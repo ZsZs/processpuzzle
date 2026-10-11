@@ -3,9 +3,9 @@ package com.processpuzzle.orgadmin.usecases.inbound.exception;
 /**
  * The user directory could not be reached, or refused the operation. Surfaced as 503.
  *
- * <p>Not a 500, because the state is knowable: the directory is the system of record and this module
- * keeps no copy, so a failure means the operation did not happen and the same request can be sent
- * again. A 500 would leave the caller unable to tell whether to retry.
+ * <p>This does not imply that a write was atomic or unapplied. Invitations use this exception after
+ * confirmed compensation; an unknown invitation outcome instead raises
+ * {@link InvitationRecoveryRequiredException}. Other writes must be reconciled before retrying.
  */
 public class DirectoryUnavailableException extends RuntimeException {
 

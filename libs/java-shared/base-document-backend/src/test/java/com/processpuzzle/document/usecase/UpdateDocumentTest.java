@@ -1,6 +1,6 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
+import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -12,10 +12,8 @@ import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.WidgetPlacement;
-import com.processpuzzle.document.model.DocumentBlockInput;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
@@ -27,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -57,10 +56,10 @@ class UpdateDocumentTest {
         updateDocument = new UpdateDocument(
                 repository,
                 draftRepository,
+                publishedRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.permitAll(),
-                new DocumentMapper());
+                TestGuards.permitAll());
     }
 
     @Test
@@ -68,9 +67,10 @@ class UpdateDocumentTest {
         Document existing = existing();
         stubFound(existing, draft("en", List.of()));
 
-        DocumentDetails details = updateDocument.execute(ORG, ID, input()
-                .title("Renamed").subject("Onboarding").description("Updated").author("Grace").isPublic(true)
-                .readerRoles(List.of("reader")));
+        DocumentDetails details = updateDocument.execute(ORG, ID, new DocumentCommand(
+                new DocumentProperties("getting-started", "Renamed", "Onboarding", "Updated", "Grace", "en",
+                        true, new DocumentRoles(List.of("reader"), List.of(), List.of()), input().properties().ports()),
+                List.of()));
 
         assertThat(details.document().getTitle()).isEqualTo("Renamed");
         assertThat(details.document().getSubject()).isEqualTo("Onboarding");
@@ -87,8 +87,8 @@ class UpdateDocumentTest {
         DocumentDraft english = draft("en", List.of(text("old")));
         stubFound(existing, english);
 
-        updateDocument.execute(ORG, ID, input().translations(List.of(
-                new DocumentTranslationInput().locale("en").blocks(List.of(textInput("new"))))));
+        updateDocument.execute(ORG, ID, input(List.of(
+                translation("en", text("new")))));
 
         assertThat(english.getBlocks()).extracting(DocumentBlock::id).containsExactly("new");
         assertThat(english.getRevision()).isEqualTo(2L);
@@ -102,8 +102,7 @@ class UpdateDocumentTest {
         DocumentDraft german = draft("de", List.of(text("einleitung")));
         stubFound(existing, draft("en", List.of()), german);
 
-        updateDocument.execute(ORG, ID, input().translations(List.of(
-                new DocumentTranslationInput().locale("en").blocks(List.of()))));
+        updateDocument.execute(ORG, ID, input(List.of(translation("en"))));
 
         assertThat(german.getBlocks()).extracting(DocumentBlock::id).containsExactly("einleitung");
         verify(draftRepository, never()).save(german);
@@ -115,8 +114,7 @@ class UpdateDocumentTest {
         DocumentDraft english = draft("en", List.of(text("old")));
         stubFound(existing, english);
 
-        updateDocument.execute(ORG, ID, input().translations(List.of(
-                new DocumentTranslationInput().locale("en"))));
+        updateDocument.execute(ORG, ID, input(List.of(new DocumentTranslationCommand("en", null))));
 
         assertThat(english.getBlocks()).extracting(DocumentBlock::id).containsExactly("old");
         verify(draftRepository, never()).save(any());
@@ -127,8 +125,7 @@ class UpdateDocumentTest {
         // Creating one has to decide which source revision it is based on — AddDocumentTranslation's job.
         stubFound(existing(), draft("en", List.of()));
 
-        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input().translations(List.of(
-                new DocumentTranslationInput().locale("fr").blocks(List.of(textInput("intro")))))))
+        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input(List.of(translation("fr", text("intro"))))))
                 .isInstanceOf(DocumentTranslationNotFoundException.class);
         verify(repository, never()).save(any());
     }
@@ -140,7 +137,7 @@ class UpdateDocumentTest {
         DocumentDraft german = draft("de", List.of(widgetBoundTo("grid-1", "customer")));
         stubFound(existing, draft("en", List.of()), german);
 
-        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input().inputPorts(List.of())))
+        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input("getting-started", DocumentPorts.empty(), List.of())))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid document");
         verify(repository, never()).save(any());
@@ -153,14 +150,39 @@ class UpdateDocumentTest {
         DocumentDraft english = draft("en", List.of());
         stubFound(existing, english);
 
-        DocumentBlockInput broken = new DocumentBlockInput()
-                .kind(com.processpuzzle.document.model.BlockKind.WIDGET)
-                .type("entity-grid")
-                .inputBindings(Map.of("rows", "gone"));
+        DocumentBlock broken = widgetBoundTo(null, "gone");
 
-        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input().translations(List.of(
-                new DocumentTranslationInput().locale("en").blocks(List.of(broken))))))
+        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input(List.of(translation("en", broken)))))
                 .isInstanceOf(IllegalArgumentException.class);
+        assertThat(english.getBlocks()).isEmpty();
+    }
+
+    @Test
+    void replacingDraftContentDoesNotAuthorizeBreakingPublishedBindings() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of(widgetBoundTo("grid", "customer")));
+        stubFound(document, english);
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(
+                new PublishedDocument(ORG, ID, "en", english.getContent(), 1L, Instant.now(), "ada")));
+
+        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input("getting-started", DocumentPorts.empty(),
+                List.of(translation("en")))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("unknown-port");
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+        assertThat(english.getBlocks()).hasSize(1);
+        assertThat(document.getPorts().inputPorts()).hasSize(1);
+    }
+
+    @Test
+    void portsAndDraftBindingsCanBeRemovedTogetherWhenNothingPublishedReferencesThem() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of(widgetBoundTo("grid", "customer")));
+        stubFound(document, english);
+
+        updateDocument.execute(ORG, ID, input("getting-started", DocumentPorts.empty(), List.of(translation("en"))));
+
+        assertThat(document.getPorts().inputPorts()).isEmpty();
         assertThat(english.getBlocks()).isEmpty();
     }
 
@@ -170,7 +192,7 @@ class UpdateDocumentTest {
         stubFound(existing, draft("en", List.of()));
         when(repository.existsByOrgKeyAndSlug(anyString(), anyString())).thenReturn(true);
 
-        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input().slug("taken")))
+        assertThatThrownBy(() -> updateDocument.execute(ORG, ID, input("taken", input().properties().ports(), List.of())))
                 .isInstanceOf(DocumentSlugAlreadyExistsException.class);
         assertThat(updateDocument.execute(ORG, ID, input()).document().getSlug()).isEqualTo("getting-started");
     }
@@ -180,7 +202,7 @@ class UpdateDocumentTest {
         Document existing = existing();
         stubFound(existing, draft("en", List.of()));
 
-        assertThat(updateDocument.execute(ORG, ID, input().slug("renamed")).document().getSlug())
+        assertThat(updateDocument.execute(ORG, ID, input("renamed", input().properties().ports(), List.of())).document().getSlug())
                 .isEqualTo("renamed");
     }
 
@@ -190,7 +212,7 @@ class UpdateDocumentTest {
         DocumentDraft english = draft("en", List.of(text("old")));
         stubFound(existing, english);
 
-        updateDocument.execute(ORG, ID, input().translations(null));
+        updateDocument.execute(ORG, ID, input(null));
 
         assertThat(english.getBlocks()).extracting(DocumentBlock::id).containsExactly("old");
         verify(draftRepository, never()).save(any());
@@ -229,25 +251,25 @@ class UpdateDocumentTest {
         return new DocumentInputPort("customer", PortType.ENTITY_REF, true, null, null, "Customer", null, null);
     }
 
-    private static DocumentInput input() {
-        return new DocumentInput()
-                .slug("getting-started")
-                .title("Original")
-                .sourceLocale("en")
-                .inputPorts(List.of(new com.processpuzzle.document.model.DocumentInputPort()
-                        .name("customer")
-                        .type(com.processpuzzle.document.model.PortType.ENTITY_REF)
-                        .required(true)
-                        .entityType("Customer")))
-                .outputPorts(List.of());
+    private static DocumentCommand input() {
+        return input(List.of());
+    }
+
+    private static DocumentCommand input(List<DocumentTranslationCommand> translations) {
+        return input("getting-started", new DocumentPorts(List.of(customerPort()), List.of()), translations);
+    }
+
+    private static DocumentCommand input(String slug, DocumentPorts ports, List<DocumentTranslationCommand> translations) {
+        return new DocumentCommand(new DocumentProperties(slug, "Original", null, null, null, "en",
+                false, null, ports), translations);
     }
 
     private static DocumentBlock text(String id) {
         return new DocumentBlock(id, BlockKind.TEXT, true, null, null, null, null, null, null);
     }
 
-    private static DocumentBlockInput textInput(String id) {
-        return new DocumentBlockInput().id(id).kind(com.processpuzzle.document.model.BlockKind.TEXT);
+    private static DocumentTranslationCommand translation(String locale, DocumentBlock... blocks) {
+        return new DocumentTranslationCommand(locale, DocumentContent.of(List.of(blocks)));
     }
 
     private static DocumentBlock widgetBoundTo(String id, String portName) {

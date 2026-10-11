@@ -7,15 +7,10 @@ import java.util.Collection;
  * the deploying application, which is where identity actually lives — there is no Spring Security
  * on the classpath of this library.
  *
- * <p>Every method defaults to permitting, so an implementation only has to override what it
- * actually enforces. That direction matters for {@link #hasAnyRole}: a port shaped as
- * {@code Set<String> currentRoles()} would return an empty set without an identity provider, and
- * every nav item with roles configured would then be filtered away — denying access precisely in
- * the apps someone had bothered to configure.
-
- * <p>Moved here from {@code base-app} with the {@code Organization} aggregate. base-app still
- * consumes it, through {@code platformadmin :: port} — which is also why the port is exposed
- * separately from {@code usecase}: implementing it is a different act from calling a use case.
+ * <p>Authorization decisions default to denial. Implementations must explicitly grant the
+ * operations they support, so adding a new check cannot silently authorize existing policies.
+ * Hosts intentionally running without identity may explicitly register
+ * {@link PermitAllOrganizationAccessPolicy}.
  *
  * @see PermitAllOrganizationAccessPolicy
  */
@@ -29,7 +24,7 @@ public interface OrganizationAccessPolicy {
      * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException when denied
      */
     default void requireAccess(String orgKey) {
-        // permitted by default
+        throw new OrganizationAccessDeniedException(orgKey);
     }
 
     /**
@@ -39,7 +34,7 @@ public interface OrganizationAccessPolicy {
      * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException when denied
      */
     default void requireDesign(String orgKey) {
-        // permitted by default
+        throw new OrganizationAccessDeniedException(orgKey);
     }
 
     /**
@@ -50,22 +45,19 @@ public interface OrganizationAccessPolicy {
      * administrator acts across all tenants, so there is no {@code orgKey} to compare anything
      * against. It is the one authorization question in this port that is not about a tenant.
      *
-     * <p>Note this defaults to permitting, like everything else here — which is safe only because
-     * {@link PermitAllOrganizationAccessPolicy} exists purely as a development stand-in. A
-     * deployment that reaches the internet must supply a real policy; see that class.
-     *
      * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException
      *         when denied
      */
     default void requirePlatformAdmin() {
-        // permitted by default
+        throw new OrganizationAccessDeniedException("platform");
     }
 
     /**
-     * Whether the principal holds at least one of {@code requiredRoles}. An empty or {@code null}
-     * collection means "any authenticated member" and must return {@code true}.
+     * Whether the principal holds at least one of {@code requiredRoles}. Defaults to denial.
+     * The guard handles an empty or {@code null} collection as "any member" after the use case's
+     * access check; this method does not itself establish membership.
      */
     default boolean hasAnyRole(Collection<String> requiredRoles) {
-        return true;
+        return false;
     }
 }

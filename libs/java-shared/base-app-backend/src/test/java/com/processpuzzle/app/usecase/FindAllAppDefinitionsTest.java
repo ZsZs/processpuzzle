@@ -37,7 +37,7 @@ class FindAllAppDefinitionsTest {
     void setUp() {
         repository = mock(AppDefinitionRepository.class);
         ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
-        when(provider.getIfUnique(any())).thenReturn(new PermitAllOrganizationAccessPolicy());
+        when(provider.getObject()).thenReturn(new PermitAllOrganizationAccessPolicy());
         findAllAppDefinitions = new FindAllAppDefinitions(repository, new OrganizationGuard(provider));
     }
 

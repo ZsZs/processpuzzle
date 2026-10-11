@@ -11,6 +11,38 @@ ProcessPuzzle Core provides cross-cutting building blocks shared by every backen
 - `com.processpuzzle.core.exception` — generic REST exception handling (`ApiExceptionHandler`) for common Spring / Jackson / validation failures. Domain modules add their own `@RestControllerAdvice` for their specific exceptions.
 - `com.processpuzzle.core.logging` — reserved for cross-cutting logging support (AOP logger — TBD).
 
+## Organization authorization
+
+`OrganizationGuard` requires an `OrganizationAccessPolicy` bean at startup. Missing or ambiguous
+policies fail startup; when several policies exist, select the intended one with `@Primary`.
+Policy methods deny access unless overridden. Hosts must implement membership, design, staff and
+role decisions explicitly; the testbed's `JwtOrganizationAccessPolicy` does so.
+
+**Migration (PCR-SEC-01):** absence of a policy no longer enables unauthenticated access. A local
+demonstration or test host that intentionally needs unrestricted access must opt in:
+
+```java
+@Bean
+OrganizationAccessPolicy organizationAccessPolicy() {
+    return new PermitAllOrganizationAccessPolicy();
+}
+```
+
+Do not use that policy on an internet-facing or multi-tenant deployment: it grants all tenant,
+design, platform-administrator and role checks. Keep it in a demonstration-only configuration.
+Partial policy implementations now deny any checks they do not override.
+
+## Identity failures
+
+`IdentityProviderUnavailableException.getHttpStatus()` exposes the actual HTTP response status as
+an `OptionalInt`, retaining the original cause. Transport failures and failures without a response
+have no status; error messages and response bodies are never parsed as status codes.
+
+`KeycloakAdminClient.exchangeTolerating` accepts only exact status matches from the requested
+Admin API operation. Token-acquisition failures always propagate, even when their status is in
+the tolerated list. Callers translating identity failures should use the structured status rather
+than diagnostic text (PCR-ABS-01).
+
 ## Technologies
 
 - **Java 25**

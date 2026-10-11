@@ -1,5 +1,9 @@
 package com.processpuzzle.core.identity;
 
+import org.springframework.web.client.RestClientResponseException;
+
+import java.util.OptionalInt;
+
 /**
  * The identity provider could not be reached, or refused the operation.
  *
@@ -9,11 +13,20 @@ package com.processpuzzle.core.identity;
  */
 public class IdentityProviderUnavailableException extends RuntimeException {
 
+    private final Integer httpStatus;
+
     public IdentityProviderUnavailableException(String message, Throwable cause) {
         super(message, cause);
+        this.httpStatus = cause instanceof RestClientResponseException response
+                ? response.getStatusCode().value() : null;
     }
 
     public IdentityProviderUnavailableException(String message) {
-        super(message);
+        this(message, null);
+    }
+
+    /** The actual response status, absent for transport failures or failures without a response. */
+    public OptionalInt getHttpStatus() {
+        return httpStatus == null ? OptionalInt.empty() : OptionalInt.of(httpStatus);
     }
 }

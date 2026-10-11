@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -87,7 +86,7 @@ public final class AppTestFixtures {
         return provider;
     }
 
-    /** The guard a deployment without an access policy ends up with. */
+    /** A guard explicitly configured for unrestricted tests. */
     public static OrganizationGuard permissiveGuard() {
         return guardWith(new PermitAllOrganizationAccessPolicy());
     }
@@ -110,7 +109,7 @@ public final class AppTestFixtures {
     @SuppressWarnings("unchecked")
     public static OrganizationGuard guardWith(OrganizationAccessPolicy policy) {
         ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
-        when(provider.getIfUnique(any())).thenReturn(policy);
+        when(provider.getObject()).thenReturn(policy);
         return new OrganizationGuard(provider);
     }
 

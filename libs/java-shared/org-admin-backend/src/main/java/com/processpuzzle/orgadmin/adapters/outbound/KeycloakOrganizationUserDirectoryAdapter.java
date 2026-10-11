@@ -5,7 +5,6 @@ import com.processpuzzle.core.identity.KeycloakAdminClient;
 import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
-import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserNotFoundException;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
@@ -67,8 +66,6 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakOrganizationUserDirectoryAdapter.class);
 
-    private static final String UPDATE_PASSWORD = "UPDATE_PASSWORD";
-
     private static final Set<String> PLATFORM_ROLES = Set.of(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER);
 
     /** Organizations have a handful of role groups; one page that no tenant will fill. */
@@ -107,47 +104,13 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
     @Override
     public DirectoryUser inviteUser(String directory, NewUser user, List<String> roles) {
         String org = organizationId(directory);
-        Map<String, Object> representation = new LinkedHashMap<>();
-        representation.put("username", user.username());
-        representation.put("email", user.email());
-        representation.put("firstName", user.firstName());
-        representation.put("lastName", user.lastName());
-        representation.put("enabled", true);
-        representation.put("emailVerified", false);
-        representation.put("requiredActions", List.of(UPDATE_PASSWORD));
-
-        String userId = createUser(directory, user, representation);
-        try {
-            // The body is the id as a JSON string, quotes included. Spring writes a String body
-            // verbatim, and Keycloak refuses a bare id with 400.
+        return new KeycloakInvitation(client).invite(realm, directory, user, roles, userId -> {
+            // Spring writes String bodies verbatim; Keycloak requires a JSON string.
             wrap(() -> client.exchange(HttpMethod.POST, orgPath(org) + "/members", "\"" + userId + "\"", null));
-        } catch (DirectoryUnavailableException ex) {
-            // Undone rather than left behind: a realm user who belongs to no organization is invisible
-            // to every tenant's administrator, so nobody could ever find it to finish or remove it.
-            deleteAccountQuietly(userId);
-            throw ex;
-        }
-        applyRoles(org, userId, Set.of(), Set.copyOf(roles == null ? List.of() : roles));
-        return findUser(directory, userId).orElseThrow(() -> new DirectoryUnavailableException(
-                "Keycloak reported user '" + userId + "' added to organization '" + directory
-                        + "' but will not read it back."));
-    }
-
-    /**
-     * 409 is a duplicate username or email <em>in the realm</em> — possibly another tenant's user, so
-     * the message names only this tenant's attempt, never whose account it collided with.
-     */
-    private String createUser(String directory, NewUser user, Map<String, Object> representation) {
-        try {
-            return client.createAndReturnId(realmPath() + "/users", representation)
-                    .orElseThrow(() -> new DirectoryUnavailableException(
-                            "Keycloak created a user for organization '" + directory + "' but returned no id."));
-        } catch (IdentityProviderUnavailableException ex) {
-            if (ex.getCause() instanceof HttpClientErrorException.Conflict) {
-                throw new UserAlreadyExistsException(directory, user.username());
-            }
-            throw new DirectoryUnavailableException(ex.getMessage(), ex);
-        }
+            applyRoles(org, userId, Set.of(), Set.copyOf(roles == null ? List.of() : roles));
+        }, userId -> member(org, userId).map(raw -> toUser(raw, roleNames(org, userId)))
+                .orElseThrow(() -> new DirectoryUnavailableException(
+                        "Keycloak will not read back the invited member '" + userId + "'.")));
     }
 
     @Override
@@ -325,15 +288,6 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
     private void requireMember(String org, String directory, String userId) {
         if (member(org, userId).isEmpty()) {
             throw new UserNotFoundException(directory, userId);
-        }
-    }
-
-    private void deleteAccountQuietly(String userId) {
-        try {
-            client.exchange(HttpMethod.DELETE, realmPath() + "/users/" + userId, null, null);
-        } catch (RuntimeException cleanup) {
-            LOG.error("User '{}' was created in '{}' but could not be added to an organization or removed again; "
-                    + "delete it by hand.", userId, realm, cleanup);
         }
     }
 

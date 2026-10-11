@@ -1,6 +1,5 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -12,8 +11,8 @@ import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.WidgetPlacement;
-import com.processpuzzle.document.model.DocumentPropertiesInput;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.clearInvocations;
 
 class UpdateDocumentPropertiesTest {
 
@@ -52,15 +53,15 @@ class UpdateDocumentPropertiesTest {
         updateDocumentProperties = new UpdateDocumentProperties(
                 repository,
                 draftRepository,
+                publishedRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.permitAll(),
-                new DocumentMapper());
+                TestGuards.permitAll());
     }
 
     @Test
     void updatesTheMetadataAndNeverWritesContent() {
-        // The whole reason this use case exists: DocumentPropertiesInput has no content field, so a
+        // The whole reason this use case exists: DocumentProperties has no content field, so a
         // Properties save cannot discard blocks maintained through the translation endpoints.
         Document existing = existing();
         DocumentDraft draft = draft(List.of(standaloneWidget("chart-1", Map.of())));
@@ -94,8 +95,7 @@ class UpdateDocumentPropertiesTest {
         DocumentDraft german = draft("de", List.of(widgetBoundTo("grid-1", "customer")));
         stubFound(existing, draft(List.of()), german);
 
-        DocumentPropertiesInput noPorts = new DocumentPropertiesInput()
-                .slug("getting-started").title("Renamed").sourceLocale("en").inputPorts(List.of());
+        DocumentProperties noPorts = input("getting-started", "Renamed", DocumentPorts.empty());
 
         assertThatThrownBy(() -> updateDocumentProperties.execute(ORG, ID, noPorts))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -104,12 +104,53 @@ class UpdateDocumentPropertiesTest {
     }
 
     @Test
+    void publishingThenRemovingDraftBindingsCannotOrphanEitherPublishedLocale() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of(widgetBoundTo("en-grid", "customer")));
+        DocumentDraft german = draft("de", List.of(widgetBoundTo("de-grid", "customer")));
+        stubFound(document, english, german);
+        List<PublishedDocument> snapshots = new ArrayList<>();
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(snapshots);
+        when(publishedRepository.save(any())).thenAnswer(call -> {
+            PublishedDocument snapshot = call.getArgument(0);
+            snapshots.add(snapshot);
+            return snapshot;
+        });
+        PublishDocumentTranslation publish = new PublishDocumentTranslation(repository, draftRepository,
+                publishedRepository, new DocumentReferentialIntegrityChecker(),
+                new DocumentTranslationAssembler(draftRepository, publishedRepository),
+                TestGuards.permitAll(), event -> { });
+        publish.execute(ORG, ID, "en");
+        publish.execute(ORG, ID, "de");
+        english.replaceBlocks(List.of());
+        german.replaceBlocks(List.of());
+        clearInvocations(repository);
+
+        assertThatThrownBy(() -> updateDocumentProperties.execute(ORG, ID, input("getting-started", "Renamed", DocumentPorts.empty())))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("unknown-port");
+        verify(repository, never()).save(any());
+        assertThat(document.getTitle()).isEqualTo("Original");
+        when(repository.findByOrgKeyAndSlug(ORG, document.getSlug())).thenReturn(Optional.of(document));
+        FindPublishedContent reader = new FindPublishedContent(repository, publishedRepository, TestGuards.permitAll());
+        for (String locale : List.of("en", "de")) {
+            var view = reader.execute(ORG, document.getSlug(), locale);
+            assertThat(new DocumentReferentialIntegrityChecker().check(
+                    document.getPorts(), view.served().content())).isEmpty();
+            assertThat(view.served().content().blocks()).hasSize(1);
+        }
+
+        snapshots.clear();
+        assertThat(updateDocumentProperties.execute(ORG, ID, input("getting-started", "Renamed", DocumentPorts.empty()))
+                .document().getPorts().inputPorts()).isEmpty();
+    }
+
+    @Test
     void rejectsASlugAnotherDocumentAlreadyUses() {
         Document existing = existing();
         stubFound(existing, draft(List.of()));
         when(repository.existsByOrgKeyAndSlug(ORG, "taken")).thenReturn(true);
 
-        DocumentPropertiesInput renamed = input("Renamed").slug("taken");
+        DocumentProperties renamed = input("taken", "Renamed", input("Renamed").ports());
 
         assertThatThrownBy(() -> updateDocumentProperties.execute(ORG, ID, renamed))
                 .isInstanceOf(DocumentSlugAlreadyExistsException.class);
@@ -120,7 +161,7 @@ class UpdateDocumentPropertiesTest {
         Document existing = existing();
         stubFound(existing, draft(List.of()));
 
-        DocumentDetails details = updateDocumentProperties.execute(ORG, ID, input("Renamed").slug("renamed"));
+        DocumentDetails details = updateDocumentProperties.execute(ORG, ID, input("renamed", "Renamed", input("Renamed").ports()));
 
         assertThat(details.document().getSlug()).isEqualTo("renamed");
     }
@@ -177,20 +218,13 @@ class UpdateDocumentPropertiesTest {
         return new DocumentInputPort("customer", PortType.ENTITY_REF, true, null, null, "Customer", null, null);
     }
 
-    private static DocumentPropertiesInput input(String title) {
-        return new DocumentPropertiesInput()
-                .slug("getting-started")
-                .title(title)
-                .subject("Onboarding")
-                .description("Updated description")
-                .author("Ada")
-                .sourceLocale("en")
-                .inputPorts(List.of(new com.processpuzzle.document.model.DocumentInputPort()
-                        .name("customer")
-                        .type(com.processpuzzle.document.model.PortType.ENTITY_REF)
-                        .required(true)
-                        .entityType("Customer")))
-                .outputPorts(List.of());
+    private static DocumentProperties input(String title) {
+        return input("getting-started", title, new DocumentPorts(List.of(customerPort()), List.of()));
+    }
+
+    private static DocumentProperties input(String slug, String title, DocumentPorts ports) {
+        return new DocumentProperties(slug, title, "Onboarding", "Updated description", "Ada", "en", false,
+                null, ports);
     }
 
     private static DocumentBlock standaloneWidget(String id, Map<String, Object> props) {

@@ -20,6 +20,9 @@ import com.processpuzzle.document.model.DocumentTranslationSummary;
 import com.processpuzzle.document.model.PageOfDocumentSummary;
 import com.processpuzzle.document.model.PublishedContent;
 import com.processpuzzle.document.usecase.DocumentTranslationView;
+import com.processpuzzle.document.usecase.DocumentCommand;
+import com.processpuzzle.document.usecase.DocumentProperties;
+import com.processpuzzle.document.usecase.DocumentTranslationCommand;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
 import com.processpuzzle.document.usecase.ImportOutcome;
 import com.processpuzzle.shared.model.ImportResult;
@@ -58,25 +61,22 @@ public class DocumentMapper {
 
     // ── model -> domain ─────────────────────────────────────────
 
-    /**
-     * {@code orgKey} comes from the path, not the body — same reasoning as RuleMapper. So does
-     * {@code id}, which the caller has already generated: minting identity is a decision, not a
-     * mapping, and {@code createdBy} likewise comes from the principal rather than the payload.
-     */
-    public com.processpuzzle.document.domain.Document toDomain(String orgKey, String id, DocumentInput input, String createdBy) {
-        com.processpuzzle.document.domain.Document document = new com.processpuzzle.document.domain.Document(
-                orgKey, id, input.getSlug(), input.getTitle(), input.getSourceLocale(), createdBy);
-        document.replaceProperties(
-                input.getSlug(),
-                input.getTitle(),
-                input.getSubject(),
-                input.getDescription(),
-                input.getAuthor() == null ? createdBy : input.getAuthor(),
-                input.getSourceLocale(),
-                Boolean.TRUE.equals(input.getIsPublic()),
-                toRoles(input.getReaderRoles(), input.getEditorRoles(), input.getPublisherRoles()),
-                toPorts(input.getInputPorts(), input.getOutputPorts()));
-        return document;
+    public DocumentCommand toCommand(DocumentInput input) {
+        return new DocumentCommand(
+                new DocumentProperties(input.getSlug(), input.getTitle(), input.getSubject(), input.getDescription(),
+                        input.getAuthor(), input.getSourceLocale(), Boolean.TRUE.equals(input.getIsPublic()),
+                        toRoles(input), toPorts(input)),
+                input.getTranslations() == null ? null : input.getTranslations().stream().map(this::toCommand).toList());
+    }
+
+    public DocumentProperties toCommand(DocumentPropertiesInput input) {
+        return new DocumentProperties(input.getSlug(), input.getTitle(), input.getSubject(), input.getDescription(),
+                input.getAuthor(), input.getSourceLocale(), Boolean.TRUE.equals(input.getIsPublic()),
+                toRoles(input), toPorts(input));
+    }
+
+    public DocumentTranslationCommand toCommand(DocumentTranslationInput input) {
+        return new DocumentTranslationCommand(input.getLocale(), toContentOrNull(input));
     }
 
     public DocumentPorts toPorts(DocumentInput input) {

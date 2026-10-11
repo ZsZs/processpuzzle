@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * The one authenticated conversation with Keycloak's Admin REST API.
@@ -90,10 +91,15 @@ public class KeycloakAdminClient {
      * @throws IdentityProviderUnavailableException on any transport or protocol failure
      */
     public <T> Optional<T> exchange(HttpMethod method, String path, Object body, Class<T> responseType) {
+        return exchangeAuthenticated(method, path, body, responseType, accessToken());
+    }
+
+    private <T> Optional<T> exchangeAuthenticated(HttpMethod method, String path, Object body,
+                                                 Class<T> responseType, String token) {
         try {
             RestClient.RequestBodySpec request = restClient.method(method)
                     .uri(path)
-                    .headers(headers -> headers.setBearerAuth(accessToken()));
+                    .headers(headers -> headers.setBearerAuth(token));
             if (body != null) {
                 request.contentType(MediaType.APPLICATION_JSON).body(body);
             }
@@ -110,17 +116,19 @@ public class KeycloakAdminClient {
     }
 
     /**
-     * As {@link #exchange}, but tolerating the given HTTP statuses as success.
+     * As {@link #exchange}, but tolerating the given Admin API response statuses as success.
+     * Transport failures and token-acquisition failures are never tolerated.
      *
      * <p>The idempotency contract on {@code IdentityRealmPort} needs this: deleting an absent realm
      * and creating an existing one are both retries of work that already succeeded, and reporting
      * them as failures would leave a caller unable to converge after a partial outage.
      */
     public void exchangeTolerating(HttpMethod method, String path, Object body, int... tolerated) {
+        String token = accessToken();
         try {
-            exchange(method, path, body, null);
+            exchangeAuthenticated(method, path, body, null, token);
         } catch (IdentityProviderUnavailableException ex) {
-            if (!mentionsStatus(ex, tolerated)) {
+            if (!hasStatus(ex, tolerated)) {
                 throw ex;
             }
         }
@@ -159,19 +167,38 @@ public class KeycloakAdminClient {
     }
 
     /**
-     * Whether the wrapped failure names one of {@code tolerated}.
+     * Posts an {@code application/x-www-form-urlencoded} body and discards the response.
      *
-     * <p>Matching on the message rather than on a status code, because {@link #exchange} has already
-     * wrapped the {@code RestClientException}. Keeping the status accessible would mean either a
-     * richer exception type or letting the raw Spring exception escape the adapter; the string check
-     * is the smaller compromise, and it is only ever consulted for the two statuses that mean "this
-     * has already been done".
+     * <p>A few Admin API calls take a form rather than JSON, for instance
+     * {@code .../organizations/{id}/members/invite-existing-user}, whose user id is a form field.
+     *
+     * @param path path below the server root, starting with {@code /admin}
+     * @param form the form fields
+     * @throws IdentityProviderUnavailableException on any transport or protocol failure
      */
-    private static boolean mentionsStatus(RuntimeException ex, int... tolerated) {
-        Throwable cause = ex.getCause();
-        String message = String.valueOf(cause == null ? ex.getMessage() : cause.getMessage());
+    public void postForm(String path, MultiValueMap<String, String> form) {
+        String token = accessToken();
+        try {
+            restClient.post()
+                    .uri(path)
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            throw new IdentityProviderUnavailableException(
+                    "Keycloak admin call failed: " + HttpMethod.POST + " " + path, ex);
+        }
+    }
+
+    private static boolean hasStatus(IdentityProviderUnavailableException ex, int... tolerated) {
+        OptionalInt actual = ex.getHttpStatus();
+        if (actual.isEmpty()) {
+            return false;
+        }
         for (int status : tolerated) {
-            if (message.contains(String.valueOf(status))) {
+            if (actual.getAsInt() == status) {
                 return true;
             }
         }

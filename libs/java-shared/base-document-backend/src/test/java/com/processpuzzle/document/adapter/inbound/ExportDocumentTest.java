@@ -1,6 +1,8 @@
-package com.processpuzzle.document.usecase;
+package com.processpuzzle.document.adapter.inbound;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
+import com.processpuzzle.document.usecase.ExportDocument;
+import com.processpuzzle.document.usecase.TestGuards;
+import com.processpuzzle.document.usecase.TestPolicies;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -45,7 +47,7 @@ class ExportDocumentTest {
                 draft("en", "intro"),
                 draft("de", "einleitung"));
 
-        String yaml = export(TestPolicies.permitAll()).execute(ORG, ID);
+        String yaml = new DocumentYamlCodec(new DocumentMapper()).write(export(TestPolicies.permitAll()).execute(ORG, ID));
 
         assertThat(yaml).startsWith("---");
         assertThat(yaml).contains("documents:");
@@ -60,7 +62,7 @@ class ExportDocumentTest {
         // organization, not a property of a file someone sent.
         stubFound(DocumentRoles.unrestricted(), draft("en", "intro"));
 
-        String yaml = export(TestPolicies.permitAll()).execute(ORG, ID);
+        String yaml = new DocumentYamlCodec(new DocumentMapper()).write(export(TestPolicies.permitAll()).execute(ORG, ID));
 
         assertThat(yaml).doesNotContain("publishedAt").doesNotContain("publishedRevision").doesNotContain("status");
     }
@@ -72,7 +74,7 @@ class ExportDocumentTest {
 
         assertThatThrownBy(() -> export(TestPolicies.holding("reader")).execute(ORG, ID))
                 .isInstanceOf(DocumentAccessDeniedException.class);
-        assertThat(export(TestPolicies.holding("editor")).execute(ORG, ID)).contains("getting-started");
+        assertThat(export(TestPolicies.holding("editor")).execute(ORG, ID).document().getSlug()).isEqualTo("getting-started");
     }
 
     @Test
@@ -92,7 +94,7 @@ class ExportDocumentTest {
         stubFound(DocumentRoles.unrestricted(),
                 new DocumentDraft(ORG, ID, "en", DocumentContent.of(List.of(unwritable)), null));
 
-        assertThatThrownBy(() -> export(TestPolicies.permitAll()).execute(ORG, ID))
+        assertThatThrownBy(() -> new DocumentYamlCodec(new DocumentMapper()).write(export(TestPolicies.permitAll()).execute(ORG, ID)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cannot serialize document '" + ID + "'");
     }
@@ -106,7 +108,7 @@ class ExportDocumentTest {
 
     // region fixtures
     private ExportDocument export(DocumentAccessPolicy policy) {
-        return new ExportDocument(repository, draftRepository, TestGuards.with(policy), new DocumentMapper());
+        return new ExportDocument(repository, draftRepository, TestGuards.with(policy));
     }
 
     private void stubFound(DocumentRoles roles, DocumentDraft... drafts) {

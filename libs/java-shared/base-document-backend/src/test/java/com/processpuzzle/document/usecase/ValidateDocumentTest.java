@@ -1,9 +1,11 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
-import com.processpuzzle.document.model.DocumentBlockInput;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
+import com.processpuzzle.document.domain.BlockKind;
+import com.processpuzzle.document.domain.DocumentBlock;
+import com.processpuzzle.document.domain.DocumentContent;
+import com.processpuzzle.document.domain.DocumentInputPort;
+import com.processpuzzle.document.domain.DocumentPorts;
+import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.Severity;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ValidateDocumentTest {
 
     private final ValidateDocument validateDocument =
-            new ValidateDocument(new DocumentReferentialIntegrityChecker(), new DocumentMapper());
+            new ValidateDocument(new DocumentReferentialIntegrityChecker());
 
     @Test
     void aDocumentWithNoTranslationsHasNothingToBeWrongWithIt() {
@@ -28,7 +30,7 @@ class ValidateDocumentTest {
 
     @Test
     void anOmittedTranslationsArrayIsTheSameAsAnEmptyOne() {
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(null));
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(null));
 
         assertThat(outcome.valid()).isTrue();
         assertThat(outcome.problems()).isEmpty();
@@ -37,7 +39,7 @@ class ValidateDocumentTest {
     @Test
     void eachProblemIsAttributedToTheTranslationItWasFoundIn() {
         // The checker is locale-agnostic by design, so attributing the finding is this use case's job.
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(List.of(
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(List.of(
                 translation("en", widgetBoundTo("grid-1", "customer")),
                 translation("de", widgetBoundTo("grid-1", "gone")))));
 
@@ -53,7 +55,7 @@ class ValidateDocumentTest {
     void aWidgetMissingFromATranslationIsAWarningReportedAgainstThatTranslation() {
         // Translators legitimately split and merge prose, but a widget is functionality — one
         // silently absent from a language is worth saying, without blocking the save.
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(List.of(
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(List.of(
                 translation("en", widgetBoundTo("grid-1", "customer")),
                 translation("de", textBlock("einleitung")))));
 
@@ -67,7 +69,7 @@ class ValidateDocumentTest {
 
     @Test
     void theSourceLocaleIsNotComparedAgainstItself() {
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(List.of(
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(List.of(
                 translation("en", widgetBoundTo("grid-1", "customer")))));
 
         assertThat(outcome.problems()).isEmpty();
@@ -75,7 +77,7 @@ class ValidateDocumentTest {
 
     @Test
     void withoutTheSourceLocaleInThePayloadThereIsNothingToCompareCoverageAgainst() {
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(List.of(
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(List.of(
                 translation("de", textBlock("einleitung")))));
 
         assertThat(outcome.valid()).isTrue();
@@ -84,9 +86,9 @@ class ValidateDocumentTest {
 
     @Test
     void aTranslationThatCarriesNoBlocksAtAllIsValidatedAsAnEmptyOne() {
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(List.of(
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(List.of(
                 translation("en", widgetBoundTo("grid-1", "customer")),
-                new DocumentTranslationInput().locale("de"))));
+                new DocumentTranslationCommand("de", null))));
 
         assertThat(outcome.problems())
                 .extracting(DocumentValidationProblem::errorId)
@@ -95,7 +97,7 @@ class ValidateDocumentTest {
 
     @Test
     void duplicateBlockIdsWithinOneTranslationBlockTheDocument() {
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input().translations(List.of(
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(input(List.of(
                 translation("en", textBlock("intro"), textBlock("intro")))));
 
         assertThat(outcome.valid()).isFalse();
@@ -105,31 +107,27 @@ class ValidateDocumentTest {
     }
 
     // region fixtures
-    private static DocumentInput input() {
-        return new DocumentInput()
-                .slug("getting-started")
-                .title("Getting started")
-                .sourceLocale("en")
-                .inputPorts(List.of(new com.processpuzzle.document.model.DocumentInputPort()
-                        .name("customer")
-                        .type(com.processpuzzle.document.model.PortType.ENTITY_REF)
-                        .required(true)
-                        .entityType("Customer")));
+    private static DocumentCommand input() {
+        return input(List.of());
     }
 
-    private static DocumentTranslationInput translation(String locale, DocumentBlockInput... blocks) {
-        return new DocumentTranslationInput().locale(locale).blocks(List.of(blocks));
+    private static DocumentCommand input(List<DocumentTranslationCommand> translations) {
+        return new DocumentCommand(new DocumentProperties("getting-started", "Getting started", null, null, null,
+                "en", false, null, new DocumentPorts(List.of(new DocumentInputPort("customer",
+                PortType.ENTITY_REF, true, null, null, "Customer", null, null)), List.of())), translations);
     }
 
-    private static DocumentBlockInput textBlock(String id) {
-        return new DocumentBlockInput().id(id).kind(com.processpuzzle.document.model.BlockKind.TEXT);
+    private static DocumentTranslationCommand translation(String locale, DocumentBlock... blocks) {
+        return new DocumentTranslationCommand(locale, DocumentContent.of(List.of(blocks)));
     }
 
-    private static DocumentBlockInput widgetBoundTo(String id, String portName) {
-        return new DocumentBlockInput().id(id)
-                .kind(com.processpuzzle.document.model.BlockKind.WIDGET)
-                .type("entity-grid")
-                .inputBindings(Map.of("rows", portName));
+    private static DocumentBlock textBlock(String id) {
+        return new DocumentBlock(id, BlockKind.TEXT, true, null, null, null, null, null, null);
+    }
+
+    private static DocumentBlock widgetBoundTo(String id, String portName) {
+        return new DocumentBlock(id, BlockKind.WIDGET, null, null, null, "entity-grid", null,
+                Map.of("rows", portName), null);
     }
     // endregion
 }

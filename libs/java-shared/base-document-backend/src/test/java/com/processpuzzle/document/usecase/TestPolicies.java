@@ -9,19 +9,19 @@ import java.util.List;
  * The two access policies almost every use-case test needs. Kept next to {@link TestGuards} — that
  * one wires a policy into a {@code DocumentGuard}, this one supplies the policies to wire.
  */
-final class TestPolicies {
+public final class TestPolicies {
 
     private TestPolicies() {
     }
 
     /** Every default is permitting, so this stands in for "an authenticated member with every role". */
-    static DocumentAccessPolicy permitAll() {
+    public static DocumentAccessPolicy permitAll() {
         return new DocumentAccessPolicy() {
         };
     }
 
     /** A member of the organization holding exactly {@code roles} and nothing else. */
-    static DocumentAccessPolicy holding(String... roles) {
+    public static DocumentAccessPolicy holding(String... roles) {
         List<String> held = List.of(roles);
         return new DocumentAccessPolicy() {
             @Override
@@ -32,7 +32,7 @@ final class TestPolicies {
     }
 
     /** Not a member at all — {@code requireOrganizationAccess} rejects before anything else runs. */
-    static DocumentAccessPolicy outsider() {
+    public static DocumentAccessPolicy outsider() {
         return new DocumentAccessPolicy() {
             @Override
             public void requireAccess(String orgKey) {
@@ -42,7 +42,7 @@ final class TestPolicies {
     }
 
     /** An anonymous caller: only {@code isPublic} content is readable. */
-    static DocumentAccessPolicy anonymous() {
+    public static DocumentAccessPolicy anonymous() {
         return new DocumentAccessPolicy() {
             @Override
             public boolean isAuthenticated() {
@@ -52,7 +52,7 @@ final class TestPolicies {
     }
 
     /** Named, so audit fields have something to record. */
-    static DocumentAccessPolicy principal(String name) {
+    public static DocumentAccessPolicy principal(String name) {
         return new DocumentAccessPolicy() {
             @Override
             public String currentPrincipal() {

@@ -1,10 +1,7 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentPorts;
-import com.processpuzzle.document.model.DocumentInput;
-import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.springframework.stereotype.Service;
 
@@ -26,15 +23,13 @@ import java.util.Map;
 public class ValidateDocument {
 
     private final DocumentReferentialIntegrityChecker integrityChecker;
-    private final DocumentMapper mapper;
 
-    public ValidateDocument(DocumentReferentialIntegrityChecker integrityChecker, DocumentMapper mapper) {
+    public ValidateDocument(DocumentReferentialIntegrityChecker integrityChecker) {
         this.integrityChecker = integrityChecker;
-        this.mapper = mapper;
     }
 
-    public ValidationOutcome execute(DocumentInput input) {
-        DocumentPorts ports = mapper.toPorts(input);
+    public ValidationOutcome execute(DocumentCommand input) {
+        DocumentPorts ports = input.properties().ports();
         Map<String, DocumentContent> byLocale = contentByLocale(input);
         List<DocumentValidationProblem> problems = new ArrayList<>();
 
@@ -42,12 +37,12 @@ public class ValidateDocument {
                 problems.addAll(DocumentValidationProblem.withLocale(integrityChecker.check(ports, content), locale)));
 
         // Cross-locale widget coverage, reported against each translation rather than the source.
-        DocumentContent sourceContent = byLocale.get(input.getSourceLocale());
+        DocumentContent sourceContent = byLocale.get(input.properties().sourceLocale());
         if (sourceContent != null) {
             byLocale.forEach((locale, content) -> {
-                if (!locale.equals(input.getSourceLocale())) {
+                if (!locale.equals(input.properties().sourceLocale())) {
                     problems.addAll(DocumentValidationProblem.withLocale(
-                            integrityChecker.checkWidgetCoverage(sourceContent, input.getSourceLocale(), content),
+                            integrityChecker.checkWidgetCoverage(sourceContent, input.properties().sourceLocale(), content),
                             locale));
                 }
             });
@@ -57,14 +52,10 @@ public class ValidateDocument {
         return new ValidationOutcome(valid, problems);
     }
 
-    private Map<String, DocumentContent> contentByLocale(DocumentInput input) {
+    private Map<String, DocumentContent> contentByLocale(DocumentCommand input) {
         Map<String, DocumentContent> byLocale = new LinkedHashMap<>();
-        if (input.getTranslations() == null) {
-            return byLocale;
-        }
-        for (DocumentTranslationInput translation : input.getTranslations()) {
-            DocumentContent content = mapper.toContentOrNull(translation);
-            byLocale.put(translation.getLocale(), content == null ? DocumentContent.empty() : content);
+        for (DocumentTranslationCommand translation : input.translations()) {
+            byLocale.put(translation.locale(), translation.contentOrEmpty());
         }
         return byLocale;
     }

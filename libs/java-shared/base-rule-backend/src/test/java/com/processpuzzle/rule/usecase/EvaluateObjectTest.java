@@ -66,25 +66,27 @@ class EvaluateObjectTest {
     }
 
     @Test
-    void registersARuleTheEngineHasNotSeenYet() {
-        // The path a freshly-restarted instance takes before its engine state was re-synced.
+    void evaluatesThePersistedExpressionWithoutPublishingARegistration() {
         stubRules(rule("max-quantity", Severity.ERROR, "too many", null, true));
-        when(ruleEngine.isRegistered(KEY)).thenReturn(false);
-        when(ruleEngine.evaluate(eq(KEY), any())).thenReturn(true);
+        when(ruleEngine.evaluate(eq(KEY), eq("entity.quantity <= 5"), any())).thenReturn(true);
 
         evaluateObject.execute("demo", "Order", ENTITY);
 
-        verify(ruleEngine).registerRule(KEY, "entity.quantity <= 5");
+        verify(ruleEngine).evaluate(KEY, "entity.quantity <= 5", ENTITY);
+        verify(ruleEngine, never()).registerRule(any(RuleKey.class), anyString());
     }
 
     @Test
-    void reusesAnAlreadyRegisteredRule() {
+    void aChangedDatabaseExpressionIsForwardedEvenWhenTheKeyIsUnchanged() {
         stubRules(rule("max-quantity", Severity.ERROR, "too many", null, true));
-        when(ruleEngine.isRegistered(KEY)).thenReturn(true);
-        when(ruleEngine.evaluate(eq(KEY), any())).thenReturn(true);
-
+        evaluateObject.execute("demo", "Order", ENTITY);
+        RuleDefinition edited = rule("max-quantity", Severity.ERROR, "too many", null, true);
+        edited.setExpression("false");
+        stubRules(edited);
         evaluateObject.execute("demo", "Order", ENTITY);
 
+        verify(ruleEngine).evaluate(KEY, "entity.quantity <= 5", ENTITY);
+        verify(ruleEngine).evaluate(KEY, "false", ENTITY);
         verify(ruleEngine, never()).registerRule(any(RuleKey.class), anyString());
     }
 
@@ -101,8 +103,7 @@ class EvaluateObjectTest {
     @Test
     void aFailingErrorRuleFailsTheWholeEvaluation() {
         stubRules(rule("max-quantity", Severity.ERROR, "too many", "rule.max", true));
-        when(ruleEngine.isRegistered(KEY)).thenReturn(true);
-        when(ruleEngine.evaluate(eq(KEY), any())).thenReturn(false);
+        when(ruleEngine.evaluate(eq(KEY), anyString(), any())).thenReturn(false);
 
         EvaluationOutcome outcome = evaluateObject.execute("demo", "Order", ENTITY);
 
@@ -119,8 +120,7 @@ class EvaluateObjectTest {
     @Test
     void aFailingWarningIsReportedWithoutFailingTheEvaluation() {
         stubRules(rule("max-quantity", Severity.WARNING, "consider fewer", null, true));
-        when(ruleEngine.isRegistered(KEY)).thenReturn(true);
-        when(ruleEngine.evaluate(eq(KEY), any())).thenReturn(false);
+        when(ruleEngine.evaluate(eq(KEY), anyString(), any())).thenReturn(false);
 
         EvaluationOutcome outcome = evaluateObject.execute("demo", "Order", ENTITY);
 
@@ -131,8 +131,7 @@ class EvaluateObjectTest {
     @Test
     void aBrokenExpressionBecomesAnErrorViolationInsteadOfPropagating() {
         stubRules(rule("max-quantity", Severity.WARNING, "consider fewer", null, true));
-        when(ruleEngine.isRegistered(KEY)).thenReturn(true);
-        when(ruleEngine.evaluate(eq(KEY), any())).thenThrow(new IllegalStateException("not a boolean"));
+        when(ruleEngine.evaluate(eq(KEY), anyString(), any())).thenThrow(new IllegalStateException("not a boolean"));
 
         EvaluationOutcome outcome = evaluateObject.execute("demo", "Order", ENTITY);
 
@@ -150,8 +149,7 @@ class EvaluateObjectTest {
         RuleDefinition blankMessage = rule("max-quantity", Severity.ERROR, "  ", null, true);
         blankMessage.setDescription("described");
         stubRules(blankMessage);
-        when(ruleEngine.isRegistered(KEY)).thenReturn(true);
-        when(ruleEngine.evaluate(eq(KEY), any())).thenReturn(false);
+        when(ruleEngine.evaluate(eq(KEY), anyString(), any())).thenReturn(false);
 
         assertThat(evaluateObject.execute("demo", "Order", ENTITY).violations())
                 .extracting(RuleViolation::message).containsExactly("described");

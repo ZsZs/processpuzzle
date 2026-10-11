@@ -1,12 +1,11 @@
 package com.processpuzzle.document.usecase;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
-import com.processpuzzle.document.model.DocumentPropertiesInput;
+import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
@@ -15,12 +14,12 @@ import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The language-invariant half only — what the generic Properties form saves. Content is untouched
- * because it is not on this entity at all: {@link DocumentPropertiesInput} has no translations
+ * because it is not on this entity at all: {@link DocumentProperties} has no translations
  * field, so a Properties save racing a Tiptap autosave cannot revert it. That guarantee is
  * structural rather than something this class has to uphold.
  *
@@ -36,56 +35,44 @@ public class UpdateDocumentProperties {
 
     private final DocumentRepository repository;
     private final DocumentDraftRepository draftRepository;
+    private final PublishedDocumentRepository publishedRepository;
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
-    private final DocumentMapper mapper;
 
     public UpdateDocumentProperties(DocumentRepository repository,
                                     DocumentDraftRepository draftRepository,
+                                    PublishedDocumentRepository publishedRepository,
                                     DocumentReferentialIntegrityChecker integrityChecker,
                                     DocumentTranslationAssembler assembler,
-                                    DocumentGuard guard,
-                                    DocumentMapper mapper) {
+                                    DocumentGuard guard) {
         this.repository = repository;
         this.draftRepository = draftRepository;
+        this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
-        this.mapper = mapper;
     }
 
-    public DocumentDetails execute(String orgKey, String documentId, DocumentPropertiesInput input) {
+    public DocumentDetails execute(String orgKey, String documentId, DocumentProperties input) {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
 
-        if (!document.getSlug().equals(input.getSlug()) && repository.existsByOrgKeyAndSlug(orgKey, input.getSlug())) {
-            throw new DocumentSlugAlreadyExistsException(orgKey, input.getSlug());
+        if (!document.getSlug().equals(input.slug()) && repository.existsByOrgKeyAndSlug(orgKey, input.slug())) {
+            throw new DocumentSlugAlreadyExistsException(orgKey, input.slug());
         }
 
-        DocumentPorts newPorts = mapper.toPorts(input);
+        DocumentPorts newPorts = input.ports();
         List<DocumentDraft> drafts = draftRepository.findByOrgKeyAndDocumentId(orgKey, documentId);
-        List<DocumentValidationProblem> problems = new ArrayList<>();
-        for (DocumentDraft draft : drafts) {
-            problems.addAll(DocumentValidationProblem.withLocale(
-                    integrityChecker.check(newPorts, draft.getContent()), draft.getLocale()));
-        }
-        List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(problems);
+        List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
+                integrityChecker.checkPortChange(newPorts, drafts, Map.of(),
+                        publishedRepository.findByOrgKeyAndDocumentId(orgKey, documentId)));
         if (!blocking.isEmpty()) {
             throw new IllegalArgumentException("Invalid document properties: " + blocking);
         }
 
-        document.replaceProperties(
-                input.getSlug(),
-                input.getTitle(),
-                input.getSubject(),
-                input.getDescription(),
-                input.getAuthor(),
-                input.getSourceLocale(),
-                Boolean.TRUE.equals(input.getIsPublic()),
-                mapper.toRoles(input),
-                newPorts);
+        input.applyTo(document);
 
         Document saved = repository.save(document);
         return new DocumentDetails(saved,

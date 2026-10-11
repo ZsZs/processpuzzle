@@ -48,6 +48,10 @@ public record DocumentBlock(
         return kind == BlockKind.WIDGET;
     }
 
+    public DocumentBlock withId(String id) {
+        return new DocumentBlock(id, kind, editable, content, placement, type, props, inputBindings, outputBindings);
+    }
+
     public boolean isReferenced() {
         return isWidget() && placement == WidgetPlacement.REFERENCED;
     }

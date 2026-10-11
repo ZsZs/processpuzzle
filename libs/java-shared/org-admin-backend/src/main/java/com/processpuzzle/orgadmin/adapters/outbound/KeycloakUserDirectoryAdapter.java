@@ -2,7 +2,6 @@ package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
-import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
@@ -28,9 +27,8 @@ import java.util.stream.Collectors;
 /**
  * The tenant's user directory, over Keycloak's Admin REST API.
  *
- * <p>Reuses {@code platform-admin}'s {@link KeycloakAdminClient} rather than opening its own
- * conversation — one token cache, one copy of {@code keycloak.admin.*}. See that class for why the
- * coupling is declared rather than avoided.
+ * <p>Reuses core's {@link KeycloakAdminClient} rather than opening its own conversation:
+ * one token cache, one copy of {@code keycloak.admin.*}.
  *
  * <p><b>Roles are resolved by name on every call.</b> Keycloak's role-mapping endpoints want the
  * {@code {id, name}} pair, and caching the ids would mean a realm re-import silently breaks every
@@ -38,9 +36,7 @@ import java.util.stream.Collectors;
  * human performs by hand.
  *
  * <p>Transport failures are re-thrown as this module's {@link DirectoryUnavailableException}, not
- * platform-admin's. Both map to 503, but each module's advice is scoped to its own controllers, so a
- * platform-admin exception raised from an org-admin endpoint would fall through to core's catch-all
- * as a 500 instead.
+ * core's. Invitations additionally distinguish unconfirmed external work from retryable failures.
  *
  * <p>Deliberately not a {@code @Component}: {@code UserDirectoryConfiguration} registers either this
  * or the no-op, depending on whether an admin secret is configured.
@@ -48,9 +44,6 @@ import java.util.stream.Collectors;
 public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakUserDirectoryAdapter.class);
-
-    /** Forces the invitee to set their own password on first login. */
-    private static final String UPDATE_PASSWORD = "UPDATE_PASSWORD";
 
     /** The two roles created with every realm, which ProcessPuzzle itself interprets. */
     private static final Set<String> PLATFORM_ROLES =
@@ -87,38 +80,10 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     @Override
     public DirectoryUser inviteUser(String realm, NewUser user, List<String> roles) {
-        Map<String, Object> representation = new LinkedHashMap<>();
-        representation.put("username", user.username());
-        representation.put("email", user.email());
-        representation.put("firstName", user.firstName());
-        representation.put("lastName", user.lastName());
-        representation.put("enabled", true);
-        representation.put("emailVerified", false);
-        representation.put("requiredActions", List.of(UPDATE_PASSWORD));
-
-        String userId = createUser(realm, user, representation);
-        grantRoles(realm, userId, roles);
-        return findUser(realm, userId).orElseThrow(() -> new DirectoryUnavailableException(
-                "Keycloak reported user '" + userId + "' created in realm '" + realm
-                        + "' but will not read it back."));
-    }
-
-    /**
-     * Keycloak answers 409 for a duplicate username or email. Distinguished from a transport failure
-     * because the contract declares 409 for it, and because a 503 would tell the administrator to
-     * retry something that can never succeed.
-     */
-    private String createUser(String realm, NewUser user, Map<String, Object> representation) {
-        try {
-            return client.createAndReturnId("/admin/realms/" + realm + "/users", representation)
-                    .orElseThrow(() -> new DirectoryUnavailableException(
-                            "Keycloak created a user in realm '" + realm + "' but returned no id."));
-        } catch (IdentityProviderUnavailableException ex) {
-            if (String.valueOf(ex.getCause()).contains("409")) {
-                throw new UserAlreadyExistsException(realm, user.username());
-            }
-            throw new DirectoryUnavailableException(ex.getMessage(), ex);
-        }
+        return new KeycloakInvitation(client).invite(realm, realm, user, roles,
+                userId -> grantRoles(realm, userId, roles),
+                userId -> findUser(realm, userId).orElseThrow(() -> new DirectoryUnavailableException(
+                        "Keycloak will not read back the invited account '" + userId + "'.")));
     }
 
     @Override
@@ -257,7 +222,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
     }
 
     /**
-     * Re-throws platform-admin's transport failure as this module's, so this module's advice — which
+     * Re-throws core's transport failure as this module's, so this module's advice — which
      * is scoped to this module's controllers — is the one that answers it.
      */
     private static <T> T wrap(Supplier<T> call) {

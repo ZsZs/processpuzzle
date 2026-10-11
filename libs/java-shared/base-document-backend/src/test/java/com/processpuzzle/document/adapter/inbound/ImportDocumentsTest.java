@@ -1,6 +1,10 @@
-package com.processpuzzle.document.usecase;
+package com.processpuzzle.document.adapter.inbound;
 
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
+import com.processpuzzle.document.usecase.DocumentCommand;
+import com.processpuzzle.document.usecase.ImportDocuments;
+import com.processpuzzle.document.usecase.ImportOutcome;
+import com.processpuzzle.document.usecase.TestGuards;
+import com.processpuzzle.document.usecase.TestPolicies;
 import com.processpuzzle.document.domain.BlockKind;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
@@ -9,15 +13,23 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentInputPort;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentRoles;
+import com.processpuzzle.document.domain.DocumentPorts;
+import com.processpuzzle.document.domain.DocumentOutputPort;
+import com.processpuzzle.document.domain.PortType;
+import com.processpuzzle.document.domain.PublishedDocument;
+import com.processpuzzle.document.domain.PublishedDocumentRepository;
+import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
@@ -38,11 +50,13 @@ class ImportDocumentsTest {
 
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
+    private PublishedDocumentRepository publishedRepository;
 
     @BeforeEach
     void setUp() {
         repository = mock(DocumentRepository.class);
         draftRepository = mock(DocumentDraftRepository.class);
+        publishedRepository = mock(PublishedDocumentRepository.class);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(draftRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
@@ -357,6 +371,163 @@ class ImportDocumentsTest {
     }
 
     @Test
+    void anImportCannotClearEditorRolesToAuthorizeItsOwnOverwrite() {
+        Document existing = editorDocument(ID, "locked", "restricted-editor");
+        when(repository.findByOrgKeyAndSlug(ORG, "locked")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> importDocuments(TestPolicies.holding("reader")).execute(ORG, yaml("""
+                documents:
+                  - slug: locked
+                    title: Replaced
+                    sourceLocale: en
+                    isPublic: true
+                    editorRoles: []
+                    translations:
+                      - locale: en
+                        blocks: []
+                """))).isInstanceOf(DocumentAccessDeniedException.class);
+        assertThat(existing.getTitle()).isEqualTo("Original");
+        assertThat(existing.getRoles().editorRoles()).containsExactly("restricted-editor");
+        assertThat(existing.isPublic()).isFalse();
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+    }
+
+    @Test
+    void importingPortsMustAlsoValidateAnOmittedDraftLocaleBeforeSavingAnyEntry() throws IOException {
+        Document existing = documentWithPorts();
+        DocumentBlock widget = new DocumentBlock("grid", BlockKind.WIDGET, null, null,
+                com.processpuzzle.document.domain.WidgetPlacement.STANDALONE,
+                "entity-grid", java.util.Map.of(), java.util.Map.of("rows", "customer"), java.util.Map.of());
+        DocumentDraft german = new DocumentDraft(ORG, ID, "de", DocumentContent.of(List.of(widget)), null);
+        when(repository.findByOrgKeyAndSlug(ORG, "existing")).thenReturn(Optional.of(existing));
+        when(draftRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(german));
+
+        ImportOutcome result = importDocuments(TestPolicies.permitAll()).execute(ORG, yaml("""
+                documents:
+                  - slug: new
+                    title: New
+                    sourceLocale: en
+                  - slug: existing
+                    title: Replaced
+                    sourceLocale: en
+                    inputPorts: []
+                    translations:
+                      - locale: en
+                        blocks: []
+                """));
+
+        assertThat(result.errors()).anySatisfy(error -> assertThat(error).contains("unknown-port", "de"));
+        assertThat(result.created()).isZero();
+        assertThat(result.updated()).isZero();
+        assertThat(existing.getTitle()).isEqualTo("Original");
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"en", "de"})
+    void importsProtectPublishedInputAndOutputBindingsEvenWhenReplacingAllDraftContent(String locale) throws IOException {
+        Document existing = documentWithPorts();
+        DocumentBlock widget = new DocumentBlock("grid", BlockKind.WIDGET, null, null,
+                com.processpuzzle.document.domain.WidgetPlacement.STANDALONE, "entity-grid",
+                java.util.Map.of(), java.util.Map.of("rows", "customer"), java.util.Map.of("select", "selected"));
+        when(repository.findByOrgKeyAndSlug(ORG, "existing")).thenReturn(Optional.of(existing));
+        when(draftRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(
+                new DocumentDraft(ORG, ID, locale, DocumentContent.empty(), null)));
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(
+                new PublishedDocument(ORG, ID, locale, DocumentContent.of(List.of(widget)),
+                        1L, java.time.Instant.now(), "ada")));
+
+        ImportOutcome result = importDocuments(TestPolicies.permitAll()).execute(ORG, yaml("""
+                documents:
+                  - slug: new
+                    title: New
+                    sourceLocale: en
+                  - slug: existing
+                    title: Replaced
+                    sourceLocale: en
+                    inputPorts: []
+                    outputPorts: []
+                    translations:
+                      - locale: en
+                        blocks: []
+                      - locale: de
+                        blocks: []
+                """));
+
+        assertThat(result.errors()).hasSize(2).allSatisfy(error ->
+                assertThat(error).contains("Published content", "unknown-port", locale));
+        assertThat(result.created()).isZero();
+        assertThat(result.updated()).isZero();
+        assertThat(existing.getTitle()).isEqualTo("Original");
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+        verify(publishedRepository, never()).save(any());
+    }
+
+    @Test
+    void allExistingImportTargetsAreAuthorizedBeforeAnyEntryIsChanged() {
+        Document allowed = editorDocument(ID, "allowed", "own-editor");
+        Document denied = editorDocument("other-id", "locked", "restricted-editor");
+        when(repository.findByOrgKeyAndSlug(ORG, "allowed")).thenReturn(Optional.of(allowed));
+        when(repository.findByOrgKeyAndSlug(ORG, "locked")).thenReturn(Optional.of(denied));
+
+        assertThatThrownBy(() -> importDocuments(TestPolicies.holding("own-editor")).execute(ORG, yaml("""
+                documents:
+                  - slug: brand-new
+                    title: New
+                    sourceLocale: en
+                  - slug: allowed
+                    title: Replaced
+                    sourceLocale: en
+                  - slug: locked
+                    title: Replaced
+                    sourceLocale: en
+                    editorRoles: [own-editor]
+                """))).isInstanceOf(DocumentAccessDeniedException.class);
+        assertThat(allowed.getTitle()).isEqualTo("Original");
+        assertThat(allowed.getRoles().editorRoles()).containsExactly("own-editor");
+        assertThat(denied.getTitle()).isEqualTo("Original");
+        verify(repository, never()).save(any());
+        verify(draftRepository, never()).save(any());
+    }
+
+    @Test
+    void anAuthorizedEditorCanImportChangesToAnExistingDocument() throws IOException {
+        Document existing = editorDocument(ID, "allowed", "own-editor");
+        when(repository.findByOrgKeyAndSlug(ORG, "allowed")).thenReturn(Optional.of(existing));
+
+        ImportOutcome outcome = importDocuments(TestPolicies.holding("own-editor")).execute(ORG, yaml("""
+                documents:
+                  - slug: allowed
+                    title: Replaced
+                    sourceLocale: en
+                    editorRoles: [own-editor]
+                """));
+
+        assertThat(outcome.updated()).isEqualTo(1);
+        assertThat(existing.getTitle()).isEqualTo("Replaced");
+    }
+
+    private static Document editorDocument(String id, String slug, String editorRole) {
+        Document document = new Document(ORG, id, slug, "Original", "en", "ada");
+        document.replaceProperties(slug, "Original", null, null, null, "en", false,
+                new DocumentRoles(List.of(), List.of(editorRole), List.of()), DocumentPorts.empty());
+        return document;
+    }
+
+    private static Document documentWithPorts() {
+        Document document = new Document(ORG, ID, "existing", "Original", "en", "ada");
+        document.replaceProperties("existing", "Original", null, null, null, "en", false,
+                DocumentRoles.unrestricted(), new DocumentPorts(
+                        List.of(new DocumentInputPort("customer", PortType.ENTITY_REF, true,
+                                null, null, "Customer", null, null)),
+                        List.of(new DocumentOutputPort("selected", PortType.ENTITY_REF, null, "Customer", null))));
+        return document;
+    }
+
+    @Test
     void malformedYamlFailsRatherThanImportingHalfAFile() {
         assertThatThrownBy(() -> importDocuments(TestPolicies.permitAll()).execute(ORG, yaml("documents: [ {")))
                 .isInstanceOf(IOException.class);
@@ -364,8 +535,8 @@ class ImportDocumentsTest {
 
     // region fixtures
     private ImportDocuments importDocuments(DocumentAccessPolicy policy) {
-        return new ImportDocuments(repository, draftRepository, new DocumentReferentialIntegrityChecker(),
-                TestGuards.with(policy), new DocumentMapper());
+        return new ImportDocuments(repository, draftRepository, publishedRepository, new DocumentReferentialIntegrityChecker(),
+                TestGuards.with(policy));
     }
 
     private void importSilently(String yaml) {
@@ -382,8 +553,9 @@ class ImportDocumentsTest {
         return captor.getAllValues();
     }
 
-    private static InputStream yaml(String content) {
-        return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+    private static List<DocumentCommand> yaml(String content) throws IOException {
+        return new DocumentYamlCodec(new DocumentMapper())
+                .read(new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static DocumentBlock text(String id) {

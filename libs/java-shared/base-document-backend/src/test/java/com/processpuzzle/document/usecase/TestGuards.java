@@ -15,17 +15,17 @@ import java.util.function.Supplier;
  * here — the other methods throw, so a future change that starts calling one of them fails loudly
  * in tests instead of silently taking a different path than production does.
  */
-final class TestGuards {
+public final class TestGuards {
 
     private TestGuards() {
     }
 
     /** A guard with no policy bean at all — exercises the production permit-all fallback. */
-    static DocumentGuard permitAll() {
+    public static DocumentGuard permitAll() {
         return new DocumentGuard(new SingletonProvider(null));
     }
 
-    static DocumentGuard with(DocumentAccessPolicy policy) {
+    public static DocumentGuard with(DocumentAccessPolicy policy) {
         return new DocumentGuard(new SingletonProvider(policy));
     }
 

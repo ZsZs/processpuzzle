@@ -45,7 +45,7 @@ class CreateRuleTest {
         assertThat(saved.getContext()).isEqualTo("Order");
         assertThat(saved.getSeverity()).isEqualTo(Severity.WARNING);
         assertThat(saved.getFields()).containsExactly("quantity");
-        verify(ruleEngineSync).register(saved);
+        verify(ruleEngineSync).registerAfterCommit(saved);
     }
 
     @Test
@@ -58,7 +58,7 @@ class CreateRuleTest {
         InOrder inOrder = inOrder(extendsValidator, repository, ruleEngineSync);
         inOrder.verify(extendsValidator).validate("demo", "child", "base");
         inOrder.verify(repository).save(any(RuleDefinition.class));
-        inOrder.verify(ruleEngineSync).register(any(RuleDefinition.class));
+        inOrder.verify(ruleEngineSync).registerAfterCommit(any(RuleDefinition.class));
     }
 
     @Test

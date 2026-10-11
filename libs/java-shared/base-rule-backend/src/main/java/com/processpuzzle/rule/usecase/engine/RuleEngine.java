@@ -26,7 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *       compiled {@link Value} produced by evaluating a rule's Source cannot be shared
  *       across Contexts/threads, but the Source itself is immutable and cheap to re-eval
  *       thanks to the shared Engine's code cache — so each thread lazily compiles its own
- *       Value the first time it needs a given rule, and reuses it after that.</li>
+ *       Value the first time it needs a given rule, and reuses it only while the registered
+ *       Source identity is unchanged.</li>
  *   <li><b>HostAccess.NONE / IOAccess.NONE</b> mean rule expressions have no path to real
  *       Java objects, the filesystem, threads, or processes — only pure JS computation over
  *       whatever {@link EntityProxy} explicitly exposes.</li>
@@ -75,26 +76,52 @@ public class RuleEngine implements AutoCloseable {
      * be compiled once and executed many times against different entity instances.
      */
     public void registerRule(RuleKey key, String expression) {
+        ruleSources.put(key, source(key, wrap(expression)));
+    }
+
+    private static String wrap(String expression) {
         // Strict mode ensures that failed writes to the read-only EntityProxy surface as a
         // catchable TypeError instead of silently no-op'ing (sloppy-mode [[Set]] behavior).
-        String wrapped = "(entity) => { 'use strict'; return (" + expression + "); }";
-        Source source = Source.newBuilder("js", wrapped, key.asSourceName())
+        return "(entity) => { 'use strict'; return (" + expression + "); }";
+    }
+
+    private static Source source(RuleKey key, String wrapped) {
+        return Source.newBuilder("js", wrapped, key.asSourceName())
                 .buildLiteral();
-        ruleSources.put(key, source);
     }
 
     /**
      * Evaluates a previously-registered rule against the given entity data. Expects the
-     * rule expression to resolve to a boolean.
+     * rule expression to resolve to a boolean. Each call uses the source snapshot read at its
+     * start; an already-running evaluation may finish while a new revision is registered.
      */
     public boolean evaluate(RuleKey key, Map<String, Object> entityData) {
         Source source = ruleSources.get(key);
         if (source == null) {
             throw new IllegalArgumentException("Rule not registered: " + key);
         }
+        return evaluateSource(key, source, entityData);
+    }
+
+    /**
+     * Evaluates an expression from the caller's database snapshot without publishing it as a
+     * registration. A transaction can see its own pending edits, or an older committed revision
+     * than another request; neither may replace the expression used by other transactions.
+     */
+    public boolean evaluate(RuleKey key, String expression, Map<String, Object> entityData) {
+        String wrapped = wrap(expression);
+        CompiledRule cached = threadContext.get().ruleFunctions.get(key);
+        Source snapshot = cached != null && cached.source().getCharacters().toString().equals(wrapped)
+                ? cached.source() : source(key, wrapped);
+        return evaluateSource(key, snapshot, entityData);
+    }
+
+    private boolean evaluateSource(RuleKey key, Source source, Map<String, Object> entityData) {
         ThreadContext tc = threadContext.get();
-        Value ruleFn = tc.ruleFunctions.computeIfAbsent(key, k -> tc.context.eval(source));
-        Value result = ruleFn.execute(EntityProxy.wrap(entityData));
+        CompiledRule compiled = tc.ruleFunctions.compute(key, (k, cached) ->
+                cached != null && cached.source() == source
+                        ? cached : new CompiledRule(source, tc.context.eval(source)));
+        Value result = compiled.function().execute(EntityProxy.wrap(entityData));
         return result.asBoolean();
     }
 
@@ -104,9 +131,10 @@ public class RuleEngine implements AutoCloseable {
      *
      * <p>Note: a thread that already lazily compiled this rule's Value keeps its own copy
      * in {@code ThreadContext.ruleFunctions} until that thread happens to evict/recreate its
-     * context — harmless (no new compilations happen, and the Source is gone from
-     * {@code ruleSources}), but worth knowing about if you need an absolute guarantee that
-     * an unregistered rule can never execute again on any thread.
+     * context. Evaluations by registered key fail while the source is absent; re-registration refreshes a
+     * stale compiled entry on its next use. An evaluation already holding a source snapshot
+     * may finish even if the rule is removed concurrently. Caller-supplied database snapshots
+     * are evaluated independently of registration.
      */
     public void unregisterRule(RuleKey key) {
         ruleSources.remove(key);
@@ -126,9 +154,12 @@ public class RuleEngine implements AutoCloseable {
         engine.close();
     }
 
+    private record CompiledRule(Source source, Value function) {
+    }
+
     private static final class ThreadContext {
         final Context context;
-        final Map<RuleKey, Value> ruleFunctions = new ConcurrentHashMap<>();
+        final Map<RuleKey, CompiledRule> ruleFunctions = new ConcurrentHashMap<>();
 
         ThreadContext(Context context) {
             this.context = context;

@@ -57,7 +57,7 @@ import java.util.UUID;
  *
  * <p>The generated {@code documentId} is a {@link UUID} while the use cases take the canonical
  * string — see {@code DocumentMapper} for why the domain stores a string — so every method that
- * takes an id calls {@code toString()} on the way in. That is the only translation this class does.
+ * takes an id calls {@code toString()} on the way in. Requests are mapped before entering use cases.
  */
 @RestController
 @LogClass
@@ -84,6 +84,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
     private final ImportDocuments importDocuments;
     private final ExportDocument exportDocument;
     private final DocumentMapper mapper;
+    private final DocumentYamlCodec yaml;
 
     @SuppressWarnings("java:S107") // one constructor parameter per use case; the alternative is a service locator
     public DocumentEndpoint(CreateDocument createDocument,
@@ -106,7 +107,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
                             ValidateDocument validateDocument,
                             ImportDocuments importDocuments,
                             ExportDocument exportDocument,
-                            DocumentMapper mapper) {
+                            DocumentMapper mapper,
+                            DocumentYamlCodec yaml) {
         this.createDocument = createDocument;
         this.updateDocument = updateDocument;
         this.updateDocumentProperties = updateDocumentProperties;
@@ -128,6 +130,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
         this.importDocuments = importDocuments;
         this.exportDocument = exportDocument;
         this.mapper = mapper;
+        this.yaml = yaml;
     }
 
     // ── Documents ───────────────────────────────────────────────
@@ -141,7 +144,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
 
     @Override
     public ResponseEntity<Document> createDocument(String orgKey, DocumentInput documentInput) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(toModel(createDocument.execute(orgKey, documentInput)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toModel(createDocument.execute(orgKey, mapper.toCommand(documentInput))));
     }
 
     @Override
@@ -152,14 +155,14 @@ public class DocumentEndpoint implements BaseDocumentApi {
 
     @Override
     public ResponseEntity<Document> updateDocument(String orgKey, UUID documentId, DocumentInput documentInput) {
-        return ResponseEntity.ok(toModel(updateDocument.execute(orgKey, documentId.toString(), documentInput)));
+        return ResponseEntity.ok(toModel(updateDocument.execute(orgKey, documentId.toString(), mapper.toCommand(documentInput))));
     }
 
     @Override
     public ResponseEntity<Document> updateDocumentProperties(String orgKey, UUID documentId,
                                                              DocumentPropertiesInput documentPropertiesInput) {
         return ResponseEntity.ok(toModel(
-                updateDocumentProperties.execute(orgKey, documentId.toString(), documentPropertiesInput)));
+                updateDocumentProperties.execute(orgKey, documentId.toString(), mapper.toCommand(documentPropertiesInput))));
     }
 
     @Override
@@ -181,7 +184,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
     public ResponseEntity<DocumentTranslation> addDocumentTranslation(String orgKey, UUID documentId,
                                                                       DocumentTranslationInput input) {
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toTranslationModel(
-                addDocumentTranslation.execute(orgKey, documentId.toString(), input)));
+                addDocumentTranslation.execute(orgKey, documentId.toString(), mapper.toCommand(input))));
     }
 
     @Override
@@ -223,7 +226,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
     public ResponseEntity<DocumentBlock> appendDocumentBlock(String orgKey, UUID documentId, String locale,
                                                              DocumentBlockInput documentBlockInput) {
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toModel(
-                appendDocumentBlock.execute(orgKey, documentId.toString(), locale, documentBlockInput)));
+                appendDocumentBlock.execute(orgKey, documentId.toString(), locale, mapper.toBlock(null, documentBlockInput))));
     }
 
     @Override
@@ -239,7 +242,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
     public ResponseEntity<DocumentBlock> replaceDocumentBlock(String orgKey, UUID documentId, String locale,
                                                               String blockId, DocumentBlockInput documentBlockInput) {
         return ResponseEntity.ok(mapper.toModel(
-                replaceDocumentBlock.execute(orgKey, documentId.toString(), locale, blockId, documentBlockInput)));
+                replaceDocumentBlock.execute(orgKey, documentId.toString(), locale, blockId, mapper.toBlock(blockId, documentBlockInput))));
     }
 
     @Override
@@ -261,14 +264,14 @@ public class DocumentEndpoint implements BaseDocumentApi {
 
     @Override
     public ResponseEntity<ValidationResult> validateDocument(String orgKey, DocumentInput documentInput) {
-        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(documentInput);
+        ValidateDocument.ValidationOutcome outcome = validateDocument.execute(mapper.toCommand(documentInput));
         return ResponseEntity.ok(mapper.toModel(outcome.valid(), outcome.problems()));
     }
 
     @Override
     public ResponseEntity<ImportResult> importDocuments(String orgKey, MultipartFile file) {
-        try {
-            return ResponseEntity.ok(mapper.toModel(importDocuments.execute(orgKey, file.getInputStream())));
+        try (var input = file.getInputStream()) {
+            return ResponseEntity.ok(mapper.toModel(importDocuments.execute(orgKey, yaml.read(input))));
         } catch (IOException e) {
             throw new UncheckedIOException("Cannot read the uploaded document file", e);
         }
@@ -276,8 +279,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
 
     @Override
     public ResponseEntity<Resource> exportDocument(String orgKey, UUID documentId) {
-        String yaml = exportDocument.execute(orgKey, documentId.toString());
-        Resource body = new ByteArrayResource(yaml.getBytes(StandardCharsets.UTF_8));
+        String content = yaml.write(exportDocument.execute(orgKey, documentId.toString()));
+        Resource body = new ByteArrayResource(content.getBytes(StandardCharsets.UTF_8));
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + documentId + ".yaml\"")
                 .contentType(MediaType.parseMediaType("application/x-yaml"))

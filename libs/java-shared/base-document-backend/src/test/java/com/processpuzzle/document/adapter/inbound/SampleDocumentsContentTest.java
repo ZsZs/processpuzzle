@@ -1,14 +1,13 @@
-package com.processpuzzle.document.usecase.service;
+package com.processpuzzle.document.adapter.inbound;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.processpuzzle.document.adapter.inbound.DocumentMapper;
+import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
-import com.processpuzzle.document.usecase.DocumentYamlFile;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
@@ -28,7 +27,7 @@ class SampleDocumentsContentTest {
 
     private static final String SAMPLE_FILE = "sample-documents/processpuzzle-testbed-documents.yaml";
 
-    /** Configured exactly as {@code ImportDocuments}, so an unknown property fails here too. */
+    /** Configured exactly as {@code DocumentYamlCodec}, so an unknown property fails here too. */
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private final DocumentMapper mapper = new DocumentMapper();

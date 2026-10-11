@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -147,6 +150,85 @@ class RuleEngineTest {
         assertFalse(ruleEngine.isRegistered(key));
         assertThrows(IllegalArgumentException.class,
                 () -> ruleEngine.evaluate(key, new HashMap<>()));
+    }
+
+    @Test
+    void anEditedExpressionReplacesTheFunctionAlreadyCompiledOnThisThread() {
+        RuleKey key = RuleKey.of(ORG, "edited-rule");
+        ruleEngine.registerRule(key, "true");
+        assertTrue(ruleEngine.evaluate(key, Map.of()));
+
+        ruleEngine.registerRule(key, "false");
+        assertFalse(ruleEngine.evaluate(key, Map.of()));
+
+        ruleEngine.registerRule(key, "entity.allowed === true");
+        assertTrue(ruleEngine.evaluate(key, Map.of("allowed", true)));
+        assertFalse(ruleEngine.evaluate(key, Map.of("allowed", false)));
+    }
+
+    @Test
+    void reRegisteringARemovedRuleDoesNotResurrectItsCompiledFunction() {
+        RuleKey key = RuleKey.of(ORG, "recreated-rule");
+        ruleEngine.registerRule(key, "true");
+        assertTrue(ruleEngine.evaluate(key, Map.of()));
+
+        ruleEngine.unregisterRule(key);
+        assertThrows(IllegalArgumentException.class, () -> ruleEngine.evaluate(key, Map.of()));
+        ruleEngine.registerRule(key, "false");
+
+        assertFalse(ruleEngine.evaluate(key, Map.of()));
+    }
+
+    @Test
+    void reRegistrationRefreshesEvenAThreadThatDidNotObserveRemoval() throws Exception {
+        RuleKey key = RuleKey.of(ORG, "re-enabled-rule");
+        ruleEngine.registerRule(key, "true");
+        try (ExecutorService worker = Executors.newSingleThreadExecutor()) {
+            assertTrue(evaluateOn(worker, key));
+            ruleEngine.unregisterRule(key);
+            ruleEngine.registerRule(key, "false");
+            assertFalse(evaluateOn(worker, key));
+        }
+    }
+
+    @Test
+    void everyWarmedThreadSeesEditsWithoutCrossingTenantBoundaries() throws Exception {
+        RuleKey key = RuleKey.of(ORG, "shared-id");
+        RuleKey otherTenant = RuleKey.of("other", "shared-id");
+        ruleEngine.registerRule(key, "true");
+        ruleEngine.registerRule(otherTenant, "true");
+        try (ExecutorService first = Executors.newSingleThreadExecutor();
+             ExecutorService second = Executors.newSingleThreadExecutor()) {
+            assertTrue(evaluateOn(first, key));
+            assertTrue(evaluateOn(second, key));
+            assertTrue(evaluateOn(first, otherTenant));
+            assertTrue(evaluateOn(second, otherTenant));
+
+            ruleEngine.registerRule(key, "false");
+
+            assertFalse(evaluateOn(first, key));
+            assertFalse(evaluateOn(second, key));
+            assertTrue(evaluateOn(first, otherTenant));
+            assertTrue(evaluateOn(second, otherTenant));
+        }
+    }
+
+    @Test
+    void anInvalidEditFailsInsteadOfExecutingThePreviousRevision() {
+        RuleKey key = RuleKey.of(ORG, "invalid-edit");
+        ruleEngine.registerRule(key, "true");
+        assertTrue(ruleEngine.evaluate(key, Map.of()));
+        ruleEngine.registerRule(key, "invalid (");
+
+        assertThrows(org.graalvm.polyglot.PolyglotException.class,
+                () -> ruleEngine.evaluate(key, Map.of()));
+
+        ruleEngine.registerRule(key, "false");
+        assertFalse(ruleEngine.evaluate(key, Map.of()));
+    }
+
+    private boolean evaluateOn(ExecutorService worker, RuleKey key) throws Exception {
+        return worker.submit(() -> ruleEngine.evaluate(key, Map.of())).get(30, TimeUnit.SECONDS);
     }
 
     @Test

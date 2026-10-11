@@ -36,7 +36,7 @@ public class UpdateRule {
         mapper.applyToDomain(input, existing);
 
         RuleDefinition saved = repository.save(existing);
-        ruleEngineSync.register(saved);
+        ruleEngineSync.registerAfterCommit(saved);
         return saved;
     }
 }

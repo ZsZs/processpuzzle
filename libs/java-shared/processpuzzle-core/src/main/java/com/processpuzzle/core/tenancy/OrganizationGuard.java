@@ -9,14 +9,15 @@ import java.util.Collection;
  * The single place any feature consults {@link OrganizationAccessPolicy}. Use cases depend on this
  * component, never on the port directly.
  *
- * <p>The policy is resolved with {@link ObjectProvider#getIfUnique}, not
+ * <p>The policy is resolved with {@link ObjectProvider#getObject}, not
  * {@code @ConditionalOnMissingBean}. That condition is only reliable inside auto-configuration,
  * which is processed after user beans are registered — and putting an {@code @AutoConfiguration}
  * under {@code com.processpuzzle} would not help either, because the application scans that
  * package with {@code scanBasePackages} and the component scan picks such a class up before the
  * auto-configuration import is applied (exactly what already happens to
- * {@code LoggingAspectAutoConfiguration}). {@code getIfUnique} is order-independent: it returns
- * the application's bean when there is exactly one, and falls back otherwise.
+ * {@code LoggingAspectAutoConfiguration}). Resolution requires a single policy candidate (or a
+ * primary candidate) and fails startup if none or multiple ambiguous candidates exist. A host
+ * without identity must explicitly register {@link PermitAllOrganizationAccessPolicy} as a bean.
  *
  * <p><b>Why this class is here and not in base-app, where it started.</b> It moved with the
  * {@code Organization} aggregate, and it had to shed something to make the trip: its
@@ -33,7 +34,7 @@ public class OrganizationGuard {
     private final OrganizationAccessPolicy policy;
 
     public OrganizationGuard(ObjectProvider<OrganizationAccessPolicy> policyProvider) {
-        this.policy = policyProvider.getIfUnique(PermitAllOrganizationAccessPolicy::new);
+        this.policy = policyProvider.getObject();
     }
 
     /** Rejects the call with 403 when the principal is not a member of {@code orgKey}. */

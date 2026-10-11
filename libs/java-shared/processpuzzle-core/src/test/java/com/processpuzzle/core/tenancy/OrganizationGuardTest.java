@@ -2,6 +2,9 @@ package com.processpuzzle.core.tenancy;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.util.Collection;
 import java.util.List;
@@ -9,13 +12,12 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * The guard is the single place any feature consults {@link OrganizationAccessPolicy}, so what is
- * tested here is delegation and the fallback — not policy logic, of which the guard has none beyond
+ * tested here is delegation and explicit policy wiring — not host policy logic beyond
  * the "no roles means any member" default.
  *
  * <p>The nav-filtering half of this class stayed in base-app as {@code NavVisibilityFilterTest}: it
@@ -28,6 +30,9 @@ import static org.mockito.Mockito.when;
  */
 @SuppressWarnings("java:S5778")
 class OrganizationGuardTest {
+
+    private final ApplicationContextRunner contextRunner =
+            new ApplicationContextRunner().withBean(OrganizationGuard.class);
 
     @Test
     void anEntryWithoutRoles_isVisibleToAnyMember() {
@@ -71,23 +76,80 @@ class OrganizationGuardTest {
                 .isInstanceOf(OrganizationAccessDeniedException.class);
     }
 
-    /**
-     * {@code getIfUnique} rather than {@code @ConditionalOnMissingBean}: with no application policy
-     * bean the guard has to fall back to permit-all, order-independently.
-     */
     @Test
-    @SuppressWarnings("unchecked")
-    void withNoPolicyBean_theGuardFallsBackToPermitAll() {
-        ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
-        when(provider.getIfUnique(any())).thenAnswer(call ->
-                ((java.util.function.Supplier<OrganizationAccessPolicy>) call.getArgument(0)).get());
+    void withNoPolicyBean_startupFails() {
+        contextRunner.run(context -> assertThat(context.getStartupFailure())
+                .hasRootCauseInstanceOf(NoSuchBeanDefinitionException.class));
+    }
 
-        OrganizationGuard guard = new OrganizationGuard(provider);
+    @Test
+    void aSinglePolicyBean_isUsed() {
+        contextRunner.withBean("restrictive", OrganizationAccessPolicy.class, () -> new OrganizationAccessPolicy() {})
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertDenied(context.getBean(OrganizationGuard.class));
+                });
+    }
 
-        assertThatCode(guard::requirePlatformAdmin).doesNotThrowAnyException();
-        assertThatCode(() -> guard.requireDesign("my-org")).doesNotThrowAnyException();
-        assertThat(guard.isVisible(List.of("ANY_ROLE"))).isTrue();
-        assertThat(new PermitAllOrganizationAccessPolicy().hasAnyRole(List.of("ANY_ROLE"))).isTrue();
+    @Test
+    void ambiguousPolicies_failStartupRatherThanPermitAccess() {
+        contextRunner.withBean("first", OrganizationAccessPolicy.class, () -> new OrganizationAccessPolicy() {})
+                .withBean("second", OrganizationAccessPolicy.class, PermitAllOrganizationAccessPolicy::new)
+                .run(context -> assertThat(context.getStartupFailure())
+                        .hasRootCauseInstanceOf(NoUniqueBeanDefinitionException.class));
+    }
+
+    @Test
+    void aPrimaryPolicy_resolvesMultipleCandidates() {
+        contextRunner.withBean("demo", OrganizationAccessPolicy.class, PermitAllOrganizationAccessPolicy::new)
+                .withBean("restrictive", OrganizationAccessPolicy.class, () -> new OrganizationAccessPolicy() {},
+                        definition -> definition.setPrimary(true))
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertDenied(context.getBean(OrganizationGuard.class));
+                });
+    }
+
+    @Test
+    void explicitDemonstrationPolicy_permitsAllChecks() {
+        contextRunner.withBean(OrganizationAccessPolicy.class, PermitAllOrganizationAccessPolicy::new)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    OrganizationGuard guard = context.getBean(OrganizationGuard.class);
+                    assertThatCode(() -> guard.requireAccess("my-org")).doesNotThrowAnyException();
+                    assertThatCode(() -> guard.requireDesign("my-org")).doesNotThrowAnyException();
+                    assertThatCode(guard::requirePlatformAdmin).doesNotThrowAnyException();
+                    assertThat(guard.isVisible(List.of("ANY_ROLE"))).isTrue();
+                });
+    }
+
+    @Test
+    void partialPolicies_denyUnimplementedChecks() {
+        OrganizationAccessPolicy policy = new OrganizationAccessPolicy() {
+            @Override
+            public void requireAccess(String orgKey) {
+                // This host grants membership only.
+            }
+        };
+        OrganizationGuard guard = guardWith(policy);
+        assertThatCode(() -> guard.requireAccess("my-org")).doesNotThrowAnyException();
+        assertThatThrownBy(() -> guard.requireDesign("my-org"))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThatThrownBy(guard::requirePlatformAdmin)
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThat(guard.isVisible(List.of("ANY_ROLE"))).isFalse();
+        assertThat(policy.hasAnyRole(null)).isFalse();
+        assertThat(policy.hasAnyRole(List.of())).isFalse();
+    }
+
+    private static void assertDenied(OrganizationGuard guard) {
+        assertThatThrownBy(() -> guard.requireAccess("my-org"))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThatThrownBy(() -> guard.requireDesign("my-org"))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThatThrownBy(guard::requirePlatformAdmin)
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThat(guard.isVisible(List.of("ANY_ROLE"))).isFalse();
     }
 
     private static OrganizationGuard withRoles(boolean granted) {
@@ -125,7 +187,7 @@ class OrganizationGuardTest {
     @SuppressWarnings("unchecked")
     private static OrganizationGuard guardWith(OrganizationAccessPolicy policy) {
         ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
-        when(provider.getIfUnique(any())).thenReturn(policy);
+        when(provider.getObject()).thenReturn(policy);
         return new OrganizationGuard(provider);
     }
 }

@@ -17,6 +17,7 @@ import com.processpuzzle.document.usecase.DeleteDocument;
 import com.processpuzzle.document.usecase.DeleteDocumentBlock;
 import com.processpuzzle.document.usecase.DiscardDocumentDraft;
 import com.processpuzzle.document.usecase.DocumentDetails;
+import com.processpuzzle.document.usecase.DocumentExport;
 import com.processpuzzle.document.usecase.DocumentTranslationView;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
 import com.processpuzzle.document.usecase.ExportDocument;
@@ -58,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -120,7 +122,7 @@ class DocumentEndpointTest {
                 removeDocumentTranslation, publishDocumentTranslation, unpublishDocumentTranslation,
                 discardDocumentDraft, findPublishedContent, appendDocumentBlock, replaceDocumentBlock,
                 deleteDocumentBlock, reorderDocumentBlocks, validateDocument, importDocuments, exportDocument,
-                new DocumentMapper());
+                new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
     }
 
     // ── Documents ───────────────────────────────────────────────
@@ -142,7 +144,7 @@ class DocumentEndpointTest {
     @Test
     void createAnswers201() {
         DocumentInput input = new DocumentInput().slug("getting-started").title("Getting started").sourceLocale("en");
-        when(createDocument.execute(ORG, input)).thenReturn(details());
+        when(createDocument.execute(ORG, new DocumentMapper().toCommand(input))).thenReturn(details());
 
         ResponseEntity<com.processpuzzle.document.model.Document> response = endpoint.createDocument(ORG, input);
 
@@ -170,8 +172,8 @@ class DocumentEndpointTest {
         DocumentInput input = new DocumentInput().slug("getting-started").title("Renamed").sourceLocale("en");
         DocumentPropertiesInput properties = new DocumentPropertiesInput().slug("getting-started").title("Renamed")
                 .sourceLocale("en");
-        when(updateDocument.execute(ORG, ID, input)).thenReturn(details());
-        when(updateDocumentProperties.execute(ORG, ID, properties)).thenReturn(details());
+        when(updateDocument.execute(ORG, ID, new DocumentMapper().toCommand(input))).thenReturn(details());
+        when(updateDocumentProperties.execute(ORG, ID, new DocumentMapper().toCommand(properties))).thenReturn(details());
 
         assertThat(endpoint.updateDocument(ORG, DOCUMENT_ID, input).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(endpoint.updateDocumentProperties(ORG, DOCUMENT_ID, properties).getStatusCode())
@@ -197,7 +199,7 @@ class DocumentEndpointTest {
     @Test
     void addingATranslationAnswers201() {
         DocumentTranslationInput input = new DocumentTranslationInput().locale("de");
-        when(addDocumentTranslation.execute(ORG, ID, input)).thenReturn(view());
+        when(addDocumentTranslation.execute(ORG, ID, new DocumentMapper().toCommand(input))).thenReturn(view());
 
         assertThat(endpoint.addDocumentTranslation(ORG, DOCUMENT_ID, input).getStatusCode())
                 .isEqualTo(HttpStatus.CREATED);
@@ -239,7 +241,7 @@ class DocumentEndpointTest {
     @Test
     void appendingABlockAnswers201WithTheBlockTheUseCaseMinted() {
         DocumentBlockInput input = new DocumentBlockInput().kind(com.processpuzzle.document.model.BlockKind.TEXT);
-        when(appendDocumentBlock.execute(ORG, ID, "en", input)).thenReturn(text("intro"));
+        when(appendDocumentBlock.execute(ORG, ID, "en", new DocumentMapper().toBlock(null, input))).thenReturn(text("intro"));
 
         var response = endpoint.appendDocumentBlock(ORG, DOCUMENT_ID, "en", input);
 
@@ -262,7 +264,7 @@ class DocumentEndpointTest {
     @Test
     void replacingABlockAnswers200AndDeletingItAnswers204() {
         DocumentBlockInput input = new DocumentBlockInput().kind(com.processpuzzle.document.model.BlockKind.TEXT);
-        when(replaceDocumentBlock.execute(ORG, ID, "en", "intro", input)).thenReturn(text("intro"));
+        when(replaceDocumentBlock.execute(ORG, ID, "en", "intro", new DocumentMapper().toBlock("intro", input))).thenReturn(text("intro"));
 
         assertThat(endpoint.replaceDocumentBlock(ORG, DOCUMENT_ID, "en", "intro", input).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
@@ -290,7 +292,7 @@ class DocumentEndpointTest {
     @Test
     void validationAnswers200EvenWhenTheDocumentIsInvalid() {
         DocumentInput input = new DocumentInput().slug("s").title("t").sourceLocale("en");
-        when(validateDocument.execute(input)).thenReturn(new ValidateDocument.ValidationOutcome(false,
+        when(validateDocument.execute(new DocumentMapper().toCommand(input))).thenReturn(new ValidateDocument.ValidationOutcome(false,
                 List.of(new DocumentValidationProblem("/blocks/0", "document.validation.unknown-port",
                         "'gone' is not a declared input port.", Severity.ERROR, "en"))));
 
@@ -324,8 +326,27 @@ class DocumentEndpointTest {
     }
 
     @Test
+    void aMalformedLaterEntryNeverReachesTheTransactionalImport() {
+        MultipartFile file = new MockMultipartFile("file", "documents.yaml", "application/x-yaml", """
+                documents:
+                  - slug: valid
+                    title: Valid
+                    sourceLocale: en
+                  - slug: malformed
+                    sourceLocale: en
+                    translations:
+                      - locale: en
+                        blocks:
+                          - kind: NOT_A_BLOCK_KIND
+                """.getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> endpoint.importDocuments(ORG, file)).isInstanceOf(UncheckedIOException.class);
+        verifyNoInteractions(importDocuments);
+    }
+
+    @Test
     void exportIsServedAsADownloadableYamlNamedAfterTheDocument() {
-        when(exportDocument.execute(ORG, ID)).thenReturn("documents:\n  - slug: getting-started\n");
+        when(exportDocument.execute(ORG, ID)).thenReturn(new DocumentExport(document(), List.of()));
 
         ResponseEntity<Resource> response = endpoint.exportDocument(ORG, DOCUMENT_ID);
 

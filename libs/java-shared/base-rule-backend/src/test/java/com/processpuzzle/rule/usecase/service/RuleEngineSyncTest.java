@@ -70,6 +70,23 @@ class RuleEngineSyncTest {
     }
 
     @Test
+    void capturesImmutableStateRatherThanRetainingTheManagedEntity() {
+        RuleDefinition saved = rule(true);
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            ruleEngineSync.registerAfterCommit(saved);
+            saved.setExpression("false");
+            saved.setEnabled(false);
+            TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+
+        verify(ruleEngine).registerRule(RuleKey.of("demo", "max-quantity"), "entity.quantity <= 5");
+        verify(ruleEngine, never()).unregisterRule(any());
+    }
+
+    @Test
     void unregistersAfterCommitImmediatelyWhenNoTransactionIsActive() {
         ruleEngineSync.unregisterAfterCommit("demo", "max-quantity");
 

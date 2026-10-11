@@ -37,7 +37,7 @@ class DeleteRuleTest {
         deleteRule.execute("demo", "base");
 
         verify(repository).delete(existing);
-        verify(ruleEngineSync).unregister("demo", "base");
+        verify(ruleEngineSync).unregisterAfterCommit("demo", "base");
     }
 
     @Test
