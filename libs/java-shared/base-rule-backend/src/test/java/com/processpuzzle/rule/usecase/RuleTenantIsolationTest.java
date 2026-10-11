@@ -16,6 +16,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.test.context.transaction.TestTransaction;
 
 import java.util.HashMap;
 import java.util.List;
@@ -88,9 +89,7 @@ class RuleTenantIsolationTest {
     }
 
     @Test
-    void lazyRegistrationAlsoStaysWithinTheOrganization() {
-        // Nothing is registered up-front here: EvaluateObject compiles on demand, which is the
-        // path a freshly-restarted instance takes before its engine state has been re-synced.
+    void aColdEngineEvaluatesTenantSnapshotsWithoutPublishingRegistrations() {
         save("demo", RULE_ID, "Order", "entity.quantity <= 1");
         save("other", RULE_ID, "Order", "entity.quantity <= 5");
 
@@ -98,8 +97,8 @@ class RuleTenantIsolationTest {
 
         assertThat(evaluateObject.execute("demo", "Order", order).passed()).isFalse();
         assertThat(evaluateObject.execute("other", "Order", order).passed()).isTrue();
-        assertThat(ruleEngine.isRegistered(RuleKey.of("demo", RULE_ID))).isTrue();
-        assertThat(ruleEngine.isRegistered(RuleKey.of("other", RULE_ID))).isTrue();
+        assertThat(ruleEngine.isRegistered(RuleKey.of("demo", RULE_ID))).isFalse();
+        assertThat(ruleEngine.isRegistered(RuleKey.of("other", RULE_ID))).isFalse();
     }
 
     @Test
@@ -151,6 +150,9 @@ class RuleTenantIsolationTest {
 
         assertThat(repository.findByOrgKeyAndId("demo", "base")).isEmpty();
         assertThat(repository.findByOrgKeyAndId("other", "base")).isPresent();
+        assertThat(ruleEngine.isRegistered(RuleKey.of("demo", "base"))).isTrue();
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
         assertThat(ruleEngine.isRegistered(RuleKey.of("demo", "base"))).isFalse();
         assertThat(ruleEngine.isRegistered(RuleKey.of("other", "base"))).isTrue();
     }

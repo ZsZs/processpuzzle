@@ -36,6 +36,6 @@ public class DeleteRule {
         }
 
         repository.delete(existing);
-        ruleEngineSync.unregister(orgKey, id);
+        ruleEngineSync.unregisterAfterCommit(orgKey, id);
     }
 }

@@ -29,7 +29,26 @@ error, never a fallback to the preceding expression.
 
 An evaluation uses the source snapshot read at its start. An in-flight evaluation may finish on
 that snapshot while a rule is updated or removed; subsequent calls observe the new registration.
-This cache policy alone does not define the transaction boundary for publishing registrations.
+
+## Transactions and evaluation
+
+CRUD and YAML import/removal publish engine registrations **after the surrounding transaction
+commits**. Rollback, including a failed commit-time flush, leaves the previous registration intact.
+`RuleEngineSync` captures immutable key/expression/enabled values when scheduling its callback,
+not the mutable managed entity. Callbacks in one transaction run in registration order, so a
+replacement import removes the old entry before registering the recreated rule. Outside a
+transaction, the synchronization helper applies changes immediately.
+
+`EvaluateObject` executes the exact expression read with each rule's database row, not whichever
+revision currently happens to be registered. Evaluation compiles/caches that snapshot per thread
+without publishing a shared registration. This supports cold starts, concurrent commits and a
+caller's own pending edits without leaking those edits into another transaction's verdict. An
+older transaction can still see an older database snapshot according to its isolation level; its
+expression and violation metadata stay aligned.
+
+After-commit callbacks are in-process, not durable or distributed. A crash or delayed callback can
+leave the local registry stale, but API evaluation remains driven by the database snapshot rather
+than depending on callback delivery. No cross-replica cache invalidation protocol is claimed.
 
 ## Development
 

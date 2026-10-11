@@ -29,11 +29,14 @@ public class RuleEngineSync {
     }
 
     public void register(RuleDefinition rule) {
-        RuleKey key = RuleKey.of(rule.getOrgKey(), rule.getId());
-        if (rule.isEnabled()) {
-            ruleEngine.registerRule(key, rule.getExpression());
+        register(snapshot(rule));
+    }
+
+    private void register(Registration registration) {
+        if (registration.enabled()) {
+            ruleEngine.registerRule(registration.key(), registration.expression());
         } else {
-            ruleEngine.unregisterRule(key);
+            ruleEngine.unregisterRule(registration.key());
         }
     }
 
@@ -42,19 +45,12 @@ public class RuleEngineSync {
      *
      * <p>For a write that may still be rolled back: a Business Starter dry run applies the import in
      * a transaction that is then rolled back, and an engine registered mid-transaction would keep
-     * rules the database never stored.
+     * rules the database never stored. The callback captures immutable state, not a managed entity
+     * that can change again before commit.
      */
     public void registerAfterCommit(RuleDefinition rule) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            register(rule);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                register(rule);
-            }
-        });
+        Registration registration = snapshot(rule);
+        afterCommit(() -> register(registration));
     }
 
     public void unregister(String orgKey, String ruleId) {
@@ -63,15 +59,26 @@ public class RuleEngineSync {
 
     /** {@link #unregister} once the surrounding transaction commits; see {@link #registerAfterCommit}. */
     public void unregisterAfterCommit(String orgKey, String ruleId) {
+        afterCommit(() -> unregister(orgKey, ruleId));
+    }
+
+    private static void afterCommit(Runnable action) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            unregister(orgKey, ruleId);
+            action.run();
             return;
         }
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                unregister(orgKey, ruleId);
+                action.run();
             }
         });
+    }
+
+    private static Registration snapshot(RuleDefinition rule) {
+        return new Registration(RuleKey.of(rule.getOrgKey(), rule.getId()), rule.getExpression(), rule.isEnabled());
+    }
+
+    private record Registration(RuleKey key, String expression, boolean enabled) {
     }
 }
