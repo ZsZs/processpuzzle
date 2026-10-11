@@ -13,9 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Builds the run-time bootstrap payload for the application shell: theme, layout, and the regions
- * with nav entries already filtered against the caller's roles — but no routes, which are fetched
- * lazily per route.
+ * Builds the run-time bootstrap payload for the application shell: theme, layout, the regions with
+ * nav entries already filtered against the caller's roles, and the routes and module mounts the
+ * caller may reach — everything the runtime host needs to render the published application from
+ * one request.
  *
  * <p>Filtering happens here, server side, so a nav entry the user may not see never reaches the
  * browser. The corresponding route fetch is authorized independently by {@link GetRouteDefinition};
@@ -60,13 +61,16 @@ public class GetAppLayout {
             throw new AppNotPublishedException(orgKey, appId);
         }
 
-        AppGraph filtered = graph.withRegions(navVisibility.filterRegions(graph.regions()));
+        AppGraph filtered = graph
+                .withRegions(navVisibility.filterRegions(graph.regions()))
+                .withRoutes(navVisibility.filterRoutes(graph.routes()));
         TenantDirectory directory = tenantDirectoryProvider.getIfAvailable();
         String defaultLocale = directory == null
                 ? null
                 : directory.find(orgKey).map(TenantDirectory.Tenant::defaultLocale).orElse(null);
 
-        return new Result(definition, filtered, defaultLocale);
+        Long version = draft ? definition.getRevision() : definition.getPublishedRevision();
+        return new Result(definition, filtered, defaultLocale, version);
     }
 
     /**
@@ -74,7 +78,14 @@ public class GetAppLayout {
      * @param graph the role-filtered projection of the requested revision
      * @param defaultLocale copied from the organization so the shell can set the Transloco language
      *                      from this one request
+     * @param version the revision {@code graph} was taken from — the published revision for a
+     *                published read, so a host can tell when a new one has been published
      */
-    public record Result(AppDefinition definition, AppGraph graph, String defaultLocale) {
+    public record Result(AppDefinition definition, AppGraph graph, String defaultLocale, Long version) {
+
+        /** A result for the draft, whose version is the definition's current revision. */
+        public Result(AppDefinition definition, AppGraph graph, String defaultLocale) {
+            this(definition, graph, defaultLocale, definition.getRevision());
+        }
     }
 }

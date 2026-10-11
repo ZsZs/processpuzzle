@@ -151,7 +151,8 @@
   },
   "publish": {
     "button": "Publish",
-    "tooltip": "Publish the saved definition: its version becomes the published version"
+    "tooltip": "Publish the saved definition: it becomes what the users of your application see",
+    "done": "Published. Your application now shows this version."
   },
   "concepts": {
     "title": "How a dynamic application is put together",

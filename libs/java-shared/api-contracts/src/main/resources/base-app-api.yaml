@@ -209,15 +209,15 @@ paths:
       - $ref: "#/components/parameters/AppIdParam"
     get:
       operationId: getAppLayout
-      summary: Get the run-time shell payload (theme, layout and regions, role-filtered)
+      summary: Get the run-time shell payload (theme, layout, regions and routes, role-filtered)
       description: >-
-        The bootstrap payload for AppShellComponent: theme, layout and the region list with
-        `NavItem`s already filtered against the authenticated principal's roles, and
-        without the `routes` array. Routes are fetched lazily per path, mirroring base-rule's
-        `loadRulesFor()`; a mounted module's routes are fetched as a unit when something first
-        navigates under its basePath. Filtering happens server-side so that a nav entry a user may
-        not see is never sent to the browser; clients must still expect the corresponding route
-        fetch to be authorized independently.
+        The bootstrap payload for AppShellComponent in the runtime host: theme, layout, the region
+        list with `NavItem`s filtered against the authenticated principal's roles, and the routes
+        and module mounts that principal may reach. A mounted module's own routes are fetched as a
+        unit when something first navigates under its basePath. Filtering happens server-side so
+        that a nav entry or route a user may not see is never sent to the browser. Without
+        `draft=true` this serves the published revision, and answers 404 until the app has been
+        published once.
       tags:
         - Base App
       parameters:
@@ -1184,9 +1184,10 @@ components:
     AppLayout:
       type: object
       description: >-
-        The run-time shell payload: theme, layout and the regions of an app definition with
-        role filtering already applied, and without routes. `version` is the version of the
-        AppDefinition it was derived from, so the shell can detect a published change.
+        The run-time shell payload: theme, layout, regions, routes and module mounts of an app
+        definition with role filtering already applied. `version` is the revision it was derived
+        from — the published revision for a published read — so the shell can detect a newly
+        published change.
       required: [ id, orgKey, name, regions ]
       properties:
         id:
@@ -1213,6 +1214,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RegionDefinition"
+        routes:
+          type: array
+          description: The app's own routes the principal may reach, as a flat list.
+          items:
+            $ref: "#/components/schemas/RouteDefinition"
+        modules:
+          type: array
+          description: Modules this application mounts, and where.
+          items:
+            $ref: "#/components/schemas/ModuleMount"
 
     ValidationProblem:
       type: object

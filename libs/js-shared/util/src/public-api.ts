@@ -3,7 +3,7 @@
 export type { BaseConfiguration, FirebaseConfig } from './lib/runtime-configuration/base-configuration';
 export { CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS, CONFIGURATION_TYPE, RUNTIME_CONFIGURATION } from './lib/runtime-configuration/configuration.injection-tokens';
 export type { ConfigurationOptions } from './lib/runtime-configuration/configuration.options';
-export { centralHttpErrorInterceptor } from './lib/error-handler/central-http-error.interceptor';
+export { centralHttpErrorInterceptor, EXPECTED_ERROR_STATUSES } from './lib/error-handler/central-http-error.interceptor';
 export { ConfigurationService } from './lib/runtime-configuration/configuration.service';
 export { serviceRootOf } from './lib/runtime-configuration/service-root';
 export { CentralErrorHandler } from './lib/error-handler/central-error-handler';

@@ -1,5 +1,6 @@
 package com.processpuzzle.app.usecase.service;
 
+import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
@@ -45,6 +46,17 @@ public class NavVisibilityFilter {
             filtered.add(region.withNavItems(filterNavItems(region.navItems())));
         }
         return List.copyOf(filtered);
+    }
+
+    /**
+     * Drops the routes the principal may not reach. Unlike {@link #isRouteReachable}, a route needs no
+     * nav entry to survive: detail screens are navigated to from inside a page, never from the nav.
+     */
+    public List<AppRoute> filterRoutes(List<AppRoute> routes) {
+        if (routes == null) {
+            return List.of();
+        }
+        return routes.stream().filter(route -> guard.isVisible(route.roles())).toList();
     }
 
     private List<NavNode> filterNavItems(List<NavNode> navItems) {

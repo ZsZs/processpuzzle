@@ -1,9 +1,10 @@
 import { Component, ComponentRef, computed, inject, OnDestroy, TemplateRef, viewChild, ViewChild } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { MatButton } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
-import { PUBLISH_BUTTON_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY } from '../base-app.i18n';
+import { PUBLISH_BUTTON_I18N_KEY, PUBLISH_DONE_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY } from '../base-app.i18n';
 import { AppDefinitionStore } from '../domain/app-definition.store';
 import { createAppDefinitionDescriptor } from '../domain/app-definition.descriptors';
 import { APP_PREVIEW_TAB } from './app-preview-tab';
@@ -26,6 +27,8 @@ export class AppDefinitionContainerComponent implements OnDestroy {
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
   readonly publishActionsTpl = viewChild<TemplateRef<unknown>>('publishActionsTpl');
   private readonly store = inject(AppDefinitionStore);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly transloco = inject(TranslocoService);
   readonly entityDescriptor: BaseEntityDescriptor;
   readonly publishButtonKey = PUBLISH_BUTTON_I18N_KEY;
   readonly publishTooltipKey = PUBLISH_TOOLTIP_I18N_KEY;
@@ -45,9 +48,14 @@ export class AppDefinitionContainerComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Says so when it worked, because nothing on this screen changes visibly: the Preview already showed the
+   * draft. What changed is the application itself, which now serves this revision. A failure surfaces
+   * through the store's `error`, as a failed save does.
+   */
   async onPublish(): Promise<void> {
     const id = this.store.currentEntity()?.id;
     if (!id) return;
-    await this.store.publish(id);
+    if (await this.store.publish(id)) this.snackBar.open(this.transloco.translate(PUBLISH_DONE_I18N_KEY), undefined, { duration: 4000 });
   }
 }

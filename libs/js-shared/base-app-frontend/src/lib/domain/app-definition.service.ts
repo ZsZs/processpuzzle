@@ -1,6 +1,8 @@
+import { HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
+import { EXPECTED_ERROR_STATUSES } from '@processpuzzle/util';
 import { AppDefinition } from './app-definition';
 import { AppDefinitionMapper } from './app-definition.mapper';
 
@@ -26,5 +28,23 @@ export class AppDefinitionService extends BaseEntityRestService<AppDefinition> {
     const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/publish', { pathParams });
     if (!fullUrl) throw new Error('Could not determine the full url');
     return this.httpClient.post(fullUrl, {}, { headers: this.headers }).pipe(map((response: unknown) => this.entityMapper.fromDto(response) as PersistedEntity<AppDefinition>));
+  }
+
+  /**
+   * `GET /app-definitions/{appId}/layout` — the **published** revision, role-filtered, with its routes:
+   * what the runtime host renders. `findById` is the designer's read and always returns the draft.
+   *
+   * Resolves to `undefined` while the application has never been published, which the backend answers
+   * with 404. That is the state of every new organization, so it is not reported as an error.
+   */
+  findPublished(id: string): Observable<AppDefinition | undefined> {
+    const pathParams = new Map<string, string>([['id', String(id)]]);
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/layout', { pathParams });
+    if (!fullUrl) throw new Error('Could not determine the full url');
+    const context = new HttpContext().set(EXPECTED_ERROR_STATUSES, [404]);
+    return this.httpClient.get(fullUrl, { headers: this.headers, context }).pipe(
+      map((response: unknown) => this.entityMapper.fromDto(response) as AppDefinition),
+      catchError((error: unknown) => (error instanceof HttpErrorResponse && error.status === 404 ? of(undefined) : throwError(() => error))),
+    );
   }
 }

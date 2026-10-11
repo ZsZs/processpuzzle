@@ -50,6 +50,11 @@ public record AppGraph(
         return new AppGraph(theme, layout, replacement, routes, modules);
     }
 
+    /** Returns a copy of this graph with {@code routes} replaced — used by role filtering. */
+    public AppGraph withRoutes(List<AppRoute> replacement) {
+        return new AppGraph(theme, layout, regions, replacement, modules);
+    }
+
     /**
      * Finds a route by its exact path, or {@code null} when this graph declares no such route.
      *
