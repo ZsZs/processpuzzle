@@ -12,6 +12,7 @@ import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.WidgetPlacement;
 import com.processpuzzle.document.model.DocumentPropertiesInput;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.clearInvocations;
 
 class UpdateDocumentPropertiesTest {
 
@@ -52,6 +55,7 @@ class UpdateDocumentPropertiesTest {
         updateDocumentProperties = new UpdateDocumentProperties(
                 repository,
                 draftRepository,
+                publishedRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
                 TestGuards.permitAll(),
@@ -101,6 +105,47 @@ class UpdateDocumentPropertiesTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid document properties");
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void publishingThenRemovingDraftBindingsCannotOrphanEitherPublishedLocale() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of(widgetBoundTo("en-grid", "customer")));
+        DocumentDraft german = draft("de", List.of(widgetBoundTo("de-grid", "customer")));
+        stubFound(document, english, german);
+        List<PublishedDocument> snapshots = new ArrayList<>();
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(snapshots);
+        when(publishedRepository.save(any())).thenAnswer(call -> {
+            PublishedDocument snapshot = call.getArgument(0);
+            snapshots.add(snapshot);
+            return snapshot;
+        });
+        PublishDocumentTranslation publish = new PublishDocumentTranslation(repository, draftRepository,
+                publishedRepository, new DocumentReferentialIntegrityChecker(),
+                new DocumentTranslationAssembler(draftRepository, publishedRepository),
+                TestGuards.permitAll(), event -> { });
+        publish.execute(ORG, ID, "en");
+        publish.execute(ORG, ID, "de");
+        english.replaceBlocks(List.of());
+        german.replaceBlocks(List.of());
+        clearInvocations(repository);
+
+        assertThatThrownBy(() -> updateDocumentProperties.execute(ORG, ID, input("Renamed").inputPorts(List.of())))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("unknown-port");
+        verify(repository, never()).save(any());
+        assertThat(document.getTitle()).isEqualTo("Original");
+        when(repository.findByOrgKeyAndSlug(ORG, document.getSlug())).thenReturn(Optional.of(document));
+        FindPublishedContent reader = new FindPublishedContent(repository, publishedRepository, TestGuards.permitAll());
+        for (String locale : List.of("en", "de")) {
+            var view = reader.execute(ORG, document.getSlug(), locale);
+            assertThat(new DocumentReferentialIntegrityChecker().check(
+                    document.getPorts(), view.served().content())).isEmpty();
+            assertThat(view.served().content().blocks()).hasSize(1);
+        }
+
+        snapshots.clear();
+        assertThat(updateDocumentProperties.execute(ORG, ID, input("Renamed").inputPorts(List.of()))
+                .document().getPorts().inputPorts()).isEmpty();
     }
 
     @Test

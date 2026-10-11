@@ -3,6 +3,8 @@ package com.processpuzzle.document.usecase.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.processpuzzle.document.domain.DocumentBlock;
 import com.processpuzzle.document.domain.DocumentContent;
+import com.processpuzzle.document.domain.DocumentDraft;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.DocumentInputPort;
 import com.processpuzzle.document.domain.DocumentOutputPort;
 import com.processpuzzle.document.domain.DocumentPorts;
@@ -70,6 +72,25 @@ public class DocumentReferentialIntegrityChecker {
         }
 
         checkOrphans(blocks, referencedFrom, problems);
+        return problems;
+    }
+
+    /** Validates the resulting drafts and every untouched publication before live ports change. */
+    public List<DocumentValidationProblem> checkPortChange(DocumentPorts ports, List<DocumentDraft> drafts,
+                                                          Map<String, DocumentContent> replacements,
+                                                          List<PublishedDocument> published) {
+        Map<String, DocumentContent> candidates = new HashMap<>();
+        drafts.forEach(draft -> candidates.put(draft.getLocale(), draft.getContent()));
+        candidates.putAll(replacements);
+        List<DocumentValidationProblem> problems = new ArrayList<>();
+        candidates.forEach((locale, content) ->
+                problems.addAll(DocumentValidationProblem.withLocale(check(ports, content), locale)));
+        for (PublishedDocument snapshot : published) {
+            for (DocumentValidationProblem problem : check(ports, snapshot.getContent())) {
+                problems.add(new DocumentValidationProblem(problem.path(), problem.errorId(),
+                        "Published content: " + problem.errorText(), problem.severity(), snapshot.getLocale()));
+            }
+        }
         return problems;
     }
 

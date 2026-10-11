@@ -26,6 +26,13 @@ Three entities, split along the two axes that actually vary — language, and pu
 
 **Publishing** is per locale, so one language can go live while another is still being translated. A draft carries a plain `revision` counter; a snapshot records the `publishedRevision` it was taken from, and `DocumentStatus` is derived by comparing them rather than stored. Unpublishing deletes the snapshot, so "withdrawn" needs no extra state. Publishing emits `DocumentPublished`, so an approval flow can attach later without this module knowing it exists.
 
+**Port changes protect published content too.** Properties replacement, full-document updates and
+imports share one validation of the resulting drafts and every published locale against the proposed
+live input/output ports. Removing a binding from a draft does not permit removing a port still used
+by its published snapshot. First republish content without that binding, or unpublish the affected
+locales. Full updates/imports may replace draft bindings and ports together, but retained drafts and
+all publications must remain valid. Import validates every target before persisting any entry.
+
 Two deliberate divergences from `base-app`'s `AppDefinition`, which is otherwise the model this follows:
 
 - **The published snapshot is its own entity**, not a second column beside the draft. Document content is read anonymously, and this is what makes "a draft is never publicly readable" a property of what the public path reads rather than a check someone has to remember. It is also what survives the port to a store that authorizes whole records and cannot hide a field.

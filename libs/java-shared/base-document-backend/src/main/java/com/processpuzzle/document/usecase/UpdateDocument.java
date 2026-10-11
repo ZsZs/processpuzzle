@@ -7,6 +7,7 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
@@ -18,7 +19,6 @@ import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +38,7 @@ public class UpdateDocument {
 
     private final DocumentRepository repository;
     private final DocumentDraftRepository draftRepository;
+    private final PublishedDocumentRepository publishedRepository;
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
@@ -45,12 +46,14 @@ public class UpdateDocument {
 
     public UpdateDocument(DocumentRepository repository,
                           DocumentDraftRepository draftRepository,
+                          PublishedDocumentRepository publishedRepository,
                           DocumentReferentialIntegrityChecker integrityChecker,
                           DocumentTranslationAssembler assembler,
                           DocumentGuard guard,
                           DocumentMapper mapper) {
         this.repository = repository;
         this.draftRepository = draftRepository;
+        this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
@@ -75,13 +78,9 @@ public class UpdateDocument {
         // Validate the candidate state of every locale — the ones being replaced with their new
         // content, the ones being left alone against the new ports — before writing anything.
         Map<String, DocumentContent> replacements = replacementsOf(input, draftsByLocale, orgKey, documentId);
-        List<DocumentValidationProblem> problems = new ArrayList<>();
-        for (DocumentDraft draft : draftsByLocale.values()) {
-            DocumentContent candidate = replacements.getOrDefault(draft.getLocale(), draft.getContent());
-            problems.addAll(DocumentValidationProblem.withLocale(
-                    integrityChecker.check(newPorts, candidate), draft.getLocale()));
-        }
-        List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(problems);
+        List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
+                integrityChecker.checkPortChange(newPorts, List.copyOf(draftsByLocale.values()), replacements,
+                        publishedRepository.findByOrgKeyAndDocumentId(orgKey, documentId)));
         if (!blocking.isEmpty()) {
             throw new IllegalArgumentException("Invalid document: " + blocking);
         }
