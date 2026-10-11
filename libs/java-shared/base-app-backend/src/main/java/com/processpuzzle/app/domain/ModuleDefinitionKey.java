@@ -1,11 +1,12 @@
 package com.processpuzzle.app.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Composite primary key of {@link ModuleDefinition}: a module key is unique only within its
- * organization. A plain mutable class rather than a record, for the reason given on
+ * organization and channel. A plain mutable class rather than a record, for the reason given on
  * {@link AppDefinitionKey}.
  */
 public class ModuleDefinitionKey implements Serializable {
@@ -14,14 +15,16 @@ public class ModuleDefinitionKey implements Serializable {
 
     private String orgKey;
     private String key;
+    private Channel channel;
 
     public ModuleDefinitionKey() {
         // required by JPA
     }
 
-    public ModuleDefinitionKey(String orgKey, String key) {
+    public ModuleDefinitionKey(String orgKey, String key, Channel channel) {
         this.orgKey = orgKey;
         this.key = key;
+        this.channel = channel;
     }
 
     public String getOrgKey() {
@@ -40,6 +43,14 @@ public class ModuleDefinitionKey implements Serializable {
         this.key = key;
     }
 
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -48,11 +59,11 @@ public class ModuleDefinitionKey implements Serializable {
         if (!(other instanceof ModuleDefinitionKey that)) {
             return false;
         }
-        return Objects.equals(orgKey, that.orgKey) && Objects.equals(key, that.key);
+        return Objects.equals(orgKey, that.orgKey) && Objects.equals(key, that.key) && channel == that.channel;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgKey, key);
+        return Objects.hash(orgKey, key, channel);
     }
 }

@@ -1,5 +1,6 @@
 package com.processpuzzle.app.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
@@ -158,7 +159,7 @@ class DefaultAppLoaderTest {
     @Test
     void aDefinitionAlreadyInTheRepository_neverReachesTheEndpoint() {
         when(appRepository.existsByOrgKeyAndId(TESTBED_KEY, "demo")).thenReturn(true);
-        when(moduleRepository.existsByOrgKeyAndKey(TESTBED_KEY, "order-admin")).thenReturn(true);
+        when(moduleRepository.existsByOrgKeyAndKeyAndChannel(TESTBED_KEY, "order-admin", Channel.DRAFT)).thenReturn(true);
 
         loader.loadDefaults();
 

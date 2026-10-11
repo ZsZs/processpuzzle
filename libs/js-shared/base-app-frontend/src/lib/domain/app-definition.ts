@@ -1,5 +1,6 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
 import { THEME_COLOR_SCHEMES, THEME_PRESETS, ThemeColorScheme, ThemePreset, WidgetInstance } from '@processpuzzle/widgets';
+import type { ModuleDefinition } from './module-definition';
 
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from '@processpuzzle/widgets';
 
@@ -256,6 +257,12 @@ export class AppDefinition implements BaseEntity {
   regions: RegionDefinition[] | undefined;
   routes: RouteDefinition[] | undefined;
   modules: ModuleMount[] | undefined;
+  /**
+   * The mounted modules themselves, as the `/layout` read carries them: the released rows with the published
+   * revision, the drafts with the draft. Read-only, never saved, and `undefined` on the designer's own read —
+   * which is how the route builder tells a layout that brought its modules from a definition that did not.
+   */
+  mountedModules: ModuleDefinition[] | undefined;
   // region server-assigned
   orgKey: string | undefined;
   status: AppDefinitionStatus | undefined;
@@ -285,6 +292,7 @@ export class AppDefinition implements BaseEntity {
     this.regions = init.regions;
     this.routes = init.routes;
     this.modules = init.modules;
+    this.mountedModules = init.mountedModules;
     this.orgKey = init.orgKey;
     this.status = init.status;
     this.version = init.version;

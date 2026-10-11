@@ -1,9 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter } from '@angular/router';
-import { TranslocoService } from '@jsverse/transloco';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
 import { AppDefinitionContainerComponent } from './app-definition-container.component';
@@ -11,11 +9,9 @@ import { APP_PREVIEW_TAB } from './app-preview-tab';
 
 describe('AppDefinitionContainerComponent', () => {
   async function setup(currentEntity?: Partial<AppDefinition>) {
-    const snackBar = { open: vi.fn() };
     const storeStub = {
       currentEntity: signal(currentEntity ? new AppDefinition(currentEntity) : undefined),
       isLoading: signal(false),
-      publish: vi.fn().mockResolvedValue(undefined),
     };
 
     await TestBed.configureTestingModule({
@@ -23,15 +19,13 @@ describe('AppDefinitionContainerComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AppDefinitionStore, useValue: storeStub },
-        { provide: MatSnackBar, useValue: snackBar },
-        { provide: TranslocoService, useValue: { translate: (key: string) => key } },
       ],
     })
       .overrideComponent(AppDefinitionContainerComponent, { set: { template: '', imports: [] } })
       .compileComponents();
 
     const fixture = TestBed.createComponent(AppDefinitionContainerComponent);
-    return { fixture, component: fixture.componentInstance, storeStub, snackBar };
+    return { fixture, component: fixture.componentInstance, storeStub };
   }
 
   it('hands the app definition descriptor to the generic container', async () => {
@@ -52,58 +46,9 @@ describe('AppDefinitionContainerComponent', () => {
     expect(component.entityDescriptor.extraTabs).toEqual([APP_PREVIEW_TAB]);
   });
 
-  it('contributes the Publish button to the form actions', async () => {
+  it('contributes no Publish action, since publishing is the release of the organization', async () => {
     const { component } = await setup();
 
-    expect(component.entityDescriptor.extraFormActionsTemplate).toBeDefined();
-    expect(component.entityDescriptor.extraFormActionsTemplate?.()).toBe(component.publishActionsTpl());
-  });
-
-  it('captions the Publish button from the base_app scope', async () => {
-    const { component } = await setup();
-
-    expect(component.publishButtonKey).toBe('base_app.publish.button');
-    expect(component.publishTooltipKey).toBe('base_app.publish.tooltip');
-  });
-
-  it('cannot publish a definition the backend does not know yet', async () => {
-    const { component, storeStub } = await setup();
-
-    expect(component.canPublish()).toBe(false);
-    await component.onPublish();
-    expect(storeStub.publish).not.toHaveBeenCalled();
-  });
-
-  it('publishes the definition currently on the form', async () => {
-    const { component, storeStub } = await setup({ id: 'demo', name: 'Demo' });
-
-    expect(component.canPublish()).toBe(true);
-    await component.onPublish();
-    expect(storeStub.publish).toHaveBeenCalledWith('demo');
-  });
-
-  it('confirms a successful Publish, since the screen itself does not change', async () => {
-    const { component, storeStub, snackBar } = await setup({ id: 'demo', name: 'Demo' });
-    storeStub.publish.mockResolvedValue(new AppDefinition({ id: 'demo', name: 'Demo' }));
-
-    await component.onPublish();
-
-    expect(snackBar.open).toHaveBeenCalledWith('base_app.publish.done', undefined, { duration: 4000 });
-  });
-
-  it('confirms nothing when Publish failed', async () => {
-    const { component, snackBar } = await setup({ id: 'demo', name: 'Demo' });
-
-    await component.onPublish();
-
-    expect(snackBar.open).not.toHaveBeenCalled();
-  });
-
-  it('keeps Publish disabled while a request is in flight', async () => {
-    const { component, storeStub } = await setup({ id: 'demo', name: 'Demo' });
-
-    storeStub.isLoading.set(true);
-
-    expect(component.canPublish()).toBe(false);
+    expect(component.entityDescriptor.extraFormActionsTemplate).toBeUndefined();
   });
 });
