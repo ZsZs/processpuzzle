@@ -21,8 +21,19 @@ import { ShellOverlayContainer } from './shell-overlay-container';
  * organization, opening the designer. They come from the host and not from a header region, because a
  * definition decides what its regions hold, and a definition that could drop the designer button would
  * let a designer lock themselves out of the designer.
+ *
+ * **It brings its own overlay container.** Projected content resolves its dependencies through the
+ * injectors of the template that declared it — the host's — not through the shell's, so the shell's
+ * {@link ShellOverlayContainer} is out of its reach: a menu opened from one of these controls would render
+ * under `<body>` and wear the host's theme. This element is inside the shell's host, which is all a
+ * container needs to wear the application's.
  */
-@Directive({ selector: '[ppShellActions]', standalone: true, host: { class: 'pp-app-shell__actions' } })
+@Directive({
+  selector: '[ppShellActions]',
+  standalone: true,
+  host: { class: 'pp-app-shell__actions' },
+  providers: [{ provide: OverlayContainer, useClass: ShellOverlayContainer }],
+})
 export class ShellActionsDirective {}
 
 /**
