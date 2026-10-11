@@ -7,16 +7,35 @@
 - **Tools run:** Static review using IDE file discovery/read, scoped glob/ripgrep, numbered PowerShell reads, and Git revision verification. Read `AGENTS.md`, `README.md` architectural intent and the review rubric. Inspected rule engine, evaluation, CRUD/import synchronization, persistence model, module declarations and relevant tests. Tests inspected, not executed; no build, Nx task, ArchUnit or Modulith verification executed.
 - **Estimation note:** Effort is provisional: rubric calibration has not been completed. The rubric's scales and effort points are unchanged.
 
-## Summary
+## Remediation log
+
+### BRU-MET-01: addressed (2026-10-11)
+
+Each thread-local compiled function now retains the immutable source identity it was compiled
+from. Evaluation replaces a cached function when the currently registered source differs, including
+same-key edits and remove/re-register transitions. Tenant-scoped keys are unchanged. An in-flight
+evaluation may finish on its captured source; no cross-thread GraalJS values are shared.
+
+Five real-engine regressions reproduced the original failure before the fix: same-thread edits,
+remove/re-create, a worker missing the removal interval, two warmed workers with tenant isolation,
+and an invalid edit that must fail rather than execute the old function. BRU-PER-01 remains a
+separate transaction-boundary change.
+
+**Validation:** all 15 `RuleEngineTest` cases passed through `base-rule-backend:test` via Nx.
+The five new cases failed against the original implementation before passing with the fix.
+
+The assessment and evidence below are the original review baseline.
+
+## Summary (review baseline)
 
 The slice has a useful organization-scoped evaluation boundary and keeps engine implementation packages internal. The substantive debt is in consistency between persisted rule metadata and executable in-memory state, rather than the intentionally unfinished inheritance model. BRU-MET-01 makes an already-evaluated rule continue using its old expression after an edit, even on a single thread. BRU-PER-01 lets ordinary CRUD publish executable changes before the database transaction commits, although a commit-aware mechanism already exists for imports. The inspected tests cover expressions, tenant separation and synchronization helpers separately, but do not establish a transaction-to-real-engine update contract.
 
 ## Findings table
 
-| ID | Title | Cat | Crit | Blast | Effort | Conf | Priority |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| BRU-MET-01 | Compiled rule functions outlive the metadata revision | MET | 5 | 2 feature | M | High | 5.0 |
-| BRU-PER-01 | CRUD changes executable state before commit | PER | 5 | 2 feature | M | High | 5.0 |
+| ID | Title | Cat | Crit | Blast | Effort | Conf | Priority | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| BRU-MET-01 | Compiled rule functions outlive the metadata revision | MET | 5 | 2 feature | M | High | 5.0 | Addressed 2026-10-11 |
+| BRU-PER-01 | CRUD changes executable state before commit | PER | 5 | 2 feature | M | High | 5.0 | Open |
 
 ## Findings
 
