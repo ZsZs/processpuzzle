@@ -38,7 +38,7 @@ public class CreateRule {
 
         RuleDefinition rule = mapper.toDomain(orgKey, input);
         RuleDefinition saved = repository.save(rule);
-        ruleEngineSync.register(saved);
+        ruleEngineSync.registerAfterCommit(saved);
         return saved;
     }
 }

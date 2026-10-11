@@ -39,13 +39,8 @@ public class EvaluateObject {
                 continue;
             }
             RuleKey key = RuleKey.of(rule.getOrgKey(), rule.getId());
-            // Lazily register so a freshly-restarted instance can evaluate before its in-memory
-            // engine state has been re-synced from the database.
-            if (!ruleEngine.isRegistered(key)) {
-                ruleEngine.registerRule(key, rule.getExpression());
-            }
             try {
-                if (!ruleEngine.evaluate(key, entity)) {
+                if (!ruleEngine.evaluate(key, rule.getExpression(), entity)) {
                     violations.add(new RuleViolation(
                             rule.getId(), rule.getName(), rule.getSeverity(),
                             messageFor(rule), rule.getTranslocoId()));

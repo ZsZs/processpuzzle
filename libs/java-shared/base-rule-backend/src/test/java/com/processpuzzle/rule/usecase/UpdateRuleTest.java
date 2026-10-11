@@ -48,7 +48,7 @@ class UpdateRuleTest {
         assertThat(saved.getSeverity()).isEqualTo(Severity.INFO);
         assertThat(saved.getFields()).containsExactly("quantity");
         verify(extendsValidator).validate("demo", "max-quantity", null);
-        verify(ruleEngineSync).register(existing);
+        verify(ruleEngineSync).registerAfterCommit(existing);
     }
 
     @Test

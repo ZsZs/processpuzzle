@@ -24,6 +24,27 @@ separate transaction-boundary change.
 **Validation:** all 15 `RuleEngineTest` cases passed through `base-rule-backend:test` via Nx.
 The five new cases failed against the original implementation before passing with the fix.
 
+### BRU-PER-01: addressed (2026-10-11)
+
+Create, update and delete now use the same after-commit synchronization as imports. Registration
+callbacks capture immutable tenant-scoped key, expression and enabled state rather than retaining
+managed entities; rollback and failed commit-time flushes do not publish the attempted change.
+
+Evaluation also uses the expression from the row it actually read, compiling that snapshot without
+publishing a shared registration. This closes the lazy-registration path that could otherwise
+publish a caller's uncommitted row, and prevents a concurrent/stale registration from supplying an
+expression inconsistent with the row's violation metadata. Registered-key evaluation remains
+available for explicit engine use. Callback delivery is still local/in-process, not a durable or
+cross-replica synchronization protocol.
+
+**Validation:** 88 focused tests passed through Nx `base-rule-backend:test`, including
+`RuleModularityTests`, the engine, CRUD, evaluation, import, tenant isolation/cleanup and
+synchronization tests. Sixteen new transaction cases use a real H2/JPA repository, proxied use cases
+and GraalJS: committed and rolled-back create/update/delete, disable/re-enable, failed commit-time
+flushes, import/replacement-import rollback, warmed worker-thread evaluation and transaction-local
+snapshots. The mutable-callback and transaction regressions reproduced failures before the fix.
+No live PostgreSQL, process-crash or multi-replica test was performed.
+
 The assessment and evidence below are the original review baseline.
 
 ## Summary (review baseline)
@@ -35,7 +56,7 @@ The slice has a useful organization-scoped evaluation boundary and keeps engine 
 | ID | Title | Cat | Crit | Blast | Effort | Conf | Priority | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | BRU-MET-01 | Compiled rule functions outlive the metadata revision | MET | 5 | 2 feature | M | High | 5.0 | Addressed 2026-10-11 |
-| BRU-PER-01 | CRUD changes executable state before commit | PER | 5 | 2 feature | M | High | 5.0 | Open |
+| BRU-PER-01 | CRUD changes executable state before commit | PER | 5 | 2 feature | M | High | 5.0 | Addressed 2026-10-11 |
 
 ## Findings
 
