@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
 import { BaseEntityLoadResponse, PersistedEntity } from '@processpuzzle/base-entity';
-import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { EXPECTED_ERROR_STATUSES, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition, AppDefinitionStatus } from './app-definition';
 import { AppDefinitionMapper } from './app-definition.mapper';
@@ -96,5 +96,28 @@ describe('AppDefinitionService', () => {
     const published = await pending;
     expect(published.status).toBe(AppDefinitionStatus.PUBLISHED);
     expect(published.publishedVersion).toBe(3);
+  });
+
+  it('reads the published revision, routes included, from the layout sub-resource', async () => {
+    const pending = firstValueFrom(service.findPublished('demo'));
+
+    const request = controller.expectOne(`${serviceRoot}/app-definitions/demo/layout`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ id: 'demo', name: 'Demo', version: 2, theme: { colorScheme: 'dark' }, regions: [], routes: [{ path: 'orders', target: { kind: 'WIDGETS', widgets: [] } }] });
+
+    const published = await pending;
+    expect(published?.version).toBe(2);
+    expect(published?.colorScheme).toBe('dark');
+    expect(published?.routes?.map((route) => route.path)).toEqual(['orders']);
+  });
+
+  it('answers undefined, without reporting an error, while nothing has been published', async () => {
+    const pending = firstValueFrom(service.findPublished('demo'));
+
+    const request = controller.expectOne(`${serviceRoot}/app-definitions/demo/layout`);
+    expect(request.request.context.get(EXPECTED_ERROR_STATUSES)).toEqual([404]);
+    request.flush(null, { status: 404, statusText: 'Not Found' });
+
+    expect(await pending).toBeUndefined();
   });
 });

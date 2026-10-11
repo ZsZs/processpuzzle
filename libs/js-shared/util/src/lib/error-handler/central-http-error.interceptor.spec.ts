@@ -1,9 +1,9 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { centralHttpErrorInterceptor } from './central-http-error.interceptor';
+import { centralHttpErrorInterceptor, EXPECTED_ERROR_STATUSES } from './central-http-error.interceptor';
 
 describe('centralHttpErrorInterceptor', () => {
   let httpClient: HttpClient;
@@ -45,5 +45,27 @@ describe('centralHttpErrorInterceptor', () => {
 
     expect(handledErrors).toHaveLength(1);
     expect(errorSpy).toHaveBeenCalledWith(handledErrors[0]);
+  });
+
+  it('does not report a status the request declared as expected, but still rethrows it', () => {
+    const errorSpy = vi.fn();
+    const context = new HttpContext().set(EXPECTED_ERROR_STATUSES, [404]);
+
+    httpClient.get('/api/app/layout', { context }).subscribe({ error: errorSpy });
+
+    httpTestingController.expectOne('/api/app/layout').flush(null, { status: 404, statusText: 'Not Found' });
+
+    expect(handledErrors).toHaveLength(0);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('still reports an unexpected status of a request that declared others', () => {
+    const context = new HttpContext().set(EXPECTED_ERROR_STATUSES, [404]);
+
+    httpClient.get('/api/app/layout', { context }).subscribe({ error: vi.fn() });
+
+    httpTestingController.expectOne('/api/app/layout').flush(null, { status: 500, statusText: 'Server Error' });
+
+    expect(handledErrors).toHaveLength(1);
   });
 });

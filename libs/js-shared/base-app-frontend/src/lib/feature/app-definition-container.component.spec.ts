@@ -1,6 +1,8 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
 import { AppDefinition } from '../domain/app-definition';
 import { AppDefinitionStore } from '../domain/app-definition.store';
@@ -9,6 +11,7 @@ import { APP_PREVIEW_TAB } from './app-preview-tab';
 
 describe('AppDefinitionContainerComponent', () => {
   async function setup(currentEntity?: Partial<AppDefinition>) {
+    const snackBar = { open: vi.fn() };
     const storeStub = {
       currentEntity: signal(currentEntity ? new AppDefinition(currentEntity) : undefined),
       isLoading: signal(false),
@@ -17,13 +20,18 @@ describe('AppDefinitionContainerComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppDefinitionContainerComponent],
-      providers: [provideRouter([]), { provide: AppDefinitionStore, useValue: storeStub }],
+      providers: [
+        provideRouter([]),
+        { provide: AppDefinitionStore, useValue: storeStub },
+        { provide: MatSnackBar, useValue: snackBar },
+        { provide: TranslocoService, useValue: { translate: (key: string) => key } },
+      ],
     })
       .overrideComponent(AppDefinitionContainerComponent, { set: { template: '', imports: [] } })
       .compileComponents();
 
     const fixture = TestBed.createComponent(AppDefinitionContainerComponent);
-    return { fixture, component: fixture.componentInstance, storeStub };
+    return { fixture, component: fixture.componentInstance, storeStub, snackBar };
   }
 
   it('hands the app definition descriptor to the generic container', async () => {
@@ -72,6 +80,23 @@ describe('AppDefinitionContainerComponent', () => {
     expect(component.canPublish()).toBe(true);
     await component.onPublish();
     expect(storeStub.publish).toHaveBeenCalledWith('demo');
+  });
+
+  it('confirms a successful Publish, since the screen itself does not change', async () => {
+    const { component, storeStub, snackBar } = await setup({ id: 'demo', name: 'Demo' });
+    storeStub.publish.mockResolvedValue(new AppDefinition({ id: 'demo', name: 'Demo' }));
+
+    await component.onPublish();
+
+    expect(snackBar.open).toHaveBeenCalledWith('base_app.publish.done', undefined, { duration: 4000 });
+  });
+
+  it('confirms nothing when Publish failed', async () => {
+    const { component, snackBar } = await setup({ id: 'demo', name: 'Demo' });
+
+    await component.onPublish();
+
+    expect(snackBar.open).not.toHaveBeenCalled();
   });
 
   it('keeps Publish disabled while a request is in flight', async () => {

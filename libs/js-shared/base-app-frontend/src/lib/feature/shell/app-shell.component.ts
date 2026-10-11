@@ -1,7 +1,7 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { NgComponentOutlet } from '@angular/common';
-import { Component, computed, effect, inject, input } from '@angular/core';
+import { Component, computed, contentChild, Directive, effect, inject, input } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { RouterOutlet } from '@angular/router';
@@ -15,13 +15,24 @@ import { ShellApplicationContext } from './shell-application-context';
 import { ShellOverlayContainer } from './shell-overlay-container';
 
 /**
+ * Marks content a host projects into the end of the shell's top row: `<div ppShellActions>…</div>`.
+ *
+ * For controls that belong to the platform rather than to the application — signing out, switching
+ * organization, opening the designer. They come from the host and not from a header region, because a
+ * definition decides what its regions hold, and a definition that could drop the designer button would
+ * let a designer lock themselves out of the designer.
+ */
+@Directive({ selector: '[ppShellActions]', standalone: true, host: { class: 'pp-app-shell__actions' } })
+export class ShellActionsDirective {}
+
+/**
  * The run-time shell of a metadata-defined application: the chrome an `AppDefinition` describes, with a
  * `<router-outlet>` where its routes render.
  *
- * **This is the application, not a picture of one.** `AppPreviewComponent` hosts it so that the Preview
- * tab shows the real thing, and the standalone runtime host will mount the same component — which is
- * the whole point of it being a component with one input rather than something assembled inside the
- * preview. A shell built for the preview would drift from the one built for production, and a preview
+ * **This is the application, not a picture of one.** `AppPreviewComponent` hosts it with the draft so
+ * that the Preview tab shows the real thing, and a runtime host mounts the same component with the
+ * published revision — which is the whole point of it being a component with one input rather than
+ * something assembled inside the preview. A shell built for the preview would drift from the one built for production, and a preview
  * that drifts is worse than none.
  *
  * Everything is bound declaratively. Regions are resolved to {@link RegionView}s and rendered through
@@ -38,8 +49,12 @@ import { ShellOverlayContainer } from './shell-overlay-container';
  * shell simply inherits the host's theme. Overlays opened from inside the shell render into a
  * {@link ShellOverlayContainer} in its host, so they are themed as well.
  *
- * Not yet handled, deliberately: **no routes are registered** under the outlet. That is the nested router
- * context, which needs `EntityTabDescriptor` to be able to carry child routes.
+ * The definition's routes render in the outlet once its host registers them as the children of the route
+ * the shell is mounted on — `appShellRoutesGuard` for the Preview, `publishedAppRoutesGuard` for a runtime
+ * host.
+ *
+ * A host may also project controls of its own into the end of the top row, marked {@link ShellActionsDirective}
+ * — the platform's controls a definition must not be able to remove, such as the way into the designer.
  */
 @Component({
   selector: 'pp-app-shell',
@@ -58,7 +73,7 @@ import { ShellOverlayContainer } from './shell-overlay-container';
   // selects one of the scoped Material themes there; `[style]` carries the `--pp-*` overrides.
   host: { '[class]': 'themeClass()', '[style]': 'themeVars()' },
   template: `
-    @if (headerView() || topNavView()) {
+    @if (headerView() || topNavView() || hostActions()) {
       <div class="pp-app-shell__top">
         @if (headerView(); as view) {
           <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
@@ -66,6 +81,7 @@ import { ShellOverlayContainer } from './shell-overlay-container';
         @if (topNavView(); as view) {
           <ng-container *ngComponentOutlet="view.component; inputs: topNavInputs()"></ng-container>
         }
+        <ng-content select="[ppShellActions]" />
       </div>
     }
 
@@ -113,6 +129,9 @@ export class AppShellComponent {
   private readonly theme = inject(ThemeService);
   private readonly applicationContext = inject(ShellApplicationContext);
   protected readonly layoutService = inject(LayoutService);
+
+  /** Controls the host projected into the top row; the row is rendered for them alone if need be. */
+  protected readonly hostActions = contentChild(ShellActionsDirective);
 
   protected readonly layout = computed(() => layoutOf(this.definition()));
   protected readonly themeVars = computed(() => themeVarsOf(this.definition()));

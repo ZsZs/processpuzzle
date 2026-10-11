@@ -10,7 +10,7 @@ import { AppShellComponent } from './shell/app-shell.component';
  *
  * A **container and nothing more**: it resolves which definition is being previewed and frames the
  * result. Everything about *how* an application renders belongs to {@link AppShellComponent}, which the
- * standalone runtime host will mount just as this does — so the preview cannot grow behaviour the real
+ * runtime host mounts just as this does — so the preview cannot grow behaviour the real
  * shell lacks, which is the only way a preview stays honest.
  *
  * The frame below — rounded, white, and tall enough to look like an application — is the preview's own,
