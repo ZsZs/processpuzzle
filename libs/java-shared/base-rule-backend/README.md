@@ -16,7 +16,20 @@ ProcessPuzzle Base Rule Backend is the server-side companion of [`@processpuzzle
 
 ## Status
 
-This library is currently a scaffold. Domain, use cases, and adapter packages will be added as the rule engine takes shape.
+The library provides persisted rule CRUD, YAML import/export and tenant-scoped GraalJS evaluation.
+Resolution of inherited/overridden rule expressions remains unimplemented.
+
+## Executable rule revisions
+
+`RuleEngine` caches immutable GraalJS sources by `(orgKey, ruleId)` and compiled functions per
+thread, because GraalJS values belong to their thread's context. Each compiled entry retains its
+source identity: an edited expression replaces the entry on the next evaluation on **every**
+thread, including after disable/re-enable or delete/re-create. A failed compilation is an evaluation
+error, never a fallback to the preceding expression.
+
+An evaluation uses the source snapshot read at its start. An in-flight evaluation may finish on
+that snapshot while a rule is updated or removed; subsequent calls observe the new registration.
+This cache policy alone does not define the transaction boundary for publishing registrations.
 
 ## Development
 
