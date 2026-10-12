@@ -1,5 +1,6 @@
 package com.processpuzzle.state.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -18,14 +19,24 @@ public class DiagramDefinitionKey implements Serializable {
 
     private String orgKey;
     private String entityName;
+    private Channel channel;
 
     public DiagramDefinitionKey() {
         // required by JPA
     }
 
-    public DiagramDefinitionKey(String orgKey, String entityName) {
+    public DiagramDefinitionKey(String orgKey, String entityName, Channel channel) {
         this.orgKey = orgKey;
         this.entityName = entityName;
+        this.channel = channel;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
     public String getOrgKey() {
@@ -52,16 +63,17 @@ public class DiagramDefinitionKey implements Serializable {
         if (!(other instanceof DiagramDefinitionKey that)) {
             return false;
         }
-        return Objects.equals(orgKey, that.orgKey) && Objects.equals(entityName, that.entityName);
+        return Objects.equals(orgKey, that.orgKey) && Objects.equals(entityName, that.entityName)
+                && channel == that.channel;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgKey, entityName);
+        return Objects.hash(orgKey, entityName, channel);
     }
 
     @Override
     public String toString() {
-        return orgKey + "/" + entityName;
+        return orgKey + "/" + entityName + "/" + channel;
     }
 }

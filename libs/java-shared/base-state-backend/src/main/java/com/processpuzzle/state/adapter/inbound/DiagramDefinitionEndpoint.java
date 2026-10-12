@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.api.BaseStateDiagramsApi;
 import com.processpuzzle.state.domain.DiagramDefinition;
 import com.processpuzzle.state.model.DiagramDefinitionInput;
@@ -49,15 +50,16 @@ public class DiagramDefinitionEndpoint implements BaseStateDiagramsApi {
 
     @Override
     public ResponseEntity<PageOfDiagramDefinition> listDiagramDefinitions(
-            String orgKey, String where, String order, Integer page, Integer size) {
-        Page<DiagramDefinition> result = findAllDiagramDefinitions.execute(orgKey, where, order, page, size);
+            String orgKey, String where, String order, Integer page, Integer size, String revision) {
+        Page<DiagramDefinition> result =
+                findAllDiagramDefinitions.execute(orgKey, Channel.ofRevision(revision), where, order, page, size);
         return ResponseEntity.ok(mapper.toModel(result));
     }
 
     @Override
     public ResponseEntity<com.processpuzzle.state.model.DiagramDefinition> getDiagramDefinition(
-            String orgKey, String entityName) {
-        return ResponseEntity.ok(mapper.toModel(findDiagramDefinition.execute(orgKey, entityName)));
+            String orgKey, String entityName, String revision) {
+        return ResponseEntity.ok(mapper.toModel(findDiagramDefinition.execute(orgKey, entityName, Channel.ofRevision(revision))));
     }
 
     /** {@code 201} the first time this entityName is arranged, {@code 200} every time after. */

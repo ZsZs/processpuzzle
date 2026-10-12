@@ -65,7 +65,12 @@ class GovernedStateConsistencyCheckTest {
         appender.stop();
     }
 
+    /** A released machine: the check judges objects against what governs them, which a draft does not yet. */
     private StateMachineDefinition machine() {
+        return StateMachineDefinition.releasedCopyOf(draftMachine());
+    }
+
+    private StateMachineDefinition draftMachine() {
         return StateMachineDefinition.builder()
                 .orgKey(ORG)
                 .entityName(ENTITY)
@@ -202,5 +207,14 @@ class GovernedStateConsistencyCheckTest {
 
         verifyNoInteractions(gatewayResolver);
         assertThat(appender.list).isEmpty();
+    }
+
+    @Test
+    void judgesNoObjectAgainstADraft() {
+        when(repository.findAll()).thenReturn(List.of(draftMachine()));
+
+        check.verify();
+
+        org.mockito.Mockito.verifyNoInteractions(gateway);
     }
 }

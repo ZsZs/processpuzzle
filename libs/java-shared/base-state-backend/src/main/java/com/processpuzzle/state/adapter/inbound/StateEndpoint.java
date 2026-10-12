@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.state.api.BaseStateApi;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -77,8 +78,9 @@ public class StateEndpoint implements BaseStateApi {
 
     @Override
     public ResponseEntity<PageOfStateMachineDefinition> listStateMachineDefinitions(
-            String orgKey, String where, String order, Integer page, Integer size) {
-        Page<StateMachineDefinition> result = findAllStateMachineDefinitions.execute(orgKey, where, order, page, size);
+            String orgKey, String where, String order, Integer page, Integer size, String revision) {
+        Page<StateMachineDefinition> result =
+                findAllStateMachineDefinitions.execute(orgKey, Channel.ofRevision(revision), where, order, page, size);
         return ResponseEntity.ok(mapper.toModel(result));
     }
 
@@ -92,8 +94,8 @@ public class StateEndpoint implements BaseStateApi {
 
     @Override
     public ResponseEntity<com.processpuzzle.state.model.StateMachineDefinition> getStateMachineDefinition(
-            String orgKey, String entityName) {
-        StateMachineDefinition definition = findStateMachineDefinition.execute(orgKey, entityName);
+            String orgKey, String entityName, String revision) {
+        StateMachineDefinition definition = findStateMachineDefinition.execute(orgKey, entityName, Channel.ofRevision(revision));
         return ResponseEntity.ok(mapper.toModel(definition));
     }
 

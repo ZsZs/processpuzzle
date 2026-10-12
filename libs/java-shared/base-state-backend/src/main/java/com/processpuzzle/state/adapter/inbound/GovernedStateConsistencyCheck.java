@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -70,7 +71,10 @@ class GovernedStateConsistencyCheck {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional(readOnly = true)
     public void verify() {
-        List<StateMachineDefinition> definitions = repository.findAll();
+        // The machines that govern objects now: the released ones. A draft governs nothing until it is released.
+        List<StateMachineDefinition> definitions = repository.findAll().stream()
+                .filter(definition -> definition.getChannel() == Channel.RELEASED)
+                .toList();
         if (definitions.isEmpty()) {
             return;
         }

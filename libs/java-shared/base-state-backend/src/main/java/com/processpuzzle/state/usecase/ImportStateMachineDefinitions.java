@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -109,8 +110,10 @@ public class ImportStateMachineDefinitions {
     private ImportOutcome persistEntries(String orgKey, Iterable<StateMachineYamlEntry> entries) {
         int created = 0;
         int updated = 0;
+        List<String> written = new java.util.ArrayList<>();
         for (StateMachineYamlEntry entry : entries) {
-            Optional<StateMachineDefinition> existing = repository.findByOrgKeyAndEntityName(orgKey, entry.entityName());
+            written.add(entry.entityName());
+            Optional<StateMachineDefinition> existing = repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entry.entityName(), Channel.DRAFT);
             if (existing.isPresent()) {
                 StateMachineDefinition definition = existing.get();
                 definition.replaceTopology(entry.name(), entry.description(), entry.stateAttributeKey(),
@@ -132,6 +135,6 @@ public class ImportStateMachineDefinitions {
                 created++;
             }
         }
-        return new ImportOutcome(created, updated, List.of());
+        return new ImportOutcome(created, updated, List.of(), written);
     }
 }

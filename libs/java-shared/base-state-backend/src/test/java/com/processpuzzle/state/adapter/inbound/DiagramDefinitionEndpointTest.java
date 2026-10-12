@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinition;
 import com.processpuzzle.state.model.DiagramDefinitionInput;
 import com.processpuzzle.state.model.PageOfDiagramDefinition;
@@ -49,11 +50,11 @@ class DiagramDefinitionEndpointTest {
 
     @Test
     void list_shouldReturnThePage() {
-        when(findAllUseCase.execute(ORG, "entityName==invoice", "entityName,asc", 1, 5))
+        when(findAllUseCase.execute(ORG, Channel.DRAFT, "entityName==invoice", "entityName,asc", 1, 5))
                 .thenReturn(new PageImpl<>(List.of(domainLayout()), PageRequest.of(1, 5), 6));
 
         ResponseEntity<PageOfDiagramDefinition> response =
-                endpoint.listDiagramDefinitions(ORG, "entityName==invoice", "entityName,asc", 1, 5);
+                endpoint.listDiagramDefinitions(ORG, "entityName==invoice", "entityName,asc", 1, 5, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -62,10 +63,10 @@ class DiagramDefinitionEndpointTest {
 
     @Test
     void get_shouldReturnTheLayout() {
-        when(findUseCase.execute(ORG, ENTITY)).thenReturn(domainLayout());
+        when(findUseCase.execute(ORG, ENTITY, Channel.DRAFT)).thenReturn(domainLayout());
 
         ResponseEntity<com.processpuzzle.state.model.DiagramDefinition> response =
-                endpoint.getDiagramDefinition(ORG, ENTITY);
+                endpoint.getDiagramDefinition(ORG, ENTITY, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

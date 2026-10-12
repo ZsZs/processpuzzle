@@ -1,5 +1,6 @@
 package com.processpuzzle.state.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -80,10 +81,11 @@ class StateMachineDefinitionTest {
         StateMachineDefinitionKey key1 = new StateMachineDefinitionKey();
         key1.setOrgKey("org-1");
         key1.setEntityName("invoice");
+        key1.setChannel(Channel.DRAFT);
 
-        StateMachineDefinitionKey key2 = new StateMachineDefinitionKey("org-1", "invoice");
-        StateMachineDefinitionKey key3 = new StateMachineDefinitionKey("org-2", "invoice");
-        StateMachineDefinitionKey key4 = new StateMachineDefinitionKey("org-1", "order");
+        StateMachineDefinitionKey key2 = new StateMachineDefinitionKey("org-1", "invoice", Channel.DRAFT);
+        StateMachineDefinitionKey key3 = new StateMachineDefinitionKey("org-2", "invoice", Channel.DRAFT);
+        StateMachineDefinitionKey key4 = new StateMachineDefinitionKey("org-1", "order", Channel.DRAFT);
 
         assertThat(key1.getOrgKey()).isEqualTo("org-1");
         assertThat(key1.getEntityName()).isEqualTo("invoice");
@@ -93,6 +95,6 @@ class StateMachineDefinitionTest {
                 .isNotEqualTo(key3)
                 .isNotEqualTo(key4)
                 .hasSameHashCodeAs(key2)
-                .hasToString("org-1/invoice");
+                .hasToString("org-1/invoice/DRAFT");
     }
 }

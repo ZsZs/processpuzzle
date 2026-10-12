@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.domain.event.EntityObjectStateChangedEvent;
@@ -60,7 +61,7 @@ public class StartStateMachine {
      */
     public Optional<String> execute(String orgKey, String entityName, UUID objectId,
                                     Map<String, Object> payload, long version) {
-        Optional<StateMachineDefinition> found = repository.findByOrgKeyAndEntityName(orgKey, entityName);
+        Optional<StateMachineDefinition> found = repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.RELEASED);
         if (found.isEmpty()) {
             return Optional.empty();
         }

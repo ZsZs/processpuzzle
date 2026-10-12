@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -30,10 +31,10 @@ public class ExportStateMachineDefinitions {
      */
     public byte[] execute(String orgKey, String entityName) throws IOException {
         List<StateMachineDefinition> definitions = entityName != null
-                ? repository.findByOrgKeyAndEntityName(orgKey, entityName)
+                ? repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT)
                         .map(List::of)
                         .orElseGet(List::of)
-                : repository.findByOrgKey(orgKey);
+                : repository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT);
 
         List<StateMachineYamlEntry> entries = definitions.stream()
                 .map(d -> new StateMachineYamlEntry(d.getEntityName(), d.getName(), d.getDescription(),

@@ -78,7 +78,7 @@ class StarterImportIntegrationTest {
         assertThat(report.items()).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.CREATE);
 
         assertThat(entityAttributeQuery.entityTypeExists("dry-run-org", "inventory-item", Channel.DRAFT)).isFalse();
-        assertThatThrownBy(() -> findStateMachine.execute("dry-run-org", "inventory-item")).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> findStateMachine.execute("dry-run-org", "inventory-item", Channel.DRAFT)).isInstanceOf(RuntimeException.class);
         assertThat(ruleEngine.isRegistered(RuleKey.of("dry-run-org", "non-negative-quantity"))).isFalse();
         assertThat(listInstalledStarters.execute("dry-run-org")).isEmpty();
     }
@@ -97,7 +97,7 @@ class StarterImportIntegrationTest {
             assertThat(entityAttributeQuery.attributeKind(orgKey, "inventory-item", "status", Channel.DRAFT))
                     .contains(EntityAttributeKind.ENUM);
             assertThat(entityAttributeQuery.entityTypeExists(orgKey, "inventory-item")).isFalse();
-            assertThat(findStateMachine.execute(orgKey, "inventory-item").getInitialStateKey()).isEqualTo("IN_STOCK");
+            assertThat(findStateMachine.execute(orgKey, "inventory-item", Channel.DRAFT).getInitialStateKey()).isEqualTo("IN_STOCK");
             assertThat(ruleEngine.isRegistered(RuleKey.of(orgKey, "sku-format"))).isTrue();
             assertThat(listInstalledStarters.execute(orgKey)).singleElement().satisfies(installed -> {
                 assertThat(installed.starterId()).isEqualTo("inventory");
@@ -154,7 +154,7 @@ class StarterImportIntegrationTest {
 
         assertThat(entityAttributeQuery.entityTypeExists("rollback-org", "inventory-item", Channel.DRAFT)).isFalse();
         assertThat(entityAttributeQuery.entityTypeExists("rollback-org", "stock-location", Channel.DRAFT)).isFalse();
-        assertThatThrownBy(() -> findStateMachine.execute("rollback-org", "inventory-item")).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> findStateMachine.execute("rollback-org", "inventory-item", Channel.DRAFT)).isInstanceOf(RuntimeException.class);
         assertThat(listInstalledStarters.execute("rollback-org")).isEmpty();
     }
 

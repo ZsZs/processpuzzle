@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
@@ -25,7 +26,7 @@ public class UpdateStateMachineDefinition {
     }
 
     public StateMachineDefinition execute(String orgKey, String entityName, StateMachineDefinition updated) {
-        StateMachineDefinition definition = repository.findByOrgKeyAndEntityName(orgKey, entityName)
+        StateMachineDefinition definition = repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT)
                 .orElseThrow(() -> new StateMachineNotFoundException(orgKey, entityName));
         validator.validate(orgKey, entityName, updated.getStateAttributeKey(),
                 updated.getInitialStateKey(), updated.getStates(), updated.getTransitions());

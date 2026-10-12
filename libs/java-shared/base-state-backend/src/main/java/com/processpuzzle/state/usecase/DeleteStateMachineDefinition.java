@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
@@ -29,10 +30,10 @@ public class DeleteStateMachineDefinition {
     }
 
     public void execute(String orgKey, String entityName) {
-        if (!repository.existsByOrgKeyAndEntityName(orgKey, entityName)) {
+        if (!repository.existsByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT)) {
             throw new StateMachineNotFoundException(orgKey, entityName);
         }
-        diagramRepository.findByOrgKeyAndEntityName(orgKey, entityName).ifPresent(diagramRepository::delete);
-        repository.deleteById(new com.processpuzzle.state.domain.StateMachineDefinitionKey(orgKey, entityName));
+        diagramRepository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT).ifPresent(diagramRepository::delete);
+        repository.deleteById(new com.processpuzzle.state.domain.StateMachineDefinitionKey(orgKey, entityName, Channel.DRAFT));
     }
 }

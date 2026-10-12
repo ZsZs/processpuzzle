@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -67,7 +68,7 @@ class StartStateMachineTest {
 
     @Test
     void writesTheInitialStateAndPublishesAStartEvent() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition()));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.RELEASED)).thenReturn(Optional.of(definition()));
         when(gatewayResolver.gateway()).thenReturn(gateway);
         when(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, ATTR, "draft", 0L)).thenReturn(1L);
 
@@ -97,7 +98,7 @@ class StartStateMachineTest {
      */
     @Test
     void theStartEventCarriesNoPreviousStateTransitionOrTrigger() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition()));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.RELEASED)).thenReturn(Optional.of(definition()));
         when(gatewayResolver.gateway()).thenReturn(gateway);
         when(gateway.updateStateAttribute(anyString(), anyString(), eq(OBJECT_ID), anyString(), anyString(), eq(0L)))
                 .thenReturn(1L);
@@ -112,7 +113,7 @@ class StartStateMachineTest {
 
     @Test
     void doesNothingWhenNoMachineGovernsTheEntityType() {
-        when(repository.findByOrgKeyAndEntityName(ORG, "partner")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "partner", Channel.RELEASED)).thenReturn(Optional.empty());
 
         assertThat(startStateMachine.execute(ORG, "partner", OBJECT_ID, Map.of(), 0L)).isEmpty();
 
@@ -121,7 +122,7 @@ class StartStateMachineTest {
 
     @Test
     void leavesAStateTheCreatingPayloadAlreadySet() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition()));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.RELEASED)).thenReturn(Optional.of(definition()));
 
         Optional<String> written =
                 startStateMachine.execute(ORG, ENTITY, OBJECT_ID, Map.of(ATTR, "CONFIRMED"), 0L);
@@ -136,7 +137,7 @@ class StartStateMachineTest {
      */
     @Test
     void treatsABlankOrAbsentStateAsUnset() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition()));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.RELEASED)).thenReturn(Optional.of(definition()));
         when(gatewayResolver.gateway()).thenReturn(gateway);
         when(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, ATTR, "draft", 0L)).thenReturn(1L);
 
@@ -151,7 +152,7 @@ class StartStateMachineTest {
 
     @Test
     void toleratesANullPayload() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition()));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.RELEASED)).thenReturn(Optional.of(definition()));
         when(gatewayResolver.gateway()).thenReturn(gateway);
         when(gateway.updateStateAttribute(ORG, ENTITY, OBJECT_ID, ATTR, "draft", 3L)).thenReturn(4L);
 
