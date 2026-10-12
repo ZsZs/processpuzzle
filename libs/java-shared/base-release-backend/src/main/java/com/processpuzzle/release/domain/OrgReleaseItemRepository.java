@@ -11,6 +11,10 @@ public interface OrgReleaseItemRepository extends JpaRepository<OrgReleaseItem, 
 
     List<OrgReleaseItem> findByOrgKeyOrderByReleaseNumberDescSequenceNoAsc(String orgKey);
 
+    /** Every item up to a release, oldest first, so that a later item of a definition replaces an earlier one. */
+    List<OrgReleaseItem> findByOrgKeyAndReleaseNumberLessThanEqualOrderByReleaseNumberAscSequenceNoAsc(
+            String orgKey, long releaseNumber);
+
     /** One bulk statement, as {@code OrganizationDeletedEvent} recommends. */
     @Modifying
     @Query("delete from OrgReleaseItem i where i.orgKey = :orgKey")
