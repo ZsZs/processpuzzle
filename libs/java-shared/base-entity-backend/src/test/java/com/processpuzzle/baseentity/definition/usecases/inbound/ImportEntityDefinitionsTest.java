@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import static org.mockito.Mockito.mock;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
@@ -62,12 +63,12 @@ class ImportEntityDefinitionsTest {
     void setUp() {
         importer = new ImportEntityDefinitions(repository, new EntityDefinitionValidator(),
                 new EntityDefinitionMapper(), createUseCase, replaceUseCase);
-        lenient().when(repository.existsByOrgKeyAndCode(anyString(), anyString())).thenReturn(false);
+        lenient().when(repository.existsByOrgKeyAndCodeAndChannel(anyString(), anyString(), eq(Channel.DRAFT))).thenReturn(false);
     }
 
     @Test
     void newDefinitionsAreCreatedAndExistingOnesReplaced() throws IOException {
-        when(repository.existsByOrgKeyAndCode(ORG, "partner")).thenReturn(true);
+        when(repository.existsByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(true);
 
         ImportEntityDefinitions.Outcome outcome = importer.execute(ORG, yaml("""
                 entityDefinitions:
@@ -152,7 +153,7 @@ class ImportEntityDefinitionsTest {
 
     @Test
     void aComponentParentMayAlreadyExistInTheOrganization() throws IOException {
-        when(repository.existsByOrgKeyAndCode(ORG, "customer")).thenReturn(true);
+        when(repository.existsByOrgKeyAndCodeAndChannel(ORG, "customer", Channel.DRAFT)).thenReturn(true);
 
         ImportEntityDefinitions.Outcome outcome = importer.execute(ORG, yaml("""
                 entityDefinitions:
@@ -168,7 +169,7 @@ class ImportEntityDefinitionsTest {
 
     @Test
     void aComponentParentInAnotherOrganizationDoesNotCount() throws IOException {
-        lenient().when(repository.existsByOrgKeyAndCode("globex", "customer")).thenReturn(true);
+        lenient().when(repository.existsByOrgKeyAndCodeAndChannel("globex", "customer", Channel.DRAFT)).thenReturn(true);
 
         ImportEntityDefinitions.Outcome outcome = importer.execute(ORG, yaml("""
                 entityDefinitions:

@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.adapters.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.baseentity.common.BaseEntityApiExceptionHandler;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
@@ -100,7 +101,7 @@ class EntityDefinitionEndpointTest {
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
         Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
-        when(findAllUseCase.findAll(eq("test-org"), any(), any(), any(Pageable.class))).thenReturn(page);
+        when(findAllUseCase.findAll(eq("test-org"), eq(Channel.DRAFT), any(), any(), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions"))
                 .andExpect(status().isOk())
@@ -116,7 +117,7 @@ class EntityDefinitionEndpointTest {
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
         Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
-        when(findAllUseCase.findAll(eq("test-org"), eq(EntityDefinitionStatus.ACTIVE), eq(false), any(Pageable.class))).thenReturn(page);
+        when(findAllUseCase.findAll(eq("test-org"), eq(Channel.DRAFT), eq(EntityDefinitionStatus.ACTIVE), eq(false), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions")
                         .param("status", "ACTIVE")
@@ -134,7 +135,7 @@ class EntityDefinitionEndpointTest {
                 .name("Partner")
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
-        when(findByCodeUseCase.findByCode("test-org", "partner")).thenReturn(def);
+        when(findByCodeUseCase.findByCode("test-org", "partner", Channel.DRAFT)).thenReturn(def);
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions/partner"))
                 .andExpect(status().isOk())

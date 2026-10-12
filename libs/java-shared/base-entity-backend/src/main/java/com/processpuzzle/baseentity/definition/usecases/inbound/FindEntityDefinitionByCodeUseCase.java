@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
@@ -14,8 +15,8 @@ public class FindEntityDefinitionByCodeUseCase {
     private final EntityDefinitionRepository repository;
 
     @Transactional(readOnly = true)
-    public BaseEntityDefinition findByCode(String orgKey, String code) {
-        return repository.findByOrgKeyAndCode(orgKey, code)
+    public BaseEntityDefinition findByCode(String orgKey, String code, Channel channel) {
+        return repository.findByOrgKeyAndCodeAndChannel(orgKey, code, channel)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(code)));
     }
 }

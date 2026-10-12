@@ -1,9 +1,8 @@
 package com.processpuzzle.baseentity.adapter.inbound;
 
-import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.usecases.inbound.FindEntityDefinitionsByCodesUseCase;
 import com.processpuzzle.baseentity.definition.usecases.inbound.ImportEntityDefinitions;
-import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
@@ -25,20 +24,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class EntityDefinitionImportParticipant implements DefinitionImportParticipant {
 
-    /** Assigned by the database or by auditing, so not part of what a starter author wrote. */
-    private static final Set<String> VOLATILE_FIELDS =
-        Set.of("id", "version", "createdAt", "createdBy", "updatedAt", "updatedBy", "organizationId");
-
     private final ImportEntityDefinitions importDefinitions;
     private final FindEntityDefinitionsByCodesUseCase findByCodes;
-    private final EntityDefinitionMapper mapper;
+    private final EntityDefinitionFingerprint fingerprint;
 
     public EntityDefinitionImportParticipant(ImportEntityDefinitions importDefinitions,
                                              FindEntityDefinitionsByCodesUseCase findByCodes,
-                                             EntityDefinitionMapper mapper) {
+                                             EntityDefinitionFingerprint fingerprint) {
         this.importDefinitions = importDefinitions;
         this.findByCodes = findByCodes;
-        this.mapper = mapper;
+        this.fingerprint = fingerprint;
     }
 
     @Override
@@ -77,16 +72,8 @@ public class EntityDefinitionImportParticipant implements DefinitionImportPartic
     @Override
     public Map<String, String> fingerprints(String orgKey, Set<String> keys) {
         Map<String, String> fingerprints = new LinkedHashMap<>();
-        findByCodes.find(orgKey, keys).forEach(definition ->
-            fingerprints.put(definition.getCode(), CanonicalJson.of(withoutTimestamps(mapper.toModel(definition)), VOLATILE_FIELDS)));
+        findByCodes.find(orgKey, keys, Channel.DRAFT).forEach(definition ->
+            fingerprints.put(definition.getCode(), fingerprint.of(definition)));
         return fingerprints;
-    }
-
-    /** Cleared rather than only stripped: canonical JSON is written without a java.time module. */
-    private com.processpuzzle.baseentity.model.BaseEntityDefinition withoutTimestamps(
-        com.processpuzzle.baseentity.model.BaseEntityDefinition model) {
-        model.setCreatedAt(null);
-        model.setUpdatedAt(null);
-        return model;
     }
 }

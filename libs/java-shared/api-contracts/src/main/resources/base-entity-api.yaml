@@ -74,6 +74,7 @@ paths:
           schema:
             type: boolean
           description: Filter to embedded-only or standalone/non-embedded-only definitions.
+        - $ref: '#/components/parameters/RevisionParam'
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -121,6 +122,8 @@ paths:
       operationId: getEntityDefinition
       tags: [ Base Entity Definitions ]
       summary: Get an entity definition by code
+      parameters:
+        - $ref: '#/components/parameters/RevisionParam'
       responses:
         '200':
           description: OK
@@ -488,6 +491,19 @@ components:
       required: true
       schema:
         type: string
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of a definition to read: the `draft` the designer edits, or the one the
+        organization last released (base-release-api.yaml), which is what the running application
+        uses. Writes always go to the draft.
+
     PageParam:
       name: page
       in: query

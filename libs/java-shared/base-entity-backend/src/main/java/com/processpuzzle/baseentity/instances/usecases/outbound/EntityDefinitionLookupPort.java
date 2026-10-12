@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.usecases.outbound;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.Optional;
 
 /**
@@ -9,5 +10,11 @@ import java.util.Optional;
  */
 public interface EntityDefinitionLookupPort {
 
-    Optional<EntityDefinitionView> findByCode(String orgKey, String code);
+    /** The definition the running application uses: the organization's released one. */
+    default Optional<EntityDefinitionView> findByCode(String orgKey, String code) {
+        return findByCode(orgKey, code, Channel.RELEASED);
+    }
+
+    /** Either row of a definition; the draft is for checking other drafts against, never for live data. */
+    Optional<EntityDefinitionView> findByCode(String orgKey, String code, Channel channel);
 }
