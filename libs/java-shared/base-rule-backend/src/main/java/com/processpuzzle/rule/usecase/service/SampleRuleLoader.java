@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase.service;
 
+import com.processpuzzle.rule.usecase.RuleReleaser;
 import com.processpuzzle.rule.usecase.ImportOutcome;
 import com.processpuzzle.rule.usecase.ImportRules;
 import org.slf4j.Logger;
@@ -33,10 +34,12 @@ public class SampleRuleLoader {
     private static final String SAMPLE_RULES_LOCATION = "classpath:sample-rules/*" + RULES_FILE_SUFFIX;
     private final ImportRules importRules;
     private final ResourcePatternResolver resourceResolver;
+    private final RuleReleaser releaser;
 
-    public SampleRuleLoader(ImportRules importRules, ResourcePatternResolver resourceResolver) {
+    public SampleRuleLoader(ImportRules importRules, ResourcePatternResolver resourceResolver, RuleReleaser releaser) {
         this.importRules = importRules;
         this.resourceResolver = resourceResolver;
+        this.releaser = releaser;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -72,6 +75,9 @@ public class SampleRuleLoader {
             LOG.info("Imported sample rules from {} into organization '{}': created={}, updated={}, errors={}",
                     name, orgKey, outcome.created(), outcome.updated(), outcome.errors().size());
             outcome.errors().forEach(error -> LOG.warn("Sample rule import error in {}: {}", name, error));
+            // Samples are meant to run: released at once, but only the rules this file wrote, so a designer's
+            // unreleased drafts in the same organization stay drafts.
+            outcome.written().forEach(ruleId -> releaser.release(orgKey, ruleId));
         } catch (IOException e) {
             LOG.warn("Failed to import sample rules from {}", name, e);
         }

@@ -98,7 +98,8 @@ class StarterImportIntegrationTest {
                     .contains(EntityAttributeKind.ENUM);
             assertThat(entityAttributeQuery.entityTypeExists(orgKey, "inventory-item")).isFalse();
             assertThat(findStateMachine.execute(orgKey, "inventory-item", Channel.DRAFT).getInitialStateKey()).isEqualTo("IN_STOCK");
-            assertThat(ruleEngine.isRegistered(RuleKey.of(orgKey, "sku-format"))).isTrue();
+            // Imported rules are drafts: the engine holds released rules only, until a release.
+            assertThat(ruleEngine.isRegistered(RuleKey.of(orgKey, "sku-format"))).isFalse();
             assertThat(listInstalledStarters.execute(orgKey)).singleElement().satisfies(installed -> {
                 assertThat(installed.starterId()).isEqualTo("inventory");
                 assertThat(installed.version()).isEqualTo("1.0.0");

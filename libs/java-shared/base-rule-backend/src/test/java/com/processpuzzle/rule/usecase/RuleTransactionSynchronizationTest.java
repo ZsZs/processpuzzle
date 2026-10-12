@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.adapter.inbound.RuleMapper;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.model.RuleDefinitionInput;
@@ -39,11 +40,16 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * The engine's registry holds the released rules, and changes only when a release commits. A designer's save writes a
+ * draft and leaves the engine alone; each case here releases what it saved in the same transaction, so whether the
+ * transaction commits or rolls back still decides what the engine sees.
+ */
 @DataJpaTest(showSql = false)
 @EntityScan("com.processpuzzle.rule.domain")
 @EnableJpaRepositories("com.processpuzzle.rule.domain")
 @Import({CreateRule.class, UpdateRule.class, DeleteRule.class, ImportRules.class, EvaluateObject.class,
-        RuleEngineSync.class, RuleMapper.class, RuleExtendsValidator.class})
+        RuleEngineSync.class, RuleMapper.class, RuleExtendsValidator.class, RuleReleaser.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class RuleTransactionSynchronizationTest {
 
@@ -69,6 +75,7 @@ class RuleTransactionSynchronizationTest {
     @Autowired private DeleteRule delete;
     @Autowired private ImportRules importer;
     @Autowired private EvaluateObject evaluate;
+    @Autowired private RuleReleaser releaser;
 
     private TransactionTemplate transactions;
     private ExecutorService worker;
@@ -93,12 +100,13 @@ class RuleTransactionSynchronizationTest {
     void creationIsPublishedOnlyOnCommit(boolean rollback) {
         transactions.executeWithoutResult(status -> {
             create.execute(ORG, input("false"));
+            releaser.release(ORG, ID);
             assertThat(engine.isRegistered(KEY)).isFalse();
             assertThat(evaluateOnWorker()).isTrue();
             if (rollback) status.setRollbackOnly();
         });
 
-        assertThat(repository.existsByOrgKeyAndId(ORG, ID)).isEqualTo(!rollback);
+        assertThat(repository.existsByOrgKeyAndIdAndChannel(ORG, ID, Channel.RELEASED)).isEqualTo(!rollback);
         assertThat(engine.isRegistered(KEY)).isEqualTo(!rollback);
         assertThat(evaluateOnWorker()).isEqualTo(rollback);
     }
@@ -107,17 +115,19 @@ class RuleTransactionSynchronizationTest {
     @ValueSource(booleans = {true, false})
     void editsDoNotEscapeUntilCommitAndRefreshBothWarmedThreads(boolean rollback) {
         create.execute(ORG, input("true"));
+        releaser.release(ORG, ID);
         assertThat(engine.evaluate(KEY, Map.of())).isTrue();
         assertThat(evaluateOnWorker()).isTrue();
 
         transactions.executeWithoutResult(status -> {
             update.execute(ORG, ID, input("false"));
+            releaser.release(ORG, ID);
             assertThat(engine.evaluate(KEY, Map.of())).isTrue();
             assertThat(evaluateOnWorker()).isTrue();
             if (rollback) status.setRollbackOnly();
         });
 
-        assertThat(repository.findByOrgKeyAndId(ORG, ID).orElseThrow().getExpression())
+        assertThat(repository.findByOrgKeyAndIdAndChannel(ORG, ID, Channel.RELEASED).orElseThrow().getExpression())
                 .isEqualTo(rollback ? "true" : "false");
         assertThat(engine.evaluate(KEY, Map.of())).isEqualTo(rollback);
         assertThat(evaluateOnWorker()).isEqualTo(rollback);
@@ -127,16 +137,18 @@ class RuleTransactionSynchronizationTest {
     @ValueSource(booleans = {true, false})
     void deletionIsPublishedOnlyOnCommit(boolean rollback) {
         create.execute(ORG, input("false"));
+        releaser.release(ORG, ID);
         assertThat(evaluateOnWorker()).isFalse();
 
         transactions.executeWithoutResult(status -> {
             delete.execute(ORG, ID);
+            releaser.release(ORG, ID);
             assertThat(engine.isRegistered(KEY)).isTrue();
             assertThat(evaluateOnWorker()).isFalse();
             if (rollback) status.setRollbackOnly();
         });
 
-        assertThat(repository.existsByOrgKeyAndId(ORG, ID)).isEqualTo(rollback);
+        assertThat(repository.existsByOrgKeyAndIdAndChannel(ORG, ID, Channel.RELEASED)).isEqualTo(rollback);
         assertThat(engine.isRegistered(KEY)).isEqualTo(rollback);
         assertThat(evaluateOnWorker()).isEqualTo(!rollback);
     }
@@ -144,9 +156,11 @@ class RuleTransactionSynchronizationTest {
     @Test
     void disableAndReEnablePublishOnlyCommittedExpressions() {
         create.execute(ORG, input("true"));
+        releaser.release(ORG, ID);
         assertThat(evaluateOnWorker()).isTrue();
         transactions.executeWithoutResult(status -> {
             update.execute(ORG, ID, input("false").enabled(false));
+            releaser.release(ORG, ID);
             assertThat(engine.evaluate(KEY, Map.of())).isTrue();
             assertThat(evaluateOnWorker()).isTrue();
         });
@@ -155,6 +169,7 @@ class RuleTransactionSynchronizationTest {
 
         transactions.executeWithoutResult(status -> {
             update.execute(ORG, ID, input("false").enabled(true));
+            releaser.release(ORG, ID);
             assertThat(engine.isRegistered(KEY)).isFalse();
             assertThat(evaluateOnWorker()).isTrue();
         });
@@ -165,18 +180,25 @@ class RuleTransactionSynchronizationTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void failedCommitFlushDoesNotPublishTheSavedExpression(boolean existing) {
-        if (existing) create.execute(ORG, input("true"));
+        if (existing) {
+            create.execute(ORG, input("true"));
+            releaser.release(ORG, ID);
+        }
         RuleDefinitionInput invalid = input("false").name("x".repeat(201));
 
         assertThatThrownBy(() -> transactions.executeWithoutResult(status -> {
-            if (existing) update.execute(ORG, ID, invalid);
-            else create.execute(ORG, invalid);
+            if (existing) {
+                update.execute(ORG, ID, invalid);
+            } else {
+                create.execute(ORG, invalid);
+            }
+            releaser.release(ORG, ID);
         })).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
 
-        assertThat(repository.existsByOrgKeyAndId(ORG, ID)).isEqualTo(existing);
+        assertThat(repository.existsByOrgKeyAndIdAndChannel(ORG, ID, Channel.RELEASED)).isEqualTo(existing);
         assertThat(engine.isRegistered(KEY)).isEqualTo(existing);
         if (existing) {
-            assertThat(repository.findByOrgKeyAndId(ORG, ID).orElseThrow().getExpression()).isEqualTo("true");
+            assertThat(repository.findByOrgKeyAndIdAndChannel(ORG, ID, Channel.RELEASED).orElseThrow().getExpression()).isEqualTo("true");
             assertThat(engine.evaluate(KEY, Map.of())).isTrue();
         }
         assertThat(evaluateOnWorker()).isTrue();
@@ -186,9 +208,11 @@ class RuleTransactionSynchronizationTest {
     @ValueSource(booleans = {true, false})
     void importsFollowTheSameCommitAndRollbackPolicy(boolean rollback) {
         create.execute(ORG, input("true"));
+        releaser.release(ORG, ID);
         assertThat(evaluateOnWorker()).isTrue();
         transactions.executeWithoutResult(status -> {
             importFalseExpression();
+            releaser.release(ORG, ID);
             assertThat(engine.evaluate(KEY, Map.of())).isTrue();
             assertThat(evaluateOnWorker()).isTrue();
             if (rollback) status.setRollbackOnly();
@@ -201,6 +225,7 @@ class RuleTransactionSynchronizationTest {
     void evaluatingAnUncommittedRowDoesNotPublishItToOtherTransactions() {
         transactions.executeWithoutResult(status -> {
             create.execute(ORG, input("false"));
+            releaser.release(ORG, ID);
             assertThat(evaluate.execute(ORG, "Order", Map.of()).passed()).isFalse();
             assertThat(engine.isRegistered(KEY)).isFalse();
             assertThat(evaluateOnWorker()).isTrue();
@@ -213,9 +238,11 @@ class RuleTransactionSynchronizationTest {
     @Test
     void evaluatingAPendingEditDoesNotReplaceTheCommittedRegistration() {
         create.execute(ORG, input("true"));
+        releaser.release(ORG, ID);
         assertThat(evaluateOnWorker()).isTrue();
         transactions.executeWithoutResult(status -> {
             update.execute(ORG, ID, input("false"));
+            releaser.release(ORG, ID);
             assertThat(evaluate.execute(ORG, "Order", Map.of()).passed()).isFalse();
             assertThat(engine.evaluate(KEY, Map.of())).isTrue();
             assertThat(evaluateOnWorker()).isTrue();
@@ -229,15 +256,17 @@ class RuleTransactionSynchronizationTest {
     @ValueSource(booleans = {true, false})
     void replacementImportsKeepDeleteAndRecreateInCommitOrder(boolean rollback) {
         create.execute(ORG, input("true"));
+        releaser.release(ORG, ID);
         assertThat(evaluateOnWorker()).isTrue();
         transactions.executeWithoutResult(status -> {
             assertThat(importer.removeAll(ORG)).containsExactly(ID);
             importFalseExpression();
+            releaser.release(ORG, ID);
             assertThat(engine.evaluate(KEY, Map.of())).isTrue();
             assertThat(evaluateOnWorker()).isTrue();
             if (rollback) status.setRollbackOnly();
         });
-        assertThat(repository.findByOrgKeyAndId(ORG, ID).orElseThrow().getExpression())
+        assertThat(repository.findByOrgKeyAndIdAndChannel(ORG, ID, Channel.RELEASED).orElseThrow().getExpression())
                 .isEqualTo(rollback ? "true" : "false");
         assertThat(engine.evaluate(KEY, Map.of())).isEqualTo(rollback);
         assertThat(evaluateOnWorker()).isEqualTo(rollback);
@@ -246,6 +275,7 @@ class RuleTransactionSynchronizationTest {
     @Test
     void evaluationUsesItsDatabaseSnapshotEvenIfRegistrationHasAnotherRevision() {
         create.execute(ORG, input("false"));
+        releaser.release(ORG, ID);
         engine.registerRule(KEY, "true");
 
         assertThat(evaluateOnWorker()).isFalse();

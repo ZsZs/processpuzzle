@@ -46,6 +46,7 @@ paths:
         - $ref: "#/components/parameters/OrderParam"
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/SizeParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Matching rule definitions (paginated)
@@ -90,6 +91,8 @@ paths:
       summary: Get a rule definition by id
       tags:
         - Base Rule
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: The rule definition
@@ -301,6 +304,18 @@ components:
         Tenant discriminator; also the public URL segment of the tenant's application. See
         shared-api.yaml OrgKeyParam for the full contract. Must be verified against the
         principal's `organization` claim — 403 on mismatch.
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of a rule to read: the `draft` the designer edits, or the one the organization last
+        released (base-release-api.yaml), which is what the running application evaluates. Writes
+        always go to the draft.
     WhereParam:
       name: where
       in: query

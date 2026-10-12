@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.rule.api.BaseRuleApi;
 import com.processpuzzle.rule.model.*;
@@ -69,14 +70,14 @@ public class RuleEndpoint implements BaseRuleApi {
     }
 
     @Override
-    public ResponseEntity<RuleDefinition> getRule(String orgKey, String id) {
-        return ResponseEntity.ok(mapper.toModel(findRule.execute(orgKey, id)));
+    public ResponseEntity<RuleDefinition> getRule(String orgKey, String id, String revision) {
+        return ResponseEntity.ok(mapper.toModel(findRule.execute(orgKey, id, Channel.ofRevision(revision))));
     }
 
     @Override
     public ResponseEntity<PageOfRuleDefinition> listRules(String orgKey, String context, String where,
-                                                          String order, Integer page, Integer size) {
-        return ResponseEntity.ok(mapper.toModel(findAllRules.execute(orgKey, context, where, order, page, size)));
+                                                          String order, Integer page, Integer size, String revision) {
+        return ResponseEntity.ok(mapper.toModel(findAllRules.execute(orgKey, Channel.ofRevision(revision), context, where, order, page, size)));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ class FindAllRulesTest {
     void alwaysQueriesWithASpecification_soTheTenantFilterCanNeverBeSkipped() {
         when(repository.findAll(specArg(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("demo", null, null, null, null, null);
+        findAllRules.execute("demo", Channel.DRAFT, null, null, null, null, null);
 
         verify(repository).findAll(specCaptor().capture(), any(Pageable.class));
         verify(repository, never()).findAll(any(Pageable.class));
@@ -43,7 +44,7 @@ class FindAllRulesTest {
     void defaultsToTheFirstPageOfTwentyUnsorted() {
         when(repository.findAll(specArg(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("demo", null, null, null, null, null);
+        findAllRules.execute("demo", Channel.DRAFT, null, null, null, null, null);
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(repository).findAll(specArg(), pageable.capture());
@@ -56,7 +57,7 @@ class FindAllRulesTest {
     void contextIsCombinedWithTheTenantSpecification() {
         when(repository.findAll(specArg(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("demo", "Order", null, null, null, null);
+        findAllRules.execute("demo", Channel.DRAFT, "Order", null, null, null, null);
 
         ArgumentCaptor<Specification<RuleDefinition>> spec = specCaptor();
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
@@ -69,7 +70,7 @@ class FindAllRulesTest {
     void orderIsParsedIntoTheSort() {
         when(repository.findAll(specArg(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("demo", null, null, "name,desc", null, null);
+        findAllRules.execute("demo", Channel.DRAFT, null, null, "name,desc", null, null);
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(repository).findAll(specArg(), pageable.capture());
@@ -80,7 +81,7 @@ class FindAllRulesTest {
     void pageAndSizeAreForwarded() {
         when(repository.findAll(specArg(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("demo", null, null, null, 3, 5);
+        findAllRules.execute("demo", Channel.DRAFT, null, null, null, 3, 5);
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(repository).findAll(specArg(), pageable.capture());
@@ -92,7 +93,7 @@ class FindAllRulesTest {
     void whereAndContextAreCombinedIntoSingleSpec() {
         when(repository.findAll(specArg(), any(Pageable.class))).thenReturn(emptyPage());
 
-        findAllRules.execute("demo", "Order", "enabled==true", null, null, null);
+        findAllRules.execute("demo", Channel.DRAFT, "Order", "enabled==true", null, null, null);
 
         ArgumentCaptor<Specification<RuleDefinition>> spec = specCaptor();
         verify(repository).findAll(spec.capture(), any(Pageable.class));
@@ -102,7 +103,7 @@ class FindAllRulesTest {
     @Test
     void invalidWhereBubblesAsIllegalArgumentBeforeAnyQuery() {
         try {
-            findAllRules.execute("demo", null, "context==", null, null, null);
+            findAllRules.execute("demo", Channel.DRAFT, null, "context==", null, null, null);
         } catch (IllegalArgumentException expected) {
             assertThat(expected).hasMessageStartingWith("Invalid RSQL");
             verifyNoInteractions(repository);

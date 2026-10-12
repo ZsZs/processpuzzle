@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -18,14 +19,24 @@ public class RuleDefinitionKey implements Serializable {
 
     private String orgKey;
     private String id;
+    private Channel channel;
 
     public RuleDefinitionKey() {
         // required by JPA
     }
 
-    public RuleDefinitionKey(String orgKey, String id) {
+    public RuleDefinitionKey(String orgKey, String id, Channel channel) {
         this.orgKey = orgKey;
         this.id = id;
+        this.channel = channel;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
     public String getOrgKey() {
@@ -52,12 +63,12 @@ public class RuleDefinitionKey implements Serializable {
         if (!(other instanceof RuleDefinitionKey that)) {
             return false;
         }
-        return Objects.equals(orgKey, that.orgKey) && Objects.equals(id, that.id);
+        return Objects.equals(orgKey, that.orgKey) && Objects.equals(id, that.id) && channel == that.channel;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgKey, id);
+        return Objects.hash(orgKey, id, channel);
     }
 
     @Override

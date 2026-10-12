@@ -1,5 +1,6 @@
 package com.processpuzzle.composition;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.app.model.AppDefinitionInput;
@@ -66,7 +67,7 @@ class ShippedAppRulesTest {
     @SuppressWarnings("unchecked")
     void setUp() throws IOException {
         RuleDefinitionRepository repository = mock(RuleDefinitionRepository.class);
-        when(repository.findByOrgKeyAndContext(eq(ORG), eq(AppRuleValidator.RULE_CONTEXT)))
+        when(repository.findByOrgKeyAndContextAndChannel(eq(ORG), eq(AppRuleValidator.RULE_CONTEXT), eq(Channel.RELEASED)))
                 .thenReturn(shippedAppDefinitionRules());
 
         ruleEngine = new RuleEngine();
