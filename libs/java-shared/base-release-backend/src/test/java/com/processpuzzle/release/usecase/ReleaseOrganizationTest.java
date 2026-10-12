@@ -95,15 +95,15 @@ class ReleaseOrganizationTest {
         entities.withDraft("Claim", PendingChange.Change.CHANGED);
         apps.withDraft("app", PendingChange.Change.ADDED);
 
-        ReleaseRecord record = releaseOrganization.execute(ORG, false, "designer");
+        ReleaseRecord released = releaseOrganization.execute(ORG, false, "designer");
 
         assertThat(calls).containsExactly("release entity", "release app");
-        assertThat(record.release().getReleaseNumber()).isEqualTo(1);
-        assertThat(record.release().getReleasedAt()).isEqualTo(NOW);
-        assertThat(record.release().getReleasedBy()).isEqualTo("designer");
-        assertThat(record.items()).extracting(OrgReleaseItem::getKind, OrgReleaseItem::getDefinitionKey)
+        assertThat(released.release().getReleaseNumber()).isEqualTo(1);
+        assertThat(released.release().getReleasedAt()).isEqualTo(NOW);
+        assertThat(released.release().getReleasedBy()).isEqualTo("designer");
+        assertThat(released.items()).extracting(OrgReleaseItem::getKind, OrgReleaseItem::getDefinitionKey)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("entity", "Claim"), org.assertj.core.groups.Tuple.tuple("app", "app"));
-        assertThat(record.items().getFirst().getContentHash())
+        assertThat(released.items().getFirst().getContentHash())
                 .isEqualTo(ReleaseOrganization.sha256("{\"key\":\"Claim\"}")).hasSize(64);
     }
 
@@ -113,7 +113,7 @@ class ReleaseOrganizationTest {
         releaseOrganization.execute(ORG, false, null);
         releaseOrganization.execute(ORG, false, null);
 
-        assertThat(listReleases.execute(ORG)).extracting(record -> record.release().getReleaseNumber())
+        assertThat(listReleases.execute(ORG)).extracting(releaseRecord -> releaseRecord.release().getReleaseNumber())
                 .containsExactly(2L, 1L);
         assertThat(listReleases.execute(ORG).getFirst().items()).extracting(OrgReleaseItem::getDefinitionKey)
                 .containsExactly("Claim");
@@ -210,10 +210,24 @@ class ReleaseOrganizationTest {
     }
 
     @Test
+    void aProvisioningReleaseNeedsNoDesignRightsAndConfirmsItsWarnings() {
+        apps.withDraft("app", PendingChange.Change.ADDED);
+        apps.references.add(DefinitionReference.optional(DefinitionKinds.APP, "app", DefinitionKinds.ENTITY, "Claim"));
+        doThrow(new OrganizationAccessDeniedException(ORG)).when(policy).requireDesign(ORG);
+
+        ReleaseRecord released = releaseOrganization.provision(ORG, "seed");
+
+        assertThat(released.release().getReleasedBy()).isEqualTo("seed");
+        assertThat(calls).containsExactly("release entity", "release app");
+    }
+
+    @Test
     void twoParticipantsForOneKindAreAConfigurationError() {
         FakeParticipant twin = new FakeParticipant(DefinitionKinds.APP, DefinitionKinds.APP_ORDER, calls);
 
-        assertThatThrownBy(() -> ReleaseParticipants.of(List.of(apps, twin))).isInstanceOf(IllegalStateException.class);
+        List<ReleaseParticipant> both = List.of(apps, twin);
+
+        assertThatThrownBy(() -> ReleaseParticipants.of(both)).isInstanceOf(IllegalStateException.class);
     }
 
     @SuppressWarnings("unchecked")

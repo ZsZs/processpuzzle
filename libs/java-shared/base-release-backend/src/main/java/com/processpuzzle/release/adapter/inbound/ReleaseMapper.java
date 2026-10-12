@@ -21,12 +21,12 @@ public class ReleaseMapper {
                 pending.problems().stream().map(this::toModel).toList());
     }
 
-    public Release toModel(ReleaseRecord record) {
+    public Release toModel(ReleaseRecord releaseRecord) {
         Release release = new Release(
-                record.release().getReleaseNumber(),
-                record.release().getReleasedAt().atOffset(ZoneOffset.UTC),
-                record.items().stream().map(this::toModel).toList());
-        release.setReleasedBy(record.release().getReleasedBy());
+                releaseRecord.release().getReleaseNumber(),
+                releaseRecord.release().getReleasedAt().atOffset(ZoneOffset.UTC),
+                releaseRecord.items().stream().map(this::toModel).toList());
+        release.setReleasedBy(releaseRecord.release().getReleasedBy());
         return release;
     }
 

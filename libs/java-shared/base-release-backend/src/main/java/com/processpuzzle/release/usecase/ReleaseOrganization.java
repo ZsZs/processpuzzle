@@ -90,11 +90,11 @@ public class ReleaseOrganization {
             for (ReleaseParticipant participant : participants.inOrder()) {
                 participant.release(orgKey);
             }
-            return record(orgKey, pending.changes(), releasedBy);
+            return recordRelease(orgKey, pending.changes(), releasedBy);
         });
     }
 
-    private ReleaseRecord record(String orgKey, List<PendingChange> changes, String releasedBy) {
+    private ReleaseRecord recordRelease(String orgKey, List<PendingChange> changes, String releasedBy) {
         long number = releaseRepository.findFirstByOrgKeyOrderByReleaseNumberDesc(orgKey)
                 .map(OrgRelease::getReleaseNumber)
                 .orElse(0L) + 1;

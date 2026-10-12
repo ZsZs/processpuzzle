@@ -36,7 +36,7 @@ public class ChannelBackfill {
 
     static final String CHANNEL_COLUMN = "channel";
     private static final String ALTER_TABLE = "ALTER TABLE ";
-    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]{0,62}");
+    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_]\\w{0,62}");
     private static final Logger LOG = LoggerFactory.getLogger(ChannelBackfill.class);
 
     private final JdbcTemplate jdbc;

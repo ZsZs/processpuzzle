@@ -75,7 +75,9 @@ class ChannelBackfillTest {
     void migrate_refusesAKeyColumnThatIsNotAPlainName_andLeavesTheTableAlone() {
         legacyTable();
 
-        assertThatThrownBy(() -> backfill.migrate("modules", List.of("org_key) --"))).isInstanceOf(IllegalArgumentException.class);
+        List<String> injected = List.of("org_key) --");
+
+        assertThatThrownBy(() -> backfill.migrate("modules", injected)).isInstanceOf(IllegalArgumentException.class);
         assertThat(backfill.shapeOf("modules").orElseThrow().primaryKeyColumns()).containsExactlyInAnyOrder("org_key", "module_key");
     }
 
