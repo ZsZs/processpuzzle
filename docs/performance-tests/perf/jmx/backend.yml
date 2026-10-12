@@ -1,0 +1,27 @@
+# Rules of the Prometheus JMX exporter agent attached to testbed-backend (port 9404).
+#
+# JVM memory, GC, threads and process CPU come from the agent's built-in collectors and need no
+# rule. The rules below add what an upload-and-CRUD workload stresses: the Tomcat request thread
+# pool and the Hikari connection pool. Both MBeans exist only because the overlay sets
+# SERVER_TOMCAT_MBEANREGISTRY_ENABLED and SPRING_DATASOURCE_HIKARI_REGISTER_MBEANS. A pattern that
+# matches nothing exports nothing and breaks nothing, so check /metrics on the first run.
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: 'Tomcat<type=ThreadPool, name="(.+)"><>(currentThreadCount|currentThreadsBusy|maxThreads)'
+    name: tomcat_threadpool_$2
+    type: GAUGE
+    labels:
+      pool: "$1"
+
+  - pattern: 'Tomcat<type=GlobalRequestProcessor, name="(.+)"><>(requestCount|errorCount|bytesReceived|bytesSent|processingTime)'
+    name: tomcat_requests_$2
+    type: COUNTER
+    labels:
+      connector: "$1"
+
+  - pattern: 'com.zaxxer.hikari<type=Pool \((.+)\)><>(ActiveConnections|IdleConnections|TotalConnections|ThreadsAwaitingConnection)'
+    name: hikaricp_$2
+    type: GAUGE
+    labels:
+      pool: "$1"

@@ -1,0 +1,219 @@
+# ── Performance-test overlay ────────────────────────────────────────────────────────────────────
+#
+# Turns the CI/local topology into a measurable system under test: memory caps you can change per
+# run, PostgreSQL with pg_stat_statements, a JMX agent on the backend, and an opt-in monitoring
+# stack (node-exporter, cAdvisor, postgres-exporter, Prometheus, Grafana). It adds no build step and
+# changes no application image. Strategy: docs of the performance & stress test strategy.
+#
+# Use it through tools/docker/perf/perf-stack.sh, which passes the right files in the right order.
+# Overlay it LAST, after docker-compose-apps-local.yaml. Relative paths below resolve against
+# tools/docker (the project directory), which the script sets with --project-directory.
+#
+# Memory caps. The base files cap every service at a value tuned for the 3.8 GiB stage host
+# (see docker-compose-infrastructure.yaml). The defaults below repeat those numbers, so an
+# unconfigured run reproduces stage. Raise them in .env.perf for a scaled run. The JVMs size their
+# heaps as a percentage of the cap (MaxRAMPercentage), so raising a cap raises its heap too.
+#
+# Monitoring services sit behind the `monitoring` profile, so a run without them is possible (to
+# measure what the monitoring itself costs). The script enables the profile by default.
+
+services:
+  # ── Existing services: caps made tunable, metrics switched on ─────────────────────────────────
+  postgres:
+    mem_limit: ${PERF_POSTGRES_MEM_LIMIT:-512m}
+    # The image's CMD plus what a load test needs: statement statistics, I/O timing, and a log of
+    # slow statements and lock waits. shared_buffers and max_connections keep the image's values.
+    command:
+      - postgres
+      - -c
+      - max_connections=${PERF_PG_MAX_CONNECTIONS:-200}
+      - -c
+      - shared_buffers=${PERF_PG_SHARED_BUFFERS:-256MB}
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - track_io_timing=on
+      - -c
+      - log_min_duration_statement=${PERF_PG_LOG_MIN_DURATION_MS:-500}
+      - -c
+      - log_lock_waits=on
+
+  keycloak:
+    mem_limit: ${PERF_KEYCLOAK_MEM_LIMIT:-640m}
+
+  minio:
+    mem_limit: ${PERF_MINIO_MEM_LIMIT:-320m}
+    environment:
+      # Lets Prometheus read /minio/v2/metrics/* without a bearer token. Reachable on the compose
+      # network only; the S3 port itself is what is published.
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+
+  testbed-frontend:
+    mem_limit: ${PERF_FRONTEND_MEM_LIMIT:-96m}
+
+  testbed-backend:
+    mem_limit: ${PERF_BACKEND_MEM_LIMIT:-768m}
+    depends_on:
+      perf-jmx-agent:
+        condition: service_completed_successfully
+    volumes:
+      - perf-jmx-agent:/opt/jmx:ro
+      - ./perf/jmx/backend.yml:/opt/jmx-config/backend.yml:ro
+    environment:
+      # The base value, plus the Prometheus JMX agent: JVM heap, GC and threads out of the box, and
+      # Tomcat and Hikari MBeans through the two switches below. No application change is needed.
+      JAVA_TOOL_OPTIONS: "${PERF_BACKEND_JAVA_TOOL_OPTIONS:--XX:MaxRAMPercentage=65} -javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=9404:/opt/jmx-config/backend.yml"
+      SERVER_TOMCAT_MBEANREGISTRY_ENABLED: "true"
+      SPRING_DATASOURCE_HIKARI_REGISTER_MBEANS: "true"
+      # application.yaml ships `false` because the Angular apps send no token yet. The production
+      # configuration is `true`; set PERF_REQUIRE_AUTHENTICATION=true to test it, and k6 then needs
+      # a bearer token per virtual user.
+      PROCESSPUZZLE_SECURITY_REQUIRE_AUTHENTICATION: ${PERF_REQUIRE_AUTHENTICATION:-false}
+
+  # ── One-shots ─────────────────────────────────────────────────────────────────────────────────
+  # Fetches the JMX exporter agent into a volume the backend mounts read-only. Maven Central must
+  # be reachable from the host; a failed download stops the backend from starting, loudly.
+  perf-jmx-agent:
+    image: curlimages/curl:${PERF_CURL_VERSION:-8.11.1}
+    container_name: perf-jmx-agent
+    user: "0:0"
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - >-
+        curl -fsSL --retry 5 --retry-delay 2
+        -o /opt/jmx/jmx_prometheus_javaagent.jar
+        https://repo1.maven.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/${PERF_JMX_EXPORTER_VERSION:-1.0.1}/jmx_prometheus_javaagent-${PERF_JMX_EXPORTER_VERSION:-1.0.1}.jar
+    volumes:
+      - perf-jmx-agent:/opt/jmx
+    networks:
+      - processpuzzle
+    restart: "no"
+
+  # Creates the extension in the application database once postgres runs with the preload library.
+  perf-postgres-init:
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG}
+    container_name: perf-postgres-init
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    environment:
+      PGHOST: postgres
+      PGUSER: ${KEYCLOAK_DB_USERNAME:-keycloak}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${PERF_APP_DB:-processpuzzle_testbed}
+    entrypoint: [ "psql", "-v", "ON_ERROR_STOP=1", "-c", "CREATE EXTENSION IF NOT EXISTS pg_stat_statements" ]
+    networks:
+      - processpuzzle
+    restart: "no"
+
+  # ── Monitoring stack (profile `monitoring`) ───────────────────────────────────────────────────
+  node-exporter:
+    profiles: [ "monitoring" ]
+    image: prom/node-exporter:${PERF_NODE_EXPORTER_VERSION:-v1.8.2}
+    container_name: perf-node-exporter
+    mem_limit: 64m
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc|var/lib/docker/.+)($$|/)
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - processpuzzle
+    restart: unless-stopped
+
+  cadvisor:
+    profiles: [ "monitoring" ]
+    image: gcr.io/cadvisor/cadvisor:${PERF_CADVISOR_VERSION:-v0.49.1}
+    container_name: perf-cadvisor
+    mem_limit: 256m
+    privileged: true
+    devices:
+      - /dev/kmsg
+    # Only what the dashboard uses, at a 10s housekeeping interval, to keep its own CPU low.
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=10s
+      - --enable_metrics=cpu,memory,diskIO,disk,network,oom_event
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - processpuzzle
+    restart: unless-stopped
+
+  postgres-exporter:
+    profiles: [ "monitoring" ]
+    image: quay.io/prometheuscommunity/postgres-exporter:${PERF_POSTGRES_EXPORTER_VERSION:-v0.16.0}
+    container_name: perf-postgres-exporter
+    mem_limit: 64m
+    depends_on:
+      perf-postgres-init:
+        condition: service_completed_successfully
+    environment:
+      # Discrete values, not a DSN: a password is not a URL component until it is encoded, the same
+      # trap the pgweb service in the infrastructure file documents.
+      DATA_SOURCE_URI: postgres:5432/${PERF_APP_DB:-processpuzzle_testbed}?sslmode=disable
+      DATA_SOURCE_USER: ${KEYCLOAK_DB_USERNAME:-keycloak}
+      DATA_SOURCE_PASS: ${POSTGRES_PASSWORD}
+    command:
+      - --collector.stat_statements
+      - --auto-discover-databases
+    networks:
+      - processpuzzle
+    restart: unless-stopped
+
+  prometheus:
+    profiles: [ "monitoring" ]
+    image: prom/prometheus:${PERF_PROMETHEUS_VERSION:-v3.1.0}
+    container_name: perf-prometheus
+    mem_limit: ${PERF_PROMETHEUS_MEM_LIMIT:-768m}
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PERF_PROMETHEUS_RETENTION:-14d}
+      # k6 pushes its client-side metrics here, so both sides share one time axis in Grafana.
+      - --web.enable-remote-write-receiver
+    ports:
+      # Loopback by default. For k6 on another host use an SSH tunnel, or publish on a public
+      # interface AND restrict the port to the load generator's IP in the cloud firewall.
+      - "${PERF_PROMETHEUS_PUBLISH:-127.0.0.1:9099:9090}"
+    volumes:
+      - ./perf/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - perf-prometheus-data:/prometheus
+    networks:
+      - processpuzzle
+    restart: unless-stopped
+
+  grafana:
+    profiles: [ "monitoring" ]
+    image: grafana/grafana:${PERF_GRAFANA_VERSION:-11.4.0}
+    container_name: perf-grafana
+    mem_limit: 256m
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${PERF_GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${PERF_GRAFANA_ADMIN_PASSWORD:?PERF_GRAFANA_ADMIN_PASSWORD must be set}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/pp-perf-overview.json
+    ports:
+      - "${PERF_GRAFANA_PUBLISH:-127.0.0.1:3001:3000}"
+    volumes:
+      - ./perf/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./perf/grafana/dashboards:/etc/grafana/dashboards:ro
+      - perf-grafana-data:/var/lib/grafana
+    networks:
+      - processpuzzle
+    restart: unless-stopped
+
+volumes:
+  perf-jmx-agent:
+  perf-prometheus-data:
+  perf-grafana-data:
