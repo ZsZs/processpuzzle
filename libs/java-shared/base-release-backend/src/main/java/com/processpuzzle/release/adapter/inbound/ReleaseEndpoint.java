@@ -1,6 +1,7 @@
 package com.processpuzzle.release.adapter.inbound;
 
 import com.processpuzzle.core.logging.LogClass;
+import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.release.api.BaseReleaseApi;
 import com.processpuzzle.release.model.PendingRelease;
 import com.processpuzzle.release.model.Release;
@@ -8,8 +9,6 @@ import com.processpuzzle.release.model.ReleaseRequest;
 import com.processpuzzle.release.usecase.DescribePendingRelease;
 import com.processpuzzle.release.usecase.ListReleases;
 import com.processpuzzle.release.usecase.ReleaseOrganization;
-import jakarta.servlet.http.HttpServletRequest;
-import java.security.Principal;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,15 +23,15 @@ public class ReleaseEndpoint implements BaseReleaseApi {
     private final ReleaseOrganization releaseOrganization;
     private final ListReleases listReleases;
     private final ReleaseMapper mapper;
-    private final HttpServletRequest request;
+    private final CurrentPrincipal currentPrincipal;
 
     public ReleaseEndpoint(DescribePendingRelease describePendingRelease, ReleaseOrganization releaseOrganization,
-                           ListReleases listReleases, ReleaseMapper mapper, HttpServletRequest request) {
+                           ListReleases listReleases, ReleaseMapper mapper, CurrentPrincipal currentPrincipal) {
         this.describePendingRelease = describePendingRelease;
         this.releaseOrganization = releaseOrganization;
         this.listReleases = listReleases;
         this.mapper = mapper;
-        this.request = request;
+        this.currentPrincipal = currentPrincipal;
     }
 
     @Override
@@ -52,8 +51,8 @@ public class ReleaseEndpoint implements BaseReleaseApi {
         return ResponseEntity.ok(listReleases.execute(orgKey).stream().map(mapper::toModel).toList());
     }
 
+    /** Who released, as a person reads it — not the token's subject, which is a UUID. */
     private String principalName() {
-        Principal principal = request.getUserPrincipal();
-        return principal == null ? null : principal.getName();
+        return currentPrincipal.displayName().orElse(null);
     }
 }

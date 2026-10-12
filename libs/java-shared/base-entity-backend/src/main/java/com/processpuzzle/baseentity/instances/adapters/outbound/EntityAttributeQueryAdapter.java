@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.adapters.outbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
@@ -22,8 +23,9 @@ public class EntityAttributeQueryAdapter implements EntityAttributeQuery {
     private final EntityDefinitionLookupPort definitionLookupPort;
 
     @Override
-    public Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode) {
-        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
+    public Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode,
+                                                       Channel channel) {
+        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode, channel)
             .map(definition -> definition.attribute(attributeCode))
             .map(EntityAttributeView::valueKind)
             // valueOf, not a switch: the two enums are kept in step by name, so a kind added to one
@@ -32,13 +34,14 @@ public class EntityAttributeQueryAdapter implements EntityAttributeQuery {
     }
 
     @Override
-    public boolean entityTypeExists(String orgKey, String entityDefinitionCode) {
-        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode).isPresent();
+    public boolean entityTypeExists(String orgKey, String entityDefinitionCode, Channel channel) {
+        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode, channel).isPresent();
     }
 
     @Override
     public Optional<String> titleAttribute(String orgKey, String entityDefinitionCode) {
-        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
+        // A label shown to users of the running application, so the released definition's.
+        return definitionLookupPort.findByCode(orgKey, entityDefinitionCode, Channel.RELEASED)
             .map(EntityDefinitionView::titleAttribute);
     }
 }

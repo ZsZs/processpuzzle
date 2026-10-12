@@ -1,5 +1,5 @@
 import { FormControlType, type AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
-import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { BaseEntityAttrDescriptor, type Selectable } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
@@ -18,7 +18,7 @@ export { ENTITY_ATTRIBUTE_ENTITY_NAME };
  */
 export const ENTITY_ATTRIBUTE_ID_FIELD = 'code';
 
-function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
+function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]): AbstractAttrDescriptor[] {
   const codeAttr = new BaseEntityAttrDescriptor('code', FormControlType.TEXT_BOX, 'Code', undefined, true);
   codeAttr.required = true;
   codeAttr.isHeading = true;
@@ -79,10 +79,12 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   const enumValuesAttr = new BaseEntityAttrDescriptor('enumValues', FormControlType.TAGS, 'Enum Values');
   enumValuesAttr.hideInTable = true;
 
-  // Plain text rather than a dropdown over the tenant's definitions, for the reason the definition's own
-  // `componentParents` gives: the definitions are rows of the list this form was opened from, so a closed
-  // option list would be stale the moment one is added. The backend resolves the code on save.
-  const linkedEntityTypeAttr = new BaseEntityAttrDescriptor('linkedEntityType', FormControlType.TEXT_BOX, 'Linked Entity');
+  // A dropdown over the organization's definitions, by code, when the form is given them — a callback re-read
+  // on every change detection, so a definition saved a moment ago is already on offer. Without one (a test, a
+  // host with no definitions to list) it stays the text box it was; the backend resolves the code on save.
+  const linkedEntityTypeAttr = entityCodes
+    ? new BaseEntityAttrDescriptor('linkedEntityType', FormControlType.DROPDOWN, 'Linked Entity', entityCodes)
+    : new BaseEntityAttrDescriptor('linkedEntityType', FormControlType.TEXT_BOX, 'Linked Entity');
   linkedEntityTypeAttr.placeholder = 'Code of the definition FOREIGN_KEY / EMBEDDED_COMPONENTS points at';
   linkedEntityTypeAttr.hideInTable = true;
 
@@ -119,10 +121,11 @@ function createEntityAttributeAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
-export function createEntityAttributeDescriptor(): BaseEntityDescriptor {
+/** @param entityCodes the codes the Linked Entity dropdown offers; see {@link EntityDefinitionOptions.codes} */
+export function createEntityAttributeDescriptor(entityCodes?: () => Selectable[]): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: ENTITY_ATTRIBUTE_ENTITY_NAME,
-    attrDescriptors: createEntityAttributeAttrDescriptors(),
+    attrDescriptors: createEntityAttributeAttrDescriptors(entityCodes),
     i18nScope: ENTITY_ATTRIBUTE_I18N_SCOPE,
     componentParent: ENTITY_DEFINITION_ENTITY_NAME,
     isEmbedded: true,

@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.adapter.inbound.RuleMapper;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
@@ -30,12 +31,12 @@ class CreateRuleTest {
         repository = mock(RuleDefinitionRepository.class);
         ruleEngineSync = mock(RuleEngineSync.class);
         extendsValidator = mock(RuleExtendsValidator.class);
-        createRule = new CreateRule(repository, ruleEngineSync, extendsValidator, new RuleMapper());
+        createRule = new CreateRule(repository, extendsValidator, new RuleMapper());
     }
 
     @Test
-    void persistsTheMappedRuleAndRegistersItWithTheEngine() {
-        when(repository.existsByOrgKeyAndId("demo", "max-quantity")).thenReturn(false);
+    void persistsTheMappedRuleAsADraftAndLeavesTheEngineAlone() {
+        when(repository.existsByOrgKeyAndIdAndChannel("demo", "max-quantity", Channel.DRAFT)).thenReturn(false);
         when(repository.save(any(RuleDefinition.class))).thenAnswer(call -> call.getArgument(0));
 
         RuleDefinition saved = createRule.execute("demo", input("max-quantity", "parent"));
@@ -45,27 +46,27 @@ class CreateRuleTest {
         assertThat(saved.getContext()).isEqualTo("Order");
         assertThat(saved.getSeverity()).isEqualTo(Severity.WARNING);
         assertThat(saved.getFields()).containsExactly("quantity");
-        verify(ruleEngineSync).registerAfterCommit(saved);
+        // A save writes the draft; the engine holds released rules, and only a release changes it.
+        verifyNoInteractions(ruleEngineSync);
     }
 
     @Test
     void validatesTheExtendsLinkBeforePersisting() {
-        when(repository.existsByOrgKeyAndId("demo", "child")).thenReturn(false);
+        when(repository.existsByOrgKeyAndIdAndChannel("demo", "child", Channel.DRAFT)).thenReturn(false);
         when(repository.save(any(RuleDefinition.class))).thenAnswer(call -> call.getArgument(0));
 
         createRule.execute("demo", input("child", "base"));
 
-        InOrder inOrder = inOrder(extendsValidator, repository, ruleEngineSync);
+        InOrder inOrder = inOrder(extendsValidator, repository);
         inOrder.verify(extendsValidator).validate("demo", "child", "base");
         inOrder.verify(repository).save(any(RuleDefinition.class));
-        inOrder.verify(ruleEngineSync).registerAfterCommit(any(RuleDefinition.class));
     }
 
     @Test
     void refusesAnIdThatTheOrganizationAlreadyUses() {
         // An assigned composite id makes save() a merge, so without this check a create would
         // silently overwrite the existing rule instead of conflicting.
-        when(repository.existsByOrgKeyAndId("demo", "max-quantity")).thenReturn(true);
+        when(repository.existsByOrgKeyAndIdAndChannel("demo", "max-quantity", Channel.DRAFT)).thenReturn(true);
 
         assertThatThrownBy(() -> createRule.execute("demo", input("max-quantity", null)))
                 .isInstanceOf(RuleAlreadyExistsException.class)

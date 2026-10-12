@@ -59,6 +59,21 @@
       "boundary_event": "Evento de borde (interruptor)",
       "non_interrupting_boundary_event": "Evento de borde (no interruptor)",
       "event": "Evento intermedio"
+    },
+    "_tooltips": {
+      "id": "Única dentro de tu organización y parte de la dirección del flujo de trabajo. Corta, en minúsculas y con guiones, p. ej. order-fulfillment-workflow; evita cambiarla después.",
+      "name": "El nombre del flujo de trabajo tal como aparece en las listas y en el panel de tareas, p. ej. Gestión de pedidos.",
+      "description": "Una nota para ti y los demás diseñadores; no influye en la ejecución.",
+      "extends": "Flujo de trabajo padre opcional cuyos roles, artefactos, herramientas y tareas hereda este. Un flujo no puede extenderse a sí mismo, ni directa ni indirectamente.",
+      "activeInstances": "Cuántas ejecuciones de este flujo de trabajo están en curso. Lo establece el sistema.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó el flujo de trabajo por última vez. Lo establece el sistema.",
+      "startEvents": "Las formas en que puede comenzar una ejecución de este flujo, p. ej. al crearse un pedido o cada mañana a las 8. Sin ninguno, cualquiera puede iniciarlo a mano.",
+      "roles": "Los roles que participan en este flujo de trabajo. Todo rol que realice una de sus tareas debe figurar aquí.",
+      "artifacts": "Los productos de trabajo que maneja este flujo, p. ej. un pedido o una factura. Todo artefacto que lean o escriban sus tareas debe figurar aquí.",
+      "tools": "Los sistemas externos a los que puede llamar este flujo. Un paso de tarea solo puede usar una herramienta que figure aquí.",
+      "tasks": "Las tareas de este flujo, cada una con el rol que la realiza aquí y las tareas o eventos que espera. Cada tarea solo puede aparecer una vez.",
+      "events": "Eventos que el flujo envía o espera mientras se ejecuta, p. ej. un mensaje de pago o que pasen dos días. Las tareas pueden esperarlos igual que a otras tareas."
     }
   },
   "workflow_task_assignment": {
@@ -69,20 +84,39 @@
     "joinType": "Tipo de unión",
     "parallel": "Paralela",
     "override": "Sobrescribir",
-    "artifactStates": "Estados de artefactos"
+    "artifactStates": "Estados de artefactos",
+    "_tooltips": {
+      "taskDefinitionId": "La tarea de tu catálogo de tareas que participa en este flujo. Cada tarea solo puede añadirse una vez a un flujo.",
+      "performedBy": "El único rol que realiza la tarea en este flujo. Debe estar entre los Roles del flujo y entre los Roles ejecutores de la tarea.",
+      "dependsOn": "Los ids de las tareas o eventos de este flujo que deben terminar antes de que esta tarea pueda empezar, p. ej. review-order. Vacío significa que puede empezar en cuanto empiece el flujo.",
+      "joinType": "ALL espera a todas las tareas o eventos de «Depende de» (predeterminado); ANY inicia esta tarea tras la primera de ellas. Se ignora si «Depende de» está vacío.",
+      "parallel": "Márcalo para que esta tarea se ejecute a la vez que otras que esperan a las mismas predecesoras. Sin marcar, se ejecutan una tras otra en el orden de la lista.",
+      "override": "Solo para un flujo que extiende otro: márcalo para sustituir el uso de la misma tarea en el flujo padre en lugar de añadirse a él.",
+      "artifactStates": "El estado en que la tarea espera cada entrada y deja cada salida en este flujo, p. ej. el pedido queda CONFIRMED. Se muestra en el modelador; aún no se aplica."
+    }
   },
   "workflow_role_use": {
     "_self": "Uso de rol",
-    "roleDefinitionId": "Rol"
+    "roleDefinitionId": "Rol",
+    "_tooltips": {
+      "roleDefinitionId": "Un rol de tu catálogo de roles que participa en este flujo. Quitarlo aquí solo lo saca del flujo; el rol en sí se conserva."
+    }
   },
   "workflow_artifact_use": {
     "_self": "Uso de artefacto",
     "artifactDefinitionId": "Artefacto",
-    "objectName": "Nombre del objeto"
+    "objectName": "Nombre del objeto",
+    "_tooltips": {
+      "artifactDefinitionId": "Un artefacto de tu catálogo que leen o escriben las tareas de este flujo. Quitarlo aquí solo lo saca del flujo.",
+      "objectName": "Nombre opcional del artefacto en este flujo, mostrado en el modelador como new_order : Order. Solo visual; vacío se dibuja sin nombre."
+    }
   },
   "workflow_tool_use": {
     "_self": "Uso de herramienta",
-    "toolDefinitionId": "Herramienta"
+    "toolDefinitionId": "Herramienta",
+    "_tooltips": {
+      "toolDefinitionId": "Una herramienta de tu catálogo a la que pueden llamar los pasos de las tareas de este flujo. Quitarla aquí solo la saca del flujo."
+    }
   },
   "workflow_start_event": {
     "_self": "Evento de inicio",
@@ -96,12 +130,29 @@
     "timerExpression": "Expresión del temporizador",
     "authorizedRoles": "Roles autorizados",
     "payloadMapping": "Mapeo de carga",
-    "requiredArtifacts": "Artefactos requeridos"
+    "requiredArtifacts": "Artefactos requeridos",
+    "_tooltips": {
+      "id": "Única dentro del flujo, también frente a los ids de sus tareas y eventos, p. ej. order-created.",
+      "name": "Etiqueta opcional que se muestra en el modelador, p. ej. Pedido creado. Vacío muestra el tipo de inicio.",
+      "startType": "Qué inicia el flujo: INPUT_ARTIFACT (existen los artefactos requeridos), TRIGGERING_EVENT (ocurre un evento del catálogo), ROLE_DEFINITION (una persona con un rol autorizado lo inicia a mano) o TIME_BASED_PRECONDITION (un momento o una programación). Solo se aplican los campos del tipo elegido.",
+      "eventType": "Solo TRIGGERING_EVENT: el evento de tu catálogo que inicia una ejecución cuando ocurre, p. ej. OrderCreatedEvent.",
+      "milestoneRef": "Solo TIME_BASED_PRECONDITION: el hito cuya llegada inicia el flujo, p. ej. MILESTONE_REACHED.",
+      "timerType": "Solo TIME_BASED_PRECONDITION: DATE inicia una vez en un momento dado, CYCLE inicia repetidamente según una programación.",
+      "timerExpression": "Cuándo se dispara el temporizador, en ISO 8601: una fecha y hora como 2026-12-24T08:00:00Z para DATE, o una repetición como R/P1D (cada día) para CYCLE.",
+      "preconditionExpression": "Solo TIME_BASED_PRECONDITION: una condición que debe cumplirse cuando llega el hito, p. ej. milestone.status == 'PASSED'. Se guarda, aún no se evalúa.",
+      "authorizedRoles": "Solo ROLE_DEFINITION: los roles cuyos miembros pueden iniciar el flujo a mano. Vacío significa que cualquiera puede.",
+      "payloadMapping": "TRIGGERING_EVENT e INPUT_ARTIFACT: copia datos del evento de inicio en la nueva ejecución. Clave: el nombre con que se guardan, p. ej. orderId; valor: de dónde se leen, p. ej. $.payload.orderId.",
+      "requiredArtifacts": "Solo INPUT_ARTIFACT: los artefactos, opcionalmente en un estado dado, que deben existir antes de que empiece el flujo. Cada uno debe estar entre los Artefactos del flujo."
+    }
   },
   "workflow_required_start_artifact": {
     "_self": "Artefacto requerido",
     "artifactDefinitionId": "Artefacto",
-    "state": "Estado"
+    "state": "Estado",
+    "_tooltips": {
+      "artifactDefinitionId": "Un artefacto que debe existir antes de que empiece el flujo. Debe estar entre los Artefactos del flujo.",
+      "state": "El estado en que debe estar el artefacto, tal como lo nombra su máquina de estados, p. ej. DRAFT. Vacío significa cualquier estado."
+    }
   },
   "workflow_event_use": {
     "_self": "Evento intermedio",
@@ -116,13 +167,32 @@
     "timerExpression": "Expresión del temporizador",
     "attachedTo": "Adjunto a",
     "interrupting": "Interruptor",
-    "payloadMapping": "Mapeo de carga"
+    "payloadMapping": "Mapeo de carga",
+    "_tooltips": {
+      "id": "Única dentro del flujo, también frente a los ids de sus tareas y eventos de inicio, p. ej. invoice-issued. Las tareas la indican en «Depende de».",
+      "name": "Etiqueta opcional que se muestra en el modelador, p. ej. Factura emitida. Vacío muestra el nombre del evento del catálogo.",
+      "direction": "THROW envía el evento en cuanto se alcanza; CATCH espera a que ocurra el evento (o se dispare el temporizador) antes de continuar.",
+      "eventDefinitionId": "El evento de tu catálogo que se envía o se espera. Déjalo vacío para un temporizador; los eventos SYSTEM solo pueden esperarse, nunca enviarse.",
+      "timerType": "Para un CATCH que espera un tiempo en lugar de un evento: DURATION espera un periodo, DATE hasta un momento, CYCLE se repite (solo en un evento de borde no interruptor).",
+      "timerExpression": "El temporizador en ISO 8601: PT2H (dos horas) para DURATION, 2026-10-10T08:00:00Z para DATE, R3/PT1H (tres veces, cada hora) para CYCLE, o una $.variable de la ejecución que lo contenga.",
+      "attachedTo": "Id opcional de una tarea de este flujo, p. ej. issue-invoice. El evento solo espera mientras esa tarea esté activa; debe ser CATCH y no lleva «Depende de».",
+      "interrupting": "Solo para un evento adjunto a una tarea: marcado, el evento cancela esa tarea al dispararse; sin marcar, la tarea sigue en curso.",
+      "dependsOn": "Los ids de las tareas o eventos que deben terminar antes de alcanzar este evento, p. ej. issue-invoice. Vacío significa que se alcanza al iniciar el flujo.",
+      "joinType": "ALL espera a todas las tareas o eventos de «Depende de» (predeterminado); ANY continúa tras la primera de ellas. Se ignora si «Depende de» está vacío.",
+      "correlationKey": "Solo eventos MESSAGE, y obligatoria en ellos: la variable de la ejecución que vincula el mensaje con ella, p. ej. orderId. Un THROW envía su valor; un CATCH espera un mensaje con el mismo valor.",
+      "payloadMapping": "CATCH: copia datos del evento en la ejecución; clave un nombre de variable, valor una ruta como $.payload.amount. THROW: rellena el evento enviado; clave un nombre de atributo, valor una ruta como $.orderId."
+    }
   },
   "workflow_task_artifact_state": {
     "_self": "Estado de artefacto de la tarea",
     "artifactDefinitionId": "Artefacto",
     "inputState": "Estado de entrada",
-    "outputState": "Estado de salida"
+    "outputState": "Estado de salida",
+    "_tooltips": {
+      "artifactDefinitionId": "Una de las entradas o salidas de la tarea. Cada artefacto solo puede figurar una vez por tarea.",
+      "inputState": "Solo para una entrada: el estado en que la tarea espera el artefacto, tal como lo nombra su máquina de estados, p. ej. DRAFT. Vacío significa cualquiera.",
+      "outputState": "Solo para una salida: el estado en que la tarea deja el artefacto, tal como lo nombra su máquina de estados, p. ej. CONFIRMED. Vacío significa sin cambio o sin especificar."
+    }
   },
   "workflow_role_definition": {
     "_self": "Rol",
@@ -138,6 +208,15 @@
     },
     "modeler": {
       "empty": "Todavía no se ha definido ningún rol."
+    },
+    "_tooltips": {
+      "id": "Única dentro de tu organización; los flujos y las tareas se refieren al rol mediante ella. Corta, en minúsculas y con guiones, p. ej. developer; evita cambiarla después.",
+      "name": "El nombre del rol tal como se muestra, p. ej. Administrativo o Desarrollador.",
+      "description": "Qué hace este rol y quién lo ocupa; una nota para ti y los demás diseñadores.",
+      "responsibleFor": "Los artefactos de cuyo resultado es responsable este rol, p. ej. la factura. Solo responsabilidad; lo que una tarea puede leer o escribir se define en la tarea.",
+      "entityRoleId": "Rol de usuario equivalente de tu organización, opcional. Si se indica, solo los usuarios con ese rol pueden recibir tareas de este rol; vacío significa sin comprobación.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó el rol por última vez. Lo establece el sistema."
     }
   },
   "artifact_definition": {
@@ -149,7 +228,17 @@
     "artifactTypeId": "Id de tipo",
     "stateMachineId": "Máquina de estados",
     "version": "Versión",
-    "updatedAt": "Actualizado el"
+    "updatedAt": "Actualizado el",
+    "_tooltips": {
+      "id": "Única dentro de tu organización; las tareas y los flujos se refieren al artefacto mediante ella. Corta, en minúsculas y con guiones, p. ej. order-entity; evita cambiarla después.",
+      "name": "El nombre del artefacto tal como se muestra, p. ej. Pedido o Factura.",
+      "artifactType": "Qué tipo de producto de trabajo es: ENTITY (un registro de una de tus entidades), DOCUMENT (un documento) o WIDGET (un elemento de pantalla).",
+      "description": "Qué es este artefacto y para qué se usa; una nota para ti y los demás diseñadores.",
+      "artifactTypeId": "El elemento concreto que es este artefacto, según el Tipo de artefacto: el nombre de la entidad para ENTITY, del documento para DOCUMENT o del widget para WIDGET, p. ej. order.",
+      "stateMachineId": "Id opcional de la máquina de estados que rige el ciclo de vida de este artefacto, p. ej. order-lifecycle. Sus nombres de estado son los que usan las tareas y los eventos de inicio.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó el artefacto por última vez. Lo establece el sistema."
+    }
   },
   "task_definition": {
     "_self": "Tarea",
@@ -163,7 +252,20 @@
     "updatedAt": "Actualizado el",
     "inputs": "Entradas",
     "outputs": "Salidas",
-    "steps": "Pasos"
+    "steps": "Pasos",
+    "_tooltips": {
+      "id": "Única dentro de tu organización; los flujos añaden la tarea mediante ella. Corta, en minúsculas y con guiones, p. ej. write-spec; evita cambiarla después.",
+      "name": "El nombre de la tarea tal como aparece en el panel de tareas, p. ej. Revisar pedido.",
+      "description": "Qué hay que hacer; se muestra a la persona que trabaja en la tarea.",
+      "performedByRoles": "Los roles capaces de realizar esta tarea; al menos uno. Cada flujo que usa la tarea elige uno de ellos.",
+      "preconditionRuleId": "Id opcional de una regla de negocio que se comprueba antes de que la tarea se active; mientras no se cumpla, la tarea sigue esperando.",
+      "postconditionRuleId": "Id opcional de una regla de negocio que debe cumplirse antes de poder completar la tarea.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó la tarea por última vez. Lo establece el sistema.",
+      "inputs": "Los artefactos que lee esta tarea, p. ej. el pedido. Un flujo que use la tarea debe incluirlos entre sus Artefactos.",
+      "outputs": "Los artefactos que crea o modifica esta tarea, p. ej. la factura. Un flujo que use la tarea debe incluirlos entre sus Artefactos.",
+      "steps": "Los pasos de la tarea, en orden. Un paso de usuario es una guía para la persona; un paso de servicio llama automáticamente a una herramienta."
+    }
   },
   "task_step_definition": {
     "_self": "Paso",
@@ -174,7 +276,17 @@
     "toolDefinitionId": "Herramienta",
     "toolOperation": "Operación",
     "inputMapping": "Mapeo de entrada",
-    "outputMapping": "Mapeo de salida"
+    "outputMapping": "Mapeo de salida",
+    "_tooltips": {
+      "id": "Única dentro de la tarea, p. ej. check-items.",
+      "name": "El nombre del paso tal como lo ve la persona que trabaja en la tarea, p. ej. Revisar artículos.",
+      "description": "Instrucciones para este paso, que se muestran a la persona que trabaja en la tarea.",
+      "stepType": "USER_STEP: algo que una persona hace a mano. SERVICE_STEP: el sistema llama a la Herramienta y la Operación de abajo al completar el paso.",
+      "toolDefinitionId": "Solo SERVICE_STEP: la herramienta a la que llamar. También debe figurar entre las Herramientas de cada flujo que use esta tarea.",
+      "toolOperation": "Solo SERVICE_STEP: el id de una de las operaciones de la herramienta elegida, p. ej. create-issue.",
+      "inputMapping": "Solo SERVICE_STEP: los valores que se envían a la herramienta. Clave: el nombre del parámetro, p. ej. summary; valor: una expresión sobre los datos de la ejecución, p. ej. order.title.",
+      "outputMapping": "Solo SERVICE_STEP: qué conservar de la respuesta de la herramienta. Clave: el nombre con que se guarda, p. ej. issueKey; valor: dónde leerlo en la respuesta, p. ej. $.key."
+    }
   },
   "tool_definition": {
     "_self": "Herramienta",
@@ -186,7 +298,18 @@
     "secretRef": "Referencia del secreto",
     "version": "Versión",
     "createdAt": "Creado el",
-    "operations": "Operaciones"
+    "operations": "Operaciones",
+    "_tooltips": {
+      "id": "Única dentro de tu organización; los flujos y los pasos de tarea se refieren a la herramienta mediante ella. Corta, en minúsculas y con guiones, p. ej. jira; evita cambiarla después.",
+      "name": "El nombre de la herramienta tal como se muestra, p. ej. Jira.",
+      "baseUrl": "La dirección a la que se añade la ruta de cada operación, sin espacios, p. ej. https://example.atlassian.net.",
+      "description": "Qué es esta herramienta y para qué la usan los flujos; una nota para ti y los demás diseñadores.",
+      "type": "Cómo se autentica el sistema ante la herramienta: NONE, BEARER_TOKEN, BASIC (usuario y contraseña) o API_KEY.",
+      "secretRef": "Dónde se guarda la credencial: el nombre de una variable de entorno o una ruta de Vault, p. ej. JIRA_TOKEN. Nunca introduzcas la contraseña o el token.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "createdAt": "Cuándo se creó la herramienta. Lo establece el sistema.",
+      "operations": "Las llamadas que ofrece esta herramienta, p. ej. create-issue. Los pasos de tarea eligen una por su id."
+    }
   },
   "tool_operation": {
     "_self": "Operación",
@@ -195,7 +318,15 @@
     "path": "Ruta",
     "description": "Descripción",
     "payloadTemplate": "Plantilla de payload",
-    "expectedStatusCodes": "Códigos de estado esperados"
+    "expectedStatusCodes": "Códigos de estado esperados",
+    "_tooltips": {
+      "id": "Única dentro de la herramienta; los pasos de tarea indican la operación mediante ella, p. ej. create-issue.",
+      "method": "El método HTTP de la llamada: GET lee, POST crea, PUT o PATCH modifica, DELETE elimina.",
+      "path": "La dirección de la llamada relativa a la URL base de la herramienta, p. ej. /rest/api/3/issue.",
+      "description": "Qué hace esta operación; una nota para ti y los demás diseñadores.",
+      "payloadTemplate": "Cuerpo JSON opcional de la petición. Los marcadores ${...} se rellenan con los datos de la ejecución, p. ej. {\"summary\": \"${order.title}\"}.",
+      "expectedStatusCodes": "Los códigos de estado HTTP que cuentan como éxito, p. ej. 201; cualquier otra respuesta hace fallar el paso. Vacío significa 200, 201 y 204."
+    }
   },
   "workflow_instance": {
     "_self": "Instancia de flujo de trabajo",

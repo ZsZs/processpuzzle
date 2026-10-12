@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
@@ -47,7 +48,7 @@ class EntityDefinitionImportParticipantTest {
 
     @BeforeEach
     void setUp() {
-        participant = new EntityDefinitionImportParticipant(importDefinitions, findByCodes, new EntityDefinitionMapper());
+        participant = new EntityDefinitionImportParticipant(importDefinitions, findByCodes, new EntityDefinitionFingerprint(new EntityDefinitionMapper()));
     }
 
     @Test
@@ -116,7 +117,7 @@ class EntityDefinitionImportParticipantTest {
     void malformedYamlThroughTheRealImportIsRejectedNotThrown() {
         ImportEntityDefinitions realImport = new ImportEntityDefinitions(null, null, new EntityDefinitionMapper(), null, null);
         EntityDefinitionImportParticipant real =
-                new EntityDefinitionImportParticipant(realImport, findByCodes, new EntityDefinitionMapper());
+                new EntityDefinitionImportParticipant(realImport, findByCodes, new EntityDefinitionFingerprint(new EntityDefinitionMapper()));
 
         ParticipantResult result = real.apply(ORG, FILE, bytes("entityDefinitions: [ unclosed"));
 
@@ -135,7 +136,7 @@ class EntityDefinitionImportParticipantTest {
         sameButRestored.setCreatedBy("someone-else");
         sameButRestored.getAttributes().getFirst().setId(UUID.randomUUID());
 
-        when(findByCodes.find(ORG, Set.of("partner"))).thenReturn(List.of(stored), List.of(sameButRestored));
+        when(findByCodes.find(ORG, Set.of("partner"), Channel.DRAFT)).thenReturn(List.of(stored), List.of(sameButRestored));
 
         String first = participant.fingerprints(ORG, Set.of("partner")).get("partner");
         String second = participant.fingerprints(ORG, Set.of("partner")).get("partner");
@@ -146,7 +147,7 @@ class EntityDefinitionImportParticipantTest {
 
     @Test
     void aChangedNameChangesTheFingerprint() {
-        when(findByCodes.find(ORG, Set.of("partner")))
+        when(findByCodes.find(ORG, Set.of("partner"), Channel.DRAFT))
                 .thenReturn(List.of(definition("partner", "Partner")), List.of(definition("partner", "Business partner")));
 
         String first = participant.fingerprints(ORG, Set.of("partner")).get("partner");
@@ -157,7 +158,7 @@ class EntityDefinitionImportParticipantTest {
 
     @Test
     void fingerprintsAreKeyedByCodeAndOmitUnknownCodes() {
-        when(findByCodes.find(ORG, Set.of("partner", "ghost"))).thenReturn(List.of(definition("partner", "Partner")));
+        when(findByCodes.find(ORG, Set.of("partner", "ghost"), Channel.DRAFT)).thenReturn(List.of(definition("partner", "Partner")));
 
         Map<String, String> fingerprints = participant.fingerprints(ORG, Set.of("partner", "ghost"));
 

@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -58,7 +59,7 @@ class GetEntityObjectStateTest {
                 .transitions(transitions)
                 .build();
 
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(definition));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.RELEASED)).thenReturn(Optional.of(definition));
     }
 
     @Test
@@ -92,7 +93,7 @@ class GetEntityObjectStateTest {
 
     @Test
     void execute_shouldThrowWhenDefinitionNotFound() {
-        when(repository.findByOrgKeyAndEntityName(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "unknown", Channel.RELEASED)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> usecase.execute(ORG, "unknown", OBJECT_ID))
                 .isInstanceOf(StateMachineNotFoundException.class);

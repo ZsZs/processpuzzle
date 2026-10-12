@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.api.StateTransitionResult;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.usecase.EntityObjectStateProjection;
@@ -133,15 +134,15 @@ class StateOperationApiAdapterTest {
 
     @Test
     void stateAttributeKey_namesTheGoverningMachinesAttribute() {
-        when(findStateMachineDefinition.execute(ORG, ENTITY)).thenReturn(machineWithStateAttribute("status"));
+        when(findStateMachineDefinition.execute(ORG, ENTITY, Channel.RELEASED)).thenReturn(machineWithStateAttribute("status"));
 
         assertThat(adapter.stateAttributeKey(ORG, ENTITY)).contains("status");
     }
 
     @Test
     void stateAttributeKey_isEmptyForAnUngovernedEntityOrABlankKey() {
-        when(findStateMachineDefinition.execute(ORG, ENTITY)).thenThrow(new StateMachineNotFoundException(ORG, ENTITY));
-        when(findStateMachineDefinition.execute(ORG, "invoice")).thenReturn(machineWithStateAttribute(" "));
+        when(findStateMachineDefinition.execute(ORG, ENTITY, Channel.RELEASED)).thenThrow(new StateMachineNotFoundException(ORG, ENTITY));
+        when(findStateMachineDefinition.execute(ORG, "invoice", Channel.RELEASED)).thenReturn(machineWithStateAttribute(" "));
 
         assertThat(adapter.stateAttributeKey(ORG, ENTITY)).isEmpty();
         assertThat(adapter.stateAttributeKey(ORG, "invoice")).isEmpty();

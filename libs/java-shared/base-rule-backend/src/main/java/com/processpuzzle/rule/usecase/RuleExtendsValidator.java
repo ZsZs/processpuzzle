@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import org.springframework.stereotype.Component;
@@ -28,7 +29,7 @@ public class RuleExtendsValidator {
             throw new IllegalArgumentException("Rule cannot extend itself: " + ownId);
         }
 
-        RuleDefinition parent = repository.findByOrgKeyAndId(orgKey, extendsRuleId)
+        RuleDefinition parent = repository.findByOrgKeyAndIdAndChannel(orgKey, extendsRuleId, Channel.DRAFT)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Rule '" + ownId + "' extends unknown rule '" + extendsRuleId + "'"));
 
@@ -44,7 +45,7 @@ public class RuleExtendsValidator {
                 throw new IllegalStateException(
                         "Extends chain too deep (or already cyclic) starting at '" + cursor + "'");
             }
-            cursor = repository.findByOrgKeyAndId(orgKey, cursor)
+            cursor = repository.findByOrgKeyAndIdAndChannel(orgKey, cursor, Channel.DRAFT)
                     .map(RuleDefinition::getExtendsRuleId)
                     .orElse(null);
         }

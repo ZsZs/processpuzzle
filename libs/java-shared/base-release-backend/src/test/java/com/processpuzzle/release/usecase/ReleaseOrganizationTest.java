@@ -14,6 +14,7 @@ import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.release.domain.OrgReleaseItem;
+import com.processpuzzle.release.domain.OrgReleaseContentRepository;
 import com.processpuzzle.release.domain.OrgReleaseItemRepository;
 import com.processpuzzle.release.domain.OrgReleaseRepository;
 import java.time.Clock;
@@ -60,6 +61,8 @@ class ReleaseOrganizationTest {
     @Autowired
     private OrgReleaseItemRepository itemRepository;
     @Autowired
+    private OrgReleaseContentRepository contentRepository;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private final List<String> calls = new ArrayList<>();
@@ -69,9 +72,11 @@ class ReleaseOrganizationTest {
     private ReleaseOrganization releaseOrganization;
     private DescribePendingRelease describePendingRelease;
     private ListReleases listReleases;
+    private ReleaseHistory releaseHistory;
 
     @BeforeEach
     void setUp() {
+        contentRepository.deleteAll();
         itemRepository.deleteAll();
         releaseRepository.deleteAll();
         policy = mock(OrganizationAccessPolicy.class);
@@ -85,7 +90,8 @@ class ReleaseOrganizationTest {
         ReleaseParticipants all = ReleaseParticipants.of(List.of(participants));
         ReleasePlanner planner = new ReleasePlanner(all);
         releaseOrganization = new ReleaseOrganization(guard, planner, all, releaseRepository, itemRepository,
-                transactionManager, provider(Clock.fixed(NOW, ZoneOffset.UTC)));
+                contentRepository, transactionManager, provider(Clock.fixed(NOW, ZoneOffset.UTC)));
+        releaseHistory = new ReleaseHistory(itemRepository, contentRepository);
         describePendingRelease = new DescribePendingRelease(guard, planner);
         listReleases = new ListReleases(guard, releaseRepository, itemRepository);
     }
@@ -105,6 +111,35 @@ class ReleaseOrganizationTest {
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("entity", "Claim"), org.assertj.core.groups.Tuple.tuple("app", "app"));
         assertThat(released.items().getFirst().getContentHash())
                 .isEqualTo(ReleaseOrganization.sha256("{\"key\":\"Claim\"}")).hasSize(64);
+    }
+
+    /**
+     * A release records only what it changed; what the organization ran at release N is rebuilt from the newest
+     * item of each definition up to N, the removed ones left out.
+     */
+    @Test
+    void keepsWhatEachReleaseCarried_soTheStateAtAnyReleaseCanBeReadBack() {
+        entities.pending.add(new PendingChange("entity", "Claim", PendingChange.Change.ADDED, "{\"v\":1}"));
+        entities.pending.add(new PendingChange("entity", "Order", PendingChange.Change.ADDED, "{\"order\":1}"));
+        releaseOrganization.execute(ORG, false, null);
+
+        entities.pending.clear();
+        entities.pending.add(new PendingChange("entity", "Claim", PendingChange.Change.CHANGED, "{\"v\":2}"));
+        entities.pending.add(new PendingChange("entity", "Order", PendingChange.Change.REMOVED, null));
+        entities.pending.add(new PendingChange("entity", "Invoice", PendingChange.Change.ADDED, "{\"invoice\":1}"));
+        releaseOrganization.execute(ORG, false, null);
+
+        assertThat(releaseHistory.contentAt(ORG, 1))
+                .extracting(ReleaseHistory.ReleasedDefinition::key, ReleaseHistory.ReleasedDefinition::content)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("Claim", "{\"v\":1}"),
+                        org.assertj.core.groups.Tuple.tuple("Order", "{\"order\":1}"));
+        assertThat(releaseHistory.contentAt(ORG, 2))
+                .extracting(ReleaseHistory.ReleasedDefinition::key, ReleaseHistory.ReleasedDefinition::content,
+                        ReleaseHistory.ReleasedDefinition::releasedIn)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("Claim", "{\"v\":2}", 2L),
+                        org.assertj.core.groups.Tuple.tuple("Invoice", "{\"invoice\":1}", 2L));
+        assertThat(releaseHistory.contentAt(ORG, 0)).isEmpty();
+        assertThat(releaseHistory.contentAt("other-org", 2)).isEmpty();
     }
 
     @Test

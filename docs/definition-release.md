@@ -62,6 +62,13 @@ Tables: `org_releases (org_key, release_number, released_at, released_by)` and
 The hash is SHA-256 of the definition's canonical JSON (`CanonicalJson`). A concurrent release fails on
 the unique `(org_key, release_number)`.
 
+**History.** `org_release_contents (item_id, org_key, content)` keeps that canonical JSON itself, one row
+per item — a table of its own, so listing releases does not read every definition's content. A release
+records only what it changed, so what an organization ran at release *n* is the newest item of each
+definition up to *n*, removals left out: `ReleaseHistory.contentAt(orgKey, n)`. Not exposed yet; it is
+what a diff between releases, a return to one, or running work bound to its release will stand on.
+Only the latest release is what the runtime reads — the `RELEASED` rows.
+
 The contract is `base-release-api.yaml`, under `/organizations/{orgKey}/releases`:
 
 | Operation | |
@@ -79,7 +86,9 @@ erases both tables with the tenant.
 | --- | --- | --- | --- |
 | app | `AppDefinition` keeps `draftGraph` and `publishedGraph` on one row; releasing is `publish()` | `AppReleaseParticipant` (base-app) | step 1 |
 | module | `app_modules.channel`, primary key `(org_key, module_key, channel)` | `ModuleReleaseParticipant` (base-app) | step 1 |
-| entity, state, rule | `channel` on the definition tables and their children | step 2 | |
+| entity | `base_entity_definition.channel`, unique `(org_key, code, channel)`; attributes follow their definition | `EntityDefinitionReleaseParticipant` (base-entity) | step 2 |
+| state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
+| rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
 | workflow, catalogue, event | `channel` on the definition tables | step 3 | |
 | document | `published_documents`, per translation | step 4 | |
 
@@ -111,11 +120,24 @@ loaders: rows become `DRAFT`, each gets a `RELEASED` copy, and the primary key w
 organization therefore runs exactly as before. Idempotent: a table whose key already includes `channel`
 is left alone. Flyway stays deferred to the production move.
 
+**Entity definitions** have a generated UUID key with their attributes hanging off it, so their copy is made
+in Java (`BaseEntityDefinition.releasedCopyOf`, the same one a release makes) by
+`EntityDefinitionChannelBackfill`. It drops the old unique key on `(org_key, code)`, which would refuse every
+copy and which Hibernate never drops; that key's presence is also what marks the table as not yet migrated,
+so a draft created later is never released by a restart. A release updates the released row in place,
+matching attributes by code — never clear-and-re-add, because Hibernate flushes inserts before orphan
+deletes. `DefaultEntityLoader` releases what it seeds at once, since its sample objects are validated
+against the released definition.
+
 ### Compatibility checks (`check`), from step 2
 
-- **Entity.** Error: a definition removed while objects exist, or a new required attribute without a
-  default while objects exist. Warning: an attribute removed.
-- **State.** Error: a state removed while objects are in it.
+- **Entity** (only while objects of the type exist). Error: the definition removed; a required attribute
+  added without a default; an attribute's value kind or multiplicity changed; a switch between embedded
+  and stand-alone. Warning: an attribute removed; an attribute that becomes required. A rename is a
+  removal and an addition. Entity objects are not migrated between releases.
+- **State** (only while objects of the type exist). Error: a state removed while objects are in it; a changed
+  state attribute. Warning: the machine removed — its objects keep their state, ungoverned. A moved layout is
+  pending but never a problem. A renamed state is a removal and an addition.
 - **Workflow.** Error: a workflow removed while instances run, or a task removed while an active task
   instance uses it.
 - **References.** App routes → entity / document / module; rule context → entity; state machine →
@@ -126,16 +148,46 @@ is left alone. Flyway stays deferred to the production move.
 - **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
   problems (errors block, warnings need confirming), Publish, and the release history.
 - **The live application** renders the published layout and its inline modules.
-- From step 2: one `DEFINITION_REVISION` token (`'released'` at the root) read by the run-time caches —
-  entity registries and screen resolver, governed entities, the rule engine — re-provided as `'draft'`
-  on the designer's route by `provideDraftDefinitionReaders()`, so the Preview reads drafts through its
-  own instances. A `READ_ONLY_ENTITY_SCREENS` token there disables create, save and delete.
+- **Revision of the reads (step 2).** `DEFINITION_REVISION` (`@processpuzzle/util`) answers, per read,
+  `draft` or `released`. Definition readers mark their GETs with `definitionRead()` — entity definitions,
+  state machines, diagrams, rules (via `BaseEntityRestService.readContext()`) — and the opt-in
+  `definitionRevisionInterceptor` adds `revision=<answer>` to them.
+  - **`draft` unless the host says otherwise**: that is what the endpoints serve without the parameter,
+    so a host that has not wired it up reads, and saves back, the drafts as before.
+  - The custom application answers `draft` on its designer route and `released` elsewhere, and does a
+    **full page load** when crossing between them. The root caches (entity registries, governed
+    entities, the rule engine) are then never filled from both revisions; resetting them in place is
+    not reliable, since the dynamic screens' injection tokens are cached at the root too.
+- **Read-only Preview.** `ENTITY_PREVIEW_READ_ONLY` (`@processpuzzle/base-entity`), provided `true` by a
+  host showing drafts, makes `EntityPreviewMode` disable New, Save and Delete on the screens of
+  definition-built entity types — they show live objects through draft definitions. The designer's own,
+  compiled screens stay editable.
 
-## Starters and seeding (step 4)
+## Starters and seeding
 
-A starter import writes drafts and then releases them: a starter is a vetted set and should work out of
-the box (`ReleaseOrganization.provision`). A blank seed stays unreleased, which shows the "not published
-yet" page.
+A starter import writes drafts. **Sign-up seeding** (the custom backend's `SeedOrganization`) releases them
+right after installing, in the same transaction — a starter is a vetted set and should work out of the box
+(`ReleaseOrganization.provision`, which skips the design-rights check). **A designer installing a starter**
+gets drafts like any other edit, and releases them from the Release section. A blank seed stays
+unreleased, which shows the "not published yet" page.
+
+**Rules.** `EvaluateObject` — the rule endpoint, state guards, workflow conditions — reads the released rules.
+The engine's in-memory registry holds released rules only: a designer's save no longer touches it, and
+`RuleReleaser` registers or unregisters after a release commits. A rule's reference is the rule it `extends`;
+rules hold no data, so a release checks nothing else about them. `RuleChannelBackfill` drops the fields' old
+foreign key first — the database refuses to drop the primary key it depends on — and adds the fields'
+`channel` column itself, since `ddl-auto` cannot add it `not null` to a table with rows. `SampleRuleLoader`
+releases the rules its file wrote.
+
+**Run-time readers of state machines** — firing a transition, an object's state, starting the machine of a new
+object, the startup consistency check, and `StateOperationApi` — read the released machine. `DefaultStateImporter`
+releases the machines its file wrote, and only those, through `StateMachineReleaser`.
+
+**Run-time readers of entity definitions** — object create and update, payload validation, RSQL paths,
+workflow labels, the AI subject directory — read the released row through `EntityDefinitionLookupPort`.
+`EntityAttributeQuery` answers about the released row unless asked for a `Channel`: base-state's
+`StateMachineTopologyValidator` checks a state machine draft against the entity type's draft, which it will
+be released with.
 
 ## Delivery
 

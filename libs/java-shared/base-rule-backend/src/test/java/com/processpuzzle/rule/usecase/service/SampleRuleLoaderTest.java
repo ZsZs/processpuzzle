@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.processpuzzle.rule.usecase.ImportOutcome;
 import com.processpuzzle.rule.usecase.ImportRules;
+import com.processpuzzle.rule.usecase.RuleReleaser;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +53,7 @@ class SampleRuleLoaderTest {
     void setUp() {
         importRules = mock(ImportRules.class);
         resourceResolver = mock(ResourcePatternResolver.class);
-        loader = new SampleRuleLoader(importRules, resourceResolver);
+        loader = new SampleRuleLoader(importRules, resourceResolver, mock(RuleReleaser.class));
     }
 
     @Test

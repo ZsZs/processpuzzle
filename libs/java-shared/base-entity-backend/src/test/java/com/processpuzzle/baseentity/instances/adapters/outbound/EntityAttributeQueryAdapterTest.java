@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.adapters.outbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
@@ -35,15 +36,27 @@ class EntityAttributeQueryAdapterTest {
 
     @Test
     void attributeKind_declaredAttribute_isMapped() {
-        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("status", ValueKindView.ENUM)))));
 
         assertThat(adapter.attributeKind(ORG, "order", "status")).contains(EntityAttributeKind.ENUM);
     }
 
+    /** A module checking a draft of its own — base-state's validator — asks about the entity type's draft. */
+    @Test
+    void askingAboutTheDraftReadsTheDraft_notTheReleasedRow() {
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.DRAFT)).thenReturn(Optional.of(
+            new EntityDefinitionView("order", false, List.of(attribute("status", ValueKindView.ENUM)))));
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.empty());
+
+        assertThat(adapter.attributeKind(ORG, "order", "status", Channel.DRAFT)).contains(EntityAttributeKind.ENUM);
+        assertThat(adapter.entityTypeExists(ORG, "order", Channel.DRAFT)).isTrue();
+        assertThat(adapter.entityTypeExists(ORG, "order")).isFalse();
+    }
+
     @Test
     void attributeKind_unknownAttribute_isEmpty() {
-        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("status", ValueKindView.ENUM)))));
 
         assertThat(adapter.attributeKind(ORG, "order", "stauts")).isEmpty();
@@ -51,9 +64,9 @@ class EntityAttributeQueryAdapterTest {
 
     @Test
     void titleAttribute_isTheDefinitionsLinkToDetailsAttribute() {
-        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("orderNumber", ValueKindView.TEXT)), "orderNumber")));
-        when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "nope", Channel.RELEASED)).thenReturn(Optional.empty());
 
         assertThat(adapter.titleAttribute(ORG, "order")).contains("orderNumber");
         assertThat(adapter.titleAttribute(ORG, "nope")).isEmpty();
@@ -61,7 +74,7 @@ class EntityAttributeQueryAdapterTest {
 
     @Test
     void attributeKind_unknownEntityType_isEmpty() {
-        when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "nope", Channel.RELEASED)).thenReturn(Optional.empty());
 
         assertThat(adapter.attributeKind(ORG, "nope", "status")).isEmpty();
     }
@@ -73,7 +86,7 @@ class EntityAttributeQueryAdapterTest {
     @ParameterizedTest
     @EnumSource(ValueKindView.class)
     void attributeKind_everyValueKind_hasACounterpart(ValueKindView kind) {
-        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of(attribute("a", kind)))));
 
         assertThat(adapter.attributeKind(ORG, "order", "a"))
@@ -82,9 +95,9 @@ class EntityAttributeQueryAdapterTest {
 
     @Test
     void entityTypeExists_reflectsTheLookup() {
-        when(definitionLookupPort.findByCode(ORG, "order")).thenReturn(Optional.of(
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.of(
             new EntityDefinitionView("order", false, List.of())));
-        when(definitionLookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByCode(ORG, "nope", Channel.RELEASED)).thenReturn(Optional.empty());
 
         assertThat(adapter.entityTypeExists(ORG, "order")).isTrue();
         assertThat(adapter.entityTypeExists(ORG, "nope")).isFalse();

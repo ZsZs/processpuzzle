@@ -16,7 +16,25 @@
     "defaultValue": "Valor predeterminado",
     "enumValues": "Valores de enumeración",
     "dateStyle": "Estilo de fecha",
-    "timeStyle": "Estilo de hora"
+    "timeStyle": "Estilo de hora",
+    "_tooltips": {
+      "code": "Clave con la que se guarda el valor, única dentro del tipo de entidad, p. ej. orderNumber. No la cambie una vez que existan registros.",
+      "name": "La etiqueta del campo tal como la ven los usuarios en formularios y columnas de lista, p. ej. Número de pedido.",
+      "valueKind": "Qué tipo de valor contiene el campo: texto, número, sí/no, fecha, fecha y hora, una opción de una lista (ENUM) o una referencia a otro registro. Determina cómo se validan y comparan los valores.",
+      "formControlType": "Con qué control rellenan los usuarios el campo, p. ej. TEXT_BOX, TEXTAREA, DROPDOWN o CHECKBOX. Elija uno acorde al tipo de valor.",
+      "displayOrder": "Posición del campo en el formulario y de su columna en la lista; los números menores van primero, p. ej. 10, 20, 30.",
+      "multiplicity": "Cuántos valores admite el campo: 0..1 como máximo uno, 0..n / 1..n cualquier cantidad (al menos uno con 1..), 0..x / 1..x hasta Máx. ocurrencias. Déjelo vacío para un único valor.",
+      "maxOccurs": "Límite superior del número de valores, p. ej. 5. Solo se usa con las multiplicidades 0..x y 1..x.",
+      "required": "Si los usuarios deben rellenar el campo antes de poder guardar el registro.",
+      "indexed": "Márquelo en los campos por los que se busca o filtra a menudo, p. ej. un número de cliente; agiliza esas consultas.",
+      "isLinkToDetails": "Márquelo en el campo que nombra el registro, p. ej. el número de pedido: abre el registro desde la lista y encabeza su formulario. Como máximo un campo por tipo de entidad.",
+      "autosizeColumn": "Márquelo para que la columna del campo en la lista sea solo tan ancha como su contenido, p. ej. para códigos cortos o indicadores.",
+      "enumValues": "Para el tipo de valor ENUM: las opciones entre las que eligen los usuarios, una por chip, p. ej. NEW, PAID, SHIPPED.",
+      "linkedEntityType": "Para campos de referencia (FOREIGN_KEY) y filas incrustadas (EMBEDDED_COMPONENTS): el código del tipo de entidad al que apuntan, p. ej. customer.",
+      "defaultValue": "Valor que aparece ya rellenado en los registros nuevos, p. ej. NEW o 1. Déjelo vacío si no hay ninguno.",
+      "dateStyle": "Para campos DATE y DATE_TIME: cómo se muestra la fecha, de short (31/12/26) a full (jueves, 31 de diciembre de 2026). Vacío usa el valor predeterminado.",
+      "timeStyle": "Para campos DATE_TIME: cómo se muestra la hora, de short (14:30) a long (con segundos y zona horaria). Vacío usa el valor predeterminado."
+    }
   },
   "entity_definition": {
     "_self": "Definición de entidad",
@@ -28,7 +46,18 @@
     "componentParents": "Componentes padre",
     "attributes": "Atributos",
     "version": "Versión",
-    "updatedAt": "Actualizado el"
+    "updatedAt": "Actualizado el",
+    "_tooltips": {
+      "code": "Clave única del tipo de entidad dentro de su organización, usada en las direcciones. Corta, en minúsculas y apta para URL, p. ej. order; evite cambiarla después.",
+      "name": "El nombre de entidad con el que las páginas, rutas y menús de la aplicación se refieren a este tipo, p. ej. Order.",
+      "description": "Una nota para usted y los demás diseñadores sobre la finalidad de este tipo de entidad; los usuarios no la ven.",
+      "status": "DRAFT mientras aún diseña el tipo, ACTIVE para mostrarlo en la aplicación, DEPRECATED para retirarlo. Solo se muestran los tipos ACTIVE.",
+      "isEmbedded": "Márquelo cuando los registros de este tipo solo existan dentro de otro registro, p. ej. las líneas de un pedido. Indique entonces también el padre en Componentes padre.",
+      "componentParents": "Para un tipo incrustado: los códigos de los tipos de entidad cuyos registros lo contienen, p. ej. order. Obligatorio si Incrustada está marcado.",
+      "attributes": "Los campos del tipo de entidad, una fila por campo. Se guardan junto con la definición.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema."
+    }
   },
   "artifact": {
     "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo.",

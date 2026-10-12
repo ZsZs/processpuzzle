@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -25,24 +26,25 @@ class DeleteRuleTest {
     void setUp() {
         repository = mock(RuleDefinitionRepository.class);
         ruleEngineSync = mock(RuleEngineSync.class);
-        deleteRule = new DeleteRule(repository, ruleEngineSync);
+        deleteRule = new DeleteRule(repository);
     }
 
     @Test
-    void deletesTheRowAndUnregistersTheCompiledRule() {
+    void deletesTheDraftAndLeavesTheReleasedRuleRunning() {
         RuleDefinition existing = rule("base", null);
-        when(repository.findByOrgKeyAndId("demo", "base")).thenReturn(Optional.of(existing));
-        when(repository.findByOrgKeyAndExtendsRuleId("demo", "base")).thenReturn(List.of());
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "base", Channel.DRAFT)).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndExtendsRuleIdAndChannel("demo", "base", Channel.DRAFT)).thenReturn(List.of());
 
         deleteRule.execute("demo", "base");
 
         verify(repository).delete(existing);
-        verify(ruleEngineSync).unregisterAfterCommit("demo", "base");
+        // A save writes the draft; the engine holds released rules, and only a release changes it.
+        verifyNoInteractions(ruleEngineSync);
     }
 
     @Test
     void failsWhenTheOrganizationHasNoSuchRule() {
-        when(repository.findByOrgKeyAndId("demo", "missing")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "missing", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> deleteRule.execute("demo", "missing"))
                 .isInstanceOf(RuleNotFoundException.class)
@@ -54,8 +56,8 @@ class DeleteRuleTest {
 
     @Test
     void refusesWhileDependentsStillExtendTheRule() {
-        when(repository.findByOrgKeyAndId("demo", "base")).thenReturn(Optional.of(rule("base", null)));
-        when(repository.findByOrgKeyAndExtendsRuleId("demo", "base"))
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "base", Channel.DRAFT)).thenReturn(Optional.of(rule("base", null)));
+        when(repository.findByOrgKeyAndExtendsRuleIdAndChannel("demo", "base", Channel.DRAFT))
                 .thenReturn(List.of(rule("child-a", "base"), rule("child-b", "base")));
 
         assertThatThrownBy(() -> deleteRule.execute("demo", "base"))

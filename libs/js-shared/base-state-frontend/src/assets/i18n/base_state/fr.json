@@ -27,6 +27,17 @@
         "polyline": "Droite",
         "bezier": "Courbe"
       }
+    },
+    "_tooltips": {
+      "entityName": "Le type d'entité dont cette machine à états pilote les enregistrements, p. ex. order. Un type d'entité n'a qu'une seule machine à états, et la valeur ne peut plus être modifiée après le premier enregistrement.",
+      "name": "Un nom lisible pour la machine à états, p. ex. Cycle de vie de la commande.",
+      "description": "Une note pour vous et les autres concepteurs ; les utilisateurs ne la voient pas.",
+      "stateAttributeKey": "L'attribut de l'entité qui contient l'état actuel de l'enregistrement, p. ex. status. Il doit exister sur l'entité et être de type texte ou énumération ; seule la machine à états l'écrit.",
+      "initialStateKey": "La clé de l'état dans lequel démarre chaque nouvel enregistrement, p. ex. NEW. Elle doit correspondre à la clé de l'un des états ci-dessous.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "updatedAt": "Date du dernier enregistrement de la machine à états. Défini par le système.",
+      "states": "Les états dans lesquels un enregistrement peut se trouver, une ligne par état, p. ex. NEW, CONFIRMED, SHIPPED. Au moins un est requis.",
+      "transitions": "Les passages autorisés d'un état à un autre, une ligne par passage, p. ex. approve : NEW → CONFIRMED. Un enregistrement ne peut changer d'état que par une transition listée ici."
     }
   },
   "state_machine_state": {
@@ -37,7 +48,15 @@
     "initial": "État initial",
     "isFinal": "Terminal",
     "isLocked": "Verrouillé",
-    "metadata": "Métadonnées"
+    "metadata": "Métadonnées",
+    "_tooltips": {
+      "key": "La valeur exacte enregistrée dans l'attribut d'état de l'enregistrement tant qu'il se trouve dans cet état, p. ex. CONFIRMED. Unique dans la machine à états ; les transitions désignent l'état par elle.",
+      "name": "Le nom de l'état tel que les utilisateurs le voient, p. ex. Confirmé.",
+      "description": "Ce que cet état signifie pour l'enregistrement, en guise de note pour vous et les autres concepteurs.",
+      "isFinal": "Cochez-la pour un état final, p. ex. CLOSED ou CANCELLED : aucune transition ne peut en sortir.",
+      "isLocked": "Cochez-la pour figer les enregistrements dans cet état : leurs autres champs ne sont plus modifiables, seul l'état lui-même peut encore changer.",
+      "metadata": "Indications d'affichage facultatives pour dessiner l'état dans le modeleur d'états, sous forme de paires nom-valeur, p. ex. color = #2e7d32."
+    }
   },
   "state_machine_transition": {
     "_self": "Transition",
@@ -47,17 +66,34 @@
     "targetStateKey": "État cible",
     "triggerKey": "Déclencheur",
     "guards": "Gardes",
-    "actions": "Actions"
+    "actions": "Actions",
+    "_tooltips": {
+      "key": "Identifie la transition, unique dans la machine à états, p. ex. confirm-order.",
+      "name": "Nom lisible facultatif de la transition, p. ex. Confirmer la commande.",
+      "sourceStateKey": "La clé de l'état dans lequel doit se trouver l'enregistrement pour que cette transition soit proposée, p. ex. NEW. Ce ne peut pas être un état terminal.",
+      "targetStateKey": "La clé de l'état dans lequel passe l'enregistrement, p. ex. CONFIRMED.",
+      "triggerKey": "L'action qui déclenche la transition, p. ex. approve. Un même déclencheur ne peut servir qu'une fois par état source, mais depuis un autre état il peut mener ailleurs.",
+      "guards": "Conditions vérifiées dans l'ordre avant que la transition puisse avoir lieu ; la première qui échoue la bloque. Laissez vide si la transition est toujours autorisée.",
+      "actions": "Étapes exécutées dans l'ordre une fois toutes les gardes passées, p. ex. l'envoi d'une notification."
+    }
   },
   "state_transition_guard": {
     "_self": "Garde",
     "beanName": "Nom du bean",
-    "params": "Paramètres"
+    "params": "Paramètres",
+    "_tooltips": {
+      "beanName": "Le nom de la garde côté serveur qui vérifie la condition, p. ex. sufficientBalanceGuard. Demandez les noms disponibles à vos développeurs ; un nom inconnu est refusé à l'enregistrement.",
+      "params": "Paramètres facultatifs de la garde, sous forme de paires nom-valeur, p. ex. minBalance = 100. Les noms reconnus dépendent de la garde."
+    }
   },
   "state_transition_action": {
     "_self": "Action",
     "beanName": "Nom du bean",
-    "params": "Paramètres"
+    "params": "Paramètres",
+    "_tooltips": {
+      "beanName": "Le nom de l'action côté serveur à exécuter, p. ex. sendApprovalNotificationAction. Demandez les noms disponibles à vos développeurs ; un nom inconnu est refusé à l'enregistrement.",
+      "params": "Paramètres facultatifs de l'action, sous forme de paires nom-valeur, p. ex. recipient = sales@example.com. Les noms reconnus dépendent de l'action."
+    }
   },
   "entity_state_machine": {
     "tab": "Machine à états",

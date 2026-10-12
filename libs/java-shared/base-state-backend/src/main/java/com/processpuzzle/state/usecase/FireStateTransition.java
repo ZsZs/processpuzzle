@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.domain.event.EntityObjectStateChangedEvent;
@@ -45,7 +46,7 @@ public class FireStateTransition {
 
     public Result execute(String orgKey, String entityName, UUID objectId,
                           String triggerKey, Map<String, Object> requestContext, long expectedVersion) {
-        StateMachineDefinition definition = repository.findByOrgKeyAndEntityName(orgKey, entityName)
+        StateMachineDefinition definition = repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.RELEASED)
                 .orElseThrow(() -> new StateMachineNotFoundException(orgKey, entityName));
 
         var gateway = gatewayResolver.gateway();

@@ -12,7 +12,21 @@
     "publishedVersion": "Veröffentlichte Version",
     "updatedAt": "Aktualisiert am",
     "inputPorts": "Eingangsports",
-    "outputPorts": "Ausgangsports"
+    "outputPorts": "Ausgangsports",
+    "_tooltips": {
+      "id": "Innerhalb Ihrer Organisation eindeutig; jede Platzierung des Widgets verweist darauf. Kleinbuchstaben, Ziffern und einzelne Bindestriche, z. B. cards-grid; nicht mehr änderbar, sobald Seiten das Widget verwenden.",
+      "name": "Der Name des Widgets, wie Designer ihn in der Palette sehen, z. B. Kartenraster.",
+      "translocoId": "Optionaler Übersetzungsschlüssel; ist er gesetzt, wird er in anderen Sprachen statt des Namens angezeigt, z. B. cards_grid.name.",
+      "category": "Die Gruppe, unter der das Widget in der Palette aufgeführt wird, z. B. Content, Data oder Navigation. Freitext; Widgets derselben Kategorie werden zusammen angezeigt.",
+      "icon": "Name des Material-Symbols, das in der Palette neben dem Widget angezeigt wird, z. B. grid_view.",
+      "description": "Was das Widget tut, als Notiz für Sie und Ihre Mitdesigner; Benutzer sehen sie nicht.",
+      "status": "DRAFT, solange das Widget noch nicht veröffentlichte Änderungen hat, PUBLISHED, sobald die aktuelle Version über die Schaltfläche Veröffentlichen freigegeben ist. Wird vom System gesetzt.",
+      "version": "Erhöht sich mit jedem Speichern. Wird vom System gesetzt.",
+      "publishedVersion": "Die zuletzt veröffentlichte Version; leer, bis das Widget zum ersten Mal veröffentlicht wird. Wird vom System gesetzt.",
+      "updatedAt": "Wann das Widget zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "inputPorts": "Die Werte, die das Widget von der Seite erhält, auf der es platziert ist, eine Zeile pro Wert, z. B. die Liste der Einträge, die ein Raster anzeigt.",
+      "outputPorts": "Die Werte, die das Widget an die Seite zurückgibt, eine Zeile pro Wert, z. B. den vom Benutzer ausgewählten Eintrag."
+    }
   },
   "widget_input_port": {
     "_self": "Eingangsport",
@@ -23,7 +37,17 @@
     "entityType": "Entitätstyp",
     "attributeVisibility": "Attributsichtbarkeit",
     "defaultValue": "Standardwert",
-    "defaultRsqlFilter": "Standard-RSQL-Filter"
+    "defaultRsqlFilter": "Standard-RSQL-Filter",
+    "_tooltips": {
+      "name": "Kennzeichnet den Port, innerhalb des Widgets eindeutig, z. B. items. Ein auf einer Seite platziertes Widget wird über diesen Namen mit seinem Container verbunden.",
+      "type": "Die Art des Werts, den der Port empfängt: STRING, NUMBER, BOOLEAN, DATE, OBJECT oder ARRAY für einfache Werte, ENTITY_REF für einen einzelnen Datensatz, ENTITY_COLLECTION für eine gefilterte Liste von Datensätzen.",
+      "description": "Wofür der Port dient, als Notiz für die Designer, die das Widget auf einer Seite platzieren.",
+      "entityType": "Nur für ENTITY_REF und ENTITY_COLLECTION: der Entitätstyp, dessen Datensätze über den Port laufen, z. B. order. Bei den anderen Typen leer lassen.",
+      "attributeVisibility": "Nur für ENTITY_REF und ENTITY_COLLECTION: welche Attribute der Datensätze das Widget standardmäßig erhält. mode auf ALL, INCLUDE oder EXCLUDE setzen und bei den beiden letzten die Attribute auflisten, z. B. attributes = name, price.",
+      "required": "Ankreuzen, wenn das Widget ohne diesen Wert nicht funktioniert; die Seite, die das Widget platziert, muss ihn dann liefern.",
+      "defaultValue": "Der Wert, den das Widget verwendet, wenn der Port optional ist und die Seite nichts liefert, z. B. 10.",
+      "defaultRsqlFilter": "Nur für ENTITY_COLLECTION: der Filter, der gilt, wenn die Seite keinen liefert, in RSQL geschrieben, z. B. status==OPEN."
+    }
   },
   "widget_output_port": {
     "_self": "Ausgangsport",
@@ -31,7 +55,14 @@
     "type": "Typ",
     "description": "Beschreibung",
     "entityType": "Entitätstyp",
-    "attributeVisibility": "Attributsichtbarkeit"
+    "attributeVisibility": "Attributsichtbarkeit",
+    "_tooltips": {
+      "name": "Kennzeichnet den Port, innerhalb des Widgets eindeutig, z. B. selectedItem. Ein auf einer Seite platziertes Widget wird über diesen Namen mit seinem Container verbunden.",
+      "type": "Die Art des Werts, den der Port ausgibt: STRING, NUMBER, BOOLEAN, DATE, OBJECT oder ARRAY für einfache Werte, ENTITY_REF für einen einzelnen Datensatz, ENTITY_COLLECTION für eine gefilterte Liste von Datensätzen.",
+      "description": "Wofür der Port dient, als Notiz für die Designer, die das Widget auf einer Seite platzieren.",
+      "entityType": "Nur für ENTITY_REF und ENTITY_COLLECTION: der Entitätstyp, dessen Datensätze über den Port laufen, z. B. order. Bei den anderen Typen leer lassen.",
+      "attributeVisibility": "Nur für ENTITY_REF und ENTITY_COLLECTION: welche Attribute der Datensätze das Widget weitergibt. mode auf ALL, INCLUDE oder EXCLUDE setzen und bei den beiden letzten die Attribute auflisten, z. B. attributes = name, price."
+    }
   },
   "publish": {
     "button": "Veröffentlichen",

@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.api;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.Optional;
 
 /**
@@ -12,8 +13,18 @@ import java.util.Optional;
  *
  * <p>base-workflow's host adapter asks {@link #titleAttribute} to show a workflow instance's subject by
  * name rather than by id.
+ *
+ * <p>The questions without a {@link Channel} are about the released definition — what the running application
+ * uses. One that checks a draft of its own, as base-state does a state machine the designer saves, asks about the
+ * entity type's draft, which it will be released with.
  */
 public interface EntityAttributeQuery {
+
+    /** {@link #attributeKind(String, String, String)} for either row of the entity type. */
+    Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode, Channel channel);
+
+    /** {@link #entityTypeExists(String, String)} for either row of the entity type. */
+    boolean entityTypeExists(String orgKey, String entityDefinitionCode, Channel channel);
 
     /**
      * The kind of {@code attributeCode} on the entity type {@code entityDefinitionCode} of the
@@ -23,10 +34,14 @@ public interface EntityAttributeQuery {
      * reference wants the same answer either way, and distinguishing them would only invite a
      * message that leaks which of the two the deployment is missing.
      */
-    Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode);
+    default Optional<EntityAttributeKind> attributeKind(String orgKey, String entityDefinitionCode, String attributeCode) {
+        return attributeKind(orgKey, entityDefinitionCode, attributeCode, Channel.RELEASED);
+    }
 
     /** Whether {@code entityDefinitionCode} resolves to an entity type of {@code orgKey} at all. */
-    boolean entityTypeExists(String orgKey, String entityDefinitionCode);
+    default boolean entityTypeExists(String orgKey, String entityDefinitionCode) {
+        return entityTypeExists(orgKey, entityDefinitionCode, Channel.RELEASED);
+    }
 
     /**
      * The attribute that names an object of {@code entityDefinitionCode} — the one its definition marks

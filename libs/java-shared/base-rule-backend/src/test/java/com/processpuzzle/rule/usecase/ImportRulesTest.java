@@ -1,5 +1,7 @@
 package com.processpuzzle.rule.usecase;
 
+import static org.mockito.ArgumentMatchers.eq;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -31,8 +33,8 @@ class ImportRulesTest {
         repository = mock(RuleDefinitionRepository.class);
         ruleEngineSync = mock(RuleEngineSync.class);
         importRules = new ImportRules(repository, ruleEngineSync);
-        when(repository.findByOrgKey(anyString())).thenReturn(List.of());
-        when(repository.findByOrgKeyAndId(anyString(), anyString())).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndChannel(anyString(), eq(Channel.DRAFT))).thenReturn(List.of());
+        when(repository.findByOrgKeyAndIdAndChannel(anyString(), anyString(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
     }
 
     @Test
@@ -59,7 +61,8 @@ class ImportRulesTest {
         assertThat(saved.isEnabled()).isTrue();
         assertThat(saved.isOverride()).isFalse();
         assertThat(saved.getFields()).containsExactly("quantity");
-        verify(ruleEngineSync).registerAfterCommit(saved);
+        // An import writes drafts; the engine holds released rules, and only a release changes it.
+        verifyNoInteractions(ruleEngineSync);
     }
 
     @Test
@@ -67,7 +70,7 @@ class ImportRulesTest {
         RuleDefinition existing = new RuleDefinition("demo", "max-quantity", "Old", "old desc",
                 "Invoice", "false", Severity.INFO, "old msg", "old.id", null, false, true,
                 List.of("stale"));
-        when(repository.findByOrgKeyAndId("demo", "max-quantity")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "max-quantity", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         ImportOutcome outcome = importRules.execute("demo", yaml("""
                 rules:
@@ -130,8 +133,8 @@ class ImportRulesTest {
         reset(repository);
         RuleDefinition existing = new RuleDefinition("demo", "known", "Known", null, "Order",
                 "true", Severity.ERROR, null, null, null, false, false, List.of());
-        when(repository.findByOrgKey("demo")).thenReturn(List.of(existing));
-        when(repository.findByOrgKeyAndId("demo", "known")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT)).thenReturn(List.of(existing));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "known", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         importRules.execute("demo", yaml("""
                 rules:
@@ -163,8 +166,8 @@ class ImportRulesTest {
     void anExistingDisabledRuleIsReEnabledWhenTheEntryIsSilent() throws IOException {
         RuleDefinition existing = new RuleDefinition("demo", "known", "Known", null, "Order",
                 "true", Severity.ERROR, null, null, null, false, false, List.of());
-        when(repository.findByOrgKey("demo")).thenReturn(List.of(existing));
-        when(repository.findByOrgKeyAndId("demo", "known")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT)).thenReturn(List.of(existing));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "known", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         importRules.execute("demo", yaml("""
                 rules:
@@ -235,7 +238,7 @@ class ImportRulesTest {
 
     @Test
     void resolvesAnExtendsLinkAgainstARuleTheOrganizationAlreadyHas() throws IOException {
-        when(repository.findByOrgKey("demo")).thenReturn(List.of(
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT)).thenReturn(List.of(
                 new RuleDefinition("demo", "base", "Base", null, "Order", "true", Severity.ERROR,
                         null, null, null, false, true, List.of())));
 

@@ -7,6 +7,15 @@
     "kind": "Type",
     "subjectType": "Type de sujet",
     "action": "Action",
-    "state": "État"
+    "state": "État",
+    "_tooltips": {
+      "id": "Unique dans votre organisation, p. ex. OrderCreatedEvent. Les workflows et autres fonctions désignent l'événement par cet identifiant, évitez donc de le modifier ensuite.",
+      "name": "Le nom de l'événement tel qu'il apparaît dans les sélecteurs et les listes, p. ex. Commande créée.",
+      "description": "Une note sur le moment où l'événement survient et son usage ; les utilisateurs ne la voient pas.",
+      "kind": "SYSTEM : émis par la plateforme lorsqu'un enregistrement change. MESSAGE : envoyé à un destinataire via l'API. SIGNAL : diffusé à tous les auditeurs via l'API.",
+      "subjectType": "Uniquement pour les événements SYSTEM : le code du type d'entité dont les enregistrements émettent l'événement, p. ex. order.",
+      "action": "Uniquement pour les événements SYSTEM : ce qui arrive à l'enregistrement : CREATED, UPDATED, DELETED ou STATE_CHANGED.",
+      "state": "Uniquement pour STATE_CHANGED : l'état dans lequel entre l'enregistrement, p. ex. CONFIRMED."
+    }
   }
 }

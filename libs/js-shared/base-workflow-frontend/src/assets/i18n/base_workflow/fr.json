@@ -59,6 +59,21 @@
       "boundary_event": "Événement de bordure (interrompant)",
       "non_interrupting_boundary_event": "Événement de bordure (non interrompant)",
       "event": "Événement intermédiaire"
+    },
+    "_tooltips": {
+      "id": "Unique au sein de votre organisation et utilisé dans l'adresse du flux de travail. Court, en minuscules et avec des tirets, p. ex. order-fulfillment-workflow ; évitez de le modifier ensuite.",
+      "name": "Le nom du flux de travail tel qu'il apparaît dans les listes et le tableau de bord des tâches, p. ex. Traitement des commandes.",
+      "description": "Une note pour vous et vos collègues concepteurs ; elle n'influe pas sur l'exécution.",
+      "extends": "Flux de travail parent facultatif dont celui-ci hérite les rôles, artefacts, outils et tâches. Un flux ne peut pas s'étendre lui-même, ni directement ni par d'autres.",
+      "activeInstances": "Nombre d'exécutions de ce flux de travail actuellement en cours. Défini par le système.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "updatedAt": "Date du dernier enregistrement du flux de travail. Défini par le système.",
+      "startEvents": "Les façons dont une exécution de ce flux peut démarrer, p. ex. à la création d'une commande ou chaque matin à 8 h. Sans aucun, chacun peut le démarrer manuellement.",
+      "roles": "Les rôles qui participent à ce flux de travail. Tout rôle qui réalise l'une de ses tâches doit figurer ici.",
+      "artifacts": "Les produits de travail que manipule ce flux, p. ex. une commande ou une facture. Tout artefact lu ou écrit par ses tâches doit figurer ici.",
+      "tools": "Les systèmes externes que ce flux peut appeler. Une étape de tâche ne peut utiliser qu'un outil listé ici.",
+      "tasks": "Les tâches de ce flux, chacune avec le rôle qui la réalise ici et les tâches ou événements qu'elle attend. Une tâche ne peut figurer qu'une fois.",
+      "events": "Événements que le flux envoie ou attend pendant son exécution, p. ex. un message de paiement ou l'écoulement de deux jours. Les tâches peuvent les attendre comme d'autres tâches."
     }
   },
   "workflow_task_assignment": {
@@ -69,20 +84,39 @@
     "joinType": "Type de jonction",
     "parallel": "Parallèle",
     "override": "Remplacer",
-    "artifactStates": "États des artefacts"
+    "artifactStates": "États des artefacts",
+    "_tooltips": {
+      "taskDefinitionId": "La tâche de votre catalogue qui participe à ce flux de travail. Chaque tâche ne peut être ajoutée qu'une fois à un flux.",
+      "performedBy": "Le seul rôle qui réalise la tâche dans ce flux. Il doit faire partie des Rôles du flux et des Rôles exécutants de la tâche.",
+      "dependsOn": "Les ids des tâches ou événements de ce flux qui doivent être terminés avant que cette tâche puisse commencer, p. ex. review-order. Vide signifie qu'elle peut commencer dès le démarrage du flux.",
+      "joinType": "ALL attend toutes les tâches ou événements de « Dépend de » (par défaut) ; ANY démarre cette tâche après le premier d'entre eux. Ignoré si « Dépend de » est vide.",
+      "parallel": "Cochez pour que cette tâche s'exécute en même temps que les autres tâches qui attendent les mêmes prédécesseurs. Sinon, elles s'exécutent l'une après l'autre dans l'ordre de la liste.",
+      "override": "Uniquement pour un flux qui en étend un autre : cochez pour remplacer l'utilisation de la même tâche dans le flux parent au lieu de s'y ajouter.",
+      "artifactStates": "L'état dans lequel la tâche attend chacune de ses entrées et laisse chacune de ses sorties dans ce flux, p. ex. la commande est ensuite CONFIRMED. Affiché dans le modeleur ; pas encore appliqué."
+    }
   },
   "workflow_role_use": {
     "_self": "Utilisation de rôle",
-    "roleDefinitionId": "Rôle"
+    "roleDefinitionId": "Rôle",
+    "_tooltips": {
+      "roleDefinitionId": "Un rôle de votre catalogue qui participe à ce flux. Le retirer ici ne fait que l'enlever du flux ; le rôle lui-même est conservé."
+    }
   },
   "workflow_artifact_use": {
     "_self": "Utilisation d'artefact",
     "artifactDefinitionId": "Artefact",
-    "objectName": "Nom de l'objet"
+    "objectName": "Nom de l'objet",
+    "_tooltips": {
+      "artifactDefinitionId": "Un artefact de votre catalogue que lisent ou écrivent les tâches de ce flux. Le retirer ici ne fait que l'enlever du flux.",
+      "objectName": "Nom facultatif de l'artefact dans ce flux, affiché dans le modeleur sous la forme new_order : Order. Affichage uniquement ; vide, il est dessiné sans nom."
+    }
   },
   "workflow_tool_use": {
     "_self": "Utilisation d'outil",
-    "toolDefinitionId": "Outil"
+    "toolDefinitionId": "Outil",
+    "_tooltips": {
+      "toolDefinitionId": "Un outil de votre catalogue que les étapes des tâches de ce flux peuvent appeler. Le retirer ici ne fait que l'enlever du flux."
+    }
   },
   "workflow_start_event": {
     "_self": "Événement de démarrage",
@@ -96,12 +130,29 @@
     "timerExpression": "Expression du minuteur",
     "authorizedRoles": "Rôles autorisés",
     "payloadMapping": "Mappage de charge utile",
-    "requiredArtifacts": "Artefacts requis"
+    "requiredArtifacts": "Artefacts requis",
+    "_tooltips": {
+      "id": "Unique au sein du flux, y compris parmi les ids de ses tâches et événements, p. ex. order-created.",
+      "name": "Libellé facultatif affiché dans le modeleur, p. ex. Commande créée. Vide, le type de démarrage est affiché.",
+      "startType": "Ce qui démarre le flux : INPUT_ARTIFACT (les artefacts requis existent), TRIGGERING_EVENT (un événement du catalogue survient), ROLE_DEFINITION (une personne ayant un rôle autorisé le démarre manuellement) ou TIME_BASED_PRECONDITION (un moment ou un calendrier). Seuls les champs du type choisi s'appliquent.",
+      "eventType": "TRIGGERING_EVENT uniquement : l'événement de votre catalogue qui démarre une exécution lorsqu'il survient, p. ex. OrderCreatedEvent.",
+      "milestoneRef": "TIME_BASED_PRECONDITION uniquement : le jalon dont l'arrivée démarre le flux, p. ex. MILESTONE_REACHED.",
+      "timerType": "TIME_BASED_PRECONDITION uniquement : DATE démarre une fois à un moment donné, CYCLE démarre de façon répétée selon un calendrier.",
+      "timerExpression": "Quand le minuteur se déclenche, au format ISO 8601 : une date et heure comme 2026-12-24T08:00:00Z pour DATE, ou une répétition comme R/P1D (chaque jour) pour CYCLE.",
+      "preconditionExpression": "TIME_BASED_PRECONDITION uniquement : une condition qui doit être vraie à l'arrivée du jalon, p. ex. milestone.status == 'PASSED'. Enregistrée, pas encore évaluée.",
+      "authorizedRoles": "ROLE_DEFINITION uniquement : les rôles dont les membres peuvent démarrer le flux manuellement. Vide signifie que tout le monde le peut.",
+      "payloadMapping": "TRIGGERING_EVENT et INPUT_ARTIFACT : copie des données de l'événement déclencheur dans la nouvelle exécution. Clé : le nom sous lequel les stocker, p. ex. orderId ; valeur : où les lire, p. ex. $.payload.orderId.",
+      "requiredArtifacts": "INPUT_ARTIFACT uniquement : les artefacts, éventuellement dans un état donné, qui doivent exister avant le démarrage du flux. Chacun doit faire partie des Artefacts du flux."
+    }
   },
   "workflow_required_start_artifact": {
     "_self": "Artefact requis",
     "artifactDefinitionId": "Artefact",
-    "state": "État"
+    "state": "État",
+    "_tooltips": {
+      "artifactDefinitionId": "Un artefact qui doit exister avant le démarrage du flux. Il doit faire partie des Artefacts du flux.",
+      "state": "L'état dans lequel l'artefact doit se trouver, tel que le nomme sa machine à états, p. ex. DRAFT. Vide signifie n'importe quel état."
+    }
   },
   "workflow_event_use": {
     "_self": "Événement intermédiaire",
@@ -116,13 +167,32 @@
     "timerExpression": "Expression du minuteur",
     "attachedTo": "Attaché à",
     "interrupting": "Interrompant",
-    "payloadMapping": "Mappage de charge utile"
+    "payloadMapping": "Mappage de charge utile",
+    "_tooltips": {
+      "id": "Unique au sein du flux, y compris parmi les ids de ses tâches et événements de démarrage, p. ex. invoice-issued. Les tâches le citent dans « Dépend de ».",
+      "name": "Libellé facultatif affiché dans le modeleur, p. ex. Facture émise. Vide, le nom de l'événement du catalogue est affiché.",
+      "direction": "THROW envoie l'événement dès qu'il est atteint ; CATCH attend que l'événement survienne (ou que le minuteur se déclenche) avant de poursuivre.",
+      "eventDefinitionId": "L'événement de votre catalogue à envoyer ou à attendre. Laissez vide pour un minuteur ; les événements SYSTEM peuvent seulement être attendus, jamais envoyés.",
+      "timerType": "Pour un CATCH qui attend une durée plutôt qu'un événement : DURATION attend une période, DATE jusqu'à un moment, CYCLE se répète (uniquement sur un événement de bordure non interrompant).",
+      "timerExpression": "Le minuteur au format ISO 8601 : PT2H (deux heures) pour DURATION, 2026-10-10T08:00:00Z pour DATE, R3/PT1H (trois fois, toutes les heures) pour CYCLE — ou une $.variable de l'exécution qui le contient.",
+      "attachedTo": "Id facultatif d'une tâche de ce flux, p. ex. issue-invoice. L'événement n'attend alors que tant que cette tâche est active ; il doit être un CATCH et n'a pas de « Dépend de ».",
+      "interrupting": "Uniquement pour un événement attaché à une tâche : coché, l'événement annule cette tâche lorsqu'il se déclenche ; décoché, la tâche continue.",
+      "dependsOn": "Les ids des tâches ou événements qui doivent être terminés avant que cet événement soit atteint, p. ex. issue-invoice. Vide signifie qu'il est atteint au démarrage du flux.",
+      "joinType": "ALL attend toutes les tâches ou événements de « Dépend de » (par défaut) ; ANY poursuit après le premier d'entre eux. Ignoré si « Dépend de » est vide.",
+      "correlationKey": "Événements MESSAGE uniquement, et obligatoire pour eux : la variable de l'exécution qui rattache le message à celle-ci, p. ex. orderId. Un THROW envoie sa valeur ; un CATCH attend un message de même valeur.",
+      "payloadMapping": "CATCH : copie des données de l'événement dans l'exécution — clé un nom de variable, valeur un chemin comme $.payload.amount. THROW : remplit l'événement envoyé — clé un nom d'attribut, valeur un chemin comme $.orderId."
+    }
   },
   "workflow_task_artifact_state": {
     "_self": "État d'artefact de la tâche",
     "artifactDefinitionId": "Artefact",
     "inputState": "État d'entrée",
-    "outputState": "État de sortie"
+    "outputState": "État de sortie",
+    "_tooltips": {
+      "artifactDefinitionId": "L'une des entrées ou sorties de la tâche. Chaque artefact ne peut figurer qu'une fois par tâche.",
+      "inputState": "Uniquement pour une entrée : l'état dans lequel la tâche attend l'artefact, tel que le nomme sa machine à états, p. ex. DRAFT. Vide signifie n'importe lequel.",
+      "outputState": "Uniquement pour une sortie : l'état dans lequel la tâche laisse l'artefact, tel que le nomme sa machine à états, p. ex. CONFIRMED. Vide signifie inchangé ou non précisé."
+    }
   },
   "workflow_role_definition": {
     "_self": "Rôle",
@@ -138,6 +208,15 @@
     },
     "modeler": {
       "empty": "Aucun rôle n'a encore été défini."
+    },
+    "_tooltips": {
+      "id": "Unique au sein de votre organisation ; les flux et les tâches désignent le rôle par cet id. Court, en minuscules et avec des tirets, p. ex. developer ; évitez de le modifier ensuite.",
+      "name": "Le nom du rôle tel qu'il est affiché, p. ex. Employé ou Développeur.",
+      "description": "Ce que fait ce rôle et qui le tient ; une note pour vous et vos collègues concepteurs.",
+      "responsibleFor": "Les artefacts dont ce rôle est responsable du résultat, p. ex. la facture. Responsabilité uniquement ; ce qu'une tâche peut lire ou écrire se définit sur la tâche.",
+      "entityRoleId": "Rôle utilisateur correspondant de votre organisation, facultatif. S'il est renseigné, seuls les utilisateurs ayant ce rôle peuvent recevoir une tâche de ce rôle ; vide signifie aucun contrôle.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "updatedAt": "Date du dernier enregistrement du rôle. Défini par le système."
     }
   },
   "artifact_definition": {
@@ -149,7 +228,17 @@
     "artifactTypeId": "Id de type",
     "stateMachineId": "Machine à états",
     "version": "Version",
-    "updatedAt": "Modifié le"
+    "updatedAt": "Modifié le",
+    "_tooltips": {
+      "id": "Unique au sein de votre organisation ; les tâches et les flux désignent l'artefact par cet id. Court, en minuscules et avec des tirets, p. ex. order-entity ; évitez de le modifier ensuite.",
+      "name": "Le nom de l'artefact tel qu'il est affiché, p. ex. Commande ou Facture.",
+      "artifactType": "Le type de produit de travail : ENTITY (un enregistrement de l'une de vos entités), DOCUMENT (un document) ou WIDGET (un élément d'écran).",
+      "description": "Ce qu'est cet artefact et à quoi il sert ; une note pour vous et vos collègues concepteurs.",
+      "artifactTypeId": "L'élément concret qu'est cet artefact, selon le Type d'artefact : le nom de l'entité pour ENTITY, du document pour DOCUMENT ou du widget pour WIDGET, p. ex. order.",
+      "stateMachineId": "Id facultatif de la machine à états qui régit le cycle de vie de cet artefact, p. ex. order-lifecycle. Les tâches et événements de démarrage utilisent ses noms d'état.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "updatedAt": "Date du dernier enregistrement de l'artefact. Défini par le système."
+    }
   },
   "task_definition": {
     "_self": "Tâche",
@@ -163,7 +252,20 @@
     "updatedAt": "Modifié le",
     "inputs": "Entrées",
     "outputs": "Sorties",
-    "steps": "Étapes"
+    "steps": "Étapes",
+    "_tooltips": {
+      "id": "Unique au sein de votre organisation ; les flux ajoutent la tâche par cet id. Court, en minuscules et avec des tirets, p. ex. write-spec ; évitez de le modifier ensuite.",
+      "name": "Le nom de la tâche tel qu'il apparaît dans le tableau de bord des tâches, p. ex. Vérifier la commande.",
+      "description": "Ce qu'il faut faire ; affiché à la personne qui traite la tâche.",
+      "performedByRoles": "Les rôles capables de réaliser cette tâche ; au moins un. Chaque flux qui utilise la tâche en choisit un.",
+      "preconditionRuleId": "Id facultatif d'une règle métier vérifiée avant que la tâche devienne active ; tant qu'elle n'est pas remplie, la tâche reste en attente.",
+      "postconditionRuleId": "Id facultatif d'une règle métier qui doit être remplie avant que la tâche puisse être terminée.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "updatedAt": "Date du dernier enregistrement de la tâche. Défini par le système.",
+      "inputs": "Les artefacts que lit cette tâche, p. ex. la commande. Un flux qui utilise la tâche doit les lister parmi ses Artefacts.",
+      "outputs": "Les artefacts que crée ou modifie cette tâche, p. ex. la facture. Un flux qui utilise la tâche doit les lister parmi ses Artefacts.",
+      "steps": "Les étapes de la tâche, dans l'ordre. Une étape utilisateur guide la personne ; une étape de service appelle automatiquement un outil."
+    }
   },
   "task_step_definition": {
     "_self": "Étape",
@@ -174,7 +276,17 @@
     "toolDefinitionId": "Outil",
     "toolOperation": "Opération",
     "inputMapping": "Mappage d'entrée",
-    "outputMapping": "Mappage de sortie"
+    "outputMapping": "Mappage de sortie",
+    "_tooltips": {
+      "id": "Unique au sein de la tâche, p. ex. check-items.",
+      "name": "Le nom de l'étape tel que le voit la personne qui traite la tâche, p. ex. Vérifier les articles.",
+      "description": "Instructions pour cette étape, affichées à la personne qui traite la tâche.",
+      "stepType": "USER_STEP : une action qu'une personne effectue manuellement. SERVICE_STEP : le système appelle l'Outil et l'Opération ci-dessous lorsque l'étape est terminée.",
+      "toolDefinitionId": "SERVICE_STEP uniquement : l'outil à appeler. Il doit aussi figurer parmi les Outils de chaque flux qui utilise cette tâche.",
+      "toolOperation": "SERVICE_STEP uniquement : l'id de l'une des opérations de l'outil choisi, p. ex. create-issue.",
+      "inputMapping": "SERVICE_STEP uniquement : les valeurs envoyées à l'outil. Clé : le nom du paramètre de l'outil, p. ex. summary ; valeur : une expression sur les données de l'exécution, p. ex. order.title.",
+      "outputMapping": "SERVICE_STEP uniquement : ce qu'il faut garder de la réponse de l'outil. Clé : le nom sous lequel le stocker, p. ex. issueKey ; valeur : où le lire dans la réponse, p. ex. $.key."
+    }
   },
   "tool_definition": {
     "_self": "Outil",
@@ -186,7 +298,18 @@
     "secretRef": "Référence du secret",
     "version": "Version",
     "createdAt": "Créé le",
-    "operations": "Opérations"
+    "operations": "Opérations",
+    "_tooltips": {
+      "id": "Unique au sein de votre organisation ; les flux et les étapes de tâche désignent l'outil par cet id. Court, en minuscules et avec des tirets, p. ex. jira ; évitez de le modifier ensuite.",
+      "name": "Le nom de l'outil tel qu'il est affiché, p. ex. Jira.",
+      "baseUrl": "L'adresse à laquelle s'ajoute le chemin de chaque opération, sans espaces, p. ex. https://example.atlassian.net.",
+      "description": "Ce qu'est cet outil et à quoi les flux l'utilisent ; une note pour vous et vos collègues concepteurs.",
+      "type": "Comment le système s'authentifie auprès de l'outil : NONE, BEARER_TOKEN, BASIC (nom d'utilisateur et mot de passe) ou API_KEY.",
+      "secretRef": "Où est conservé l'identifiant : le nom d'une variable d'environnement ou un chemin Vault, p. ex. JIRA_TOKEN. Ne saisissez jamais le mot de passe ou le jeton lui-même.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "createdAt": "Date de création de l'outil. Défini par le système.",
+      "operations": "Les appels que propose cet outil, p. ex. create-issue. Les étapes de tâche en choisissent un par son id."
+    }
   },
   "tool_operation": {
     "_self": "Opération",
@@ -195,7 +318,15 @@
     "path": "Chemin",
     "description": "Description",
     "payloadTemplate": "Modèle de charge utile",
-    "expectedStatusCodes": "Codes de statut attendus"
+    "expectedStatusCodes": "Codes de statut attendus",
+    "_tooltips": {
+      "id": "Unique au sein de l'outil ; les étapes de tâche désignent l'opération par cet id, p. ex. create-issue.",
+      "method": "La méthode HTTP de l'appel : GET lit, POST crée, PUT ou PATCH modifie, DELETE supprime.",
+      "path": "L'adresse de l'appel relative à l'URL de base de l'outil, p. ex. /rest/api/3/issue.",
+      "description": "Ce que fait cette opération ; une note pour vous et vos collègues concepteurs.",
+      "payloadTemplate": "Corps JSON facultatif de la requête. Les espaces réservés ${...} sont remplis à partir des données de l'exécution, p. ex. {\"summary\": \"${order.title}\"}.",
+      "expectedStatusCodes": "Les codes de statut HTTP considérés comme un succès, p. ex. 201 ; toute autre réponse fait échouer l'étape. Vide signifie 200, 201 et 204."
+    }
   },
   "workflow_instance": {
     "_self": "Instance de flux de travail",

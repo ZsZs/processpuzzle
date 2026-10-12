@@ -27,6 +27,17 @@
         "polyline": "Straight",
         "bezier": "Curved"
       }
+    },
+    "_tooltips": {
+      "entityName": "The entity type whose records this state machine controls, e.g. order. Each entity type can have only one state machine, and the value cannot be changed after the first save.",
+      "name": "A readable name for the state machine, e.g. Order lifecycle.",
+      "description": "A note for you and your fellow designers; users do not see it.",
+      "stateAttributeKey": "The attribute of the entity that holds the record's current state, e.g. status. It must exist on the entity and be a text or enum attribute; only the state machine writes it.",
+      "initialStateKey": "The key of the state every new record starts in, e.g. NEW. It must match the key of one of the states below.",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the state machine was last saved. Set by the system.",
+      "states": "The states a record can be in, one row per state, e.g. NEW, CONFIRMED, SHIPPED. At least one is required.",
+      "transitions": "The allowed moves from one state to another, one row per move, e.g. approve: NEW → CONFIRMED. A record can only change state along a transition listed here."
     }
   },
   "state_machine_state": {
@@ -37,7 +48,15 @@
     "initial": "Initial",
     "isFinal": "Terminal",
     "isLocked": "Locked",
-    "metadata": "Metadata"
+    "metadata": "Metadata",
+    "_tooltips": {
+      "key": "The exact value stored in the record's state attribute while it is in this state, e.g. CONFIRMED. Unique within the state machine; transitions refer to the state by it.",
+      "name": "The state's name as users see it, e.g. Confirmed.",
+      "description": "What this state means for the record, as a note for you and your fellow designers.",
+      "isFinal": "Tick it for an end state, e.g. CLOSED or CANCELLED: no transition may lead out of it.",
+      "isLocked": "Tick it to freeze records in this state: their other fields can no longer be edited, only the state itself can change.",
+      "metadata": "Optional display hints for drawing the state in the State Modeler, as name and value pairs, e.g. color = #2e7d32."
+    }
   },
   "state_machine_transition": {
     "_self": "Transition",
@@ -47,17 +66,34 @@
     "targetStateKey": "Target State",
     "triggerKey": "Trigger",
     "guards": "Guards",
-    "actions": "Actions"
+    "actions": "Actions",
+    "_tooltips": {
+      "key": "Identifies the transition, unique within the state machine, e.g. confirm-order.",
+      "name": "Optional readable name of the transition, e.g. Confirm order.",
+      "sourceStateKey": "The key of the state the record must be in for this transition to be offered, e.g. NEW. It cannot be a terminal state.",
+      "targetStateKey": "The key of the state the record moves into, e.g. CONFIRMED.",
+      "triggerKey": "The action that fires the transition, e.g. approve. Only one transition per source state may use the same trigger, but the same trigger may lead elsewhere from another state.",
+      "guards": "Conditions checked in order before the transition may happen; the first that fails blocks it. Leave empty if the transition is always allowed.",
+      "actions": "Steps run in order once every guard has passed, e.g. sending a notification."
+    }
   },
   "state_transition_guard": {
     "_self": "Guard",
     "beanName": "Bean Name",
-    "params": "Params"
+    "params": "Params",
+    "_tooltips": {
+      "beanName": "The name of the server-side guard that checks the condition, e.g. sufficientBalanceGuard. Ask your developers for the available names; an unknown name is rejected on save.",
+      "params": "Optional settings for the guard, as name and value pairs, e.g. minBalance = 100. Which names it understands depends on the guard."
+    }
   },
   "state_transition_action": {
     "_self": "Action",
     "beanName": "Bean Name",
-    "params": "Params"
+    "params": "Params",
+    "_tooltips": {
+      "beanName": "The name of the server-side action to run, e.g. sendApprovalNotificationAction. Ask your developers for the available names; an unknown name is rejected on save.",
+      "params": "Optional settings for the action, as name and value pairs, e.g. recipient = sales@example.com. Which names it understands depends on the action."
+    }
   },
   "entity_state_machine": {
     "tab": "State Machine",

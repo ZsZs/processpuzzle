@@ -59,6 +59,21 @@
       "boundary_event": "Határesemény (megszakító)",
       "non_interrupting_boundary_event": "Határesemény (nem megszakító)",
       "event": "Köztes esemény"
+    },
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül, és a munkafolyamat címében is szerepel. Rövid, kisbetűs, kötőjeles, pl. order-fulfillment-workflow; később lehetőleg ne változtasd.",
+      "name": "A munkafolyamat neve, ahogy a listákban és a tevékenység-irányítópulton megjelenik, pl. Rendelés teljesítése.",
+      "description": "Megjegyzés neked és a tervezőtársaidnak; a futást nem befolyásolja.",
+      "extends": "Opcionális szülő munkafolyamat, amelynek szerepköreit, artefaktumait, eszközeit és tevékenységeit ez örökli. Egy munkafolyamat sem közvetlenül, sem közvetve nem terjesztheti ki önmagát.",
+      "activeInstances": "A munkafolyamat jelenleg futó példányainak száma. A rendszer állítja be.",
+      "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "updatedAt": "A munkafolyamat utolsó mentésének ideje. A rendszer állítja be.",
+      "startEvents": "A munkafolyamat egy futásának lehetséges indítási módjai, pl. egy rendelés létrejöttekor vagy minden reggel 8-kor. Ha nincs ilyen, bárki elindíthatja kézzel.",
+      "roles": "A munkafolyamatban részt vevő szerepkörök. Minden szerepkört, amely valamelyik tevékenységét végzi, itt fel kell sorolni.",
+      "artifacts": "A munkafolyamat által kezelt munkatermékek, pl. egy rendelés vagy egy számla. Minden artefaktumot, amelyet a tevékenységei olvasnak vagy írnak, itt fel kell sorolni.",
+      "tools": "A külső rendszerek, amelyeket a munkafolyamat meghívhat. Egy lépés csak az itt felsorolt eszközt használhatja.",
+      "tasks": "A munkafolyamat tevékenységei, mindegyik azzal a szerepkörrel, amely itt végzi, és azokkal a tevékenységekkel vagy eseményekkel, amelyekre vár. Egy tevékenység csak egyszer szerepelhet.",
+      "events": "Események, amelyeket a munkafolyamat futás közben küld vagy amelyekre vár, pl. egy fizetési üzenet vagy két nap eltelte. A tevékenységek ugyanúgy várhatnak rájuk, mint más tevékenységekre."
     }
   },
   "workflow_task_assignment": {
@@ -69,20 +84,39 @@
     "joinType": "Egyesítés típusa",
     "parallel": "Párhuzamos",
     "override": "Felülírás",
-    "artifactStates": "Artefaktum-állapotok"
+    "artifactStates": "Artefaktum-állapotok",
+    "_tooltips": {
+      "taskDefinitionId": "A tevékenységkatalógusod tevékenysége, amely részt vesz ebben a munkafolyamatban. Egy tevékenység csak egyszer adható hozzá egy munkafolyamathoz.",
+      "performedBy": "Az az egy szerepkör, amely ebben a munkafolyamatban a tevékenységet végzi. A munkafolyamat szerepkörei és a tevékenység végrehajtó szerepkörei között is szerepelnie kell.",
+      "dependsOn": "Azoknak a tevékenységeknek vagy eseményeknek az azonosítói, amelyeknek be kell fejeződniük, mielőtt ez a tevékenység elindulhat, pl. review-order. Üresen a munkafolyamat indulásakor rögtön indulhat.",
+      "joinType": "ALL az Előfeltételei mező minden tevékenységére vagy eseményére vár (alapértelmezés); ANY az elsőjük után indítja ezt a tevékenységet. Üres Előfeltételei esetén nincs hatása.",
+      "parallel": "Jelöld be, ha ez a tevékenység az ugyanazokra az előzményekre váró többi tevékenységgel egy időben futhat. Bejelölés nélkül ezek a felsorolás sorrendjében, egymás után futnak.",
+      "override": "Csak egy másikat kiterjesztő munkafolyamatnál: jelöld be, ha a szülő ugyanezen tevékenységét felülírja, ahelyett hogy kiegészítené.",
+      "artifactStates": "Az az állapot, amelyben a tevékenység ebben a munkafolyamatban a bemeneteit várja és a kimeneteit hagyja, pl. a rendelés utána CONFIRMED. A modellezőben látszik; még nincs érvényesítve."
+    }
   },
   "workflow_role_use": {
     "_self": "Szerepkör használat",
-    "roleDefinitionId": "Szerepkör"
+    "roleDefinitionId": "Szerepkör",
+    "_tooltips": {
+      "roleDefinitionId": "Egy szerepkör a szerepkör-katalógusodból, amely részt vesz a munkafolyamatban. Az eltávolítás csak a munkafolyamatból veszi ki; maga a szerepkör megmarad."
+    }
   },
   "workflow_artifact_use": {
     "_self": "Artefaktum használat",
     "artifactDefinitionId": "Artefaktum",
-    "objectName": "Objektum neve"
+    "objectName": "Objektum neve",
+    "_tooltips": {
+      "artifactDefinitionId": "Egy artefaktum a katalógusodból, amelyet a munkafolyamat tevékenységei olvasnak vagy írnak. Az eltávolítás csak a munkafolyamatból veszi ki.",
+      "objectName": "Az artefaktum opcionális neve ebben a munkafolyamatban, a modellezőben new_order : Order alakban jelenik meg. Csak megjelenítés; üresen név nélkül rajzolódik."
+    }
   },
   "workflow_tool_use": {
     "_self": "Eszköz használat",
-    "toolDefinitionId": "Eszköz"
+    "toolDefinitionId": "Eszköz",
+    "_tooltips": {
+      "toolDefinitionId": "Egy eszköz a katalógusodból, amelyet a munkafolyamat lépései meghívhatnak. Az eltávolítás csak a munkafolyamatból veszi ki."
+    }
   },
   "workflow_start_event": {
     "_self": "Indító esemény",
@@ -96,12 +130,29 @@
     "timerExpression": "Időzítő kifejezés",
     "authorizedRoles": "Jogosult szerepkörök",
     "payloadMapping": "Adattartalom-hozzárendelés",
-    "requiredArtifacts": "Szükséges artefaktumok"
+    "requiredArtifacts": "Szükséges artefaktumok",
+    "_tooltips": {
+      "id": "Egyedi a munkafolyamaton belül, a tevékenységek és események azonosítói között is, pl. order-created.",
+      "name": "Opcionális felirat a modellezőben, pl. Rendelés létrejött. Üresen az indítás típusa látszik.",
+      "startType": "Mi indítja a munkafolyamatot: INPUT_ARTIFACT (a szükséges artefaktumok rendelkezésre állnak), TRIGGERING_EVENT (bekövetkezik egy katalógusesemény), ROLE_DEFINITION (jogosult szerepkörű személy kézzel indítja) vagy TIME_BASED_PRECONDITION (egy időpont vagy ütemezés). Csak a választott típus mezői érvényesek.",
+      "eventType": "Csak TRIGGERING_EVENT: az eseménykatalógusod eseménye, amelynek bekövetkezése elindít egy futást, pl. OrderCreatedEvent.",
+      "milestoneRef": "Csak TIME_BASED_PRECONDITION: a mérföldkő, amelynek elérése elindítja a munkafolyamatot, pl. MILESTONE_REACHED.",
+      "timerType": "Csak TIME_BASED_PRECONDITION: DATE egyszer, egy adott időpontban indít, CYCLE ütemezés szerint ismételten.",
+      "timerExpression": "Mikor jár le az időzítő, ISO 8601 formában: DATE esetén egy időpont, pl. 2026-12-24T08:00:00Z, CYCLE esetén egy ismétlés, pl. R/P1D (naponta).",
+      "preconditionExpression": "Csak TIME_BASED_PRECONDITION: feltétel, amelynek a mérföldkő elérésekor teljesülnie kell, pl. milestone.status == 'PASSED'. Elmentjük, de még nem értékeljük ki.",
+      "authorizedRoles": "Csak ROLE_DEFINITION: azok a szerepkörök, amelyek tagjai kézzel indíthatják a munkafolyamatot. Üresen bárki.",
+      "payloadMapping": "TRIGGERING_EVENT és INPUT_ARTIFACT: adatokat másol az indító eseményből az új futásba. Kulcs: a név, amely alatt tároljuk, pl. orderId; érték: honnan olvassuk, pl. $.payload.orderId.",
+      "requiredArtifacts": "Csak INPUT_ARTIFACT: azok az artefaktumok – opcionálisan adott állapotban –, amelyeknek létezniük kell a munkafolyamat indulása előtt. Mindegyiknek a munkafolyamat artefaktumai között kell lennie."
+    }
   },
   "workflow_required_start_artifact": {
     "_self": "Szükséges artefaktum",
     "artifactDefinitionId": "Artefaktum",
-    "state": "Állapot"
+    "state": "Állapot",
+    "_tooltips": {
+      "artifactDefinitionId": "Egy artefaktum, amelynek léteznie kell a munkafolyamat indulása előtt. A munkafolyamat artefaktumai között kell lennie.",
+      "state": "Az az állapot, amelyben az artefaktumnak lennie kell, ahogy az állapotgépe nevezi, pl. DRAFT. Üresen bármely állapot megfelel."
+    }
   },
   "workflow_event_use": {
     "_self": "Köztes esemény",
@@ -116,13 +167,32 @@
     "timerExpression": "Időzítő kifejezés",
     "attachedTo": "Csatolva ehhez",
     "interrupting": "Megszakító",
-    "payloadMapping": "Adatleképezés"
+    "payloadMapping": "Adatleképezés",
+    "_tooltips": {
+      "id": "Egyedi a munkafolyamaton belül, a tevékenységek és indító események azonosítói között is, pl. invoice-issued. A tevékenységek az Előfeltételei mezőben hivatkoznak rá.",
+      "name": "Opcionális felirat a modellezőben, pl. Számla kiállítva. Üresen a katalógusesemény neve látszik.",
+      "direction": "A THROW elküldi az eseményt, amint odaér a folyamat; a CATCH megvárja az esemény bekövetkezését (vagy az időzítő lejártát), mielőtt továbbmegy.",
+      "eventDefinitionId": "Az eseménykatalógusod eseménye, amelyet küldünk vagy amelyre várunk. Időzítőnél hagyd üresen; a SYSTEM eseményekre csak várni lehet, küldeni nem.",
+      "timerType": "Olyan CATCH-hez, amely esemény helyett időre vár: DURATION egy időtartamot vár, DATE egy időpontig, CYCLE ismétlődik (csak nem megszakító határeseménynél).",
+      "timerExpression": "Az időzítő ISO 8601 formában: DURATION esetén PT2H (két óra), DATE esetén 2026-10-10T08:00:00Z, CYCLE esetén R3/PT1H (háromszor, óránként) – vagy a futás egy $.változója, amely tartalmazza.",
+      "attachedTo": "Egy tevékenység opcionális azonosítója ebben a munkafolyamatban, pl. issue-invoice. Az esemény ekkor csak addig vár, amíg az a tevékenység aktív; CATCH-nek kell lennie, és nincs Függ ettől mezője.",
+      "interrupting": "Csak tevékenységhez csatolt eseménynél: bejelölve az esemény bekövetkezésekor megszakítja a tevékenységet; anélkül a tevékenység tovább fut.",
+      "dependsOn": "Azoknak a tevékenységeknek vagy eseményeknek az azonosítói, amelyeknek be kell fejeződniük, mielőtt a folyamat ehhez az eseményhez ér, pl. issue-invoice. Üresen a munkafolyamat indulásakor elérhető.",
+      "joinType": "ALL a Függ ettől mező minden tevékenységére vagy eseményére vár (alapértelmezés); ANY az elsőjük után továbblép. Üres Függ ettől esetén nincs hatása.",
+      "correlationKey": "Csak MESSAGE eseményeknél, ott kötelező: a futás változója, amely az üzenetet ehhez a futáshoz köti, pl. orderId. A THROW elküldi az értékét; a CATCH azonos értékű üzenetre vár.",
+      "payloadMapping": "CATCH: adatokat másol az eseményből a futásba – kulcs egy változónév, érték egy útvonal, pl. $.payload.amount. THROW: kitölti a küldött eseményt – kulcs egy attribútumnév, érték egy útvonal, pl. $.orderId."
+    }
   },
   "workflow_task_artifact_state": {
     "_self": "Tevékenység artefaktum-állapota",
     "artifactDefinitionId": "Artefaktum",
     "inputState": "Bemeneti állapot",
-    "outputState": "Kimeneti állapot"
+    "outputState": "Kimeneti állapot",
+    "_tooltips": {
+      "artifactDefinitionId": "A tevékenység egyik bemenete vagy kimenete. Egy artefaktum tevékenységenként csak egyszer szerepelhet.",
+      "inputState": "Csak bemenetnél: az az állapot, amelyben a tevékenység az artefaktumot várja, ahogy az állapotgépe nevezi, pl. DRAFT. Üresen bármelyik.",
+      "outputState": "Csak kimenetnél: az az állapot, amelyben a tevékenység az artefaktumot hagyja, ahogy az állapotgépe nevezi, pl. CONFIRMED. Üresen változatlan vagy nincs megadva."
+    }
   },
   "workflow_role_definition": {
     "_self": "Szerepkör",
@@ -138,6 +208,15 @@
     },
     "modeler": {
       "empty": "Még nincs szerepkör definiálva."
+    },
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül; a munkafolyamatok és tevékenységek ezzel hivatkoznak a szerepkörre. Rövid, kisbetűs, kötőjeles, pl. developer; később lehetőleg ne változtasd.",
+      "name": "A szerepkör megjelenő neve, pl. Ügyintéző vagy Fejlesztő.",
+      "description": "Mit csinál ez a szerepkör és ki tölti be; megjegyzés neked és a tervezőtársaidnak.",
+      "responsibleFor": "Azok az artefaktumok, amelyek eredményéért ez a szerepkör felel, pl. a számla. Csak felelősség; hogy egy tevékenység mit olvashat vagy írhat, a tevékenységnél adható meg.",
+      "entityRoleId": "A szervezeted megfelelő felhasználói szerepköre, opcionális. Ha meg van adva, csak az ilyen szerepkörű felhasználók kaphatják meg e szerepkör tevékenységeit; üresen nincs ellenőrzés.",
+      "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "updatedAt": "A szerepkör utolsó mentésének ideje. A rendszer állítja be."
     }
   },
   "artifact_definition": {
@@ -149,7 +228,17 @@
     "artifactTypeId": "Típus azonosító",
     "stateMachineId": "Állapotgép",
     "version": "Verzió",
-    "updatedAt": "Módosítva"
+    "updatedAt": "Módosítva",
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül; a tevékenységek és munkafolyamatok ezzel hivatkoznak az artefaktumra. Rövid, kisbetűs, kötőjeles, pl. order-entity; később lehetőleg ne változtasd.",
+      "name": "Az artefaktum megjelenő neve, pl. Rendelés vagy Számla.",
+      "artifactType": "Milyen munkatermék ez: ENTITY (valamelyik entitásod rekordja), DOCUMENT (dokumentum) vagy WIDGET (képernyőelem).",
+      "description": "Mi ez az artefaktum és mire szolgál; megjegyzés neked és a tervezőtársaidnak.",
+      "artifactTypeId": "A konkrét elem, amely ez az artefaktum, az Artefaktum típusa szerint: ENTITY esetén az entitás neve, DOCUMENT esetén a dokumentumé, WIDGET esetén a widgeté, pl. order.",
+      "stateMachineId": "Az artefaktum életciklusát vezérlő állapotgép opcionális azonosítója, pl. order-lifecycle. A tevékenységek és indító események ennek állapotneveire hivatkoznak.",
+      "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "updatedAt": "Az artefaktum utolsó mentésének ideje. A rendszer állítja be."
+    }
   },
   "task_definition": {
     "_self": "Tevékenység",
@@ -163,7 +252,20 @@
     "updatedAt": "Módosítva",
     "inputs": "Bemenetek",
     "outputs": "Kimenetek",
-    "steps": "Lépések"
+    "steps": "Lépések",
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül; a munkafolyamatok ezzel veszik fel a tevékenységet. Rövid, kisbetűs, kötőjeles, pl. write-spec; később lehetőleg ne változtasd.",
+      "name": "A tevékenység neve, ahogy a tevékenység-irányítópulton megjelenik, pl. Rendelés ellenőrzése.",
+      "description": "Mit kell elvégezni; annak jelenik meg, aki a tevékenységen dolgozik.",
+      "performedByRoles": "A tevékenység végzésére képes szerepkörök; legalább egy. Minden munkafolyamat, amely használja, ezek közül választ egyet.",
+      "preconditionRuleId": "Egy üzleti szabály opcionális azonosítója, amelyet a tevékenység aktiválása előtt ellenőrzünk; amíg nem teljesül, a tevékenység várakozik.",
+      "postconditionRuleId": "Egy üzleti szabály opcionális azonosítója, amelynek teljesülnie kell, mielőtt a tevékenység lezárható.",
+      "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "updatedAt": "A tevékenység utolsó mentésének ideje. A rendszer állítja be.",
+      "inputs": "Az artefaktumok, amelyeket ez a tevékenység olvas, pl. a rendelés. A tevékenységet használó munkafolyamatnak fel kell sorolnia őket az artefaktumai között.",
+      "outputs": "Az artefaktumok, amelyeket ez a tevékenység létrehoz vagy módosít, pl. a számla. A tevékenységet használó munkafolyamatnak fel kell sorolnia őket az artefaktumai között.",
+      "steps": "A tevékenység egyes lépései, sorrendben. A felhasználói lépés útmutatás a személynek; a szolgáltatás-lépés automatikusan meghív egy eszközt."
+    }
   },
   "task_step_definition": {
     "_self": "Lépés",
@@ -174,7 +276,17 @@
     "toolDefinitionId": "Eszköz",
     "toolOperation": "Művelet",
     "inputMapping": "Bemenet leképezés",
-    "outputMapping": "Kimenet leképezés"
+    "outputMapping": "Kimenet leképezés",
+    "_tooltips": {
+      "id": "Egyedi a tevékenységen belül, pl. check-items.",
+      "name": "A lépés neve, ahogy a tevékenységen dolgozó személy látja, pl. Tételek ellenőrzése.",
+      "description": "Útmutató ehhez a lépéshez, amely a tevékenységen dolgozó személynek jelenik meg.",
+      "stepType": "USER_STEP: amit egy személy kézzel végez el. SERVICE_STEP: a lépés lezárásakor a rendszer meghívja az alábbi eszközt és műveletet.",
+      "toolDefinitionId": "Csak SERVICE_STEP: a meghívandó eszköz. Minden, ezt a tevékenységet használó munkafolyamat eszközei között is szerepelnie kell.",
+      "toolOperation": "Csak SERVICE_STEP: a választott eszköz egyik műveletének azonosítója, pl. create-issue.",
+      "inputMapping": "Csak SERVICE_STEP: az eszköznek küldött értékek. Kulcs: az eszköz paraméterneve, pl. summary; érték: kifejezés a futás adataira, pl. order.title.",
+      "outputMapping": "Csak SERVICE_STEP: mit tartsunk meg az eszköz válaszából. Kulcs: a név, amely alatt tároljuk, pl. issueKey; érték: hol található a válaszban, pl. $.key."
+    }
   },
   "tool_definition": {
     "_self": "Eszköz",
@@ -186,7 +298,18 @@
     "secretRef": "Titok hivatkozás",
     "version": "Verzió",
     "createdAt": "Létrehozva",
-    "operations": "Műveletek"
+    "operations": "Műveletek",
+    "_tooltips": {
+      "id": "Egyedi a szervezeteden belül; a munkafolyamatok és lépések ezzel hivatkoznak az eszközre. Rövid, kisbetűs, kötőjeles, pl. jira; később lehetőleg ne változtasd.",
+      "name": "Az eszköz megjelenő neve, pl. Jira.",
+      "baseUrl": "A cím, amelyhez minden művelet útvonala hozzáfűződik, szóközök nélkül, pl. https://example.atlassian.net.",
+      "description": "Mi ez az eszköz és mire használják a munkafolyamatok; megjegyzés neked és a tervezőtársaidnak.",
+      "type": "Hogyan jelentkezik be a rendszer az eszközbe: NONE, BEARER_TOKEN, BASIC (felhasználónév és jelszó) vagy API_KEY.",
+      "secretRef": "Ahol a hitelesítő adat található: egy környezeti változó neve vagy egy Vault-útvonal, pl. JIRA_TOKEN. Soha ne magát a jelszót vagy tokent add meg.",
+      "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "createdAt": "Az eszköz létrehozásának ideje. A rendszer állítja be.",
+      "operations": "Az eszköz által kínált hívások, pl. create-issue. A lépések az azonosítójuk alapján választanak közülük."
+    }
   },
   "tool_operation": {
     "_self": "Művelet",
@@ -195,7 +318,15 @@
     "path": "Útvonal",
     "description": "Leírás",
     "payloadTemplate": "Kérés sablon",
-    "expectedStatusCodes": "Elvárt státuszkódok"
+    "expectedStatusCodes": "Elvárt státuszkódok",
+    "_tooltips": {
+      "id": "Egyedi az eszközön belül; a lépések ezzel hivatkoznak a műveletre, pl. create-issue.",
+      "method": "A hívás HTTP-metódusa: GET olvas, POST létrehoz, PUT vagy PATCH módosít, DELETE töröl.",
+      "path": "A hívás címe az eszköz alap URL-jéhez képest, pl. /rest/api/3/issue.",
+      "description": "Mit csinál ez a művelet; megjegyzés neked és a tervezőtársaidnak.",
+      "payloadTemplate": "A kérés opcionális JSON-törzse. A ${...} helyőrzőket a futás adataiból töltjük ki, pl. {\"summary\": \"${order.title}\"}.",
+      "expectedStatusCodes": "A sikeresnek számító HTTP-státuszkódok, pl. 201; bármely más válasz esetén a lépés sikertelen. Üresen 200, 201 és 204."
+    }
   },
   "workflow_instance": {
     "_self": "Munkafolyamat-példány",

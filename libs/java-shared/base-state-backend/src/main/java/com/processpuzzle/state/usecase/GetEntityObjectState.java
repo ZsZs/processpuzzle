@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -35,7 +36,7 @@ public class GetEntityObjectState {
     }
 
     public EntityObjectStateProjection execute(String orgKey, String entityName, UUID objectId) {
-        StateMachineDefinition definition = repository.findByOrgKeyAndEntityName(orgKey, entityName)
+        StateMachineDefinition definition = repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.RELEASED)
                 .orElseThrow(() -> new StateMachineNotFoundException(orgKey, entityName));
 
         EntityObjectSnapshot snapshot = gatewayResolver.gateway().findObject(orgKey, entityName, objectId);

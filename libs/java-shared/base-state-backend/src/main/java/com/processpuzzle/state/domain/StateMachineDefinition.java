@@ -1,5 +1,9 @@
 package com.processpuzzle.state.domain;
 
+import org.hibernate.annotations.ColumnDefault;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import com.processpuzzle.core.definition.Channel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -57,6 +61,18 @@ public class StateMachineDefinition {
     @Id
     @Column(name = "entity_name", length = 100)
     private String entityName;
+
+    /**
+     * Which of the definition's two rows this is: the {@code DRAFT} the designer edits, or the {@code RELEASED} one
+     * the running application reads, which only a release of the organization replaces. The database default lets
+     * {@code ddl-auto} add the column to a table that already has rows; {@code StateChannelBackfill} then widens the
+     * key and gives each row its released copy.
+     */
+    @Id
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'DRAFT'")
+    @Column(name = "channel", length = 16, nullable = false)
+    private Channel channel = Channel.DRAFT;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -128,6 +144,27 @@ public class StateMachineDefinition {
     /** The entity type this state machine governs. Part of the identity, so no setter. */
     public String getEntityName() {
         return entityName;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    /** A new released row with the draft's content: what a machine's first release creates. */
+    public static StateMachineDefinition releasedCopyOf(StateMachineDefinition draft) {
+        StateMachineDefinition released = StateMachineDefinition.builder()
+                .orgKey(draft.orgKey)
+                .entityName(draft.entityName)
+                .build();
+        released.channel = Channel.RELEASED;
+        released.releaseFrom(draft);
+        return released;
+    }
+
+    /** Replaces this released row's content with the draft's, keeping its own version and timestamps. */
+    public void releaseFrom(StateMachineDefinition draft) {
+        replaceTopology(draft.name, draft.description, draft.stateAttributeKey, draft.initialStateKey,
+                draft.states, draft.transitions);
     }
 
     public String getName() {

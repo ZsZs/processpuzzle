@@ -16,7 +16,25 @@
     "defaultValue": "Alapértelmezett érték",
     "enumValues": "Felsorolás értékei",
     "dateStyle": "Dátum stílusa",
-    "timeStyle": "Idő stílusa"
+    "timeStyle": "Idő stílusa",
+    "_tooltips": {
+      "code": "A kulcs, amely alatt az érték tárolódik, az entitástípuson belül egyedi, pl. orderNumber. Ha már vannak rekordok, ne módosítsa.",
+      "name": "A mező felirata, ahogy a felhasználók az űrlapokon és a lista oszlopaiban látják, pl. Rendelésszám.",
+      "valueKind": "Milyen értéket tárol a mező: szöveg, szám, igen/nem, dátum, dátum és idő, választás egy listából (ENUM) vagy hivatkozás egy másik rekordra. Ez határozza meg az értékek ellenőrzését és összehasonlítását.",
+      "formControlType": "Milyen beviteli elemmel töltik ki a felhasználók a mezőt, pl. TEXT_BOX, TEXTAREA, DROPDOWN vagy CHECKBOX. Az értéktípushoz illőt válasszon.",
+      "displayOrder": "A mező helye az űrlapon és oszlopáé a listában; a kisebb szám kerül előre, pl. 10, 20, 30.",
+      "multiplicity": "Hány értéket fogad a mező: 0..1 legfeljebb egyet, 0..n / 1..n bármennyit (1.. esetén legalább egyet), 0..x / 1..x legfeljebb a Max. előfordulás szerintit. Egyetlen értékhez hagyja üresen.",
+      "maxOccurs": "Az értékek számának felső határa, pl. 5. Csak a 0..x és 1..x multiplicitásnál számít.",
+      "required": "Ki kell-e tölteniük a felhasználóknak a mezőt a rekord mentése előtt.",
+      "indexed": "Jelölje be azoknál a mezőknél, amelyekre gyakran keresnek vagy szűrnek, pl. ügyfélszám; így ezek a lekérdezések gyorsak.",
+      "isLinkToDetails": "Jelölje be a rekordot megnevező mezőnél, pl. a rendelésszámnál: ez nyitja meg a rekordot a listából, és ez az űrlap címe. Entitástípusonként legfeljebb egy mező.",
+      "autosizeColumn": "Jelölje be, hogy a mező listaoszlopa csak a tartalmához mérten legyen széles, pl. rövid kódoknál vagy jelzőknél.",
+      "enumValues": "ENUM értéktípusnál: a felhasználók által választható lehetőségek, mindegyik egy címke, pl. NEW, PAID, SHIPPED.",
+      "linkedEntityType": "Hivatkozó mezőknél (FOREIGN_KEY) és beágyazott soroknál (EMBEDDED_COMPONENTS): annak az entitástípusnak a kódja, amelyre mutatnak, pl. customer.",
+      "defaultValue": "Az új rekordokban előre kitöltött érték, pl. NEW vagy 1. Ha nincs ilyen, hagyja üresen.",
+      "dateStyle": "DATE és DATE_TIME mezőknél: a dátum megjelenítése a short (26. 12. 31.) formától a full (2026. december 31., csütörtök) formáig. Üresen az alapértelmezés érvényes.",
+      "timeStyle": "DATE_TIME mezőknél: az idő megjelenítése a short (14:30) formától a long (másodperccel és időzónával) formáig. Üresen az alapértelmezés érvényes."
+    }
   },
   "entity_definition": {
     "_self": "Entitásdefiníció",
@@ -28,7 +46,18 @@
     "componentParents": "Szülő komponensek",
     "attributes": "Attribútumok",
     "version": "Verzió",
-    "updatedAt": "Módosítva"
+    "updatedAt": "Módosítva",
+    "_tooltips": {
+      "code": "Az entitástípus egyedi kulcsa a szervezeten belül, a címekben is ez szerepel. Rövid, kisbetűs és URL-barát, pl. order; később lehetőleg ne módosítsa.",
+      "name": "Az entitásnév, amellyel az alkalmazás oldalai, útvonalai és menüi erre a típusra hivatkoznak, pl. Order.",
+      "description": "Megjegyzés Önnek és tervezőtársainak arról, mire szolgál ez az entitástípus; a felhasználók nem látják.",
+      "status": "DRAFT, amíg még tervezi a típust, ACTIVE, hogy megjelenjen az alkalmazásban, DEPRECATED a kivezetéséhez. Csak az ACTIVE típusok jelennek meg.",
+      "isEmbedded": "Jelölje be, ha az ilyen típusú rekordok csak egy másik rekordon belül léteznek, pl. rendelési tételek egy rendelésben. Ekkor a szülőt is adja meg a Szülő komponensek mezőben.",
+      "componentParents": "Beágyazott típusnál: azoknak az entitástípusoknak a kódjai, amelyek rekordjai tartalmazzák, pl. order. Kötelező, ha a Beágyazott be van jelölve.",
+      "attributes": "Az entitástípus mezői, mezőnként egy sor. A definícióval együtt mentődnek.",
+      "version": "Minden mentéssel növekszik. A rendszer állítja be.",
+      "updatedAt": "A definíció utolsó mentésének időpontja. A rendszer állítja be."
+    }
   },
   "artifact": {
     "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra.",

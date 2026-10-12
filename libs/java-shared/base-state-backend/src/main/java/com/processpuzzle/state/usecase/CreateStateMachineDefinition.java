@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.usecase.exception.StateMachineAlreadyExistsException;
@@ -25,7 +26,7 @@ public class CreateStateMachineDefinition {
      * conflicting — same reasoning as {@code CreateRule}.
      */
     public StateMachineDefinition execute(StateMachineDefinition definition) {
-        if (repository.existsByOrgKeyAndEntityName(definition.getOrgKey(), definition.getEntityName())) {
+        if (repository.existsByOrgKeyAndEntityNameAndChannel(definition.getOrgKey(), definition.getEntityName(), Channel.DRAFT)) {
             throw new StateMachineAlreadyExistsException(definition.getOrgKey(), definition.getEntityName());
         }
         validator.validate(definition.getOrgKey(), definition.getEntityName(), definition.getStateAttributeKey(),

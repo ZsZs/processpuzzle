@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -30,16 +31,16 @@ class FindRuleTest {
     void readsTheRuleThroughTheOrgScopedFinder() {
         RuleDefinition rule = new RuleDefinition("demo", "base", "Base", null, "Order", "true",
                 Severity.ERROR, null, null, null, false, true, List.of());
-        when(repository.findByOrgKeyAndId("demo", "base")).thenReturn(Optional.of(rule));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "base", Channel.DRAFT)).thenReturn(Optional.of(rule));
 
-        assertThat(findRule.execute("demo", "base")).isSameAs(rule);
+        assertThat(findRule.execute("demo", "base", Channel.DRAFT)).isSameAs(rule);
     }
 
     @Test
     void failsWhenTheRuleBelongsToAnotherOrganizationOrDoesNotExist() {
-        when(repository.findByOrgKeyAndId("demo", "base")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "base", Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> findRule.execute("demo", "base"))
+        assertThatThrownBy(() -> findRule.execute("demo", "base", Channel.DRAFT))
                 .isInstanceOf(RuleNotFoundException.class)
                 .hasMessage("Rule not found: demo/base");
     }

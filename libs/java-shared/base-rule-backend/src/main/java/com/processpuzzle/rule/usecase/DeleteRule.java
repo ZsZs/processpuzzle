@@ -1,9 +1,9 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.usecase.exception.RuleNotFoundException;
-import com.processpuzzle.rule.usecase.service.RuleEngineSync;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,20 +14,18 @@ import java.util.List;
 public class DeleteRule {
 
     private final RuleDefinitionRepository repository;
-    private final RuleEngineSync ruleEngineSync;
 
-    public DeleteRule(RuleDefinitionRepository repository, RuleEngineSync ruleEngineSync) {
+    public DeleteRule(RuleDefinitionRepository repository) {
         this.repository = repository;
-        this.ruleEngineSync = ruleEngineSync;
     }
 
     public void execute(String orgKey, String id) {
-        RuleDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+        RuleDefinition existing = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new RuleNotFoundException(orgKey, id));
 
         // Only this organization's rules can extend this one, so a same-id rule in another
         // organization is not a dependent and must not block the delete.
-        List<String> dependents = repository.findByOrgKeyAndExtendsRuleId(orgKey, id).stream()
+        List<String> dependents = repository.findByOrgKeyAndExtendsRuleIdAndChannel(orgKey, id, Channel.DRAFT).stream()
                 .map(RuleDefinition::getId)
                 .toList();
         if (!dependents.isEmpty()) {
@@ -36,6 +34,5 @@ public class DeleteRule {
         }
 
         repository.delete(existing);
-        ruleEngineSync.unregisterAfterCommit(orgKey, id);
     }
 }

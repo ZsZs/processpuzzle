@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.usecase.exception.RuleNotFoundException;
@@ -16,8 +17,8 @@ public class FindRule {
         this.repository = repository;
     }
 
-    public RuleDefinition execute(String orgKey, String id) {
-        return repository.findByOrgKeyAndId(orgKey, id)
+    public RuleDefinition execute(String orgKey, String id, Channel channel) {
+        return repository.findByOrgKeyAndIdAndChannel(orgKey, id, channel)
                 .orElseThrow(() -> new RuleNotFoundException(orgKey, id));
     }
 }

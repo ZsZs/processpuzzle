@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.adapter.inbound.RuleMapper;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
@@ -30,13 +31,13 @@ class UpdateRuleTest {
         repository = mock(RuleDefinitionRepository.class);
         ruleEngineSync = mock(RuleEngineSync.class);
         extendsValidator = mock(RuleExtendsValidator.class);
-        updateRule = new UpdateRule(repository, ruleEngineSync, extendsValidator, new RuleMapper());
+        updateRule = new UpdateRule(repository, extendsValidator, new RuleMapper());
     }
 
     @Test
     void appliesTheInputToTheExistingRowRatherThanReplacingIt() {
         RuleDefinition existing = existing();
-        when(repository.findByOrgKeyAndId("demo", "max-quantity")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "max-quantity", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
 
         RuleDefinition saved = updateRule.execute("demo", "max-quantity", input(null));
@@ -48,13 +49,14 @@ class UpdateRuleTest {
         assertThat(saved.getSeverity()).isEqualTo(Severity.INFO);
         assertThat(saved.getFields()).containsExactly("quantity");
         verify(extendsValidator).validate("demo", "max-quantity", null);
-        verify(ruleEngineSync).registerAfterCommit(existing);
+        // A save writes the draft; the engine holds released rules, and only a release changes it.
+        verifyNoInteractions(ruleEngineSync);
     }
 
     @Test
     void validatesTheNewExtendsLinkAgainstTheIdFromThePath() {
         RuleDefinition existing = existing();
-        when(repository.findByOrgKeyAndId("demo", "max-quantity")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "max-quantity", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
 
         updateRule.execute("demo", "max-quantity", input("base"));
@@ -65,7 +67,7 @@ class UpdateRuleTest {
 
     @Test
     void failsWhenTheOrganizationHasNoSuchRule() {
-        when(repository.findByOrgKeyAndId("demo", "missing")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "missing", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> updateRule.execute("demo", "missing", input(null)))
                 .isInstanceOf(RuleNotFoundException.class)

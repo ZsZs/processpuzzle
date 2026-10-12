@@ -1,11 +1,13 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
 import com.processpuzzle.state.usecase.ImportOutcome;
+import com.processpuzzle.state.usecase.StateMachineReleaser;
 import com.processpuzzle.state.usecase.ImportStateMachineDefinitions;
 import com.processpuzzle.state.usecase.StateMachineTopologyValidator;
 import com.processpuzzle.state.usecase.service.GuardActionResolver;
@@ -40,12 +42,14 @@ class DefaultStateImporterTest {
     private ImportStateMachineDefinitions importUseCase;
     private ResourcePatternResolver resourceResolver;
     private DefaultStateImporter importer;
+    private StateMachineReleaser releaser;
 
     @BeforeEach
     void setUp() {
         importUseCase = mock(ImportStateMachineDefinitions.class);
         resourceResolver = mock(ResourcePatternResolver.class);
-        importer = new DefaultStateImporter(importUseCase, resourceResolver);
+        releaser = mock(StateMachineReleaser.class);
+        importer = new DefaultStateImporter(importUseCase, resourceResolver, releaser);
     }
 
     @Test
@@ -60,19 +64,34 @@ class DefaultStateImporterTest {
         verify(importUseCase).execute(eq("processpuzzle-testbed"), any(InputStream.class));
     }
 
+    /** Defaults are meant to run, but a designer's other drafts in the organization must stay drafts. */
+    @Test
+    void releasesTheMachinesTheFileWrote_andOnlyThose() throws IOException {
+        Resource bundledResource = bundledTestbedFile();
+        when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{bundledResource});
+        when(importUseCase.execute(eq("processpuzzle-testbed"), any(InputStream.class)))
+                .thenReturn(new ImportOutcome(1, 1, List.of(), List.of("order", "invoice")));
+
+        importer.loadDefaults();
+
+        verify(releaser).release("processpuzzle-testbed", "order");
+        verify(releaser).release("processpuzzle-testbed", "invoice");
+        org.mockito.Mockito.verifyNoMoreInteractions(releaser);
+    }
+
     @Test
     void bundledFileParsesAndImportsValidDynamicEntityStateMachine() throws IOException {
         StateMachineDefinitionRepository repository = mock(StateMachineDefinitionRepository.class);
         GuardActionResolver guardActionResolver = mock(GuardActionResolver.class);
         EntityAttributeQuery entityAttributeQuery = mock(EntityAttributeQuery.class);
-        when(entityAttributeQuery.entityTypeExists(eq("processpuzzle-testbed"), anyString())).thenReturn(true);
-        when(entityAttributeQuery.attributeKind(eq("processpuzzle-testbed"), anyString(), anyString()))
+        when(entityAttributeQuery.entityTypeExists(eq("processpuzzle-testbed"), anyString(), eq(Channel.DRAFT))).thenReturn(true);
+        when(entityAttributeQuery.attributeKind(eq("processpuzzle-testbed"), anyString(), anyString(), eq(Channel.DRAFT)))
                 .thenReturn(Optional.of(EntityAttributeKind.ENUM));
         StateMachineTopologyValidator validator =
                 new StateMachineTopologyValidator(guardActionResolver, entityAttributeQuery);
         ImportStateMachineDefinitions realImportUseCase = new ImportStateMachineDefinitions(repository, mock(DiagramDefinitionRepository.class), validator);
 
-        when(repository.findByOrgKeyAndEntityName("processpuzzle-testbed", "dynamic-entity"))
+        when(repository.findByOrgKeyAndEntityNameAndChannel("processpuzzle-testbed", "dynamic-entity", Channel.DRAFT))
                 .thenReturn(Optional.empty());
 
         try (InputStream input = bundledTestbedFile().getInputStream()) {

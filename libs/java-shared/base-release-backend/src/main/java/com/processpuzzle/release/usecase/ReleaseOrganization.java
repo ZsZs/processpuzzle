@@ -4,6 +4,8 @@ import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.release.domain.OrgRelease;
+import com.processpuzzle.release.domain.OrgReleaseContent;
+import com.processpuzzle.release.domain.OrgReleaseContentRepository;
 import com.processpuzzle.release.domain.OrgReleaseItem;
 import com.processpuzzle.release.domain.OrgReleaseItemRepository;
 import com.processpuzzle.release.domain.OrgReleaseRepository;
@@ -26,8 +28,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * what is checked is what is released. Refuses while the plan has errors, while it has warnings the
  * caller has not confirmed, and while nothing is pending. Otherwise every participant releases its
  * kind in order, all in the one transaction — the platform runs on a single datasource — and the
- * release is recorded with the hash of each definition it carried. A participant that fails rolls
- * every kind back.
+ * release is recorded with the hash and the content of each definition it carried — see
+ * {@link OrgReleaseContent}. A participant that fails rolls every kind back.
  */
 @Service
 public class ReleaseOrganization {
@@ -37,6 +39,7 @@ public class ReleaseOrganization {
     private final ReleaseParticipants participants;
     private final OrgReleaseRepository releaseRepository;
     private final OrgReleaseItemRepository itemRepository;
+    private final OrgReleaseContentRepository contentRepository;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -45,6 +48,7 @@ public class ReleaseOrganization {
                         ReleaseParticipants participants,
                         OrgReleaseRepository releaseRepository,
                         OrgReleaseItemRepository itemRepository,
+                        OrgReleaseContentRepository contentRepository,
                         PlatformTransactionManager transactionManager,
                         ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -52,6 +56,7 @@ public class ReleaseOrganization {
         this.participants = participants;
         this.releaseRepository = releaseRepository;
         this.itemRepository = itemRepository;
+        this.contentRepository = contentRepository;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -105,6 +110,10 @@ public class ReleaseOrganization {
                     return new OrgReleaseItem(orgKey, number, index, change.kind(), change.key(), change.change(),
                             change.fingerprint() == null ? null : sha256(change.fingerprint()));
                 })
+                .toList());
+        contentRepository.saveAll(IntStream.range(0, changes.size())
+                .filter(index -> changes.get(index).fingerprint() != null)
+                .mapToObj(index -> new OrgReleaseContent(items.get(index).getId(), orgKey, changes.get(index).fingerprint()))
                 .toList());
         return new ReleaseRecord(release, items);
     }

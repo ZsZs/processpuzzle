@@ -1,5 +1,6 @@
 package com.processpuzzle.state.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,10 +19,13 @@ public interface DiagramDefinitionRepository
         extends JpaRepository<DiagramDefinition, DiagramDefinitionKey>,
         JpaSpecificationExecutor<DiagramDefinition> {
 
-    Optional<DiagramDefinition> findByOrgKeyAndEntityName(String orgKey, String entityName);
+    Optional<DiagramDefinition> findByOrgKeyAndEntityNameAndChannel(String orgKey, String entityName, Channel channel);
 
-    boolean existsByOrgKeyAndEntityName(String orgKey, String entityName);
+    boolean existsByOrgKeyAndEntityNameAndChannel(String orgKey, String entityName, Channel channel);
 
+    List<DiagramDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
+
+    /** Both rows of every one of a tenant's definitions — for removing them all, never for reading one. */
     List<DiagramDefinition> findByOrgKey(String orgKey);
 
     void deleteByOrgKey(String orgKey);

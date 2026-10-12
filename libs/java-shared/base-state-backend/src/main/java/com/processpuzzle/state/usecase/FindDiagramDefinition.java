@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinition;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.usecase.exception.DiagramDefinitionNotFoundException;
@@ -25,8 +26,8 @@ public class FindDiagramDefinition {
         this.repository = repository;
     }
 
-    public DiagramDefinition execute(String orgKey, String entityName) {
-        return repository.findByOrgKeyAndEntityName(orgKey, entityName)
+    public DiagramDefinition execute(String orgKey, String entityName, Channel channel) {
+        return repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, channel)
                 .orElseThrow(() -> new DiagramDefinitionNotFoundException(orgKey, entityName));
     }
 }

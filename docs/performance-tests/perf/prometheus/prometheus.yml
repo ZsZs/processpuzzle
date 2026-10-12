@@ -1,0 +1,53 @@
+# Scrape configuration of the performance-test stack. Targets are compose service names, so this
+# file works as is wherever Prometheus runs in the same compose project as the system under test.
+# 5s is coarse enough to be cheap and fine enough to see a 30s ramp step.
+global:
+  scrape_interval: 5s
+  scrape_timeout: 4s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [ "localhost:9090" ]
+
+  # The host: CPU, memory, disk and network of the whole VPS.
+  - job_name: node
+    static_configs:
+      - targets: [ "node-exporter:9100" ]
+
+  # Per-container CPU, memory against limit, block I/O, network, OOM events.
+  - job_name: cadvisor
+    scrape_interval: 10s
+    scrape_timeout: 8s
+    static_configs:
+      - targets: [ "cadvisor:8080" ]
+
+  # Backend JVM through the JMX exporter agent (heap, GC, threads, Tomcat, Hikari).
+  - job_name: backend
+    static_configs:
+      - targets: [ "testbed-backend:9404" ]
+
+  - job_name: postgres
+    scrape_interval: 10s
+    static_configs:
+      - targets: [ "postgres-exporter:9187" ]
+
+  # MinIO's own metrics; MINIO_PROMETHEUS_AUTH_TYPE=public in the overlay lets these through.
+  - job_name: minio-cluster
+    metrics_path: /minio/v2/metrics/cluster
+    scrape_interval: 15s
+    static_configs:
+      - targets: [ "minio:9000" ]
+
+  - job_name: minio-node
+    metrics_path: /minio/v2/metrics/node
+    scrape_interval: 15s
+    static_configs:
+      - targets: [ "minio:9000" ]
+
+  # Keycloak's management interface (port 9000; metrics are enabled in the image).
+  - job_name: keycloak
+    metrics_path: /metrics
+    static_configs:
+      - targets: [ "keycloak:9000" ]

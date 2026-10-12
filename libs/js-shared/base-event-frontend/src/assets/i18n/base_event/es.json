@@ -7,6 +7,15 @@
     "kind": "Tipo",
     "subjectType": "Tipo de sujeto",
     "action": "Acción",
-    "state": "Estado"
+    "state": "Estado",
+    "_tooltips": {
+      "id": "Único en su organización, p. ej. OrderCreatedEvent. Los workflows y otras funciones se refieren al evento con él, así que evite cambiarlo después.",
+      "name": "El nombre del evento tal como se ve en selectores y listas, p. ej. Pedido creado.",
+      "description": "Una nota sobre cuándo ocurre el evento y para qué se usa; los usuarios no la ven.",
+      "kind": "SYSTEM: lo genera la plataforma cuando cambia un registro. MESSAGE: se envía a un receptor a través de la API. SIGNAL: se difunde a todos los oyentes a través de la API.",
+      "subjectType": "Solo para eventos SYSTEM: el código del tipo de entidad cuyos registros generan el evento, p. ej. order.",
+      "action": "Solo para eventos SYSTEM: qué le ocurre al registro: CREATED, UPDATED, DELETED o STATE_CHANGED.",
+      "state": "Solo para STATE_CHANGED: el estado al que pasa el registro, p. ej. CONFIRMED."
+    }
   }
 }

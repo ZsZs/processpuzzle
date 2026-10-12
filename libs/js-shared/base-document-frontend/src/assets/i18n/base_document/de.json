@@ -36,6 +36,20 @@
         "undo": "Rückgängig",
         "redo": "Wiederherstellen"
       }
+    },
+    "_tooltips": {
+      "slug": "Der Schlüssel des Dokuments in seiner Adresse, eindeutig in Ihrer Organisation. Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. getting-started.",
+      "title": "Der Titel des Dokuments, wie Leser ihn sehen, z. B. Erste Schritte.",
+      "subject": "Worum es im Dokument geht, in einer Zeile.",
+      "description": "Eine kurze Zusammenfassung des Dokuments, z. B. für Übersichten und Suchergebnisse.",
+      "author": "Die Autorenangabe, die mit dem Dokument angezeigt wird. Leer lassen, um den Ersteller zu verwenden.",
+      "sourceLocale": "Die Sprache, in der Sie das Dokument schreiben; jede andere Sprachfassung ist eine Übersetzung davon.",
+      "isPublic": "Ankreuzen, damit jeder das veröffentlichte Dokument ohne Anmeldung lesen kann; Leserrollen werden dann ignoriert.",
+      "readerRoles": "Rollen, die das Dokument lesen dürfen, je ein Chip, z. B. staff. Leer lassen, damit jedes angemeldete Mitglied der Organisation es lesen kann.",
+      "editorRoles": "Rollen, die Inhalt und Eigenschaften des Dokuments ändern dürfen, je ein Chip, z. B. editor.",
+      "publisherRoles": "Rollen, die das Dokument veröffentlichen dürfen, je ein Chip. Leer lassen, damit auch die Bearbeiterrollen veröffentlichen können.",
+      "inputPorts": "Werte, die die Seite, in die das Dokument eingebettet ist, übergibt, z. B. der angezeigte Kunde, damit Widgets im Dokument sie nutzen können.",
+      "outputPorts": "Werte, die das Dokument an die einbettende Seite zurückgibt, z. B. ein vom Leser ausgewählter Datensatz."
     }
   },
   "document_input_port": {
@@ -47,7 +61,17 @@
     "entityType": "Entitätstyp",
     "attributeVisibility": "Attributsichtbarkeit",
     "defaultValue": "Standardwert",
-    "defaultRsqlFilter": "Standard-RSQL-Filter"
+    "defaultRsqlFilter": "Standard-RSQL-Filter",
+    "_tooltips": {
+      "name": "Name, unter dem die einbettende Seite diesen Wert übergibt oder empfängt, eindeutig unter den Ports des Dokuments, z. B. customer.",
+      "type": "Art des Wertes: Text, Zahl, Ja/Nein, Datum, Objekt oder Liste, oder ENTITY_REF / ENTITY_COLLECTION für einen bzw. mehrere Datensätze eines Entitätstyps.",
+      "required": "Ob die einbettende Seite diesen Wert liefern muss. Ohne Häkchen wird der Standardwert verwendet, wenn nichts geliefert wird.",
+      "description": "Was der Wert bedeutet, für alle, die das Dokument einbetten.",
+      "entityType": "Nur für ENTITY_REF und ENTITY_COLLECTION: der Entitätstyp der Datensätze, z. B. Order.",
+      "attributeVisibility": "Nur für ENTITY_REF und ENTITY_COLLECTION: welche Attribute der Datensätze angezeigt werden. mode ist ALL, INCLUDE oder EXCLUDE; attributes nennt die betroffenen Attributnamen.",
+      "defaultValue": "Wert, der verwendet wird, wenn der Port nicht erforderlich ist und die einbettende Seite nichts liefert, z. B. 10.",
+      "defaultRsqlFilter": "Nur für ENTITY_COLLECTION: welche Datensätze angezeigt werden, wenn die Seite keinen Filter liefert, als RSQL-Abfrage, z. B. status==OPEN."
+    }
   },
   "document_output_port": {
     "_self": "Ausgangsport",
@@ -55,6 +79,13 @@
     "type": "Typ",
     "description": "Beschreibung",
     "entityType": "Entitätstyp",
-    "attributeVisibility": "Attributsichtbarkeit"
+    "attributeVisibility": "Attributsichtbarkeit",
+    "_tooltips": {
+      "name": "Name, unter dem die einbettende Seite diesen Wert übergibt oder empfängt, eindeutig unter den Ports des Dokuments, z. B. customer.",
+      "type": "Art des Wertes: Text, Zahl, Ja/Nein, Datum, Objekt oder Liste, oder ENTITY_REF / ENTITY_COLLECTION für einen bzw. mehrere Datensätze eines Entitätstyps.",
+      "description": "Was der Wert bedeutet, für alle, die das Dokument einbetten.",
+      "entityType": "Nur für ENTITY_REF und ENTITY_COLLECTION: der Entitätstyp der Datensätze, z. B. Order.",
+      "attributeVisibility": "Nur für ENTITY_REF und ENTITY_COLLECTION: welche Attribute der Datensätze angezeigt werden. mode ist ALL, INCLUDE oder EXCLUDE; attributes nennt die betroffenen Attributnamen."
+    }
   }
 }

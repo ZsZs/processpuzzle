@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -53,7 +54,7 @@ public class ImportRules {
 
         // Only this organization's existing rules can satisfy an 'extends' reference.
         Map<String, String> extendsLinks = new HashMap<>();
-        for (RuleDefinition existing : repository.findByOrgKey(orgKey)) {
+        for (RuleDefinition existing : repository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT)) {
             extendsLinks.put(existing.getId(), existing.getExtendsRuleId());
         }
         for (RuleYamlEntry entry : byId.values()) {
@@ -79,9 +80,11 @@ public class ImportRules {
         }
 
         int created = 0;
+        List<String> written = new java.util.ArrayList<>();
         int updated = 0;
         for (RuleYamlEntry entry : byId.values()) {
-            Optional<RuleDefinition> existingOpt = repository.findByOrgKeyAndId(orgKey, entry.id());
+            written.add(entry.id());
+            Optional<RuleDefinition> existingOpt = repository.findByOrgKeyAndIdAndChannel(orgKey, entry.id(), Channel.DRAFT);
             RuleDefinition rule;
             if (existingOpt.isPresent()) {
                 rule = existingOpt.get();
@@ -98,10 +101,9 @@ public class ImportRules {
                 created++;
             }
             repository.save(rule);
-            ruleEngineSync.registerAfterCommit(rule);
         }
 
-        return new ImportOutcome(created, updated, errors);
+        return new ImportOutcome(created, updated, errors, written);
     }
 
     /**
@@ -118,8 +120,10 @@ public class ImportRules {
         // Flushed now: Hibernate orders inserts before deletes, so a rule the starter re-creates
         // under the same id would otherwise collide with its own not-yet-deleted row.
         repository.flush();
-        rules.forEach(rule -> ruleEngineSync.unregisterAfterCommit(orgKey, rule.getId()));
-        return rules.stream().map(RuleDefinition::getId).toList();
+        // Each rule has a draft and a released row; it is one rule, and the engine knows it once.
+        List<String> ids = rules.stream().map(RuleDefinition::getId).distinct().toList();
+        ids.forEach(id -> ruleEngineSync.unregisterAfterCommit(orgKey, id));
+        return ids;
     }
 
     private void applyEntry(RuleDefinition rule, RuleYamlEntry entry) {
