@@ -32,7 +32,6 @@ public class UpdateRule {
 
         mapper.applyToDomain(input, existing);
 
-        RuleDefinition saved = repository.save(existing);
-        return saved;
+        return repository.save(existing);
     }
 }

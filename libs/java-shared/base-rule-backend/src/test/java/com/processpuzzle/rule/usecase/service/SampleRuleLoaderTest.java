@@ -53,7 +53,7 @@ class SampleRuleLoaderTest {
     void setUp() {
         importRules = mock(ImportRules.class);
         resourceResolver = mock(ResourcePatternResolver.class);
-        loader = new SampleRuleLoader(importRules, resourceResolver, org.mockito.Mockito.mock(RuleReleaser.class));
+        loader = new SampleRuleLoader(importRules, resourceResolver, mock(RuleReleaser.class));
     }
 
     @Test
