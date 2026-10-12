@@ -72,6 +72,11 @@
 
         <dependency>
             <groupId>com.processpuzzle</groupId>
+            <artifactId>base-release-backend</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.processpuzzle</groupId>
             <artifactId>base-event-backend</artifactId>
         </dependency>
 

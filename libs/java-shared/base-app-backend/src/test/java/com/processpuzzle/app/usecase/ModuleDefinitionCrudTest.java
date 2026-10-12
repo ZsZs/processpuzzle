@@ -1,5 +1,6 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
 import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
@@ -89,7 +90,7 @@ class ModuleDefinitionCrudTest {
     /** {@code save} merges for an assigned id, so without the pre-check this would silently overwrite. */
     @Test
     void creatingAModuleThatAlreadyExists_is409RatherThanASilentOverwrite() {
-        when(repository.existsByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(true);
+        when(repository.existsByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(true);
 
         assertThatThrownBy(() -> createModuleDefinition.execute(ORG_KEY,
                 AppTestFixtures.validModuleInput(MODULE_KEY)))
@@ -148,14 +149,14 @@ class ModuleDefinitionCrudTest {
     @Test
     void findReturnsTheStoredModule() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(Optional.of(stored));
 
         assertThat(findModuleDefinition.execute(ORG_KEY, MODULE_KEY)).isSameAs(stored);
     }
 
     @Test
     void findingAnUnknownModule_is404() {
-        when(repository.findByOrgKeyAndKey(ORG_KEY, "nope")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, "nope", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> findModuleDefinition.execute(ORG_KEY, "nope"))
                 .isInstanceOf(ModuleDefinitionNotFoundException.class)
@@ -163,14 +164,14 @@ class ModuleDefinitionCrudTest {
     }
 
     /**
-     * Lazy-loading a module is a run-time read every member makes, so this one asks for membership and
-     * not for design rights — a policy granting the former and refusing the latter must still serve it,
-     * while the authoring list stays closed.
+     * The released module is a run-time read every member may make, so it asks for membership and not for
+     * design rights — a policy granting the former and refusing the latter must still serve it, while the
+     * drafts stay closed.
      */
     @Test
-    void findNeedsMembershipOnlyWhereTheAuthoringListNeedsDesign() {
+    void theReleasedModuleNeedsMembershipOnlyWhereTheDraftsNeedDesign() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.RELEASED)).thenReturn(Optional.of(stored));
         OrganizationGuard memberOnly = AppTestFixtures.guardWith(new OrganizationAccessPolicy() {
             @Override
             public void requireAccess(String orgKey) {
@@ -183,8 +184,10 @@ class ModuleDefinitionCrudTest {
             }
         });
 
-        assertThat(new FindModuleDefinition(repository, memberOnly).execute(ORG_KEY, MODULE_KEY))
+        assertThat(new FindModuleDefinition(repository, memberOnly).execute(ORG_KEY, MODULE_KEY, Channel.RELEASED))
                 .isSameAs(stored);
+        assertThatThrownBy(() -> new FindModuleDefinition(repository, memberOnly).execute(ORG_KEY, MODULE_KEY))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
         assertThatThrownBy(() -> new FindAllModuleDefinitions(repository, memberOnly).execute(ORG_KEY))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
     }
@@ -192,7 +195,7 @@ class ModuleDefinitionCrudTest {
     @Test
     void listReturnsEveryModuleOfTheOrganization() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKey(ORG_KEY)).thenReturn(List.of(stored));
+        when(repository.findByOrgKeyAndChannel(ORG_KEY, Channel.DRAFT)).thenReturn(List.of(stored));
 
         assertThat(findAllModuleDefinitions.execute(ORG_KEY)).containsExactly(stored);
     }
@@ -202,7 +205,7 @@ class ModuleDefinitionCrudTest {
     @Test
     void updateReplacesTheContentAndCountsTheRevision() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(Optional.of(stored));
         ModuleDefinitionInput input = AppTestFixtures.validModuleInput(MODULE_KEY);
         input.setName("Claims, renamed");
         input.setRoutes(List.of(AppTestFixtures.routeDefinition("closed", "Closed claims")));
@@ -219,7 +222,7 @@ class ModuleDefinitionCrudTest {
     @Test
     void updateIgnoresTheKeyInTheBodyAndKeepsThePathOne() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(Optional.of(stored));
 
         assertThat(updateModuleDefinition
                 .execute(ORG_KEY, MODULE_KEY, AppTestFixtures.validModuleInput("some-other-key"))
@@ -228,7 +231,7 @@ class ModuleDefinitionCrudTest {
 
     @Test
     void updatingAnUnknownModule_is404() {
-        when(repository.findByOrgKeyAndKey(ORG_KEY, "nope")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, "nope", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> updateModuleDefinition.execute(ORG_KEY, "nope",
                 AppTestFixtures.validModuleInput("nope")))
@@ -239,7 +242,7 @@ class ModuleDefinitionCrudTest {
     @Test
     void updatingWithAStructurallyInvalidBody_is400AndLeavesTheStoredModuleAlone() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(Optional.of(stored));
         ModuleDefinitionInput input = AppTestFixtures.validModuleInput(MODULE_KEY);
         input.setRoutes(List.of(AppTestFixtures.routeDefinition(MODULE_ROUTE_PATH, null)));
 
@@ -258,7 +261,7 @@ class ModuleDefinitionCrudTest {
     @Test
     void deleteRemovesTheModuleItLoaded() {
         ModuleDefinition stored = AppTestFixtures.storedModule();
-        when(repository.findByOrgKeyAndKey(ORG_KEY, MODULE_KEY)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(Optional.of(stored));
 
         deleteModuleDefinition.execute(ORG_KEY, MODULE_KEY);
 
@@ -267,7 +270,7 @@ class ModuleDefinitionCrudTest {
 
     @Test
     void deletingAnUnknownModule_is404RatherThanASilentNoOp() {
-        when(repository.findByOrgKeyAndKey(ORG_KEY, "nope")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndKeyAndChannel(ORG_KEY, "nope", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> deleteModuleDefinition.execute(ORG_KEY, "nope"))
                 .isInstanceOf(ModuleDefinitionNotFoundException.class);

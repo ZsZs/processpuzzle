@@ -30,9 +30,9 @@
       "name": "Der Name der Anwendung, wie Benutzer ihn sehen, z. B. im Widget app-title. — Leitfaden: Anwendung",
       "translocoId": "Optionaler Übersetzungsschlüssel; wenn gesetzt, wird er in anderen Sprachen anstelle des Namens angezeigt. — Leitfaden: Anwendung",
       "description": "Eine Notiz für Sie und Ihre Designer-Kollegen; Benutzer sehen sie nicht. — Leitfaden: Anwendung",
-      "status": "DRAFT, bis die Definition veröffentlicht ist, danach PUBLISHED. Wird vom System gesetzt. — Leitfaden: Speichern, Vorschau und Veröffentlichen",
-      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt. — Leitfaden: Speichern, Vorschau und Veröffentlichen",
-      "publishedVersion": "Die Version, die Benutzer derzeit erhalten. Ändert sich nur, wenn Sie Veröffentlichen drücken. — Leitfaden: Speichern, Vorschau und Veröffentlichen",
+      "status": "DRAFT, solange die Definition Änderungen hat, die die Organisation nicht freigegeben hat, danach PUBLISHED. Vom System gesetzt. — Leitfaden: Speichern, Vorschau und Freigabe",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt. — Leitfaden: Speichern, Vorschau und Freigabe",
+      "publishedVersion": "Die Version, die die Benutzer derzeit erhalten. Ändert sich erst, wenn die Organisation im Bereich Freigabe des Designers freigegeben wird. — Leitfaden: Speichern, Vorschau und Freigabe",
       "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt.",
       "materialTheme": "Die Farbpalette der gesamten Anwendung. processpuzzle ist das Marken-Design; die anderen färben auch Kopfzeile, Seitennavigation, Karten und Schaltflächen um. — Leitfaden: Theme",
       "colorScheme": "Hell, dunkel oder automatisch (folgt dem Betriebssystem des Benutzers). — Leitfaden: Theme",
@@ -149,17 +149,12 @@
       "routes": "Die Seiten des Moduls. Ihre Pfade sind relativ zum Basispfad, unter dem das Modul eingebunden ist. — Leitfaden: Module"
     }
   },
-  "publish": {
-    "button": "Veröffentlichen",
-    "tooltip": "Die gespeicherte Definition veröffentlichen: Sie wird zu dem, was die Benutzer Ihrer Anwendung sehen",
-    "done": "Veröffentlicht. Ihre Anwendung zeigt jetzt diese Version."
-  },
   "concepts": {
     "title": "Wie eine dynamische Anwendung aufgebaut ist",
     "intro": "Eine <b>Anwendung</b> wird in ProcessPuzzle nicht programmiert – sie wird <b>beschrieben</b>. Alles, was Sie hier eingeben (der Rahmen, das Menü, die Seiten und was jede Seite zeigt), wird als Daten gespeichert, und die Anwendungsoberfläche baut daraus zur Laufzeit die laufende Anwendung auf. Um die Anwendung zu ändern, bearbeiten Sie ihre Definition und veröffentlichen sie erneut; es muss nichts neu gebaut oder neu ausgeliefert werden.",
     "assembling": {
       "title": "Ihre Anwendung Schritt für Schritt zusammenstellen",
-      "body": "<ol><li><b>Anwendung anlegen</b> – geben Sie ihr eine Id und einen Namen.</li><li><b>Aussehen wählen</b> – ein Material-Theme, ein Farbschema und eine Layout-Vorlage.</li><li><b>Seiten hinzufügen</b> – eine <b>Route</b> pro Seite; legen Sie fest, was jede davon zeigt: Widgets, eine Entität oder ein Dokument.</li><li><b>Rahmen bauen</b> – fügen Sie die Bereiche <b>header</b>, <b>sidenav</b> und <b>footer</b> hinzu; füllen Sie header und footer mit Widgets und die sidenav mit Navigationseinträgen, die auf Ihre Routen verweisen.</li><li><b>Prüfen</b> Sie das Ergebnis im Tab <b>Vorschau</b>.</li><li><b>Veröffentlichen</b> Sie die Anwendung, damit die Benutzer die neue Version erhalten.</li></ol><p>Routen kommen bewusst vor der Navigation: Ein Navigationseintrag verweist über ihren Pfad auf eine Route, daher lässt er sich am einfachsten anlegen, wenn die Route bereits existiert.</p>"
+      "body": "<ol><li><b>Anwendung anlegen</b> – geben Sie ihr eine Id und einen Namen.</li><li><b>Aussehen wählen</b> – ein Material-Theme, ein Farbschema und eine Layout-Vorlage.</li><li><b>Seiten hinzufügen</b> – eine <b>Route</b> pro Seite; legen Sie fest, was jede davon zeigt: Widgets, eine Entität oder ein Dokument.</li><li><b>Rahmen bauen</b> – fügen Sie die Bereiche <b>header</b>, <b>sidenav</b> und <b>footer</b> hinzu; füllen Sie header und footer mit Widgets und die sidenav mit Navigationseinträgen, die auf Ihre Routen verweisen.</li><li><b>Prüfen</b> Sie das Ergebnis im Tab <b>Vorschau</b>.</li><li><b>Geben Sie sie frei</b> – im Bereich <b>Freigabe</b> des Designers –, damit die Benutzer die neue Version erhalten.</li></ol><p>Routen kommen bewusst vor der Navigation: Ein Navigationseintrag verweist über ihren Pfad auf eine Route, daher lässt er sich am einfachsten anlegen, wenn die Route bereits existiert.</p>"
     },
     "application": {
       "title": "Anwendung",
@@ -214,8 +209,8 @@
       "body": "<p>Routen und Navigationseinträge können die <b>Rollen</b> nennen, die sie verwenden dürfen. Bleibt die Liste leer, darf jedes angemeldete Mitglied Ihrer Organisation sie verwenden. Rollen werden mit der Definition gespeichert, aber die Vorschau schränkt anhand von ihnen noch nichts ein.</p>"
     },
     "lifecycle": {
-      "title": "Speichern, Vorschau und Veröffentlichen",
-      "body": "<p>Eine neue Anwendung beginnt als <b>Entwurf</b>. <b>Speichern</b> sichert Ihre Änderungen; der Tab <b>Vorschau</b> zeigt dann die gespeicherte Definition genau so, wie die laufende Anwendung sie darstellt, einschließlich Theme – prüfen Sie sie dort, bevor Sie weitermachen. <b>Veröffentlichen</b> macht die gespeicherte Version zur <b>Veröffentlichten Version</b>, die die Benutzer erhalten. Sie können danach weiter bearbeiten und speichern; die Benutzer sehen die Änderungen erst, wenn Sie erneut veröffentlichen.</p>"
+      "title": "Speichern, Vorschau und Freigabe",
+      "body": "<p>Eine neue Anwendung beginnt als <b>Entwurf</b>. <b>Speichern</b> sichert Ihre Änderungen; der Reiter <b>Vorschau</b> zeigt dann die gespeicherte Definition genau so, wie die laufende Anwendung sie darstellt, einschließlich Theme – prüfen Sie sie dort, bevor Sie weitermachen. Die Benutzer sehen davon noch nichts: Die laufende Anwendung verwendet nur <b>freigegebene</b> Definitionen. Öffnen Sie den Bereich <b>Freigabe</b> des Designers, um alles zu sehen, was Sie geändert haben – diese Anwendung, ihre Module und die anderen Definitionen, die sie verwendet –, und <b>veröffentlichen</b> Sie alles zusammen; die gespeicherte Version wird zur <b>veröffentlichten Version</b>. Sie können danach weiter bearbeiten und speichern; die Benutzer sehen die Änderungen erst nach der nächsten Freigabe.</p>"
     }
   }
 }

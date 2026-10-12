@@ -8,7 +8,7 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
-import { buildAppRoutes } from '../app-route-builder';
+import { buildAppRoutes, ModuleLoader } from '../app-route-builder';
 import { AppRouteRenderer } from '../app-route-renderer';
 
 /**
@@ -37,9 +37,14 @@ export class AppShellRoutesFactory {
    * The routes of a definition already in hand — the published one the runtime host fetched, or the draft
    * {@link childrenOf} found. One builder for both is what keeps the Preview and the live application from
    * rendering the same definition differently.
+   *
+   * A definition read through `/layout` brings its mounted modules along, from its own side — the released
+   * modules with the published revision — and those are the only ones it mounts. Fetching a module instead
+   * would read its draft, and the live application would show edits nobody has released.
    */
   async childrenFor(definition: AppDefinition): Promise<Routes> {
-    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule: this.loadModule }, this.renderRoute);
+    const loadModule = definition.mountedModules ? inlineModules(definition.mountedModules) : this.loadModule;
+    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule }, this.renderRoute);
     return built.length ? [indexRoute(definition, built), ...built] : built;
   }
 
@@ -79,6 +84,11 @@ export class AppShellRoutesFactory {
       return undefined;
     }
   }
+}
+
+/** A {@link ModuleLoader} over the modules a layout carried; a mount naming any other module shows nothing. */
+function inlineModules(modules: ModuleDefinition[]): ModuleLoader {
+  return async (moduleKey) => modules.find((module) => module.id === moduleKey);
 }
 
 /**

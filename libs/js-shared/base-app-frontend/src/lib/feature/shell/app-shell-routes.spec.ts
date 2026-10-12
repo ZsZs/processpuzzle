@@ -150,6 +150,36 @@ describe('AppShellRoutesFactory', () => {
       expect(await expand(mount as Route)).toEqual([]);
     });
   });
+
+  describe('a layout that carries its modules', () => {
+    const published = new AppDefinition({
+      id: 'demo',
+      routes: [widgetsRoute('orders')],
+      modules: [
+        { moduleKey: 'order-admin', basePath: 'back-office' },
+        { moduleKey: 'unreleased', basePath: 'later' },
+      ],
+      mountedModules: [new ModuleDefinition({ id: 'order-admin', routes: [widgetsRoute('lines')] })],
+    });
+
+    it('mounts the modules it carries, and never reads a module on its own', async () => {
+      moduleStore.loadById.mockReturnValue(new ModuleDefinition({ id: 'order-admin', routes: [widgetsRoute('draft-only')] }));
+
+      const mount = (await factory().childrenFor(published)).find((route) => route.path === 'back-office');
+      const [wrapper] = await expand(mount as Route);
+
+      expect(wrapper.children?.map((route) => route.path)).toEqual(['lines']);
+      expect(moduleStore.loadById).not.toHaveBeenCalled();
+      expect(moduleService.findById).not.toHaveBeenCalled();
+    });
+
+    it('contributes nothing for a mount whose module it does not carry', async () => {
+      const mount = (await factory().childrenFor(published)).find((route) => route.path === 'later');
+
+      expect(await expand(mount as Route)).toEqual([]);
+      expect(moduleService.findById).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('appShellRoutesGuard', () => {

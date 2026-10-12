@@ -236,6 +236,16 @@ public class AppMapper {
      */
     public AppLayout toLayout(com.processpuzzle.app.domain.AppDefinition definition, AppGraph graph,
                               String defaultLocale, Long version) {
+        return toLayout(definition, graph, defaultLocale, version, List.of());
+    }
+
+    /**
+     * As {@link #toLayout(com.processpuzzle.app.domain.AppDefinition, AppGraph, String, Long)}, with the
+     * mounted modules carried inline: already the revision the layout was read for, and role-filtered.
+     */
+    public AppLayout toLayout(com.processpuzzle.app.domain.AppDefinition definition, AppGraph graph,
+                              String defaultLocale, Long version,
+                              List<com.processpuzzle.app.domain.ModuleDefinition> mountedModules) {
         AppLayout layout = new AppLayout(
                 definition.getId(),
                 definition.getOrgKey(),
@@ -249,6 +259,7 @@ public class AppMapper {
             layout.setLayout(toModelLayout(graph.layout()));
             layout.setRoutes(toModelRoutes(graph.routes()));
             layout.setModules(toModelMounts(graph.modules()));
+            layout.setMountedModules(mountedModules.stream().map(this::toModel).toList());
         }
         return layout;
     }

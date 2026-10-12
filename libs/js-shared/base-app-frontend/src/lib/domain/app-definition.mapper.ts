@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, LayoutPreset, MaterialTheme, SidenavMode, ThemeDefinition } from './app-definition';
+import { ModuleDefinitionMapper } from './module-definition.mapper';
 import { flattenRouteTarget, nestRouteTarget, RouteDefinitionDto } from './route-definition.mapper';
 
 interface AppDefinitionDto {
@@ -13,6 +14,8 @@ interface AppDefinitionDto {
   regions?: AppDefinition['regions'];
   routes?: RouteDefinitionDto[];
   modules?: AppDefinition['modules'];
+  /** `/layout` only. */
+  mountedModules?: unknown[];
   orgKey?: string;
   status?: AppDefinitionStatus;
   version?: number;
@@ -42,6 +45,8 @@ type AppDefinitionPayload = AppDefinitionDto & { theme: ThemeDefinition; layout:
  */
 @Injectable({ providedIn: 'root' })
 export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
+  private readonly moduleMapper = new ModuleDefinitionMapper();
+
   fromDto(dto: unknown): AppDefinition {
     const source = dto as AppDefinitionDto;
     const theme = source.theme;
@@ -66,6 +71,7 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       regions: source.regions,
       routes: source.routes?.map(flattenRouteTarget),
       modules: source.modules,
+      mountedModules: source.mountedModules?.map((module) => this.moduleMapper.fromDto(module)),
       orgKey: source.orgKey,
       status: source.status,
       version: source.version,

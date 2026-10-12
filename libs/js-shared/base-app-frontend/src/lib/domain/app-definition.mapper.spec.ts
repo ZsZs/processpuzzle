@@ -78,6 +78,14 @@ describe('AppDefinitionMapper', () => {
       expect(entity.modules).toBeUndefined();
     });
 
+    it('maps the modules a layout carries, keyed by module key, and never sends them back', () => {
+      const entity = mapper.fromDto({ id: 'demo', name: 'Demo', mountedModules: [{ key: 'claims', name: 'Claims', routes: [{ path: 'list', title: 'List' }] }] });
+
+      expect(entity.mountedModules?.map((module) => module.id)).toEqual(['claims']);
+      expect(entity.mountedModules?.[0].routes?.map((route) => route.path)).toEqual(['list']);
+      expect(mapper.toDto(entity)).not.toHaveProperty('mountedModules');
+    });
+
     it('leaves a route without a target with no kind rather than inventing one', () => {
       const entity = mapper.fromDto({ id: 'bare', name: 'Bare', routes: [{ path: 'orders', title: 'Orders' }] });
 

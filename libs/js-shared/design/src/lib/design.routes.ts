@@ -10,6 +10,7 @@ import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
+import { ReleasePanelComponent } from './release/release-panel.component';
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
 
 export const DESIGN_ROUTES: Routes = [
@@ -126,4 +127,13 @@ export const DESIGN_ROUTES: Routes = [
   // registers its own `base_starter` scope, whose translations the hosting application has to copy to
   // `assets/i18n/base_starter`. Last because it acts on everything the sections above it define.
   ...BASE_STARTER_ROUTES,
+  // The Release section: the one place the designer's drafts reach the live application. Every definition
+  // a release carries — the application, its modules and, as features join, entities, rules and workflows —
+  // goes live together or not at all; see ReleasePanelComponent. Last, because it acts on everything above.
+  {
+    path: 'release',
+    title: 'ProcessPuzzle Design - Release',
+    data: { icon: 'rocket_launch', menuTitle: 'design.release' },
+    component: ReleasePanelComponent,
+  },
 ];
