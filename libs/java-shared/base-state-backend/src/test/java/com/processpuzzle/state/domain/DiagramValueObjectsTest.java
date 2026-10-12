@@ -80,9 +80,9 @@ class DiagramValueObjectsTest {
                 .isNotEqualTo(new DiagramDefinitionKey("org-2", "invoice", Channel.DRAFT))
                 .isNotEqualTo(new DiagramDefinitionKey("org-1", "order", Channel.DRAFT))
                 .isNotEqualTo(new DiagramDefinitionKey("org-1", "invoice", Channel.RELEASED))
-                .isNotEqualTo("org-1/invoice");
-        assertThat(key).isEqualTo(key);
-        assertThat(key.toString()).isEqualTo("org-1/invoice/DRAFT");
+                .isNotEqualTo("org-1/invoice")
+                .isEqualTo(key)
+                .hasToString("org-1/invoice/DRAFT");
     }
 
     @Test

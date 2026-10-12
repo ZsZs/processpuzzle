@@ -104,7 +104,7 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
         List<ReleaseProblem> problems = new ArrayList<>();
         for (StateMachineDefinition current : machinesOf(orgKey, Channel.RELEASED).values()) {
             StateMachineDefinition draft = drafts.get(current.getEntityName());
-            if (Objects.equals(machineContent(draft), machineContent(current))) {
+            if (draft != null && machineContent(draft).equals(machineContent(current))) {
                 continue;
             }
             List<EntityObjectSnapshot> governed = objects.findObjects(orgKey, current.getEntityName());
@@ -150,15 +150,15 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
     }
 
     private Map<String, StateMachineDefinition> machinesOf(String orgKey, Channel channel) {
-        return machines.findByOrgKeyAndChannel(orgKey, channel).stream()
-                .collect(Collectors.toMap(StateMachineDefinition::getEntityName, Function.identity(), (a, b) -> a,
-                        LinkedHashMap::new));
+        return byEntityName(machines.findByOrgKeyAndChannel(orgKey, channel), StateMachineDefinition::getEntityName);
     }
 
     private Map<String, DiagramDefinition> diagramsOf(String orgKey, Channel channel) {
-        return diagrams.findByOrgKeyAndChannel(orgKey, channel).stream()
-                .collect(Collectors.toMap(DiagramDefinition::getEntityName, Function.identity(), (a, b) -> a,
-                        LinkedHashMap::new));
+        return byEntityName(diagrams.findByOrgKeyAndChannel(orgKey, channel), DiagramDefinition::getEntityName);
+    }
+
+    private static <T> Map<String, T> byEntityName(List<T> rows, Function<T, String> entityName) {
+        return rows.stream().collect(Collectors.toMap(entityName, Function.identity(), (a, b) -> a, LinkedHashMap::new));
     }
 
     /** The machine and its layout as one definition; {@code null} when there is no machine. */
@@ -180,9 +180,6 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
 
     /** The authored content only: neither the channel, nor the version and timestamps every save moves. */
     private static Map<String, Object> machineContent(StateMachineDefinition machine) {
-        if (machine == null) {
-            return null;
-        }
         Map<String, Object> content = new LinkedHashMap<>();
         content.put("name", machine.getName());
         content.put("description", machine.getDescription());

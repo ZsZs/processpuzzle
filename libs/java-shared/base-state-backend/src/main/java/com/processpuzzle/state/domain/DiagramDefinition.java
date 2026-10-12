@@ -57,12 +57,7 @@ public class DiagramDefinition {
     @Column(name = "entity_name", length = 100)
     private String entityName;
 
-    /**
-     * Which of the definition's two rows this is: the {@code DRAFT} the designer edits, or the {@code RELEASED} one
-     * the running application reads, which only a release of the organization replaces. The database default lets
-     * {@code ddl-auto} add the column to a table that already has rows; {@code StateChannelBackfill} then widens the
-     * key and gives each row its released copy.
-     */
+    /** The layout's row, released together with its machine's: see the machine's own {@code channel}. */
     @Id
     @Enumerated(EnumType.STRING)
     @ColumnDefault("'DRAFT'")
