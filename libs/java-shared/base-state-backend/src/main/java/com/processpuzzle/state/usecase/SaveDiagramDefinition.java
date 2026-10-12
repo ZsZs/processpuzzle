@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinition;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.StateMachineDefinitionRepository;
@@ -51,11 +52,11 @@ public class SaveDiagramDefinition {
     public Result execute(DiagramDefinition definition) {
         String orgKey = definition.getOrgKey();
         String entityName = definition.getEntityName();
-        if (!stateMachineRepository.existsByOrgKeyAndEntityName(orgKey, entityName)) {
+        if (!stateMachineRepository.existsByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT)) {
             throw new StateMachineNotFoundException(orgKey, entityName);
         }
 
-        Optional<DiagramDefinition> existing = repository.findByOrgKeyAndEntityName(orgKey, entityName);
+        Optional<DiagramDefinition> existing = repository.findByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT);
         if (existing.isEmpty()) {
             return new Result(repository.save(definition), true);
         }

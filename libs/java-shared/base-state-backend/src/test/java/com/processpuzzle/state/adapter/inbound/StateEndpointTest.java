@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -117,10 +118,10 @@ class StateEndpointTest {
                 .transitions(List.of())
                 .build();
 
-        when(findUseCase.execute(ORG, ENTITY)).thenReturn(definition);
+        when(findUseCase.execute(ORG, ENTITY, Channel.DRAFT)).thenReturn(definition);
 
         ResponseEntity<com.processpuzzle.state.model.StateMachineDefinition> response =
-                endpoint.getStateMachineDefinition(ORG, ENTITY);
+                endpoint.getStateMachineDefinition(ORG, ENTITY, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -174,11 +175,11 @@ class StateEndpointTest {
                 .transitions(List.of())
                 .build();
 
-        when(findAllUseCase.execute(ORG, "name=='Invoice Machine'", "name,asc", 0, 10))
+        when(findAllUseCase.execute(ORG, Channel.DRAFT, "name=='Invoice Machine'", "name,asc", 0, 10))
                 .thenReturn(new PageImpl<>(List.of(def), PageRequest.of(0, 10), 1));
 
         ResponseEntity<PageOfStateMachineDefinition> response =
-                endpoint.listStateMachineDefinitions(ORG, "name=='Invoice Machine'", "name,asc", 0, 10);
+                endpoint.listStateMachineDefinitions(ORG, "name=='Invoice Machine'", "name,asc", 0, 10, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

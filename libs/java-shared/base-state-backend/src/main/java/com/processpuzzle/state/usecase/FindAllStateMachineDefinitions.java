@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -31,8 +32,10 @@ public class FindAllStateMachineDefinitions {
      * {@code FindAllRules}, for the same reason: RSQL permits a top-level {@code OR}, which would
      * otherwise escape the filter and return other organizations' definitions.
      */
-    public Page<StateMachineDefinition> execute(String orgKey, String where, String order, Integer page, Integer size) {
+    public Page<StateMachineDefinition> execute(String orgKey, Channel channel, String where, String order, Integer page,
+                                          Integer size) {
         Specification<StateMachineDefinition> spec = orgKeySpec(orgKey);
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("channel"), channel));
         Specification<StateMachineDefinition> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {
             spec = spec.and(whereSpec);

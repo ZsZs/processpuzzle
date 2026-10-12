@@ -1,6 +1,7 @@
 package com.processpuzzle.state.adapter.inbound;
 
 import com.processpuzzle.state.usecase.ImportOutcome;
+import com.processpuzzle.state.usecase.StateMachineReleaser;
 import com.processpuzzle.state.usecase.ImportStateMachineDefinitions;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,11 +37,13 @@ public class DefaultStateImporter {
 
     private final ImportStateMachineDefinitions importStateMachineDefinitions;
     private final ResourcePatternResolver resourceResolver;
+    private final StateMachineReleaser releaser;
 
     public DefaultStateImporter(ImportStateMachineDefinitions importStateMachineDefinitions,
-                                ResourcePatternResolver resourceResolver) {
+                                ResourcePatternResolver resourceResolver, StateMachineReleaser releaser) {
         this.importStateMachineDefinitions = importStateMachineDefinitions;
         this.resourceResolver = resourceResolver;
+        this.releaser = releaser;
     }
 
     /**
@@ -86,6 +89,9 @@ public class DefaultStateImporter {
             if (outcome.errors() != null) {
                 outcome.errors().forEach(error -> LOG.warn("Default state machine import error in {}: {}", fileName, error));
             }
+            // Defaults are meant to run: released at once, but only the machines this file wrote, so a designer's
+            // unreleased drafts in the same organization stay drafts.
+            outcome.written().forEach(entityName -> releaser.release(orgKey, entityName));
         } catch (Exception e) {
             LOG.warn("Failed to import default state machines from {}", fileName, e);
         }

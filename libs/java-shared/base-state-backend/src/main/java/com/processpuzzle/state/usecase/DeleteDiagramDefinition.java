@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinitionKey;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.usecase.exception.DiagramDefinitionNotFoundException;
@@ -23,9 +24,9 @@ public class DeleteDiagramDefinition {
     }
 
     public void execute(String orgKey, String entityName) {
-        if (!repository.existsByOrgKeyAndEntityName(orgKey, entityName)) {
+        if (!repository.existsByOrgKeyAndEntityNameAndChannel(orgKey, entityName, Channel.DRAFT)) {
             throw new DiagramDefinitionNotFoundException(orgKey, entityName);
         }
-        repository.deleteById(new DiagramDefinitionKey(orgKey, entityName));
+        repository.deleteById(new DiagramDefinitionKey(orgKey, entityName, Channel.DRAFT));
     }
 }

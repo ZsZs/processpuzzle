@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.state.domain.DiagramDefinition;
@@ -34,8 +35,10 @@ public class FindAllDiagramDefinitions {
      * <p>Only {@code DiagramDefinition}'s own scalars are filterable; {@code nodes} and
      * {@code edges} are serialized JSON blobs, so no RSQL expression reaches inside them.
      */
-    public Page<DiagramDefinition> execute(String orgKey, String where, String order, Integer page, Integer size) {
+    public Page<DiagramDefinition> execute(String orgKey, Channel channel, String where, String order, Integer page,
+                                          Integer size) {
         Specification<DiagramDefinition> spec = orgKeySpec(orgKey);
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("channel"), channel));
         Specification<DiagramDefinition> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {
             spec = spec.and(whereSpec);
