@@ -27,6 +27,17 @@
         "polyline": "Egyenes",
         "bezier": "Ívelt"
       }
+    },
+    "_tooltips": {
+      "entityName": "Az az entitástípus, amelynek rekordjait ez az állapotgép vezérli, pl. order. Egy entitástípushoz csak egy állapotgép tartozhat, és az első mentés után az érték már nem módosítható.",
+      "name": "Az állapotgép jól olvasható neve, pl. Rendelés életciklusa.",
+      "description": "Megjegyzés önnek és a tervezőtársainak; a felhasználók nem látják.",
+      "stateAttributeKey": "Az entitás azon attribútuma, amely a rekord aktuális állapotát tárolja, pl. status. Léteznie kell az entitáson, és szöveges vagy felsorolás típusúnak kell lennie; csak az állapotgép írja.",
+      "initialStateKey": "Annak az állapotnak a kulcsa, amelyben minden új rekord indul, pl. NEW. Meg kell egyeznie az alábbi állapotok egyikének kulcsával.",
+      "version": "Minden mentéssel növekszik. A rendszer állítja be.",
+      "updatedAt": "Az állapotgép utolsó mentésének időpontja. A rendszer állítja be.",
+      "states": "Azok az állapotok, amelyekben egy rekord lehet, soronként egy, pl. NEW, CONFIRMED, SHIPPED. Legalább egy szükséges.",
+      "transitions": "Az engedélyezett váltások egyik állapotból a másikba, soronként egy, pl. approve: NEW → CONFIRMED. Egy rekord csak az itt felsorolt átmeneteken keresztül válthat állapotot."
     }
   },
   "state_machine_state": {
@@ -37,7 +48,15 @@
     "initial": "Kezdő állapot",
     "isFinal": "Végállapot",
     "isLocked": "Zárolt",
-    "metadata": "Metaadatok"
+    "metadata": "Metaadatok",
+    "_tooltips": {
+      "key": "Az a pontos érték, amely a rekord állapot attribútumában szerepel, amíg ebben az állapotban van, pl. CONFIRMED. Az állapotgépen belül egyedi; az átmenetek ezzel hivatkoznak az állapotra.",
+      "name": "Az állapot neve, ahogyan a felhasználók látják, pl. Visszaigazolva.",
+      "description": "Mit jelent ez az állapot a rekord számára – megjegyzésként önnek és a tervezőtársainak.",
+      "isFinal": "Jelölje be végállapot esetén, pl. CLOSED vagy CANCELLED: ebből az állapotból egyetlen átmenet sem indulhat.",
+      "isLocked": "Jelölje be, ha az ebben az állapotban lévő rekordokat zárolni szeretné: a többi mezőjük nem szerkeszthető, csak maga az állapot változhat.",
+      "metadata": "Opcionális megjelenítési jellemzők az állapot kirajzolásához az Állapotmodellezőben, név–érték párokként, pl. color = #2e7d32."
+    }
   },
   "state_machine_transition": {
     "_self": "Átmenet",
@@ -47,17 +66,34 @@
     "targetStateKey": "Cél állapot",
     "triggerKey": "Kiváltó",
     "guards": "Őrök",
-    "actions": "Akciók"
+    "actions": "Akciók",
+    "_tooltips": {
+      "key": "Az átmenet azonosítója, az állapotgépen belül egyedi, pl. confirm-order.",
+      "name": "Az átmenet opcionális, jól olvasható neve, pl. Rendelés visszaigazolása.",
+      "sourceStateKey": "Annak az állapotnak a kulcsa, amelyben a rekordnak lennie kell ahhoz, hogy ez az átmenet elérhető legyen, pl. NEW. Nem lehet végállapot.",
+      "targetStateKey": "Annak az állapotnak a kulcsa, amelybe a rekord átkerül, pl. CONFIRMED.",
+      "triggerKey": "Az a művelet, amely az átmenetet kiváltja, pl. approve. Egy kiinduló állapotból ugyanaz a kiváltó csak egyszer szerepelhet, de egy másik állapotból máshová is vezethet.",
+      "guards": "Feltételek, amelyeket a rendszer sorban ellenőriz, mielőtt az átmenet megtörténhet; az első nem teljesülő megakadályozza. Hagyja üresen, ha az átmenet mindig engedélyezett.",
+      "actions": "Lépések, amelyek sorban lefutnak, miután minden őr engedélyezte az átmenetet, pl. értesítés küldése."
+    }
   },
   "state_transition_guard": {
     "_self": "Őr",
     "beanName": "Bean neve",
-    "params": "Paraméterek"
+    "params": "Paraméterek",
+    "_tooltips": {
+      "beanName": "A feltételt ellenőrző szerveroldali őr neve, pl. sufficientBalanceGuard. Az elérhető neveket a fejlesztőktől kérdezze meg; ismeretlen nevet a mentés elutasít.",
+      "params": "Az őr opcionális beállításai, név–érték párokként, pl. minBalance = 100. Hogy mely neveket ismeri, az az adott őrtől függ."
+    }
   },
   "state_transition_action": {
     "_self": "Akció",
     "beanName": "Bean neve",
-    "params": "Paraméterek"
+    "params": "Paraméterek",
+    "_tooltips": {
+      "beanName": "A lefuttatandó szerveroldali akció neve, pl. sendApprovalNotificationAction. Az elérhető neveket a fejlesztőktől kérdezze meg; ismeretlen nevet a mentés elutasít.",
+      "params": "Az akció opcionális beállításai, név–érték párokként, pl. recipient = sales@example.com. Hogy mely neveket ismeri, az az adott akciótól függ."
+    }
   },
   "entity_state_machine": {
     "tab": "Állapotgép",

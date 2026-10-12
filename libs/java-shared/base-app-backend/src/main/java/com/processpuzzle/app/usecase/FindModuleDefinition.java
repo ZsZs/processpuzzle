@@ -3,18 +3,16 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * The lazy-load entry point: the shell fetches a module's routes when something navigates under the
- * {@code basePath} it is mounted at.
- *
- * <p>Guarded with {@code requireAccess} rather than {@code requireDesign} — unlike
- * {@link FindAppDefinition} this is a run-time read, so every member of the organization may make it.
- * The routes it returns are not role-filtered here; the sidenav that leads to them already is, by
- * {@link GetAppLayout}.
+ * One module, from either channel. The draft is the designer's read and requires design rights. The
+ * released row is a run-time read every member of the organization may make; its routes are not
+ * role-filtered here, the sidenav that leads to them already is, by {@link GetAppLayout} — which also
+ * carries the released modules inline, so the runtime host has no need of this read.
  */
 @Service
 @Transactional(readOnly = true)
@@ -29,8 +27,12 @@ public class FindModuleDefinition {
     }
 
     public ModuleDefinition execute(String orgKey, String moduleKey) {
-        guard.requireAccess(orgKey);
-        return repository.findByOrgKeyAndKey(orgKey, moduleKey)
+        return execute(orgKey, moduleKey, Channel.DRAFT);
+    }
+
+    public ModuleDefinition execute(String orgKey, String moduleKey, Channel channel) {
+        FindAllModuleDefinitions.requireReader(guard, orgKey, channel);
+        return repository.findByOrgKeyAndKeyAndChannel(orgKey, moduleKey, channel)
                 .orElseThrow(() -> new ModuleDefinitionNotFoundException(orgKey, moduleKey));
     }
 }

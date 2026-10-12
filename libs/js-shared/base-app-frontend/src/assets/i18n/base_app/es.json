@@ -30,9 +30,9 @@
       "name": "El nombre de la aplicación tal como lo ven los usuarios, p. ej. en el widget app-title. — Guía: Aplicación",
       "translocoId": "Clave de traducción opcional; si se indica, se muestra en lugar del Nombre en otros idiomas. — Guía: Aplicación",
       "description": "Una nota para ti y los demás diseñadores; los usuarios no la ven. — Guía: Aplicación",
-      "status": "DRAFT hasta que se publica la definición, PUBLISHED a partir de entonces. Lo establece el sistema. — Guía: Guardar, previsualizar y publicar",
+      "status": "DRAFT mientras la definición tenga cambios que la organización no ha publicado; PUBLISHED después. Lo establece el sistema. — Guía: Guardar, previsualizar y publicar",
       "version": "Aumenta con cada guardado. Lo establece el sistema. — Guía: Guardar, previsualizar y publicar",
-      "publishedVersion": "La versión que reciben actualmente los usuarios. Solo cambia cuando pulsas Publicar. — Guía: Guardar, previsualizar y publicar",
+      "publishedVersion": "La versión que reciben actualmente los usuarios. Solo cambia cuando la organización se publica desde la sección Publicación del diseñador. — Guía: Guardar, previsualizar y publicar",
       "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema.",
       "materialTheme": "La paleta de colores de toda la aplicación. processpuzzle es el aspecto de la marca; las demás también cambian el color del encabezado, el menú lateral, las tarjetas y los botones. — Guía: Tema",
       "colorScheme": "Claro, oscuro o automático (sigue el sistema operativo del usuario). — Guía: Tema",
@@ -149,16 +149,12 @@
       "routes": "Las páginas del módulo. Sus rutas de acceso son relativas a la ruta base en la que se monta el módulo. — Guía: Módulos"
     }
   },
-  "publish": {
-    "button": "Publicar",
-    "tooltip": "Publica la definición guardada: su versión pasa a ser la versión publicada"
-  },
   "concepts": {
     "title": "Cómo se construye una aplicación dinámica",
     "intro": "En ProcessPuzzle, una <b>Aplicación</b> no se programa: se <b>describe</b>. Todo lo que introduces aquí (el marco, el menú, las páginas y lo que muestra cada una) se guarda como datos, y el shell de la aplicación construye la aplicación en funcionamiento a partir de esa descripción en tiempo de ejecución. Para cambiar la aplicación basta con editar su definición y volver a publicarla; no hay que recompilar ni volver a desplegar nada.",
     "assembling": {
       "title": "Cómo montar tu aplicación, paso a paso",
-      "body": "<ol><li><b>Crea la aplicación</b>: dale un Id y un Nombre.</li><li><b>Elige su aspecto</b>: un tema de Material, un esquema de color y una plantilla de diseño.</li><li><b>Añade las páginas</b>: una <b>Ruta</b> por página, y decide qué muestra cada una: widgets, una entidad o un documento.</li><li><b>Construye el marco</b>: añade las regiones de <b>encabezado</b>, <b>menú lateral</b> y <b>pie de página</b>; llena el encabezado y el pie de página con widgets, y el menú lateral con elementos de navegación que apunten a tus rutas.</li><li><b>Compruébala</b> en la pestaña <b>Vista previa</b>.</li><li><b>Publícala</b>, para que los usuarios reciban la nueva versión.</li></ol><p>Las rutas van antes que la navegación a propósito: un elemento de navegación apunta a una ruta mediante su ruta de acceso, así que es más fácil escribirlo cuando la ruta ya existe.</p>"
+      "body": "<ol><li><b>Crea la aplicación</b>: dale un Id y un Nombre.</li><li><b>Elige su aspecto</b>: un tema de Material, un esquema de color y una plantilla de diseño.</li><li><b>Añade las páginas</b>: una <b>Ruta</b> por página, y decide qué muestra cada una: widgets, una entidad o un documento.</li><li><b>Construye el marco</b>: añade las regiones de <b>encabezado</b>, <b>menú lateral</b> y <b>pie de página</b>; llena el encabezado y el pie de página con widgets, y el menú lateral con elementos de navegación que apunten a tus rutas.</li><li><b>Compruébala</b> en la pestaña <b>Vista previa</b>.</li><li><b>Publíquela</b> desde la sección <b>Publicación</b> del diseñador, para que los usuarios reciban la nueva versión.</li></ol><p>Las rutas van antes que la navegación a propósito: un elemento de navegación apunta a una ruta mediante su ruta de acceso, así que es más fácil escribirlo cuando la ruta ya existe.</p>"
     },
     "application": {
       "title": "Aplicación",
@@ -214,7 +210,7 @@
     },
     "lifecycle": {
       "title": "Guardar, previsualizar y publicar",
-      "body": "<p>Una aplicación nueva empieza como <b>Borrador</b>. <b>Guardar</b> almacena tus cambios; después, la pestaña <b>Vista previa</b> muestra la definición guardada exactamente como la muestra la aplicación en funcionamiento, tema incluido: compruébala ahí antes de seguir. <b>Publicar</b> convierte la versión guardada en la <b>Versión publicada</b>, la que reciben los usuarios. Puedes seguir editando y guardando después; los usuarios solo verán los cambios cuando vuelvas a publicar.</p>"
+      "body": "<p>Una aplicación nueva empieza como <b>borrador</b>. <b>Guardar</b> almacena sus cambios; la pestaña <b>Vista previa</b> muestra entonces la definición guardada tal como la presenta la aplicación en ejecución, tema incluido: compruébela allí antes de seguir. Los usuarios todavía no reciben nada: la aplicación en ejecución solo usa definiciones <b>publicadas</b>. Abra la sección <b>Publicación</b> del diseñador para ver todo lo que ha cambiado —esta aplicación, sus módulos y las demás definiciones que usa— y <b>publíquelo</b> todo junto; la versión guardada pasa a ser la <b>versión publicada</b>. Después puede seguir editando y guardando; los usuarios verán los cambios solo cuando vuelva a publicar.</p>"
     }
   }
 }

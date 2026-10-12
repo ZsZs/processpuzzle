@@ -27,6 +27,17 @@
         "polyline": "Recta",
         "bezier": "Curva"
       }
+    },
+    "_tooltips": {
+      "entityName": "El tipo de entidad cuyos registros controla esta máquina de estados, p. ej. order. Cada tipo de entidad admite una sola máquina de estados y el valor no se puede cambiar tras el primer guardado.",
+      "name": "Un nombre legible para la máquina de estados, p. ej. Ciclo de vida del pedido.",
+      "description": "Una nota para usted y los demás diseñadores; los usuarios no la ven.",
+      "stateAttributeKey": "El atributo de la entidad que guarda el estado actual del registro, p. ej. status. Debe existir en la entidad y ser de tipo texto o enumeración; solo la máquina de estados lo escribe.",
+      "initialStateKey": "La clave del estado en el que empieza cada registro nuevo, p. ej. NEW. Debe coincidir con la clave de uno de los estados de abajo.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó la máquina de estados por última vez. Lo establece el sistema.",
+      "states": "Los estados en los que puede estar un registro, una fila por estado, p. ej. NEW, CONFIRMED, SHIPPED. Se necesita al menos uno.",
+      "transitions": "Los cambios permitidos de un estado a otro, una fila por cambio, p. ej. approve: NEW → CONFIRMED. Un registro solo puede cambiar de estado mediante una transición de esta lista."
     }
   },
   "state_machine_state": {
@@ -37,7 +48,15 @@
     "initial": "Estado inicial",
     "isFinal": "Terminal",
     "isLocked": "Bloqueado",
-    "metadata": "Metadatos"
+    "metadata": "Metadatos",
+    "_tooltips": {
+      "key": "El valor exacto que se guarda en el atributo de estado del registro mientras está en este estado, p. ej. CONFIRMED. Único dentro de la máquina de estados; las transiciones se refieren al estado por él.",
+      "name": "El nombre del estado tal como lo ven los usuarios, p. ej. Confirmado.",
+      "description": "Qué significa este estado para el registro, como nota para usted y los demás diseñadores.",
+      "isFinal": "Márquelo para un estado final, p. ej. CLOSED o CANCELLED: ninguna transición puede salir de él.",
+      "isLocked": "Márquelo para congelar los registros en este estado: sus demás campos ya no se pueden editar, solo puede cambiar el propio estado.",
+      "metadata": "Indicaciones de visualización opcionales para dibujar el estado en el modelador de estados, como pares nombre-valor, p. ej. color = #2e7d32."
+    }
   },
   "state_machine_transition": {
     "_self": "Transición",
@@ -47,17 +66,34 @@
     "targetStateKey": "Estado destino",
     "triggerKey": "Disparador",
     "guards": "Guardias",
-    "actions": "Acciones"
+    "actions": "Acciones",
+    "_tooltips": {
+      "key": "Identifica la transición; única dentro de la máquina de estados, p. ej. confirm-order.",
+      "name": "Nombre legible opcional de la transición, p. ej. Confirmar pedido.",
+      "sourceStateKey": "La clave del estado en el que debe estar el registro para que se ofrezca esta transición, p. ej. NEW. No puede ser un estado terminal.",
+      "targetStateKey": "La clave del estado al que pasa el registro, p. ej. CONFIRMED.",
+      "triggerKey": "La acción que dispara la transición, p. ej. approve. Cada estado origen solo puede usar un mismo disparador una vez, pero desde otro estado el mismo disparador puede llevar a otro destino.",
+      "guards": "Condiciones que se comprueban en orden antes de que pueda producirse la transición; la primera que no se cumple la bloquea. Déjelo vacío si la transición siempre está permitida.",
+      "actions": "Pasos que se ejecutan en orden una vez superadas todas las guardias, p. ej. enviar una notificación."
+    }
   },
   "state_transition_guard": {
     "_self": "Guardia",
     "beanName": "Nombre del bean",
-    "params": "Parámetros"
+    "params": "Parámetros",
+    "_tooltips": {
+      "beanName": "El nombre de la guardia del servidor que comprueba la condición, p. ej. sufficientBalanceGuard. Pida los nombres disponibles a sus desarrolladores; un nombre desconocido se rechaza al guardar.",
+      "params": "Ajustes opcionales de la guardia, como pares nombre-valor, p. ej. minBalance = 100. Los nombres que entiende dependen de la guardia."
+    }
   },
   "state_transition_action": {
     "_self": "Acción",
     "beanName": "Nombre del bean",
-    "params": "Parámetros"
+    "params": "Parámetros",
+    "_tooltips": {
+      "beanName": "El nombre de la acción del servidor que se ejecuta, p. ej. sendApprovalNotificationAction. Pida los nombres disponibles a sus desarrolladores; un nombre desconocido se rechaza al guardar.",
+      "params": "Ajustes opcionales de la acción, como pares nombre-valor, p. ej. recipient = sales@example.com. Los nombres que entiende dependen de la acción."
+    }
   },
   "entity_state_machine": {
     "tab": "Máquina de estados",

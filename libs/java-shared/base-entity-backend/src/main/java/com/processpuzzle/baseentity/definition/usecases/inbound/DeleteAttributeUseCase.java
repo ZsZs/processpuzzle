@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
@@ -16,7 +17,7 @@ public class DeleteAttributeUseCase {
     private final EntityDefinitionRepository repository;
 
     public void deleteAttribute(String orgKey, String definitionCode, String attributeCode) {
-        BaseEntityDefinition definition = repository.findByOrgKeyAndCode(orgKey, definitionCode)
+        BaseEntityDefinition definition = repository.findByOrgKeyAndCodeAndChannel(orgKey, definitionCode, Channel.DRAFT)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(definitionCode)));
 
         BaseEntityAttribute attribute = definition.getAttributes().stream()

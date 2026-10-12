@@ -30,9 +30,9 @@
       "name": "Az alkalmazás neve, ahogy a felhasználók látják, pl. az app-title widgetben. — Útmutató: Alkalmazás",
       "translocoId": "Nem kötelező fordítási kulcs; ha megadod, más nyelveken a Név helyett ez jelenik meg. — Útmutató: Alkalmazás",
       "description": "Megjegyzés neked és a tervezőtársaidnak; a felhasználók nem látják. — Útmutató: Alkalmazás",
-      "status": "DRAFT, amíg a definíció nincs közzétéve, utána PUBLISHED. A rendszer állítja be. — Útmutató: Mentés, előnézet és közzététel",
-      "version": "Minden mentéssel nő. A rendszer állítja be. — Útmutató: Mentés, előnézet és közzététel",
-      "publishedVersion": "Az a verzió, amelyet a felhasználók jelenleg kapnak. Csak akkor változik, ha megnyomod a Közzététel gombot. — Útmutató: Mentés, előnézet és közzététel",
+      "status": "DRAFT, amíg a definíciónak vannak olyan módosításai, amelyeket a szervezet még nem adott ki, utána PUBLISHED. A rendszer állítja be. — Útmutató: Mentés, előnézet és kiadás",
+      "version": "Minden mentéssel nő. A rendszer állítja be. — Útmutató: Mentés, előnézet és kiadás",
+      "publishedVersion": "A felhasználók által jelenleg kapott verzió. Csak akkor változik, amikor a szervezetet kiadják a tervező Kiadás részében. — Útmutató: Mentés, előnézet és kiadás",
       "updatedAt": "A definíció utolsó mentésének ideje. A rendszer állítja be.",
       "materialTheme": "Az egész alkalmazás színpalettája. A processpuzzle a márka megjelenése; a többi a fejlécet, az oldalsávot, a kártyákat és a gombokat is átszínezi. — Útmutató: Téma",
       "colorScheme": "Világos, sötét vagy automatikus (a felhasználó operációs rendszerét követi). — Útmutató: Téma",
@@ -149,16 +149,12 @@
       "routes": "A modul oldalai. Útvonalaik ahhoz az alap útvonalhoz képest értendők, ahová a modult beépítik. — Útmutató: Modulok"
     }
   },
-  "publish": {
-    "button": "Közzététel",
-    "tooltip": "A mentett definíció közzététele: a verziója lesz a közzétett verzió"
-  },
   "concepts": {
     "title": "Hogyan épül fel egy dinamikus alkalmazás",
     "intro": "A ProcessPuzzle-ben egy <b>Alkalmazást</b> nem programozni kell, hanem <b>leírni</b>. Minden, amit itt megadsz (a keret, a menü, az oldalak és az, hogy melyik oldal mit mutat), adatként tárolódik, és az alkalmazás-keretrendszer futás közben ebből a leírásból építi fel a működő alkalmazást. Az alkalmazás módosításához elég a definícióját szerkeszteni, majd újra közzétenni; semmit sem kell újrafordítani vagy újratelepíteni.",
     "assembling": {
       "title": "Az alkalmazás összeállítása lépésről lépésre",
-      "body": "<ol><li><b>Hozd létre az alkalmazást</b>: adj meg egy Azonosítót és egy Nevet.</li><li><b>Válaszd ki a megjelenését</b>: egy Material témát, egy színsémát és egy elrendezés sablont.</li><li><b>Add hozzá az oldalakat</b>: oldalanként egy <b>Útvonalat</b>, és döntsd el, mit jelenítsen meg mindegyik: widgeteket, egy entitást vagy egy dokumentumot.</li><li><b>Építsd fel a keretet</b>: add hozzá a <b>fejléc</b>, az <b>oldalsáv</b> és a <b>lábléc</b> régiót; a fejlécet és a láblécet töltsd fel widgetekkel, az oldalsávot pedig az útvonalaidra mutató navigációs elemekkel.</li><li><b>Ellenőrizd</b> az <b>Előnézet</b> fülön.</li><li><b>Tedd közzé</b>, hogy a felhasználók megkapják az új verziót.</li></ol><p>Az útvonalak szándékosan előzik meg a navigációt: egy navigációs elem az útvonalára hivatkozva mutat egy oldalra, így a legkönnyebb akkor megírni, amikor az útvonal már létezik.</p>"
+      "body": "<ol><li><b>Hozd létre az alkalmazást</b>: adj meg egy Azonosítót és egy Nevet.</li><li><b>Válaszd ki a megjelenését</b>: egy Material témát, egy színsémát és egy elrendezés sablont.</li><li><b>Add hozzá az oldalakat</b>: oldalanként egy <b>Útvonalat</b>, és döntsd el, mit jelenítsen meg mindegyik: widgeteket, egy entitást vagy egy dokumentumot.</li><li><b>Építsd fel a keretet</b>: add hozzá a <b>fejléc</b>, az <b>oldalsáv</b> és a <b>lábléc</b> régiót; a fejlécet és a láblécet töltsd fel widgetekkel, az oldalsávot pedig az útvonalaidra mutató navigációs elemekkel.</li><li><b>Ellenőrizd</b> az <b>Előnézet</b> fülön.</li><li><b>Adja ki</b> a tervező <b>Kiadás</b> részében, hogy a felhasználók megkapják az új verziót.</li></ol><p>Az útvonalak szándékosan előzik meg a navigációt: egy navigációs elem az útvonalára hivatkozva mutat egy oldalra, így a legkönnyebb akkor megírni, amikor az útvonal már létezik.</p>"
     },
     "application": {
       "title": "Alkalmazás",
@@ -213,8 +209,8 @@
       "body": "<p>Az útvonalaknál és a navigációs elemeknél megadhatod, mely <b>Szerepkörök</b> használhatják őket. Ha üresen hagyod a listát, a szervezeted bármely bejelentkezett tagja használhatja. A szerepköröket a rendszer a definícióval együtt tárolja, de az előnézet egyelőre semmit sem korlátoz ezek alapján.</p>"
     },
     "lifecycle": {
-      "title": "Mentés, előnézet és közzététel",
-      "body": "<p>Egy új alkalmazás <b>Piszkozatként</b> indul. A <b>Mentés</b> eltárolja a módosításaidat; ezután az <b>Előnézet</b> fül pontosan úgy mutatja a mentett definíciót, ahogy a működő alkalmazás megjeleníti, a témával együtt; mielőtt továbblépsz, ott ellenőrizd. A <b>Közzététel</b> a mentett verziót teszi meg <b>Közzétett verzióvá</b>, vagyis azzá, amelyet a felhasználók kapnak. Utána is szerkesztheted és mentheted tovább; a felhasználók csak akkor látják a módosításokat, amikor újra közzéteszed.</p>"
+      "title": "Mentés, előnézet és kiadás",
+      "body": "<p>Egy új alkalmazás <b>piszkozatként</b> indul. A <b>Mentés</b> eltárolja a módosításait; az <b>Előnézet</b> fül ezután pontosan úgy mutatja a mentett definíciót, ahogy a futó alkalmazás megjeleníti, a témával együtt – ott ellenőrizze, mielőtt továbblép. A felhasználók ebből még semmit nem kapnak meg: a futó alkalmazás csak <b>kiadott</b> definíciókat használ. Nyissa meg a tervező <b>Kiadás</b> részét, hogy lássa mindazt, amit módosított – ezt az alkalmazást, a moduljait és a többi definíciót, amelyet használ –, és tegye <b>közzé</b> őket együtt; a mentett verzió lesz a <b>közzétett verzió</b>. Ezután tovább szerkesztheti és mentheti; a felhasználók csak a következő kiadás után látják a változásokat.</p>"
     }
   }
 }

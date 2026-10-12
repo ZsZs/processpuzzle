@@ -1,11 +1,15 @@
 package com.processpuzzle.app.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
 import com.processpuzzle.app.domain.AppRoute;
+import com.processpuzzle.app.domain.ModuleDefinition;
+import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleMount;
 import com.processpuzzle.app.domain.NavNode;
 import com.processpuzzle.app.domain.Region;
 import com.processpuzzle.app.domain.RouteTarget;
@@ -33,6 +37,7 @@ import static org.mockito.Mockito.when;
 class GetAppLayoutTest {
 
     private final AppDefinitionRepository repository = mock(AppDefinitionRepository.class);
+    private final ModuleDefinitionRepository moduleRepository = mock(ModuleDefinitionRepository.class);
     private final ObjectProvider<TenantDirectory> tenantDirectory =
             AppTestFixtures.tenantDirectoryWithLocale("my-org", "en-GB");
 
@@ -54,6 +59,32 @@ class GetAppLayoutTest {
 
         assertThat(result.graph().regions()).hasSize(1);
         assertThat(result.defaultLocale()).isEqualTo("en-GB");
+    }
+
+    @Test
+    void publishedRequest_servesThePublishedSnapshotNotLaterDraftEdits() {
+        AppDefinition definition = stored(graphWithRoles());
+        definition.publish();
+        definition.replaceDraft("Claims", null, null, AppGraph.empty());
+        GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
+
+        GetAppLayout.Result result = getAppLayout.execute("my-org", "claims-app", false);
+
+        assertThat(result.graph().routes()).extracting(AppRoute::path)
+                .containsExactly("route-open", "route-restricted");
+        assertThat(result.version()).isEqualTo(definition.getPublishedRevision());
+        assertThat(result.version()).isLessThan(definition.getRevision());
+    }
+
+    @Test
+    void routesTheCallersRolesCannotReach_areDropped() {
+        AppDefinition definition = stored(graphWithRoles());
+        definition.publish();
+        GetAppLayout getAppLayout = layoutUseCase(rolePolicy(Set.of("VIEWER")));
+
+        GetAppLayout.Result result = getAppLayout.execute("my-org", "claims-app", false);
+
+        assertThat(result.graph().routes()).extracting(AppRoute::path).containsExactly("route-open");
     }
 
     @Test
@@ -134,16 +165,53 @@ class GetAppLayoutTest {
         assertThat(route.path()).isEqualTo("route-open");
     }
 
+    @Test
+    void thePublishedLayoutCarriesTheReleasedModulesItMounts() {
+        AppDefinition definition = stored(graphMounting("claims"));
+        definition.publish();
+        ModuleDefinition released = new ModuleDefinition("my-org", "claims", "Claims", Channel.RELEASED);
+        released.setRoutes(graphWithRoles().routes());
+        when(moduleRepository.findByOrgKeyAndChannelAndKeyIn("my-org", Channel.RELEASED, List.of("claims")))
+                .thenReturn(List.of(released));
+        GetAppLayout getAppLayout = layoutUseCase(rolePolicy(Set.of("VIEWER")));
+
+        GetAppLayout.Result result = getAppLayout.execute("my-org", "claims-app", false);
+
+        assertThat(result.modules()).singleElement().satisfies(module -> {
+            assertThat(module.getChannel()).isEqualTo(Channel.RELEASED);
+            assertThat(module.getRoutes()).extracting(AppRoute::path).containsExactly("route-open");
+        });
+        assertThat(released.getRoutes()).hasSize(2);
+    }
+
+    @Test
+    void theDraftLayoutCarriesTheDraftsOfTheModulesItMounts() {
+        stored(graphMounting("claims"));
+        ModuleDefinition draft = new ModuleDefinition("my-org", "claims", "Claims");
+        when(moduleRepository.findByOrgKeyAndChannelAndKeyIn("my-org", Channel.DRAFT, List.of("claims")))
+                .thenReturn(List.of(draft));
+        GetAppLayout getAppLayout = layoutUseCase(new PermitAllOrganizationAccessPolicy());
+
+        GetAppLayout.Result result = getAppLayout.execute("my-org", "claims-app", true);
+
+        assertThat(result.modules()).extracting(ModuleDefinition::getChannel).containsExactly(Channel.DRAFT);
+    }
+
     // --- fixtures ------------------------------------------------------------------------
 
-    private void stored(AppGraph graph) {
+    private static AppGraph graphMounting(String moduleKey) {
+        return new AppGraph(null, null, List.of(), List.of(), List.of(new ModuleMount(moduleKey, moduleKey)));
+    }
+
+    private AppDefinition stored(AppGraph graph) {
         AppDefinition definition = new AppDefinition("my-org", "claims-app", "Claims", null, null, graph);
         when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
+        return definition;
     }
 
     private GetAppLayout layoutUseCase(OrganizationAccessPolicy policy) {
         OrganizationGuard guard = guard(policy);
-        return new GetAppLayout(repository, tenantDirectory, guard, new NavVisibilityFilter(guard));
+        return new GetAppLayout(repository, moduleRepository, tenantDirectory, guard, new NavVisibilityFilter(guard));
     }
 
     private GetRouteDefinition pageUseCase(OrganizationAccessPolicy policy) {
@@ -182,6 +250,7 @@ class GetAppLayoutTest {
         return new AppGraph(null, null,
                 List.of(new Region("sidenav", List.of(open, restricted, group), List.of())),
                 List.of(new AppRoute("route-open", "Open", null, null, List.of(), RouteTarget.ofWidgets(List.of())),
-                        new AppRoute("route-restricted", "Restricted", null, null, List.of(), RouteTarget.ofWidgets(List.of()))), List.of());
+                        new AppRoute("route-restricted", "Restricted", null, null, List.of("CLAIMS_ADJUSTER"),
+                                RouteTarget.ofWidgets(List.of()))), List.of());
     }
 }

@@ -2,6 +2,7 @@ package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +26,20 @@ public class FindAllModuleDefinitions {
     }
 
     public List<ModuleDefinition> execute(String orgKey) {
-        guard.requireDesign(orgKey);
-        return repository.findByOrgKey(orgKey);
+        return execute(orgKey, Channel.DRAFT);
+    }
+
+    /** The drafts require design rights, as every authoring read does; the released rows only membership. */
+    public List<ModuleDefinition> execute(String orgKey, Channel channel) {
+        requireReader(guard, orgKey, channel);
+        return repository.findByOrgKeyAndChannel(orgKey, channel);
+    }
+
+    static void requireReader(OrganizationGuard guard, String orgKey, Channel channel) {
+        if (channel == Channel.RELEASED) {
+            guard.requireAccess(orgKey);
+        } else {
+            guard.requireDesign(orgKey);
+        }
     }
 }

@@ -25,6 +25,7 @@ import com.processpuzzle.app.usecase.ImportOutcome;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UpdateAppDefinition;
 import com.processpuzzle.app.usecase.UpdateModuleDefinition;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.usecase.ValidateAppDefinition;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.shared.model.ImportResult;
@@ -151,8 +152,8 @@ public class AppEndpoint implements BaseAppApi {
     // --- modules -------------------------------------------------------------------------
 
     @Override
-    public ResponseEntity<List<ModuleDefinition>> listModuleDefinitions(String orgKey) {
-        return ResponseEntity.ok(findAllModuleDefinitions.execute(orgKey).stream()
+    public ResponseEntity<List<ModuleDefinition>> listModuleDefinitions(String orgKey, String revision) {
+        return ResponseEntity.ok(findAllModuleDefinitions.execute(orgKey, Channel.ofRevision(revision)).stream()
                 .map(mapper::toModel)
                 .toList());
     }
@@ -164,8 +165,8 @@ public class AppEndpoint implements BaseAppApi {
     }
 
     @Override
-    public ResponseEntity<ModuleDefinition> getModuleDefinition(String orgKey, String moduleKey) {
-        return ResponseEntity.ok(mapper.toModel(findModuleDefinition.execute(orgKey, moduleKey)));
+    public ResponseEntity<ModuleDefinition> getModuleDefinition(String orgKey, String moduleKey, String revision) {
+        return ResponseEntity.ok(mapper.toModel(findModuleDefinition.execute(orgKey, moduleKey, Channel.ofRevision(revision))));
     }
 
     @Override
@@ -185,7 +186,8 @@ public class AppEndpoint implements BaseAppApi {
     @Override
     public ResponseEntity<AppLayout> getAppLayout(String orgKey, String appId, Boolean draft) {
         GetAppLayout.Result result = getAppLayout.execute(orgKey, appId, Boolean.TRUE.equals(draft));
-        return ResponseEntity.ok(mapper.toLayout(result.definition(), result.graph(), result.defaultLocale()));
+        return ResponseEntity.ok(mapper.toLayout(
+                result.definition(), result.graph(), result.defaultLocale(), result.version(), result.modules()));
     }
 
     @Override

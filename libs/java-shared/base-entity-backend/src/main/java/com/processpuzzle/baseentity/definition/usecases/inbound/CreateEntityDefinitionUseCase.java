@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
@@ -18,7 +19,7 @@ public class CreateEntityDefinitionUseCase {
 
     public BaseEntityDefinition create(String orgKey, BaseEntityDefinition definition) {
         definition.setOrgKey(orgKey);
-        if (repository.existsByOrgKeyAndCode(orgKey, definition.getCode())) {
+        if (repository.existsByOrgKeyAndCodeAndChannel(orgKey, definition.getCode(), Channel.DRAFT)) {
             throw new ConflictException("Entity definition '%s' already exists".formatted(definition.getCode()));
         }
         validator.validate(definition);

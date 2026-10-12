@@ -67,6 +67,20 @@ describe('KeycloakAuthService', () => {
       expect(service.getCurrentUser()?.id).toBe('123');
     });
 
+    it('should send no scope unless one is configured', async () => {
+      await service.authenticate();
+      expect(mockKeycloakInstance.init).toHaveBeenCalledWith(expect.not.objectContaining({ scope: expect.anything() }));
+    });
+
+    it('should send the configured scope with the SSO check, which login() then defaults to', async () => {
+      const scoped = new KeycloakAuthService({ ...config, scope: 'organization:acme' });
+      (scoped as unknown as { keycloak: MockedKeycloak }).keycloak = mockKeycloakInstance;
+
+      await scoped.authenticate();
+
+      expect(mockKeycloakInstance.init).toHaveBeenCalledWith(expect.objectContaining({ onLoad: 'check-sso', scope: 'organization:acme' }));
+    });
+
     it('should return false if not authenticated after initialization', async () => {
       mockKeycloakInstance.authenticated = false;
       const result = await service.authenticate();

@@ -69,10 +69,11 @@ export { AppRouteFacade } from './lib/feature/app-route.facade';
 export { AppWidgetFacade } from './lib/feature/app-widget.facade';
 export { AppDefinitionContainerComponent } from './lib/feature/app-definition-container.component';
 export { AppPreviewComponent } from './lib/feature/app-preview.component';
-// The run-time shell. Published because the standalone runtime host mounts `AppShellComponent` exactly as
-// the Preview tab does — that being the whole reason the shell is a component with one input.
-export { AppShellComponent } from './lib/feature/shell/app-shell.component';
+// The run-time shell. Published because the runtime host mounts `AppShellComponent` exactly as the Preview
+// tab does — that being the whole reason the shell is a component with one input.
+export { AppShellComponent, ShellActionsDirective } from './lib/feature/shell/app-shell.component';
 export { AppShellRoutesFactory, appShellRoutesGuard } from './lib/feature/shell/app-shell-routes';
+export { PublishedAppStore, publishedAppRoutesGuard, type AppIdResolver } from './lib/feature/shell/published-app-routes';
 export { AppRegionRenderer, type RegionView } from './lib/feature/shell/app-region.renderer';
 export { layoutOf, themeVarsOf, type ResolvedLayout } from './lib/feature/shell/app-shell.model';
 export { RegionFooterComponent } from './lib/feature/shell/region-footer.component';

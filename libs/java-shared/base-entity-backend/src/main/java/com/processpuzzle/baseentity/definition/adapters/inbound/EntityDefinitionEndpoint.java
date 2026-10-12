@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.adapters.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.api.BaseEntityDefinitionsApi;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
@@ -41,10 +42,12 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
     private final EntityDefinitionMapper mapper;
 
     @Override
-    public ResponseEntity<Page> listEntityDefinitions(String orgKey, EntityDefinitionStatus status, Boolean isEmbedded, Integer page, Integer size) {
+    public ResponseEntity<Page> listEntityDefinitions(String orgKey, EntityDefinitionStatus status, Boolean isEmbedded, String revision,
+                                                      Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20);
         var domainStatus = mapper.toDomainStatus(status);
-        return ResponseEntity.ok(mapper.toPage(findAllUseCase.findAll(orgKey, domainStatus, isEmbedded, pageable)));
+        return ResponseEntity.ok(mapper.toPage(
+            findAllUseCase.findAll(orgKey, Channel.ofRevision(revision), domainStatus, isEmbedded, pageable)));
     }
 
     @Override
@@ -58,8 +61,9 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> getEntityDefinition(String orgKey, String code) {
-        return ResponseEntity.ok(mapper.toModel(findByCodeUseCase.findByCode(orgKey, code)));
+    public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> getEntityDefinition(String orgKey, String code,
+                                                                                                       String revision) {
+        return ResponseEntity.ok(mapper.toModel(findByCodeUseCase.findByCode(orgKey, code, Channel.ofRevision(revision))));
     }
 
     @Override

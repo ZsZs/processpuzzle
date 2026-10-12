@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.adapters.outbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
@@ -35,7 +36,7 @@ class EntityDefinitionLookupAdapterTest {
 
     @Test
     void findByCode_returnsEmpty_whenNotFound() {
-        when(repository.findByOrgKeyAndCode("acme", "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "unknown", Channel.RELEASED)).thenReturn(Optional.empty());
 
         Optional<EntityDefinitionView> result = adapter.findByCode("acme", "unknown");
 
@@ -68,7 +69,7 @@ class EntityDefinitionLookupAdapterTest {
                 .attributes(List.of(nameAttr, addressAttr))
                 .build();
 
-        when(repository.findByOrgKeyAndCode("acme", "partner")).thenReturn(Optional.of(definition));
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "partner", Channel.RELEASED)).thenReturn(Optional.of(definition));
 
         Optional<EntityDefinitionView> result = adapter.findByCode("acme", "partner");
 

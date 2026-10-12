@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
@@ -63,7 +64,7 @@ class DefaultEntityLoaderTest {
         resourceResolver = mock(ResourcePatternResolver.class);
 
         when(resourceResolver.getResources(anyString())).thenReturn(new Resource[]{bundledTestbedFile()});
-        when(definitionRepository.existsByOrgKeyAndCode(anyString(), anyString())).thenReturn(false);
+        when(definitionRepository.existsByOrgKeyAndCodeAndChannel(anyString(), anyString(), eq(Channel.DRAFT))).thenReturn(false);
         when(objectRepository.existsByOrgKeyAndEntityDefinitionCode(anyString(), anyString())).thenReturn(false);
 
         when(createDefinitionUseCase.create(anyString(), any(BaseEntityDefinition.class)))
@@ -181,7 +182,7 @@ class DefaultEntityLoaderTest {
 
     @Test
     void leavesAnAlreadyPresentDefinitionUntouched() {
-        when(definitionRepository.existsByOrgKeyAndCode(ORG, "dynamic-embedded-address")).thenReturn(true);
+        when(definitionRepository.existsByOrgKeyAndCodeAndChannel(ORG, "dynamic-embedded-address", Channel.DRAFT)).thenReturn(true);
 
         loader.loadDefaults();
 

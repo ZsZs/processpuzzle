@@ -16,7 +16,25 @@
     "defaultValue": "Valeur par défaut",
     "enumValues": "Valeurs d'énumération",
     "dateStyle": "Style de date",
-    "timeStyle": "Style d’heure"
+    "timeStyle": "Style d’heure",
+    "_tooltips": {
+      "code": "Clé sous laquelle la valeur est stockée, unique dans le type d'entité, p. ex. orderNumber. Ne la modifiez plus une fois des enregistrements créés.",
+      "name": "Le libellé du champ tel que les utilisateurs le voient dans les formulaires et les colonnes de liste, p. ex. Numéro de commande.",
+      "valueKind": "Le type de valeur du champ : texte, nombre, oui/non, date, date et heure, un choix dans une liste (ENUM) ou une référence à un autre enregistrement. Détermine la validation et la comparaison des valeurs.",
+      "formControlType": "Le contrôle avec lequel les utilisateurs remplissent le champ, p. ex. TEXT_BOX, TEXTAREA, DROPDOWN ou CHECKBOX. Choisissez-en un adapté au type de valeur.",
+      "displayOrder": "Position du champ dans le formulaire et de sa colonne dans la liste ; les plus petits nombres viennent en premier, p. ex. 10, 20, 30.",
+      "multiplicity": "Nombre de valeurs acceptées : 0..1 au plus une, 0..n / 1..n autant que voulu (au moins une avec 1..), 0..x / 1..x jusqu'à Occurrences max. Laissez vide pour une seule valeur.",
+      "maxOccurs": "Nombre maximal de valeurs, p. ex. 5. Utilisé uniquement avec les multiplicités 0..x et 1..x.",
+      "required": "Indique si les utilisateurs doivent remplir le champ avant de pouvoir enregistrer.",
+      "indexed": "Cochez pour les champs souvent utilisés pour rechercher ou filtrer, p. ex. un numéro client ; ces requêtes deviennent rapides.",
+      "isLinkToDetails": "Cochez pour le champ qui nomme l'enregistrement, p. ex. le numéro de commande : il ouvre l'enregistrement depuis la liste et sert de titre au formulaire. Un seul champ au plus par type d'entité.",
+      "autosizeColumn": "Cochez pour que la colonne du champ dans la liste ne soit pas plus large que son contenu, p. ex. pour des codes courts ou des indicateurs.",
+      "enumValues": "Pour le type de valeur ENUM : les options proposées aux utilisateurs, une par puce, p. ex. NEW, PAID, SHIPPED.",
+      "linkedEntityType": "Pour les champs de référence (FOREIGN_KEY) et les lignes intégrées (EMBEDDED_COMPONENTS) : le code du type d'entité visé, p. ex. customer.",
+      "defaultValue": "Valeur pré-remplie dans les nouveaux enregistrements, p. ex. NEW ou 1. Laissez vide pour aucune.",
+      "dateStyle": "Pour les champs DATE et DATE_TIME : l'affichage de la date, de short (31/12/26) à full (jeudi 31 décembre 2026). Vide utilise la valeur par défaut.",
+      "timeStyle": "Pour les champs DATE_TIME : l'affichage de l'heure, de short (14:30) à long (avec secondes et fuseau horaire). Vide utilise la valeur par défaut."
+    }
   },
   "entity_definition": {
     "_self": "Définition d'entité",
@@ -28,7 +46,18 @@
     "componentParents": "Composants parents",
     "attributes": "Attributs",
     "version": "Version",
-    "updatedAt": "Mis à jour le"
+    "updatedAt": "Mis à jour le",
+    "_tooltips": {
+      "code": "Clé unique du type d'entité dans votre organisation, utilisée dans les adresses. Courte, en minuscules et compatible URL, p. ex. order ; évitez de la modifier ensuite.",
+      "name": "Le nom d'entité par lequel les pages, routes et menus de l'application désignent ce type, p. ex. Order.",
+      "description": "Une note pour vous et les autres concepteurs sur le rôle de ce type d'entité ; les utilisateurs ne la voient pas.",
+      "status": "DRAFT tant que vous concevez le type, ACTIVE pour l'afficher dans l'application, DEPRECATED pour le retirer. Seuls les types ACTIVE sont affichés.",
+      "isEmbedded": "Cochez si les enregistrements de ce type n'existent qu'à l'intérieur d'un autre enregistrement, p. ex. les lignes d'une commande. Indiquez alors aussi le parent dans Composants parents.",
+      "componentParents": "Pour un type intégré : les codes des types d'entité dont les enregistrements le contiennent, p. ex. order. Obligatoire si Intégrée est cochée.",
+      "attributes": "Les champs du type d'entité, une ligne par champ. Ils sont enregistrés avec la définition.",
+      "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "updatedAt": "Date du dernier enregistrement de la définition. Défini par le système."
+    }
   },
   "artifact": {
     "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer.",

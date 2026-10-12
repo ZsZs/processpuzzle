@@ -366,6 +366,26 @@
             </configuration>
           </execution>
           <execution>
+            <id>generate-release-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-release-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.release.api</apiPackage>
+              <modelPackage>com.processpuzzle.release.model</modelPackage>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
             <id>generate-event-api</id>
             <goals>
               <goal>generate</goal>

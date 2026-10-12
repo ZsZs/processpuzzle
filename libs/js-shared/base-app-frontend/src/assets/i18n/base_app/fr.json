@@ -30,9 +30,9 @@
       "name": "Le nom de l'application tel que les utilisateurs le voient, p. ex. dans le widget app-title. — Guide : Application",
       "translocoId": "Clé de traduction facultative ; si elle est définie, elle s'affiche à la place du Nom dans les autres langues. — Guide : Application",
       "description": "Une note pour vous et vos collègues concepteurs ; les utilisateurs ne la voient pas. — Guide : Application",
-      "status": "DRAFT jusqu'à la publication de la définition, PUBLISHED ensuite. Défini par le système. — Guide : Enregistrer, prévisualiser et publier",
+      "status": "DRAFT tant que la définition a des modifications que l'organisation n'a pas publiées, PUBLISHED ensuite. Défini par le système. — Guide : Enregistrer, prévisualiser et publier",
       "version": "Augmente à chaque enregistrement. Défini par le système. — Guide : Enregistrer, prévisualiser et publier",
-      "publishedVersion": "La version que les utilisateurs obtiennent actuellement. Ne change que lorsque vous cliquez sur Publier. — Guide : Enregistrer, prévisualiser et publier",
+      "publishedVersion": "La version que reçoivent actuellement les utilisateurs. Ne change que lorsque l'organisation est publiée depuis la section Publication du concepteur. — Guide : Enregistrer, prévisualiser et publier",
       "updatedAt": "Date du dernier enregistrement de la définition. Défini par le système.",
       "materialTheme": "La palette de couleurs de toute l'application. processpuzzle est l'apparence de la marque ; les autres recolorent aussi l'en-tête, le menu latéral, les cartes et les boutons. — Guide : Thème",
       "colorScheme": "Clair, sombre ou auto (suit le système d'exploitation de l'utilisateur). — Guide : Thème",
@@ -149,16 +149,12 @@
       "routes": "Les pages du module. Leurs chemins sont relatifs au chemin de base sous lequel le module est monté. — Guide : Modules"
     }
   },
-  "publish": {
-    "button": "Publier",
-    "tooltip": "Publier la définition enregistrée : sa version devient la version publiée"
-  },
   "concepts": {
     "title": "Comment une application dynamique est construite",
     "intro": "Dans ProcessPuzzle, une <b>Application</b> ne se programme pas – elle se <b>décrit</b>. Tout ce que vous saisissez ici (le cadre, le menu, les pages et ce que chaque page affiche) est enregistré sous forme de données, et le shell d'application construit l'application à partir de cette description au moment de l'exécution. Pour modifier l'application, il suffit de modifier sa définition et de la publier à nouveau ; rien ne doit être recompilé ni redéployé.",
     "assembling": {
       "title": "Assembler votre application, étape par étape",
-      "body": "<ol><li><b>Créez l'application</b> – donnez-lui un Id et un Nom.</li><li><b>Choisissez son apparence</b> – un thème Material, un schéma de couleurs et un modèle de mise en page.</li><li><b>Ajoutez les pages</b> – une <b>Route</b> par page, et décidez ce que chacune affiche : des widgets, une entité ou un document.</li><li><b>Construisez le cadre</b> – ajoutez les régions <b>header</b>, <b>sidenav</b> et <b>footer</b> ; remplissez le header et le footer de widgets, et la sidenav d'éléments de navigation pointant vers vos routes.</li><li><b>Vérifiez le résultat</b> dans l'onglet <b>Aperçu</b>.</li><li><b>Publiez</b> l'application pour que les utilisateurs obtiennent la nouvelle version.</li></ol><p>Les routes viennent avant la navigation, et c'est voulu : un élément de navigation désigne une route par son chemin, il est donc plus simple de l'écrire une fois la route créée.</p>"
+      "body": "<ol><li><b>Créez l'application</b> – donnez-lui un Id et un Nom.</li><li><b>Choisissez son apparence</b> – un thème Material, un schéma de couleurs et un modèle de mise en page.</li><li><b>Ajoutez les pages</b> – une <b>Route</b> par page, et décidez ce que chacune affiche : des widgets, une entité ou un document.</li><li><b>Construisez le cadre</b> – ajoutez les régions <b>header</b>, <b>sidenav</b> et <b>footer</b> ; remplissez le header et le footer de widgets, et la sidenav d'éléments de navigation pointant vers vos routes.</li><li><b>Vérifiez le résultat</b> dans l'onglet <b>Aperçu</b>.</li><li><b>Publiez-la</b> depuis la section <b>Publication</b> du concepteur, pour que les utilisateurs reçoivent la nouvelle version.</li></ol><p>Les routes viennent avant la navigation, et c'est voulu : un élément de navigation désigne une route par son chemin, il est donc plus simple de l'écrire une fois la route créée.</p>"
     },
     "application": {
       "title": "Application",
@@ -214,7 +210,7 @@
     },
     "lifecycle": {
       "title": "Enregistrer, prévisualiser et publier",
-      "body": "<p>Une nouvelle application commence à l'état de <b>Brouillon</b>. <b>Enregistrer</b> sauvegarde vos modifications ; l'onglet <b>Aperçu</b> montre alors la définition enregistrée exactement telle que l'application en cours d'exécution l'affiche, thème compris – vérifiez-la là avant d'aller plus loin. <b>Publier</b> fait de la version enregistrée la <b>Version publiée</b>, celle que reçoivent les utilisateurs. Vous pouvez ensuite continuer à modifier et à enregistrer ; les utilisateurs ne voient les changements qu'une fois que vous publiez à nouveau.</p>"
+      "body": "<p>Une nouvelle application commence comme <b>brouillon</b>. <b>Enregistrer</b> conserve vos modifications ; l'onglet <b>Aperçu</b> affiche alors la définition enregistrée exactement comme l'application en cours d'exécution la rend, thème compris — vérifiez-la là avant d'aller plus loin. Les utilisateurs n'en voient encore rien : l'application en cours d'exécution n'utilise que des définitions <b>publiées</b>. Ouvrez la section <b>Publication</b> du concepteur pour voir tout ce que vous avez modifié — cette application, ses modules et les autres définitions qu'elle utilise — et <b>publiez</b> le tout ensemble ; la version enregistrée devient la <b>version publiée</b>. Vous pouvez ensuite continuer à modifier et à enregistrer ; les utilisateurs ne verront les changements qu'à la prochaine publication.</p>"
     }
   }
 }

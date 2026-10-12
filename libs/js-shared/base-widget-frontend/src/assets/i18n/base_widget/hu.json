@@ -12,7 +12,21 @@
     "publishedVersion": "Közzétett verzió",
     "updatedAt": "Módosítva",
     "inputPorts": "Bemeneti portok",
-    "outputPorts": "Kimeneti portok"
+    "outputPorts": "Kimeneti portok",
+    "_tooltips": {
+      "id": "A szervezeten belül egyedi; a widget minden elhelyezése erre hivatkozik. Kisbetűk, számjegyek és egyszeres kötőjelek, pl. cards-grid; nem módosítható, miután oldalak már használják a widgetet.",
+      "name": "A widget neve, ahogyan a tervezők a palettán látják, pl. Kártyarács.",
+      "translocoId": "Opcionális fordítási kulcs; ha meg van adva, más nyelveken a Név helyett ez jelenik meg, pl. cards_grid.name.",
+      "category": "Az a csoport, amelyben a widget a palettán megjelenik, pl. Content, Data vagy Navigation. Szabad szöveg; az azonos kategóriájú widgetek együtt jelennek meg.",
+      "icon": "A widget mellett a palettán megjelenő Material ikon neve, pl. grid_view.",
+      "description": "Mit csinál a widget – megjegyzésként önnek és a tervezőtársainak; a felhasználók nem látják.",
+      "status": "DRAFT, amíg a widgetnek vannak még közzé nem tett módosításai, PUBLISHED, miután az aktuális verziót a Közzététel gombbal közzétették. A rendszer állítja be.",
+      "version": "Minden mentéssel növekszik. A rendszer állítja be.",
+      "publishedVersion": "Az utoljára közzétett verzió; üres, amíg a widgetet először közzé nem teszik. A rendszer állítja be.",
+      "updatedAt": "A widget utolsó mentésének időpontja. A rendszer állítja be.",
+      "inputPorts": "Azok az értékek, amelyeket a widget attól az oldaltól kap, amelyre elhelyezték, soronként egy, pl. a rács által megjelenített elemek listája.",
+      "outputPorts": "Azok az értékek, amelyeket a widget visszaad az oldalnak, soronként egy, pl. a felhasználó által kiválasztott elem."
+    }
   },
   "widget_input_port": {
     "_self": "Bemeneti port",
@@ -23,7 +37,17 @@
     "entityType": "Entitás típusa",
     "attributeVisibility": "Attribútumok láthatósága",
     "defaultValue": "Alapértelmezett érték",
-    "defaultRsqlFilter": "Alapértelmezett RSQL szűrő"
+    "defaultRsqlFilter": "Alapértelmezett RSQL szűrő",
+    "_tooltips": {
+      "name": "A port azonosítója, a widgeten belül egyedi, pl. items. Az oldalra helyezett widget ezen a néven kapcsolódik a tárolójához.",
+      "type": "A port által fogadott érték fajtája: STRING, NUMBER, BOOLEAN, DATE, OBJECT vagy ARRAY egyszerű értékekhez, ENTITY_REF egyetlen rekordhoz, ENTITY_COLLECTION rekordok szűrt listájához.",
+      "description": "Mire szolgál a port – megjegyzésként azoknak a tervezőknek, akik az oldalra helyezik a widgetet.",
+      "entityType": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: az az entitástípus, amelynek rekordjai a porton haladnak át, pl. order. A többi típusnál hagyja üresen.",
+      "attributeVisibility": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok mely attribútumait kapja meg alapértelmezésben a widget. A mode értéke ALL, INCLUDE vagy EXCLUDE; az utóbbi kettőnél sorolja fel az attribútumokat, pl. attributes = name, price.",
+      "required": "Jelölje be, ha a widget nem működik ezen érték nélkül; ekkor a widgetet elhelyező oldalnak meg kell adnia.",
+      "defaultValue": "Az az érték, amelyet a widget használ, ha a port nem kötelező, és az oldal nem ad meg semmit, pl. 10.",
+      "defaultRsqlFilter": "Csak ENTITY_COLLECTION esetén: az a szűrő, amely akkor érvényes, ha az oldal nem ad meg sajátot, RSQL formában, pl. status==OPEN."
+    }
   },
   "widget_output_port": {
     "_self": "Kimeneti port",
@@ -31,7 +55,14 @@
     "type": "Típus",
     "description": "Leírás",
     "entityType": "Entitás típusa",
-    "attributeVisibility": "Attribútumok láthatósága"
+    "attributeVisibility": "Attribútumok láthatósága",
+    "_tooltips": {
+      "name": "A port azonosítója, a widgeten belül egyedi, pl. selectedItem. Az oldalra helyezett widget ezen a néven kapcsolódik a tárolójához.",
+      "type": "A port által kibocsátott érték fajtája: STRING, NUMBER, BOOLEAN, DATE, OBJECT vagy ARRAY egyszerű értékekhez, ENTITY_REF egyetlen rekordhoz, ENTITY_COLLECTION rekordok szűrt listájához.",
+      "description": "Mire szolgál a port – megjegyzésként azoknak a tervezőknek, akik az oldalra helyezik a widgetet.",
+      "entityType": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: az az entitástípus, amelynek rekordjai a porton haladnak át, pl. order. A többi típusnál hagyja üresen.",
+      "attributeVisibility": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok mely attribútumait adja tovább a widget. A mode értéke ALL, INCLUDE vagy EXCLUDE; az utóbbi kettőnél sorolja fel az attribútumokat, pl. attributes = name, price."
+    }
   },
   "publish": {
     "button": "Közzététel",

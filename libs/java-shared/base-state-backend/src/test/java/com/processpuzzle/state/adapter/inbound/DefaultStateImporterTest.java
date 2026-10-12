@@ -1,5 +1,6 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
@@ -65,8 +66,8 @@ class DefaultStateImporterTest {
         StateMachineDefinitionRepository repository = mock(StateMachineDefinitionRepository.class);
         GuardActionResolver guardActionResolver = mock(GuardActionResolver.class);
         EntityAttributeQuery entityAttributeQuery = mock(EntityAttributeQuery.class);
-        when(entityAttributeQuery.entityTypeExists(eq("processpuzzle-testbed"), anyString())).thenReturn(true);
-        when(entityAttributeQuery.attributeKind(eq("processpuzzle-testbed"), anyString(), anyString()))
+        when(entityAttributeQuery.entityTypeExists(eq("processpuzzle-testbed"), anyString(), eq(Channel.DRAFT))).thenReturn(true);
+        when(entityAttributeQuery.attributeKind(eq("processpuzzle-testbed"), anyString(), anyString(), eq(Channel.DRAFT)))
                 .thenReturn(Optional.of(EntityAttributeKind.ENUM));
         StateMachineTopologyValidator validator =
                 new StateMachineTopologyValidator(guardActionResolver, entityAttributeQuery);

@@ -36,6 +36,20 @@
         "undo": "Deshacer",
         "redo": "Rehacer"
       }
+    },
+    "_tooltips": {
+      "slug": "La clave del documento en su dirección, única en su organización. Solo minúsculas, dígitos y guiones, p. ej. getting-started.",
+      "title": "El título del documento tal como lo ven los lectores, p. ej. Primeros pasos.",
+      "subject": "De qué trata el documento, en una línea.",
+      "description": "Un breve resumen del documento, p. ej. para vistas generales y resultados de búsqueda.",
+      "author": "La autoría que se muestra con el documento. Déjelo vacío para usar a quien lo creó.",
+      "sourceLocale": "El idioma en que escribe el documento; cualquier otra versión es una traducción de este.",
+      "isPublic": "Márquelo para que cualquiera pueda leer el documento publicado sin iniciar sesión; los roles de lectura se ignoran entonces.",
+      "readerRoles": "Roles que pueden leer el documento, uno por chip, p. ej. staff. Déjelo vacío para que lo lea cualquier miembro de la organización con sesión iniciada.",
+      "editorRoles": "Roles que pueden cambiar el contenido y las propiedades del documento, uno por chip, p. ej. editor.",
+      "publisherRoles": "Roles que pueden publicar el documento, uno por chip. Déjelo vacío para que también publiquen los roles de edición.",
+      "inputPorts": "Valores que entrega la página que incrusta el documento, p. ej. el cliente que se está viendo, para que los widgets del documento los usen.",
+      "outputPorts": "Valores que el documento devuelve a la página que lo incrusta, p. ej. un registro seleccionado por el lector."
     }
   },
   "document_input_port": {
@@ -47,7 +61,17 @@
     "entityType": "Tipo de entidad",
     "attributeVisibility": "Visibilidad de atributos",
     "defaultValue": "Valor predeterminado",
-    "defaultRsqlFilter": "Filtro RSQL predeterminado"
+    "defaultRsqlFilter": "Filtro RSQL predeterminado",
+    "_tooltips": {
+      "name": "Nombre con el que la página que incrusta el documento entrega o recibe este valor, único entre los puertos del documento, p. ej. customer.",
+      "type": "Tipo de valor: texto, número, sí/no, fecha, objeto o lista, o ENTITY_REF / ENTITY_COLLECTION para uno o varios registros de un tipo de entidad.",
+      "required": "Si la página que incrusta el documento debe proporcionar este valor. Sin marcar, se usa el valor predeterminado cuando no se proporciona nada.",
+      "description": "Qué significa el valor, para quien incruste el documento.",
+      "entityType": "Solo para ENTITY_REF y ENTITY_COLLECTION: el tipo de entidad de los registros, p. ej. Order.",
+      "attributeVisibility": "Solo para ENTITY_REF y ENTITY_COLLECTION: qué atributos de los registros se muestran. mode es ALL, INCLUDE o EXCLUDE; attributes enumera los nombres de atributo afectados.",
+      "defaultValue": "Valor que se usa cuando el puerto no es obligatorio y la página no proporciona nada, p. ej. 10.",
+      "defaultRsqlFilter": "Solo para ENTITY_COLLECTION: qué registros mostrar cuando la página no proporciona filtro, como consulta RSQL, p. ej. status==OPEN."
+    }
   },
   "document_output_port": {
     "_self": "Puerto de salida",
@@ -55,6 +79,13 @@
     "type": "Tipo",
     "description": "Descripción",
     "entityType": "Tipo de entidad",
-    "attributeVisibility": "Visibilidad de atributos"
+    "attributeVisibility": "Visibilidad de atributos",
+    "_tooltips": {
+      "name": "Nombre con el que la página que incrusta el documento entrega o recibe este valor, único entre los puertos del documento, p. ej. customer.",
+      "type": "Tipo de valor: texto, número, sí/no, fecha, objeto o lista, o ENTITY_REF / ENTITY_COLLECTION para uno o varios registros de un tipo de entidad.",
+      "description": "Qué significa el valor, para quien incruste el documento.",
+      "entityType": "Solo para ENTITY_REF y ENTITY_COLLECTION: el tipo de entidad de los registros, p. ej. Order.",
+      "attributeVisibility": "Solo para ENTITY_REF y ENTITY_COLLECTION: qué atributos de los registros se muestran. mode es ALL, INCLUDE o EXCLUDE; attributes enumera los nombres de atributo afectados."
+    }
   }
 }

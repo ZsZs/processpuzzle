@@ -1,0 +1,205 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Base Release API (base-release)
+  description: >-
+    Releasing an organization's definitions. A designer edits drafts of every definition - the
+    application, its modules, entities, state machines, rules, workflows - and the running
+    application reads only what was released. One release carries every pending draft at once, so
+    a coherent change goes live in one step. See docs/definition-release.md.
+
+    ## Pending
+
+    `GET .../releases/pending` is the dry run: every definition whose draft differs from its
+    released row, and every problem that would refuse or qualify the release. An `error` blocks the
+    release: a draft referring to a definition the release would not carry, a draft that fails its
+    own validation, or live data a changed definition no longer describes. A `warning` lets the
+    release through once confirmed.
+
+    ## Release
+
+    `POST .../releases` checks again, inside the release's own transaction, and either releases
+    every pending definition of every kind or nothing at all. Refused with 409 and the same pending
+    body while there are errors, while there are unconfirmed warnings, or while nothing is pending.
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as the other feature APIs; see shared-api.yaml OrgKeyParam. Every
+    operation requires design rights on the organization.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  /organizations/{orgKey}/releases:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listReleases
+      summary: The organization's releases, newest first
+      tags: [ Base Release ]
+      responses:
+        "200":
+          description: Every release, with the definitions it carried
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Release"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+    post:
+      operationId: releaseOrganization
+      summary: Release every pending definition of the organization
+      tags: [ Base Release ]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReleaseRequest"
+      responses:
+        "201":
+          description: Released
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+        "409":
+          description: >-
+            Refused: there are errors, unconfirmed warnings, or nothing pending. Nothing was
+            released; the body says why.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingRelease"
+
+  /organizations/{orgKey}/releases/pending:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: getPendingRelease
+      summary: What a release would carry, and what would refuse it
+      tags: [ Base Release ]
+      responses:
+        "200":
+          description: The pending changes and the problems found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingRelease"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+
+components:
+
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+      description: >-
+        Tenant discriminator; see shared-api.yaml OrgKeyParam for the full contract. Must be
+        verified against the principal's `organization` claim - 403 on mismatch.
+
+  schemas:
+
+    DefinitionChange:
+      type: string
+      description: >-
+        added - a draft with nothing released; changed - a draft that differs from its released
+        row; removed - a released row whose draft was deleted.
+      enum: [ added, changed, removed ]
+
+    PendingChange:
+      type: object
+      required: [ kind, key, change ]
+      properties:
+        kind:
+          type: string
+          description: The definition kind - app, module, entity, state, rule, workflow, ...
+        key:
+          type: string
+          description: The definition's key within its kind - an app id, a module key, an entity code.
+        change:
+          $ref: "#/components/schemas/DefinitionChange"
+
+    ReleaseProblem:
+      type: object
+      required: [ severity, kind, key, errorId, message ]
+      properties:
+        severity:
+          type: string
+          enum: [ error, warning ]
+        kind:
+          type: string
+        key:
+          type: string
+        errorId:
+          type: string
+          description: Stable, machine-readable identifier; also the translation key.
+          example: release.unresolved-reference
+        message:
+          type: string
+          description: Human-readable explanation in the platform's default language.
+
+    PendingRelease:
+      type: object
+      required: [ changes, problems ]
+      properties:
+        changes:
+          type: array
+          description: In release order - by kind, then by key.
+          items:
+            $ref: "#/components/schemas/PendingChange"
+        problems:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReleaseProblem"
+
+    ReleaseRequest:
+      type: object
+      properties:
+        acknowledgeWarnings:
+          type: boolean
+          default: false
+          description: The designer has seen the warnings and releases regardless.
+
+    ReleaseItem:
+      type: object
+      required: [ kind, key, change ]
+      properties:
+        kind:
+          type: string
+        key:
+          type: string
+        change:
+          $ref: "#/components/schemas/DefinitionChange"
+        contentHash:
+          type: string
+          description: SHA-256 of the released definition's canonical JSON; absent for a removal.
+
+    Release:
+      type: object
+      required: [ releaseNumber, releasedAt, items ]
+      properties:
+        releaseNumber:
+          type: integer
+          format: int64
+          description: Counts the organization's releases from 1.
+        releasedAt:
+          type: string
+          format: date-time
+        releasedBy:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReleaseItem"

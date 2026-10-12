@@ -16,7 +16,25 @@
     "defaultValue": "Standardwert",
     "enumValues": "Aufzählungswerte",
     "dateStyle": "Datumsstil",
-    "timeStyle": "Zeitstil"
+    "timeStyle": "Zeitstil",
+    "_tooltips": {
+      "code": "Schlüssel, unter dem der Wert gespeichert wird, eindeutig innerhalb des Entitätstyps, z. B. orderNumber. Nicht mehr ändern, sobald Datensätze existieren.",
+      "name": "Die Beschriftung des Feldes, wie Benutzer sie in Formularen und Listenspalten sehen, z. B. Bestellnummer.",
+      "valueKind": "Welche Art von Wert das Feld enthält: Text, Zahl, Ja/Nein, Datum, Datum und Uhrzeit, eine Auswahl aus einer Liste (ENUM) oder einen Verweis auf einen anderen Datensatz. Bestimmt, wie Werte geprüft und verglichen werden.",
+      "formControlType": "Mit welchem Eingabeelement Benutzer das Feld ausfüllen, z. B. TEXT_BOX, TEXTAREA, DROPDOWN oder CHECKBOX. Wählen Sie eines, das zur Wertart passt.",
+      "displayOrder": "Position des Feldes im Formular und seiner Spalte in der Liste; kleinere Zahlen kommen zuerst, z. B. 10, 20, 30.",
+      "multiplicity": "Wie viele Werte das Feld aufnimmt: 0..1 höchstens einen, 0..n / 1..n beliebig viele (mit 1.. mindestens einen), 0..x / 1..x bis zu Max. Anzahl. Leer lassen für einen einzelnen Wert.",
+      "maxOccurs": "Obergrenze für die Anzahl der Werte, z. B. 5. Gilt nur für die Multiplizitäten 0..x und 1..x.",
+      "required": "Ob Benutzer das Feld ausfüllen müssen, bevor sie den Datensatz speichern können.",
+      "indexed": "Ankreuzen für Felder, nach denen oft gesucht oder gefiltert wird, z. B. eine Kundennummer; das macht solche Abfragen schnell.",
+      "isLinkToDetails": "Ankreuzen für das Feld, das den Datensatz benennt, z. B. die Bestellnummer: Es öffnet den Datensatz aus der Liste und steht als Überschrift im Formular. Höchstens ein Feld pro Entitätstyp.",
+      "autosizeColumn": "Ankreuzen, damit die Listenspalte des Feldes nur so breit wie ihr Inhalt ist, z. B. bei kurzen Codes oder Kennzeichen.",
+      "enumValues": "Für die Wertart ENUM: die Optionen, aus denen Benutzer wählen, je ein Chip, z. B. NEW, PAID, SHIPPED.",
+      "linkedEntityType": "Für Verweisfelder (FOREIGN_KEY) und eingebettete Zeilen (EMBEDDED_COMPONENTS): der Code des Entitätstyps, auf den sie zeigen, z. B. customer.",
+      "defaultValue": "Wert, der in neuen Datensätzen vorausgefüllt ist, z. B. NEW oder 1. Leer lassen für keinen.",
+      "dateStyle": "Für DATE- und DATE_TIME-Felder: wie das Datum angezeigt wird, von short (31.12.26) bis full (Donnerstag, 31. Dezember 2026). Leer bedeutet Standard.",
+      "timeStyle": "Für DATE_TIME-Felder: wie die Uhrzeit angezeigt wird, von short (14:30) bis long (mit Sekunden und Zeitzone). Leer bedeutet Standard."
+    }
   },
   "entity_definition": {
     "_self": "Entitätsdefinition",
@@ -28,7 +46,18 @@
     "componentParents": "Übergeordnete Komponenten",
     "attributes": "Attribute",
     "version": "Version",
-    "updatedAt": "Aktualisiert am"
+    "updatedAt": "Aktualisiert am",
+    "_tooltips": {
+      "code": "Eindeutiger Schlüssel des Entitätstyps in Ihrer Organisation, wird in Adressen verwendet. Kurz, kleingeschrieben und URL-tauglich, z. B. order; später möglichst nicht ändern.",
+      "name": "Der Entitätsname, unter dem Seiten, Routen und Menüs der Anwendung diesen Typ ansprechen, z. B. Order.",
+      "description": "Eine Notiz für Sie und Ihre Mitgestalter, wozu dieser Entitätstyp dient; Benutzer sehen sie nicht.",
+      "status": "DRAFT, solange Sie den Typ noch entwerfen, ACTIVE, um ihn in der Anwendung anzuzeigen, DEPRECATED, um ihn auszumustern. Angezeigt werden nur ACTIVE-Typen.",
+      "isEmbedded": "Ankreuzen, wenn Datensätze dieses Typs nur innerhalb eines anderen Datensatzes existieren, z. B. Bestellpositionen in einer Bestellung. Dann auch den übergeordneten Typ unter Übergeordnete Komponenten angeben.",
+      "componentParents": "Für einen eingebetteten Typ: die Codes der Entitätstypen, deren Datensätze ihn enthalten, z. B. order. Pflicht, wenn Eingebettet angekreuzt ist.",
+      "attributes": "Die Felder des Entitätstyps, eine Zeile pro Feld. Sie werden zusammen mit der Definition gespeichert.",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt."
+    }
   },
   "artifact": {
     "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen.",

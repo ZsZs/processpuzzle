@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import java.util.List;
@@ -16,8 +17,8 @@ public class FindEntityDefinitionsByCodesUseCase {
     private final EntityDefinitionRepository repository;
 
     @Transactional(readOnly = true)
-    public List<BaseEntityDefinition> find(String orgKey, Set<String> codes) {
-        return repository.findAllByOrgKey(orgKey).stream()
+    public List<BaseEntityDefinition> find(String orgKey, Set<String> codes, Channel channel) {
+        return repository.findAllByOrgKeyAndChannel(orgKey, channel).stream()
             .filter(definition -> codes.contains(definition.getCode()))
             .toList();
     }

@@ -1,5 +1,6 @@
 package com.processpuzzle.app.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -7,16 +8,18 @@ import java.util.Optional;
 
 public interface ModuleDefinitionRepository extends JpaRepository<ModuleDefinition, ModuleDefinitionKey> {
 
-    Optional<ModuleDefinition> findByOrgKeyAndKey(String orgKey, String key);
+    Optional<ModuleDefinition> findByOrgKeyAndKeyAndChannel(String orgKey, String key, Channel channel);
 
     /**
      * Used before {@code save} on create: {@code save} merges rather than persists for an assigned
      * id, which would turn a duplicate create into a silent update. Same reason as
      * {@code AppDefinitionRepository.existsByOrgKeyAndId}.
      */
-    boolean existsByOrgKeyAndKey(String orgKey, String key);
+    boolean existsByOrgKeyAndKeyAndChannel(String orgKey, String key, Channel channel);
 
-    List<ModuleDefinition> findByOrgKey(String orgKey);
+    List<ModuleDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
+
+    List<ModuleDefinition> findByOrgKeyAndChannelAndKeyIn(String orgKey, Channel channel, List<String> keys);
 
     /**
      * Called by {@code TenantDataCleaner} when the tenant is deleted: modules are scoped by the

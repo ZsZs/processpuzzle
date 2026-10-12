@@ -9,6 +9,7 @@ import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsExce
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import java.util.List;
 /**
  * Creates a module in an organization. A module is an aggregate of its own — nothing about creating
  * one touches an {@link com.processpuzzle.app.domain.AppDefinition}, and no app has to mount it for
- * it to exist.
+ * it to exist. It is created as a draft; the organization's next release makes it live.
  */
 @Service
 @Transactional
@@ -50,7 +51,7 @@ public class CreateModuleDefinition {
         }
         // Same reason as CreateAppDefinition: save merges for an assigned id, so without this a
         // duplicate create would silently overwrite the existing module.
-        if (repository.existsByOrgKeyAndKey(orgKey, input.getKey())) {
+        if (repository.existsByOrgKeyAndKeyAndChannel(orgKey, input.getKey(), Channel.DRAFT)) {
             throw new ModuleDefinitionAlreadyExistsException(orgKey, input.getKey());
         }
 

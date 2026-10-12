@@ -134,6 +134,15 @@ class AppMapperTest {
         assertThat(layout.getVersion()).isEqualTo(1L);
         assertThat(layout.getRegions()).isEmpty();
         assertThat(layout.getTheme().getMaterialTheme()).isEqualTo(MaterialTheme.ROSE_RED);
+        assertThat(layout.getRoutes()).extracting(RouteDefinition::getPath).containsExactly("claims-list");
+    }
+
+    @Test
+    void layoutCarriesTheVersionItWasTakenFrom() {
+        com.processpuzzle.app.domain.AppDefinition entity = new com.processpuzzle.app.domain.AppDefinition(
+                "my-org", "claims-app", "Claims", null, null, AppGraph.empty());
+
+        assertThat(mapper.toLayout(entity, AppGraph.empty(), null, 7L).getVersion()).isEqualTo(7L);
     }
 
     @Test

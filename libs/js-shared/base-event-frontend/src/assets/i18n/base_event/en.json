@@ -7,6 +7,15 @@
     "kind": "Kind",
     "subjectType": "Subject Type",
     "action": "Action",
-    "state": "State"
+    "state": "State",
+    "_tooltips": {
+      "id": "Unique within your organization, e.g. OrderCreatedEvent. Workflows and other features refer to the event by it, so avoid changing it later.",
+      "name": "The event's name as people see it in pickers and lists, e.g. Order created.",
+      "description": "A note on when the event happens and what it is used for; users do not see it.",
+      "kind": "SYSTEM: raised by the platform when a record changes. MESSAGE: sent to one receiver through the API. SIGNAL: broadcast to every listener through the API.",
+      "subjectType": "For SYSTEM events only: the code of the entity type whose records raise the event, e.g. order.",
+      "action": "For SYSTEM events only: what happens to the record: CREATED, UPDATED, DELETED or STATE_CHANGED.",
+      "state": "For STATE_CHANGED only: the state the record enters, e.g. CONFIRMED."
+    }
   }
 }

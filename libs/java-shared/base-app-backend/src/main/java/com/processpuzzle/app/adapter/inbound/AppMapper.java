@@ -227,6 +227,25 @@ public class AppMapper {
      */
     public AppLayout toLayout(com.processpuzzle.app.domain.AppDefinition definition, AppGraph graph,
                               String defaultLocale) {
+        return toLayout(definition, graph, defaultLocale, definition.getRevision());
+    }
+
+    /**
+     * As {@link #toLayout(com.processpuzzle.app.domain.AppDefinition, AppGraph, String)}, with the
+     * revision {@code graph} was taken from — the published one for a published read.
+     */
+    public AppLayout toLayout(com.processpuzzle.app.domain.AppDefinition definition, AppGraph graph,
+                              String defaultLocale, Long version) {
+        return toLayout(definition, graph, defaultLocale, version, List.of());
+    }
+
+    /**
+     * As {@link #toLayout(com.processpuzzle.app.domain.AppDefinition, AppGraph, String, Long)}, with the
+     * mounted modules carried inline: already the revision the layout was read for, and role-filtered.
+     */
+    public AppLayout toLayout(com.processpuzzle.app.domain.AppDefinition definition, AppGraph graph,
+                              String defaultLocale, Long version,
+                              List<com.processpuzzle.app.domain.ModuleDefinition> mountedModules) {
         AppLayout layout = new AppLayout(
                 definition.getId(),
                 definition.getOrgKey(),
@@ -234,10 +253,13 @@ public class AppMapper {
                 toModelRegions(graph == null ? List.of() : graph.regions()));
         layout.setTranslocoId(definition.getTranslocoId());
         layout.setDefaultLocale(defaultLocale);
-        layout.setVersion(definition.getRevision());
+        layout.setVersion(version);
         if (graph != null) {
             layout.setTheme(toModelTheme(graph.theme()));
             layout.setLayout(toModelLayout(graph.layout()));
+            layout.setRoutes(toModelRoutes(graph.routes()));
+            layout.setModules(toModelMounts(graph.modules()));
+            layout.setMountedModules(mountedModules.stream().map(this::toModel).toList());
         }
         return layout;
     }

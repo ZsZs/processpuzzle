@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, Injector } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
 import { BaseUrlSegments } from '@processpuzzle/base-entity';
 import { firstValueFrom } from 'rxjs';
@@ -8,7 +8,7 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
-import { buildAppRoutes } from '../app-route-builder';
+import { buildAppRoutes, ModuleLoader } from '../app-route-builder';
 import { AppRouteRenderer } from '../app-route-renderer';
 
 /**
@@ -20,17 +20,31 @@ import { AppRouteRenderer } from '../app-route-renderer';
  */
 @Injectable({ providedIn: 'root' })
 export class AppShellRoutesFactory {
-  private readonly appStore = inject(AppDefinitionStore);
+  // The two stores are read on first use rather than injected here. They are the designer's stores of
+  // drafts, and each loads every definition the moment it is created — which a runtime host, building
+  // the routes of the published revision it already holds, must not set off on its way past.
+  private readonly injector = inject(Injector);
   private readonly appService = inject(AppDefinitionService);
-  private readonly moduleStore = inject(ModuleDefinitionStore);
   private readonly moduleService = inject(ModuleDefinitionService);
   private readonly renderRoute = inject(AppRouteRenderer).render;
 
   async childrenOf(appId: string): Promise<Routes> {
     const definition = await this.definitionOf(appId);
-    if (!definition) return [];
+    return definition ? this.childrenFor(definition) : [];
+  }
 
-    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule: this.loadModule }, this.renderRoute);
+  /**
+   * The routes of a definition already in hand — the published one the runtime host fetched, or the draft
+   * {@link childrenOf} found. One builder for both is what keeps the Preview and the live application from
+   * rendering the same definition differently.
+   *
+   * A definition read through `/layout` brings its mounted modules along, from its own side — the released
+   * modules with the published revision — and those are the only ones it mounts. Fetching a module instead
+   * would read its draft, and the live application would show edits nobody has released.
+   */
+  async childrenFor(definition: AppDefinition): Promise<Routes> {
+    const loadModule = definition.mountedModules ? inlineModules(definition.mountedModules) : this.loadModule;
+    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule }, this.renderRoute);
     return built.length ? [indexRoute(definition, built), ...built] : built;
   }
 
@@ -46,7 +60,7 @@ export class AppShellRoutesFactory {
    * navigation, and an app whose definition cannot be read should render an empty shell, not a dead URL.
    */
   private async definitionOf(appId: string): Promise<AppDefinition | undefined> {
-    const known = this.appStore.loadById(appId);
+    const known = this.injector.get(AppDefinitionStore).loadById(appId);
     if (known) return known;
     return (await this.fetch(() => firstValueFrom(this.appService.findById(appId)))) as AppDefinition | undefined;
   }
@@ -57,7 +71,7 @@ export class AppShellRoutesFactory {
    * authored yet is a validation *warning*, so it must contribute no routes rather than break navigation.
    */
   private loadModule = async (moduleKey: string): Promise<ModuleDefinition | undefined> => {
-    const known = this.moduleStore.loadById(moduleKey);
+    const known = this.injector.get(ModuleDefinitionStore).loadById(moduleKey);
     if (known) return known;
     return (await this.fetch(() => firstValueFrom(this.moduleService.findById(moduleKey)))) as ModuleDefinition | undefined;
   };
@@ -70,6 +84,11 @@ export class AppShellRoutesFactory {
       return undefined;
     }
   }
+}
+
+/** A {@link ModuleLoader} over the modules a layout carried; a mount naming any other module shows nothing. */
+function inlineModules(modules: ModuleDefinition[]): ModuleLoader {
+  return async (moduleKey) => modules.find((module) => module.id === moduleKey);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { FormControlType, type AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
-import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { BaseEntityAttrDescriptor, type Selectable } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { toSelectables } from '../base-entity/selectables';
@@ -10,7 +10,7 @@ import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './e
 
 export { ENTITY_DEFINITION_ENTITY_NAME };
 
-function createEntityDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
+function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[]): AbstractAttrDescriptor[] {
   // The business key *and* the record's identity — see `EntityDefinition.id`. `isLinkToDetails`, so the
   // list's own column is what opens the definition, and `isHeading`, so the form and the status bar name
   // the entity type being authored.
@@ -40,11 +40,11 @@ function createEntityDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // decision, which is also how `BaseEntityDescriptor` treats them.
   const isEmbeddedAttr = new BaseEntityAttrDescriptor('isEmbedded', FormControlType.CHECKBOX, 'Embedded');
 
-  // A TAGS control, not a dropdown over the tenant's definitions: the parents are named by **code**, and
-  // the codes on offer are rows of the very list this form was opened from — a closed option list would be
-  // stale as soon as one is added. `descriptorOf` drops a code with no definition behind it, and the
-  // backend rejects one on save.
-  const componentParentsAttr = new BaseEntityAttrDescriptor('componentParents', FormControlType.TAGS, 'Component Parents');
+  // A TAGS control picking from the organization's definitions, by **code**, when the form is given them: the
+  // options are a callback re-read on every change detection, so a definition saved a moment ago is already on
+  // offer. Without them it accepts free text, and `descriptorOf` drops a code with no definition behind it —
+  // the backend rejects one on save either way.
+  const componentParentsAttr = new BaseEntityAttrDescriptor('componentParents', FormControlType.TAGS, 'Component Parents', entityCodes);
   componentParentsAttr.hideInTable = true;
   // endregion
 
@@ -81,10 +81,11 @@ function createEntityDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
-export function createEntityDefinitionDescriptor(): BaseEntityDescriptor {
+/** @param entityCodes the codes Component Parents may pick from; see {@link EntityDefinitionOptions.codes} */
+export function createEntityDefinitionDescriptor(entityCodes?: () => Selectable[]): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: ENTITY_DEFINITION_ENTITY_NAME,
-    attrDescriptors: createEntityDefinitionAttrDescriptors(),
+    attrDescriptors: createEntityDefinitionAttrDescriptors(entityCodes),
     i18nScope: ENTITY_DEFINITION_I18N_SCOPE,
   });
 }

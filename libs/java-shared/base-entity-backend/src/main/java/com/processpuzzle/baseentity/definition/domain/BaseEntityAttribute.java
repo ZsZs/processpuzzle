@@ -122,4 +122,34 @@ public class BaseEntityAttribute {
     public boolean isMultiValued() {
         return Multiplicity.isMultiValued(multiplicity, maxOccurs);
     }
+
+    /**
+     * The same attribute as a new row, not yet attached to a definition: how a release copies a draft's attributes
+     * onto the released definition. Every field but the id and the owner — see {@link #copyFrom}, where a new field must be added.
+     */
+    public BaseEntityAttribute copy() {
+        BaseEntityAttribute copy = BaseEntityAttribute.builder().code(code).build();
+        copy.copyFrom(this);
+        return copy;
+    }
+
+    /** Takes every authored field of {@code source}, leaving this row's id and owner as they are. */
+    public void copyFrom(BaseEntityAttribute source) {
+        this.code = source.code;
+        this.name = source.name;
+        this.displayOrder = source.displayOrder;
+        this.valueKind = source.valueKind;
+        this.formControlType = source.formControlType;
+        this.multiplicity = source.multiplicity;
+        this.maxOccurs = source.maxOccurs;
+        this.required = source.required;
+        this.indexed = source.indexed;
+        this.defaultValue = source.defaultValue;
+        this.enumValues = source.enumValues == null ? null : new java.util.ArrayList<>(source.enumValues);
+        this.dateFormat = source.dateFormat;
+        this.linkedEntityType = source.linkedEntityType;
+        this.isLinkToDetails = source.isLinkToDetails;
+        this.autosizeColumn = source.autosizeColumn;
+        this.validationRules = source.validationRules;
+    }
 }

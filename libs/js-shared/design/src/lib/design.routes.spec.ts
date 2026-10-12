@@ -4,6 +4,7 @@ import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer
 import { WORKFLOW_DESIGNER_TABS } from './workflow-designer/workflow-designer.tabs';
 import { APPLICATION_DESIGNER_TABS } from './application-designer/application-designer.tabs';
 import { DESIGN_ROUTES } from './design.routes';
+import { ReleasePanelComponent } from './release/release-panel.component';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
@@ -49,6 +50,14 @@ describe('DESIGN_ROUTES', () => {
 
     expect(sectionPaths).not.toContain('app-definition');
     expect(sectionPaths).not.toContain('module-definition');
+  });
+
+  it('ends with the Release section, the one place drafts reach the live application', () => {
+    const releaseRoute = DESIGN_ROUTES.at(-1);
+
+    expect(releaseRoute?.path).toBe('release');
+    expect(releaseRoute?.component).toBe(ReleasePanelComponent);
+    expect(releaseRoute?.data).toEqual({ icon: 'rocket_launch', menuTitle: 'design.release' });
   });
 
   describe('the States section', () => {

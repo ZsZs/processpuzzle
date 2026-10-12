@@ -30,9 +30,9 @@
       "name": "The application's name as users see it, e.g. in the app-title widget. — Guide: Application",
       "translocoId": "Optional translation key; when set, it is shown instead of the Name in other languages. — Guide: Application",
       "description": "A note for you and your fellow designers; users do not see it. — Guide: Application",
-      "status": "DRAFT until the definition is published, PUBLISHED afterwards. Set by the system. — Guide: Save, preview and publish",
-      "version": "Increases with every save. Set by the system. — Guide: Save, preview and publish",
-      "publishedVersion": "The version users currently get. Changes only when you press Publish. — Guide: Save, preview and publish",
+      "status": "DRAFT while the definition has changes the organization has not released, PUBLISHED once released. Set by the system. — Guide: Save, preview and release",
+      "version": "Increases with every save. Set by the system. — Guide: Save, preview and release",
+      "publishedVersion": "The version users currently get. Changes only when the organization is released from the designer's Release section. — Guide: Save, preview and release",
       "updatedAt": "When the definition was last saved. Set by the system.",
       "materialTheme": "The colour palette of the whole application. processpuzzle is the brand look; the others also recolour header, sidenav, cards and buttons. — Guide: Theme",
       "colorScheme": "Light, dark, or auto (follows the user's operating system). — Guide: Theme",
@@ -149,16 +149,12 @@
       "routes": "The module's pages. Their paths are relative to the base path the module is mounted at. — Guide: Modules"
     }
   },
-  "publish": {
-    "button": "Publish",
-    "tooltip": "Publish the saved definition: its version becomes the published version"
-  },
   "concepts": {
     "title": "How a dynamic application is put together",
     "intro": "An <b>Application</b> in ProcessPuzzle is not programmed — it is <b>described</b>. Everything you enter here (the frame, the menu, the pages and what each page shows) is stored as data, and the application shell builds the running application from that description at run time. Changing the application means editing its definition and publishing it again; nothing has to be rebuilt or redeployed.",
     "assembling": {
       "title": "Assembling your application, step by step",
-      "body": "<ol><li><b>Create the application</b> — give it an Id and a Name.</li><li><b>Choose its look</b> — a Material theme, a colour scheme and a layout preset.</li><li><b>Add the pages</b> — one <b>Route</b> per page, and decide what each one renders: widgets, an entity or a document.</li><li><b>Build the frame</b> — add the <b>header</b>, <b>sidenav</b> and <b>footer</b> regions; fill the header and footer with widgets and the sidenav with navigation items pointing at your routes.</li><li><b>Check it</b> on the <b>Preview</b> tab.</li><li><b>Publish</b> it, so that users get the new version.</li></ol><p>Routes come before navigation on purpose: a navigation item points at a route by its path, so it is easiest to write once the route exists.</p>"
+      "body": "<ol><li><b>Create the application</b> — give it an Id and a Name.</li><li><b>Choose its look</b> — a Material theme, a colour scheme and a layout preset.</li><li><b>Add the pages</b> — one <b>Route</b> per page, and decide what each one renders: widgets, an entity or a document.</li><li><b>Build the frame</b> — add the <b>header</b>, <b>sidenav</b> and <b>footer</b> regions; fill the header and footer with widgets and the sidenav with navigation items pointing at your routes.</li><li><b>Check it</b> on the <b>Preview</b> tab.</li><li><b>Release</b> it from the designer's <b>Release</b> section, so that users get the new version.</li></ol><p>Routes come before navigation on purpose: a navigation item points at a route by its path, so it is easiest to write once the route exists.</p>"
     },
     "application": {
       "title": "Application",
@@ -213,8 +209,8 @@
       "body": "<p>Routes and navigation items can name the <b>Roles</b> allowed to use them. Leaving the list empty means any signed-in member of your organization. Roles are stored with the definition, but the Preview does not restrict anything by them yet.</p>"
     },
     "lifecycle": {
-      "title": "Save, preview and publish",
-      "body": "<p>A new application starts as a <b>Draft</b>. <b>Save</b> stores your changes; the <b>Preview</b> tab then shows the saved definition exactly as the running application renders it, theme included — check it there before going further. <b>Publish</b> makes the saved version the <b>Published Version</b>, the one users get. You can keep editing and saving afterwards; users see the changes only once you publish again.</p>"
+      "title": "Save, preview and release",
+      "body": "<p>A new application starts as a <b>Draft</b>. <b>Save</b> stores your changes; the <b>Preview</b> tab then shows the saved definition exactly as the running application renders it, theme included — check it there before going further. Users get none of it yet: the running application uses only <b>released</b> definitions. Open the designer's <b>Release</b> section to see everything you changed — this application, its modules and the other definitions it uses — and <b>Publish</b> them together; the saved version becomes the <b>Published Version</b>. You can keep editing and saving afterwards; users see the changes only once you release again.</p>"
     }
   }
 }
