@@ -34,7 +34,6 @@ public class CreateRule {
         extendsValidator.validate(orgKey, input.getId(), input.getExtendsRuleId());
 
         RuleDefinition rule = mapper.toDomain(orgKey, input);
-        RuleDefinition saved = repository.save(rule);
-        return saved;
+        return repository.save(rule);
     }
 }
