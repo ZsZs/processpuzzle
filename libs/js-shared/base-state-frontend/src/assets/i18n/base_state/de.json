@@ -27,6 +27,17 @@
         "polyline": "Gerade",
         "bezier": "Gebogen"
       }
+    },
+    "_tooltips": {
+      "entityName": "Der Entitätstyp, dessen Datensätze diese Zustandsmaschine steuert, z. B. order. Pro Entitätstyp gibt es nur eine Zustandsmaschine; nach dem ersten Speichern lässt sich der Wert nicht mehr ändern.",
+      "name": "Ein gut lesbarer Name für die Zustandsmaschine, z. B. Bestelllebenszyklus.",
+      "description": "Eine Notiz für Sie und Ihre Mitdesigner; Benutzer sehen sie nicht.",
+      "stateAttributeKey": "Das Attribut der Entität, das den aktuellen Zustand des Datensatzes enthält, z. B. status. Es muss in der Entität vorhanden und ein Text- oder Aufzählungsattribut sein; geschrieben wird es nur von der Zustandsmaschine.",
+      "initialStateKey": "Der Schlüssel des Zustands, in dem jeder neue Datensatz beginnt, z. B. NEW. Er muss dem Schlüssel eines der Zustände unten entsprechen.",
+      "version": "Erhöht sich mit jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann die Zustandsmaschine zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "states": "Die Zustände, in denen sich ein Datensatz befinden kann, eine Zeile pro Zustand, z. B. NEW, CONFIRMED, SHIPPED. Mindestens einer ist erforderlich.",
+      "transitions": "Die erlaubten Wechsel von einem Zustand in einen anderen, eine Zeile pro Wechsel, z. B. approve: NEW → CONFIRMED. Ein Datensatz kann seinen Zustand nur über einen hier aufgeführten Übergang ändern."
     }
   },
   "state_machine_state": {
@@ -37,7 +48,15 @@
     "initial": "Startzustand",
     "isFinal": "Endzustand",
     "isLocked": "Gesperrt",
-    "metadata": "Metadaten"
+    "metadata": "Metadaten",
+    "_tooltips": {
+      "key": "Der genaue Wert, der im Zustandsattribut des Datensatzes steht, solange er sich in diesem Zustand befindet, z. B. CONFIRMED. Innerhalb der Zustandsmaschine eindeutig; Übergänge verweisen über ihn auf den Zustand.",
+      "name": "Der Name des Zustands, wie Benutzer ihn sehen, z. B. Bestätigt.",
+      "description": "Was dieser Zustand für den Datensatz bedeutet, als Notiz für Sie und Ihre Mitdesigner.",
+      "isFinal": "Ankreuzen für einen Endzustand, z. B. CLOSED oder CANCELLED: Kein Übergang darf aus ihm herausführen.",
+      "isLocked": "Ankreuzen, um Datensätze in diesem Zustand einzufrieren: Ihre übrigen Felder lassen sich nicht mehr bearbeiten, nur der Zustand selbst kann sich noch ändern.",
+      "metadata": "Optionale Darstellungshinweise für das Zeichnen des Zustands im Zustandsmodellierer, als Name-Wert-Paare, z. B. color = #2e7d32."
+    }
   },
   "state_machine_transition": {
     "_self": "Übergang",
@@ -47,17 +66,34 @@
     "targetStateKey": "Zielzustand",
     "triggerKey": "Auslöser",
     "guards": "Wächter",
-    "actions": "Aktionen"
+    "actions": "Aktionen",
+    "_tooltips": {
+      "key": "Kennzeichnet den Übergang, innerhalb der Zustandsmaschine eindeutig, z. B. confirm-order.",
+      "name": "Optionaler, gut lesbarer Name des Übergangs, z. B. Bestellung bestätigen.",
+      "sourceStateKey": "Der Schlüssel des Zustands, in dem sich der Datensatz befinden muss, damit dieser Übergang angeboten wird, z. B. NEW. Es darf kein Endzustand sein.",
+      "targetStateKey": "Der Schlüssel des Zustands, in den der Datensatz wechselt, z. B. CONFIRMED.",
+      "triggerKey": "Die Aktion, die den Übergang auslöst, z. B. approve. Pro Quellzustand darf ein Auslöser nur einmal vorkommen; von einem anderen Zustand aus kann derselbe Auslöser woandershin führen.",
+      "guards": "Bedingungen, die der Reihe nach geprüft werden, bevor der Übergang stattfinden darf; die erste, die nicht erfüllt ist, blockiert ihn. Leer lassen, wenn der Übergang immer erlaubt ist.",
+      "actions": "Schritte, die der Reihe nach ausgeführt werden, sobald alle Wächter bestanden sind, z. B. das Versenden einer Benachrichtigung."
+    }
   },
   "state_transition_guard": {
     "_self": "Wächter",
     "beanName": "Bean-Name",
-    "params": "Parameter"
+    "params": "Parameter",
+    "_tooltips": {
+      "beanName": "Der Name des serverseitigen Wächters, der die Bedingung prüft, z. B. sufficientBalanceGuard. Die verfügbaren Namen erfahren Sie von Ihren Entwicklern; ein unbekannter Name wird beim Speichern abgelehnt.",
+      "params": "Optionale Einstellungen für den Wächter, als Name-Wert-Paare, z. B. minBalance = 100. Welche Namen er versteht, hängt vom Wächter ab."
+    }
   },
   "state_transition_action": {
     "_self": "Aktion",
     "beanName": "Bean-Name",
-    "params": "Parameter"
+    "params": "Parameter",
+    "_tooltips": {
+      "beanName": "Der Name der serverseitigen Aktion, die ausgeführt wird, z. B. sendApprovalNotificationAction. Die verfügbaren Namen erfahren Sie von Ihren Entwicklern; ein unbekannter Name wird beim Speichern abgelehnt.",
+      "params": "Optionale Einstellungen für die Aktion, als Name-Wert-Paare, z. B. recipient = sales@example.com. Welche Namen sie versteht, hängt von der Aktion ab."
+    }
   },
   "entity_state_machine": {
     "tab": "Zustandsautomat",

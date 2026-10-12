@@ -59,6 +59,21 @@
       "boundary_event": "Boundary event (interrupting)",
       "non_interrupting_boundary_event": "Boundary event (non-interrupting)",
       "event": "Intermediate event"
+    },
+    "_tooltips": {
+      "id": "Unique within your organization and used in the workflow's address. Short, lower-case and hyphenated, e.g. order-fulfillment-workflow; avoid changing it later.",
+      "name": "The workflow's name as people see it in lists and on the task dashboard, e.g. Order fulfillment.",
+      "description": "A note for you and your fellow designers; it does not affect how the workflow runs.",
+      "extends": "Optional parent workflow whose roles, artifacts, tools and tasks this one inherits. A workflow cannot extend itself, directly or through others.",
+      "activeInstances": "How many runs of this workflow are currently in progress. Set by the system.",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the workflow was last saved. Set by the system.",
+      "startEvents": "The ways a run of this workflow can begin, e.g. when an order is created or every morning at 8. With none, anyone may start it by hand.",
+      "roles": "The roles taking part in this workflow. Every role that performs one of its tasks has to be listed here.",
+      "artifacts": "The work products this workflow handles, e.g. an order or an invoice. Every artifact its tasks read or write has to be listed here.",
+      "tools": "The external systems this workflow may call. A task step can only use a tool listed here.",
+      "tasks": "The tasks of this workflow, each with the role that performs it here and the tasks or events it waits for. A task can appear only once.",
+      "events": "Events the workflow sends or waits for while it runs, e.g. waiting for a payment message or two days to pass. Tasks can wait for them like for other tasks."
     }
   },
   "workflow_task_assignment": {
@@ -69,20 +84,39 @@
     "joinType": "Join Type",
     "parallel": "Parallel",
     "override": "Override",
-    "artifactStates": "Artifact States"
+    "artifactStates": "Artifact States",
+    "_tooltips": {
+      "taskDefinitionId": "The task from your task catalog that takes part in this workflow. Each task can be added to a workflow only once.",
+      "performedBy": "The one role that performs the task in this workflow. It must be one of the workflow's Roles and one of the task's Performed By Roles.",
+      "dependsOn": "The ids of the tasks or events of this workflow that must be finished before this task can start, e.g. review-order. Empty means it can start as soon as the workflow does.",
+      "joinType": "ALL waits for every task or event in Depends On (the default); ANY starts this task after the first of them. Ignored when Depends On is empty.",
+      "parallel": "Tick to let this task run at the same time as other tasks waiting for the same predecessors. Unticked, such tasks run one after the other in the order listed.",
+      "override": "Only for a workflow that extends another: tick to replace the parent's use of the same task instead of adding to it.",
+      "artifactStates": "The state the task expects each of its inputs in and leaves each of its outputs in, in this workflow, e.g. the order is CONFIRMED afterwards. Shown in the modeler; not enforced yet."
+    }
   },
   "workflow_role_use": {
     "_self": "Role Use",
-    "roleDefinitionId": "Role"
+    "roleDefinitionId": "Role",
+    "_tooltips": {
+      "roleDefinitionId": "A role from your role catalog that takes part in this workflow. Removing it here only takes it out of the workflow; the role itself stays."
+    }
   },
   "workflow_artifact_use": {
     "_self": "Artifact Use",
     "artifactDefinitionId": "Artifact",
-    "objectName": "Object Name"
+    "objectName": "Object Name",
+    "_tooltips": {
+      "artifactDefinitionId": "An artifact from your artifact catalog that this workflow's tasks read or write. Removing it here only takes it out of the workflow.",
+      "objectName": "Optional name of the artifact in this workflow, shown in the modeler as new_order : Order. Display only; empty draws it without a name."
+    }
   },
   "workflow_tool_use": {
     "_self": "Tool Use",
-    "toolDefinitionId": "Tool"
+    "toolDefinitionId": "Tool",
+    "_tooltips": {
+      "toolDefinitionId": "A tool from your tool catalog that this workflow's task steps may call. Removing it here only takes it out of the workflow."
+    }
   },
   "workflow_start_event": {
     "_self": "Start Event",
@@ -96,12 +130,29 @@
     "timerExpression": "Timer Expression",
     "authorizedRoles": "Authorized Roles",
     "payloadMapping": "Payload Mapping",
-    "requiredArtifacts": "Required Artifacts"
+    "requiredArtifacts": "Required Artifacts",
+    "_tooltips": {
+      "id": "Unique within the workflow, also among its task and event ids, e.g. order-created.",
+      "name": "Optional label shown in the modeler, e.g. Order created. Empty shows the start type.",
+      "startType": "What starts the workflow: INPUT_ARTIFACT (the required artifacts exist), TRIGGERING_EVENT (a catalog event occurs), ROLE_DEFINITION (a person in an authorized role starts it by hand) or TIME_BASED_PRECONDITION (a moment or schedule). Only the fields of the chosen type apply.",
+      "eventType": "TRIGGERING_EVENT only: the event from your event catalog that starts a run when it occurs, e.g. OrderCreatedEvent.",
+      "milestoneRef": "TIME_BASED_PRECONDITION only: the milestone whose arrival starts the workflow, e.g. MILESTONE_REACHED.",
+      "timerType": "TIME_BASED_PRECONDITION only: DATE starts once at a given moment, CYCLE starts repeatedly on a schedule.",
+      "timerExpression": "When the timer fires, in ISO 8601: a date and time such as 2026-12-24T08:00:00Z for DATE, or a repetition such as R/P1D (every day) for CYCLE.",
+      "preconditionExpression": "TIME_BASED_PRECONDITION only: a condition that must hold when the milestone arrives, e.g. milestone.status == 'PASSED'. Recorded, not evaluated yet.",
+      "authorizedRoles": "ROLE_DEFINITION only: the roles whose members may start the workflow by hand. Empty means anyone may.",
+      "payloadMapping": "TRIGGERING_EVENT and INPUT_ARTIFACT: copies data from the starting event into the new run. Key: the name to store it under, e.g. orderId; value: where to read it, e.g. $.payload.orderId.",
+      "requiredArtifacts": "INPUT_ARTIFACT only: the artifacts, optionally in a given state, that must exist before the workflow starts. Each must be one of the workflow's Artifacts."
+    }
   },
   "workflow_required_start_artifact": {
     "_self": "Required Artifact",
     "artifactDefinitionId": "Artifact",
-    "state": "State"
+    "state": "State",
+    "_tooltips": {
+      "artifactDefinitionId": "An artifact that must exist before the workflow starts. It has to be one of the workflow's Artifacts.",
+      "state": "The state the artifact has to be in, as named by its state machine, e.g. DRAFT. Empty means any state will do."
+    }
   },
   "workflow_event_use": {
     "_self": "Intermediate Event",
@@ -116,13 +167,32 @@
     "timerExpression": "Timer Expression",
     "attachedTo": "Attached To",
     "interrupting": "Interrupting",
-    "payloadMapping": "Payload Mapping"
+    "payloadMapping": "Payload Mapping",
+    "_tooltips": {
+      "id": "Unique within the workflow, also among its task and start event ids, e.g. invoice-issued. Tasks name it in their Depends On.",
+      "name": "Optional label shown in the modeler, e.g. Invoice issued. Empty shows the catalog event's name.",
+      "direction": "THROW sends the event the moment it is reached; CATCH waits until the event occurs (or the timer fires) before the flow goes on.",
+      "eventDefinitionId": "The event from your event catalog to send or wait for. Leave empty for a timer; SYSTEM events can only be waited for, never sent.",
+      "timerType": "For a CATCH that waits for time instead of an event: DURATION waits a period, DATE until a moment, CYCLE repeats (only on a non-interrupting boundary event).",
+      "timerExpression": "The timer in ISO 8601: PT2H (two hours) for DURATION, 2026-10-10T08:00:00Z for DATE, R3/PT1H (three times, hourly) for CYCLE — or a $.variable of the run holding it.",
+      "attachedTo": "Optional id of a task of this workflow, e.g. issue-invoice. The event then waits only while that task is active; it must be a CATCH and takes no Depends On.",
+      "interrupting": "Only for an event attached to a task: ticked, the event cancels that task when it fires; unticked, the task keeps running.",
+      "dependsOn": "The ids of the tasks or events that must be finished before this event is reached, e.g. issue-invoice. Empty means it is reached when the workflow starts.",
+      "joinType": "ALL waits for every task or event in Depends On (the default); ANY goes on after the first of them. Ignored when Depends On is empty.",
+      "correlationKey": "MESSAGE events only, and required there: the run's variable that ties the message to this run, e.g. orderId. A THROW sends its value; a CATCH waits for a message with the same value.",
+      "payloadMapping": "CATCH: copies data from the event into the run — key a variable name, value a path such as $.payload.amount. THROW: fills the sent event — key an attribute name, value a path such as $.orderId."
+    }
   },
   "workflow_task_artifact_state": {
     "_self": "Task Artifact State",
     "artifactDefinitionId": "Artifact",
     "inputState": "Input State",
-    "outputState": "Output State"
+    "outputState": "Output State",
+    "_tooltips": {
+      "artifactDefinitionId": "One of the task's inputs or outputs. Each artifact can be listed only once per task.",
+      "inputState": "Only for an input: the state the task expects the artifact in, as named by its state machine, e.g. DRAFT. Empty means any.",
+      "outputState": "Only for an output: the state the task leaves the artifact in, as named by its state machine, e.g. CONFIRMED. Empty means unchanged or unspecified."
+    }
   },
   "workflow_role_definition": {
     "_self": "Role",
@@ -138,6 +208,15 @@
     },
     "modeler": {
       "empty": "No roles have been defined yet."
+    },
+    "_tooltips": {
+      "id": "Unique within your organization; workflows and tasks refer to the role by it. Short, lower-case and hyphenated, e.g. developer; avoid changing it later.",
+      "name": "The role's name as people see it, e.g. Clerk or Developer.",
+      "description": "What this role does and who fills it; a note for you and your fellow designers.",
+      "responsibleFor": "The artifacts whose outcome this role owns, e.g. the invoice. Ownership only; what a task may read or write is set on the task.",
+      "entityRoleId": "Optional matching user role of your organization. When set, only users holding that role can be given a task this role performs; empty means no check.",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the role was last saved. Set by the system."
     }
   },
   "artifact_definition": {
@@ -149,7 +228,17 @@
     "artifactTypeId": "Type Id",
     "stateMachineId": "State Machine",
     "version": "Version",
-    "updatedAt": "Updated At"
+    "updatedAt": "Updated At",
+    "_tooltips": {
+      "id": "Unique within your organization; tasks and workflows refer to the artifact by it. Short, lower-case and hyphenated, e.g. order-entity; avoid changing it later.",
+      "name": "The artifact's name as people see it, e.g. Order or Fulfillment invoice.",
+      "artifactType": "What kind of work product this is: ENTITY (a record of one of your entities), DOCUMENT (a document) or WIDGET (a screen element).",
+      "description": "What this artifact is and what it is used for; a note for you and your fellow designers.",
+      "artifactTypeId": "The concrete thing this artifact is, matching the Artifact Type: the entity name for ENTITY, the document name for DOCUMENT, or the widget name for WIDGET, e.g. order.",
+      "stateMachineId": "Optional id of the state machine that governs this artifact's lifecycle, e.g. order-lifecycle. Its state names are the ones tasks and start events refer to.",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the artifact was last saved. Set by the system."
+    }
   },
   "task_definition": {
     "_self": "Task",
@@ -163,7 +252,20 @@
     "updatedAt": "Updated At",
     "inputs": "Inputs",
     "outputs": "Outputs",
-    "steps": "Steps"
+    "steps": "Steps",
+    "_tooltips": {
+      "id": "Unique within your organization; workflows add the task by it. Short, lower-case and hyphenated, e.g. write-spec; avoid changing it later.",
+      "name": "The task's name as people see it on their task dashboard, e.g. Review order.",
+      "description": "What has to be done; shown to the person working on the task.",
+      "performedByRoles": "The roles able to perform this task; at least one. Each workflow that uses the task picks one of them.",
+      "preconditionRuleId": "Optional id of a business rule checked before the task becomes active; while it is not met, the task keeps waiting.",
+      "postconditionRuleId": "Optional id of a business rule that must be met before the task can be completed.",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the task was last saved. Set by the system.",
+      "inputs": "The artifacts this task reads, e.g. the order. A workflow using the task has to list them among its Artifacts.",
+      "outputs": "The artifacts this task creates or changes, e.g. the invoice. A workflow using the task has to list them among its Artifacts.",
+      "steps": "The individual steps of the task, in order. A user step is guidance for the person; a service step calls a tool automatically."
+    }
   },
   "task_step_definition": {
     "_self": "Step",
@@ -174,7 +276,17 @@
     "toolDefinitionId": "Tool",
     "toolOperation": "Operation",
     "inputMapping": "Input Mapping",
-    "outputMapping": "Output Mapping"
+    "outputMapping": "Output Mapping",
+    "_tooltips": {
+      "id": "Unique within the task, e.g. check-items.",
+      "name": "The step's name as the person working on the task sees it, e.g. Check items.",
+      "description": "Instructions for this step, shown to the person working on the task.",
+      "stepType": "USER_STEP: something a person does by hand. SERVICE_STEP: the system calls the Tool and Operation below when the step is completed.",
+      "toolDefinitionId": "SERVICE_STEP only: the tool to call. It must also be listed among the Tools of every workflow that uses this task.",
+      "toolOperation": "SERVICE_STEP only: the id of one of the chosen tool's operations, e.g. create-issue.",
+      "inputMapping": "SERVICE_STEP only: the values sent to the tool. Key: the tool's parameter name, e.g. summary; value: an expression over the run's data, e.g. order.title.",
+      "outputMapping": "SERVICE_STEP only: what to keep from the tool's answer. Key: the name to store it under, e.g. issueKey; value: where to read it in the response, e.g. $.key."
+    }
   },
   "tool_definition": {
     "_self": "Tool",
@@ -186,7 +298,18 @@
     "secretRef": "Secret Reference",
     "version": "Version",
     "createdAt": "Created At",
-    "operations": "Operations"
+    "operations": "Operations",
+    "_tooltips": {
+      "id": "Unique within your organization; workflows and task steps refer to the tool by it. Short, lower-case and hyphenated, e.g. jira; avoid changing it later.",
+      "name": "The tool's name as people see it, e.g. Jira.",
+      "baseUrl": "The address every operation's path is appended to, without spaces, e.g. https://example.atlassian.net.",
+      "description": "What this tool is and what the workflows use it for; a note for you and your fellow designers.",
+      "type": "How the system signs in to the tool: NONE, BEARER_TOKEN, BASIC (user name and password) or API_KEY.",
+      "secretRef": "Where the credential is kept: the name of an environment variable or a Vault path, e.g. JIRA_TOKEN. Never enter the password or token itself.",
+      "version": "Increases with every save. Set by the system.",
+      "createdAt": "When the tool was created. Set by the system.",
+      "operations": "The calls this tool offers, e.g. create-issue. Task steps choose one of them by its id."
+    }
   },
   "tool_operation": {
     "_self": "Operation",
@@ -195,7 +318,15 @@
     "path": "Path",
     "description": "Description",
     "payloadTemplate": "Payload Template",
-    "expectedStatusCodes": "Expected Status Codes"
+    "expectedStatusCodes": "Expected Status Codes",
+    "_tooltips": {
+      "id": "Unique within the tool; task steps name the operation by it, e.g. create-issue.",
+      "method": "The HTTP method of the call: GET reads, POST creates, PUT or PATCH changes, DELETE removes.",
+      "path": "The address of the call relative to the tool's Base URL, e.g. /rest/api/3/issue.",
+      "description": "What this operation does; a note for you and your fellow designers.",
+      "payloadTemplate": "Optional JSON body of the request. ${...} placeholders are filled from the run's data, e.g. {\"summary\": \"${order.title}\"}.",
+      "expectedStatusCodes": "The HTTP status codes that count as success, e.g. 201; any other answer fails the step. Empty means 200, 201 and 204."
+    }
   },
   "workflow_instance": {
     "_self": "Workflow Instance",

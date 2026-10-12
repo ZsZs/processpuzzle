@@ -7,6 +7,15 @@
     "kind": "Art",
     "subjectType": "Subjekttyp",
     "action": "Aktion",
-    "state": "Zustand"
+    "state": "Zustand",
+    "_tooltips": {
+      "id": "Eindeutig in Ihrer Organisation, z. B. OrderCreatedEvent. Workflows und andere Funktionen verweisen darüber auf das Ereignis, daher später möglichst nicht ändern.",
+      "name": "Der Name des Ereignisses, wie er in Auswahllisten und Listen erscheint, z. B. Bestellung angelegt.",
+      "description": "Eine Notiz, wann das Ereignis eintritt und wofür es dient; Benutzer sehen sie nicht.",
+      "kind": "SYSTEM: von der Plattform ausgelöst, wenn sich ein Datensatz ändert. MESSAGE: über die API an einen Empfänger gesendet. SIGNAL: über die API an alle Zuhörer gesendet.",
+      "subjectType": "Nur für SYSTEM-Ereignisse: der Code des Entitätstyps, dessen Datensätze das Ereignis auslösen, z. B. order.",
+      "action": "Nur für SYSTEM-Ereignisse: was mit dem Datensatz geschieht: CREATED, UPDATED, DELETED oder STATE_CHANGED.",
+      "state": "Nur für STATE_CHANGED: der Zustand, den der Datensatz annimmt, z. B. CONFIRMED."
+    }
   }
 }

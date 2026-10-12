@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import com.processpuzzle.core.definition.Channel;
 import java.time.Instant;
 import java.util.List;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -49,10 +50,16 @@ public class ModuleDefinition {
     @Column(name = "module_key", length = 100)
     private String key;
 
-    /** The database default lets {@code ddl-auto} add the column to a table that already has rows; see {@code ChannelBackfill}. */
+    /**
+     * The database default lets {@code ddl-auto} add the column to a table that already has rows; see
+     * {@code ChannelBackfill}. Declared through {@link ColumnDefault} rather than a {@code columnDefinition}:
+     * Hibernate compares a {@code columnDefinition} with the column's type as text, never finds them equal, and
+     * re-issues an {@code alter column} on every start.
+     */
     @Id
     @Enumerated(EnumType.STRING)
-    @Column(name = "channel", columnDefinition = "varchar(16) default 'DRAFT' not null")
+    @ColumnDefault("'DRAFT'")
+    @Column(name = "channel", length = 16, nullable = false)
     private Channel channel = Channel.DRAFT;
 
     @Column(nullable = false, length = 200)

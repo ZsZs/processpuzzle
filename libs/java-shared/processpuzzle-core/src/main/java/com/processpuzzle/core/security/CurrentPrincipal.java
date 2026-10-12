@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,6 +24,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class CurrentPrincipal {
+
+    private static final List<String> DISPLAY_NAME_CLAIMS = List.of("name", "preferred_username", "email");
 
     private final SecurityProperties properties;
 
@@ -45,6 +48,19 @@ public class CurrentPrincipal {
         return jwt().map(Jwt::getIssuer)
                 .map(Object::toString)
                 .map(CurrentPrincipal::realmOf);
+    }
+
+    /**
+     * The principal as a person reads it, for recording who did something: the token's {@code name}, else its
+     * {@code preferred_username}, else its {@code email}, and only as a last resort its subject — which for a
+     * Keycloak token is a UUID nobody recognizes. Empty when unauthenticated.
+     */
+    public Optional<String> displayName() {
+        return jwt().map(token -> DISPLAY_NAME_CLAIMS.stream()
+                .map(token::getClaimAsString)
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst()
+                .orElse(token.getSubject()));
     }
 
     /** Whether the principal is ProcessPuzzle staff. */

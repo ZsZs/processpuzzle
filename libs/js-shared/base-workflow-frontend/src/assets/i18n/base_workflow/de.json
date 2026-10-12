@@ -59,6 +59,21 @@
       "boundary_event": "Angeheftetes Ereignis (unterbrechend)",
       "non_interrupting_boundary_event": "Angeheftetes Ereignis (nicht unterbrechend)",
       "event": "Zwischenereignis"
+    },
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation und Teil der Adresse des Workflows. Kurz, kleingeschrieben und mit Bindestrichen, z. B. order-fulfillment-workflow; später möglichst nicht mehr ändern.",
+      "name": "Der Name des Workflows, wie er in Listen und im Aufgaben-Dashboard erscheint, z. B. Auftragsabwicklung.",
+      "description": "Eine Notiz für Sie und Ihre Designer-Kollegen; sie hat keinen Einfluss auf den Ablauf.",
+      "extends": "Optionaler übergeordneter Workflow, dessen Rollen, Artefakte, Werkzeuge und Aufgaben dieser erbt. Ein Workflow darf sich weder direkt noch über andere selbst erweitern.",
+      "activeInstances": "Wie viele Durchläufe dieses Workflows gerade laufen. Wird vom System gesetzt.",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann der Workflow zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "startEvents": "Die Wege, auf denen ein Durchlauf dieses Workflows beginnen kann, z. B. wenn ein Auftrag angelegt wird oder jeden Morgen um 8. Ohne Startereignis darf ihn jeder von Hand starten.",
+      "roles": "Die Rollen, die an diesem Workflow beteiligt sind. Jede Rolle, die eine seiner Aufgaben ausführt, muss hier aufgeführt sein.",
+      "artifacts": "Die Arbeitsergebnisse, mit denen dieser Workflow umgeht, z. B. ein Auftrag oder eine Rechnung. Jedes Artefakt, das seine Aufgaben lesen oder schreiben, muss hier aufgeführt sein.",
+      "tools": "Die externen Systeme, die dieser Workflow aufrufen darf. Ein Aufgabenschritt kann nur ein hier aufgeführtes Werkzeug verwenden.",
+      "tasks": "Die Aufgaben dieses Workflows, jeweils mit der Rolle, die sie hier ausführt, und den Aufgaben oder Ereignissen, auf die sie wartet. Jede Aufgabe darf nur einmal vorkommen.",
+      "events": "Ereignisse, die der Workflow während des Ablaufs sendet oder auf die er wartet, z. B. auf eine Zahlungsnachricht oder den Ablauf von zwei Tagen. Aufgaben können wie auf andere Aufgaben auf sie warten."
     }
   },
   "workflow_task_assignment": {
@@ -69,20 +84,39 @@
     "joinType": "Verknüpfungstyp",
     "parallel": "Parallel",
     "override": "Überschreiben",
-    "artifactStates": "Artefaktzustände"
+    "artifactStates": "Artefaktzustände",
+    "_tooltips": {
+      "taskDefinitionId": "Die Aufgabe aus Ihrem Aufgabenkatalog, die an diesem Workflow teilnimmt. Jede Aufgabe kann einem Workflow nur einmal hinzugefügt werden.",
+      "performedBy": "Die eine Rolle, die die Aufgabe in diesem Workflow ausführt. Sie muss zu den Rollen des Workflows und zu den ausführenden Rollen der Aufgabe gehören.",
+      "dependsOn": "Die Ids der Aufgaben oder Ereignisse dieses Workflows, die abgeschlossen sein müssen, bevor diese Aufgabe beginnen kann, z. B. review-order. Leer bedeutet: Sie kann starten, sobald der Workflow startet.",
+      "joinType": "ALL wartet auf alle Aufgaben oder Ereignisse unter „Abhängig von“ (Standard); ANY startet diese Aufgabe nach der ersten davon. Ohne Einträge unter „Abhängig von“ ohne Wirkung.",
+      "parallel": "Ankreuzen, damit diese Aufgabe gleichzeitig mit anderen Aufgaben laufen kann, die auf dieselben Vorgänger warten. Sonst laufen solche Aufgaben nacheinander in der aufgeführten Reihenfolge.",
+      "override": "Nur für einen Workflow, der einen anderen erweitert: ankreuzen, um die Verwendung derselben Aufgabe im übergeordneten Workflow zu ersetzen, statt sie zu ergänzen.",
+      "artifactStates": "Der Zustand, in dem die Aufgabe in diesem Workflow ihre Eingaben erwartet und ihre Ausgaben hinterlässt, z. B. ist der Auftrag danach CONFIRMED. Wird im Modeler angezeigt; noch nicht durchgesetzt."
+    }
   },
   "workflow_role_use": {
     "_self": "Rollenverwendung",
-    "roleDefinitionId": "Rolle"
+    "roleDefinitionId": "Rolle",
+    "_tooltips": {
+      "roleDefinitionId": "Eine Rolle aus Ihrem Rollenkatalog, die an diesem Workflow beteiligt ist. Das Entfernen nimmt sie nur aus dem Workflow; die Rolle selbst bleibt bestehen."
+    }
   },
   "workflow_artifact_use": {
     "_self": "Artefaktverwendung",
     "artifactDefinitionId": "Artefakt",
-    "objectName": "Objektname"
+    "objectName": "Objektname",
+    "_tooltips": {
+      "artifactDefinitionId": "Ein Artefakt aus Ihrem Artefaktkatalog, das die Aufgaben dieses Workflows lesen oder schreiben. Das Entfernen nimmt es nur aus dem Workflow.",
+      "objectName": "Optionaler Name des Artefakts in diesem Workflow, im Modeler als new_order : Order angezeigt. Nur zur Anzeige; leer wird es ohne Namen gezeichnet."
+    }
   },
   "workflow_tool_use": {
     "_self": "Werkzeugverwendung",
-    "toolDefinitionId": "Werkzeug"
+    "toolDefinitionId": "Werkzeug",
+    "_tooltips": {
+      "toolDefinitionId": "Ein Werkzeug aus Ihrem Werkzeugkatalog, das die Aufgabenschritte dieses Workflows aufrufen dürfen. Das Entfernen nimmt es nur aus dem Workflow."
+    }
   },
   "workflow_start_event": {
     "_self": "Startereignis",
@@ -96,12 +130,29 @@
     "timerExpression": "Timer-Ausdruck",
     "authorizedRoles": "Berechtigte Rollen",
     "payloadMapping": "Nutzdatenzuordnung",
-    "requiredArtifacts": "Erforderliche Artefakte"
+    "requiredArtifacts": "Erforderliche Artefakte",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb des Workflows, auch gegenüber den Ids seiner Aufgaben und Ereignisse, z. B. order-created.",
+      "name": "Optionale Beschriftung im Modeler, z. B. Auftrag angelegt. Leer wird der Starttyp angezeigt.",
+      "startType": "Was den Workflow startet: INPUT_ARTIFACT (die erforderlichen Artefakte liegen vor), TRIGGERING_EVENT (ein Katalogereignis tritt ein), ROLE_DEFINITION (eine Person mit berechtigter Rolle startet ihn von Hand) oder TIME_BASED_PRECONDITION (ein Zeitpunkt oder Zeitplan). Nur die Felder des gewählten Typs gelten.",
+      "eventType": "Nur TRIGGERING_EVENT: das Ereignis aus Ihrem Ereigniskatalog, dessen Eintreten einen Durchlauf startet, z. B. OrderCreatedEvent.",
+      "milestoneRef": "Nur TIME_BASED_PRECONDITION: der Meilenstein, dessen Erreichen den Workflow startet, z. B. MILESTONE_REACHED.",
+      "timerType": "Nur TIME_BASED_PRECONDITION: DATE startet einmal zu einem bestimmten Zeitpunkt, CYCLE startet wiederholt nach Zeitplan.",
+      "timerExpression": "Wann der Timer auslöst, im ISO-8601-Format: ein Zeitpunkt wie 2026-12-24T08:00:00Z für DATE oder eine Wiederholung wie R/P1D (täglich) für CYCLE.",
+      "preconditionExpression": "Nur TIME_BASED_PRECONDITION: eine Bedingung, die beim Erreichen des Meilensteins gelten muss, z. B. milestone.status == 'PASSED'. Wird gespeichert, aber noch nicht ausgewertet.",
+      "authorizedRoles": "Nur ROLE_DEFINITION: die Rollen, deren Mitglieder den Workflow von Hand starten dürfen. Leer bedeutet: jeder.",
+      "payloadMapping": "TRIGGERING_EVENT und INPUT_ARTIFACT: übernimmt Daten aus dem auslösenden Ereignis in den neuen Durchlauf. Schlüssel: der Name, unter dem sie gespeichert werden, z. B. orderId; Wert: woher sie stammen, z. B. $.payload.orderId.",
+      "requiredArtifacts": "Nur INPUT_ARTIFACT: die Artefakte, optional in einem bestimmten Zustand, die vorliegen müssen, bevor der Workflow startet. Jedes muss zu den Artefakten des Workflows gehören."
+    }
   },
   "workflow_required_start_artifact": {
     "_self": "Erforderliches Artefakt",
     "artifactDefinitionId": "Artefakt",
-    "state": "Zustand"
+    "state": "Zustand",
+    "_tooltips": {
+      "artifactDefinitionId": "Ein Artefakt, das vorliegen muss, bevor der Workflow startet. Es muss zu den Artefakten des Workflows gehören.",
+      "state": "Der Zustand, in dem sich das Artefakt befinden muss, wie ihn seine Zustandsmaschine nennt, z. B. DRAFT. Leer bedeutet: jeder Zustand."
+    }
   },
   "workflow_event_use": {
     "_self": "Zwischenereignis",
@@ -116,13 +167,32 @@
     "timerExpression": "Timer-Ausdruck",
     "attachedTo": "Angeheftet an",
     "interrupting": "Unterbrechend",
-    "payloadMapping": "Nutzdatenzuordnung"
+    "payloadMapping": "Nutzdatenzuordnung",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb des Workflows, auch gegenüber den Ids seiner Aufgaben und Startereignisse, z. B. invoice-issued. Aufgaben nennen sie unter „Abhängig von“.",
+      "name": "Optionale Beschriftung im Modeler, z. B. Rechnung gestellt. Leer wird der Name des Katalogereignisses angezeigt.",
+      "direction": "THROW sendet das Ereignis, sobald es erreicht wird; CATCH wartet, bis das Ereignis eintritt (oder der Timer auslöst), bevor es weitergeht.",
+      "eventDefinitionId": "Das Ereignis aus Ihrem Ereigniskatalog, das gesendet oder erwartet wird. Für einen Timer leer lassen; SYSTEM-Ereignisse können nur erwartet, nie gesendet werden.",
+      "timerType": "Für ein CATCH, das auf Zeit statt auf ein Ereignis wartet: DURATION wartet eine Dauer, DATE bis zu einem Zeitpunkt, CYCLE wiederholt sich (nur bei einem nicht unterbrechenden Randereignis).",
+      "timerExpression": "Der Timer im ISO-8601-Format: PT2H (zwei Stunden) für DURATION, 2026-10-10T08:00:00Z für DATE, R3/PT1H (dreimal, stündlich) für CYCLE – oder eine $.variable des Durchlaufs, die ihn enthält.",
+      "attachedTo": "Optionale Id einer Aufgabe dieses Workflows, z. B. issue-invoice. Das Ereignis wartet dann nur, solange diese Aufgabe aktiv ist; es muss ein CATCH sein und hat kein „Abhängig von“.",
+      "interrupting": "Nur für ein an eine Aufgabe angeheftetes Ereignis: angekreuzt bricht das Ereignis die Aufgabe beim Auslösen ab; sonst läuft die Aufgabe weiter.",
+      "dependsOn": "Die Ids der Aufgaben oder Ereignisse, die abgeschlossen sein müssen, bevor dieses Ereignis erreicht wird, z. B. issue-invoice. Leer bedeutet: Es wird beim Start des Workflows erreicht.",
+      "joinType": "ALL wartet auf alle Aufgaben oder Ereignisse unter „Abhängig von“ (Standard); ANY geht nach der ersten davon weiter. Ohne Einträge unter „Abhängig von“ ohne Wirkung.",
+      "correlationKey": "Nur bei MESSAGE-Ereignissen, dort Pflicht: die Variable des Durchlaufs, die die Nachricht diesem Durchlauf zuordnet, z. B. orderId. Ein THROW sendet ihren Wert; ein CATCH wartet auf eine Nachricht mit demselben Wert.",
+      "payloadMapping": "CATCH: übernimmt Daten aus dem Ereignis in den Durchlauf – Schlüssel ein Variablenname, Wert ein Pfad wie $.payload.amount. THROW: befüllt das gesendete Ereignis – Schlüssel ein Attributname, Wert ein Pfad wie $.orderId."
+    }
   },
   "workflow_task_artifact_state": {
     "_self": "Artefaktzustand der Aufgabe",
     "artifactDefinitionId": "Artefakt",
     "inputState": "Eingangszustand",
-    "outputState": "Ausgangszustand"
+    "outputState": "Ausgangszustand",
+    "_tooltips": {
+      "artifactDefinitionId": "Eine der Eingaben oder Ausgaben der Aufgabe. Jedes Artefakt kann pro Aufgabe nur einmal aufgeführt werden.",
+      "inputState": "Nur für eine Eingabe: der Zustand, in dem die Aufgabe das Artefakt erwartet, wie ihn seine Zustandsmaschine nennt, z. B. DRAFT. Leer bedeutet: beliebig.",
+      "outputState": "Nur für eine Ausgabe: der Zustand, in dem die Aufgabe das Artefakt hinterlässt, wie ihn seine Zustandsmaschine nennt, z. B. CONFIRMED. Leer bedeutet: unverändert bzw. nicht festgelegt."
+    }
   },
   "workflow_role_definition": {
     "_self": "Rolle",
@@ -138,6 +208,15 @@
     },
     "modeler": {
       "empty": "Es wurden noch keine Rollen definiert."
+    },
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation; Workflows und Aufgaben verweisen über sie auf die Rolle. Kurz, kleingeschrieben und mit Bindestrichen, z. B. developer; später möglichst nicht mehr ändern.",
+      "name": "Der Name der Rolle, wie er angezeigt wird, z. B. Sachbearbeiter oder Entwickler.",
+      "description": "Was diese Rolle tut und wer sie besetzt; eine Notiz für Sie und Ihre Designer-Kollegen.",
+      "responsibleFor": "Die Artefakte, für deren Ergebnis diese Rolle verantwortlich ist, z. B. die Rechnung. Nur Verantwortung; was eine Aufgabe lesen oder schreiben darf, wird an der Aufgabe festgelegt.",
+      "entityRoleId": "Optionale passende Benutzerrolle Ihrer Organisation. Wenn gesetzt, können nur Benutzer mit dieser Rolle Aufgaben dieser Rolle erhalten; leer bedeutet: keine Prüfung.",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann die Rolle zuletzt gespeichert wurde. Wird vom System gesetzt."
     }
   },
   "artifact_definition": {
@@ -149,7 +228,17 @@
     "artifactTypeId": "Typ-Id",
     "stateMachineId": "Zustandsmaschine",
     "version": "Version",
-    "updatedAt": "Geändert am"
+    "updatedAt": "Geändert am",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation; Aufgaben und Workflows verweisen über sie auf das Artefakt. Kurz, kleingeschrieben und mit Bindestrichen, z. B. order-entity; später möglichst nicht mehr ändern.",
+      "name": "Der Name des Artefakts, wie er angezeigt wird, z. B. Auftrag oder Rechnung.",
+      "artifactType": "Welche Art Arbeitsergebnis das ist: ENTITY (ein Datensatz einer Ihrer Entitäten), DOCUMENT (ein Dokument) oder WIDGET (ein Bildschirmelement).",
+      "description": "Was dieses Artefakt ist und wofür es dient; eine Notiz für Sie und Ihre Designer-Kollegen.",
+      "artifactTypeId": "Das konkrete Objekt, passend zum Artefakttyp: der Entitätsname bei ENTITY, der Dokumentname bei DOCUMENT oder der Widget-Name bei WIDGET, z. B. order.",
+      "stateMachineId": "Optionale Id der Zustandsmaschine, die den Lebenszyklus dieses Artefakts steuert, z. B. order-lifecycle. Auf ihre Zustandsnamen beziehen sich Aufgaben und Startereignisse.",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann das Artefakt zuletzt gespeichert wurde. Wird vom System gesetzt."
+    }
   },
   "task_definition": {
     "_self": "Aufgabe",
@@ -163,7 +252,20 @@
     "updatedAt": "Geändert am",
     "inputs": "Eingaben",
     "outputs": "Ausgaben",
-    "steps": "Schritte"
+    "steps": "Schritte",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation; Workflows fügen die Aufgabe über sie hinzu. Kurz, kleingeschrieben und mit Bindestrichen, z. B. write-spec; später möglichst nicht mehr ändern.",
+      "name": "Der Name der Aufgabe, wie er im Aufgaben-Dashboard erscheint, z. B. Auftrag prüfen.",
+      "description": "Was zu tun ist; wird der Person angezeigt, die die Aufgabe bearbeitet.",
+      "performedByRoles": "Die Rollen, die diese Aufgabe ausführen können; mindestens eine. Jeder Workflow, der die Aufgabe verwendet, wählt eine davon.",
+      "preconditionRuleId": "Optionale Id einer Geschäftsregel, die geprüft wird, bevor die Aufgabe aktiv wird; solange sie nicht erfüllt ist, wartet die Aufgabe.",
+      "postconditionRuleId": "Optionale Id einer Geschäftsregel, die erfüllt sein muss, bevor die Aufgabe abgeschlossen werden kann.",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "updatedAt": "Wann die Aufgabe zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "inputs": "Die Artefakte, die diese Aufgabe liest, z. B. der Auftrag. Ein Workflow, der die Aufgabe verwendet, muss sie unter seinen Artefakten aufführen.",
+      "outputs": "Die Artefakte, die diese Aufgabe erzeugt oder ändert, z. B. die Rechnung. Ein Workflow, der die Aufgabe verwendet, muss sie unter seinen Artefakten aufführen.",
+      "steps": "Die einzelnen Schritte der Aufgabe, in Reihenfolge. Ein Benutzerschritt ist eine Anleitung für die Person; ein Serviceschritt ruft automatisch ein Werkzeug auf."
+    }
   },
   "task_step_definition": {
     "_self": "Schritt",
@@ -174,7 +276,17 @@
     "toolDefinitionId": "Werkzeug",
     "toolOperation": "Operation",
     "inputMapping": "Eingabezuordnung",
-    "outputMapping": "Ausgabezuordnung"
+    "outputMapping": "Ausgabezuordnung",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb der Aufgabe, z. B. check-items.",
+      "name": "Der Name des Schritts, wie ihn die bearbeitende Person sieht, z. B. Positionen prüfen.",
+      "description": "Anleitung für diesen Schritt, die der bearbeitenden Person angezeigt wird.",
+      "stepType": "USER_STEP: etwas, das eine Person von Hand erledigt. SERVICE_STEP: Das System ruft beim Abschluss des Schritts das Werkzeug und die Operation unten auf.",
+      "toolDefinitionId": "Nur SERVICE_STEP: das aufzurufende Werkzeug. Es muss auch unter den Werkzeugen jedes Workflows stehen, der diese Aufgabe verwendet.",
+      "toolOperation": "Nur SERVICE_STEP: die Id einer Operation des gewählten Werkzeugs, z. B. create-issue.",
+      "inputMapping": "Nur SERVICE_STEP: die an das Werkzeug übergebenen Werte. Schlüssel: der Parametername des Werkzeugs, z. B. summary; Wert: ein Ausdruck über die Daten des Durchlaufs, z. B. order.title.",
+      "outputMapping": "Nur SERVICE_STEP: was aus der Antwort des Werkzeugs übernommen wird. Schlüssel: der Name, unter dem es gespeichert wird, z. B. issueKey; Wert: wo es in der Antwort steht, z. B. $.key."
+    }
   },
   "tool_definition": {
     "_self": "Werkzeug",
@@ -186,7 +298,18 @@
     "secretRef": "Secret-Referenz",
     "version": "Version",
     "createdAt": "Erstellt am",
-    "operations": "Operationen"
+    "operations": "Operationen",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb Ihrer Organisation; Workflows und Aufgabenschritte verweisen über sie auf das Werkzeug. Kurz, kleingeschrieben und mit Bindestrichen, z. B. jira; später möglichst nicht mehr ändern.",
+      "name": "Der Name des Werkzeugs, wie er angezeigt wird, z. B. Jira.",
+      "baseUrl": "Die Adresse, an die der Pfad jeder Operation angehängt wird, ohne Leerzeichen, z. B. https://example.atlassian.net.",
+      "description": "Was dieses Werkzeug ist und wofür die Workflows es nutzen; eine Notiz für Sie und Ihre Designer-Kollegen.",
+      "type": "Wie sich das System beim Werkzeug anmeldet: NONE, BEARER_TOKEN, BASIC (Benutzername und Passwort) oder API_KEY.",
+      "secretRef": "Wo die Zugangsdaten hinterlegt sind: der Name einer Umgebungsvariablen oder ein Vault-Pfad, z. B. JIRA_TOKEN. Niemals das Passwort oder Token selbst eingeben.",
+      "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "createdAt": "Wann das Werkzeug angelegt wurde. Wird vom System gesetzt.",
+      "operations": "Die Aufrufe, die dieses Werkzeug anbietet, z. B. create-issue. Aufgabenschritte wählen einen davon über seine Id."
+    }
   },
   "tool_operation": {
     "_self": "Operation",
@@ -195,7 +318,15 @@
     "path": "Pfad",
     "description": "Beschreibung",
     "payloadTemplate": "Payload-Vorlage",
-    "expectedStatusCodes": "Erwartete Statuscodes"
+    "expectedStatusCodes": "Erwartete Statuscodes",
+    "_tooltips": {
+      "id": "Eindeutig innerhalb des Werkzeugs; Aufgabenschritte nennen die Operation darüber, z. B. create-issue.",
+      "method": "Die HTTP-Methode des Aufrufs: GET liest, POST legt an, PUT oder PATCH ändert, DELETE löscht.",
+      "path": "Die Adresse des Aufrufs relativ zur Basis-URL des Werkzeugs, z. B. /rest/api/3/issue.",
+      "description": "Was diese Operation tut; eine Notiz für Sie und Ihre Designer-Kollegen.",
+      "payloadTemplate": "Optionaler JSON-Body der Anfrage. ${...}-Platzhalter werden aus den Daten des Durchlaufs befüllt, z. B. {\"summary\": \"${order.title}\"}.",
+      "expectedStatusCodes": "Die HTTP-Statuscodes, die als Erfolg gelten, z. B. 201; jede andere Antwort lässt den Schritt scheitern. Leer bedeutet 200, 201 und 204."
+    }
   },
   "workflow_instance": {
     "_self": "Workflow-Instanz",

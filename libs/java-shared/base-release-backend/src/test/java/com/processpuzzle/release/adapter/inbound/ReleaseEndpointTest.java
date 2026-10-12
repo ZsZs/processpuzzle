@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseProblem;
+import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.release.domain.OrgRelease;
 import com.processpuzzle.release.domain.OrgReleaseItem;
 import com.processpuzzle.release.model.DefinitionChange;
@@ -17,11 +18,11 @@ import com.processpuzzle.release.usecase.ListReleases;
 import com.processpuzzle.release.usecase.PendingRelease;
 import com.processpuzzle.release.usecase.ReleaseOrganization;
 import com.processpuzzle.release.usecase.ReleaseRecord;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -34,12 +35,12 @@ class ReleaseEndpointTest {
     private final DescribePendingRelease describePendingRelease = mock(DescribePendingRelease.class);
     private final ReleaseOrganization releaseOrganization = mock(ReleaseOrganization.class);
     private final ListReleases listReleases = mock(ListReleases.class);
-    private final HttpServletRequest request = mock(HttpServletRequest.class);
+    private final CurrentPrincipal currentPrincipal = mock(CurrentPrincipal.class);
     private ReleaseEndpoint endpoint;
 
     @BeforeEach
     void setUp() {
-        endpoint = new ReleaseEndpoint(describePendingRelease, releaseOrganization, listReleases, new ReleaseMapper(), request);
+        endpoint = new ReleaseEndpoint(describePendingRelease, releaseOrganization, listReleases, new ReleaseMapper(), currentPrincipal);
     }
 
     @Test
@@ -60,7 +61,7 @@ class ReleaseEndpointTest {
 
     @Test
     void releasingAnswers201WithTheReleaseAndPassesTheConfirmationAndThePrincipal() {
-        when(request.getUserPrincipal()).thenReturn(() -> "designer");
+        when(currentPrincipal.displayName()).thenReturn(Optional.of("designer"));
         when(releaseOrganization.execute(ORG, true, "designer")).thenReturn(releaseRecord("designer"));
 
         var response = endpoint.releaseOrganization(ORG, new ReleaseRequest().acknowledgeWarnings(true));
@@ -79,6 +80,7 @@ class ReleaseEndpointTest {
 
     @Test
     void releasingWithoutABodyOrAPrincipalConfirmsNothingAndRecordsNoOne() {
+        when(currentPrincipal.displayName()).thenReturn(Optional.empty());
         when(releaseOrganization.execute(ORG, false, null)).thenReturn(releaseRecord(null));
 
         Release release = endpoint.releaseOrganization(ORG, null).getBody();

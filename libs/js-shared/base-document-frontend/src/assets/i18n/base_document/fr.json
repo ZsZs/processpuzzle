@@ -36,6 +36,20 @@
         "undo": "Annuler",
         "redo": "Rétablir"
       }
+    },
+    "_tooltips": {
+      "slug": "La clé du document dans son adresse, unique dans votre organisation. Uniquement minuscules, chiffres et tirets, p. ex. getting-started.",
+      "title": "Le titre du document tel que les lecteurs le voient, p. ex. Premiers pas.",
+      "subject": "Le sujet du document, en une ligne.",
+      "description": "Un court résumé du document, p. ex. pour les vues d'ensemble et les résultats de recherche.",
+      "author": "La signature affichée avec le document. Laissez vide pour utiliser la personne qui l'a créé.",
+      "sourceLocale": "La langue dans laquelle vous rédigez le document ; toute autre version linguistique en est une traduction.",
+      "isPublic": "Cochez pour que chacun puisse lire le document publié sans se connecter ; les rôles de lecture sont alors ignorés.",
+      "readerRoles": "Rôles autorisés à lire le document, un par puce, p. ex. staff. Laissez vide pour que tout membre connecté de l'organisation puisse le lire.",
+      "editorRoles": "Rôles autorisés à modifier le contenu et les propriétés du document, un par puce, p. ex. editor.",
+      "publisherRoles": "Rôles autorisés à publier le document, un par puce. Laissez vide pour que les rôles d'édition puissent aussi publier.",
+      "inputPorts": "Valeurs transmises par la page qui intègre le document, p. ex. le client consulté, afin que les widgets du document puissent les utiliser.",
+      "outputPorts": "Valeurs que le document renvoie à la page qui l'intègre, p. ex. un enregistrement choisi par le lecteur."
     }
   },
   "document_input_port": {
@@ -47,7 +61,17 @@
     "entityType": "Type d'entité",
     "attributeVisibility": "Visibilité des attributs",
     "defaultValue": "Valeur par défaut",
-    "defaultRsqlFilter": "Filtre RSQL par défaut"
+    "defaultRsqlFilter": "Filtre RSQL par défaut",
+    "_tooltips": {
+      "name": "Nom par lequel la page qui intègre le document transmet ou reçoit cette valeur, unique parmi les ports du document, p. ex. customer.",
+      "type": "Type de valeur : texte, nombre, oui/non, date, objet ou liste, ou ENTITY_REF / ENTITY_COLLECTION pour un ou plusieurs enregistrements d'un type d'entité.",
+      "required": "Indique si la page qui intègre le document doit fournir cette valeur. Non coché, la valeur par défaut est utilisée si rien n'est fourni.",
+      "description": "La signification de la valeur, pour qui intègre le document.",
+      "entityType": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : le type d'entité des enregistrements, p. ex. Order.",
+      "attributeVisibility": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : les attributs des enregistrements affichés. mode vaut ALL, INCLUDE ou EXCLUDE ; attributes liste les noms d'attributs concernés.",
+      "defaultValue": "Valeur utilisée lorsque le port n'est pas obligatoire et que la page ne fournit rien, p. ex. 10.",
+      "defaultRsqlFilter": "Uniquement pour ENTITY_COLLECTION : les enregistrements à afficher si la page ne fournit pas de filtre, sous forme de requête RSQL, p. ex. status==OPEN."
+    }
   },
   "document_output_port": {
     "_self": "Port de sortie",
@@ -55,6 +79,13 @@
     "type": "Type",
     "description": "Description",
     "entityType": "Type d'entité",
-    "attributeVisibility": "Visibilité des attributs"
+    "attributeVisibility": "Visibilité des attributs",
+    "_tooltips": {
+      "name": "Nom par lequel la page qui intègre le document transmet ou reçoit cette valeur, unique parmi les ports du document, p. ex. customer.",
+      "type": "Type de valeur : texte, nombre, oui/non, date, objet ou liste, ou ENTITY_REF / ENTITY_COLLECTION pour un ou plusieurs enregistrements d'un type d'entité.",
+      "description": "La signification de la valeur, pour qui intègre le document.",
+      "entityType": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : le type d'entité des enregistrements, p. ex. Order.",
+      "attributeVisibility": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : les attributs des enregistrements affichés. mode vaut ALL, INCLUDE ou EXCLUDE ; attributes liste les noms d'attributs concernés."
+    }
   }
 }

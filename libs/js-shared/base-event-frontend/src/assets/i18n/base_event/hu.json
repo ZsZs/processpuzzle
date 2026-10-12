@@ -7,6 +7,15 @@
     "kind": "Fajta",
     "subjectType": "Alany típusa",
     "action": "Művelet",
-    "state": "Állapot"
+    "state": "Állapot",
+    "_tooltips": {
+      "id": "A szervezeten belül egyedi, pl. OrderCreatedEvent. A workflow-k és más funkciók ezzel hivatkoznak az eseményre, ezért később lehetőleg ne módosítsa.",
+      "name": "Az esemény neve, ahogy a választókban és listákban megjelenik, pl. Rendelés létrehozva.",
+      "description": "Megjegyzés arról, mikor következik be az esemény és mire szolgál; a felhasználók nem látják.",
+      "kind": "SYSTEM: a platform váltja ki, amikor egy rekord megváltozik. MESSAGE: az API-n keresztül egy címzettnek küldik. SIGNAL: az API-n keresztül minden figyelőnek szól.",
+      "subjectType": "Csak SYSTEM eseményeknél: annak az entitástípusnak a kódja, amelynek rekordjai kiváltják az eseményt, pl. order.",
+      "action": "Csak SYSTEM eseményeknél: mi történik a rekorddal: CREATED, UPDATED, DELETED vagy STATE_CHANGED.",
+      "state": "Csak STATE_CHANGED esetén: az állapot, amelybe a rekord kerül, pl. CONFIRMED."
+    }
   }
 }
