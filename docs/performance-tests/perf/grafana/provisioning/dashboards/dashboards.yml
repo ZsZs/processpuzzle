@@ -1,0 +1,10 @@
+apiVersion: 1
+providers:
+  - name: processpuzzle-perf
+    orgId: 1
+    folder: ProcessPuzzle
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
