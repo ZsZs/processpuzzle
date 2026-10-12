@@ -21,16 +21,23 @@ describe('definitionRevisionInterceptor', () => {
 
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
+  /** The revision the one pending request to `url` asked for, which is answered on the way. */
+  function revisionOf(controller: HttpTestingController, url: string, method = 'GET'): string | null {
+    const request = controller.expectOne((candidate) => candidate.method === method && candidate.url === url);
+    request.flush({});
+    return request.request.params.get('revision');
+  }
+
   it('addresses a marked definition read to the current revision', () => {
     const { http, controller } = setUp();
 
     revision = 'released';
     http.get('/api/rules', { context: definitionRead() }).subscribe();
-    controller.expectOne('/api/rules?revision=released').flush([]);
+    expect(revisionOf(controller, '/api/rules')).toBe('released');
 
     revision = 'draft';
     http.get('/api/rules', { context: definitionRead() }).subscribe();
-    controller.expectOne('/api/rules?revision=draft').flush([]);
+    expect(revisionOf(controller, '/api/rules')).toBe('draft');
   });
 
   it('leaves unmarked reads, writes and an explicit revision alone', () => {
@@ -38,13 +45,13 @@ describe('definitionRevisionInterceptor', () => {
     revision = 'released';
 
     http.get('/api/entities/order').subscribe();
-    controller.expectOne('/api/entities/order').flush({});
+    expect(revisionOf(controller, '/api/entities/order')).toBeNull();
 
     http.put('/api/rules/r1', {}, { context: definitionRead() }).subscribe();
-    controller.expectOne((request) => request.method === 'PUT' && !request.params.has('revision')).flush({});
+    expect(revisionOf(controller, '/api/rules/r1', 'PUT')).toBeNull();
 
     http.get('/api/rules', { context: definitionRead(), params: { revision: 'draft' } }).subscribe();
-    controller.expectOne('/api/rules?revision=draft').flush([]);
+    expect(revisionOf(controller, '/api/rules')).toBe('draft');
   });
 
   /** A host that has not wired the revision up keeps reading what it always read: the drafts. */
@@ -52,6 +59,6 @@ describe('definitionRevisionInterceptor', () => {
     const { http, controller } = setUp(false);
 
     http.get('/api/rules', { context: definitionRead() }).subscribe();
-    controller.expectOne('/api/rules?revision=draft').flush([]);
+    expect(revisionOf(controller, '/api/rules')).toBe('draft');
   });
 });
