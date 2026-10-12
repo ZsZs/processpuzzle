@@ -36,6 +36,20 @@
         "undo": "Undo",
         "redo": "Redo"
       }
+    },
+    "_tooltips": {
+      "slug": "The document's key in its address, unique within your organization. Lower-case letters, digits and hyphens only, e.g. getting-started.",
+      "title": "The document's title as readers see it, e.g. Getting started.",
+      "subject": "What the document is about, in one line.",
+      "description": "A short summary of the document, e.g. for overviews and search results.",
+      "author": "The byline shown with the document. Leave empty to use whoever created it.",
+      "sourceLocale": "The language you write the document in; every other language version is a translation of it.",
+      "isPublic": "Tick to let anyone read the published document without signing in; Reader roles are then ignored.",
+      "readerRoles": "Roles allowed to read the document, one chip each, e.g. staff. Leave empty to let every signed-in member of the organization read it.",
+      "editorRoles": "Roles allowed to change the document's content and properties, one chip each, e.g. editor.",
+      "publisherRoles": "Roles allowed to publish the document, one chip each. Leave empty to let the editor roles publish too.",
+      "inputPorts": "Values the page embedding the document hands in, e.g. the customer being viewed, so widgets in the document can use them.",
+      "outputPorts": "Values the document hands back to the page embedding it, e.g. a record the reader selected."
     }
   },
   "document_input_port": {
@@ -47,7 +61,17 @@
     "entityType": "Entity type",
     "attributeVisibility": "Attribute visibility",
     "defaultValue": "Default value",
-    "defaultRsqlFilter": "Default RSQL filter"
+    "defaultRsqlFilter": "Default RSQL filter",
+    "_tooltips": {
+      "name": "Name the embedding page uses to pass or receive this value, unique among the document's ports, e.g. customer.",
+      "type": "Kind of value: text, number, yes/no, date, object or list, or ENTITY_REF / ENTITY_COLLECTION for one or many records of an entity type.",
+      "required": "Whether the embedding page must supply this value. If not ticked, the default value is used when nothing is supplied.",
+      "description": "What the value means, for whoever embeds the document.",
+      "entityType": "For ENTITY_REF and ENTITY_COLLECTION only: the entity type of the record(s), e.g. Order.",
+      "attributeVisibility": "For ENTITY_REF and ENTITY_COLLECTION only: which attributes of the records are shown. mode is ALL, INCLUDE or EXCLUDE; attributes lists the attribute names it applies to.",
+      "defaultValue": "Value used when the port is not required and the embedding page supplies nothing, e.g. 10.",
+      "defaultRsqlFilter": "For ENTITY_COLLECTION only: which records to show when the page supplies no filter, as an RSQL query, e.g. status==OPEN."
+    }
   },
   "document_output_port": {
     "_self": "Output port",
@@ -55,6 +79,13 @@
     "type": "Type",
     "description": "Description",
     "entityType": "Entity type",
-    "attributeVisibility": "Attribute visibility"
+    "attributeVisibility": "Attribute visibility",
+    "_tooltips": {
+      "name": "Name the embedding page uses to pass or receive this value, unique among the document's ports, e.g. customer.",
+      "type": "Kind of value: text, number, yes/no, date, object or list, or ENTITY_REF / ENTITY_COLLECTION for one or many records of an entity type.",
+      "description": "What the value means, for whoever embeds the document.",
+      "entityType": "For ENTITY_REF and ENTITY_COLLECTION only: the entity type of the record(s), e.g. Order.",
+      "attributeVisibility": "For ENTITY_REF and ENTITY_COLLECTION only: which attributes of the records are shown. mode is ALL, INCLUDE or EXCLUDE; attributes lists the attribute names it applies to."
+    }
   }
 }

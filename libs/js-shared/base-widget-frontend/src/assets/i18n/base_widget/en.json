@@ -12,7 +12,21 @@
     "publishedVersion": "Published Version",
     "updatedAt": "Updated At",
     "inputPorts": "Input ports",
-    "outputPorts": "Output ports"
+    "outputPorts": "Output ports",
+    "_tooltips": {
+      "id": "Unique within your organization; every placement of the widget refers to it. Lower-case letters, digits and single hyphens, e.g. cards-grid; it cannot be changed once pages use the widget.",
+      "name": "The widget's name as designers see it in the palette, e.g. Cards grid.",
+      "translocoId": "Optional translation key; when set, it is shown instead of the Name in other languages, e.g. cards_grid.name.",
+      "category": "The group the widget is listed under in the palette, e.g. Content, Data or Navigation. Free text; widgets with the same category are shown together.",
+      "icon": "Name of the Material icon shown next to the widget in the palette, e.g. grid_view.",
+      "description": "What the widget does, as a note for you and your fellow designers; users do not see it.",
+      "status": "DRAFT while the widget has changes that are not published yet, PUBLISHED once the current version is published with the Publish button. Set by the system.",
+      "version": "Increases with every save. Set by the system.",
+      "publishedVersion": "The version that was last published; empty until the widget is published for the first time. Set by the system.",
+      "updatedAt": "When the widget was last saved. Set by the system.",
+      "inputPorts": "The values the widget receives from the page it is placed on, one row per value, e.g. the list of items a grid shows.",
+      "outputPorts": "The values the widget passes back to the page, one row per value, e.g. the item a user selected."
+    }
   },
   "widget_input_port": {
     "_self": "Input port",
@@ -23,7 +37,17 @@
     "entityType": "Entity type",
     "attributeVisibility": "Attribute visibility",
     "defaultValue": "Default value",
-    "defaultRsqlFilter": "Default RSQL filter"
+    "defaultRsqlFilter": "Default RSQL filter",
+    "_tooltips": {
+      "name": "Identifies the port, unique within the widget, e.g. items. A widget placed on a page is wired to its container by this name.",
+      "type": "The kind of value the port receives: STRING, NUMBER, BOOLEAN, DATE, OBJECT or ARRAY for plain values, ENTITY_REF for a single record, ENTITY_COLLECTION for a filtered list of records.",
+      "description": "What the port is for, as a note for the designers who place the widget on a page.",
+      "entityType": "Only for ENTITY_REF and ENTITY_COLLECTION: the entity type whose records travel through the port, e.g. order. Leave empty for the other types.",
+      "attributeVisibility": "Only for ENTITY_REF and ENTITY_COLLECTION: which attributes of the records the widget gets by default. Set mode to ALL, INCLUDE or EXCLUDE, and for the latter two list the attributes, e.g. attributes = name, price.",
+      "required": "Tick it if the widget cannot work without this value; the page that places the widget must then supply it.",
+      "defaultValue": "The value the widget uses when the port is optional and the page supplies nothing, e.g. 10.",
+      "defaultRsqlFilter": "Only for ENTITY_COLLECTION: the filter applied when the page supplies none, written in RSQL, e.g. status==OPEN."
+    }
   },
   "widget_output_port": {
     "_self": "Output port",
@@ -31,7 +55,14 @@
     "type": "Type",
     "description": "Description",
     "entityType": "Entity type",
-    "attributeVisibility": "Attribute visibility"
+    "attributeVisibility": "Attribute visibility",
+    "_tooltips": {
+      "name": "Identifies the port, unique within the widget, e.g. selectedItem. A widget placed on a page is wired to its container by this name.",
+      "type": "The kind of value the port emits: STRING, NUMBER, BOOLEAN, DATE, OBJECT or ARRAY for plain values, ENTITY_REF for a single record, ENTITY_COLLECTION for a filtered list of records.",
+      "description": "What the port is for, as a note for the designers who place the widget on a page.",
+      "entityType": "Only for ENTITY_REF and ENTITY_COLLECTION: the entity type whose records travel through the port, e.g. order. Leave empty for the other types.",
+      "attributeVisibility": "Only for ENTITY_REF and ENTITY_COLLECTION: which attributes of the records the widget passes on. Set mode to ALL, INCLUDE or EXCLUDE, and for the latter two list the attributes, e.g. attributes = name, price."
+    }
   },
   "publish": {
     "button": "Publish",

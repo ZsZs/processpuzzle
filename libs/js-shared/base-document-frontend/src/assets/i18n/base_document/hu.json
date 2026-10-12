@@ -36,6 +36,20 @@
         "undo": "Visszavonás",
         "redo": "Újra"
       }
+    },
+    "_tooltips": {
+      "slug": "A dokumentum kulcsa a címében, a szervezeten belül egyedi. Csak kisbetűk, számjegyek és kötőjelek, pl. getting-started.",
+      "title": "A dokumentum címe, ahogy az olvasók látják, pl. Első lépések.",
+      "subject": "Miről szól a dokumentum, egy sorban.",
+      "description": "A dokumentum rövid összefoglalója, pl. áttekintésekhez és keresési találatokhoz.",
+      "author": "A dokumentummal együtt megjelenő szerzőnév. Üresen a létrehozó neve szerepel.",
+      "sourceLocale": "A nyelv, amelyen a dokumentumot írja; minden más nyelvi változat ennek fordítása.",
+      "isPublic": "Jelölje be, hogy a közzétett dokumentumot bárki bejelentkezés nélkül olvashassa; ekkor az olvasó szerepkörök nem számítanak.",
+      "readerRoles": "A dokumentumot olvasható szerepkörök, mindegyik egy címke, pl. staff. Üresen a szervezet minden bejelentkezett tagja olvashatja.",
+      "editorRoles": "A dokumentum tartalmát és tulajdonságait módosítható szerepkörök, mindegyik egy címke, pl. editor.",
+      "publisherRoles": "A dokumentumot közzétehető szerepkörök, mindegyik egy címke. Üresen a szerkesztő szerepkörök is közzétehetik.",
+      "inputPorts": "Értékek, amelyeket a dokumentumot beágyazó oldal átad, pl. a megtekintett ügyfél, hogy a dokumentum widgetjei használhassák őket.",
+      "outputPorts": "Értékek, amelyeket a dokumentum visszaad az őt beágyazó oldalnak, pl. az olvasó által kiválasztott rekord."
     }
   },
   "document_input_port": {
@@ -47,7 +61,17 @@
     "entityType": "Entitástípus",
     "attributeVisibility": "Attribútum-láthatóság",
     "defaultValue": "Alapértelmezett érték",
-    "defaultRsqlFilter": "Alapértelmezett RSQL-szűrő"
+    "defaultRsqlFilter": "Alapértelmezett RSQL-szűrő",
+    "_tooltips": {
+      "name": "A név, amellyel a beágyazó oldal átadja vagy megkapja ezt az értéket, a dokumentum portjai között egyedi, pl. customer.",
+      "type": "Az érték fajtája: szöveg, szám, igen/nem, dátum, objektum vagy lista, illetve ENTITY_REF / ENTITY_COLLECTION egy entitástípus egy vagy több rekordjához.",
+      "required": "Kötelező-e a beágyazó oldalnak megadnia ezt az értéket. Ha nincs bejelölve és nem kap értéket, az alapértelmezett érték érvényes.",
+      "description": "Mit jelent az érték – annak, aki a dokumentumot beágyazza.",
+      "entityType": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok entitástípusa, pl. Order.",
+      "attributeVisibility": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok mely attribútumai látszanak. A mode értéke ALL, INCLUDE vagy EXCLUDE; az attributes az érintett attribútumneveket sorolja fel.",
+      "defaultValue": "Az érték, amely akkor érvényes, ha a port nem kötelező és a beágyazó oldal nem ad át semmit, pl. 10.",
+      "defaultRsqlFilter": "Csak ENTITY_COLLECTION esetén: mely rekordok látszódjanak, ha az oldal nem ad szűrőt, RSQL-lekérdezésként, pl. status==OPEN."
+    }
   },
   "document_output_port": {
     "_self": "Kimeneti port",
@@ -55,6 +79,13 @@
     "type": "Típus",
     "description": "Leírás",
     "entityType": "Entitástípus",
-    "attributeVisibility": "Attribútum-láthatóság"
+    "attributeVisibility": "Attribútum-láthatóság",
+    "_tooltips": {
+      "name": "A név, amellyel a beágyazó oldal átadja vagy megkapja ezt az értéket, a dokumentum portjai között egyedi, pl. customer.",
+      "type": "Az érték fajtája: szöveg, szám, igen/nem, dátum, objektum vagy lista, illetve ENTITY_REF / ENTITY_COLLECTION egy entitástípus egy vagy több rekordjához.",
+      "description": "Mit jelent az érték – annak, aki a dokumentumot beágyazza.",
+      "entityType": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok entitástípusa, pl. Order.",
+      "attributeVisibility": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok mely attribútumai látszanak. A mode értéke ALL, INCLUDE vagy EXCLUDE; az attributes az érintett attribútumneveket sorolja fel."
+    }
   }
 }

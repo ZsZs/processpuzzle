@@ -1,7 +1,12 @@
 package com.processpuzzle.core.security;
 
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +42,27 @@ class CurrentPrincipalTest {
         assertThat(principal.realm()).contains("my-org");
         assertThat(principal.isMemberOf("my-org")).isTrue();
         assertThat(principal.isMemberOf("other-org")).isFalse();
+    }
+
+    @Test
+    void theDisplayNameIsTheNameAPersonReads_notTheSubject() {
+        authenticateWith(Map.of("name", "Ada Lovelace", "preferred_username", "ada", "email", "ada@example.com"));
+        assertThat(principal.displayName()).contains("Ada Lovelace");
+
+        authenticateWith(Map.of("preferred_username", "ada", "email", "ada@example.com"));
+        assertThat(principal.displayName()).contains("ada");
+
+        authenticateWith(Map.of("email", "ada@example.com"));
+        assertThat(principal.displayName()).contains("ada@example.com");
+    }
+
+    @Test
+    void theDisplayNameFallsBackToTheSubject_andIsEmptyWithoutAToken() {
+        assertThat(principal.displayName()).isEmpty();
+
+        authenticateWith(Map.of("name", " "));
+
+        assertThat(principal.displayName()).contains("3f2b-uuid");
     }
 
     @Test
@@ -77,5 +103,14 @@ class CurrentPrincipalTest {
         // part of the trust chain.
         assertThat(principal.isPlatformAdmin()).isTrue();
         assertThat(principal.realm()).contains("my-org");
+    }
+
+    private static void authenticateWith(Map<String, Object> claims) {
+        Jwt.Builder builder = Jwt.withTokenValue("token")
+                .header("alg", "RS256")
+                .issuer("https://auth.example.com/realms/my-org")
+                .subject("3f2b-uuid");
+        claims.forEach(builder::claim);
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(builder.build(), List.of()));
     }
 }

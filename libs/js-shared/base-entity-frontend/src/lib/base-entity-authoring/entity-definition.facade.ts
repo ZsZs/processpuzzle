@@ -5,6 +5,7 @@ import { BaseEntityFacade } from '../base-entity-facade/base-entity-facade';
 import { EmbeddedEntityFacade } from '../base-entity-facade/embedded-entity.facade';
 import { createEntityAttributeDescriptor } from './entity-attribute.descriptors';
 import { createEntityDefinitionDescriptor } from './entity-definition.descriptors';
+import { EntityDefinitionOptions } from './entity-definition.options';
 import { EntityDefinitionAuthoringService } from './entity-definition-authoring.service';
 import { EntityDefinitionMapper } from './entity-definition.mapper';
 import { EntityDefinitionStore } from './entity-definition.store';
@@ -37,7 +38,7 @@ export class EntityDefinitionFacade extends BaseEntityFacade<EntityDefinition> {
   }
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createEntityDefinitionDescriptor();
+    return createEntityDefinitionDescriptor(() => this.injector.get(EntityDefinitionOptions).codes());
   }
 }
 
@@ -54,6 +55,6 @@ export class EntityAttributeFacade extends EmbeddedEntityFacade<EntityAttributeD
   readonly entityType = EntityAttributeDefinition;
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createEntityAttributeDescriptor();
+    return createEntityAttributeDescriptor(() => this.injector.get(EntityDefinitionOptions).codes());
   }
 }

@@ -16,7 +16,25 @@
     "defaultValue": "Default Value",
     "enumValues": "Enum Values",
     "dateStyle": "Date Style",
-    "timeStyle": "Time Style"
+    "timeStyle": "Time Style",
+    "_tooltips": {
+      "code": "Key the value is stored under, unique within the entity type, e.g. orderNumber. Avoid changing it once records exist.",
+      "name": "The field's label as users see it on forms and list columns, e.g. Order number.",
+      "valueKind": "What kind of value the field holds: text, number, yes/no, date, date and time, a choice from a list (ENUM) or a reference to another record. Decides how values are checked and compared.",
+      "formControlType": "Which input users fill the field in with, e.g. TEXT_BOX, TEXTAREA, DROPDOWN or CHECKBOX. Pick one that suits the value kind.",
+      "displayOrder": "Position of the field on the form and of its column in the list; lower numbers come first, e.g. 10, 20, 30.",
+      "multiplicity": "How many values the field takes: 0..1 at most one, 0..n / 1..n any number (at least one with 1..), 0..x / 1..x up to Max occurs. Leave empty for a single value.",
+      "maxOccurs": "Upper limit on the number of values, e.g. 5. Only used with the multiplicities 0..x and 1..x.",
+      "required": "Whether users must fill the field in before they can save the record.",
+      "indexed": "Tick for fields users often search or filter on, e.g. a customer number; it makes those queries fast.",
+      "isLinkToDetails": "Tick for the field that names the record, e.g. the order number: it opens the record from the list and heads its form. At most one field per entity type.",
+      "autosizeColumn": "Tick to make the field's list column only as wide as its content, e.g. for short codes or flags.",
+      "enumValues": "For the ENUM value kind: the options users choose from, one chip each, e.g. NEW, PAID, SHIPPED.",
+      "linkedEntityType": "For reference fields (FOREIGN_KEY) and embedded rows (EMBEDDED_COMPONENTS): the code of the entity type they point at, e.g. customer.",
+      "defaultValue": "Value pre-filled in new records, e.g. NEW or 1. Leave empty for none.",
+      "dateStyle": "For DATE and DATE_TIME fields: how the date is shown, from short (12/31/26) to full (Thursday, December 31, 2026). Empty uses the default.",
+      "timeStyle": "For DATE_TIME fields: how the time is shown, from short (14:30) to long (with seconds and time zone). Empty uses the default."
+    }
   },
   "entity_definition": {
     "_self": "Entity Definition",
@@ -28,7 +46,18 @@
     "componentParents": "Component Parents",
     "attributes": "Attributes",
     "version": "Version",
-    "updatedAt": "Updated At"
+    "updatedAt": "Updated At",
+    "_tooltips": {
+      "code": "Unique key of the entity type within your organization, used in addresses. Short, lower-case and URL-safe, e.g. order; avoid changing it later.",
+      "name": "The entity name the application's pages, routes and menus refer to this type by, e.g. Order.",
+      "description": "A note for you and your fellow designers about what this entity type is for; users do not see it.",
+      "status": "DRAFT while you are still designing the type, ACTIVE to show it in the application, DEPRECATED to retire it. Only ACTIVE types are displayed.",
+      "isEmbedded": "Tick when records of this type exist only inside another record, e.g. order lines inside an order. Then also name the parent under Component Parents.",
+      "componentParents": "For an embedded type: the codes of the entity types whose records contain it, e.g. order. Required when Embedded is ticked.",
+      "attributes": "The fields of the entity type, one row per field. They are saved together with the definition.",
+      "version": "Increases with every save. Set by the system.",
+      "updatedAt": "When the definition was last saved. Set by the system."
+    }
   },
   "artifact": {
     "upload_failure": "Artifact upload failed. Please try again.",

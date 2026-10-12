@@ -12,7 +12,21 @@
     "publishedVersion": "Versión publicada",
     "updatedAt": "Actualizado el",
     "inputPorts": "Puertos de entrada",
-    "outputPorts": "Puertos de salida"
+    "outputPorts": "Puertos de salida",
+    "_tooltips": {
+      "id": "Único dentro de su organización; cada colocación del widget se refiere a ella. Minúsculas, dígitos y guiones simples, p. ej. cards-grid; no se puede cambiar una vez que las páginas usan el widget.",
+      "name": "El nombre del widget tal como lo ven los diseñadores en la paleta, p. ej. Cuadrícula de tarjetas.",
+      "translocoId": "Clave de traducción opcional; si se indica, se muestra en lugar del Nombre en otros idiomas, p. ej. cards_grid.name.",
+      "category": "El grupo bajo el que aparece el widget en la paleta, p. ej. Content, Data o Navigation. Texto libre; los widgets de la misma categoría se muestran juntos.",
+      "icon": "Nombre del icono de Material que se muestra junto al widget en la paleta, p. ej. grid_view.",
+      "description": "Qué hace el widget, como nota para usted y los demás diseñadores; los usuarios no la ven.",
+      "status": "DRAFT mientras el widget tiene cambios aún sin publicar, PUBLISHED una vez publicada la versión actual con el botón Publicar. Lo establece el sistema.",
+      "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "publishedVersion": "La última versión publicada; vacía hasta que el widget se publica por primera vez. Lo establece el sistema.",
+      "updatedAt": "Cuándo se guardó el widget por última vez. Lo establece el sistema.",
+      "inputPorts": "Los valores que el widget recibe de la página en la que está colocado, una fila por valor, p. ej. la lista de elementos que muestra una cuadrícula.",
+      "outputPorts": "Los valores que el widget devuelve a la página, una fila por valor, p. ej. el elemento que seleccionó el usuario."
+    }
   },
   "widget_input_port": {
     "_self": "Puerto de entrada",
@@ -23,7 +37,17 @@
     "entityType": "Tipo de entidad",
     "attributeVisibility": "Visibilidad de atributos",
     "defaultValue": "Valor por defecto",
-    "defaultRsqlFilter": "Filtro RSQL por defecto"
+    "defaultRsqlFilter": "Filtro RSQL por defecto",
+    "_tooltips": {
+      "name": "Identifica el puerto; único dentro del widget, p. ej. items. Un widget colocado en una página se conecta con su contenedor mediante este nombre.",
+      "type": "El tipo de valor que recibe el puerto: STRING, NUMBER, BOOLEAN, DATE, OBJECT o ARRAY para valores simples, ENTITY_REF para un único registro, ENTITY_COLLECTION para una lista filtrada de registros.",
+      "description": "Para qué sirve el puerto, como nota para los diseñadores que colocan el widget en una página.",
+      "entityType": "Solo para ENTITY_REF y ENTITY_COLLECTION: el tipo de entidad cuyos registros pasan por el puerto, p. ej. order. Déjelo vacío para los demás tipos.",
+      "attributeVisibility": "Solo para ENTITY_REF y ENTITY_COLLECTION: qué atributos de los registros recibe el widget por defecto. Ponga mode en ALL, INCLUDE o EXCLUDE y, en los dos últimos casos, enumere los atributos, p. ej. attributes = name, price.",
+      "required": "Márquelo si el widget no puede funcionar sin este valor; la página que coloca el widget deberá proporcionarlo.",
+      "defaultValue": "El valor que usa el widget cuando el puerto es opcional y la página no proporciona nada, p. ej. 10.",
+      "defaultRsqlFilter": "Solo para ENTITY_COLLECTION: el filtro que se aplica cuando la página no proporciona ninguno, escrito en RSQL, p. ej. status==OPEN."
+    }
   },
   "widget_output_port": {
     "_self": "Puerto de salida",
@@ -31,7 +55,14 @@
     "type": "Tipo",
     "description": "Descripción",
     "entityType": "Tipo de entidad",
-    "attributeVisibility": "Visibilidad de atributos"
+    "attributeVisibility": "Visibilidad de atributos",
+    "_tooltips": {
+      "name": "Identifica el puerto; único dentro del widget, p. ej. selectedItem. Un widget colocado en una página se conecta con su contenedor mediante este nombre.",
+      "type": "El tipo de valor que emite el puerto: STRING, NUMBER, BOOLEAN, DATE, OBJECT o ARRAY para valores simples, ENTITY_REF para un único registro, ENTITY_COLLECTION para una lista filtrada de registros.",
+      "description": "Para qué sirve el puerto, como nota para los diseñadores que colocan el widget en una página.",
+      "entityType": "Solo para ENTITY_REF y ENTITY_COLLECTION: el tipo de entidad cuyos registros pasan por el puerto, p. ej. order. Déjelo vacío para los demás tipos.",
+      "attributeVisibility": "Solo para ENTITY_REF y ENTITY_COLLECTION: qué atributos de los registros transmite el widget. Ponga mode en ALL, INCLUDE o EXCLUDE y, en los dos últimos casos, enumere los atributos, p. ej. attributes = name, price."
+    }
   },
   "publish": {
     "button": "Publicar",
