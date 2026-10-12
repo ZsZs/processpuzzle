@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.Severity;
 import com.processpuzzle.rule.model.EvaluationRequest;
 import com.processpuzzle.rule.model.EvaluationResult;
@@ -99,10 +100,10 @@ class RuleEndpointTest {
 
     @Test
     void getAnswers200WithTheMappedRule() {
-        when(findRule.execute("demo", "max-quantity")).thenReturn(rule("max-quantity"));
+        when(findRule.execute("demo", "max-quantity", Channel.DRAFT)).thenReturn(rule("max-quantity"));
 
         ResponseEntity<com.processpuzzle.rule.model.RuleDefinition> response =
-                endpoint.getRule("demo", "max-quantity");
+                endpoint.getRule("demo", "max-quantity", null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -111,11 +112,11 @@ class RuleEndpointTest {
 
     @Test
     void listForwardsEveryQueryParameterAndAnswersAPage() {
-        when(findAllRules.execute("demo", "Order", "enabled==true", "name,asc", 2, 5))
+        when(findAllRules.execute("demo", Channel.DRAFT, "Order", "enabled==true", "name,asc", 2, 5))
                 .thenReturn(new PageImpl<>(List.of(rule("max-quantity")), PageRequest.of(2, 5), 11));
 
         ResponseEntity<PageOfRuleDefinition> response =
-                endpoint.listRules("demo", "Order", "enabled==true", "name,asc", 2, 5);
+                endpoint.listRules("demo", "Order", "enabled==true", "name,asc", 2, 5, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         PageOfRuleDefinition body = response.getBody();

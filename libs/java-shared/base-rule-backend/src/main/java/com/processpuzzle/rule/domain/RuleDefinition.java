@@ -1,5 +1,9 @@
 package com.processpuzzle.rule.domain;
 
+import org.hibernate.annotations.ColumnDefault;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import com.processpuzzle.core.definition.Channel;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -34,6 +38,18 @@ public class RuleDefinition {
     @Column(length = 100)
     private String id;
 
+    /**
+     * Which of the rule's two rows this is: the {@code DRAFT} the designer edits, or the {@code RELEASED} one the
+     * running application evaluates, which only a release of the organization replaces. The database default lets
+     * {@code ddl-auto} add the column to a table that already has rows; {@code RuleChannelBackfill} then widens the
+     * key and gives each row its released copy.
+     */
+    @Id
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'DRAFT'")
+    @Column(name = "channel", length = 16, nullable = false)
+    private Channel channel = Channel.DRAFT;
+
     @Column(nullable = false, length = 200)
     private String name;
 
@@ -66,11 +82,13 @@ public class RuleDefinition {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    // Both key columns are needed in the join: rule_id alone would collide across tenants.
+    // Every key column is needed in the join: rule_id alone would collide across tenants, and a draft's fields
+    // must not be its released row's.
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "rule_definition_fields", joinColumns = {
             @JoinColumn(name = "org_key", referencedColumnName = "org_key"),
-            @JoinColumn(name = "rule_id", referencedColumnName = "id")
+            @JoinColumn(name = "rule_id", referencedColumnName = "id"),
+            @JoinColumn(name = "channel", referencedColumnName = "channel")
     })
     @Column(name = "field_name", length = 100)
     private List<String> fields = new ArrayList<>();
@@ -125,6 +143,34 @@ public class RuleDefinition {
     @PreUpdate
     void onUpdate() {
         this.updatedAt = Instant.now();
+    }
+
+    /** A new released row with the draft's content: what a rule's first release creates. */
+    public static RuleDefinition releasedCopyOf(RuleDefinition draft) {
+        RuleDefinition released = new RuleDefinition(draft.orgKey, draft.id, draft.name, draft.description,
+                draft.context, draft.expression, draft.severity, draft.message, draft.translocoId,
+                draft.extendsRuleId, draft.override, draft.enabled, draft.fields);
+        released.channel = Channel.RELEASED;
+        return released;
+    }
+
+    /** Replaces this released row's content with the draft's, keeping its own version and timestamps. */
+    public void releaseFrom(RuleDefinition draft) {
+        this.name = draft.name;
+        this.description = draft.description;
+        this.context = draft.context;
+        this.expression = draft.expression;
+        this.severity = draft.severity;
+        this.message = draft.message;
+        this.translocoId = draft.translocoId;
+        this.extendsRuleId = draft.extendsRuleId;
+        this.override = draft.override;
+        this.enabled = draft.enabled;
+        this.fields = new ArrayList<>(draft.fields);
+    }
+
+    public Channel getChannel() {
+        return channel;
     }
 
     /** The owning organization. Part of the identity, so there is deliberately no setter. */

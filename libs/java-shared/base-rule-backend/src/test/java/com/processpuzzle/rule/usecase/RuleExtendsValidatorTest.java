@@ -1,5 +1,7 @@
 package com.processpuzzle.rule.usecase;
 
+import static org.mockito.ArgumentMatchers.eq;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -52,7 +54,7 @@ class RuleExtendsValidatorTest {
     @Test
     void rejectsAParentThisOrganizationDoesNotHave() {
         // The parent may well exist in another organization; the chain resolves within one tenant.
-        when(repository.findByOrgKeyAndId("demo", "foreign")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel("demo", "foreign", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> validator.validate("demo", "child", "foreign"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -73,7 +75,7 @@ class RuleExtendsValidatorTest {
     void abortsAChainDeeperThanTheGuard() {
         // Every lookup answers with a fresh parent id, so the walk would never terminate on its
         // own — the depth guard is what stops it.
-        when(repository.findByOrgKeyAndId(eq("demo"), anyString()))
+        when(repository.findByOrgKeyAndIdAndChannel(eq("demo"), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> Optional.of(rule(call.getArgument(1), call.getArgument(1) + "-up")));
 
         assertThatThrownBy(() -> validator.validate("demo", "child", "a"))
@@ -82,7 +84,7 @@ class RuleExtendsValidatorTest {
     }
 
     private void stub(String id, String extendsRuleId) {
-        when(repository.findByOrgKeyAndId("demo", id)).thenReturn(Optional.of(rule(id, extendsRuleId)));
+        when(repository.findByOrgKeyAndIdAndChannel("demo", id, Channel.DRAFT)).thenReturn(Optional.of(rule(id, extendsRuleId)));
     }
 
     private static RuleDefinition rule(String id, String extendsRuleId) {

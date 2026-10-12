@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -57,7 +58,7 @@ class EvaluateObjectTest {
 
     @Test
     void passesWhenNoRuleIsDefinedForTheContext() {
-        when(repository.findByOrgKeyAndContext("demo", "Order")).thenReturn(List.of());
+        when(repository.findByOrgKeyAndContextAndChannel("demo", "Order", Channel.RELEASED)).thenReturn(List.of());
 
         EvaluationOutcome outcome = evaluateObject.execute("demo", "Order", ENTITY);
 
@@ -168,7 +169,7 @@ class EvaluateObjectTest {
     }
 
     private void stubRules(RuleDefinition... rules) {
-        when(repository.findByOrgKeyAndContext("demo", "Order")).thenReturn(List.of(rules));
+        when(repository.findByOrgKeyAndContextAndChannel("demo", "Order", Channel.RELEASED)).thenReturn(List.of(rules));
     }
 
     private static RuleDefinition rule(String id, Severity severity, String message,

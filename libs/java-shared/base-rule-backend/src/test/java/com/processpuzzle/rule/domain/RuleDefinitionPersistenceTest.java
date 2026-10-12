@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ class RuleDefinitionPersistenceTest {
         repository.saveAndFlush(rule("demo", "positive-quantities", "Order",
                 "entity.lineItems.every(li => li.quantity > 0)", List.of("lineItems", "total")));
 
-        RuleDefinition reloaded = repository.findById(new RuleDefinitionKey("demo", "positive-quantities"))
+        RuleDefinition reloaded = repository.findById(new RuleDefinitionKey("demo", "positive-quantities", Channel.DRAFT))
                 .orElseThrow();
 
         assertThat(reloaded.getOrgKey()).isEqualTo("demo");
@@ -84,14 +85,14 @@ class RuleDefinitionPersistenceTest {
                 "entity.lineItems.every(li => li.quantity <= 5)", List.of("total")));
 
         assertThat(repository.count()).isEqualTo(2);
-        assertThat(repository.findByOrgKeyAndId("org-a", "max-quantity"))
+        assertThat(repository.findByOrgKeyAndIdAndChannel("org-a", "max-quantity", Channel.DRAFT))
                 .map(RuleDefinition::getExpression)
                 .contains("entity.lineItems.every(li => li.quantity <= 1)");
-        assertThat(repository.findByOrgKeyAndId("org-b", "max-quantity"))
+        assertThat(repository.findByOrgKeyAndIdAndChannel("org-b", "max-quantity", Channel.DRAFT))
                 .map(RuleDefinition::getExpression)
                 .contains("entity.lineItems.every(li => li.quantity <= 5)");
-        assertThat(repository.existsByOrgKeyAndId("org-a", "max-quantity")).isTrue();
-        assertThat(repository.existsByOrgKeyAndId("org-c", "max-quantity")).isFalse();
+        assertThat(repository.existsByOrgKeyAndIdAndChannel("org-a", "max-quantity", Channel.DRAFT)).isTrue();
+        assertThat(repository.existsByOrgKeyAndIdAndChannel("org-c", "max-quantity", Channel.DRAFT)).isFalse();
     }
 
     @Test
@@ -100,9 +101,9 @@ class RuleDefinitionPersistenceTest {
         repository.saveAndFlush(rule("org-a", "max-quantity", "Order", "true", List.of("lineItems")));
         repository.saveAndFlush(rule("org-b", "max-quantity", "Order", "true", List.of("total", "status")));
 
-        assertThat(repository.findByOrgKeyAndId("org-a", "max-quantity").orElseThrow().getFields())
+        assertThat(repository.findByOrgKeyAndIdAndChannel("org-a", "max-quantity", Channel.DRAFT).orElseThrow().getFields())
                 .containsExactly("lineItems");
-        assertThat(repository.findByOrgKeyAndId("org-b", "max-quantity").orElseThrow().getFields())
+        assertThat(repository.findByOrgKeyAndIdAndChannel("org-b", "max-quantity", Channel.DRAFT).orElseThrow().getFields())
                 .containsExactly("total", "status");
     }
 
@@ -116,9 +117,9 @@ class RuleDefinitionPersistenceTest {
 
         assertThat(repository.findByOrgKey("org-a")).extracting(RuleDefinition::getId)
                 .containsExactlyInAnyOrder("base", "child", "other-context");
-        assertThat(repository.findByOrgKeyAndContext("org-a", "Order")).extracting(RuleDefinition::getId)
+        assertThat(repository.findByOrgKeyAndContextAndChannel("org-a", "Order", Channel.DRAFT)).extracting(RuleDefinition::getId)
                 .containsExactlyInAnyOrder("base", "child");
-        assertThat(repository.findByOrgKeyAndExtendsRuleId("org-a", "base"))
+        assertThat(repository.findByOrgKeyAndExtendsRuleIdAndChannel("org-a", "base", Channel.DRAFT))
                 .extracting(RuleDefinition::getOrgKey, RuleDefinition::getId)
                 .containsExactly(tuple("org-a", "child"));
     }

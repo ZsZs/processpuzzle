@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.rule.domain.RuleDefinition;
@@ -31,9 +32,10 @@ public class FindAllRules {
      * top-level {@code OR}, which would otherwise escape the filter and return other
      * organizations' rules — so there is deliberately no unfiltered {@code findAll} branch here.
      */
-    public Page<RuleDefinition> execute(String orgKey, String context, String where,
+    public Page<RuleDefinition> execute(String orgKey, Channel channel, String context, String where,
                                         String order, Integer page, Integer size) {
         Specification<RuleDefinition> spec = orgKeySpec(orgKey);
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("channel"), channel));
         Specification<RuleDefinition> contextSpec = contextSpec(context);
         if (contextSpec != null) {
             spec = spec.and(contextSpec);

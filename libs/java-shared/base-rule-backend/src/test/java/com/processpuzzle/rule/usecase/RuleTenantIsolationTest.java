@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -59,7 +60,7 @@ class RuleTenantIsolationTest {
         ruleEngine = new RuleEngine();
         ruleEngineSync = new RuleEngineSync(ruleEngine);
         evaluateObject = new EvaluateObject(repository, ruleEngine);
-        deleteRule = new DeleteRule(repository, ruleEngineSync);
+        deleteRule = new DeleteRule(repository);
         findAllRules = new FindAllRules(repository);
     }
 
@@ -117,10 +118,10 @@ class RuleTenantIsolationTest {
         save("demo", "own-invoice", "Invoice", "true");
         save("other", RULE_ID, "Order", "true");
 
-        assertThat(findAllRules.execute("demo", null, null, null, null, null))
+        assertThat(findAllRules.execute("demo", Channel.DRAFT, null, null, null, null, null))
                 .extracting(RuleDefinition::getId)
                 .containsExactlyInAnyOrder("own-order", "own-invoice");
-        assertThat(findAllRules.execute("demo", "Order", null, null, null, null))
+        assertThat(findAllRules.execute("demo", Channel.DRAFT, "Order", null, null, null, null))
                 .extracting(RuleDefinition::getId)
                 .containsExactly("own-order");
     }
@@ -132,7 +133,7 @@ class RuleTenantIsolationTest {
         save("demo", "own-order", "Order", "true");
         save("other", RULE_ID, "Order", "true");
 
-        assertThat(findAllRules.execute("demo", null, "id==own-order,id==" + RULE_ID,
+        assertThat(findAllRules.execute("demo", Channel.DRAFT, null, "id==own-order,id==" + RULE_ID,
                 "id,asc", null, null))
                 .extracting(RuleDefinition::getId)
                 .containsExactly("own-order");
@@ -148,12 +149,13 @@ class RuleTenantIsolationTest {
 
         deleteRule.execute("demo", "base");
 
-        assertThat(repository.findByOrgKeyAndId("demo", "base")).isEmpty();
-        assertThat(repository.findByOrgKeyAndId("other", "base")).isPresent();
+        assertThat(repository.findByOrgKeyAndIdAndChannel("demo", "base", Channel.DRAFT)).isEmpty();
+        assertThat(repository.findByOrgKeyAndIdAndChannel("other", "base", Channel.DRAFT)).isPresent();
         assertThat(ruleEngine.isRegistered(RuleKey.of("demo", "base"))).isTrue();
         TestTransaction.flagForCommit();
         TestTransaction.end();
-        assertThat(ruleEngine.isRegistered(RuleKey.of("demo", "base"))).isFalse();
+        // Deleting the draft leaves the released rule running until the next release removes it.
+        assertThat(ruleEngine.isRegistered(RuleKey.of("demo", "base"))).isTrue();
         assertThat(ruleEngine.isRegistered(RuleKey.of("other", "base"))).isTrue();
     }
 
@@ -171,10 +173,12 @@ class RuleTenantIsolationTest {
         return save(orgKey, id, context, expression, null);
     }
 
+    /** A released rule: its draft, and the released row the running application evaluates. */
     private RuleDefinition save(String orgKey, String id, String context, String expression,
                                 String extendsRuleId) {
-        return repository.saveAndFlush(new RuleDefinition(orgKey, id, id, null, context, expression,
+        RuleDefinition draft = repository.saveAndFlush(new RuleDefinition(orgKey, id, id, null, context, expression,
                 Severity.ERROR, "violated: " + id, null, extendsRuleId, false, true, List.of()));
+        return repository.saveAndFlush(RuleDefinition.releasedCopyOf(draft));
     }
 
     private static Map<String, Object> entityWithQuantity(int quantity) {

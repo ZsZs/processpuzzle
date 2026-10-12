@@ -88,7 +88,7 @@ erases both tables with the tenant.
 | module | `app_modules.channel`, primary key `(org_key, module_key, channel)` | `ModuleReleaseParticipant` (base-app) | step 1 |
 | entity | `base_entity_definition.channel`, unique `(org_key, code, channel)`; attributes follow their definition | `EntityDefinitionReleaseParticipant` (base-entity) | step 2 |
 | state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
-| rule | `channel` on the definition tables and their children | step 2 | |
+| rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
 | workflow, catalogue, event | `channel` on the definition tables | step 3 | |
 | document | `published_documents`, per translation | step 4 | |
 
@@ -160,6 +160,14 @@ right after installing, in the same transaction — a starter is a vetted set an
 (`ReleaseOrganization.provision`, which skips the design-rights check). **A designer installing a starter**
 gets drafts like any other edit, and releases them from the Release section. A blank seed stays
 unreleased, which shows the "not published yet" page.
+
+**Rules.** `EvaluateObject` — the rule endpoint, state guards, workflow conditions — reads the released rules.
+The engine's in-memory registry holds released rules only: a designer's save no longer touches it, and
+`RuleReleaser` registers or unregisters after a release commits. A rule's reference is the rule it `extends`;
+rules hold no data, so a release checks nothing else about them. `RuleChannelBackfill` drops the fields' old
+foreign key first — the database refuses to drop the primary key it depends on — and adds the fields'
+`channel` column itself, since `ddl-auto` cannot add it `not null` to a table with rows. `SampleRuleLoader`
+releases the rules its file wrote.
 
 **Run-time readers of state machines** — firing a transition, an object's state, starting the machine of a new
 object, the startup consistency check, and `StateOperationApi` — read the released machine. `DefaultStateImporter`
