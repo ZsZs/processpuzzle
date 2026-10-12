@@ -71,6 +71,21 @@ class ChannelBackfillTest {
         assertThat(backfill.migrate("modules", List.of("org_key", "module_key"))).isFalse();
     }
 
+    @Test
+    void migrate_refusesAKeyColumnThatIsNotAPlainName_andLeavesTheTableAlone() {
+        legacyTable();
+
+        assertThatThrownBy(() -> backfill.migrate("modules", List.of("org_key) --"))).isInstanceOf(IllegalArgumentException.class);
+        assertThat(backfill.shapeOf("modules").orElseThrow().primaryKeyColumns()).containsExactlyInAnyOrder("org_key", "module_key");
+    }
+
+    @Test
+    void identifier_acceptsOnlyAPlainName() {
+        assertThat(ChannelBackfill.identifier("app_modules")).isEqualTo("app_modules");
+        assertThatThrownBy(() -> ChannelBackfill.identifier("modules; DROP TABLE x")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> ChannelBackfill.identifier(null)).isInstanceOf(IllegalArgumentException.class);
+    }
+
     private void legacyTable() {
         jdbc.execute("CREATE TABLE modules (org_key VARCHAR(63) NOT NULL, module_key VARCHAR(100) NOT NULL, "
                 + "name VARCHAR(200), PRIMARY KEY (org_key, module_key))");

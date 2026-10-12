@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class ChannelBackfill {
 
     static final String CHANNEL_COLUMN = "channel";
+    private static final String ALTER_TABLE = "ALTER TABLE ";
+    private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]{0,62}");
     private static final Logger LOG = LoggerFactory.getLogger(ChannelBackfill.class);
 
     private final JdbcTemplate jdbc;
@@ -55,27 +58,49 @@ public class ChannelBackfill {
             return false;
         }
         TableShape found = shape.get();
+        // Every name is checked before the first statement runs: some databases commit DDL at once.
+        String name = identifier(table);
+        String primaryKey = found.primaryKeyName() == null ? null : identifier(found.primaryKeyName());
+        List<String> widened = new ArrayList<>(keyColumns);
+        widened.add(CHANNEL_COLUMN);
+        String widenedKey = identifiers(widened);
+        String copied = identifiers(found.columns().stream().filter(column -> !CHANNEL_COLUMN.equals(column)).toList());
         Boolean done = transaction.execute(status -> {
             if (!found.columns().contains(CHANNEL_COLUMN)) {
-                jdbc.execute("ALTER TABLE " + table + " ADD COLUMN " + CHANNEL_COLUMN + " VARCHAR(16) DEFAULT 'DRAFT' NOT NULL");
+                run(ALTER_TABLE + name + " ADD COLUMN " + CHANNEL_COLUMN + " VARCHAR(16) DEFAULT 'DRAFT' NOT NULL");
             }
-            jdbc.update("UPDATE " + table + " SET " + CHANNEL_COLUMN + " = 'DRAFT' WHERE " + CHANNEL_COLUMN + " IS NULL");
-            if (found.primaryKeyName() != null) {
-                jdbc.execute("ALTER TABLE " + table + " DROP CONSTRAINT " + found.primaryKeyName());
+            run("UPDATE " + name + " SET " + CHANNEL_COLUMN + " = 'DRAFT' WHERE " + CHANNEL_COLUMN + " IS NULL");
+            if (primaryKey != null) {
+                run(ALTER_TABLE + name + " DROP CONSTRAINT " + primaryKey);
             }
-            List<String> widened = new ArrayList<>(keyColumns);
-            widened.add(CHANNEL_COLUMN);
-            jdbc.execute("ALTER TABLE " + table + " ADD PRIMARY KEY (" + String.join(", ", widened) + ")");
-
-            String copied = found.columns().stream()
-                    .filter(column -> !CHANNEL_COLUMN.equals(column))
-                    .collect(Collectors.joining(", "));
-            int released = jdbc.update("INSERT INTO " + table + " (" + copied + ", " + CHANNEL_COLUMN + ") SELECT "
-                    + copied + ", 'RELEASED' FROM " + table + " WHERE " + CHANNEL_COLUMN + " = 'DRAFT'");
+            run(ALTER_TABLE + name + " ADD PRIMARY KEY (" + widenedKey + ")");
+            int released = run("INSERT INTO " + name + " (" + copied + ", " + CHANNEL_COLUMN + ") SELECT "
+                    + copied + ", 'RELEASED' FROM " + name + " WHERE " + CHANNEL_COLUMN + " = 'DRAFT'");
             LOG.info("Moved {} onto channels: its {} definition(s) are now drafts, each with a released copy.", table, released);
             return true;
         });
         return Boolean.TRUE.equals(done);
+    }
+
+    /**
+     * Runs one statement of the migration. The statements are assembled from identifiers rather than bound
+     * parameters, because DDL takes no parameters; every identifier comes from the calling feature's code or
+     * the database's own metadata, never from a request, and {@link #identifier} has checked each one.
+     */
+    private int run(String sql) {
+        return jdbc.update(sql); // NOSONAR java:S2077 - identifiers only, each checked by identifier()
+    }
+
+    /** A table, column or constraint name, refused unless it is a plain SQL identifier. */
+    static String identifier(String name) {
+        if (name == null || !IDENTIFIER.matcher(name).matches()) {
+            throw new IllegalArgumentException("Not a plain SQL identifier: '" + name + "'.");
+        }
+        return name;
+    }
+
+    private static String identifiers(List<String> names) {
+        return names.stream().map(ChannelBackfill::identifier).collect(Collectors.joining(", "));
     }
 
     /** The table's columns and primary key, in lower case; empty when the table does not exist. */
