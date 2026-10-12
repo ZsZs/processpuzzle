@@ -148,10 +148,20 @@ against the released definition.
 - **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
   problems (errors block, warnings need confirming), Publish, and the release history.
 - **The live application** renders the published layout and its inline modules.
-- From step 2: one `DEFINITION_REVISION` token (`'released'` at the root) read by the run-time caches —
-  entity registries and screen resolver, governed entities, the rule engine — re-provided as `'draft'`
-  on the designer's route by `provideDraftDefinitionReaders()`, so the Preview reads drafts through its
-  own instances. A `READ_ONLY_ENTITY_SCREENS` token there disables create, save and delete.
+- **Revision of the reads (step 2).** `DEFINITION_REVISION` (`@processpuzzle/util`) answers, per read,
+  `draft` or `released`. Definition readers mark their GETs with `definitionRead()` — entity definitions,
+  state machines, diagrams, rules (via `BaseEntityRestService.readContext()`) — and the opt-in
+  `definitionRevisionInterceptor` adds `revision=<answer>` to them.
+  - **`draft` unless the host says otherwise**: that is what the endpoints serve without the parameter,
+    so a host that has not wired it up reads, and saves back, the drafts as before.
+  - The custom application answers `draft` on its designer route and `released` elsewhere, and does a
+    **full page load** when crossing between them. The root caches (entity registries, governed
+    entities, the rule engine) are then never filled from both revisions; resetting them in place is
+    not reliable, since the dynamic screens' injection tokens are cached at the root too.
+- **Read-only Preview.** `ENTITY_PREVIEW_READ_ONLY` (`@processpuzzle/base-entity`), provided `true` by a
+  host showing drafts, makes `EntityPreviewMode` disable New, Save and Delete on the screens of
+  definition-built entity types — they show live objects through draft definitions. The designer's own,
+  compiled screens stay editable.
 
 ## Starters and seeding
 

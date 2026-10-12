@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
+import { definitionRead, RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { catchError, map, Observable, of } from 'rxjs';
 import { EntityDefinition, EntityDefinitionPage } from './entity-definition';
 
@@ -48,7 +48,11 @@ export class EntityDefinitionService {
     // document base and answer with the application's own index.html on every rewrite-to-index deployment.
     if (!root) return of([]);
 
-    return this.httpClient.get<EntityDefinitionPage | EntityDefinition[]>(`${root}/entity-definitions`, { params: { page: 0, size: PAGE_SIZE } }).pipe(
+    return this.httpClient.get<EntityDefinitionPage | EntityDefinition[]>(`${root}/entity-definitions`, {
+        params: { page: 0, size: PAGE_SIZE },
+        // A read of definitions: the host's revision interceptor decides whether the draft or the release.
+        context: definitionRead(),
+      }).pipe(
       map((response) => contentOf(response)),
       catchError(() => of([])),
     );
