@@ -6,6 +6,7 @@ import com.processpuzzle.core.definition.Channel;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -73,7 +74,8 @@ public class EntityDefinitionChannelBackfill {
         if (oldKeys.isEmpty()) {
             return 0;
         }
-        Integer copied = transaction.execute(status -> {
+        // The callback always returns its count, so execute() never answers null here.
+        int copied = Objects.requireNonNull(transaction.execute(status -> {
             oldKeys.forEach(name -> jdbc.execute("ALTER TABLE " + TABLE + " DROP CONSTRAINT " + identifier(name))); // NOSONAR java:S2077 - identifier() checked
             Set<String> released = repository.findAll().stream()
                 .filter(definition -> definition.getChannel() == Channel.RELEASED)
@@ -86,9 +88,9 @@ public class EntityDefinitionChannelBackfill {
                 .toList();
             repository.saveAll(copies);
             return copies.size();
-        });
+        }));
         LOG.info("Moved {} onto channels: its {} definition(s) are now drafts, each with a released copy.", TABLE, copied);
-        return copied == null ? 0 : copied;
+        return copied;
     }
 
     /** The names of the unique constraints on exactly {@code (org_key, code)}; empty once they are gone. */
