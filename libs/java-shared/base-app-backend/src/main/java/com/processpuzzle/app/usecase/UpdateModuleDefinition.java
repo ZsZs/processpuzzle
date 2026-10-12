@@ -7,6 +7,7 @@ import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,9 +19,9 @@ import java.util.List;
  * calls it immutable because an {@code AppDefinition.modules} entry references it, and letting a PUT
  * rename it would silently unmount the module from every app that mounts it.
  *
- * <p>Unlike an app definition a module holds no draft/published pair, so there is nothing to keep
- * serving while the designer works. Modules are versioned by a counter only — the same last-write-wins
- * story as {@link UpdateAppDefinition}, for the same reason: the input carries no version.
+ * <p>Replaces the draft only: end users keep the released module until the organization's next
+ * release. Last write wins, as in {@link UpdateAppDefinition} and for the same reason: the input
+ * carries no version.
  */
 @Service
 @Transactional
@@ -43,7 +44,7 @@ public class UpdateModuleDefinition {
 
     public ModuleDefinition execute(String orgKey, String moduleKey, ModuleDefinitionInput input) {
         guard.requireDesign(orgKey);
-        ModuleDefinition existing = repository.findByOrgKeyAndKey(orgKey, moduleKey)
+        ModuleDefinition existing = repository.findByOrgKeyAndKeyAndChannel(orgKey, moduleKey, Channel.DRAFT)
                 .orElseThrow(() -> new ModuleDefinitionNotFoundException(orgKey, moduleKey));
 
         List<AppValidationProblem> blockers =

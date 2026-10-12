@@ -1,44 +1,31 @@
-import { Component, ComponentRef, computed, inject, OnDestroy, TemplateRef, viewChild, ViewChild } from '@angular/core';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { MatButton } from '@angular/material/button';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTooltip } from '@angular/material/tooltip';
+import { Component, ComponentRef, inject, OnDestroy, ViewChild } from '@angular/core';
 import { BaseEntityContainerComponent, BaseEntityDescriptor, BaseFormHostDirective } from '@processpuzzle/base-entity';
-import { PUBLISH_BUTTON_I18N_KEY, PUBLISH_DONE_I18N_KEY, PUBLISH_TOOLTIP_I18N_KEY } from '../base-app.i18n';
 import { AppDefinitionStore } from '../domain/app-definition.store';
 import { createAppDefinitionDescriptor } from '../domain/app-definition.descriptors';
 import { APP_PREVIEW_TAB } from './app-preview-tab';
 
+/**
+ * The App Definition screens, with the Preview tab beside the form.
+ *
+ * There is no Publish button here any more. An application goes live together with everything it uses — its
+ * modules, and the entities, rules and workflows its routes reach — so publishing is the organization's
+ * release, made from the designer's Release section, not an action on one definition.
+ */
 @Component({
   selector: 'pp-app-definition-container',
   standalone: true,
-  imports: [BaseEntityContainerComponent, MatButton, MatTooltip, TranslocoPipe],
-  template: `
-    <base-entity-container [entityDescriptor]="entityDescriptor"></base-entity-container>
-    <ng-template #publishActionsTpl>
-      <button id="publish" type="button" mat-raised-button color="accent" [disabled]="!canPublish()" [matTooltip]="publishTooltipKey | transloco" (click)="onPublish()">
-        {{ publishButtonKey | transloco }}
-      </button>
-    </ng-template>
-  `,
+  imports: [BaseEntityContainerComponent],
+  template: ` <base-entity-container [entityDescriptor]="entityDescriptor"></base-entity-container> `,
 })
 export class AppDefinitionContainerComponent implements OnDestroy {
   private readonly containerComponentRef: ComponentRef<BaseEntityContainerComponent> | undefined;
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) baseEntityHost!: BaseFormHostDirective;
-  readonly publishActionsTpl = viewChild<TemplateRef<unknown>>('publishActionsTpl');
   private readonly store = inject(AppDefinitionStore);
-  private readonly snackBar = inject(MatSnackBar);
-  private readonly transloco = inject(TranslocoService);
   readonly entityDescriptor: BaseEntityDescriptor;
-  readonly publishButtonKey = PUBLISH_BUTTON_I18N_KEY;
-  readonly publishTooltipKey = PUBLISH_TOOLTIP_I18N_KEY;
-  /** Only a definition the backend already knows can be promoted, so a not-yet-saved form cannot publish. */
-  readonly canPublish = computed(() => !this.store.isLoading() && !!this.store.currentEntity()?.id);
 
   constructor() {
     this.entityDescriptor = createAppDefinitionDescriptor();
     this.entityDescriptor.store = this.store;
-    this.entityDescriptor.extraFormActionsTemplate = () => this.publishActionsTpl();
     this.entityDescriptor.extraTabs = [APP_PREVIEW_TAB];
   }
 
@@ -46,16 +33,5 @@ export class AppDefinitionContainerComponent implements OnDestroy {
     if (this.containerComponentRef) {
       this.containerComponentRef.destroy();
     }
-  }
-
-  /**
-   * Says so when it worked, because nothing on this screen changes visibly: the Preview already showed the
-   * draft. What changed is the application itself, which now serves this revision. A failure surfaces
-   * through the store's `error`, as a failed save does.
-   */
-  async onPublish(): Promise<void> {
-    const id = this.store.currentEntity()?.id;
-    if (!id) return;
-    if (await this.store.publish(id)) this.snackBar.open(this.transloco.translate(PUBLISH_DONE_I18N_KEY), undefined, { duration: 4000 });
   }
 }

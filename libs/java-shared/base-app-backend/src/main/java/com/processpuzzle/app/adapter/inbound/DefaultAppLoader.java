@@ -7,6 +7,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.app.adapter.inbound.dto.DefaultAppsDocument;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.model.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
@@ -228,7 +229,7 @@ public class DefaultAppLoader {
             return Outcome.REJECTED;
         }
 
-        if (moduleRepository.existsByOrgKeyAndKey(orgKey, module.getKey())) {
+        if (moduleRepository.existsByOrgKeyAndKeyAndChannel(orgKey, module.getKey(), Channel.DRAFT)) {
             return alreadyPresent("module", module.getKey(), orgKey);
         }
 

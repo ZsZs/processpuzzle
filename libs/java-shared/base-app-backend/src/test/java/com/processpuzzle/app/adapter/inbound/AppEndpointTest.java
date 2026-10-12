@@ -1,5 +1,6 @@
 package com.processpuzzle.app.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.model.AppDefinitionInput;
@@ -218,18 +219,18 @@ class AppEndpointTest {
     /** The lazy-load response: its routes are what the shell registers, so an empty body is a dead mount. */
     @Test
     void readingAModuleAnswersItsRoutes() {
-        when(findModuleDefinition.execute(ORG_KEY, MODULE_KEY)).thenReturn(AppTestFixtures.storedModule());
+        when(findModuleDefinition.execute(ORG_KEY, MODULE_KEY, Channel.DRAFT)).thenReturn(AppTestFixtures.storedModule());
 
-        assertThat(endpoint.getModuleDefinition(ORG_KEY, MODULE_KEY).getBody()).isNotNull()
+        assertThat(endpoint.getModuleDefinition(ORG_KEY, MODULE_KEY, null).getBody()).isNotNull()
                 .satisfies(body -> assertThat(body.getRoutes()).extracting(RouteDefinition::getPath)
                         .containsExactly(MODULE_ROUTE_PATH));
     }
 
     @Test
     void listingModulesAnswersEveryOneOfThem() {
-        when(findAllModuleDefinitions.execute(ORG_KEY)).thenReturn(List.of(AppTestFixtures.storedModule()));
+        when(findAllModuleDefinitions.execute(ORG_KEY, Channel.DRAFT)).thenReturn(List.of(AppTestFixtures.storedModule()));
 
-        assertThat(endpoint.listModuleDefinitions(ORG_KEY).getBody())
+        assertThat(endpoint.listModuleDefinitions(ORG_KEY, null).getBody())
                 .extracting(com.processpuzzle.app.model.ModuleDefinition::getKey)
                 .containsExactly(MODULE_KEY);
     }

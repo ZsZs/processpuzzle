@@ -1,0 +1,151 @@
+# Releasing an organization's definitions
+
+A designer edits **drafts** of every definition. The running application reads only **released**
+definitions. One **release** validates every draft against its references and the organization's live
+data, then makes all of them live at once, or none.
+
+This replaces "live on save". Until now only the application had a draft and a published revision; every
+other definition went live the moment it was saved, and a published application also mounted the
+current *draft* of its modules.
+
+## Decisions (2026-10-11)
+
+- **Storage.** A definition is stored twice: a `DRAFT` row and a `RELEASED` row, told apart by a `channel`
+  column. There is no history and no rollback in v1; the release record keeps a hash of what each release
+  carried, not the content.
+- **Live data.** A release checks for changes that live data would not survive and **refuses** them.
+  Pinning running work to old revisions, and migrating data, are postponed.
+- **Preview** shows the drafts, read-only on live data.
+- **One application per organization**, so the organization's release is the application's release.
+- **Scope.** App and modules; entities, state machines (with diagrams) and rules; workflows with their
+  catalogue (roles, tasks, artifacts, tools) and events; documents. Widget definitions stay out: nothing
+  reads them at run time, rendering uses the compiled widget registry.
+
+## The release machinery
+
+### The SPI — `processpuzzle-core`, `core.definition`
+
+Beside `DefinitionImportParticipant`:
+
+| Type | Role |
+| --- | --- |
+| `ReleaseParticipant` | Implemented by each feature for its own kind: `drafts`, `pending`, `references`, `check`, `release`. |
+| `PendingChange` | One definition whose draft differs from its released row: `ADDED`, `CHANGED` or `REMOVED`, with the draft's canonical JSON. |
+| `DefinitionReference` | One definition naming another, `(kind, key) → (kind, key)`. *Optional* references only warn when unresolved. |
+| `ReleaseCandidate` | The organization as it would be after the release, so a participant's `check` can ask about other kinds. |
+| `ReleaseProblem` | An `ERROR` refuses the release; a `WARNING` lets it through once confirmed. |
+| `Channel` | `DRAFT` / `RELEASED`, and the `revision` query parameter that names one. |
+| `ChannelBackfill` | Moves an existing definition table onto channels once; see *Backfill*. |
+
+`references()` doubles as the answer to "who refers to this definition?", which the definition delete
+guards (business-starters design §10, item 4) will ask.
+
+### The orchestrator — `base-release-backend`, module `release`
+
+`ReleaseOrganization`, after the pattern of the starter importer:
+
+1. Collect the participants, in `DefinitionKinds` order: entity 10 … workflow 60, module 65, app 70.
+2. Ask each for its drafts and pending changes, then resolve every reference of every draft against all
+   drafts. An unresolved required reference is an error, an unresolved optional one a warning. A
+   reference into a kind no participant releases is not checked: that kind still goes live on save.
+3. Run each participant's `check`.
+4. Refuse with **409** and the plan on any error, on warnings the caller has not confirmed, and when
+   nothing is pending.
+5. Otherwise call `release()` on every participant, in order, in **one transaction** (the platform has a
+   single datasource), and record the release.
+
+The plan is made again inside that transaction, not taken from the dry run the designer looked at, so
+what is checked is what is released.
+
+Tables: `org_releases (org_key, release_number, released_at, released_by)` and
+`org_release_items (org_key, release_number, sequence_no, kind, definition_key, change_type, content_hash)`.
+The hash is SHA-256 of the definition's canonical JSON (`CanonicalJson`). A concurrent release fails on
+the unique `(org_key, release_number)`.
+
+The contract is `base-release-api.yaml`, under `/organizations/{orgKey}/releases`:
+
+| Operation | |
+| --- | --- |
+| `GET  .../releases/pending` | The dry run: pending changes and problems. |
+| `POST .../releases` | Release; `{ acknowledgeWarnings }` confirms the warnings. 201 with the release, or 409 with the plan. |
+| `GET  .../releases` | The history, newest first. |
+
+All three require design rights (`OrganizationGuard.requireDesign`). The module's `TenantDataCleaner`
+erases both tables with the tenant.
+
+## Per kind
+
+| Kind | Draft / released storage | Participant | Status |
+| --- | --- | --- | --- |
+| app | `AppDefinition` keeps `draftGraph` and `publishedGraph` on one row; releasing is `publish()` | `AppReleaseParticipant` (base-app) | step 1 |
+| module | `app_modules.channel`, primary key `(org_key, module_key, channel)` | `ModuleReleaseParticipant` (base-app) | step 1 |
+| entity, state, rule | `channel` on the definition tables and their children | step 2 | |
+| workflow, catalogue, event | `channel` on the definition tables | step 3 | |
+| document | `published_documents`, per translation | step 4 | |
+
+**Designer CRUD reads and writes the draft only.** Endpoints are unchanged; reads take an optional
+`revision=draft|released`, `draft` by default. Reading the draft requires design rights, the released row
+membership. **Run-time readers read the released row.**
+
+### App and modules (step 1)
+
+- A participant compares the canonical JSON of the draft with that of the released row, so a save that
+  changes nothing is not pending.
+- The app's `check` applies the same validation a save does, to the apps with pending changes only; its
+  errors refuse the release.
+- An app's routes refer to the entities and documents they render (required), its module mounts to the
+  modules (optional: a mount of a missing module shows nothing, as before).
+- **The module leak is closed.** `GET .../layout` carries the mounted modules inline, in
+  `mountedModules`: the released rows with the published layout, the drafts with `draft=true`, each
+  role-filtered. The runtime host builds a mount from those and never fetches a module, so the live
+  application cannot pick up a module's draft.
+- The app form's own Publish button is gone: publishing is the release, from the designer's **Release**
+  section. `POST .../app-definitions/{appId}/publish` still exists for deployments without
+  base-release-backend.
+
+### Backfill
+
+Hibernate's `ddl-auto: update` adds a `channel` column but never changes a primary key, so a released
+copy would collide with its draft. Each feature runs `ChannelBackfill` once at startup, ahead of its seed
+loaders: rows become `DRAFT`, each gets a `RELEASED` copy, and the primary key widens. An existing
+organization therefore runs exactly as before. Idempotent: a table whose key already includes `channel`
+is left alone. Flyway stays deferred to the production move.
+
+### Compatibility checks (`check`), from step 2
+
+- **Entity.** Error: a definition removed while objects exist, or a new required attribute without a
+  default while objects exist. Warning: an attribute removed.
+- **State.** Error: a state removed while objects are in it.
+- **Workflow.** Error: a workflow removed while instances run, or a task removed while an active task
+  instance uses it.
+- **References.** App routes → entity / document / module; rule context → entity; state machine →
+  entity; workflow → events, roles, tasks, tools, artifacts, rules.
+
+## Frontend
+
+- **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
+  problems (errors block, warnings need confirming), Publish, and the release history.
+- **The live application** renders the published layout and its inline modules.
+- From step 2: one `DEFINITION_REVISION` token (`'released'` at the root) read by the run-time caches —
+  entity registries and screen resolver, governed entities, the rule engine — re-provided as `'draft'`
+  on the designer's route by `provideDraftDefinitionReaders()`, so the Preview reads drafts through its
+  own instances. A `READ_ONLY_ENTITY_SCREENS` token there disables create, save and delete.
+
+## Starters and seeding (step 4)
+
+A starter import writes drafts and then releases them: a starter is a vetted set and should work out of
+the box (`ReleaseOrganization.provision`). A blank seed stays unreleased, which shows the "not published
+yet" page.
+
+## Delivery
+
+1. **Machinery + app and modules** — the SPI, base-release-backend, the contract, the Release section,
+   the app and module participants, the module channel and the module leak. *This document.*
+2. **Entities, states, rules** — channels, backfill, participants with checks, run-time readers, the
+   frontend revision token, a read-only Preview.
+3. **Workflows, catalogue, events.**
+4. **Documents** and the starter install's release.
+
+Each is a core PR, then library releases, then a biz bump. The custom backend adds base-release-backend
+in step 1, and an application-level test asserts that every definition table with a `channel` column has
+a participant.

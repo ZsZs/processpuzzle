@@ -431,4 +431,19 @@ describe('AppShellComponent host actions', () => {
     expect(button).not.toBeNull();
     expect(button?.classList).toContain('pp-app-shell__actions');
   });
+
+  /** A menu opened from a host's control must wear the application's theme, which only cascades inside the shell. */
+  it("gives the host's controls an overlay container inside the shell", async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [ShellActionsHostComponent], providers: [provideRouter([]), provideTranslocoTesting({ translations: {} })] });
+
+    const hostFixture = TestBed.createComponent(ShellActionsHostComponent);
+    hostFixture.detectChanges();
+    await hostFixture.whenStable();
+
+    const actions = hostFixture.debugElement.query(By.directive(ShellActionsDirective));
+    const container = actions.injector.get(OverlayContainer).getContainerElement();
+    const shell = hostFixture.nativeElement.querySelector('pp-app-shell') as HTMLElement;
+    expect(shell.contains(container)).toBe(true);
+  });
 });
