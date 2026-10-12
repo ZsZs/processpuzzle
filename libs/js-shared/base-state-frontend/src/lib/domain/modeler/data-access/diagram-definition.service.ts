@@ -1,5 +1,6 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { definitionRead } from '@processpuzzle/util';
 import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
 import { catchError, map, Observable, of, throwError } from 'rxjs';
 import { DiagramDefinition } from '../models/diagram-definition';
@@ -24,6 +25,11 @@ import { DiagramDefinitionMapper } from './diagram-definition.mapper';
  */
 @Injectable({ providedIn: 'root' })
 export class DiagramDefinitionService extends BaseEntityRestService<DiagramDefinition> {
+  /** Reads of definitions, addressed by the host to the draft or the released revision; see `definitionRevisionInterceptor`. */
+  protected override readContext(): HttpContext {
+    return definitionRead();
+  }
+
   constructor(protected override entityMapper: DiagramDefinitionMapper) {
     super(entityMapper, 'STATE_SERVICE_ROOT', 'diagrams');
   }

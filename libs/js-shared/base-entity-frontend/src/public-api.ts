@@ -68,6 +68,7 @@ export { DynamicEntityMapper } from './lib/base-entity-definition/dynamic-entity
 export { DynamicEntityService } from './lib/base-entity-definition/dynamic-entity.service';
 export { DynamicEmbeddedEntityFacade, DynamicEntityFacade, dynamicEntityTypeOf } from './lib/base-entity-definition/dynamic-entity.facade';
 export { DynamicEntityRegistry, type ResolvedDynamicEntity } from './lib/base-entity-definition/dynamic-entity.registry';
+export { ENTITY_PREVIEW_READ_ONLY, EntityPreviewMode } from './lib/base-entity-definition/entity-preview-mode';
 
 // Mounting an entity's generated screens at a route — List and Details with the tabs, toolbar and status bar.
 // The seam a host application uses, whether its entities are compiled in or defined as metadata: base-app is
