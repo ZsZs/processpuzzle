@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.adapters.outbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
@@ -24,8 +25,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
     private final EntityDefinitionRepository entityDefinitionRepository;
 
     @Override
-    public Optional<EntityDefinitionView> findByCode(String orgKey, String code) {
-        return entityDefinitionRepository.findByOrgKeyAndCode(orgKey, code).map(this::toView);
+    public Optional<EntityDefinitionView> findByCode(String orgKey, String code, Channel channel) {
+        return entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, channel).map(this::toView);
     }
 
     private EntityDefinitionView toView(BaseEntityDefinition definition) {

@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
@@ -19,7 +20,7 @@ public class AddAttributeUseCase {
     private final EntityDefinitionValidator validator;
 
     public BaseEntityAttribute addAttribute(String orgKey, String definitionCode, BaseEntityAttribute attribute) {
-        BaseEntityDefinition definition = repository.findByOrgKeyAndCode(orgKey, definitionCode)
+        BaseEntityDefinition definition = repository.findByOrgKeyAndCodeAndChannel(orgKey, definitionCode, Channel.DRAFT)
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(definitionCode)));
 
         boolean alreadyExists = definition.getAttributes().stream()

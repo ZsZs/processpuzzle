@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus;
@@ -17,8 +18,10 @@ public class FindAllEntityDefinitionsUseCase {
     private final EntityDefinitionRepository repository;
 
     @Transactional(readOnly = true)
-    public Page<BaseEntityDefinition> findAll(String orgKey, EntityDefinitionStatus status, Boolean isEmbedded, Pageable pageable) {
-        Specification<BaseEntityDefinition> specification = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public Page<BaseEntityDefinition> findAll(String orgKey, Channel channel, EntityDefinitionStatus status, Boolean isEmbedded,
+                                              Pageable pageable) {
+        Specification<BaseEntityDefinition> specification = (root, query, cb) ->
+            cb.and(cb.equal(root.get("orgKey"), orgKey), cb.equal(root.get("channel"), channel));
         if (status != null) {
             specification = specification.and((root, query, cb) -> cb.equal(root.get("status"), status));
         }

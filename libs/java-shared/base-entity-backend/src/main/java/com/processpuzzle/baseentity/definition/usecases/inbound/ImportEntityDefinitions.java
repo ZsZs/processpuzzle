@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -68,7 +69,7 @@ public class ImportEntityDefinitions {
         List<String> created = new ArrayList<>();
         List<String> updated = new ArrayList<>();
         for (BaseEntityDefinition definition : byCode.values()) {
-            if (repository.existsByOrgKeyAndCode(orgKey, definition.getCode())) {
+            if (repository.existsByOrgKeyAndCodeAndChannel(orgKey, definition.getCode(), Channel.DRAFT)) {
                 replaceUseCase.replace(orgKey, definition.getCode(), definition);
                 updated.add(definition.getCode());
             } else {
@@ -112,7 +113,7 @@ public class ImportEntityDefinitions {
     private void validateComponentParents(String orgKey, Map<String, BaseEntityDefinition> byCode, List<String> errors) {
         for (BaseEntityDefinition definition : byCode.values()) {
             for (String parent : definition.getComponentParents()) {
-                if (!byCode.containsKey(parent) && !repository.existsByOrgKeyAndCode(orgKey, parent)) {
+                if (!byCode.containsKey(parent) && !repository.existsByOrgKeyAndCodeAndChannel(orgKey, parent, Channel.DRAFT)) {
                     errors.add("'" + definition.getCode() + "' names unknown componentParent '" + parent + "'.");
                 }
             }

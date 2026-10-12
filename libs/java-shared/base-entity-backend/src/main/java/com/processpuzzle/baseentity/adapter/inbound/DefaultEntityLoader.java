@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +53,10 @@ import java.util.stream.Collectors;
  * grown the seeded rows to 856 — see {@code GovernedStateConsistencyCheck}, which reads all of them
  * at every boot. {@code EntityObjectRepository.existsByEntityDefinitionCode} had been declared for
  * this and never wired up (now {@code existsByOrgKeyAndEntityDefinitionCode}).
+ *
+ * <p><strong>A seeded definition is released at once</strong>, with a released copy beside its draft: defaults are
+ * meant to run, and the sample instances that follow are validated against the released definition, so without
+ * the copy they would all be rejected.
  *
  * <p>Nothing here can fail startup: every problem is logged and the next file, definition, or instance
  * is attempted.
@@ -163,7 +168,7 @@ public class DefaultEntityLoader {
             return Outcome.REJECTED;
         }
 
-        if (definitionRepository.existsByOrgKeyAndCode(orgKey, input.getCode())) {
+        if (definitionRepository.existsByOrgKeyAndCodeAndChannel(orgKey, input.getCode(), Channel.DRAFT)) {
             LOG.info("Default entity definition '{}' already exists; left untouched.", input.getCode());
             return Outcome.SKIPPED;
         }
@@ -171,6 +176,9 @@ public class DefaultEntityLoader {
         try {
             BaseEntityDefinition domain = definitionMapper.toDomain(input);
             BaseEntityDefinition created = createDefinitionUseCase.create(orgKey, domain);
+            if (!definitionRepository.existsByOrgKeyAndCodeAndChannel(orgKey, created.getCode(), Channel.RELEASED)) {
+                definitionRepository.save(BaseEntityDefinition.releasedCopyOf(created));
+            }
             LOG.info("Created default entity definition '{}' as revision {}.",
                     created.getCode(), created.getVersion() == null ? 0 : created.getVersion());
             return Outcome.CREATED;

@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,10 +13,13 @@ import org.springframework.data.repository.query.Param;
 public interface EntityDefinitionRepository
     extends JpaRepository<BaseEntityDefinition, UUID>, JpaSpecificationExecutor<BaseEntityDefinition> {
 
-    Optional<BaseEntityDefinition> findByOrgKeyAndCode(String orgKey, String code);
+    Optional<BaseEntityDefinition> findByOrgKeyAndCodeAndChannel(String orgKey, String code, Channel channel);
 
-    boolean existsByOrgKeyAndCode(String orgKey, String code);
+    boolean existsByOrgKeyAndCodeAndChannel(String orgKey, String code, Channel channel);
 
+    List<BaseEntityDefinition> findAllByOrgKeyAndChannel(String orgKey, Channel channel);
+
+    /** Both rows of every definition of a tenant — for removing them all, never for reading one of them. */
     List<BaseEntityDefinition> findAllByOrgKey(String orgKey);
 
     /**

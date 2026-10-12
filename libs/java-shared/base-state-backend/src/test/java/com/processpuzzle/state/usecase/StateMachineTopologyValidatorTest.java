@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.state.domain.ActionRef;
@@ -37,8 +38,8 @@ class StateMachineTopologyValidatorTest {
         when(guardActionResolver.isKnownAction("knownAction")).thenReturn(true);
 
         entityAttributeQuery = mock(EntityAttributeQuery.class);
-        when(entityAttributeQuery.entityTypeExists(ORG, ENTITY)).thenReturn(true);
-        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR))
+        when(entityAttributeQuery.entityTypeExists(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR, Channel.DRAFT))
                 .thenReturn(Optional.of(EntityAttributeKind.ENUM));
 
         validator = new StateMachineTopologyValidator(guardActionResolver, entityAttributeQuery);
@@ -211,7 +212,7 @@ class StateMachineTopologyValidatorTest {
 
     @Test
     void rejectsAnEntityTypeThatOnlyAnotherOrganizationManages() {
-        when(entityAttributeQuery.entityTypeExists("globex", ENTITY)).thenReturn(false);
+        when(entityAttributeQuery.entityTypeExists("globex", ENTITY, Channel.DRAFT)).thenReturn(false);
 
         assertThatThrownBy(() -> validator.validate("globex", ENTITY, ATTR, "draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -220,7 +221,7 @@ class StateMachineTopologyValidatorTest {
 
     @Test
     void rejectsAnAttributeTheEntityDoesNotDeclare() {
-        when(entityAttributeQuery.attributeKind(ORG, ENTITY, "noSuchAttr")).thenReturn(Optional.empty());
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, "noSuchAttr", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> validator.validate(ORG, ENTITY, "noSuchAttr", "draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -234,7 +235,7 @@ class StateMachineTopologyValidatorTest {
     @ParameterizedTest
     @EnumSource(value = EntityAttributeKind.class, names = {"TEXT", "ENUM"})
     void acceptsTextAndEnumStateAttributes(EntityAttributeKind kind) {
-        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR)).thenReturn(Optional.of(kind));
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR, Channel.DRAFT)).thenReturn(Optional.of(kind));
 
         assertThatCode(() -> validate("draft", ONE_STATE, List.of())).doesNotThrowAnyException();
     }
@@ -242,7 +243,7 @@ class StateMachineTopologyValidatorTest {
     @ParameterizedTest
     @EnumSource(value = EntityAttributeKind.class, names = {"TEXT", "ENUM"}, mode = EnumSource.Mode.EXCLUDE)
     void rejectsEveryOtherStateAttributeKind(EntityAttributeKind kind) {
-        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR)).thenReturn(Optional.of(kind));
+        when(entityAttributeQuery.attributeKind(ORG, ENTITY, ATTR, Channel.DRAFT)).thenReturn(Optional.of(kind));
 
         assertThatThrownBy(() -> validate("draft", ONE_STATE, List.of()))
                 .isInstanceOf(IllegalArgumentException.class)

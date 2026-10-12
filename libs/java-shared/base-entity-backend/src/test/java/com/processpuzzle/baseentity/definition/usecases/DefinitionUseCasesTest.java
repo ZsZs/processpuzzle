@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.definition.usecases;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
@@ -85,7 +86,7 @@ class DefinitionUseCasesTest {
     @Test
     void createEntityDefinition_success() {
         BaseEntityDefinition input = BaseEntityDefinition.builder().code("partner").name("Partner").build();
-        when(repository.existsByOrgKeyAndCode(ORG, "partner")).thenReturn(false);
+        when(repository.existsByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         BaseEntityDefinition result = createUseCase.create(ORG, input);
@@ -98,7 +99,7 @@ class DefinitionUseCasesTest {
     @Test
     void createEntityDefinition_setsOrgKeyOnTheDefinition() {
         BaseEntityDefinition input = BaseEntityDefinition.builder().code("partner").orgKey("someone-else").build();
-        when(repository.existsByOrgKeyAndCode(ORG, "partner")).thenReturn(false);
+        when(repository.existsByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         BaseEntityDefinition result = createUseCase.create(ORG, input);
@@ -109,20 +110,20 @@ class DefinitionUseCasesTest {
     @Test
     void createEntityDefinition_sameCodeInAnotherOrg_doesNotConflict() {
         BaseEntityDefinition input = BaseEntityDefinition.builder().code("partner").build();
-        when(repository.existsByOrgKeyAndCode("globex", "partner")).thenReturn(false);
+        when(repository.existsByOrgKeyAndCodeAndChannel("globex", "partner", Channel.DRAFT)).thenReturn(false);
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         BaseEntityDefinition result = createUseCase.create("globex", input);
 
         assertThat(result.getOrgKey()).isEqualTo("globex");
-        verify(repository).existsByOrgKeyAndCode("globex", "partner");
-        verify(repository, never()).existsByOrgKeyAndCode(ORG, "partner");
+        verify(repository).existsByOrgKeyAndCodeAndChannel("globex", "partner", Channel.DRAFT);
+        verify(repository, never()).existsByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT);
     }
 
     @Test
     void createEntityDefinition_alreadyExists_throwsConflict() {
         BaseEntityDefinition input = BaseEntityDefinition.builder().code("partner").build();
-        when(repository.existsByOrgKeyAndCode(ORG, "partner")).thenReturn(true);
+        when(repository.existsByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(true);
 
         assertThatThrownBy(() -> createUseCase.create(ORG, input))
                 .isInstanceOf(ConflictException.class);
@@ -144,7 +145,7 @@ class DefinitionUseCasesTest {
             .attributes(List.of(updatedAttribute))
             .build();
 
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         BaseEntityDefinition result = replaceUseCase.replace(ORG, "partner", update);
@@ -161,7 +162,7 @@ class DefinitionUseCasesTest {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().id(UUID.randomUUID()).code("partner").name("Old").build();
         BaseEntityDefinition update = BaseEntityDefinition.builder().code("different").name("New").build();
 
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> replaceUseCase.replace(ORG, "partner", update))
                 .isInstanceOf(ConflictException.class);
@@ -170,9 +171,9 @@ class DefinitionUseCasesTest {
     @Test
     void deleteEntityDefinition_success() {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().code("partner").build();
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(existenceCheckPort.existsAnyInstanceOf(ORG, "partner")).thenReturn(false);
-        when(repository.findAllByOrgKey(ORG)).thenReturn(List.of(existing));
+        when(repository.findAllByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of(existing));
 
         deleteUseCase.delete(ORG, "partner");
 
@@ -182,7 +183,7 @@ class DefinitionUseCasesTest {
     @Test
     void deleteEntityDefinition_instancesExist_throwsConflict() {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().code("partner").build();
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(existenceCheckPort.existsAnyInstanceOf(ORG, "partner")).thenReturn(true);
 
         assertThatThrownBy(() -> deleteUseCase.delete(ORG, "partner"))
@@ -197,7 +198,7 @@ class DefinitionUseCasesTest {
                 .build();
         BaseEntityAttribute attribute = BaseEntityAttribute.builder().code("email").name("Email").build();
 
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         BaseEntityAttribute result = addAttributeUseCase.addAttribute(ORG, "partner", attribute);
@@ -216,7 +217,7 @@ class DefinitionUseCasesTest {
                 .build();
         BaseEntityAttribute duplicate = BaseEntityAttribute.builder().code("email").build();
 
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> addAttributeUseCase.addAttribute(ORG, "partner", duplicate))
                 .isInstanceOf(ConflictException.class);
@@ -231,7 +232,7 @@ class DefinitionUseCasesTest {
                 .build();
         BaseEntityAttribute replacement = BaseEntityAttribute.builder().code("email").name("New").valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT).build();
 
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         BaseEntityAttribute result = replaceAttributeUseCase.replaceAttribute(ORG, "partner", "email", replacement);
@@ -248,7 +249,7 @@ class DefinitionUseCasesTest {
                 .attributes(new ArrayList<>(List.of(existingAttr)))
                 .build();
 
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         deleteAttributeUseCase.deleteAttribute(ORG, "partner", "email");
 
@@ -263,7 +264,7 @@ class DefinitionUseCasesTest {
         when(repository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(def)));
 
-        Page<BaseEntityDefinition> result = findAllUseCase.findAll(ORG, null, null, pageable);
+        Page<BaseEntityDefinition> result = findAllUseCase.findAll(ORG, Channel.DRAFT, null, null, pageable);
 
         assertThat(result.getContent()).containsExactly(def);
         verify(repository).findAll(any(Specification.class), eq(pageable));
@@ -276,7 +277,7 @@ class DefinitionUseCasesTest {
         when(repository.findAll(any(Specification.class), eq(pageable)))
                 .thenReturn(new PageImpl<>(List.of(def)));
 
-        Page<BaseEntityDefinition> result = findAllUseCase.findAll(ORG, EntityDefinitionStatus.ACTIVE, false, pageable);
+        Page<BaseEntityDefinition> result = findAllUseCase.findAll(ORG, Channel.DRAFT, EntityDefinitionStatus.ACTIVE, false, pageable);
 
         assertThat(result.getContent()).containsExactly(def);
         verify(repository).findAll(any(Specification.class), eq(pageable));
@@ -288,7 +289,7 @@ class DefinitionUseCasesTest {
         Pageable pageable = PageRequest.of(0, 20);
         when(repository.findAll(any(Specification.class), eq(pageable))).thenReturn(Page.empty());
 
-        findAllUseCase.findAll(ORG, null, null, pageable);
+        findAllUseCase.findAll(ORG, Channel.DRAFT, null, null, pageable);
 
         ArgumentCaptor<Specification<BaseEntityDefinition>> captor = ArgumentCaptor.forClass(Specification.class);
         verify(repository).findAll(captor.capture(), eq(pageable));
@@ -306,24 +307,24 @@ class DefinitionUseCasesTest {
     @Test
     void findByCode_success() {
         BaseEntityDefinition def = BaseEntityDefinition.builder().code("partner").build();
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(def));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(def));
 
-        BaseEntityDefinition result = findByCodeUseCase.findByCode(ORG, "partner");
+        BaseEntityDefinition result = findByCodeUseCase.findByCode(ORG, "partner", Channel.DRAFT);
 
         assertThat(result).isSameAs(def);
     }
 
     @Test
     void findByCode_notFound_throwsNotFound() {
-        when(repository.findByOrgKeyAndCode(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> findByCodeUseCase.findByCode(ORG, "unknown"))
+        assertThatThrownBy(() -> findByCodeUseCase.findByCode(ORG, "unknown", Channel.DRAFT))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void replaceEntityDefinition_notFound_throwsNotFound() {
-        when(repository.findByOrgKeyAndCode(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
         BaseEntityDefinition update = BaseEntityDefinition.builder().code("unknown").build();
         assertThatThrownBy(() -> replaceUseCase.replace(ORG, "unknown", update))
@@ -332,7 +333,7 @@ class DefinitionUseCasesTest {
 
     @Test
     void deleteEntityDefinition_notFound_throwsNotFound() {
-        when(repository.findByOrgKeyAndCode(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> deleteUseCase.delete(ORG, "unknown"))
                 .isInstanceOf(NotFoundException.class);
@@ -345,9 +346,9 @@ class DefinitionUseCasesTest {
             .code("partner")
             .componentParents(List.of("address"))
             .build();
-        when(repository.findByOrgKeyAndCode(ORG, "address")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "address", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(existenceCheckPort.existsAnyInstanceOf(ORG, "address")).thenReturn(false);
-        when(repository.findAllByOrgKey(ORG)).thenReturn(List.of(existing, dependent));
+        when(repository.findAllByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of(existing, dependent));
 
         assertThatThrownBy(() -> deleteUseCase.delete(ORG, "address"))
                 .isInstanceOf(ConflictException.class)
@@ -356,18 +357,18 @@ class DefinitionUseCasesTest {
 
     @Test
     void findByCode_definitionOfAnotherOrg_isNotFound() {
-        when(repository.findByOrgKeyAndCode("globex", "partner")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel("globex", "partner", Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> findByCodeUseCase.findByCode("globex", "partner"))
+        assertThatThrownBy(() -> findByCodeUseCase.findByCode("globex", "partner", Channel.DRAFT))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void deleteEntityDefinition_componentParentInAnotherOrg_doesNotBlock() {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().code("address").build();
-        when(repository.findByOrgKeyAndCode(ORG, "address")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "address", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(existenceCheckPort.existsAnyInstanceOf(ORG, "address")).thenReturn(false);
-        when(repository.findAllByOrgKey(ORG)).thenReturn(List.of(existing));
+        when(repository.findAllByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of(existing));
 
         deleteUseCase.delete(ORG, "address");
 
@@ -377,7 +378,7 @@ class DefinitionUseCasesTest {
 
     @Test
     void addAttribute_definitionNotFound_throwsNotFound() {
-        when(repository.findByOrgKeyAndCode(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
         BaseEntityAttribute attr = BaseEntityAttribute.builder().code("email").build();
         assertThatThrownBy(() -> addAttributeUseCase.addAttribute(ORG, "unknown", attr))
@@ -386,7 +387,7 @@ class DefinitionUseCasesTest {
 
     @Test
     void replaceAttribute_definitionNotFound_throwsNotFound() {
-        when(repository.findByOrgKeyAndCode(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
         BaseEntityAttribute attr = BaseEntityAttribute.builder().code("email").build();
         assertThatThrownBy(() -> replaceAttributeUseCase.replaceAttribute(ORG, "unknown", "email", attr))
@@ -399,7 +400,7 @@ class DefinitionUseCasesTest {
                 .code("partner")
                 .attributes(new ArrayList<>())
                 .build();
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         BaseEntityAttribute attr = BaseEntityAttribute.builder().code("email").build();
         assertThatThrownBy(() -> replaceAttributeUseCase.replaceAttribute(ORG, "partner", "email", attr))
@@ -408,7 +409,7 @@ class DefinitionUseCasesTest {
 
     @Test
     void deleteAttribute_definitionNotFound_throwsNotFound() {
-        when(repository.findByOrgKeyAndCode(ORG, "unknown")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> deleteAttributeUseCase.deleteAttribute(ORG, "unknown", "email"))
                 .isInstanceOf(NotFoundException.class);
@@ -420,7 +421,7 @@ class DefinitionUseCasesTest {
                 .code("partner")
                 .attributes(new ArrayList<>())
                 .build();
-        when(repository.findByOrgKeyAndCode(ORG, "partner")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> deleteAttributeUseCase.deleteAttribute(ORG, "partner", "email"))
                 .isInstanceOf(NotFoundException.class);

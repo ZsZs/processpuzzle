@@ -1,5 +1,6 @@
 package com.processpuzzle.starter;
 
+import com.processpuzzle.core.definition.Channel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -76,7 +77,7 @@ class StarterImportIntegrationTest {
                 "rule:non-negative-quantity", "rule:sku-format");
         assertThat(report.items()).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.CREATE);
 
-        assertThat(entityAttributeQuery.entityTypeExists("dry-run-org", "inventory-item")).isFalse();
+        assertThat(entityAttributeQuery.entityTypeExists("dry-run-org", "inventory-item", Channel.DRAFT)).isFalse();
         assertThatThrownBy(() -> findStateMachine.execute("dry-run-org", "inventory-item")).isInstanceOf(RuntimeException.class);
         assertThat(ruleEngine.isRegistered(RuleKey.of("dry-run-org", "non-negative-quantity"))).isFalse();
         assertThat(listInstalledStarters.execute("dry-run-org")).isEmpty();
@@ -92,7 +93,10 @@ class StarterImportIntegrationTest {
             assertThat(report.created()).isEqualTo(5);
         }
         for (String orgKey : new String[] {"tenant-a", "tenant-b"}) {
-            assertThat(entityAttributeQuery.attributeKind(orgKey, "inventory-item", "status")).contains(EntityAttributeKind.ENUM);
+            // An import writes drafts; what the running application reads changes only with a release.
+            assertThat(entityAttributeQuery.attributeKind(orgKey, "inventory-item", "status", Channel.DRAFT))
+                    .contains(EntityAttributeKind.ENUM);
+            assertThat(entityAttributeQuery.entityTypeExists(orgKey, "inventory-item")).isFalse();
             assertThat(findStateMachine.execute(orgKey, "inventory-item").getInitialStateKey()).isEqualTo("IN_STOCK");
             assertThat(ruleEngine.isRegistered(RuleKey.of(orgKey, "sku-format"))).isTrue();
             assertThat(listInstalledStarters.execute(orgKey)).singleElement().satisfies(installed -> {
@@ -148,8 +152,8 @@ class StarterImportIntegrationTest {
                     });
                 });
 
-        assertThat(entityAttributeQuery.entityTypeExists("rollback-org", "inventory-item")).isFalse();
-        assertThat(entityAttributeQuery.entityTypeExists("rollback-org", "stock-location")).isFalse();
+        assertThat(entityAttributeQuery.entityTypeExists("rollback-org", "inventory-item", Channel.DRAFT)).isFalse();
+        assertThat(entityAttributeQuery.entityTypeExists("rollback-org", "stock-location", Channel.DRAFT)).isFalse();
         assertThatThrownBy(() -> findStateMachine.execute("rollback-org", "inventory-item")).isInstanceOf(RuntimeException.class);
         assertThat(listInstalledStarters.execute("rollback-org")).isEmpty();
     }
@@ -164,7 +168,7 @@ class StarterImportIntegrationTest {
         assertThatThrownBy(() -> importBundle.execute("state-org", zip(files), false, null))
                 .isInstanceOf(ImportRejectedException.class)
                 .hasMessageContaining("'phase' is not an attribute of 'inventory-item'");
-        assertThat(entityAttributeQuery.entityTypeExists("state-org", "inventory-item")).isFalse();
+        assertThat(entityAttributeQuery.entityTypeExists("state-org", "inventory-item", Channel.DRAFT)).isFalse();
     }
 
     @Test

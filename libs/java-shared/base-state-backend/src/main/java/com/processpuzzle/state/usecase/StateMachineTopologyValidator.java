@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.state.domain.ActionRef;
@@ -63,13 +64,13 @@ public class StateMachineTopologyValidator {
         if (stateAttributeKey == null || stateAttributeKey.isBlank()) {
             throw new IllegalArgumentException("stateAttributeKey is required");
         }
-        if (!entityAttributeQuery.entityTypeExists(orgKey, entityName)) {
+        if (!entityAttributeQuery.entityTypeExists(orgKey, entityName, Channel.DRAFT)) {
             throw new IllegalArgumentException(
                     "entityName '" + entityName + "' is not an entity type base-entity manages, so it cannot "
                             + "have a state machine");
         }
 
-        EntityAttributeKind kind = entityAttributeQuery.attributeKind(orgKey, entityName, stateAttributeKey)
+        EntityAttributeKind kind = entityAttributeQuery.attributeKind(orgKey, entityName, stateAttributeKey, Channel.DRAFT)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "stateAttributeKey '" + stateAttributeKey + "' is not an attribute of '" + entityName + "'"));
 
