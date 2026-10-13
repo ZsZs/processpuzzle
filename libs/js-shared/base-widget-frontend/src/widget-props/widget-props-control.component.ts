@@ -3,8 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormGroup } from '@angular/forms';
 import { BaseEntity, BaseEntityAttrDescriptor, BaseFormControlComponent, EntityLabelPipe, FormControlType } from '@processpuzzle/base-entity';
 import { distinctUntilChanged, Subscription } from 'rxjs';
-import { hasDescribedProps, propsSchemaToDescriptors } from '../widget-definition/props-schema-to-descriptors';
-import { PropsSchema } from '../widget-definition/widget-definition';
+import { ARTIFACT_FORMAT, hasDescribedProps, propsSchemaToDescriptors } from '../widget-definition/props-schema-to-descriptors';
+import { PropsSchema, PropsSchemaProperty } from '../widget-definition/widget-definition';
 import { WIDGET_REGISTRY, WidgetRegistration } from '../widget-registry/widget-registry.token';
 
 /**
@@ -128,20 +128,101 @@ export class WidgetPropsControlComponent<Entity extends BaseEntity> extends Base
   }
 }
 
-/** The props a nested form's value stands for: described properties only, empty ones omitted, numbers as numbers. */
-export function toProps(value: Record<string, unknown>, schema: PropsSchema): Record<string, unknown> {
+/** The props a nested form's value stands for: described properties only, empty ones omitted, numbers as numbers, recursively structured. */
+export function toProps(value: unknown, schema: PropsSchema | PropsSchemaProperty | undefined | null): Record<string, unknown> {
+  if (!schema?.properties || typeof value !== 'object' || value === null) {
+    return {};
+  }
   const props: Record<string, unknown> = {};
-  for (const [name, property] of Object.entries(schema.properties ?? {})) {
-    const raw = value[name];
+  for (const [name, property] of Object.entries(schema.properties)) {
+    const raw = (value as Record<string, unknown>)[name];
     if (raw === undefined || raw === null || raw === '') continue;
-    if ((property.type === 'number' || property.type === 'integer') && typeof raw === 'string') {
-      const parsed = Number(raw);
-      if (!Number.isNaN(parsed)) props[name] = parsed;
-    } else {
-      props[name] = raw;
+
+    const cleaned = cleanPropValue(raw, property);
+    if (cleaned !== undefined) {
+      props[name] = cleaned;
     }
   }
   return props;
+}
+
+function cleanNumericProp(raw: unknown): number | undefined {
+  if (typeof raw === 'number') {
+    return Number.isNaN(raw) ? undefined : raw;
+  }
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed === '') return undefined;
+    const parsed = Number(trimmed);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+}
+
+function cleanStringProp(raw: unknown): unknown {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return trimmed === '' ? undefined : trimmed;
+  }
+  return raw;
+}
+
+function cleanObjectProp(raw: unknown, property: PropsSchemaProperty): Record<string, unknown> | undefined {
+  if (property.properties) {
+    const cleanedObj = toProps(raw, property);
+    return Object.keys(cleanedObj).length > 0 ? cleanedObj : undefined;
+  }
+  return typeof raw === 'object' && raw !== null && Object.keys(raw).length > 0 ? (raw as Record<string, unknown>) : undefined;
+}
+
+function cleanObjectArrayRows(raw: unknown[], itemSchema: PropsSchemaProperty): Record<string, unknown>[] | undefined {
+  const rows: Record<string, unknown>[] = [];
+  for (const item of raw) {
+    if (typeof item === 'object' && item !== null) {
+      const cleanedRow = toProps(item, itemSchema);
+      if (Object.keys(cleanedRow).length > 0) {
+        rows.push(cleanedRow);
+      }
+    }
+  }
+  return rows.length > 0 ? rows : undefined;
+}
+
+function cleanStringArray(raw: unknown[]): string[] | undefined {
+  const strings = raw.map((s) => (typeof s === 'string' ? s.trim() : String(s))).filter((s) => s.length > 0);
+  return strings.length > 0 ? strings : undefined;
+}
+
+function cleanArrayProp(raw: unknown, property: PropsSchemaProperty): unknown[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  if (property.items?.type === 'object' && property.items?.properties) {
+    return cleanObjectArrayRows(raw, property.items);
+  }
+  if (property.items?.type === 'string') {
+    return cleanStringArray(raw);
+  }
+  return raw.length > 0 ? raw : undefined;
+}
+
+function cleanPropValue(raw: unknown, property: PropsSchemaProperty): unknown {
+  if (property.format === ARTIFACT_FORMAT) {
+    return raw;
+  }
+  switch (property.type) {
+    case 'number':
+    case 'integer':
+      return cleanNumericProp(raw);
+    case 'string':
+      return cleanStringProp(raw);
+    case 'boolean':
+      return typeof raw === 'boolean' ? raw : undefined;
+    case 'object':
+      return cleanObjectProp(raw, property);
+    case 'array':
+      return cleanArrayProp(raw, property);
+    default:
+      return raw;
+  }
 }
 
 export function createWidgetPropsAttrDescriptor(attrName = 'props', typeAttrName = 'type', label = 'Props'): WidgetPropsAttrDescriptor {
