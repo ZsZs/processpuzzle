@@ -27,7 +27,7 @@ describe('createRoleDefinitionDescriptor', () => {
   });
 
   it('describes the role, its link into base-entity’s registry and its revision', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'entityRoleId', 'version', 'updatedAt', 'description', 'responsibleFor']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'releaseState', 'entityRoleId', 'version', 'updatedAt', 'description', 'responsibleFor']);
   });
 
   // `/roles/{roleId}` addresses a role by the author-chosen id, so the list column has to open it and

@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { BaseEntity } from '@processpuzzle/base-entity';
 import { PropertyMap } from '../property-map';
 
@@ -87,6 +88,8 @@ export class TaskDefinition implements BaseEntity {
   steps: StepDefinition[];
   // region server-assigned
   version: number | undefined;
+  /** Where this draft stands against the release; reported by the backend, never sent back. */
+  releaseState: ReleaseState | undefined;
   createdAt: string | undefined;
   updatedAt: string | undefined;
   // endregion
@@ -104,6 +107,7 @@ export class TaskDefinition implements BaseEntity {
     this.outputs = init.outputs ?? [];
     this.steps = init.steps ?? [];
     this.version = init.version;
+    this.releaseState = init.releaseState;
     this.createdAt = init.createdAt;
     this.updatedAt = init.updatedAt;
   }

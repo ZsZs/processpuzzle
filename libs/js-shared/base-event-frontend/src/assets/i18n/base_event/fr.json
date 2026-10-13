@@ -15,7 +15,9 @@
       "kind": "SYSTEM : émis par la plateforme lorsqu'un enregistrement change. MESSAGE : envoyé à un destinataire via l'API. SIGNAL : diffusé à tous les auditeurs via l'API.",
       "subjectType": "Uniquement pour les événements SYSTEM : le code du type d'entité dont les enregistrements émettent l'événement, p. ex. order.",
       "action": "Uniquement pour les événements SYSTEM : ce qui arrive à l'enregistrement : CREATED, UPDATED, DELETED ou STATE_CHANGED.",
-      "state": "Uniquement pour STATE_CHANGED : l'état dans lequel entre l'enregistrement, p. ex. CONFIRMED."
-    }
+      "state": "Uniquement pour STATE_CHANGED : l'état dans lequel entre l'enregistrement, p. ex. CONFIRMED.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système."
+    },
+    "releaseState": "Publication"
   }
 }

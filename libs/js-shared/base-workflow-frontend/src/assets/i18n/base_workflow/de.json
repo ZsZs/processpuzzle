@@ -7,6 +7,7 @@
     "extends": "Erweitert",
     "activeInstances": "Aktive Instanzen",
     "version": "Version",
+    "releaseState": "Release-Stand",
     "updatedAt": "Geändert am",
     "startEvents": "Startereignisse",
     "roles": "Rollen",
@@ -67,6 +68,7 @@
       "extends": "Optionaler übergeordneter Workflow, dessen Rollen, Artefakte, Werkzeuge und Aufgaben dieser erbt. Ein Workflow darf sich weder direkt noch über andere selbst erweitern.",
       "activeInstances": "Wie viele Durchläufe dieses Workflows gerade laufen. Wird vom System gesetzt.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "updatedAt": "Wann der Workflow zuletzt gespeichert wurde. Wird vom System gesetzt.",
       "startEvents": "Die Wege, auf denen ein Durchlauf dieses Workflows beginnen kann, z. B. wenn ein Auftrag angelegt wird oder jeden Morgen um 8. Ohne Startereignis darf ihn jeder von Hand starten.",
       "roles": "Die Rollen, die an diesem Workflow beteiligt sind. Jede Rolle, die eine seiner Aufgaben ausführt, muss hier aufgeführt sein.",
@@ -202,6 +204,7 @@
     "responsibleFor": "Verantwortlich für",
     "entityRoleId": "Entitätsrolle",
     "version": "Version",
+    "releaseState": "Release-Stand",
     "updatedAt": "Geändert am",
     "tabs": {
       "modeler": "Rollenmodellierer"
@@ -216,6 +219,7 @@
       "responsibleFor": "Die Artefakte, für deren Ergebnis diese Rolle verantwortlich ist, z. B. die Rechnung. Nur Verantwortung; was eine Aufgabe lesen oder schreiben darf, wird an der Aufgabe festgelegt.",
       "entityRoleId": "Optionale passende Benutzerrolle Ihrer Organisation. Wenn gesetzt, können nur Benutzer mit dieser Rolle Aufgaben dieser Rolle erhalten; leer bedeutet: keine Prüfung.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "updatedAt": "Wann die Rolle zuletzt gespeichert wurde. Wird vom System gesetzt."
     }
   },
@@ -228,6 +232,7 @@
     "artifactTypeId": "Typ-Id",
     "stateMachineId": "Zustandsmaschine",
     "version": "Version",
+    "releaseState": "Release-Stand",
     "updatedAt": "Geändert am",
     "_tooltips": {
       "id": "Eindeutig innerhalb Ihrer Organisation; Aufgaben und Workflows verweisen über sie auf das Artefakt. Kurz, kleingeschrieben und mit Bindestrichen, z. B. order-entity; später möglichst nicht mehr ändern.",
@@ -237,6 +242,7 @@
       "artifactTypeId": "Das konkrete Objekt, passend zum Artefakttyp: der Entitätsname bei ENTITY, der Dokumentname bei DOCUMENT oder der Widget-Name bei WIDGET, z. B. order.",
       "stateMachineId": "Optionale Id der Zustandsmaschine, die den Lebenszyklus dieses Artefakts steuert, z. B. order-lifecycle. Auf ihre Zustandsnamen beziehen sich Aufgaben und Startereignisse.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "updatedAt": "Wann das Artefakt zuletzt gespeichert wurde. Wird vom System gesetzt."
     }
   },
@@ -249,6 +255,7 @@
     "preconditionRuleId": "Vorbedingungsregel",
     "postconditionRuleId": "Nachbedingungsregel",
     "version": "Version",
+    "releaseState": "Release-Stand",
     "updatedAt": "Geändert am",
     "inputs": "Eingaben",
     "outputs": "Ausgaben",
@@ -261,6 +268,7 @@
       "preconditionRuleId": "Optionale Id einer Geschäftsregel, die geprüft wird, bevor die Aufgabe aktiv wird; solange sie nicht erfüllt ist, wartet die Aufgabe.",
       "postconditionRuleId": "Optionale Id einer Geschäftsregel, die erfüllt sein muss, bevor die Aufgabe abgeschlossen werden kann.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "updatedAt": "Wann die Aufgabe zuletzt gespeichert wurde. Wird vom System gesetzt.",
       "inputs": "Die Artefakte, die diese Aufgabe liest, z. B. der Auftrag. Ein Workflow, der die Aufgabe verwendet, muss sie unter seinen Artefakten aufführen.",
       "outputs": "Die Artefakte, die diese Aufgabe erzeugt oder ändert, z. B. die Rechnung. Ein Workflow, der die Aufgabe verwendet, muss sie unter seinen Artefakten aufführen.",
@@ -297,6 +305,7 @@
     "type": "Authentifizierungsart",
     "secretRef": "Secret-Referenz",
     "version": "Version",
+    "releaseState": "Release-Stand",
     "createdAt": "Erstellt am",
     "operations": "Operationen",
     "_tooltips": {
@@ -307,6 +316,7 @@
       "type": "Wie sich das System beim Werkzeug anmeldet: NONE, BEARER_TOKEN, BASIC (Benutzername und Passwort) oder API_KEY.",
       "secretRef": "Wo die Zugangsdaten hinterlegt sind: der Name einer Umgebungsvariablen oder ein Vault-Pfad, z. B. JIRA_TOKEN. Niemals das Passwort oder Token selbst eingeben.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "createdAt": "Wann das Werkzeug angelegt wurde. Wird vom System gesetzt.",
       "operations": "Die Aufrufe, die dieses Werkzeug anbietet, z. B. create-issue. Aufgabenschritte wählen einen davon über seine Id."
     }

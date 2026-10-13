@@ -31,7 +31,7 @@ describe('createEventDefinitionDescriptor', () => {
   });
 
   it('describes the identity, the kind and the subject', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'kind', 'subjectType', 'action', 'state', 'description']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'kind', 'releaseState', 'subjectType', 'action', 'state', 'description']);
   });
 
   it('identifies a definition by its author-chosen id', () => {
@@ -55,6 +55,6 @@ describe('createEventDefinitionDescriptor', () => {
   });
 
   it('keeps the description out of the list', () => {
-    expect(attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName)).toEqual(['id', 'name', 'kind', 'subjectType', 'action', 'state']);
+    expect(attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName)).toEqual(['id', 'name', 'kind', 'releaseState', 'subjectType', 'action', 'state']);
   });
 });

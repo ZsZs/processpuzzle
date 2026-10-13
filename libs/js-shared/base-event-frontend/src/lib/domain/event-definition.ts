@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
@@ -44,6 +45,8 @@ export class EventDefinition implements BaseEntity {
   state?: string;
   /** Optimistic lock; optional on PUT — omitted, the write is unconditional. */
   version?: number;
+  /** Where this draft stands against the release; reported by the backend, never sent back. */
+  releaseState?: ReleaseState;
 
   constructor(init: Partial<EventDefinition> = {}) {
     this.id = init.id ?? '';
@@ -54,5 +57,6 @@ export class EventDefinition implements BaseEntity {
     this.action = init.action;
     this.state = init.state;
     this.version = init.version;
+    this.releaseState = init.releaseState;
   }
 }
