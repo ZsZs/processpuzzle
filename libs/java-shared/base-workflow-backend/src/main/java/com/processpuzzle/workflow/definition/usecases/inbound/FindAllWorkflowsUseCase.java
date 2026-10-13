@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -31,8 +32,9 @@ public class FindAllWorkflowsUseCase {
      * OR, which would otherwise let {@code where} escape the org filter. Same guard as
      * {@code FindAllRules} in base-rule-backend.
      */
-    public Page<Workflow> findAll(String orgKey, String where, String order, Integer page, Integer size) {
-        Specification<Workflow> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public Page<Workflow> findAll(String orgKey, Channel channel, String where, String order, Integer page, Integer size) {
+        Specification<Workflow> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("orgKey"), orgKey), cb.equal(root.get("channel"), channel));
 
         Specification<Workflow> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {

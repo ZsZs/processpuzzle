@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.DiagramEdgeLayout;
@@ -62,8 +63,8 @@ class WorkflowDiagramUseCasesTest {
     @Test
     void saveWorkflowDiagram_insertsWhenNeverArranged() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.empty());
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.empty());
         when(diagramRepo.save(any(WorkflowDiagram.class))).thenAnswer(call -> call.getArgument(0));
 
         SaveWorkflowDiagramUseCase.Result result = useCase.save(diagram());
@@ -77,8 +78,8 @@ class WorkflowDiagramUseCasesTest {
     void saveWorkflowDiagram_replacesWhenAlreadyArranged() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
         WorkflowDiagram existing = WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).build();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(existing));
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(diagramRepo.save(any(WorkflowDiagram.class))).thenAnswer(call -> call.getArgument(0));
 
         SaveWorkflowDiagramUseCase.Result result = useCase.save(diagram());
@@ -99,8 +100,8 @@ class WorkflowDiagramUseCasesTest {
     void saveWorkflowDiagram_refusesAStaleWrite() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
         WorkflowDiagram stored = WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).version(5L).build();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(stored));
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(stored));
         WorkflowDiagram stale = WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).version(3L).build();
 
         assertThatThrownBy(() -> useCase.save(stale))
@@ -113,8 +114,8 @@ class WorkflowDiagramUseCasesTest {
     void saveWorkflowDiagram_acceptsTheCurrentVersion() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
         WorkflowDiagram stored = WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).version(5L).build();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(stored));
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(stored));
         when(diagramRepo.save(any(WorkflowDiagram.class))).thenAnswer(call -> call.getArgument(0));
         WorkflowDiagram current = WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).version(5L).build();
 
@@ -129,8 +130,8 @@ class WorkflowDiagramUseCasesTest {
     void saveWorkflowDiagram_overwritesWhenNoVersionIsSupplied() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
         WorkflowDiagram stored = WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).version(5L).build();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(stored));
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(stored));
         when(diagramRepo.save(any(WorkflowDiagram.class))).thenAnswer(call -> call.getArgument(0));
 
         assertThat(useCase.save(diagram()).created()).isFalse();
@@ -140,7 +141,7 @@ class WorkflowDiagramUseCasesTest {
     @Test
     void saveWorkflowDiagram_refusesAnUnknownWorkflow() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(false);
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.save(diagram()))
                 .isInstanceOf(NotFoundException.class)
@@ -156,8 +157,8 @@ class WorkflowDiagramUseCasesTest {
     @Test
     void saveWorkflowDiagram_toleratesARowNamingANodeTheWorkflowNoLongerHas() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.empty());
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.empty());
         when(diagramRepo.save(any(WorkflowDiagram.class))).thenAnswer(call -> call.getArgument(0));
         WorkflowDiagram stale = WorkflowDiagram.builder()
                 .orgKey(ORG)
@@ -173,8 +174,8 @@ class WorkflowDiagramUseCasesTest {
     void saveWorkflowDiagram_readsAnAbsentListAsCleared() {
         SaveWorkflowDiagramUseCase useCase = new SaveWorkflowDiagramUseCase(diagramRepo, workflowRepo);
         WorkflowDiagram existing = diagram();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, WORKFLOW_ID)).thenReturn(true);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(existing));
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(diagramRepo.save(any(WorkflowDiagram.class))).thenAnswer(call -> call.getArgument(0));
 
         useCase.save(WorkflowDiagram.builder().orgKey(ORG).workflowId(WORKFLOW_ID).nodes(null).edges(null).build());
@@ -189,9 +190,9 @@ class WorkflowDiagramUseCasesTest {
     @Test
     void findWorkflowDiagram_readsTheArrangement() {
         FindWorkflowDiagramUseCase useCase = new FindWorkflowDiagramUseCase(diagramRepo);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(diagram()));
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(diagram()));
 
-        assertThat(useCase.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID).getNodes()).hasSize(1);
+        assertThat(useCase.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID, Channel.DRAFT).getNodes()).hasSize(1);
     }
 
     /**
@@ -202,9 +203,9 @@ class WorkflowDiagramUseCasesTest {
     @Test
     void findWorkflowDiagram_reportsNeverArrangedAsNotFound() {
         FindWorkflowDiagramUseCase useCase = new FindWorkflowDiagramUseCase(diagramRepo);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.empty());
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID))
+        assertThatThrownBy(() -> useCase.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID, Channel.DRAFT))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining(WORKFLOW_ID);
     }
@@ -221,7 +222,7 @@ class WorkflowDiagramUseCasesTest {
         Page<WorkflowDiagram> page = new PageImpl<>(List.of(diagram()));
         when(diagramRepo.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-        assertThat(useCase.findAll(ORG, null, null, null, null).getContent()).hasSize(1);
+        assertThat(useCase.findAll(ORG, Channel.DRAFT, null, null, null, null).getContent()).hasSize(1);
     }
 
     // ---------------------------------------------------------------- delete
@@ -230,7 +231,7 @@ class WorkflowDiagramUseCasesTest {
     void deleteWorkflowDiagram_discardsTheArrangement() {
         DeleteWorkflowDiagramUseCase useCase = new DeleteWorkflowDiagramUseCase(diagramRepo);
         WorkflowDiagram existing = diagram();
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.of(existing));
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         useCase.delete(ORG, WORKFLOW_ID);
 
@@ -244,7 +245,7 @@ class WorkflowDiagramUseCasesTest {
     @Test
     void deleteWorkflowDiagram_reportsNothingToDiscard() {
         DeleteWorkflowDiagramUseCase useCase = new DeleteWorkflowDiagramUseCase(diagramRepo);
-        when(diagramRepo.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(Optional.empty());
+        when(diagramRepo.findByOrgKeyAndWorkflowIdAndChannel(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.delete(ORG, WORKFLOW_ID)).isInstanceOf(NotFoundException.class);
     }

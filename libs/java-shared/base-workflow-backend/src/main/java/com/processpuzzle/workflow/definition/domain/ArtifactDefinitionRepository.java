@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,13 +13,13 @@ import java.util.Optional;
 public interface ArtifactDefinitionRepository
         extends JpaRepository<ArtifactDefinition, ArtifactDefinitionKey>, JpaSpecificationExecutor<ArtifactDefinition> {
 
-    Optional<ArtifactDefinition> findByOrgKeyAndId(String orgKey, String id);
+    Optional<ArtifactDefinition> findByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    boolean existsByOrgKeyAndId(String orgKey, String id);
+    boolean existsByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    List<ArtifactDefinition> findByOrgKey(String orgKey);
+    List<ArtifactDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
 
-    List<ArtifactDefinition> findByOrgKeyAndIdIn(String orgKey, List<String> ids);
+    List<ArtifactDefinition> findByOrgKeyAndIdInAndChannel(String orgKey, List<String> ids, Channel channel);
 
     /**
      * Every artifact definition of a tenant in one statement, for erasing the tenant. A bulk delete, so it

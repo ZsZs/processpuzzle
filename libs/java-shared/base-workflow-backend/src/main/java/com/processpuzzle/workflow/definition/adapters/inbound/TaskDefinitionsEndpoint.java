@@ -1,5 +1,8 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseStates;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.TaskReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.api.TaskDefinitionsApi;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateTaskDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteTaskDefinitionUseCase;
@@ -29,25 +32,30 @@ public class TaskDefinitionsEndpoint implements TaskDefinitionsApi {
     private final FindTaskDefinitionUseCase findTaskDefinition;
     private final FindAllTaskDefinitionsUseCase findAllTaskDefinitions;
     private final WorkflowDefinitionMapper mapper;
+    private final TaskReleaseParticipant releaseParticipant;
 
     public TaskDefinitionsEndpoint(CreateTaskDefinitionUseCase createTaskDefinition,
                                     ReplaceTaskDefinitionUseCase replaceTaskDefinition,
                                     DeleteTaskDefinitionUseCase deleteTaskDefinition,
                                     FindTaskDefinitionUseCase findTaskDefinition,
                                     FindAllTaskDefinitionsUseCase findAllTaskDefinitions,
-                                    WorkflowDefinitionMapper mapper) {
+                                    WorkflowDefinitionMapper mapper,
+            TaskReleaseParticipant releaseParticipant) {
         this.createTaskDefinition = createTaskDefinition;
         this.replaceTaskDefinition = replaceTaskDefinition;
         this.deleteTaskDefinition = deleteTaskDefinition;
         this.findTaskDefinition = findTaskDefinition;
         this.findAllTaskDefinitions = findAllTaskDefinitions;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
-    public ResponseEntity<List<TaskDefinition>> listTaskDefinitions(String orgKey, String where, String order) {
-        var tasks = findAllTaskDefinitions.findAll(orgKey, where, order);
-        return ResponseEntity.ok(tasks.stream().map(mapper::toTaskModel).toList());
+    public ResponseEntity<List<TaskDefinition>> listTaskDefinitions(String orgKey, String where, String order, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var tasks = findAllTaskDefinitions.findAll(orgKey, channel, where, order).stream().map(mapper::toTaskModel).toList();
+        return ResponseEntity.ok(ReleaseStates.stamp(channel, releaseParticipant, orgKey, tasks,
+                TaskDefinition::getId, TaskDefinition::setReleaseState));
     }
 
     @Override
@@ -57,8 +65,11 @@ public class TaskDefinitionsEndpoint implements TaskDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<TaskDefinition> getTaskDefinition(String orgKey, String taskId) {
-        return ResponseEntity.ok(mapper.toTaskModel(findTaskDefinition.findByOrgKeyAndId(orgKey, taskId)));
+    public ResponseEntity<TaskDefinition> getTaskDefinition(String orgKey, String taskId, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var task = mapper.toTaskModel(findTaskDefinition.findByOrgKeyAndId(orgKey, taskId, channel));
+        return ResponseEntity.ok(ReleaseStates.stampOne(channel, releaseParticipant, orgKey, task,
+                TaskDefinition::getId, TaskDefinition::setReleaseState));
     }
 
     @Override

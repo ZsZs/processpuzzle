@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.common.ValidationException;
@@ -98,9 +99,9 @@ class WorkflowUseCasesTest {
 
     @Test
     void createWorkflow_success() {
-        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator, events);
+        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator);
         Workflow proc = Workflow.builder().id("proc1").build();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, "proc1")).thenReturn(false);
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(false);
         when(workflowRepo.save(proc)).thenReturn(proc);
 
         Workflow result = useCase.create(ORG, proc);
@@ -108,14 +109,15 @@ class WorkflowUseCasesTest {
         assertThat(proc.getOrgKey()).isEqualTo(ORG);
         verify(extendsValidator).validate(ORG, "proc1", null);
         verify(validator).validate(proc);
-        verify(events).publishEvent(new WorkflowChangedEvent(ORG, "proc1", false));
+        // A draft: its start timers follow the release, which announces the change.
+        verify(events, never()).publishEvent(any());
     }
 
     @Test
     void createWorkflow_alreadyExists_throwsConflict() {
-        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator, events);
+        CreateWorkflowUseCase useCase = new CreateWorkflowUseCase(workflowRepo, validator, extendsValidator);
         Workflow proc = Workflow.builder().id("proc1").build();
-        when(workflowRepo.existsByOrgKeyAndId(ORG, "proc1")).thenReturn(true);
+        when(workflowRepo.existsByOrgKeyAndIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(true);
 
         assertThatThrownBy(() -> useCase.create(ORG, proc))
                 .isInstanceOf(ConflictException.class)
@@ -126,11 +128,11 @@ class WorkflowUseCasesTest {
     void findWorkflow_successAndNotFound() {
         FindWorkflowUseCase useCase = new FindWorkflowUseCase(workflowRepo);
         Workflow proc = Workflow.builder().id("proc1").build();
-        when(workflowRepo.findByOrgKeyAndId(ORG, "proc1")).thenReturn(Optional.of(proc));
-        when(workflowRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(Optional.of(proc));
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThat(useCase.findByOrgKeyAndId(ORG, "proc1")).isEqualTo(proc);
-        assertThatThrownBy(() -> useCase.findByOrgKeyAndId(ORG, "unknown"))
+        assertThat(useCase.findByOrgKeyAndId(ORG, "proc1", Channel.DRAFT)).isEqualTo(proc);
+        assertThatThrownBy(() -> useCase.findByOrgKeyAndId(ORG, "unknown", Channel.DRAFT))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -141,22 +143,23 @@ class WorkflowUseCasesTest {
         when(workflowRepo.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(proc)));
 
-        Page<Workflow> page = useCase.findAll(ORG, "id == 'proc1'", "name,asc", 0, 10);
+        Page<Workflow> page = useCase.findAll(ORG, Channel.DRAFT, "id == 'proc1'", "name,asc", 0, 10);
         assertThat(page.getContent()).containsExactly(proc);
     }
 
     @Test
     void replaceWorkflow_successAndValidation() {
-        ReplaceWorkflowUseCase useCase = new ReplaceWorkflowUseCase(workflowRepo, validator, extendsValidator, events);
+        ReplaceWorkflowUseCase useCase = new ReplaceWorkflowUseCase(workflowRepo, validator, extendsValidator);
         Workflow existing = Workflow.builder().orgKey(ORG).id("proc1").version(1L).name("Old").build();
         Workflow desired = Workflow.builder().orgKey(ORG).id("proc1").version(1L).name("New").build();
 
-        when(workflowRepo.findByOrgKeyAndId(ORG, "proc1")).thenReturn(Optional.of(existing));
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(workflowRepo.save(existing)).thenReturn(existing);
 
         Workflow result = useCase.replace(ORG, "proc1", desired);
         assertThat(result.getName()).isEqualTo("New");
-        verify(events).publishEvent(new WorkflowChangedEvent(ORG, "proc1", false));
+        // A draft: its start timers follow the release, which announces the change.
+        verify(events, never()).publishEvent(any());
 
         // ID mismatch
         Workflow wrongId = Workflow.builder().orgKey(ORG).id("proc2").build();
@@ -171,7 +174,7 @@ class WorkflowUseCasesTest {
                 .hasMessageContaining("concurrently");
 
         // Not found
-        when(workflowRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> useCase.replace(ORG, "unknown", desired))
                 .isInstanceOf(NotFoundException.class);
     }
@@ -179,19 +182,19 @@ class WorkflowUseCasesTest {
     @Test
     void deleteWorkflow_successAndConflicts() {
         WorkflowDiagramRepository diagramRepo = mock(WorkflowDiagramRepository.class);
-        DeleteWorkflowUseCase useCase = new DeleteWorkflowUseCase(workflowRepo, diagramRepo, activePort, events);
+        DeleteWorkflowUseCase useCase = new DeleteWorkflowUseCase(workflowRepo, diagramRepo, activePort);
         Workflow existing = Workflow.builder().orgKey(ORG).id("proc1").build();
 
-        when(workflowRepo.findByOrgKeyAndId(ORG, "proc1")).thenReturn(Optional.of(existing));
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(activePort.existsActiveInstanceOf(ORG, "proc1")).thenReturn(false);
-        when(workflowRepo.findByOrgKeyAndExtendsWorkflowId(ORG, "proc1")).thenReturn(List.of());
+        when(workflowRepo.findByOrgKeyAndExtendsWorkflowIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(List.of());
 
         useCase.delete(ORG, "proc1");
         verify(workflowRepo).delete(existing);
-        verify(events).publishEvent(new WorkflowChangedEvent(ORG, "proc1", true));
+        verify(events, never()).publishEvent(any());
         // The modeler's arrangement goes with the workflow it arranged: addressed only by that
         // workflow's id, an orphaned layout is unreachable and would resurface if the id were reused.
-        verify(diagramRepo).deleteByOrgKeyAndWorkflowId(ORG, "proc1");
+        verify(diagramRepo).deleteByOrgKeyAndWorkflowIdAndChannel(ORG, "proc1", Channel.DRAFT);
 
         // Active instances conflict
         when(activePort.existsActiveInstanceOf(ORG, "proc1")).thenReturn(true);
@@ -201,13 +204,13 @@ class WorkflowUseCasesTest {
 
         // Extended by other conflict
         when(activePort.existsActiveInstanceOf(ORG, "proc1")).thenReturn(false);
-        when(workflowRepo.findByOrgKeyAndExtendsWorkflowId(ORG, "proc1")).thenReturn(List.of(new Workflow()));
+        when(workflowRepo.findByOrgKeyAndExtendsWorkflowIdAndChannel(ORG, "proc1", Channel.DRAFT)).thenReturn(List.of(new Workflow()));
         assertThatThrownBy(() -> useCase.delete(ORG, "proc1"))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("extended by another");
 
         // Not found
-        when(workflowRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> useCase.delete(ORG, "unknown"))
                 .isInstanceOf(NotFoundException.class);
     }
@@ -220,30 +223,30 @@ class WorkflowUseCasesTest {
 
     @Test
     void roleDefinitionUseCases_crud() {
-        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo, events);
+        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo);
         FindRoleDefinitionUseCase findUseCase = new FindRoleDefinitionUseCase(roleRepo);
         FindAllRoleDefinitionsUseCase findAllUseCase = new FindAllRoleDefinitionsUseCase(roleRepo);
-        ReplaceRoleDefinitionUseCase replaceUseCase = new ReplaceRoleDefinitionUseCase(roleRepo, events);
-        DeleteRoleDefinitionUseCase deleteUseCase = new DeleteRoleDefinitionUseCase(roleRepo, scanner, events);
+        ReplaceRoleDefinitionUseCase replaceUseCase = new ReplaceRoleDefinitionUseCase(roleRepo);
+        DeleteRoleDefinitionUseCase deleteUseCase = new DeleteRoleDefinitionUseCase(roleRepo, scanner);
 
         RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("dev").name("Dev")
                 .responsibleFor(new ArrayList<>(List.of("spec"))).build();
 
-        when(roleRepo.existsByOrgKeyAndId(ORG, "dev")).thenReturn(false);
+        when(roleRepo.existsByOrgKeyAndIdAndChannel(ORG, "dev", Channel.DRAFT)).thenReturn(false);
         when(roleRepo.save(role)).thenReturn(role);
-        when(roleRepo.findByOrgKeyAndId(ORG, "dev")).thenReturn(Optional.of(role));
+        when(roleRepo.findByOrgKeyAndIdAndChannel(ORG, "dev", Channel.DRAFT)).thenReturn(Optional.of(role));
         when(roleRepo.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(role));
 
         assertThat(createUseCase.create(ORG, role).getId()).isEqualTo("dev");
 
-        when(roleRepo.existsByOrgKeyAndId(ORG, "dev")).thenReturn(true);
+        when(roleRepo.existsByOrgKeyAndIdAndChannel(ORG, "dev", Channel.DRAFT)).thenReturn(true);
         assertThatThrownBy(() -> createUseCase.create(ORG, role)).isInstanceOf(ConflictException.class);
 
-        assertThat(findUseCase.findByOrgKeyAndId(ORG, "dev")).isEqualTo(role);
-        when(roleRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown")).isInstanceOf(NotFoundException.class);
+        assertThat(findUseCase.findByOrgKeyAndId(ORG, "dev", Channel.DRAFT)).isEqualTo(role);
+        when(roleRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
 
-        assertThat(findAllUseCase.findAll(ORG, null, null)).containsExactly(role);
+        assertThat(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).containsExactly(role);
 
         RoleDefinition desired = RoleDefinition.builder().orgKey(ORG).id("dev").name("Senior Dev")
                 .responsibleFor(List.of("spec", "binary")).build();
@@ -284,27 +287,24 @@ class WorkflowUseCasesTest {
      * anywhere.
      */
     @Test
-    void roleDefinitionWrites_publishTheEventsTheRealmProjectionIsBuiltFrom() {
+    void roleDefinitionWrites_publishNothing_theReleaseDoes() {
         RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("reviewer").name("Reviewer")
                 .description("Reviews submissions").build();
-        when(roleRepo.existsByOrgKeyAndId(ORG, "reviewer")).thenReturn(false);
+        when(roleRepo.existsByOrgKeyAndIdAndChannel(ORG, "reviewer", Channel.DRAFT)).thenReturn(false);
         when(roleRepo.save(any(RoleDefinition.class))).thenAnswer(call -> call.getArgument(0));
-        when(roleRepo.findByOrgKeyAndId(ORG, "reviewer")).thenReturn(Optional.of(role));
+        when(roleRepo.findByOrgKeyAndIdAndChannel(ORG, "reviewer", Channel.DRAFT)).thenReturn(Optional.of(role));
         when(scanner.workflowsUsingRole(ORG, "reviewer")).thenReturn(List.of());
         when(scanner.tasksOfferingRole(ORG, "reviewer")).thenReturn(List.of());
 
-        new CreateRoleDefinitionUseCase(roleRepo, events).create(ORG, role);
-        verify(events).publishEvent(new RoleDefinitionChangedEvent(
-                ORG, "reviewer", "Reviewer", "Reviews submissions"));
+        new CreateRoleDefinitionUseCase(roleRepo).create(ORG, role);
 
-        new ReplaceRoleDefinitionUseCase(roleRepo, events).replace(ORG, "reviewer",
+        new ReplaceRoleDefinitionUseCase(roleRepo).replace(ORG, "reviewer",
                 RoleDefinition.builder().orgKey(ORG).id("reviewer").name("Senior Reviewer")
                         .description("Reviews everything").build());
-        verify(events).publishEvent(new RoleDefinitionChangedEvent(
-                ORG, "reviewer", "Senior Reviewer", "Reviews everything"));
 
-        new DeleteRoleDefinitionUseCase(roleRepo, scanner, events).delete(ORG, "reviewer");
-        verify(events).publishEvent(new RoleDefinitionDeletedEvent(ORG, "reviewer"));
+        new DeleteRoleDefinitionUseCase(roleRepo, scanner).delete(ORG, "reviewer");
+        // Drafts: the directory follows the released roles, so the release announces them.
+        verifyNoInteractions(events);
     }
 
     /**
@@ -314,7 +314,7 @@ class WorkflowUseCasesTest {
      */
     @Test
     void createRoleDefinition_refusesIdsReservedByThePlatformOrKeycloak() {
-        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo, events);
+        CreateRoleDefinitionUseCase createUseCase = new CreateRoleDefinitionUseCase(roleRepo);
 
         for (String reserved : List.of("org-admin", "org-member", "offline_access", "uma_authorization",
                 "default-roles-" + ORG)) {
@@ -338,21 +338,21 @@ class WorkflowUseCasesTest {
         ArtifactDefinition artifact = ArtifactDefinition.builder().orgKey(ORG).id("spec").name("Spec")
                 .artifactType(ArtifactType.DOCUMENT).artifactTypeId("spec-doc").build();
 
-        when(artifactRepo.existsByOrgKeyAndId(ORG, "spec")).thenReturn(false);
+        when(artifactRepo.existsByOrgKeyAndIdAndChannel(ORG, "spec", Channel.DRAFT)).thenReturn(false);
         when(artifactRepo.save(artifact)).thenReturn(artifact);
-        when(artifactRepo.findByOrgKeyAndId(ORG, "spec")).thenReturn(Optional.of(artifact));
+        when(artifactRepo.findByOrgKeyAndIdAndChannel(ORG, "spec", Channel.DRAFT)).thenReturn(Optional.of(artifact));
         when(artifactRepo.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(artifact));
 
         assertThat(createUseCase.create(ORG, artifact).getId()).isEqualTo("spec");
 
-        when(artifactRepo.existsByOrgKeyAndId(ORG, "spec")).thenReturn(true);
+        when(artifactRepo.existsByOrgKeyAndIdAndChannel(ORG, "spec", Channel.DRAFT)).thenReturn(true);
         assertThatThrownBy(() -> createUseCase.create(ORG, artifact)).isInstanceOf(ConflictException.class);
 
-        assertThat(findUseCase.findByOrgKeyAndId(ORG, "spec")).isEqualTo(artifact);
-        when(artifactRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown")).isInstanceOf(NotFoundException.class);
+        assertThat(findUseCase.findByOrgKeyAndId(ORG, "spec", Channel.DRAFT)).isEqualTo(artifact);
+        when(artifactRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
 
-        assertThat(findAllUseCase.findAll(ORG, null, null)).containsExactly(artifact);
+        assertThat(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).containsExactly(artifact);
 
         ArtifactDefinition desired = ArtifactDefinition.builder().orgKey(ORG).id("spec").name("Specification")
                 .artifactType(ArtifactType.ENTITY).artifactTypeId("spec-entity").stateMachineId("sm-spec").build();
@@ -402,21 +402,21 @@ class WorkflowUseCasesTest {
                         .stepType(TaskStepType.SERVICE_STEP).toolDefinitionId("ci").build())))
                 .build();
 
-        when(taskRepo.existsByOrgKeyAndId(ORG, "code")).thenReturn(false);
+        when(taskRepo.existsByOrgKeyAndIdAndChannel(ORG, "code", Channel.DRAFT)).thenReturn(false);
         when(taskRepo.save(task)).thenReturn(task);
-        when(taskRepo.findByOrgKeyAndId(ORG, "code")).thenReturn(Optional.of(task));
+        when(taskRepo.findByOrgKeyAndIdAndChannel(ORG, "code", Channel.DRAFT)).thenReturn(Optional.of(task));
         when(taskRepo.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(task));
 
         assertThat(createUseCase.create(ORG, task).getId()).isEqualTo("code");
 
-        when(taskRepo.existsByOrgKeyAndId(ORG, "code")).thenReturn(true);
+        when(taskRepo.existsByOrgKeyAndIdAndChannel(ORG, "code", Channel.DRAFT)).thenReturn(true);
         assertThatThrownBy(() -> createUseCase.create(ORG, task)).isInstanceOf(ConflictException.class);
 
-        assertThat(findUseCase.findByOrgKeyAndId(ORG, "code")).isEqualTo(task);
-        when(taskRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown")).isInstanceOf(NotFoundException.class);
+        assertThat(findUseCase.findByOrgKeyAndId(ORG, "code", Channel.DRAFT)).isEqualTo(task);
+        when(taskRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
 
-        assertThat(findAllUseCase.findAll(ORG, null, null)).containsExactly(task);
+        assertThat(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).containsExactly(task);
 
         TaskDefinition desired = TaskDefinition.builder().orgKey(ORG).id("code").name("Write unit tests and code")
                 .performedByRoles(List.of("dev", "lead"))
@@ -451,21 +451,21 @@ class WorkflowUseCasesTest {
         ToolDefinition tool = ToolDefinition.builder().orgKey(ORG).id("tool1").name("Tool One")
                 .baseUrl("https://example.com").build();
 
-        when(toolRepo.existsByOrgKeyAndId(ORG, "tool1")).thenReturn(false);
+        when(toolRepo.existsByOrgKeyAndIdAndChannel(ORG, "tool1", Channel.DRAFT)).thenReturn(false);
         when(toolRepo.save(tool)).thenReturn(tool);
-        when(toolRepo.findByOrgKeyAndId(ORG, "tool1")).thenReturn(Optional.of(tool));
+        when(toolRepo.findByOrgKeyAndIdAndChannel(ORG, "tool1", Channel.DRAFT)).thenReturn(Optional.of(tool));
         when(toolRepo.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(tool));
 
         assertThat(createUseCase.create(ORG, tool).getId()).isEqualTo("tool1");
 
-        when(toolRepo.existsByOrgKeyAndId(ORG, "tool1")).thenReturn(true);
+        when(toolRepo.existsByOrgKeyAndIdAndChannel(ORG, "tool1", Channel.DRAFT)).thenReturn(true);
         assertThatThrownBy(() -> createUseCase.create(ORG, tool)).isInstanceOf(ConflictException.class);
 
-        assertThat(findUseCase.findByOrgKeyAndId(ORG, "tool1")).isEqualTo(tool);
-        when(toolRepo.findByOrgKeyAndId(ORG, "unknown")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown")).isInstanceOf(NotFoundException.class);
+        assertThat(findUseCase.findByOrgKeyAndId(ORG, "tool1", Channel.DRAFT)).isEqualTo(tool);
+        when(toolRepo.findByOrgKeyAndIdAndChannel(ORG, "unknown", Channel.DRAFT)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> findUseCase.findByOrgKeyAndId(ORG, "unknown", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
 
-        assertThat(findAllUseCase.findAll(ORG, null, null)).containsExactly(tool);
+        assertThat(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).containsExactly(tool);
 
         ToolDefinition desired = ToolDefinition.builder().orgKey(ORG).id("tool1").name("Tool Updated").build();
         assertThat(replaceUseCase.replace(ORG, "tool1", desired).getName()).isEqualTo("Tool Updated");
@@ -508,7 +508,7 @@ class WorkflowUseCasesTest {
         ExportWorkflowUseCase exportUseCase = new ExportWorkflowUseCase(
                 workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, yamlMapper);
         ImportWorkflowsUseCase importUseCase = new ImportWorkflowsUseCase(
-                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, yamlMapper, events);
+                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, yamlMapper);
 
         RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("dev").name("Developer")
                 .responsibleFor(List.of("code")).build();
@@ -560,11 +560,11 @@ class WorkflowUseCasesTest {
                                 .build()))
                 .build();
 
-        when(workflowRepo.findByOrgKeyAndId(ORG, "wf-export")).thenReturn(Optional.of(workflow));
-        when(roleRepo.findByOrgKeyAndIdIn(eq(ORG), anyList())).thenReturn(List.of(role));
-        when(artifactRepo.findByOrgKeyAndIdIn(eq(ORG), anyList())).thenReturn(List.of(artifact));
-        when(taskRepo.findByOrgKeyAndIdIn(eq(ORG), anyList())).thenReturn(List.of(task));
-        when(toolRepo.findByOrgKeyAndId(ORG, "runner")).thenReturn(Optional.of(tool));
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "wf-export", Channel.DRAFT)).thenReturn(Optional.of(workflow));
+        when(roleRepo.findByOrgKeyAndIdInAndChannel(eq(ORG), anyList(), eq(Channel.DRAFT))).thenReturn(List.of(role));
+        when(artifactRepo.findByOrgKeyAndIdInAndChannel(eq(ORG), anyList(), eq(Channel.DRAFT))).thenReturn(List.of(artifact));
+        when(taskRepo.findByOrgKeyAndIdInAndChannel(eq(ORG), anyList(), eq(Channel.DRAFT))).thenReturn(List.of(task));
+        when(toolRepo.findByOrgKeyAndIdAndChannel(ORG, "runner", Channel.DRAFT)).thenReturn(Optional.of(tool));
 
         byte[] exportedYaml = exportUseCase.execute(ORG, "wf-export");
         String yaml = new String(exportedYaml, StandardCharsets.UTF_8);
@@ -587,12 +587,12 @@ class WorkflowUseCasesTest {
                 .contains("expression: \"R2/PT5M\"");
 
         // Feed it straight back: nothing exists yet, so everything is a create and nothing errors.
-        when(workflowRepo.findByOrgKey(ORG)).thenReturn(List.of());
-        when(workflowRepo.findByOrgKeyAndId(ORG, "wf-export")).thenReturn(Optional.empty());
-        when(roleRepo.findByOrgKeyAndId(ORG, "dev")).thenReturn(Optional.empty());
-        when(artifactRepo.findByOrgKeyAndId(ORG, "code")).thenReturn(Optional.empty());
-        when(taskRepo.findByOrgKeyAndId(ORG, "impl")).thenReturn(Optional.empty());
-        when(toolRepo.findByOrgKeyAndId(ORG, "runner")).thenReturn(Optional.empty());
+        when(workflowRepo.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of());
+        when(workflowRepo.findByOrgKeyAndIdAndChannel(ORG, "wf-export", Channel.DRAFT)).thenReturn(Optional.empty());
+        when(roleRepo.findByOrgKeyAndIdAndChannel(ORG, "dev", Channel.DRAFT)).thenReturn(Optional.empty());
+        when(artifactRepo.findByOrgKeyAndIdAndChannel(ORG, "code", Channel.DRAFT)).thenReturn(Optional.empty());
+        when(taskRepo.findByOrgKeyAndIdAndChannel(ORG, "impl", Channel.DRAFT)).thenReturn(Optional.empty());
+        when(toolRepo.findByOrgKeyAndIdAndChannel(ORG, "runner", Channel.DRAFT)).thenReturn(Optional.empty());
 
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(exportedYaml));
         assertThat(outcome.errors()).isEmpty();
@@ -629,8 +629,8 @@ class WorkflowUseCasesTest {
     @Test
     void importWorkflows_rejectsStructurallyBrokenFiles() throws IOException {
         ImportWorkflowsUseCase importUseCase = new ImportWorkflowsUseCase(
-                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper(), events);
-        when(workflowRepo.findByOrgKey(ORG)).thenReturn(List.of());
+                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper());
+        when(workflowRepo.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of());
 
         assertThat(importOf(importUseCase, """
                 workflows:
@@ -760,7 +760,7 @@ class WorkflowUseCasesTest {
     @Test
     void importWorkflows_toleratesAnEmptyDocument() throws IOException {
         ImportWorkflowsUseCase importUseCase = new ImportWorkflowsUseCase(
-                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper(), events);
+                workflowRepo, roleRepo, artifactRepo, toolRepo, taskRepo, validator, new WorkflowYamlMapper());
 
         ImportOutcome outcome = importUseCase.execute(ORG,
                 new ByteArrayInputStream("{}".getBytes(StandardCharsets.UTF_8)));

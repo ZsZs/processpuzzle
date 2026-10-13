@@ -48,12 +48,12 @@ import org.hibernate.type.SqlTypes;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = {"orgKey", "id"})
+@EqualsAndHashCode(callSuper = true, of = {"orgKey", "id"})
 @ToString
 @Entity
 @Table(name = "workflow_definition")
 @IdClass(WorkflowKey.class)
-public class Workflow extends com.processpuzzle.workflow.common.Auditable {
+public class Workflow extends ReleasableDefinition {
 
     @Id
     @Column(name = "org_key", nullable = false)

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
@@ -120,7 +121,7 @@ class InputArtifactStartListenerTest {
     private void define(StartEvent startEvent) {
         Workflow workflow = Workflow.builder().orgKey(ORG).id("feedback").name("feedback")
                 .startEvents(List.of(startEvent)).build();
-        when(workflows.findByOrgKey(ORG)).thenReturn(List.of(workflow));
+        when(workflows.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).thenReturn(List.of(workflow));
         when(resolve.resolveByOrgKeyAndId(ORG, "feedback"))
                 .thenReturn(new ResolvedWorkflow(workflow, List.of(), List.of(ORDER), List.of()));
     }

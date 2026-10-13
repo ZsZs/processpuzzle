@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.TimerDefinition;
 import com.processpuzzle.workflow.definition.domain.TimerExpressions;
@@ -46,7 +47,7 @@ public class StartTimerScheduleReconciler {
         scheduleRepository.findByOrgKeyAndWorkflowId(orgKey, workflowId)
                 .forEach(row -> stale.put(row.getStartEventId(), row));
 
-        for (StartEvent startEvent : timedStartEvents(workflowRepository.findByOrgKeyAndId(orgKey, workflowId))) {
+        for (StartEvent startEvent : timedStartEvents(workflowRepository.findByOrgKeyAndIdAndChannel(orgKey, workflowId, Channel.RELEASED))) {
             String spec = specOf(startEvent.getTimer());
             StartTimerSchedule row = stale.remove(startEvent.getId());
             if (row != null && spec.equals(row.getSpecHash())) {

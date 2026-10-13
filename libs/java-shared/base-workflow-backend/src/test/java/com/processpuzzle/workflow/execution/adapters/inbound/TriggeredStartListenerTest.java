@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
 import com.processpuzzle.workflow.execution.domain.OccurredEventDocument;
@@ -60,7 +61,7 @@ class TriggeredStartListenerTest {
     @Test
     @SuppressWarnings("unchecked")
     void startsAMatchingWorkflowWithTheSubjectAsEntityAndTheMappedContext() {
-        when(workflowRepository.findByOrgKey(ORG)).thenReturn(List.of(workflow("fulfillment",
+        when(workflowRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).thenReturn(List.of(workflow("fulfillment",
                 triggering("order-created", "OrderCreatedEvent",
                         Map.of("orderId", "$.subjectId", "customer", "$.payload.customerName")))));
 
@@ -77,7 +78,7 @@ class TriggeredStartListenerTest {
                 .startType(WorkflowStartConditionType.ROLE_DEFINITION).eventType("OrderCreatedEvent").build());
         Workflow other = workflow("other", triggering("confirmed", "OrderConfirmedEvent", null));
         Workflow bare = Workflow.builder().orgKey(ORG).id("bare").name("bare").startEvents(null).build();
-        when(workflowRepository.findByOrgKey(ORG)).thenReturn(List.of(manual, other, bare));
+        when(workflowRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).thenReturn(List.of(manual, other, bare));
 
         listener.on(ORDER_CREATED);
 
@@ -86,7 +87,7 @@ class TriggeredStartListenerTest {
 
     @Test
     void oneWorkflowFailingDoesNotStopTheOthers() {
-        when(workflowRepository.findByOrgKey(ORG)).thenReturn(List.of(
+        when(workflowRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).thenReturn(List.of(
                 workflow("broken", triggering("start", "OrderCreatedEvent", Map.of("x", "not-a-path"))),
                 workflow("failing", triggering("start", "OrderCreatedEvent", null)),
                 workflow("healthy", triggering("start", "OrderCreatedEvent", null))));

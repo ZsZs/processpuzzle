@@ -1,6 +1,5 @@
 package com.processpuzzle.workflow.definition.domain;
 
-import com.processpuzzle.workflow.common.Auditable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -48,12 +47,12 @@ import org.hibernate.type.SqlTypes;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = {"orgKey", "workflowId"})
+@EqualsAndHashCode(callSuper = true, of = {"orgKey", "workflowId"})
 @ToString
 @Entity
 @Table(name = "workflow_diagram")
 @IdClass(WorkflowDiagramKey.class)
-public class WorkflowDiagram extends Auditable {
+public class WorkflowDiagram extends ReleasableDefinition {
 
     @Id
     @Column(name = "org_key", nullable = false)

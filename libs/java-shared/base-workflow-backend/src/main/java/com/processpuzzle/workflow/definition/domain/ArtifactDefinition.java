@@ -30,12 +30,12 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = {"orgKey", "id"})
+@EqualsAndHashCode(callSuper = true, of = {"orgKey", "id"})
 @ToString
 @Entity
 @Table(name = "workflow_artifact_definition")
 @IdClass(ArtifactDefinitionKey.class)
-public class ArtifactDefinition extends com.processpuzzle.workflow.common.Auditable {
+public class ArtifactDefinition extends ReleasableDefinition {
 
     @Id
     @Column(name = "org_key", nullable = false)

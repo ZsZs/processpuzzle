@@ -1,5 +1,8 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseStates;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.RoleReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.api.RoleDefinitionsApi;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateRoleDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteRoleDefinitionUseCase;
@@ -29,25 +32,30 @@ public class RoleDefinitionsEndpoint implements RoleDefinitionsApi {
     private final FindRoleDefinitionUseCase findRoleDefinition;
     private final FindAllRoleDefinitionsUseCase findAllRoleDefinitions;
     private final WorkflowDefinitionMapper mapper;
+    private final RoleReleaseParticipant releaseParticipant;
 
     public RoleDefinitionsEndpoint(CreateRoleDefinitionUseCase createRoleDefinition,
                                     ReplaceRoleDefinitionUseCase replaceRoleDefinition,
                                     DeleteRoleDefinitionUseCase deleteRoleDefinition,
                                     FindRoleDefinitionUseCase findRoleDefinition,
                                     FindAllRoleDefinitionsUseCase findAllRoleDefinitions,
-                                    WorkflowDefinitionMapper mapper) {
+                                    WorkflowDefinitionMapper mapper,
+            RoleReleaseParticipant releaseParticipant) {
         this.createRoleDefinition = createRoleDefinition;
         this.replaceRoleDefinition = replaceRoleDefinition;
         this.deleteRoleDefinition = deleteRoleDefinition;
         this.findRoleDefinition = findRoleDefinition;
         this.findAllRoleDefinitions = findAllRoleDefinitions;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
-    public ResponseEntity<List<RoleDefinition>> listRoleDefinitions(String orgKey, String where, String order) {
-        var roles = findAllRoleDefinitions.findAll(orgKey, where, order);
-        return ResponseEntity.ok(roles.stream().map(mapper::toRoleModel).toList());
+    public ResponseEntity<List<RoleDefinition>> listRoleDefinitions(String orgKey, String where, String order, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var roles = findAllRoleDefinitions.findAll(orgKey, channel, where, order).stream().map(mapper::toRoleModel).toList();
+        return ResponseEntity.ok(ReleaseStates.stamp(channel, releaseParticipant, orgKey, roles,
+                RoleDefinition::getId, RoleDefinition::setReleaseState));
     }
 
     @Override
@@ -57,8 +65,11 @@ public class RoleDefinitionsEndpoint implements RoleDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<RoleDefinition> getRoleDefinition(String orgKey, String roleId) {
-        return ResponseEntity.ok(mapper.toRoleModel(findRoleDefinition.findByOrgKeyAndId(orgKey, roleId)));
+    public ResponseEntity<RoleDefinition> getRoleDefinition(String orgKey, String roleId, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var role = mapper.toRoleModel(findRoleDefinition.findByOrgKeyAndId(orgKey, roleId, channel));
+        return ResponseEntity.ok(ReleaseStates.stampOne(channel, releaseParticipant, orgKey, role,
+                RoleDefinition::getId, RoleDefinition::setReleaseState));
     }
 
     @Override

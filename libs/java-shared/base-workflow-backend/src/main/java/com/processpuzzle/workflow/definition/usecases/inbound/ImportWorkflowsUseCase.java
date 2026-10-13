@@ -1,5 +1,7 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.DefinitionKinds;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -35,8 +37,6 @@ import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskStepType;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
-import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,7 +80,6 @@ public class ImportWorkflowsUseCase {
     private final TaskDefinitionRepository taskRepository;
     private final WorkflowValidator validator;
     private final WorkflowYamlMapper mapper;
-    private final ApplicationEventPublisher events;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
@@ -91,8 +89,7 @@ public class ImportWorkflowsUseCase {
                                             ToolDefinitionRepository toolRepository,
                                             TaskDefinitionRepository taskRepository,
                                             WorkflowValidator validator,
-                                            WorkflowYamlMapper mapper,
-                                            ApplicationEventPublisher events) {
+                                            WorkflowYamlMapper mapper) {
         this.repository = repository;
         this.roleRepository = roleRepository;
         this.artifactRepository = artifactRepository;
@@ -100,7 +97,6 @@ public class ImportWorkflowsUseCase {
         this.taskRepository = taskRepository;
         this.validator = validator;
         this.mapper = mapper;
-        this.events = events;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -132,7 +128,12 @@ public class ImportWorkflowsUseCase {
         upsertTasks(orgKey, tasks.values(), tally);
         upsertWorkflows(orgKey, workflows.values(), tally);
 
-        return new ImportOutcome(tally.created, tally.updated, errors);
+        return new ImportOutcome(tally.created, tally.updated, errors, Map.of(
+                DefinitionKinds.ROLE, List.copyOf(roles.keySet()),
+                DefinitionKinds.ARTIFACT, List.copyOf(artifacts.keySet()),
+                DefinitionKinds.TOOL, List.copyOf(tools.keySet()),
+                DefinitionKinds.TASK, List.copyOf(tasks.keySet()),
+                DefinitionKinds.WORKFLOW, List.copyOf(workflows.keySet())));
     }
 
     // ---------------------------------------------------------------- indexing
@@ -214,7 +215,7 @@ public class ImportWorkflowsUseCase {
     private Map<String, String> buildExtendsLinks(String orgKey, Map<String, WorkflowYamlEntry> byId) {
         // Only this organization's existing workflows can satisfy an 'extends' reference.
         Map<String, String> extendsLinks = new HashMap<>();
-        for (Workflow existing : repository.findByOrgKey(orgKey)) {
+        for (Workflow existing : repository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT)) {
             extendsLinks.put(existing.getId(), existing.getExtendsWorkflowId());
         }
         for (WorkflowYamlEntry entry : byId.values()) {
@@ -350,19 +351,17 @@ public class ImportWorkflowsUseCase {
      */
     private void upsertRoles(String orgKey, Iterable<RoleYamlEntry> entries, Tally tally) {
         for (RoleYamlEntry entry : entries) {
-            Optional<RoleDefinition> existing = roleRepository.findByOrgKeyAndId(orgKey, entry.id());
+            Optional<RoleDefinition> existing = roleRepository.findByOrgKeyAndIdAndChannel(orgKey, entry.id(), Channel.DRAFT);
             RoleDefinition role = existing.orElseGet(() -> mapper.toRoleDomain(orgKey, entry));
             existing.ifPresent(present -> mapper.applyRole(present, entry));
             tally.count(existing.isPresent());
             roleRepository.save(role);
-            events.publishEvent(new RoleDefinitionChangedEvent(
-                    orgKey, role.getId(), role.getName(), role.getDescription()));
         }
     }
 
     private void upsertArtifacts(String orgKey, Iterable<ArtifactYamlEntry> entries, Tally tally) {
         for (ArtifactYamlEntry entry : entries) {
-            Optional<ArtifactDefinition> existing = artifactRepository.findByOrgKeyAndId(orgKey, entry.id());
+            Optional<ArtifactDefinition> existing = artifactRepository.findByOrgKeyAndIdAndChannel(orgKey, entry.id(), Channel.DRAFT);
             ArtifactDefinition artifact = existing.orElseGet(() -> mapper.toArtifactDomain(orgKey, entry));
             existing.ifPresent(present -> mapper.applyArtifact(present, entry));
             tally.count(existing.isPresent());
@@ -372,7 +371,7 @@ public class ImportWorkflowsUseCase {
 
     private void upsertTools(String orgKey, Iterable<ToolYamlEntry> entries, Tally tally) {
         for (ToolYamlEntry entry : entries) {
-            Optional<ToolDefinition> existing = toolRepository.findByOrgKeyAndId(orgKey, entry.id());
+            Optional<ToolDefinition> existing = toolRepository.findByOrgKeyAndIdAndChannel(orgKey, entry.id(), Channel.DRAFT);
             ToolDefinition tool = existing.orElseGet(() -> mapper.toToolDomain(orgKey, entry));
             existing.ifPresent(present -> mapper.applyTool(present, entry));
             tally.count(existing.isPresent());
@@ -382,7 +381,7 @@ public class ImportWorkflowsUseCase {
 
     private void upsertTasks(String orgKey, Iterable<TaskYamlEntry> entries, Tally tally) {
         for (TaskYamlEntry entry : entries) {
-            Optional<TaskDefinition> existing = taskRepository.findByOrgKeyAndId(orgKey, entry.id());
+            Optional<TaskDefinition> existing = taskRepository.findByOrgKeyAndIdAndChannel(orgKey, entry.id(), Channel.DRAFT);
             TaskDefinition task = existing.orElseGet(() -> mapper.toTaskDomain(orgKey, entry));
             existing.ifPresent(present -> mapper.applyTask(present, entry));
             tally.count(existing.isPresent());
@@ -392,13 +391,12 @@ public class ImportWorkflowsUseCase {
 
     private void upsertWorkflows(String orgKey, Iterable<WorkflowYamlEntry> entries, Tally tally) {
         for (WorkflowYamlEntry entry : entries) {
-            Optional<Workflow> existing = repository.findByOrgKeyAndId(orgKey, entry.id());
+            Optional<Workflow> existing = repository.findByOrgKeyAndIdAndChannel(orgKey, entry.id(), Channel.DRAFT);
             Workflow workflow = existing.orElseGet(() -> mapper.toWorkflowDomain(orgKey, entry));
             existing.ifPresent(present -> mapper.applyWorkflow(present, entry));
             tally.count(existing.isPresent());
             validator.validate(workflow);
             repository.save(workflow);
-            events.publishEvent(new WorkflowChangedEvent(orgKey, workflow.getId(), false));
         }
     }
 

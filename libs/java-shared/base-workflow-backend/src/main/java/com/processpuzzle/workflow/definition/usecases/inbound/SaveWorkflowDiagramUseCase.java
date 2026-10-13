@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
@@ -50,11 +51,11 @@ public class SaveWorkflowDiagramUseCase {
     public Result save(WorkflowDiagram diagram) {
         String orgKey = diagram.getOrgKey();
         String workflowId = diagram.getWorkflowId();
-        if (!workflowRepository.existsByOrgKeyAndId(orgKey, workflowId)) {
+        if (!workflowRepository.existsByOrgKeyAndIdAndChannel(orgKey, workflowId, Channel.DRAFT)) {
             throw new NotFoundException("No workflow definition with id '%s'".formatted(workflowId));
         }
 
-        Optional<WorkflowDiagram> existing = repository.findByOrgKeyAndWorkflowId(orgKey, workflowId);
+        Optional<WorkflowDiagram> existing = repository.findByOrgKeyAndWorkflowIdAndChannel(orgKey, workflowId, Channel.DRAFT);
         if (existing.isEmpty()) {
             return new Result(repository.save(diagram), true);
         }

@@ -1,5 +1,8 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseStates;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.WorkflowReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.workflow.api.WorkflowsApi;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateWorkflowUseCase;
@@ -41,6 +44,7 @@ public class WorkflowsEndpoint implements WorkflowsApi {
     private final ImportWorkflowsUseCase importWorkflows;
     private final ExportWorkflowUseCase exportWorkflow;
     private final WorkflowDefinitionMapper mapper;
+    private final WorkflowReleaseParticipant releaseParticipant;
 
     public WorkflowsEndpoint(CreateWorkflowUseCase createWorkflow,
                                        ReplaceWorkflowUseCase replaceWorkflow,
@@ -49,7 +53,8 @@ public class WorkflowsEndpoint implements WorkflowsApi {
                                        FindAllWorkflowsUseCase findAllWorkflows,
                                        ImportWorkflowsUseCase importWorkflows,
                                        ExportWorkflowUseCase exportWorkflow,
-                                       WorkflowDefinitionMapper mapper) {
+                                       WorkflowDefinitionMapper mapper,
+            WorkflowReleaseParticipant releaseParticipant) {
         this.createWorkflow = createWorkflow;
         this.replaceWorkflow = replaceWorkflow;
         this.deleteWorkflow = deleteWorkflow;
@@ -58,6 +63,7 @@ public class WorkflowsEndpoint implements WorkflowsApi {
         this.importWorkflows = importWorkflows;
         this.exportWorkflow = exportWorkflow;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
@@ -67,8 +73,11 @@ public class WorkflowsEndpoint implements WorkflowsApi {
     }
 
     @Override
-    public ResponseEntity<Workflow> getWorkflow(String orgKey, String workflowId) {
-        return ResponseEntity.ok(mapper.toModel(findWorkflow.findByOrgKeyAndId(orgKey, workflowId)));
+    public ResponseEntity<Workflow> getWorkflow(String orgKey, String workflowId, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        Workflow workflow = mapper.toModel(findWorkflow.findByOrgKeyAndId(orgKey, workflowId, channel));
+        return ResponseEntity.ok(ReleaseStates.stampOne(channel, releaseParticipant, orgKey, workflow,
+                Workflow::getId, Workflow::setReleaseState));
     }
 
     @Override
@@ -85,8 +94,13 @@ public class WorkflowsEndpoint implements WorkflowsApi {
 
     @Override
     public ResponseEntity<PageOfWorkflow> listWorkflows(
-            String orgKey, String where, String order, Integer page, Integer size) {
-        return ResponseEntity.ok(mapper.toModel(findAllWorkflows.findAll(orgKey, where, order, page, size)));
+            String orgKey, String where, String order, Integer page, Integer size, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        PageOfWorkflow body = mapper.toModel(findAllWorkflows.findAll(orgKey, channel, where, order, page, size));
+        if (body.getContent() != null) {
+            ReleaseStates.stamp(channel, releaseParticipant, orgKey, body.getContent(), Workflow::getId, Workflow::setReleaseState);
+        }
+        return ResponseEntity.ok(body);
     }
 
     @Override

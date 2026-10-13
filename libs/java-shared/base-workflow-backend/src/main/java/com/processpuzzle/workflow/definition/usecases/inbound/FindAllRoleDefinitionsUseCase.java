@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
@@ -27,8 +28,9 @@ public class FindAllRoleDefinitionsUseCase {
      * operations of base-workflow-api.yaml return a plain array, these being small,
      * catalog-sized resources per organization.
      */
-    public List<RoleDefinition> findAll(String orgKey, String where, String order) {
-        Specification<RoleDefinition> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public List<RoleDefinition> findAll(String orgKey, Channel channel, String where, String order) {
+        Specification<RoleDefinition> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("orgKey"), orgKey), cb.equal(root.get("channel"), channel));
 
         Specification<RoleDefinition> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {
