@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
@@ -51,7 +52,7 @@ class PlatformEventCatalogListenerTest {
 
     @Test
     void republishesAMatchingDefinitionWithTheFactsSubjectAndPayload() {
-        when(repository.findByOrgKeyAndKindAndSubjectTypeAndAction(ORG, EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
+        when(repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(ORG, Channel.RELEASED, EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
                 .thenReturn(List.of(definition("OrderCreatedEvent", PlatformEventAction.CREATED, null)));
 
         listener.on(PlatformEvent.of(ORG, "order", "42", PlatformEventAction.CREATED, Map.of("customer", "ACME"), WHEN));
@@ -62,7 +63,7 @@ class PlatformEventCatalogListenerTest {
 
     @Test
     void appliesTheStateFilterAndPublishesOncePerMatchingDefinition() {
-        when(repository.findByOrgKeyAndKindAndSubjectTypeAndAction(ORG, EventKind.SYSTEM, "order", PlatformEventAction.STATE_CHANGED))
+        when(repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(ORG, Channel.RELEASED, EventKind.SYSTEM, "order", PlatformEventAction.STATE_CHANGED))
                 .thenReturn(List.of(
                         definition("OrderConfirmedEvent", PlatformEventAction.STATE_CHANGED, "CONFIRMED"),
                         definition("OrderDeliveredEvent", PlatformEventAction.STATE_CHANGED, "DELIVERED"),
@@ -76,7 +77,7 @@ class PlatformEventCatalogListenerTest {
 
     @Test
     void aFactNoDefinitionNamesIsDropped() {
-        when(repository.findByOrgKeyAndKindAndSubjectTypeAndAction(ORG, EventKind.SYSTEM, "partner", PlatformEventAction.DELETED))
+        when(repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(ORG, Channel.RELEASED, EventKind.SYSTEM, "partner", PlatformEventAction.DELETED))
                 .thenReturn(List.of());
 
         listener.on(PlatformEvent.of(ORG, "partner", "7", PlatformEventAction.DELETED, null, WHEN));
@@ -88,7 +89,7 @@ class PlatformEventCatalogListenerTest {
     void anotherOrganizationsDefinitionDoesNotMatch() {
         EventDefinition foreign = definition("OrderCreatedEvent", PlatformEventAction.CREATED, null);
         foreign.setOrgKey("org-2");
-        when(repository.findByOrgKeyAndKindAndSubjectTypeAndAction(ORG, EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
+        when(repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(ORG, Channel.RELEASED, EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
                 .thenReturn(List.of(foreign));
 
         listener.on(PlatformEvent.of(ORG, "order", "42", PlatformEventAction.CREATED, Map.of(), WHEN));

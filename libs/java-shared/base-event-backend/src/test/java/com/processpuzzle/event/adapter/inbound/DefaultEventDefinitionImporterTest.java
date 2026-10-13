@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.usecase.ImportEventDefinitions;
 import com.processpuzzle.event.usecase.ImportOutcome;
@@ -25,15 +26,16 @@ class DefaultEventDefinitionImporterTest {
     @Test
     void importsTheBundledTestbedSeedIntoItsOrganization() {
         EventDefinitionRepository repository = mock(EventDefinitionRepository.class);
-        when(repository.findByOrgKeyAndId(any(), any())).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel(any(), any(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
         DefaultEventDefinitionImporter importer = new DefaultEventDefinitionImporter(
-                new ImportEventDefinitions(repository), new PathMatchingResourcePatternResolver());
+                new ImportEventDefinitions(repository), new PathMatchingResourcePatternResolver(),
+                new EventDefinitionReleaseParticipant(repository));
 
         importer.loadDefaults();
 
-        verify(repository).findByOrgKeyAndId("processpuzzle-testbed", "OrderCreatedEvent");
-        verify(repository).findByOrgKeyAndId("processpuzzle-testbed", "OrderConfirmedEvent");
-        verify(repository).findByOrgKeyAndId("processpuzzle-testbed", "OrderDeliveredEvent");
+        verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "OrderCreatedEvent", Channel.DRAFT);
+        verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "OrderConfirmedEvent", Channel.DRAFT);
+        verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "OrderDeliveredEvent", Channel.DRAFT);
     }
 
     @Test
@@ -55,7 +57,7 @@ class DefaultEventDefinitionImporterTest {
         when(resolver.getResources(DefaultEventDefinitionImporter.LOCATION)).thenReturn(new Resource[] {badName, failing});
         when(useCase.execute(eq("acme"), any())).thenThrow(new IOException("boom"));
 
-        new DefaultEventDefinitionImporter(useCase, resolver).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, resolver, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
 
         verify(useCase).execute(eq("acme"), any());
     }
@@ -73,7 +75,7 @@ class DefaultEventDefinitionImporterTest {
         when(resolver.getResources(DefaultEventDefinitionImporter.LOCATION)).thenReturn(new Resource[] {file});
         when(useCase.execute(eq("acme"), any())).thenReturn(ImportOutcome.rejected(List.of("bad")));
 
-        new DefaultEventDefinitionImporter(useCase, resolver).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, resolver, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
 
         verify(useCase).execute(eq("acme"), any());
     }
@@ -86,8 +88,8 @@ class DefaultEventDefinitionImporterTest {
         ResourcePatternResolver broken = mock(ResourcePatternResolver.class);
         when(broken.getResources(any())).thenThrow(new IOException("boom"));
 
-        new DefaultEventDefinitionImporter(useCase, empty).loadDefaults();
-        new DefaultEventDefinitionImporter(useCase, broken).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, empty, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, broken, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
 
         verify(useCase, never()).execute(any(), any());
     }

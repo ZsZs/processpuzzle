@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
@@ -62,7 +63,7 @@ class EventDefinitionUseCasesTest {
 
     @Test
     void createRefusesADuplicateId() {
-        when(repository.existsByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(true);
+        when(repository.existsByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(true);
         EventDefinition input = orderCreated();
 
         assertThatThrownBy(() -> create.create(ORG, input))
@@ -85,7 +86,7 @@ class EventDefinitionUseCasesTest {
         EventDefinition stored = orderCreated();
         stored.setOrgKey(ORG);
         stored.setVersion(2L);
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(stored));
         EventDefinition desired = orderCreated();
         desired.setName("Renamed");
         desired.setVersion(2L);
@@ -100,7 +101,7 @@ class EventDefinitionUseCasesTest {
     void replaceWithoutAVersionOverwritesUnconditionally() {
         EventDefinition stored = orderCreated();
         stored.setVersion(5L);
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(stored));
 
         assertThat(replace.replace(ORG, "OrderCreatedEvent", orderCreated())).isSameAs(stored);
     }
@@ -109,7 +110,7 @@ class EventDefinitionUseCasesTest {
     void replaceRefusesAStaleVersion() {
         EventDefinition stored = orderCreated();
         stored.setVersion(3L);
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(stored));
         EventDefinition desired = orderCreated();
         desired.setVersion(2L);
 
@@ -119,7 +120,7 @@ class EventDefinitionUseCasesTest {
 
     @Test
     void replaceRefusesAnInvalidResult() {
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(orderCreated()));
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(orderCreated()));
         EventDefinition desired = orderCreated();
         desired.setKind(EventKind.MESSAGE);
 
@@ -129,14 +130,14 @@ class EventDefinitionUseCasesTest {
 
     @Test
     void replaceAndDeleteOfAnUnknownIdAreNotFound() {
-        when(repository.findByOrgKeyAndId(ORG, "nope")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "nope", Channel.DRAFT)).thenReturn(Optional.empty());
         EventDefinition desired = orderCreated();
 
         assertThatThrownBy(() -> replace.replace(ORG, "nope", desired))
                 .isInstanceOf(EventDefinitionNotFoundException.class);
         assertThatThrownBy(() -> delete.delete(ORG, "nope"))
                 .isInstanceOf(EventDefinitionNotFoundException.class);
-        assertThatThrownBy(() -> find.find(ORG, "nope"))
+        assertThatThrownBy(() -> find.find(ORG, "nope", Channel.DRAFT))
                 .isInstanceOf(EventDefinitionNotFoundException.class)
                 .hasMessageContaining("nope").hasMessageContaining(ORG);
     }
@@ -144,7 +145,7 @@ class EventDefinitionUseCasesTest {
     @Test
     void deleteRemovesTheStoredRow() {
         EventDefinition stored = orderCreated();
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(stored));
 
         delete.delete(ORG, "OrderCreatedEvent");
 
@@ -153,12 +154,12 @@ class EventDefinitionUseCasesTest {
 
     @Test
     void kindOfNamesTheKindAsTheSharedContractDoes() {
-        when(repository.findByOrgKeyAndId(ORG, "InvoiceIssued")).thenReturn(Optional.of(
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "InvoiceIssued", Channel.DRAFT)).thenReturn(Optional.of(
                 EventDefinition.builder().orgKey(ORG).id("InvoiceIssued").name("x").kind(EventKind.MESSAGE).build()));
 
         assertThat(find.kindOf(ORG, "InvoiceIssued")).contains(CatalogEventKind.MESSAGE);
         assertThat(find.kindOf(ORG, "Nope")).isEmpty();
-        assertThat(find.lookup(ORG, null)).isEmpty();
+        assertThat(find.released(ORG, null)).isEmpty();
         for (EventKind kind : EventKind.values()) {
             assertThat(CatalogEventKind.valueOf(kind.name()).name()).isEqualTo(kind.name());
         }
@@ -167,12 +168,12 @@ class EventDefinitionUseCasesTest {
     @Test
     void findAnswersByIdListAndExistence() {
         EventDefinition stored = orderCreated();
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(stored));
-        when(repository.findByOrgKeyOrderByIdAsc(ORG)).thenReturn(List.of(stored));
-        when(repository.existsByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(true);
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndChannelOrderByIdAsc(ORG, Channel.DRAFT)).thenReturn(List.of(stored));
+        when(repository.existsByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(true);
 
-        assertThat(find.find(ORG, "OrderCreatedEvent")).isSameAs(stored);
-        assertThat(find.findAll(ORG)).containsExactly(stored);
+        assertThat(find.find(ORG, "OrderCreatedEvent", Channel.DRAFT)).isSameAs(stored);
+        assertThat(find.findAll(ORG, Channel.DRAFT)).containsExactly(stored);
         assertThat(find.exists(ORG, "OrderCreatedEvent")).isTrue();
         assertThat(find.exists(ORG, null)).isFalse();
     }

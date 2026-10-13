@@ -1,5 +1,6 @@
 package com.processpuzzle.event.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.usecase.exception.EventDefinitionNotFoundException;
@@ -21,7 +22,7 @@ public class DeleteEventDefinition {
     }
 
     public void delete(String orgKey, String id) {
-        EventDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+        EventDefinition existing = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new EventDefinitionNotFoundException(orgKey, id));
         repository.delete(existing);
     }

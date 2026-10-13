@@ -1,5 +1,8 @@
 package com.processpuzzle.event.usecase;
 
+import static org.mockito.ArgumentMatchers.eq;
+import com.processpuzzle.core.definition.Channel;
+import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -29,7 +32,7 @@ class ImportEventDefinitionsTest {
     @BeforeEach
     void setUp() {
         repository = mock(EventDefinitionRepository.class);
-        when(repository.findByOrgKeyAndId(any(), any())).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndIdAndChannel(any(), any(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
         importer = new ImportEventDefinitions(repository);
     }
 
@@ -43,7 +46,7 @@ class ImportEventDefinitionsTest {
                 .orgKey(ORG).id("OrderCreatedEvent").name("Old").kind(EventKind.SYSTEM)
                 .subjectType("order").action(PlatformEventAction.CREATED).version(4L)
                 .build();
-        when(repository.findByOrgKeyAndId(ORG, "OrderCreatedEvent")).thenReturn(Optional.of(stored));
+        when(repository.findByOrgKeyAndIdAndChannel(ORG, "OrderCreatedEvent", Channel.DRAFT)).thenReturn(Optional.of(stored));
 
         ImportOutcome outcome = importer.execute(ORG, yaml("""
                 event-definitions:
@@ -61,7 +64,7 @@ class ImportEventDefinitionsTest {
                     unknownField: ignored
                 """));
 
-        assertThat(outcome).isEqualTo(new ImportOutcome(1, 1, java.util.List.of()));
+        assertThat(outcome).isEqualTo(new ImportOutcome(1, 1, List.of(), List.of("OrderCreatedEvent", "OrderConfirmedEvent")));
         assertThat(stored.getName()).isEqualTo("Order created");
         assertThat(stored.getVersion()).isEqualTo(4L);
         verify(repository).save(stored);
@@ -94,8 +97,8 @@ class ImportEventDefinitionsTest {
 
     @Test
     void anEmptyFileOrListImportsNothing() throws IOException {
-        assertThat(importer.execute(ORG, yaml(""))).isEqualTo(new ImportOutcome(0, 0, null));
-        assertThat(importer.execute(ORG, yaml("event-definitions:\n"))).isEqualTo(new ImportOutcome(0, 0, null));
+        assertThat(importer.execute(ORG, yaml(""))).isEqualTo(new ImportOutcome(0, 0, null, List.of()));
+        assertThat(importer.execute(ORG, yaml("event-definitions:\n"))).isEqualTo(new ImportOutcome(0, 0, null, List.of()));
         assertThat(ImportOutcome.rejected(null).errors()).isEmpty();
     }
 }

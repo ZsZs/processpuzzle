@@ -2,6 +2,7 @@ package com.processpuzzle;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.processpuzzle.event.adapter.inbound.EventDefinitionReleaseParticipant;
 import com.processpuzzle.event.usecase.ImportEventDefinitions;
 import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
@@ -163,6 +164,8 @@ class WorkflowTimersIntegrationTest {
     @Autowired
     private ImportEventDefinitions importEventDefinitions;
     @Autowired
+    private EventDefinitionReleaseParticipant eventRelease;
+    @Autowired
     private ImportWorkflowsUseCase importWorkflows;
     @Autowired
     private StartWorkflowInstanceUseCase startWorkflowInstance;
@@ -189,7 +192,10 @@ class WorkflowTimersIntegrationTest {
 
     @BeforeEach
     void seed() throws IOException {
-        assertThat(importEventDefinitions.execute(ORG, stream(EVENTS)).errors()).isEmpty();
+        var importedEvents = importEventDefinitions.execute(ORG, stream(EVENTS));
+        assertThat(importedEvents.errors()).isEmpty();
+        // Imported as drafts; the running workflows match events against the released catalog.
+        eventRelease.release(ORG, importedEvents.written());
         assertThat(importWorkflows.execute(ORG, stream(WORKFLOWS)).errors()).isEmpty();
     }
 
