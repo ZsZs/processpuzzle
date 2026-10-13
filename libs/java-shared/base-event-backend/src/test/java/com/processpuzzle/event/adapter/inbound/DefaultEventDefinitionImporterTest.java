@@ -57,7 +57,7 @@ class DefaultEventDefinitionImporterTest {
         when(resolver.getResources(DefaultEventDefinitionImporter.LOCATION)).thenReturn(new Resource[] {badName, failing});
         when(useCase.execute(eq("acme"), any())).thenThrow(new IOException("boom"));
 
-        new DefaultEventDefinitionImporter(useCase, resolver, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, resolver, mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
 
         verify(useCase).execute(eq("acme"), any());
     }
@@ -75,7 +75,7 @@ class DefaultEventDefinitionImporterTest {
         when(resolver.getResources(DefaultEventDefinitionImporter.LOCATION)).thenReturn(new Resource[] {file});
         when(useCase.execute(eq("acme"), any())).thenReturn(ImportOutcome.rejected(List.of("bad")));
 
-        new DefaultEventDefinitionImporter(useCase, resolver, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, resolver, mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
 
         verify(useCase).execute(eq("acme"), any());
     }
@@ -88,8 +88,8 @@ class DefaultEventDefinitionImporterTest {
         ResourcePatternResolver broken = mock(ResourcePatternResolver.class);
         when(broken.getResources(any())).thenThrow(new IOException("boom"));
 
-        new DefaultEventDefinitionImporter(useCase, empty, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
-        new DefaultEventDefinitionImporter(useCase, broken, org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, empty, mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
+        new DefaultEventDefinitionImporter(useCase, broken, mock(EventDefinitionReleaseParticipant.class)).loadDefaults();
 
         verify(useCase, never()).execute(any(), any());
     }

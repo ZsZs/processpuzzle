@@ -60,7 +60,7 @@ class EventDefinitionsEndpointTest {
         importer = mock(ImportEventDefinitions.class);
         mvc = MockMvcBuilders
                 .standaloneSetup(new EventDefinitionsEndpoint(create, replace, deleteUseCase, find, importer,
-                        new EventDefinitionMapper(), org.mockito.Mockito.mock(EventDefinitionReleaseParticipant.class)))
+                        new EventDefinitionMapper(), mock(EventDefinitionReleaseParticipant.class)))
                 .setControllerAdvice(new EventApiExceptionHandler())
                 .build();
     }
