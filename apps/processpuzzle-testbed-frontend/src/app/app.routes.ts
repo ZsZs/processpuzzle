@@ -15,6 +15,7 @@ import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
+import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
 import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
@@ -281,6 +282,24 @@ export const appRoutes: Route[] = [
         // TRIGGERING_EVENT start event picks from — and declares its own transloco scopes. Static children,
         // for the same reason as the base-state branch above.
         children: BASE_EVENT_ROUTES,
+      },
+    ],
+  },
+  {
+    path: 'base-release',
+    title: 'ProcessPuzzle Testbed - Base Release',
+    data: { icon: 'rocket_launch', menuTitle: 'base-release' },
+    loadComponent: () => import('./content/base-release/base-release.component').then((comp) => comp.BaseReleaseComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-release/overview.component').then((comp) => comp.OverviewComponent) },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-release/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_RELEASE_ROUTES` is empty until the library gains release screens; static children, like the
+        // branches above.
+        children: BASE_RELEASE_ROUTES,
       },
     ],
   },

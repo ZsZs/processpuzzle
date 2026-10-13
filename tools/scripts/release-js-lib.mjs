@@ -40,6 +40,7 @@ const PROJECTS = new Map([
   ['base-ai-frontend', 'libs/js-shared/base-ai-frontend'],
   ['base-starter-frontend', 'libs/js-shared/base-starter-frontend'],
   ['base-event-frontend', 'libs/js-shared/base-event-frontend'],
+  ['base-release-frontend', 'libs/js-shared/base-release-frontend'],
   ['auth', 'libs/js-shared/auth'],
   ['base-app-frontend', 'libs/js-shared/base-app-frontend'],
   ['base-document-frontend', 'libs/js-shared/base-document-frontend'],
