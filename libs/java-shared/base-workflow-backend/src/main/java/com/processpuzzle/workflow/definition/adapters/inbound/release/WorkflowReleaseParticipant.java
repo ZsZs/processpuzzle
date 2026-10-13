@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.springframework.context.ApplicationEventPublisher;
@@ -61,6 +62,18 @@ public class WorkflowReleaseParticipant extends DefinitionReleaseParticipant<Wor
         this.diagrams = diagrams;
         this.instances = instances;
         this.events = events;
+    }
+
+    /**
+     * The workflows' drafts, and the workflow of every draft layout: a layout is released with its workflow, so it is
+     * that workflow's draft. A designer cannot save one without its workflow ({@code SaveWorkflowDiagramUseCase}),
+     * nor keep one when the workflow is deleted.
+     */
+    @Override
+    public Set<String> drafts(String orgKey) {
+        Set<String> keys = new TreeSet<>(super.drafts(orgKey));
+        diagrams.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).forEach(diagram -> keys.add(diagram.getWorkflowId()));
+        return keys;
     }
 
     @Override

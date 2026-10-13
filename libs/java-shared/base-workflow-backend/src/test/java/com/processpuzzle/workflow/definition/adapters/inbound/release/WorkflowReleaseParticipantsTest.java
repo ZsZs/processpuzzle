@@ -200,6 +200,14 @@ class WorkflowReleaseParticipantsTest {
                 .extracting(WorkflowDiagram::getViewport).isEqualTo(new DiagramViewport(2, 2, 1));
     }
 
+    /** A layout is its workflow's draft: released with it, reported with it. */
+    @Test
+    void aDraftLayoutIsADraftOfItsWorkflow() {
+        save(diagramRepository, diagram("approval", 1));
+
+        assertThat(workflows.drafts(ORG)).containsExactly("approval");
+    }
+
     @Test
     void refusesToRemoveAWorkflowWhileItRuns_andATaskWhileItIsOpen() {
         save(workflowRepository, workflow("approval"));
