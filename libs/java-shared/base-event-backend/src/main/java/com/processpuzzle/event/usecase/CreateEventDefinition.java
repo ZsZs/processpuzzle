@@ -1,5 +1,6 @@
 package com.processpuzzle.event.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.usecase.exception.EventDefinitionAlreadyExistsException;
@@ -21,11 +22,12 @@ public class CreateEventDefinition {
     public EventDefinition create(String orgKey, EventDefinition definition) {
         definition.setOrgKey(orgKey);
         definition.setVersion(null);
+        definition.setChannel(Channel.DRAFT);
         List<String> errors = definition.validate();
         if (!errors.isEmpty()) {
             throw new InvalidEventDefinitionException(definition.getId(), errors);
         }
-        if (repository.existsByOrgKeyAndId(orgKey, definition.getId())) {
+        if (repository.existsByOrgKeyAndIdAndChannel(orgKey, definition.getId(), Channel.DRAFT)) {
             throw new EventDefinitionAlreadyExistsException(orgKey, definition.getId());
         }
         return repository.save(definition);

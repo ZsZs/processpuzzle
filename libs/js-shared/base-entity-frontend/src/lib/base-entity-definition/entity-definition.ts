@@ -65,6 +65,7 @@ export const ENTITY_FORM_CONTROL_TYPES: readonly string[] = [
   'COMPONENTS',
   'RELATED_ENTITIES',
   'ARTIFACT',
+  'AVATAR',
 ];
 
 /**
@@ -124,6 +125,8 @@ export class EntityAttributeDefinition implements BaseEntity {
   isLinkToDetails?: boolean;
   /** The list column hugs its content instead of filling the remaining width — the descriptor's `autosizeColumn`. */
   autosizeColumn?: boolean;
+  /** Predefined avatar icon or image URL fallback for AVATAR form control. */
+  defaultAvatar?: string;
 
   constructor(init: Partial<EntityAttributeDefinition> = {}) {
     this.code = init.code ?? '';
@@ -146,6 +149,7 @@ export class EntityAttributeDefinition implements BaseEntity {
     this.linkedEntityType = init.linkedEntityType;
     this.isLinkToDetails = init.isLinkToDetails;
     this.autosizeColumn = init.autosizeColumn;
+    this.defaultAvatar = init.defaultAvatar;
   }
 }
 

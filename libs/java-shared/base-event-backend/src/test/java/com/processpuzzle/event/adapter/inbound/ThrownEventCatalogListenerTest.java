@@ -40,7 +40,7 @@ class ThrownEventCatalogListenerTest {
     }
 
     private void catalog(String id, EventKind kind) {
-        when(find.lookup(ORG, id)).thenReturn(Optional.of(
+        when(find.released(ORG, id)).thenReturn(Optional.of(
                 EventDefinition.builder().orgKey(ORG).id(id).name(id).kind(kind).build()));
     }
 
@@ -74,7 +74,7 @@ class ThrownEventCatalogListenerTest {
 
     @Test
     void dropsAThrowOfAnUndefinedEvent() {
-        when(find.lookup(ORG, "Gone")).thenReturn(Optional.empty());
+        when(find.released(ORG, "Gone")).thenReturn(Optional.empty());
 
         listener.on(thrown("Gone"));
 

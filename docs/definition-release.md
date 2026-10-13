@@ -89,7 +89,8 @@ erases both tables with the tenant.
 | entity | `base_entity_definition.channel`, unique `(org_key, code, channel)`; attributes follow their definition | `EntityDefinitionReleaseParticipant` (base-entity) | step 2 |
 | state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
 | rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
-| workflow, catalogue, event | `channel` on the definition tables | step 3 | |
+| event | `event_definition.channel`, key `(org_key, id, channel)` | `EventDefinitionReleaseParticipant` (base-event) | step 3a |
+| workflow, catalogue | `channel` on the workflow, role, task, artifact, tool and diagram tables | step 3b | |
 | document | `published_documents`, per translation | step 4 | |
 
 **Designer CRUD reads and writes the draft only.** Endpoints are unchanged; reads take an optional
@@ -128,6 +129,21 @@ so a draft created later is never released by a restart. A release updates the r
 matching attributes by code — never clear-and-re-add, because Hibernate flushes inserts before orphan
 deletes. `DefaultEntityLoader` releases what it seeds at once, since its sample objects are validated
 against the released definition.
+
+### Events (step 3a)
+
+- **Who reads which row.** The platform-fact matcher (`PlatformEventCatalogListener`) and the thrown-event
+  republisher (`ThrownEventCatalogListener`, via `FindEventDefinition.released`) read the released catalog.
+  Designer CRUD, import and the list and get endpoints (`revision`, `releaseState`) work on drafts, and so does
+  the workflow's `EventCatalogPort` (`FindEventDefinition.exists` / `kindOf`): it is asked while a designer saves
+  a workflow, which is designed against drafts.
+- **References.** A SYSTEM event refers to the entity type its facts are about (`subjectType`, an entity
+  code). An event holds no data of its own, so it has no compatibility checks; a running workflow that still
+  waits for a removed event is a reference of the workflow, checked on its side (step 3b).
+- **Seeding.** `DefaultEventDefinitionImporter` releases what its files wrote, and only that
+  (`ImportOutcome.written`).
+- **Backfill.** `EventChannelBackfill`: the generic `ChannelBackfill`, since the table has no children and no
+  foreign key onto it.
 
 ### Compatibility checks (`check`), from step 2
 

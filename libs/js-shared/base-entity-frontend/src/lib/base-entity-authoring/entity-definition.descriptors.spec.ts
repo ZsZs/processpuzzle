@@ -115,6 +115,7 @@ describe('createEntityAttributeDescriptor', () => {
       'autosizeColumn',
       'code',
       'dateStyle',
+      'defaultAvatar',
       'defaultValue',
       'displayOrder',
       'enumValues',

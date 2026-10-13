@@ -44,9 +44,9 @@ class ThrownEventCatalogListener {
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void on(EventThrown thrown) {
-        Optional<EventDefinition> definition = findEventDefinition.lookup(thrown.orgKey(), thrown.eventDefinitionId());
+        Optional<EventDefinition> definition = findEventDefinition.released(thrown.orgKey(), thrown.eventDefinitionId());
         if (definition.isEmpty()) {
-            LOG.warn("{}: workflow instance {} threw '{}', which the event catalog does not define; dropped.",
+            LOG.warn("{}: workflow instance {} threw '{}', which the released event catalog does not define; dropped.",
                     thrown.orgKey(), thrown.sourceWorkflowInstanceId(), thrown.eventDefinitionId());
             return;
         }

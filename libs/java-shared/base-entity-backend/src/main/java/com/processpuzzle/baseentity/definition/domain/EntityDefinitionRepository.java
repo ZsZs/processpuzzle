@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.definition.domain;
 
 import com.processpuzzle.core.definition.Channel;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +32,15 @@ public interface EntityDefinitionRepository
         + "join a.entityDefinition d where d.orgKey = :orgKey and a.formControlType = :controlType")
     List<AttributeCodes> findAttributeCodesByOrgKeyAndFormControlType(
         @Param("orgKey") String orgKey, @Param("controlType") FormControlType controlType);
+
+    /**
+     * Which attributes of which of a tenant's definitions use any of {@code controlTypes}, as codes alone —
+     * erasing a tenant needs its ARTIFACT and AVATAR attributes to find the files its objects refer to.
+     */
+    @Query("select d.code as definitionCode, a.code as attributeCode from BaseEntityAttribute a "
+        + "join a.entityDefinition d where d.orgKey = :orgKey and a.formControlType in :controlTypes")
+    List<AttributeCodes> findAttributeCodesByOrgKeyAndFormControlTypes(
+        @Param("orgKey") String orgKey, @Param("controlTypes") Collection<FormControlType> controlTypes);
 
     /**
      * The attributes of every definition of a tenant, which have to go before the definitions: bulk

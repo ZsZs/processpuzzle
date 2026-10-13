@@ -24,6 +24,7 @@ interface EntityAttributeDto {
   linkedEntityType?: string;
   isLinkToDetails?: boolean;
   autosizeColumn?: boolean;
+  defaultAvatar?: string;
 }
 
 /** `BaseEntityDefinition` on the way in, `BaseEntityDefinitionInput` on the way out. */
@@ -123,6 +124,7 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     linkedEntityType: dto.linkedEntityType,
     isLinkToDetails: dto.isLinkToDetails,
     autosizeColumn: dto.autosizeColumn,
+    defaultAvatar: dto.defaultAvatar,
   });
 }
 
@@ -150,6 +152,7 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     linkedEntityType: attribute.linkedEntityType,
     isLinkToDetails: attribute.isLinkToDetails ?? false,
     autosizeColumn: attribute.autosizeColumn ?? false,
+    defaultAvatar: attribute.defaultAvatar,
   };
 }
 

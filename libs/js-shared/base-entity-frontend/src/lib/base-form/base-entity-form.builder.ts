@@ -7,6 +7,7 @@ import { BaseFormControlComponent } from './base-form-control.component';
 import { AbstractControl, FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { AdditionalPropertiesComponent } from './additional-properties/additional-properties.component';
 import { ArtifactComponent } from './artifact/artifact.component';
+import { AvatarComponent } from './avatar/avatar.component';
 import { LabelComponent } from './label/label.component';
 import { DatepickerComponent } from './datepicker/datepicker.component';
 import { ForeignKeyComponent } from './foreign-key/foreign-key.component';
@@ -36,6 +37,7 @@ type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormControlComponent>>> = {
   [FormControlType.ADDITIONAL_PROPERTIES]: AdditionalPropertiesComponent,
   [FormControlType.ARTIFACT]: ArtifactComponent,
+  [FormControlType.AVATAR]: AvatarComponent,
   [FormControlType.CHECKBOX]: CheckboxComponent,
   [FormControlType.COMPONENTS]: ComponentsListComponent,
   [FormControlType.DATE]: DatepickerComponent,

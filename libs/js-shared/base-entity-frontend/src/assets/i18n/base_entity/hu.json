@@ -17,6 +17,7 @@
     "enumValues": "Felsorolás értékei",
     "dateStyle": "Dátum stílusa",
     "timeStyle": "Idő stílusa",
+    "defaultAvatar": "Alapértelmezett avatár",
     "_tooltips": {
       "code": "A kulcs, amely alatt az érték tárolódik, az entitástípuson belül egyedi, pl. orderNumber. Ha már vannak rekordok, ne módosítsa.",
       "name": "A mező felirata, ahogy a felhasználók az űrlapokon és a lista oszlopaiban látják, pl. Rendelésszám.",
@@ -32,6 +33,7 @@
       "enumValues": "ENUM értéktípusnál: a felhasználók által választható lehetőségek, mindegyik egy címke, pl. NEW, PAID, SHIPPED.",
       "linkedEntityType": "Hivatkozó mezőknél (FOREIGN_KEY) és beágyazott soroknál (EMBEDDED_COMPONENTS): annak az entitástípusnak a kódja, amelyre mutatnak, pl. customer.",
       "defaultValue": "Az új rekordokban előre kitöltött érték, pl. NEW vagy 1. Ha nincs ilyen, hagyja üresen.",
+      "defaultAvatar": "AVATAR vezérlőknél: ikonnév (pl. person, sailing) vagy kép URL, amely kép feltöltése előtt jelenik meg.",
       "dateStyle": "DATE és DATE_TIME mezőknél: a dátum megjelenítése a short (26. 12. 31.) formától a full (2026. december 31., csütörtök) formáig. Üresen az alapértelmezés érvényes.",
       "timeStyle": "DATE_TIME mezőknél: az idő megjelenítése a short (14:30) formától a long (másodperccel és időzónával) formáig. Üresen az alapértelmezés érvényes."
     }
@@ -63,6 +65,7 @@
   },
   "artifact": {
     "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra.",
+    "invalid_file_type": "Csak képfájlok engedélyezettek.",
     "camera_capture": "Fotó vagy videó készítése"
   },
   "camera_capture": {

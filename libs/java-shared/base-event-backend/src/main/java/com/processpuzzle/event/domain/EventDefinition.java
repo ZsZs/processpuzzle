@@ -1,5 +1,6 @@
 package com.processpuzzle.event.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import jakarta.persistence.Column;
@@ -22,6 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.ColumnDefault;
 
 /**
  * A named event of one organization — {@code OrderCreatedEvent}, {@code OrderConfirmedEvent} — that
@@ -37,7 +39,7 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(of = {"orgKey", "id"})
+@EqualsAndHashCode(of = {"orgKey", "id", "channel"})
 @ToString
 @Entity
 @Table(name = "event_definition")
@@ -52,6 +54,19 @@ public class EventDefinition {
     @Id
     @Column(nullable = false)
     private String id;
+
+    /**
+     * Which row of the definition this is: the draft a designer edits, or the one the organization released, which is
+     * what the running application matches events against (see core's {@code docs/definition-release.md}).
+     * {@code @ColumnDefault} so that {@code ddl-auto} can add the column to a table that already has rows;
+     * {@code EventChannelBackfill} then widens the key and gives each row its released copy.
+     */
+    @Id
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'DRAFT'")
+    @Column(name = "channel", length = 16, nullable = false)
+    @Builder.Default
+    private Channel channel = Channel.DRAFT;
 
     @Column(nullable = false)
     private String name;
@@ -129,6 +144,13 @@ public class EventDefinition {
             return false;
         }
         return isBlank(state) || state.equals(fact.state());
+    }
+
+    /** A new released row with the draft's content: what a definition's first release creates. */
+    public static EventDefinition releasedCopyOf(EventDefinition draft) {
+        EventDefinition released = EventDefinition.builder().orgKey(draft.orgKey).id(draft.id).channel(Channel.RELEASED).build();
+        released.replaceWith(draft);
+        return released;
     }
 
     /** Copies everything an author edits from {@code source}, leaving the key, version and timestamps. */
