@@ -14,8 +14,9 @@ import org.springframework.stereotype.Component;
 
 /**
  * Works out a {@link PendingRelease}: asks every participant, in order, what it would change and what
- * its drafts refer to, resolves each reference against every participant's drafts, and collects what
- * the participants' own checks object to.
+ * its drafts refer to, resolves each reference against every participant's drafts — by any key they may be
+ * referred to by ({@link ReleaseParticipant#referableKeys}) — and collects what the participants' own checks
+ * object to.
  *
  * <p>A reference into a kind no participant releases is not checked: until a feature takes part in
  * releases, its definitions go live as they are saved, so there is no draft to miss.
@@ -35,7 +36,7 @@ class ReleasePlanner {
         Map<String, Set<String>> drafts = new HashMap<>();
         List<PendingChange> changes = new ArrayList<>();
         for (ReleaseParticipant participant : participants.inOrder()) {
-            drafts.put(participant.kind(), participant.drafts(orgKey));
+            drafts.put(participant.kind(), participant.referableKeys(orgKey));
             changes.addAll(participant.pending(orgKey));
         }
         ReleaseCandidate candidate = new ReleaseCandidate() {

@@ -239,6 +239,17 @@ class EntityDefinitionReleaseParticipantTest {
                 tuple("order", DefinitionKinds.ENTITY, "customer", false));
     }
 
+    /** Keyed by its code, an entity type is named by its name elsewhere — an app route, a state machine. */
+    @Test
+    void aDraftCanBeReferredToByItsCodeOrItsName() {
+        BaseEntityDefinition invoice = definition("invoice", attribute("total", ValueKind.NUMBER));
+        invoice.setName("Invoice");
+        saveDraft(invoice);
+
+        assertThat(participant.drafts(ORG)).containsExactly("invoice");
+        assertThat(participant.referableKeys(ORG)).containsExactlyInAnyOrder("invoice", "Invoice");
+    }
+
     /** The table as it stood before channels: one row per definition, unique on (org_key, code). */
     @Test
     void theBackfillReleasesEveryExistingDefinitionOnce_andNeverAgain() {

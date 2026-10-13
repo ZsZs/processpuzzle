@@ -29,6 +29,15 @@ public interface ReleaseParticipant {
     /** The keys of every draft of this kind, changed or not: what the organization holds once released. */
     Set<String> drafts(String orgKey);
 
+    /**
+     * Every key another definition may refer to one of this kind's drafts by — what a reference into this kind is
+     * resolved against. Its {@linkplain #drafts keys} unless the kind is also known by another name: an entity type,
+     * for one, is keyed by its code but named by its name in app routes, state machines and links.
+     */
+    default Set<String> referableKeys(String orgKey) {
+        return drafts(orgKey);
+    }
+
     /** Every definition of this kind whose draft differs from its released row. */
     List<PendingChange> pending(String orgKey);
 
