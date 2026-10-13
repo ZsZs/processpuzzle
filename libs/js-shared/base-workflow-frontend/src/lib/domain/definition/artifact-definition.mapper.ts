@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { ArtifactDefinition, ArtifactType } from './artifact-definition';
@@ -11,6 +12,7 @@ interface ArtifactDefinitionDto {
   artifactTypeId?: string;
   stateMachineId?: string;
   version?: number;
+  releaseState?: ReleaseState;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -38,6 +40,7 @@ export class ArtifactDefinitionMapper implements BaseEntityMapper<ArtifactDefini
       artifactTypeId: source.artifactTypeId,
       stateMachineId: source.stateMachineId,
       version: source.version,
+      releaseState: source.releaseState,
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
     });

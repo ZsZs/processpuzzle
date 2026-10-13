@@ -36,7 +36,7 @@ describe('createWorkflowDescriptor', () => {
   });
 
   it('describes the header, the revision and the five embedded lists', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'extends', 'activeInstances', 'version', 'updatedAt', 'description', 'startEvents', 'roles', 'artifacts', 'tools', 'tasks', 'events']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'releaseState', 'extends', 'activeInstances', 'version', 'updatedAt', 'description', 'startEvents', 'roles', 'artifacts', 'tools', 'tasks', 'events']);
   });
 
   // One row per entry point, replacing the single start condition this form used to flatten. A start

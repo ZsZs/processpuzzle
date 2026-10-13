@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { BaseEntity } from '@processpuzzle/base-entity';
 
 /**
@@ -86,6 +87,8 @@ export class ToolDefinition implements BaseEntity {
   auth: ToolAuthConfig | undefined;
   // region server-assigned
   version: number | undefined;
+  /** Where this draft stands against the release; reported by the backend, never sent back. */
+  releaseState: ReleaseState | undefined;
   createdAt: string | undefined;
   // endregion
 
@@ -99,6 +102,7 @@ export class ToolDefinition implements BaseEntity {
     this.operations = init.operations ?? [];
     this.auth = init.auth;
     this.version = init.version;
+    this.releaseState = init.releaseState;
     this.createdAt = init.createdAt;
   }
 }

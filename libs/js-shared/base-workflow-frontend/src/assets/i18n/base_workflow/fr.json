@@ -7,6 +7,7 @@
     "extends": "Étend",
     "activeInstances": "Instances actives",
     "version": "Version",
+    "releaseState": "Publication",
     "updatedAt": "Modifié le",
     "startEvents": "Événements de démarrage",
     "roles": "Rôles",
@@ -67,6 +68,7 @@
       "extends": "Flux de travail parent facultatif dont celui-ci hérite les rôles, artefacts, outils et tâches. Un flux ne peut pas s'étendre lui-même, ni directement ni par d'autres.",
       "activeInstances": "Nombre d'exécutions de ce flux de travail actuellement en cours. Défini par le système.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement du flux de travail. Défini par le système.",
       "startEvents": "Les façons dont une exécution de ce flux peut démarrer, p. ex. à la création d'une commande ou chaque matin à 8 h. Sans aucun, chacun peut le démarrer manuellement.",
       "roles": "Les rôles qui participent à ce flux de travail. Tout rôle qui réalise l'une de ses tâches doit figurer ici.",
@@ -202,6 +204,7 @@
     "responsibleFor": "Responsable de",
     "entityRoleId": "Rôle d'entité",
     "version": "Version",
+    "releaseState": "Publication",
     "updatedAt": "Modifié le",
     "tabs": {
       "modeler": "Modeleur de rôles"
@@ -216,6 +219,7 @@
       "responsibleFor": "Les artefacts dont ce rôle est responsable du résultat, p. ex. la facture. Responsabilité uniquement ; ce qu'une tâche peut lire ou écrire se définit sur la tâche.",
       "entityRoleId": "Rôle utilisateur correspondant de votre organisation, facultatif. S'il est renseigné, seuls les utilisateurs ayant ce rôle peuvent recevoir une tâche de ce rôle ; vide signifie aucun contrôle.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement du rôle. Défini par le système."
     }
   },
@@ -228,6 +232,7 @@
     "artifactTypeId": "Id de type",
     "stateMachineId": "Machine à états",
     "version": "Version",
+    "releaseState": "Publication",
     "updatedAt": "Modifié le",
     "_tooltips": {
       "id": "Unique au sein de votre organisation ; les tâches et les flux désignent l'artefact par cet id. Court, en minuscules et avec des tirets, p. ex. order-entity ; évitez de le modifier ensuite.",
@@ -237,6 +242,7 @@
       "artifactTypeId": "L'élément concret qu'est cet artefact, selon le Type d'artefact : le nom de l'entité pour ENTITY, du document pour DOCUMENT ou du widget pour WIDGET, p. ex. order.",
       "stateMachineId": "Id facultatif de la machine à états qui régit le cycle de vie de cet artefact, p. ex. order-lifecycle. Les tâches et événements de démarrage utilisent ses noms d'état.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement de l'artefact. Défini par le système."
     }
   },
@@ -249,6 +255,7 @@
     "preconditionRuleId": "Règle de précondition",
     "postconditionRuleId": "Règle de postcondition",
     "version": "Version",
+    "releaseState": "Publication",
     "updatedAt": "Modifié le",
     "inputs": "Entrées",
     "outputs": "Sorties",
@@ -261,6 +268,7 @@
       "preconditionRuleId": "Id facultatif d'une règle métier vérifiée avant que la tâche devienne active ; tant qu'elle n'est pas remplie, la tâche reste en attente.",
       "postconditionRuleId": "Id facultatif d'une règle métier qui doit être remplie avant que la tâche puisse être terminée.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement de la tâche. Défini par le système.",
       "inputs": "Les artefacts que lit cette tâche, p. ex. la commande. Un flux qui utilise la tâche doit les lister parmi ses Artefacts.",
       "outputs": "Les artefacts que crée ou modifie cette tâche, p. ex. la facture. Un flux qui utilise la tâche doit les lister parmi ses Artefacts.",
@@ -297,6 +305,7 @@
     "type": "Type d'authentification",
     "secretRef": "Référence du secret",
     "version": "Version",
+    "releaseState": "Publication",
     "createdAt": "Créé le",
     "operations": "Opérations",
     "_tooltips": {
@@ -307,6 +316,7 @@
       "type": "Comment le système s'authentifie auprès de l'outil : NONE, BEARER_TOKEN, BASIC (nom d'utilisateur et mot de passe) ou API_KEY.",
       "secretRef": "Où est conservé l'identifiant : le nom d'une variable d'environnement ou un chemin Vault, p. ex. JIRA_TOKEN. Ne saisissez jamais le mot de passe ou le jeton lui-même.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "createdAt": "Date de création de l'outil. Défini par le système.",
       "operations": "Les appels que propose cet outil, p. ex. create-issue. Les étapes de tâche en choisissent un par son id."
     }

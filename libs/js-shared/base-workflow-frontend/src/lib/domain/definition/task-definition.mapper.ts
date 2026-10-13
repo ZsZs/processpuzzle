@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { PropertyMap } from '../property-map';
@@ -32,6 +33,7 @@ interface TaskDefinitionDto {
   outputs?: EntityReference[];
   steps?: StepDefinitionDto[];
   version?: number;
+  releaseState?: ReleaseState;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -72,6 +74,7 @@ export class TaskDefinitionMapper implements BaseEntityMapper<TaskDefinition> {
       outputs: toReferenceIds(source.outputs),
       steps: (source.steps ?? []).map(toStepDefinition),
       version: source.version,
+      releaseState: source.releaseState,
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
     });

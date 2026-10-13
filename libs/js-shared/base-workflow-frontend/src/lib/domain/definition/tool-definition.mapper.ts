@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { AuthType, HttpMethod, ToolAuthConfig, ToolDefinition, ToolOperation } from './tool-definition';
@@ -21,6 +22,7 @@ interface ToolDefinitionDto {
   auth?: ToolAuthConfig;
   operations?: ToolOperationDto[];
   version?: number;
+  releaseState?: ReleaseState;
   createdAt?: string;
 }
 // endregion
@@ -57,6 +59,7 @@ export class ToolDefinitionMapper implements BaseEntityMapper<ToolDefinition> {
       auth,
       operations: (source.operations ?? []).map(toToolOperation),
       version: source.version,
+      releaseState: source.releaseState,
       createdAt: source.createdAt,
     });
   }

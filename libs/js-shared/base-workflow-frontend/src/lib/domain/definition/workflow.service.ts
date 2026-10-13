@@ -1,4 +1,6 @@
+import { HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { definitionRead } from '@processpuzzle/util';
 import { BaseEntityRestService } from '@processpuzzle/base-entity';
 import { Workflow } from './workflow';
 import { WorkflowMapper } from './workflow.mapper';
@@ -21,6 +23,11 @@ import { WorkflowMapper } from './workflow.mapper';
  */
 @Injectable({ providedIn: 'root' })
 export class WorkflowService extends BaseEntityRestService<Workflow> {
+  /** Reads of definitions, addressed by the host to the draft or the released revision; see `definitionRevisionInterceptor`. */
+  protected override readContext(): HttpContext {
+    return definitionRead();
+  }
+
   constructor(protected override entityMapper: WorkflowMapper) {
     super(entityMapper, 'WORKFLOW_SERVICE_ROOT', 'workflows');
   }
