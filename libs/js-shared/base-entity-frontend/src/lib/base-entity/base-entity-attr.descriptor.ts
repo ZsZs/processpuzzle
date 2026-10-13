@@ -21,6 +21,11 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   selectables?: SelectablesInput;
   visible = true;
   showThumbnail?: boolean = true;
+  /**
+   * `AVATAR` only: the icon name (e.g. `'person'`, `'sailing'`) or image URL shown as placeholder before an image is uploaded.
+   * If omitted, defaults to `'person'`.
+   */
+  defaultAvatar?: string;
   hideInTable?: boolean = false;
   /**
    * The list column hugs its content instead of sharing the space left over. Meant for short values — an id,
@@ -77,6 +82,9 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
     this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
     this.options = { inputType: 'text', ...options };
+    if (options && 'defaultAvatar' in options && typeof options.defaultAvatar === 'string') {
+      this.defaultAvatar = options.defaultAvatar;
+    }
   }
 
   getSelectables(): Array<Selectable> | undefined {

@@ -22,6 +22,7 @@ public enum FormControlType {
     COMPONENTS,
     RELATED_ENTITIES,
     ARTIFACT,
+    AVATAR,
     TAGS,
     TITLE,
     LABEL,

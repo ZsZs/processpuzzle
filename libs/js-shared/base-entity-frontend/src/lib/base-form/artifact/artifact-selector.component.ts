@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -23,7 +23,7 @@ import { CameraSupportService } from './camera-support.service';
         }
       } @else {
         <div class="artifact-selector__inputs">
-          <input type="file" (change)="onFileSelected($event)" [disabled]="isUploading()" />
+          <input type="file" [accept]="accept ?? '*/*'" (change)="onFileSelected($event)" [disabled]="isUploading()" />
           <input type="text" [(ngModel)]="artifactName" placeholder="Artifact name" [disabled]="isUploading()" />
           <input type="text" [(ngModel)]="mimeType" placeholder="MIME type" [disabled]="isUploading()" />
           <button type="button" (click)="uploadSelectedFile()" [disabled]="!canUpload()">Upload</button>
@@ -53,6 +53,7 @@ export class ArtifactSelectorComponent {
   private readonly dialog = inject(MatDialog);
   readonly isCameraAvailable = inject(CameraSupportService).available;
 
+  @Input() accept?: string;
   @Output() artifactUploaded = new EventEmitter<ArtifactAttr>();
 
   readonly isSelectorVisible = signal(false);
@@ -90,6 +91,13 @@ export class ArtifactSelectorComponent {
       return;
     }
 
+    const derivedMime = file.type || this.deriveMimeType(file.name);
+    if (this.accept === 'image/*' && !derivedMime.startsWith('image/')) {
+      this.snackBar.open(this.translocoService.translate<string>('base_entity.artifact.invalid_file_type') || 'Only images are allowed', 'Close', { duration: 5000 });
+      input.value = '';
+      return;
+    }
+
     this.selectFile(file);
   }
 
@@ -100,7 +108,8 @@ export class ArtifactSelectorComponent {
   }
 
   canUpload(): boolean {
-    return this.selectedFile !== null && this.artifactName.length > 0 && this.mimeType.length > 0 && !this.isUploading();
+    const isMimeValid = this.accept !== 'image/*' || this.mimeType.startsWith('image/');
+    return this.selectedFile !== null && this.artifactName.length > 0 && this.mimeType.length > 0 && isMimeValid && !this.isUploading();
   }
 
   uploadSelectedFile(): void {
@@ -151,8 +160,10 @@ export class ArtifactSelectorComponent {
   private deriveMimeType(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase() ?? '';
     const mimeTypeByExtension: Record<string, string> = {
+      bmp: 'image/bmp',
       csv: 'text/csv',
       gif: 'image/gif',
+      ico: 'image/x-icon',
       jpeg: 'image/jpeg',
       jpg: 'image/jpeg',
       json: 'application/json',
@@ -163,6 +174,7 @@ export class ArtifactSelectorComponent {
       svg: 'image/svg+xml',
       txt: 'text/plain',
       webm: 'video/webm',
+      webp: 'image/webp',
       xml: 'application/xml',
       zip: 'application/zip',
     };

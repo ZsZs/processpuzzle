@@ -17,6 +17,7 @@
     "enumValues": "Valeurs d'énumération",
     "dateStyle": "Style de date",
     "timeStyle": "Style d’heure",
+    "defaultAvatar": "Avatar par défaut",
     "_tooltips": {
       "code": "Clé sous laquelle la valeur est stockée, unique dans le type d'entité, p. ex. orderNumber. Ne la modifiez plus une fois des enregistrements créés.",
       "name": "Le libellé du champ tel que les utilisateurs le voient dans les formulaires et les colonnes de liste, p. ex. Numéro de commande.",
@@ -32,6 +33,7 @@
       "enumValues": "Pour le type de valeur ENUM : les options proposées aux utilisateurs, une par puce, p. ex. NEW, PAID, SHIPPED.",
       "linkedEntityType": "Pour les champs de référence (FOREIGN_KEY) et les lignes intégrées (EMBEDDED_COMPONENTS) : le code du type d'entité visé, p. ex. customer.",
       "defaultValue": "Valeur pré-remplie dans les nouveaux enregistrements, p. ex. NEW ou 1. Laissez vide pour aucune.",
+      "defaultAvatar": "Pour les contrôles AVATAR : nom d'icône (p. ex. person, sailing) ou URL d'image à afficher avant le téléversement d'une image.",
       "dateStyle": "Pour les champs DATE et DATE_TIME : l'affichage de la date, de short (31/12/26) à full (jeudi 31 décembre 2026). Vide utilise la valeur par défaut.",
       "timeStyle": "Pour les champs DATE_TIME : l'affichage de l'heure, de short (14:30) à long (avec secondes et fuseau horaire). Vide utilise la valeur par défaut."
     }
@@ -63,6 +65,7 @@
   },
   "artifact": {
     "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer.",
+    "invalid_file_type": "Seuls les fichiers image sont autorisés.",
     "camera_capture": "Prendre une photo ou une vidéo"
   },
   "camera_capture": {

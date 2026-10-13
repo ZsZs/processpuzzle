@@ -45,6 +45,7 @@ function columnFormatter(descriptor: BaseEntityAttrDescriptor, locale: string | 
       return formatTags;
 
     case FormControlType.ARTIFACT:
+    case FormControlType.AVATAR:
       return formatArtifact;
 
     // TEXT_BOX, TEXTAREA, DROPDOWN, FOREIGN_KEY, LOOKUP, etc. → default string coercion in the service

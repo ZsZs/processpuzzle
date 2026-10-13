@@ -280,4 +280,28 @@ describe('ArtifactSelectorComponent', () => {
 
     expect(component.mimeType).toBe('video/webm');
   });
+
+  describe('accept="image/*"', () => {
+    it('rejects non-image file on selection when accept is image/*', async () => {
+      const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
+      component.accept = 'image/*';
+
+      component.onFileSelected(fileSelectEvent(createFile('document.pdf', 'application/pdf')));
+
+      expect(snackBar.open).toHaveBeenCalledWith('base_entity.artifact.invalid_file_type', 'Close', { duration: 5000 });
+      expect(component.artifactName).toBe('');
+      expect(component.canUpload()).toBe(false);
+    });
+
+    it('accepts image file on selection when accept is image/*', async () => {
+      const { component } = await setupSelector(objectStore, { isSelectorVisible: true });
+      component.accept = 'image/*';
+
+      component.onFileSelected(fileSelectEvent(createFile('photo.png', 'image/png')));
+
+      expect(component.artifactName).toBe('photo.png');
+      expect(component.mimeType).toBe('image/png');
+      expect(component.canUpload()).toBe(true);
+    });
+  });
 });

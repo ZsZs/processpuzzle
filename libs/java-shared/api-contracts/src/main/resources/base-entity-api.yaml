@@ -597,6 +597,7 @@ components:
         - COMPONENTS
         - RELATED_ENTITIES
         - ARTIFACT
+        - AVATAR
         - TAGS
         - TITLE
         - LABEL
@@ -696,6 +697,11 @@ components:
             showThumbnail:
               type: boolean
               default: true
+            defaultAvatar:
+              type: string
+              description: >-
+                For AVATAR controls: fallback icon name (e.g. person, sailing) or image URL
+                shown before an image is uploaded.
             hideInTable:
               type: boolean
               default: false
@@ -806,6 +812,11 @@ components:
           type: boolean
           default: false
           description: Marks the attribute used as this entity's display title (componentIdentification).
+        defaultAvatar:
+          type: string
+          description: >
+            For AVATAR controls: fallback icon name (e.g. person, sailing) or image URL
+            shown before an image is uploaded.
         autosizeColumn:
           type: boolean
           default: false

@@ -83,10 +83,10 @@ public class TenantDataCleaner {
                 erasedTranslations, releasedFiles.size());
     }
 
-    /** Every file the tenant's objects refer to through an ARTIFACT attribute, each once. */
+    /** Every file the tenant's objects refer to through an ARTIFACT or AVATAR attribute, each once. */
     private List<StoredObjectRef> referencedFiles(String orgKey) {
         Map<String, Set<String>> artifactAttributesByDefinition = definitions
-                .findAttributeCodesByOrgKeyAndFormControlType(orgKey, FormControlType.ARTIFACT).stream()
+                .findAttributeCodesByOrgKeyAndFormControlTypes(orgKey, Set.of(FormControlType.ARTIFACT, FormControlType.AVATAR)).stream()
                 .collect(Collectors.groupingBy(AttributeCodes::getDefinitionCode,
                         Collectors.mapping(AttributeCodes::getAttributeCode, Collectors.toSet())));
         if (artifactAttributesByDefinition.isEmpty()) {
