@@ -181,6 +181,17 @@ class ReleaseOrganizationTest {
         assertThat(describePendingRelease.execute(ORG).problems()).isEmpty();
     }
 
+    /** An entity type is keyed by its code, but an app route names it by its name: either resolves. */
+    @Test
+    void aReferenceByAnotherKeyTheDraftIsKnownByResolves() {
+        entities.drafts.add("claim");
+        entities.aliases.add("Claim");
+        apps.withDraft("app", PendingChange.Change.CHANGED);
+        apps.references.add(DefinitionReference.required(DefinitionKinds.APP, "app", DefinitionKinds.ENTITY, "Claim"));
+
+        assertThat(describePendingRelease.execute(ORG).problems()).isEmpty();
+    }
+
     @Test
     void aReferenceIntoAKindNobodyReleasesIsNotChecked() {
         apps.withDraft("app", PendingChange.Change.CHANGED);
