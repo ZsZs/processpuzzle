@@ -161,7 +161,7 @@ export class AvatarComponent<Entity extends BaseEntity> extends BaseFormControlC
 
   private setThumbnailUrl(objectId: string, uri: string | null): void {
     const art = this.artifact();
-    if (!art || art.objectId !== objectId) return;
+    if (art?.objectId !== objectId) return;
     this.thumbnailUrls.set({ [objectId]: uri });
   }
 
