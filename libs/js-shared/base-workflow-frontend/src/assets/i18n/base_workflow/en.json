@@ -7,6 +7,7 @@
     "extends": "Extends",
     "activeInstances": "Active Instances",
     "version": "Version",
+    "releaseState": "Release",
     "updatedAt": "Updated At",
     "startEvents": "Start Events",
     "roles": "Roles",
@@ -67,6 +68,7 @@
       "extends": "Optional parent workflow whose roles, artifacts, tools and tasks this one inherits. A workflow cannot extend itself, directly or through others.",
       "activeInstances": "How many runs of this workflow are currently in progress. Set by the system.",
       "version": "Increases with every save. Set by the system.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "updatedAt": "When the workflow was last saved. Set by the system.",
       "startEvents": "The ways a run of this workflow can begin, e.g. when an order is created or every morning at 8. With none, anyone may start it by hand.",
       "roles": "The roles taking part in this workflow. Every role that performs one of its tasks has to be listed here.",
@@ -202,6 +204,7 @@
     "responsibleFor": "Responsible For",
     "entityRoleId": "Entity Role",
     "version": "Version",
+    "releaseState": "Release",
     "updatedAt": "Updated At",
     "tabs": {
       "modeler": "Role Modeler"
@@ -216,6 +219,7 @@
       "responsibleFor": "The artifacts whose outcome this role owns, e.g. the invoice. Ownership only; what a task may read or write is set on the task.",
       "entityRoleId": "Optional matching user role of your organization. When set, only users holding that role can be given a task this role performs; empty means no check.",
       "version": "Increases with every save. Set by the system.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "updatedAt": "When the role was last saved. Set by the system."
     }
   },
@@ -228,6 +232,7 @@
     "artifactTypeId": "Type Id",
     "stateMachineId": "State Machine",
     "version": "Version",
+    "releaseState": "Release",
     "updatedAt": "Updated At",
     "_tooltips": {
       "id": "Unique within your organization; tasks and workflows refer to the artifact by it. Short, lower-case and hyphenated, e.g. order-entity; avoid changing it later.",
@@ -237,6 +242,7 @@
       "artifactTypeId": "The concrete thing this artifact is, matching the Artifact Type: the entity name for ENTITY, the document name for DOCUMENT, or the widget name for WIDGET, e.g. order.",
       "stateMachineId": "Optional id of the state machine that governs this artifact's lifecycle, e.g. order-lifecycle. Its state names are the ones tasks and start events refer to.",
       "version": "Increases with every save. Set by the system.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "updatedAt": "When the artifact was last saved. Set by the system."
     }
   },
@@ -249,6 +255,7 @@
     "preconditionRuleId": "Precondition Rule",
     "postconditionRuleId": "Postcondition Rule",
     "version": "Version",
+    "releaseState": "Release",
     "updatedAt": "Updated At",
     "inputs": "Inputs",
     "outputs": "Outputs",
@@ -261,6 +268,7 @@
       "preconditionRuleId": "Optional id of a business rule checked before the task becomes active; while it is not met, the task keeps waiting.",
       "postconditionRuleId": "Optional id of a business rule that must be met before the task can be completed.",
       "version": "Increases with every save. Set by the system.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "updatedAt": "When the task was last saved. Set by the system.",
       "inputs": "The artifacts this task reads, e.g. the order. A workflow using the task has to list them among its Artifacts.",
       "outputs": "The artifacts this task creates or changes, e.g. the invoice. A workflow using the task has to list them among its Artifacts.",
@@ -297,6 +305,7 @@
     "type": "Auth Type",
     "secretRef": "Secret Reference",
     "version": "Version",
+    "releaseState": "Release",
     "createdAt": "Created At",
     "operations": "Operations",
     "_tooltips": {
@@ -307,6 +316,7 @@
       "type": "How the system signs in to the tool: NONE, BEARER_TOKEN, BASIC (user name and password) or API_KEY.",
       "secretRef": "Where the credential is kept: the name of an environment variable or a Vault path, e.g. JIRA_TOKEN. Never enter the password or token itself.",
       "version": "Increases with every save. Set by the system.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "createdAt": "When the tool was created. Set by the system.",
       "operations": "The calls this tool offers, e.g. create-issue. Task steps choose one of them by its id."
     }

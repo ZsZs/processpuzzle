@@ -7,6 +7,7 @@
     "extends": "Kiterjeszti",
     "activeInstances": "Aktív példányok",
     "version": "Verzió",
+    "releaseState": "Kiadás",
     "updatedAt": "Módosítva",
     "startEvents": "Indító események",
     "roles": "Szerepkörök",
@@ -67,6 +68,7 @@
       "extends": "Opcionális szülő munkafolyamat, amelynek szerepköreit, artefaktumait, eszközeit és tevékenységeit ez örökli. Egy munkafolyamat sem közvetlenül, sem közvetve nem terjesztheti ki önmagát.",
       "activeInstances": "A munkafolyamat jelenleg futó példányainak száma. A rendszer állítja be.",
       "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "updatedAt": "A munkafolyamat utolsó mentésének ideje. A rendszer állítja be.",
       "startEvents": "A munkafolyamat egy futásának lehetséges indítási módjai, pl. egy rendelés létrejöttekor vagy minden reggel 8-kor. Ha nincs ilyen, bárki elindíthatja kézzel.",
       "roles": "A munkafolyamatban részt vevő szerepkörök. Minden szerepkört, amely valamelyik tevékenységét végzi, itt fel kell sorolni.",
@@ -202,6 +204,7 @@
     "responsibleFor": "Felelős érte",
     "entityRoleId": "Entitás szerepkör",
     "version": "Verzió",
+    "releaseState": "Kiadás",
     "updatedAt": "Módosítva",
     "tabs": {
       "modeler": "Szerepkörmodellező"
@@ -216,6 +219,7 @@
       "responsibleFor": "Azok az artefaktumok, amelyek eredményéért ez a szerepkör felel, pl. a számla. Csak felelősség; hogy egy tevékenység mit olvashat vagy írhat, a tevékenységnél adható meg.",
       "entityRoleId": "A szervezeted megfelelő felhasználói szerepköre, opcionális. Ha meg van adva, csak az ilyen szerepkörű felhasználók kaphatják meg e szerepkör tevékenységeit; üresen nincs ellenőrzés.",
       "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "updatedAt": "A szerepkör utolsó mentésének ideje. A rendszer állítja be."
     }
   },
@@ -228,6 +232,7 @@
     "artifactTypeId": "Típus azonosító",
     "stateMachineId": "Állapotgép",
     "version": "Verzió",
+    "releaseState": "Kiadás",
     "updatedAt": "Módosítva",
     "_tooltips": {
       "id": "Egyedi a szervezeteden belül; a tevékenységek és munkafolyamatok ezzel hivatkoznak az artefaktumra. Rövid, kisbetűs, kötőjeles, pl. order-entity; később lehetőleg ne változtasd.",
@@ -237,6 +242,7 @@
       "artifactTypeId": "A konkrét elem, amely ez az artefaktum, az Artefaktum típusa szerint: ENTITY esetén az entitás neve, DOCUMENT esetén a dokumentumé, WIDGET esetén a widgeté, pl. order.",
       "stateMachineId": "Az artefaktum életciklusát vezérlő állapotgép opcionális azonosítója, pl. order-lifecycle. A tevékenységek és indító események ennek állapotneveire hivatkoznak.",
       "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "updatedAt": "Az artefaktum utolsó mentésének ideje. A rendszer állítja be."
     }
   },
@@ -249,6 +255,7 @@
     "preconditionRuleId": "Előfeltétel szabály",
     "postconditionRuleId": "Utófeltétel szabály",
     "version": "Verzió",
+    "releaseState": "Kiadás",
     "updatedAt": "Módosítva",
     "inputs": "Bemenetek",
     "outputs": "Kimenetek",
@@ -261,6 +268,7 @@
       "preconditionRuleId": "Egy üzleti szabály opcionális azonosítója, amelyet a tevékenység aktiválása előtt ellenőrzünk; amíg nem teljesül, a tevékenység várakozik.",
       "postconditionRuleId": "Egy üzleti szabály opcionális azonosítója, amelynek teljesülnie kell, mielőtt a tevékenység lezárható.",
       "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "updatedAt": "A tevékenység utolsó mentésének ideje. A rendszer állítja be.",
       "inputs": "Az artefaktumok, amelyeket ez a tevékenység olvas, pl. a rendelés. A tevékenységet használó munkafolyamatnak fel kell sorolnia őket az artefaktumai között.",
       "outputs": "Az artefaktumok, amelyeket ez a tevékenység létrehoz vagy módosít, pl. a számla. A tevékenységet használó munkafolyamatnak fel kell sorolnia őket az artefaktumai között.",
@@ -297,6 +305,7 @@
     "type": "Hitelesítés típusa",
     "secretRef": "Titok hivatkozás",
     "version": "Verzió",
+    "releaseState": "Kiadás",
     "createdAt": "Létrehozva",
     "operations": "Műveletek",
     "_tooltips": {
@@ -307,6 +316,7 @@
       "type": "Hogyan jelentkezik be a rendszer az eszközbe: NONE, BEARER_TOKEN, BASIC (felhasználónév és jelszó) vagy API_KEY.",
       "secretRef": "Ahol a hitelesítő adat található: egy környezeti változó neve vagy egy Vault-útvonal, pl. JIRA_TOKEN. Soha ne magát a jelszót vagy tokent add meg.",
       "version": "Minden mentéssel nő. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "createdAt": "Az eszköz létrehozásának ideje. A rendszer állítja be.",
       "operations": "Az eszköz által kínált hívások, pl. create-issue. A lépések az azonosítójuk alapján választanak közülük."
     }

@@ -219,7 +219,8 @@ released copy the channel backfill gave it — it then waits for its first relea
     not reliable, since the dynamic screens' injection tokens are cached at the root too.
 - **Release column.** The entity-definition, state-machine and rule lists and forms show `releaseState`,
   read-only (`ReleaseState` in `@processpuzzle/util`); the entity-definition status offers Active and
-  Deprecated only.
+  Deprecated only. From step 3, so do the workflow, role, task, artifact, tool and event-definition screens, whose
+  services (with the workflow diagram's) mark their reads with `definitionRead()` too.
 - **Read-only Preview.** `ENTITY_PREVIEW_READ_ONLY` (`@processpuzzle/base-entity`), provided `true` by a
   host showing drafts, makes `EntityPreviewMode` disable New, Save and Delete on the screens of
   definition-built entity types — they show live objects through draft definitions. The designer's own,

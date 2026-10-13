@@ -1,4 +1,6 @@
+import { HttpContext } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { definitionRead } from '@processpuzzle/util';
 import { BaseEntityRestService } from '@processpuzzle/base-entity';
 import { ToolDefinition } from './tool-definition';
 import { ToolDefinitionMapper } from './tool-definition.mapper';
@@ -10,6 +12,11 @@ import { ToolDefinitionMapper } from './tool-definition.mapper';
  */
 @Injectable({ providedIn: 'root' })
 export class ToolDefinitionService extends BaseEntityRestService<ToolDefinition> {
+  /** Reads of definitions, addressed by the host to the draft or the released revision; see `definitionRevisionInterceptor`. */
+  protected override readContext(): HttpContext {
+    return definitionRead();
+  }
+
   constructor(protected override entityMapper: ToolDefinitionMapper) {
     super(entityMapper, 'WORKFLOW_SERVICE_ROOT', 'tools');
   }

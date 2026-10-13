@@ -56,7 +56,12 @@ function createToolDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   operationsAttr.referenceIdField = TOOL_OPERATION_ID_FIELD;
   operationsAttr.hideInTable = true;
 
-  const identityRow = new FlexboxDescriptor([idAttr, nameAttr], FlexDirection.ROW);
+  // Whether the running application has this definition as it stands — new, changed since, or released — as
+  // the backend reports it. Changed only by a release, so never edited.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
+
+  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const endpointRow = new FlexboxDescriptor([baseUrlAttr, authTypeAttr, secretRefAttr], FlexDirection.ROW);
   endpointRow.style = { 'column-gap': '10px' };

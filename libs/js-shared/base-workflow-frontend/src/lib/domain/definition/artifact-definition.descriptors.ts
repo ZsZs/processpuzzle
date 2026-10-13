@@ -42,7 +42,12 @@ function createArtifactDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const updatedAtAttr = timestampAttr('updatedAt', 'Updated At');
 
-  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, artifactTypeAttr], FlexDirection.ROW);
+  // Whether the running application has this definition as it stands — new, changed since, or released — as
+  // the backend reports it. Changed only by a release, so never edited.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
+
+  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, artifactTypeAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const bindingRow = new FlexboxDescriptor([artifactTypeIdAttr, stateMachineIdAttr], FlexDirection.ROW);
   bindingRow.style = { 'column-gap': '10px' };

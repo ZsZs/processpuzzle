@@ -39,7 +39,12 @@ function createEventDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const stateAttr = new BaseEntityAttrDescriptor('state', FormControlType.TEXT_BOX, 'State');
   stateAttr.placeholder = 'STATE_CHANGED — the state entered, e.g. CONFIRMED';
 
-  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, kindAttr], FlexDirection.ROW);
+  // Whether the running application has this definition as it stands — new, changed since, or released — as
+  // the backend reports it. Changed only by a release, so never edited.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
+
+  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, kindAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const subjectRow = new FlexboxDescriptor([subjectTypeAttr, actionAttr, stateAttr], FlexDirection.ROW);
   subjectRow.style = { 'column-gap': '10px' };
