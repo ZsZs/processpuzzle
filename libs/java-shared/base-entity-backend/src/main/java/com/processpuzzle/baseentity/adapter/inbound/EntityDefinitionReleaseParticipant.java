@@ -68,6 +68,22 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
         return byCode(orgKey, Channel.DRAFT).keySet();
     }
 
+    /**
+     * Each draft's code, and its name too: a definition is keyed by its code, but the rest of the platform — an app's
+     * routes, a state machine, the screens — names the entity type by its name.
+     */
+    @Override
+    public Set<String> referableKeys(String orgKey) {
+        Set<String> keys = new TreeSet<>();
+        for (BaseEntityDefinition draft : byCode(orgKey, Channel.DRAFT).values()) {
+            keys.add(draft.getCode());
+            if (draft.getName() != null && !draft.getName().isBlank()) {
+                keys.add(draft.getName());
+            }
+        }
+        return keys;
+    }
+
     @Override
     public List<PendingChange> pending(String orgKey) {
         Map<String, BaseEntityDefinition> drafts = byCode(orgKey, Channel.DRAFT);

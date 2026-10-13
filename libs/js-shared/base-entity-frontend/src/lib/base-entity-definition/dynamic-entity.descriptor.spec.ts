@@ -145,6 +145,8 @@ describe('controlTypeOf', () => {
     ['ARTIFACT', FormControlType.ARTIFACT],
     ['FOREIGN_KEY', FormControlType.FOREIGN_KEY],
     ['EMBEDDED_COMPONENTS', FormControlType.EMBEDDED_COMPONENTS],
+    ['EMBEDDED_LIST', FormControlType.EMBEDDED_LIST],
+    ['EMBEDDED_OBJECT', FormControlType.EMBEDDED_OBJECT],
     ['COMPONENTS', FormControlType.COMPONENTS],
     ['RELATED_ENTITIES', FormControlType.RELATED_ENTITIES],
     ['ADDITIONAL_PROPERTIES', FormControlType.ADDITIONAL_PROPERTIES],

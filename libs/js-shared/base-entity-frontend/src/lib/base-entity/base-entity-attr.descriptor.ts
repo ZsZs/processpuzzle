@@ -33,6 +33,10 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   lines?: number;
   options: { inputType: 'text' };
   required = false;
+  /** Child attribute descriptors for nested forms (`EMBEDDED_OBJECT`, `EMBEDDED_LIST`). */
+  childDescriptors?: AbstractAttrDescriptor[];
+  /** `EMBEDDED_LIST` only: the attribute whose value titles a collapsed row. */
+  rowLabelAttr?: string;
   /**
    * Regular-expression source the value has to match, applied as `Validators.pattern` and anchored by
    * Angular at both ends.

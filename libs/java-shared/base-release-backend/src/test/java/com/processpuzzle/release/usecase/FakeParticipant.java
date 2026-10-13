@@ -14,6 +14,8 @@ import java.util.Set;
 class FakeParticipant implements ReleaseParticipant {
 
     final Set<String> drafts = new LinkedHashSet<>();
+    /** Further keys the drafts may be referred to by, beside their own. */
+    final Set<String> aliases = new LinkedHashSet<>();
     final List<PendingChange> pending = new ArrayList<>();
     final List<DefinitionReference> references = new ArrayList<>();
     final List<ReleaseProblem> problems = new ArrayList<>();
@@ -48,6 +50,13 @@ class FakeParticipant implements ReleaseParticipant {
     @Override
     public Set<String> drafts(String orgKey) {
         return drafts;
+    }
+
+    @Override
+    public Set<String> referableKeys(String orgKey) {
+        Set<String> keys = new LinkedHashSet<>(drafts);
+        keys.addAll(aliases);
+        return keys;
     }
 
     @Override
