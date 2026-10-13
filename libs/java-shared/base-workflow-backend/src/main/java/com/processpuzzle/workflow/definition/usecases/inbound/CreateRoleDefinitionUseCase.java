@@ -37,7 +37,6 @@ public class CreateRoleDefinitionUseCase {
         if (repository.existsByOrgKeyAndIdAndChannel(orgKey, role.getId(), Channel.DRAFT)) {
             throw new ConflictException("Role definition '%s' already exists".formatted(role.getId()));
         }
-        RoleDefinition created = repository.save(role);
-        return created;
+        return repository.save(role);
     }
 }

@@ -52,7 +52,6 @@ public class ReplaceWorkflowUseCase {
                 desiredState.getEvents());
 
         validator.validate(existing);
-        Workflow saved = repository.save(existing);
-        return saved;
+        return repository.save(existing);
     }
 }

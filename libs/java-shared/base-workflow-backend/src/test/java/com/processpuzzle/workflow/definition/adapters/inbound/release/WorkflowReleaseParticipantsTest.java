@@ -18,6 +18,8 @@ import com.processpuzzle.workflow.definition.domain.RoleUse;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
+import com.processpuzzle.workflow.definition.domain.ToolDefinition;
+import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
@@ -25,6 +27,7 @@ import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionDeletedEvent;
 import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
+import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
@@ -66,7 +69,8 @@ import org.springframework.transaction.support.TransactionTemplate;
         "spring.jpa.hibernate.ddl-auto=create-drop"})
 @EntityScan({"com.processpuzzle.workflow.execution.domain", "com.processpuzzle.workflow.definition.domain"})
 @EnableJpaRepositories({"com.processpuzzle.workflow.execution.domain", "com.processpuzzle.workflow.definition.domain"})
-@Import({RoleReleaseParticipant.class, TaskReleaseParticipant.class, WorkflowReleaseParticipant.class,
+@Import({ArtifactReleaseParticipant.class, RoleReleaseParticipant.class, ToolReleaseParticipant.class,
+        TaskReleaseParticipant.class, WorkflowReleaseParticipant.class, ReleaseImportedWorkflows.class,
         WorkflowReleaseParticipantsTest.Announcements.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class WorkflowReleaseParticipantsTest {
@@ -103,6 +107,10 @@ class WorkflowReleaseParticipantsTest {
         }
     }
 
+    @Autowired private ArtifactReleaseParticipant artifacts;
+    @Autowired private ToolReleaseParticipant tools;
+    @Autowired private ReleaseImportedWorkflows releaseImported;
+    @Autowired private ToolDefinitionRepository toolRepository;
     @Autowired private RoleReleaseParticipant roles;
     @Autowired private TaskReleaseParticipant tasks;
     @Autowired private WorkflowReleaseParticipant workflows;
@@ -125,6 +133,7 @@ class WorkflowReleaseParticipantsTest {
         taskRepository.deleteAll();
         roleRepository.deleteAll();
         artifactRepository.deleteAll();
+        toolRepository.deleteAll();
         announcements.events.clear();
     }
 
@@ -231,6 +240,69 @@ class WorkflowReleaseParticipantsTest {
                 .containsExactlyInAnyOrder(tuple(DefinitionKinds.ROLE, "reviewer"), tuple(DefinitionKinds.TASK, "review"));
         assertThat(tasks.references(ORG)).extracting(DefinitionReference::toKind, DefinitionReference::toKey)
                 .containsExactlyInAnyOrder(tuple(DefinitionKinds.ROLE, "reviewer"), tuple(DefinitionKinds.ARTIFACT, "order"));
+    }
+
+    /** The catalogue kinds share the mechanism; an artifact names its entity type and its state machine. */
+    @Test
+    void artifactsAndToolsAreReleasedLikeTheRestOfTheCatalogue() {
+        save(artifactRepository, ArtifactDefinition.builder().orgKey(ORG).id("order").name("Order")
+                .artifactType(ArtifactType.ENTITY).artifactTypeId("Order").stateMachineId("order").build());
+        save(toolRepository, ToolDefinition.builder().orgKey(ORG).id("erp").name("ERP").baseUrl("https://erp.example.com").build());
+        assertThat(artifacts.references(ORG)).extracting(DefinitionReference::toKind, DefinitionReference::toKey)
+                .containsExactly(tuple(DefinitionKinds.ENTITY, "Order"), tuple(DefinitionKinds.STATE, "order"));
+        assertThat(tools.references(ORG)).isEmpty();
+        assertThat(tools.pending(ORG)).extracting(PendingChange::change).containsExactly(PendingChange.Change.ADDED);
+
+        release(() -> {
+            artifacts.release(ORG);
+            tools.release(ORG);
+        });
+        assertThat(artifactRepository.findByOrgKeyAndIdAndChannel(ORG, "order", Channel.RELEASED)).get()
+                .extracting(ArtifactDefinition::getArtifactTypeId).isEqualTo("Order");
+        assertThat(toolRepository.findByOrgKeyAndIdAndChannel(ORG, "erp", Channel.RELEASED)).get()
+                .extracting(ToolDefinition::getBaseUrl).isEqualTo("https://erp.example.com");
+
+        transaction.executeWithoutResult(status -> {
+            ToolDefinition draft = toolRepository.findByOrgKeyAndIdAndChannel(ORG, "erp", Channel.DRAFT).orElseThrow();
+            draft.setBaseUrl("https://erp2.example.com");
+            toolRepository.save(draft);
+            artifactRepository.delete(artifactRepository.findByOrgKeyAndIdAndChannel(ORG, "order", Channel.DRAFT).orElseThrow());
+        });
+        assertThat(tools.pending(ORG)).extracting(PendingChange::change).containsExactly(PendingChange.Change.CHANGED);
+        assertThat(artifacts.pending(ORG)).extracting(PendingChange::change).containsExactly(PendingChange.Change.REMOVED);
+
+        release(() -> {
+            artifacts.release(ORG);
+            tools.release(ORG);
+        });
+        assertThat(artifactRepository.findByOrgKeyAndIdAndChannel(ORG, "order", Channel.RELEASED)).isEmpty();
+        assertThat(toolRepository.findByOrgKeyAndIdAndChannel(ORG, "erp", Channel.RELEASED)).get()
+                .extracting(ToolDefinition::getBaseUrl).isEqualTo("https://erp2.example.com");
+    }
+
+    /** What a seed loader does with an import: release what it wrote, every kind, and nothing else. */
+    @Test
+    void releasingAnImportReleasesWhatItWroteOnly() {
+        save(artifactRepository, ArtifactDefinition.builder().orgKey(ORG).id("order").name("Order")
+                .artifactType(ArtifactType.ENTITY).build());
+        save(roleRepository, role("reviewer", "Reviewer"));
+        save(roleRepository, role("designer-draft", "Not imported"));
+        save(toolRepository, ToolDefinition.builder().orgKey(ORG).id("erp").name("ERP").baseUrl("https://erp.example.com").build());
+        save(taskRepository, TaskDefinition.builder().orgKey(ORG).id("review").name("Review").build());
+        save(workflowRepository, workflow("approval"));
+        ImportOutcome outcome = new ImportOutcome(5, 0, List.of(), java.util.Map.of(
+                DefinitionKinds.ARTIFACT, List.of("order"), DefinitionKinds.ROLE, List.of("reviewer"),
+                DefinitionKinds.TOOL, List.of("erp"), DefinitionKinds.TASK, List.of("review"),
+                DefinitionKinds.WORKFLOW, List.of("approval")));
+
+        releaseImported.release(ORG, outcome);
+
+        assertThat(roles.pending(ORG)).extracting(PendingChange::key).containsExactly("designer-draft");
+        assertThat(artifacts.pending(ORG)).isEmpty();
+        assertThat(tools.pending(ORG)).isEmpty();
+        assertThat(tasks.pending(ORG)).isEmpty();
+        assertThat(workflows.pending(ORG)).isEmpty();
+        assertThat(outcome.written(DefinitionKinds.EVENT)).isEmpty();
     }
 
     private void release(Runnable release) {

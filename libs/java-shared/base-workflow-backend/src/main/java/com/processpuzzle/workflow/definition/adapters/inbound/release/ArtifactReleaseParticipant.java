@@ -65,14 +65,22 @@ public class ArtifactReleaseParticipant extends DefinitionReleaseParticipant<Art
     protected List<DefinitionReference> referencesOf(ArtifactDefinition draft) {
         List<DefinitionReference> references = new ArrayList<>();
         if (draft.getArtifactType() != null && isNamed(draft.getArtifactTypeId())) {
-            String toKind = draft.getArtifactType() == ArtifactType.ENTITY ? DefinitionKinds.ENTITY
-                    : draft.getArtifactType() == ArtifactType.DOCUMENT ? DefinitionKinds.DOCUMENT : DefinitionKinds.WIDGET;
-            references.add(DefinitionReference.required(kind(), draft.getId(), toKind, draft.getArtifactTypeId()));
+            references.add(DefinitionReference.required(kind(), draft.getId(), kindOf(draft.getArtifactType()),
+                    draft.getArtifactTypeId()));
         }
         if (isNamed(draft.getStateMachineId())) {
             references.add(DefinitionReference.required(kind(), draft.getId(), DefinitionKinds.STATE, draft.getStateMachineId()));
         }
         return references;
+    }
+
+    /** The definition kind an artifact of this type names. */
+    static String kindOf(ArtifactType type) {
+        return switch (type) {
+            case ENTITY -> DefinitionKinds.ENTITY;
+            case DOCUMENT -> DefinitionKinds.DOCUMENT;
+            case WIDGET -> DefinitionKinds.WIDGET;
+        };
     }
 
     static boolean isNamed(String key) {

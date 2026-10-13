@@ -22,10 +22,9 @@ public interface RoleDefinitionRepository
     List<RoleDefinition> findByOrgKeyAndIdInAndChannel(String orgKey, List<String> ids, Channel channel);
 
     /**
-     * The ids alone, read by tenant erasure before {@link #eraseByOrgKey} so that each role can be
-     * removed from the identity provider once the erasure has committed.
+     * Every role id of the organization, draft or released, once each — read by tenant erasure before
+     * {@link #eraseByOrgKey} so that each role can be removed from the identity provider once the erasure has committed.
      */
-    /** Every role id the organization has, draft or released, once each: what an erasure removes from the directory. */
     @Query("select distinct r.id from RoleDefinition r where r.orgKey = :orgKey")
     List<String> findIdsByOrgKey(@Param("orgKey") String orgKey);
 

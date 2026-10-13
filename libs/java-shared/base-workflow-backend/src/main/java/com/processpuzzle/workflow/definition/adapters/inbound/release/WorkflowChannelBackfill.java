@@ -22,14 +22,15 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Component
 public class WorkflowChannelBackfill {
 
+    private static final List<String> BY_ID = List.of("org_key", "id");
     /** Each table and the key it had before channels. */
     static final Map<String, List<String>> TABLES = Map.of(
-            "workflow_definition", List.of("org_key", "id"),
-            "workflow_role_definition", List.of("org_key", "id"),
-            "workflow_task_definition", List.of("org_key", "id"),
-            "workflow_artifact_definition", List.of("org_key", "id"),
-            "workflow_tool_definition", List.of("org_key", "id"),
-            "workflow_diagram", List.of("org_key", "workflow_id"));
+            "workflow_definition", BY_ID,
+            "workflow_role_definition", BY_ID,
+            "workflow_task_definition", BY_ID,
+            "workflow_artifact_definition", BY_ID,
+            "workflow_tool_definition", BY_ID,
+            "workflow_diagram", List.of(BY_ID.get(0), "workflow_id"));
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowChannelBackfill.class);
 
     private final ChannelBackfill backfill;

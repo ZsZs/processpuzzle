@@ -37,7 +37,6 @@ public class ReplaceRoleDefinitionUseCase {
         existing.setDescription(desiredState.getDescription());
         existing.setResponsibleFor(desiredState.getResponsibleFor());
         existing.setEntityRoleId(desiredState.getEntityRoleId());
-        RoleDefinition replaced = repository.save(existing);
-        return replaced;
+        return repository.save(existing);
     }
 }

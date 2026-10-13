@@ -26,7 +26,6 @@ public class CreateWorkflowUseCase {
         }
         extendsValidator.validate(orgKey, workflow.getId(), workflow.getExtendsWorkflowId());
         validator.validate(workflow);
-        Workflow saved = repository.save(workflow);
-        return saved;
+        return repository.save(workflow);
     }
 }

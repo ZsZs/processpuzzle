@@ -141,19 +141,11 @@ public abstract class DefinitionReleaseParticipant<D extends ReleasableDefinitio
         List<D> releasedRows = new ArrayList<>();
         for (String key : keys) {
             D draft = drafts.get(key);
-            if (draft == null) {
-                continue;
-            }
             D current = released.get(key);
-            if (current != null && Objects.equals(fingerprint(draft), fingerprint(current))) {
-                continue;
+            // Nothing to do for a key without a draft, nor for a draft already released as it stands.
+            if (draft != null && (current == null || !Objects.equals(fingerprint(draft), fingerprint(current)))) {
+                releasedRows.add(repository.save(releasedRowOf(draft, current)));
             }
-            if (current == null) {
-                current = blankLike(draft);
-                current.setChannel(Channel.RELEASED);
-            }
-            copy(draft, current);
-            releasedRows.add(repository.save(current));
         }
         Set<String> removed = new TreeSet<>();
         if (removeTheRest) {
@@ -162,6 +154,17 @@ public abstract class DefinitionReleaseParticipant<D extends ReleasableDefinitio
             gone.forEach(row -> removed.add(keyOf(row)));
         }
         released(orgKey, releasedRows, removed);
+    }
+
+    /** The released row filled from the draft: the existing one updated in place, or a new one. */
+    private D releasedRowOf(D draft, D current) {
+        D released = current;
+        if (released == null) {
+            released = blankLike(draft);
+            released.setChannel(Channel.RELEASED);
+        }
+        copy(draft, released);
+        return released;
     }
 
     /** The organization's rows of this kind in the channel, by key. */

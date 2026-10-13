@@ -40,7 +40,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -108,7 +107,6 @@ class DefaultWorkflowImporterTest {
         TaskDefinitionRepository taskRepository = mock(TaskDefinitionRepository.class);
         WorkflowValidator validator = new WorkflowValidator(
                 roleRepository, artifactRepository, toolRepository, taskRepository, new PermitAllEventCatalogPort());
-        ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
         ImportWorkflowsUseCase realImportUseCase = new ImportWorkflowsUseCase(
                 repository, roleRepository, artifactRepository, toolRepository, taskRepository,
                 validator, new WorkflowYamlMapper());
