@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.processpuzzle.event.adapter.inbound.EventDefinitionReleaseParticipant;
 import com.processpuzzle.event.usecase.ImportEventDefinitions;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseImportedWorkflows;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
@@ -120,6 +121,8 @@ class InvoiceRoundTripIntegrationTest {
     @Autowired
     private ImportWorkflowsUseCase importWorkflows;
     @Autowired
+    private ReleaseImportedWorkflows releaseImportedWorkflows;
+    @Autowired
     private StartWorkflowInstanceUseCase startWorkflowInstance;
     @Autowired
     private CompleteTaskUseCase completeTask;
@@ -138,7 +141,10 @@ class InvoiceRoundTripIntegrationTest {
         assertThat(importedEvents.errors()).isEmpty();
         // Imported as drafts; the running workflows match events against the released catalog.
         eventRelease.release(ORG, importedEvents.written());
-        assertThat(importWorkflows.execute(ORG, stream(WORKFLOWS)).errors()).isEmpty();
+        var importedWorkflows = importWorkflows.execute(ORG, stream(WORKFLOWS));
+        assertThat(importedWorkflows.errors()).isEmpty();
+        // Imported as drafts; the running application executes the released workflows.
+        releaseImportedWorkflows.release(ORG, importedWorkflows);
     }
 
     @Test

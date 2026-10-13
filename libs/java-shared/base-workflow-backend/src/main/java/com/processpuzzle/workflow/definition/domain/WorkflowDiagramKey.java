@@ -1,6 +1,7 @@
 package com.processpuzzle.workflow.definition.domain;
 
 import java.io.Serializable;
+import com.processpuzzle.core.definition.Channel;
 import java.util.Objects;
 
 /**
@@ -18,14 +19,24 @@ public class WorkflowDiagramKey implements Serializable {
 
     private String orgKey;
     private String workflowId;
+    private Channel channel;
 
     public WorkflowDiagramKey() {
         // required by JPA
     }
 
-    public WorkflowDiagramKey(String orgKey, String workflowId) {
+    public WorkflowDiagramKey(String orgKey, String workflowId, Channel channel) {
         this.orgKey = orgKey;
         this.workflowId = workflowId;
+        this.channel = channel;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
     public String getOrgKey() {
@@ -52,16 +63,16 @@ public class WorkflowDiagramKey implements Serializable {
         if (!(other instanceof WorkflowDiagramKey that)) {
             return false;
         }
-        return Objects.equals(orgKey, that.orgKey) && Objects.equals(workflowId, that.workflowId);
+        return Objects.equals(orgKey, that.orgKey) && Objects.equals(workflowId, that.workflowId) && channel == that.channel;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgKey, workflowId);
+        return Objects.hash(orgKey, workflowId, channel);
     }
 
     @Override
     public String toString() {
-        return orgKey + "/" + workflowId;
+        return orgKey + "/" + workflowId + "/" + channel;
     }
 }

@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.workflow.common.ValidationException;
 import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
@@ -91,10 +92,10 @@ public class WorkflowValidator {
         requireUnique(toolIds, "tool use");
         requireUnique(taskIds, "task use");
 
-        roleIds.forEach(roleId -> requireExists(roleRepository.existsByOrgKeyAndId(orgKey, roleId), "role", roleId));
+        roleIds.forEach(roleId -> requireExists(roleRepository.existsByOrgKeyAndIdAndChannel(orgKey, roleId, Channel.DRAFT), "role", roleId));
         artifactIds.forEach(artifactId -> requireExists(
-                artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId));
-        toolIds.forEach(toolId -> requireExists(toolRepository.existsByOrgKeyAndId(orgKey, toolId), "tool", toolId));
+                artifactRepository.existsByOrgKeyAndIdAndChannel(orgKey, artifactId, Channel.DRAFT), "artifact", artifactId));
+        toolIds.forEach(toolId -> requireExists(toolRepository.existsByOrgKeyAndIdAndChannel(orgKey, toolId, Channel.DRAFT), "tool", toolId));
 
         List<String> eventIds = workflow.eventUseIds();
         requireUniqueIds(taskIds, eventIds);
@@ -111,7 +112,7 @@ public class WorkflowValidator {
     private void validateTaskUses(Workflow workflow, String orgKey, List<String> roleIds, List<String> taskIds,
                                   Set<String> flowIds, Set<String> startEventIds) {
         Map<String, TaskDefinition> tasksById = taskRepository
-                .findByOrgKeyAndIdIn(orgKey, taskIds)
+                .findByOrgKeyAndIdInAndChannel(orgKey, taskIds, Channel.DRAFT)
                 .stream()
                 .collect(Collectors.toMap(TaskDefinition::getId, Function.identity()));
         Set<String> declaredRoles = new HashSet<>(roleIds);
@@ -383,7 +384,7 @@ public class WorkflowValidator {
             List<String> authorizedRoles =
                     startEvent.getAuthorizedRoles() == null ? List.of() : startEvent.getAuthorizedRoles();
             for (String roleId : authorizedRoles) {
-                requireExists(roleRepository.existsByOrgKeyAndId(orgKey, roleId), "role", roleId);
+                requireExists(roleRepository.existsByOrgKeyAndIdAndChannel(orgKey, roleId, Channel.DRAFT), "role", roleId);
             }
 
             if (startEvent.getStartType() == WorkflowStartConditionType.TRIGGERING_EVENT) {
@@ -417,7 +418,7 @@ public class WorkflowValidator {
                 startEvent.getRequiredArtifacts() == null ? List.of() : startEvent.getRequiredArtifacts();
         for (RequiredStartArtifact artifact : required) {
             String artifactId = artifact.getArtifactDefinitionId();
-            requireExists(artifactRepository.existsByOrgKeyAndId(orgKey, artifactId), "artifact", artifactId);
+            requireExists(artifactRepository.existsByOrgKeyAndIdAndChannel(orgKey, artifactId, Channel.DRAFT), "artifact", artifactId);
             if (!declaredArtifacts.contains(artifactId)) {
                 throw new ValidationException("Start event '%s' requires artifact '%s', which the workflow does not declare"
                         .formatted(startEvent.getId(), artifactId));

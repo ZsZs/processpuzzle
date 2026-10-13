@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
@@ -21,7 +22,7 @@ public class CreateArtifactDefinitionUseCase {
 
     public ArtifactDefinition create(String orgKey, ArtifactDefinition artifact) {
         artifact.setOrgKey(orgKey);
-        if (repository.existsByOrgKeyAndId(orgKey, artifact.getId())) {
+        if (repository.existsByOrgKeyAndIdAndChannel(orgKey, artifact.getId(), Channel.DRAFT)) {
             throw new ConflictException("Artifact definition '%s' already exists".formatted(artifact.getId()));
         }
         return repository.save(artifact);

@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
@@ -70,7 +71,7 @@ public class InputArtifactStartListener {
                 || (event.action() != PlatformEventAction.CREATED && event.action() != PlatformEventAction.STATE_CHANGED)) {
             return;
         }
-        for (Workflow workflow : workflowRepository.findByOrgKey(event.orgKey())) {
+        for (Workflow workflow : workflowRepository.findByOrgKeyAndChannel(event.orgKey(), Channel.RELEASED)) {
             List<StartEvent> candidates = inputArtifactStartEvents(workflow);
             if (!candidates.isEmpty()) {
                 startIfMatched(event, workflow, candidates);

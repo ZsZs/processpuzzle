@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.StepDefinition;
@@ -43,7 +44,7 @@ public class CatalogReferenceScanner {
 
     /** Ids of the task definitions offering {@code roleId} among their performedByRoles. */
     public List<String> tasksOfferingRole(String orgKey, String roleId) {
-        return taskRepository.findByOrgKey(orgKey).stream()
+        return taskRepository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
                 .filter(task -> safe(task.getPerformedByRoles()).contains(roleId))
                 .map(TaskDefinition::getId)
                 .toList();
@@ -55,7 +56,7 @@ public class CatalogReferenceScanner {
 
     /** Ids of the task definitions naming {@code artifactId} among their inputs or outputs. */
     public List<String> tasksReferencingArtifact(String orgKey, String artifactId) {
-        return taskRepository.findByOrgKey(orgKey).stream()
+        return taskRepository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
                 .filter(task -> referencesArtifact(task, artifactId))
                 .map(TaskDefinition::getId)
                 .toList();
@@ -67,7 +68,7 @@ public class CatalogReferenceScanner {
      * ownership is as much a reference as use is.
      */
     public List<String> rolesResponsibleForArtifact(String orgKey, String artifactId) {
-        return roleRepository.findByOrgKey(orgKey).stream()
+        return roleRepository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
                 .filter(role -> safe(role.getResponsibleFor()).contains(artifactId))
                 .map(RoleDefinition::getId)
                 .toList();
@@ -83,7 +84,7 @@ public class CatalogReferenceScanner {
 
     /** Ids of the task definitions whose steps invoke {@code toolId}. */
     public List<String> tasksUsingTool(String orgKey, String toolId) {
-        return taskRepository.findByOrgKey(orgKey).stream()
+        return taskRepository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
                 .filter(task -> safe(task.getSteps()).stream()
                         .map(StepDefinition::getToolDefinitionId)
                         .anyMatch(toolId::equals))
@@ -97,7 +98,7 @@ public class CatalogReferenceScanner {
     }
 
     private List<String> workflowIdsWhere(String orgKey, Predicate<Workflow> predicate) {
-        return workflowRepository.findByOrgKey(orgKey).stream()
+        return workflowRepository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
                 .filter(predicate)
                 .map(Workflow::getId)
                 .toList();

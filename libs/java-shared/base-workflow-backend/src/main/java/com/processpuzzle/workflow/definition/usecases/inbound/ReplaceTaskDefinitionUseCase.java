@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
@@ -21,7 +22,7 @@ public class ReplaceTaskDefinitionUseCase {
     private final TaskDefinitionRepository repository;
 
     public TaskDefinition replace(String orgKey, String id, TaskDefinition desiredState) {
-        TaskDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+        TaskDefinition existing = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No task definition with id '%s'".formatted(id)));
 
         if (desiredState.getVersion() != null && !desiredState.getVersion().equals(existing.getVersion())) {

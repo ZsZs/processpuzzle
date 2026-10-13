@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
@@ -21,7 +22,7 @@ public class CreateTaskDefinitionUseCase {
 
     public TaskDefinition create(String orgKey, TaskDefinition task) {
         task.setOrgKey(orgKey);
-        if (repository.existsByOrgKeyAndId(orgKey, task.getId())) {
+        if (repository.existsByOrgKeyAndIdAndChannel(orgKey, task.getId(), Channel.DRAFT)) {
             throw new ConflictException("Task definition '%s' already exists".formatted(task.getId()));
         }
         return repository.save(task);

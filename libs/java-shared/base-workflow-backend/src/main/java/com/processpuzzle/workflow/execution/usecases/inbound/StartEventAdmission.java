@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.ForbiddenException;
 import com.processpuzzle.workflow.common.ValidationException;
@@ -112,7 +113,7 @@ public class StartEventAdmission {
         }
         Set<String> entityRoleIds = new HashSet<>();
         for (String roleId : authorizedRoles) {
-            String entityRoleId = roleRepository.findByOrgKeyAndId(orgKey, roleId)
+            String entityRoleId = roleRepository.findByOrgKeyAndIdAndChannel(orgKey, roleId, Channel.RELEASED)
                     .map(RoleDefinition::getEntityRoleId)
                     .orElse(null);
             if (entityRoleId == null || entityRoleId.isBlank()) {

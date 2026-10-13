@@ -1,5 +1,8 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseStates;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.WorkflowReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.api.WorkflowDiagramsApi;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteWorkflowDiagramUseCase;
@@ -34,30 +37,43 @@ public class WorkflowDiagramsEndpoint implements WorkflowDiagramsApi {
     private final FindAllWorkflowDiagramsUseCase findAllWorkflowDiagrams;
     private final DeleteWorkflowDiagramUseCase deleteWorkflowDiagram;
     private final WorkflowDiagramMapper mapper;
+    private final WorkflowReleaseParticipant releaseParticipant;
 
     public WorkflowDiagramsEndpoint(SaveWorkflowDiagramUseCase saveWorkflowDiagram,
                                     FindWorkflowDiagramUseCase findWorkflowDiagram,
                                     FindAllWorkflowDiagramsUseCase findAllWorkflowDiagrams,
                                     DeleteWorkflowDiagramUseCase deleteWorkflowDiagram,
-                                    WorkflowDiagramMapper mapper) {
+                                    WorkflowDiagramMapper mapper,
+            WorkflowReleaseParticipant releaseParticipant) {
         this.saveWorkflowDiagram = saveWorkflowDiagram;
         this.findWorkflowDiagram = findWorkflowDiagram;
         this.findAllWorkflowDiagrams = findAllWorkflowDiagrams;
         this.deleteWorkflowDiagram = deleteWorkflowDiagram;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
     public ResponseEntity<PageOfWorkflowDiagram> listWorkflowDiagrams(
-            String orgKey, String where, String order, Integer page, Integer size) {
-        Page<WorkflowDiagram> result = findAllWorkflowDiagrams.findAll(orgKey, where, order, page, size);
-        return ResponseEntity.ok(mapper.toModel(result));
+            String orgKey, String where, String order, Integer page, Integer size, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        Page<WorkflowDiagram> result = findAllWorkflowDiagrams.findAll(orgKey, channel, where, order, page, size);
+        PageOfWorkflowDiagram body = mapper.toModel(result);
+        // A layout is released with its workflow, so it stands where its workflow does.
+        if (body.getContent() != null) {
+            ReleaseStates.stamp(channel, releaseParticipant, orgKey, body.getContent(),
+                    com.processpuzzle.workflow.model.WorkflowDiagram::getWorkflowId, com.processpuzzle.workflow.model.WorkflowDiagram::setReleaseState);
+        }
+        return ResponseEntity.ok(body);
     }
 
     @Override
     public ResponseEntity<com.processpuzzle.workflow.model.WorkflowDiagram> getWorkflowDiagram(
-            String orgKey, String workflowId) {
-        return ResponseEntity.ok(mapper.toModel(findWorkflowDiagram.findByOrgKeyAndWorkflowId(orgKey, workflowId)));
+            String orgKey, String workflowId, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var diagram = mapper.toModel(findWorkflowDiagram.findByOrgKeyAndWorkflowId(orgKey, workflowId, channel));
+        return ResponseEntity.ok(ReleaseStates.stampOne(channel, releaseParticipant, orgKey, diagram,
+                com.processpuzzle.workflow.model.WorkflowDiagram::getWorkflowId, com.processpuzzle.workflow.model.WorkflowDiagram::setReleaseState));
     }
 
     /** {@code 201} the first time this workflow is arranged, {@code 200} every time after. */

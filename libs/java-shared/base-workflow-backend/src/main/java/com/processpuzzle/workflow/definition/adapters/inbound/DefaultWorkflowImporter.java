@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseImportedWorkflows;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportWorkflowsUseCase;
 import java.io.IOException;
@@ -43,11 +44,14 @@ public class DefaultWorkflowImporter {
 
     private final ImportWorkflowsUseCase importWorkflows;
     private final ResourcePatternResolver resourceResolver;
+    private final ReleaseImportedWorkflows releaseImported;
 
     public DefaultWorkflowImporter(ImportWorkflowsUseCase importWorkflows,
-                                  ResourcePatternResolver resourceResolver) {
+                                  ResourcePatternResolver resourceResolver,
+                                   ReleaseImportedWorkflows releaseImported) {
         this.importWorkflows = importWorkflows;
         this.resourceResolver = resourceResolver;
+        this.releaseImported = releaseImported;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -82,6 +86,9 @@ public class DefaultWorkflowImporter {
 
         try (InputStream input = resource.getInputStream()) {
             ImportOutcome outcome = importWorkflows.execute(orgKey, input);
+            // A seeded workflow set is meant to run, so it is released at once — what this file wrote, and nothing a
+            // designer drafted besides.
+            releaseImported.release(orgKey, outcome);
             LOG.info("Imported default workflows from {} into organization '{}': created={}, updated={}, errors={}",
                     fileName, orgKey, outcome.created(), outcome.updated(), outcome.errors() == null ? 0 : outcome.errors().size());
             if (outcome.errors() != null) {

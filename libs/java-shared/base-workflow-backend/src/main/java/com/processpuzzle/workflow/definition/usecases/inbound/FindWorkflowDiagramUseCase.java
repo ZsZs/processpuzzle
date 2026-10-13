@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
@@ -23,8 +24,8 @@ public class FindWorkflowDiagramUseCase {
 
     private final WorkflowDiagramRepository repository;
 
-    public WorkflowDiagram findByOrgKeyAndWorkflowId(String orgKey, String workflowId) {
-        return repository.findByOrgKeyAndWorkflowId(orgKey, workflowId)
+    public WorkflowDiagram findByOrgKeyAndWorkflowId(String orgKey, String workflowId, Channel channel) {
+        return repository.findByOrgKeyAndWorkflowIdAndChannel(orgKey, workflowId, channel)
                 .orElseThrow(() -> new NotFoundException(
                         "No diagram layout for workflow '%s'".formatted(workflowId)));
     }

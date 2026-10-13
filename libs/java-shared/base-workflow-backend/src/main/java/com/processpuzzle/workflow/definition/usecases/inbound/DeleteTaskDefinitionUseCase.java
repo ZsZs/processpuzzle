@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
@@ -23,7 +24,7 @@ public class DeleteTaskDefinitionUseCase {
     private final CatalogReferenceScanner referenceScanner;
 
     public void delete(String orgKey, String id) {
-        TaskDefinition task = repository.findByOrgKeyAndId(orgKey, id)
+        TaskDefinition task = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No task definition with id '%s'".formatted(id)));
 
         List<String> workflows = referenceScanner.workflowsAssigningTask(orgKey, id);

@@ -90,7 +90,8 @@ erases both tables with the tenant.
 | state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
 | rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
 | event | `event_definition.channel`, key `(org_key, id, channel)` | `EventDefinitionReleaseParticipant` (base-event) | step 3a |
-| workflow, catalogue | `channel` on the workflow, role, task, artifact, tool and diagram tables | step 3b | |
+| artifact, role, tool, task | `channel` on `workflow_artifact_definition`, `workflow_role_definition`, `workflow_tool_definition`, `workflow_task_definition`, keys `(org_key, id, channel)` | `ArtifactReleaseParticipant`, `RoleReleaseParticipant`, `ToolReleaseParticipant`, `TaskReleaseParticipant` (base-workflow) | step 3b |
+| workflow | `workflow_definition.channel` and `workflow_diagram.channel`; a workflow and its diagram are released together, as one definition | `WorkflowReleaseParticipant` (base-workflow) | step 3b |
 | document | `published_documents`, per translation | step 4 | |
 
 **Designer CRUD reads and writes the draft only.** Endpoints are unchanged; reads take an optional
@@ -144,6 +145,33 @@ against the released definition.
   (`ImportOutcome.written`).
 - **Backfill.** `EventChannelBackfill`: the generic `ChannelBackfill`, since the table has no children and no
   foreign key onto it.
+
+### Workflows and their catalogue (step 3b)
+
+- **One mechanism, five kinds.** `DefinitionReleaseParticipant` (base-workflow) does what every kind does — pending by
+  a canonical fingerprint of the authored fields, release in place, removal — and each kind names its rows, content,
+  copy and references. Each catalogue item is its own entry in the Release section, since workflows share them; a
+  workflow's entry covers its diagram, so a moved node is a pending change.
+- **Who reads which row.** The running application reads released rows: `ResolveWorkflowUseCase` (every start, task
+  completion, assignment, skip, timer and catch event), `TriggeredStartListener`, `InputArtifactStartListener`,
+  `StartEventAdmission`, `FireStartTimerUseCase`, `StartTimerScheduleReconciler` and `ToolStepExecutor`. Designer CRUD,
+  import, export, the validators and `CatalogReferenceScanner` work on drafts; list and get take `revision` and
+  report `releaseState`.
+- **What follows the release instead of a save.** The organization's directory (Keycloak groups for roles): the
+  release announces `RoleDefinitionChangedEvent` / `RoleDefinitionDeletedEvent` for the roles it changes and removes,
+  and `SyncRoleDirectory` reconciles released roles only. The start timers: the release announces
+  `WorkflowChangedEvent`, and the reconciler reads the released workflow. Both listeners run after the release
+  commits. A designer's save announces neither any longer.
+- **References.** A workflow: the workflow it extends, its roles, artifacts, tools and tasks, the roles performing its
+  tasks and authorized to start it, the artifacts a start requires, and its events (triggering, thrown, caught). A
+  task: its roles, input and output artifacts, pre- and postcondition rules, and the tools of its steps. A role: the
+  artifacts it is responsible for. An artifact: its entity type (by name) and its state machine.
+- **Checks.** Error: a workflow removed while instances run (ACTIVE or SUSPENDED); a task removed while a task
+  instance has it open (PENDING, ACTIVE or BLOCKED). Running instances are not pinned to their revision: they continue
+  on the released definition (phase 3).
+- **Seeding.** `DefaultWorkflowImporter` releases what its file wrote (`ImportOutcome.written`, by kind) through
+  `ReleaseImportedWorkflows`, catalogue first.
+- **Backfill.** `WorkflowChannelBackfill`: the generic `ChannelBackfill` over the six tables.
 
 ### Compatibility checks (`check`), from step 2
 

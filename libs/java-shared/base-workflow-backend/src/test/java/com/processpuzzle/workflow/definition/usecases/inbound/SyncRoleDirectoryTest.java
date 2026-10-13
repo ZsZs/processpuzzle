@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
@@ -161,7 +162,9 @@ class SyncRoleDirectoryTest {
     }
 
     private static RoleDefinition role(String orgKey, String id, String name, String description) {
-        return RoleDefinition.builder().orgKey(orgKey).id(id).name(name).description(description).build();
+        RoleDefinition role = RoleDefinition.builder().orgKey(orgKey).id(id).name(name).description(description).build();
+        role.setChannel(Channel.RELEASED);
+        return role;
     }
 
     private static IdentityProviderUnavailableException unavailable() {

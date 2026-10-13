@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
@@ -35,8 +36,9 @@ public class FindAllWorkflowDiagramsUseCase {
         this.repository = repository;
     }
 
-    public Page<WorkflowDiagram> findAll(String orgKey, String where, String order, Integer page, Integer size) {
-        Specification<WorkflowDiagram> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public Page<WorkflowDiagram> findAll(String orgKey, Channel channel, String where, String order, Integer page, Integer size) {
+        Specification<WorkflowDiagram> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("orgKey"), orgKey), cb.equal(root.get("channel"), channel));
 
         Specification<WorkflowDiagram> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {

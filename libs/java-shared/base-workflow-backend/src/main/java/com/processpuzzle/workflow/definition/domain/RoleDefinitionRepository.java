@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,19 +13,19 @@ import java.util.Optional;
 public interface RoleDefinitionRepository
         extends JpaRepository<RoleDefinition, RoleDefinitionKey>, JpaSpecificationExecutor<RoleDefinition> {
 
-    Optional<RoleDefinition> findByOrgKeyAndId(String orgKey, String id);
+    Optional<RoleDefinition> findByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    boolean existsByOrgKeyAndId(String orgKey, String id);
+    boolean existsByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    List<RoleDefinition> findByOrgKey(String orgKey);
+    List<RoleDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
 
-    List<RoleDefinition> findByOrgKeyAndIdIn(String orgKey, List<String> ids);
+    List<RoleDefinition> findByOrgKeyAndIdInAndChannel(String orgKey, List<String> ids, Channel channel);
 
     /**
-     * The ids alone, read by tenant erasure before {@link #eraseByOrgKey} so that each role can be
-     * removed from the identity provider once the erasure has committed.
+     * Every role id of the organization, draft or released, once each — read by tenant erasure before
+     * {@link #eraseByOrgKey} so that each role can be removed from the identity provider once the erasure has committed.
      */
-    @Query("select r.id from RoleDefinition r where r.orgKey = :orgKey")
+    @Query("select distinct r.id from RoleDefinition r where r.orgKey = :orgKey")
     List<String> findIdsByOrgKey(@Param("orgKey") String orgKey);
 
     /**

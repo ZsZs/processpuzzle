@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,13 +13,13 @@ import java.util.Optional;
 public interface TaskDefinitionRepository
         extends JpaRepository<TaskDefinition, TaskDefinitionKey>, JpaSpecificationExecutor<TaskDefinition> {
 
-    Optional<TaskDefinition> findByOrgKeyAndId(String orgKey, String id);
+    Optional<TaskDefinition> findByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    boolean existsByOrgKeyAndId(String orgKey, String id);
+    boolean existsByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    List<TaskDefinition> findByOrgKey(String orgKey);
+    List<TaskDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
 
-    List<TaskDefinition> findByOrgKeyAndIdIn(String orgKey, List<String> ids);
+    List<TaskDefinition> findByOrgKeyAndIdInAndChannel(String orgKey, List<String> ids, Channel channel);
 
     /**
      * Every task definition of a tenant in one statement, for erasing the tenant. A bulk delete, so it

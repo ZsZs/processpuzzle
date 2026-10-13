@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
@@ -25,7 +26,7 @@ public class DeleteArtifactDefinitionUseCase {
     private final CatalogReferenceScanner referenceScanner;
 
     public void delete(String orgKey, String id) {
-        ArtifactDefinition artifact = repository.findByOrgKeyAndId(orgKey, id)
+        ArtifactDefinition artifact = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No artifact definition with id '%s'".formatted(id)));
 
         List<String> workflows = referenceScanner.workflowsUsingArtifact(orgKey, id);

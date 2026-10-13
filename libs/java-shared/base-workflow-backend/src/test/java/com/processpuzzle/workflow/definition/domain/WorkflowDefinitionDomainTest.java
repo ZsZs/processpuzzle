@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,35 +12,39 @@ class WorkflowDefinitionDomainTest {
 
     @Test
     void workflowKey_equalsAndHashCodeAndGettersSetters() {
-        WorkflowKey key1 = new WorkflowKey("org1", "proc1");
-        WorkflowKey key2 = new WorkflowKey("org1", "proc1");
-        WorkflowKey key3 = new WorkflowKey("org2", "proc2");
+        WorkflowKey key1 = new WorkflowKey("org1", "proc1", Channel.DRAFT);
+        WorkflowKey key2 = new WorkflowKey("org1", "proc1", Channel.DRAFT);
+        WorkflowKey key3 = new WorkflowKey("org2", "proc2", Channel.DRAFT);
         WorkflowKey emptyKey = new WorkflowKey();
 
         emptyKey.setOrgKey("org1");
         emptyKey.setId("proc1");
+        emptyKey.setChannel(Channel.DRAFT);
 
         assertThat(key1)
                 .isEqualTo(key2)
                 .isEqualTo(emptyKey)
                 .isNotEqualTo(key3)
+                .isNotEqualTo(new WorkflowKey("org1", "proc1", Channel.RELEASED))
+                .isNotEqualTo(new RoleDefinitionKey("org1", "proc1", Channel.DRAFT))
                 .isNotEqualTo(null)
                 .isNotEqualTo("other")
-                .hasSameHashCodeAs(key2);
+                .hasSameHashCodeAs(key2)
+                .hasToString("org1/proc1/DRAFT");
         assertThat(key1.getOrgKey()).isEqualTo("org1");
         assertThat(key1.getId()).isEqualTo("proc1");
     }
 
     @Test
     void theOtherFourKeysBehaveTheSameWay() {
-        assertKeyContract(new ToolDefinitionKey("org1", "tool1"), new ToolDefinitionKey("org1", "tool1"),
-                new ToolDefinitionKey("org2", "tool2"), new ToolDefinitionKey(), "tool1");
-        assertKeyContract(new RoleDefinitionKey("org1", "role1"), new RoleDefinitionKey("org1", "role1"),
-                new RoleDefinitionKey("org2", "role2"), new RoleDefinitionKey(), "role1");
-        assertKeyContract(new ArtifactDefinitionKey("org1", "art1"), new ArtifactDefinitionKey("org1", "art1"),
-                new ArtifactDefinitionKey("org2", "art2"), new ArtifactDefinitionKey(), "art1");
-        assertKeyContract(new TaskDefinitionKey("org1", "task1"), new TaskDefinitionKey("org1", "task1"),
-                new TaskDefinitionKey("org2", "task2"), new TaskDefinitionKey(), "task1");
+        assertKeyContract(new ToolDefinitionKey("org1", "tool1", Channel.DRAFT), new ToolDefinitionKey("org1", "tool1", Channel.DRAFT),
+                new ToolDefinitionKey("org2", "tool2", Channel.DRAFT), new ToolDefinitionKey(), "tool1");
+        assertKeyContract(new RoleDefinitionKey("org1", "role1", Channel.DRAFT), new RoleDefinitionKey("org1", "role1", Channel.DRAFT),
+                new RoleDefinitionKey("org2", "role2", Channel.DRAFT), new RoleDefinitionKey(), "role1");
+        assertKeyContract(new ArtifactDefinitionKey("org1", "art1", Channel.DRAFT), new ArtifactDefinitionKey("org1", "art1", Channel.DRAFT),
+                new ArtifactDefinitionKey("org2", "art2", Channel.DRAFT), new ArtifactDefinitionKey(), "art1");
+        assertKeyContract(new TaskDefinitionKey("org1", "task1", Channel.DRAFT), new TaskDefinitionKey("org1", "task1", Channel.DRAFT),
+                new TaskDefinitionKey("org2", "task2", Channel.DRAFT), new TaskDefinitionKey(), "task1");
     }
 
     @Test
@@ -432,6 +437,7 @@ class WorkflowDefinitionDomainTest {
         try {
             empty.getClass().getMethod("setOrgKey", String.class).invoke(empty, "org1");
             empty.getClass().getMethod("setId", String.class).invoke(empty, id);
+            empty.getClass().getMethod("setChannel", Channel.class).invoke(empty, Channel.DRAFT);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError("Key class is missing the setters JPA needs", e);
         }

@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,13 +20,13 @@ import org.springframework.data.repository.query.Param;
 public interface WorkflowDiagramRepository
         extends JpaRepository<WorkflowDiagram, WorkflowDiagramKey>, JpaSpecificationExecutor<WorkflowDiagram> {
 
-    Optional<WorkflowDiagram> findByOrgKeyAndWorkflowId(String orgKey, String workflowId);
+    Optional<WorkflowDiagram> findByOrgKeyAndWorkflowIdAndChannel(String orgKey, String workflowId, Channel channel);
 
-    boolean existsByOrgKeyAndWorkflowId(String orgKey, String workflowId);
+    boolean existsByOrgKeyAndWorkflowIdAndChannel(String orgKey, String workflowId, Channel channel);
 
-    List<WorkflowDiagram> findByOrgKey(String orgKey);
+    List<WorkflowDiagram> findByOrgKeyAndChannel(String orgKey, Channel channel);
 
-    void deleteByOrgKeyAndWorkflowId(String orgKey, String workflowId);
+    void deleteByOrgKeyAndWorkflowIdAndChannel(String orgKey, String workflowId, Channel channel);
 
     /**
      * Every workflow diagram layout of a tenant in one statement, for erasing the tenant. A bulk delete, so it

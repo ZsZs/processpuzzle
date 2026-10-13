@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.ForbiddenException;
 import com.processpuzzle.workflow.common.ValidationException;
@@ -70,7 +71,7 @@ class StartEventAdmissionTest {
 
     @Test
     void roleDefinitionAdmitsAHolderOfAnAuthorizedRole() {
-        when(roleRepository.findByOrgKeyAndId(ORG, "clerk")).thenReturn(Optional.of(role("clerk", "order-clerk")));
+        when(roleRepository.findByOrgKeyAndIdAndChannel(ORG, "clerk", Channel.RELEASED)).thenReturn(Optional.of(role("clerk", "order-clerk")));
         when(startAuthorizationPort.currentPrincipalHoldsAny(ORG, Set.of("order-clerk"))).thenReturn(true);
 
         assertThat(admission.admit(ORG, workflow(roleEvent("manual", "clerk")), null, null)).contains("manual");
@@ -78,7 +79,7 @@ class StartEventAdmissionTest {
 
     @Test
     void roleDefinitionRefusesACallerWithoutTheRole() {
-        when(roleRepository.findByOrgKeyAndId(ORG, "clerk")).thenReturn(Optional.of(role("clerk", "order-clerk")));
+        when(roleRepository.findByOrgKeyAndIdAndChannel(ORG, "clerk", Channel.RELEASED)).thenReturn(Optional.of(role("clerk", "order-clerk")));
         when(startAuthorizationPort.currentPrincipalHoldsAny(ORG, Set.of("order-clerk"))).thenReturn(false);
 
         ResolvedWorkflow workflow = workflow(roleEvent("manual", "clerk"));
@@ -91,7 +92,7 @@ class StartEventAdmissionTest {
     /** A role with no entity role behind it gives membership nothing to check, as in AssignTaskUseCase. */
     @Test
     void roleDefinitionAdmitsWhenARoleHasNoEntityRole() {
-        when(roleRepository.findByOrgKeyAndId(ORG, "clerk")).thenReturn(Optional.of(role("clerk", null)));
+        when(roleRepository.findByOrgKeyAndIdAndChannel(ORG, "clerk", Channel.RELEASED)).thenReturn(Optional.of(role("clerk", null)));
 
         assertThat(admission.admit(ORG, workflow(roleEvent("manual", "clerk")), null, null)).contains("manual");
         verify(startAuthorizationPort, never()).currentPrincipalHoldsAny(anyString(), any());
