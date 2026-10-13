@@ -1,12 +1,11 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReplaceRoleDefinitionUseCase {
 
     private final RoleDefinitionRepository repository;
-    private final ApplicationEventPublisher events;
 
     public RoleDefinition replace(String orgKey, String id, RoleDefinition desiredState) {
-        RoleDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+        RoleDefinition existing = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No role definition with id '%s'".formatted(id)));
 
         if (desiredState.getVersion() != null && !desiredState.getVersion().equals(existing.getVersion())) {
@@ -39,9 +37,6 @@ public class ReplaceRoleDefinitionUseCase {
         existing.setDescription(desiredState.getDescription());
         existing.setResponsibleFor(desiredState.getResponsibleFor());
         existing.setEntityRoleId(desiredState.getEntityRoleId());
-        RoleDefinition replaced = repository.save(existing);
-        events.publishEvent(new RoleDefinitionChangedEvent(
-                orgKey, replaced.getId(), replaced.getName(), replaced.getDescription()));
-        return replaced;
+        return repository.save(existing);
     }
 }

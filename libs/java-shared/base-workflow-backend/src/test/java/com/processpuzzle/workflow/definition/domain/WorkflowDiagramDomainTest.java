@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -93,12 +94,12 @@ class WorkflowDiagramDomainTest {
 
     @Test
     void keyEqualsAndHashesByBothParts() {
-        assertThat(new WorkflowDiagramKey(ORG, WORKFLOW_ID))
-                .isEqualTo(new WorkflowDiagramKey(ORG, WORKFLOW_ID))
-                .hasSameHashCodeAs(new WorkflowDiagramKey(ORG, WORKFLOW_ID))
-                .isNotEqualTo(new WorkflowDiagramKey("org-2", WORKFLOW_ID))
-                .isNotEqualTo(new WorkflowDiagramKey(ORG, "other-workflow"));
-        assertThat(new WorkflowDiagramKey(ORG, WORKFLOW_ID)).hasToString(ORG + "/" + WORKFLOW_ID);
+        assertThat(new WorkflowDiagramKey(ORG, WORKFLOW_ID, Channel.DRAFT))
+                .isEqualTo(new WorkflowDiagramKey(ORG, WORKFLOW_ID, Channel.DRAFT))
+                .hasSameHashCodeAs(new WorkflowDiagramKey(ORG, WORKFLOW_ID, Channel.DRAFT))
+                .isNotEqualTo(new WorkflowDiagramKey("org-2", WORKFLOW_ID, Channel.DRAFT))
+                .isNotEqualTo(new WorkflowDiagramKey(ORG, "other-workflow", Channel.DRAFT));
+        assertThat(new WorkflowDiagramKey(ORG, WORKFLOW_ID, Channel.DRAFT)).hasToString(ORG + "/" + WORKFLOW_ID + "/DRAFT");
     }
 
     // Required by JPA, and the setters with it: an @IdClass has to be instantiable through a no-arg ctor.

@@ -1,5 +1,7 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseImportedWorkflows;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
@@ -38,7 +40,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -71,7 +72,7 @@ class DefaultWorkflowImporterTest {
     void setUp() {
         importUseCase = mock(ImportWorkflowsUseCase.class);
         resourceResolver = mock(ResourcePatternResolver.class);
-        importer = new DefaultWorkflowImporter(importUseCase, resourceResolver);
+        importer = new DefaultWorkflowImporter(importUseCase, resourceResolver, mock(ReleaseImportedWorkflows.class));
     }
 
     @Test
@@ -106,17 +107,16 @@ class DefaultWorkflowImporterTest {
         TaskDefinitionRepository taskRepository = mock(TaskDefinitionRepository.class);
         WorkflowValidator validator = new WorkflowValidator(
                 roleRepository, artifactRepository, toolRepository, taskRepository, new PermitAllEventCatalogPort());
-        ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
         ImportWorkflowsUseCase realImportUseCase = new ImportWorkflowsUseCase(
                 repository, roleRepository, artifactRepository, toolRepository, taskRepository,
-                validator, new WorkflowYamlMapper(), events);
+                validator, new WorkflowYamlMapper());
 
-        when(repository.findByOrgKey(ORG)).thenReturn(List.of());
-        when(repository.findByOrgKeyAndId(eq(ORG), anyString())).thenReturn(Optional.empty());
-        when(roleRepository.findByOrgKeyAndId(eq(ORG), anyString())).thenReturn(Optional.empty());
-        when(artifactRepository.findByOrgKeyAndId(eq(ORG), anyString())).thenReturn(Optional.empty());
-        when(toolRepository.findByOrgKeyAndId(eq(ORG), anyString())).thenReturn(Optional.empty());
-        when(taskRepository.findByOrgKeyAndId(eq(ORG), anyString())).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of());
+        when(repository.findByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
+        when(roleRepository.findByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
+        when(artifactRepository.findByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
+        when(toolRepository.findByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
+        when(taskRepository.findByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
 
         // The validator resolves references through the repositories; the saves above are what the
         // file itself contributes, so echo them back.
@@ -128,13 +128,13 @@ class DefaultWorkflowImporterTest {
         when(artifactRepository.save(any())).thenAnswer(call -> record(savedArtifacts, call.getArgument(0)));
         when(toolRepository.save(any())).thenAnswer(call -> record(savedTools, call.getArgument(0)));
         when(taskRepository.save(any())).thenAnswer(call -> record(savedTasks, call.getArgument(0)));
-        when(roleRepository.existsByOrgKeyAndId(eq(ORG), anyString()))
+        when(roleRepository.existsByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> hasId(savedRoles, call.getArgument(1), RoleDefinition::getId));
-        when(artifactRepository.existsByOrgKeyAndId(eq(ORG), anyString()))
+        when(artifactRepository.existsByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> hasId(savedArtifacts, call.getArgument(1), ArtifactDefinition::getId));
-        when(toolRepository.existsByOrgKeyAndId(eq(ORG), anyString()))
+        when(toolRepository.existsByOrgKeyAndIdAndChannel(eq(ORG), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> hasId(savedTools, call.getArgument(1), ToolDefinition::getId));
-        when(taskRepository.findByOrgKeyAndIdIn(eq(ORG), anyList())).thenAnswer(call -> {
+        when(taskRepository.findByOrgKeyAndIdInAndChannel(eq(ORG), anyList(), eq(Channel.DRAFT))).thenAnswer(call -> {
             List<String> requested = call.getArgument(1);
             return savedTasks.stream().filter(task -> requested.contains(task.getId())).toList();
         });
@@ -148,12 +148,7 @@ class DefaultWorkflowImporterTest {
             assertThat(outcome.updated()).isZero();
 
             assertThat(savedRoles).extracting(RoleDefinition::getId).containsExactly("clerk", "manager");
-            // Seeded roles reach the realm only through these: the importer writes through the
-            // repository, bypassing CreateRoleDefinitionUseCase, so it has to publish for itself.
-            verify(events).publishEvent(new RoleDefinitionChangedEvent(ORG, "clerk", "Order Clerk",
-                    "Responsible for initial order entry, verification, and delivery confirmation."));
-            verify(events).publishEvent(new RoleDefinitionChangedEvent(ORG, "manager", "Order Manager",
-                    "Approves orders for shipment."));
+            // Drafts: seeded roles reach the realm when the loader releases them, which announces them.
             assertThat(savedRoles).extracting(RoleDefinition::getResponsibleFor)
                     .containsExactly(List.of("order-entity"), List.of("fulfillment-invoice"));
             assertThat(savedArtifacts).extracting(ArtifactDefinition::getId)
@@ -177,7 +172,6 @@ class DefaultWorkflowImporterTest {
 
             ArgumentCaptor<Workflow> defCaptor = ArgumentCaptor.forClass(Workflow.class);
             verify(repository, times(3)).save(defCaptor.capture());
-            verify(events).publishEvent(new WorkflowChangedEvent(ORG, "order-fulfillment-workflow", false));
 
             Workflow def = defCaptor.getAllValues().get(0);
             assertThat(def.getOrgKey()).isEqualTo(ORG);

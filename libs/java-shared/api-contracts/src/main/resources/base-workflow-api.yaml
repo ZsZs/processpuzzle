@@ -45,6 +45,7 @@ paths:
         - $ref: "#/components/parameters/OrderParam"
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/SizeParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: >-
@@ -87,6 +88,8 @@ paths:
       operationId: getWorkflow
       tags: [ Workflows ]
       summary: Get a workflow with its task uses and its role, artifact and tool references
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Full workflow
@@ -211,6 +214,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Role definitions
@@ -251,6 +255,8 @@ paths:
       operationId: getRoleDefinition
       tags: [ Role Definitions ]
       summary: Get a single role definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Role definition
@@ -322,6 +328,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Artifact definitions
@@ -362,6 +369,8 @@ paths:
       operationId: getArtifactDefinition
       tags: [ Artifact Definitions ]
       summary: Get a single artifact definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Artifact definition
@@ -428,6 +437,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Task definitions
@@ -468,6 +478,8 @@ paths:
       operationId: getTaskDefinition
       tags: [ Task Definitions ]
       summary: Get a single task definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Task definition
@@ -531,6 +543,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/WhereParam"
         - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Tool definitions
@@ -571,6 +584,8 @@ paths:
       operationId: getToolDefinition
       tags: [ Tool Definitions ]
       summary: Get a tool definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Tool definition
@@ -648,6 +663,7 @@ paths:
         - $ref: "#/components/parameters/OrderParam"
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/SizeParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Paged list of diagram layouts
@@ -668,6 +684,8 @@ paths:
         404 when the workflow has never been arranged. That is not an error condition for the
         modeler — it is how it learns to keep the automatic swimlane layout — and it is
         deliberately distinguishable from a layout that exists but is empty.
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: The diagram layout
@@ -1197,6 +1215,18 @@ components:
       required: true
       schema:
         type: string
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of a definition to read: the `draft` the designer edits, or the one the
+        organization last released (base-release-api.yaml), which is what the running application
+        executes. Writes always go to the draft.
     WhereParam:
       name: where
       in: query
@@ -1350,6 +1380,15 @@ components:
     # audit stamps on top.
 
     # ── Role Definition ─────────────────────────────────────
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released,
+        CHANGED differs from the released row, RELEASED is what the running application uses.
+        Present on drafts only. A released definition whose draft was deleted is listed by the
+        Release section (base-release-api.yaml), not here.
+
     RoleDefinitionInput:
       type: object
       required: [ id, name ]
@@ -1397,6 +1436,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     # ── Artifact Definition ─────────────────────────────────
     ArtifactDefinitionInput:
@@ -1448,6 +1491,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     # ── Tool Definition ─────────────────────────────────────
     # Both the capability and how to reach it. Credentials are the one thing kept out: `auth` names
@@ -1494,6 +1541,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     ToolAuthConfig:
       type: object
@@ -1618,6 +1669,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     # ── Task Step Definition ────────────────────────────────
     # One flat schema with a `stepType` discriminant field rather than a polymorphic subtype tree:
@@ -1871,6 +1926,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     # ── Role Use ────────────────────────────────────────────
     RoleUse:
@@ -2650,6 +2709,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     PageOf_WorkflowDiagram:
       type: object

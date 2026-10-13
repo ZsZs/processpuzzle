@@ -1,5 +1,8 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseStates;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ArtifactReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.api.ArtifactDefinitionsApi;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateArtifactDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteArtifactDefinitionUseCase;
@@ -29,25 +32,30 @@ public class ArtifactDefinitionsEndpoint implements ArtifactDefinitionsApi {
     private final FindArtifactDefinitionUseCase findArtifactDefinition;
     private final FindAllArtifactDefinitionsUseCase findAllArtifactDefinitions;
     private final WorkflowDefinitionMapper mapper;
+    private final ArtifactReleaseParticipant releaseParticipant;
 
     public ArtifactDefinitionsEndpoint(CreateArtifactDefinitionUseCase createArtifactDefinition,
                                     ReplaceArtifactDefinitionUseCase replaceArtifactDefinition,
                                     DeleteArtifactDefinitionUseCase deleteArtifactDefinition,
                                     FindArtifactDefinitionUseCase findArtifactDefinition,
                                     FindAllArtifactDefinitionsUseCase findAllArtifactDefinitions,
-                                    WorkflowDefinitionMapper mapper) {
+                                    WorkflowDefinitionMapper mapper,
+            ArtifactReleaseParticipant releaseParticipant) {
         this.createArtifactDefinition = createArtifactDefinition;
         this.replaceArtifactDefinition = replaceArtifactDefinition;
         this.deleteArtifactDefinition = deleteArtifactDefinition;
         this.findArtifactDefinition = findArtifactDefinition;
         this.findAllArtifactDefinitions = findAllArtifactDefinitions;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
-    public ResponseEntity<List<ArtifactDefinition>> listArtifactDefinitions(String orgKey, String where, String order) {
-        var artifacts = findAllArtifactDefinitions.findAll(orgKey, where, order);
-        return ResponseEntity.ok(artifacts.stream().map(mapper::toArtifactModel).toList());
+    public ResponseEntity<List<ArtifactDefinition>> listArtifactDefinitions(String orgKey, String where, String order, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var artifacts = findAllArtifactDefinitions.findAll(orgKey, channel, where, order).stream().map(mapper::toArtifactModel).toList();
+        return ResponseEntity.ok(ReleaseStates.stamp(channel, releaseParticipant, orgKey, artifacts,
+                ArtifactDefinition::getId, ArtifactDefinition::setReleaseState));
     }
 
     @Override
@@ -57,8 +65,11 @@ public class ArtifactDefinitionsEndpoint implements ArtifactDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<ArtifactDefinition> getArtifactDefinition(String orgKey, String artifactId) {
-        return ResponseEntity.ok(mapper.toArtifactModel(findArtifactDefinition.findByOrgKeyAndId(orgKey, artifactId)));
+    public ResponseEntity<ArtifactDefinition> getArtifactDefinition(String orgKey, String artifactId, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var artifact = mapper.toArtifactModel(findArtifactDefinition.findByOrgKeyAndId(orgKey, artifactId, channel));
+        return ResponseEntity.ok(ReleaseStates.stampOne(channel, releaseParticipant, orgKey, artifact,
+                ArtifactDefinition::getId, ArtifactDefinition::setReleaseState));
     }
 
     @Override

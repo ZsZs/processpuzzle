@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ValidationException;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import java.util.List;
@@ -806,13 +807,13 @@ class WorkflowValidatorTest {
     }
 
     private void catalog(List<String> roleIds, List<String> artifactIds, List<String> toolIds, List<TaskDefinition> tasks) {
-        lenient().when(roleRepository.existsByOrgKeyAndId(eq("acme"), anyString()))
+        lenient().when(roleRepository.existsByOrgKeyAndIdAndChannel(eq("acme"), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> roleIds.contains(call.getArgument(1)));
-        lenient().when(artifactRepository.existsByOrgKeyAndId(eq("acme"), anyString()))
+        lenient().when(artifactRepository.existsByOrgKeyAndIdAndChannel(eq("acme"), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> artifactIds.contains(call.getArgument(1)));
-        lenient().when(toolRepository.existsByOrgKeyAndId(eq("acme"), anyString()))
+        lenient().when(toolRepository.existsByOrgKeyAndIdAndChannel(eq("acme"), anyString(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> toolIds.contains(call.getArgument(1)));
-        when(taskRepository.findByOrgKeyAndIdIn(eq("acme"), anyList()))
+        when(taskRepository.findByOrgKeyAndIdInAndChannel(eq("acme"), anyList(), eq(Channel.DRAFT)))
                 .thenAnswer(call -> {
                     List<String> requested = call.getArgument(1);
                     return tasks.stream().filter(task -> requested.contains(task.getId())).toList();

@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,7 +27,7 @@ public class WorkflowExtendsValidator {
             throw new IllegalArgumentException("Workflow cannot extend itself: " + ownId);
         }
 
-        Workflow parent = repository.findByOrgKeyAndId(orgKey, extendsWorkflowId)
+        Workflow parent = repository.findByOrgKeyAndIdAndChannel(orgKey, extendsWorkflowId, Channel.DRAFT)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Workflow '" + ownId + "' extends unknown workflow '" + extendsWorkflowId + "'"));
 
@@ -42,7 +43,7 @@ public class WorkflowExtendsValidator {
                 throw new IllegalStateException(
                         "Extends chain too deep (or already cyclic) starting at '" + cursor + "'");
             }
-            cursor = repository.findByOrgKeyAndId(orgKey, cursor)
+            cursor = repository.findByOrgKeyAndIdAndChannel(orgKey, cursor, Channel.DRAFT)
                     .map(Workflow::getExtendsWorkflowId)
                     .orElse(null);
         }

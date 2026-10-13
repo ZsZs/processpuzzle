@@ -1,5 +1,11 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ToolReleaseParticipant;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.TaskReleaseParticipant;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ArtifactReleaseParticipant;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.RoleReleaseParticipant;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.WorkflowReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
@@ -96,14 +102,14 @@ class WorkflowDefinitionEndpointsTest {
 
         WorkflowsEndpoint endpoint = new WorkflowsEndpoint(
                 createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase,
-                importUseCase, exportUseCase, mapper);
+                importUseCase, exportUseCase, mapper, mock(WorkflowReleaseParticipant.class));
 
         Workflow domain = Workflow.builder().orgKey(ORG).id("p1").name("Workflow 1").build();
 
         when(createUseCase.create(eq(ORG), any(Workflow.class))).thenReturn(domain);
-        when(findUseCase.findByOrgKeyAndId(ORG, "p1")).thenReturn(domain);
+        when(findUseCase.findByOrgKeyAndId(ORG, "p1", Channel.DRAFT)).thenReturn(domain);
         when(replaceUseCase.replace(eq(ORG), eq("p1"), any(Workflow.class))).thenReturn(domain);
-        when(findAllUseCase.findAll(ORG, null, null, null, null)).thenReturn(new PageImpl<>(List.of(domain)));
+        when(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null, null, null)).thenReturn(new PageImpl<>(List.of(domain)));
         when(importUseCase.execute(eq(ORG), any(InputStream.class))).thenReturn(new ImportOutcome(1, 0, List.of()));
         when(exportUseCase.execute(ORG, "p1")).thenReturn("workflows: []".getBytes(StandardCharsets.UTF_8));
 
@@ -115,7 +121,7 @@ class WorkflowDefinitionEndpointsTest {
         assertThat(createdRes.getBody().getId()).isEqualTo("p1");
 
         // get
-        ResponseEntity<com.processpuzzle.workflow.model.Workflow> getRes = endpoint.getWorkflow(ORG, "p1");
+        ResponseEntity<com.processpuzzle.workflow.model.Workflow> getRes = endpoint.getWorkflow(ORG, "p1", null);
         assertThat(getRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(getRes.getBody().getId()).isEqualTo("p1");
 
@@ -124,7 +130,7 @@ class WorkflowDefinitionEndpointsTest {
         assertThat(updateRes.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // list
-        ResponseEntity<PageOfWorkflow> listRes = endpoint.listWorkflows(ORG, null, null, null, null);
+        ResponseEntity<PageOfWorkflow> listRes = endpoint.listWorkflows(ORG, null, null, null, null, null);
         assertThat(listRes.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(listRes.getBody().getContent()).hasSize(1);
 
@@ -153,17 +159,17 @@ class WorkflowDefinitionEndpointsTest {
         FindAllRoleDefinitionsUseCase findAllUseCase = mock(FindAllRoleDefinitionsUseCase.class);
 
         RoleDefinitionsEndpoint endpoint = new RoleDefinitionsEndpoint(
-                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper);
+                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper, mock(RoleReleaseParticipant.class));
 
         RoleDefinition role = RoleDefinition.builder().orgKey(ORG).id("dev").name("Developer").build();
 
-        when(findAllUseCase.findAll(ORG, null, null)).thenReturn(List.of(role));
-        when(findUseCase.findByOrgKeyAndId(ORG, "dev")).thenReturn(role);
+        when(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).thenReturn(List.of(role));
+        when(findUseCase.findByOrgKeyAndId(ORG, "dev", Channel.DRAFT)).thenReturn(role);
         when(createUseCase.create(eq(ORG), any())).thenReturn(role);
         when(replaceUseCase.replace(eq(ORG), eq("dev"), any())).thenReturn(role);
 
         // list
-        ResponseEntity<List<com.processpuzzle.workflow.model.RoleDefinition>> listRes = endpoint.listRoleDefinitions(ORG, null, null);
+        ResponseEntity<List<com.processpuzzle.workflow.model.RoleDefinition>> listRes = endpoint.listRoleDefinitions(ORG, null, null, null);
         assertThat(listRes.getBody()).hasSize(1);
 
         // create
@@ -172,7 +178,7 @@ class WorkflowDefinitionEndpointsTest {
         assertThat(createRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // get
-        ResponseEntity<com.processpuzzle.workflow.model.RoleDefinition> getRes = endpoint.getRoleDefinition(ORG, "dev");
+        ResponseEntity<com.processpuzzle.workflow.model.RoleDefinition> getRes = endpoint.getRoleDefinition(ORG, "dev", null);
         assertThat(getRes.getBody().getId()).isEqualTo("dev");
 
         // update
@@ -194,18 +200,18 @@ class WorkflowDefinitionEndpointsTest {
         FindAllArtifactDefinitionsUseCase findAllUseCase = mock(FindAllArtifactDefinitionsUseCase.class);
 
         ArtifactDefinitionsEndpoint endpoint = new ArtifactDefinitionsEndpoint(
-                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper);
+                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper, mock(ArtifactReleaseParticipant.class));
 
         ArtifactDefinition artifact = ArtifactDefinition.builder()
                 .orgKey(ORG).id("spec").name("Specification").artifactType(ArtifactType.DOCUMENT).build();
 
-        when(findAllUseCase.findAll(ORG, null, null)).thenReturn(List.of(artifact));
-        when(findUseCase.findByOrgKeyAndId(ORG, "spec")).thenReturn(artifact);
+        when(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).thenReturn(List.of(artifact));
+        when(findUseCase.findByOrgKeyAndId(ORG, "spec", Channel.DRAFT)).thenReturn(artifact);
         when(createUseCase.create(eq(ORG), any())).thenReturn(artifact);
         when(replaceUseCase.replace(eq(ORG), eq("spec"), any())).thenReturn(artifact);
 
         // list
-        ResponseEntity<List<com.processpuzzle.workflow.model.ArtifactDefinition>> listRes = endpoint.listArtifactDefinitions(ORG, null, null);
+        ResponseEntity<List<com.processpuzzle.workflow.model.ArtifactDefinition>> listRes = endpoint.listArtifactDefinitions(ORG, null, null, null);
         assertThat(listRes.getBody()).hasSize(1);
 
         // create
@@ -215,7 +221,7 @@ class WorkflowDefinitionEndpointsTest {
         assertThat(createRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // get
-        ResponseEntity<com.processpuzzle.workflow.model.ArtifactDefinition> getRes = endpoint.getArtifactDefinition(ORG, "spec");
+        ResponseEntity<com.processpuzzle.workflow.model.ArtifactDefinition> getRes = endpoint.getArtifactDefinition(ORG, "spec", null);
         assertThat(getRes.getBody().getId()).isEqualTo("spec");
 
         // update
@@ -237,18 +243,18 @@ class WorkflowDefinitionEndpointsTest {
         FindAllTaskDefinitionsUseCase findAllUseCase = mock(FindAllTaskDefinitionsUseCase.class);
 
         TaskDefinitionsEndpoint endpoint = new TaskDefinitionsEndpoint(
-                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper);
+                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper, mock(TaskReleaseParticipant.class));
 
         TaskDefinition task = TaskDefinition.builder().orgKey(ORG).id("code").name("Write code")
                 .performedByRoles(List.of("dev")).build();
 
-        when(findAllUseCase.findAll(ORG, null, null)).thenReturn(List.of(task));
-        when(findUseCase.findByOrgKeyAndId(ORG, "code")).thenReturn(task);
+        when(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).thenReturn(List.of(task));
+        when(findUseCase.findByOrgKeyAndId(ORG, "code", Channel.DRAFT)).thenReturn(task);
         when(createUseCase.create(eq(ORG), any())).thenReturn(task);
         when(replaceUseCase.replace(eq(ORG), eq("code"), any())).thenReturn(task);
 
         // list
-        ResponseEntity<List<com.processpuzzle.workflow.model.TaskDefinition>> listRes = endpoint.listTaskDefinitions(ORG, null, null);
+        ResponseEntity<List<com.processpuzzle.workflow.model.TaskDefinition>> listRes = endpoint.listTaskDefinitions(ORG, null, null, null);
         assertThat(listRes.getBody()).hasSize(1);
 
         // create
@@ -257,7 +263,7 @@ class WorkflowDefinitionEndpointsTest {
         assertThat(createRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // get
-        ResponseEntity<com.processpuzzle.workflow.model.TaskDefinition> getRes = endpoint.getTaskDefinition(ORG, "code");
+        ResponseEntity<com.processpuzzle.workflow.model.TaskDefinition> getRes = endpoint.getTaskDefinition(ORG, "code", null);
         assertThat(getRes.getBody().getId()).isEqualTo("code");
 
         // update
@@ -279,17 +285,17 @@ class WorkflowDefinitionEndpointsTest {
         FindAllToolDefinitionsUseCase findAllUseCase = mock(FindAllToolDefinitionsUseCase.class);
 
         ToolDefinitionsEndpoint endpoint = new ToolDefinitionsEndpoint(
-                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper);
+                createUseCase, replaceUseCase, deleteUseCase, findUseCase, findAllUseCase, mapper, mock(ToolReleaseParticipant.class));
 
         ToolDefinition tool = ToolDefinition.builder().orgKey(ORG).id("tool1").name("Tool One").build();
 
-        when(findAllUseCase.findAll(ORG, null, null)).thenReturn(List.of(tool));
-        when(findUseCase.findByOrgKeyAndId(ORG, "tool1")).thenReturn(tool);
+        when(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).thenReturn(List.of(tool));
+        when(findUseCase.findByOrgKeyAndId(ORG, "tool1", Channel.DRAFT)).thenReturn(tool);
         when(createUseCase.create(eq(ORG), any())).thenReturn(tool);
         when(replaceUseCase.replace(eq(ORG), eq("tool1"), any())).thenReturn(tool);
 
         // list
-        ResponseEntity<List<com.processpuzzle.workflow.model.ToolDefinition>> listRes = endpoint.listToolDefinitions(ORG, null, null);
+        ResponseEntity<List<com.processpuzzle.workflow.model.ToolDefinition>> listRes = endpoint.listToolDefinitions(ORG, null, null, null);
         assertThat(listRes.getBody()).hasSize(1);
 
         // create
@@ -298,7 +304,7 @@ class WorkflowDefinitionEndpointsTest {
         assertThat(createRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // get
-        ResponseEntity<com.processpuzzle.workflow.model.ToolDefinition> getRes = endpoint.getToolDefinition(ORG, "tool1");
+        ResponseEntity<com.processpuzzle.workflow.model.ToolDefinition> getRes = endpoint.getToolDefinition(ORG, "tool1", null);
         assertThat(getRes.getBody().getId()).isEqualTo("tool1");
 
         // update
@@ -325,7 +331,7 @@ class WorkflowDefinitionEndpointsTest {
                 mock(CreateWorkflowUseCase.class), replaceUseCase,
                 mock(DeleteWorkflowUseCase.class), mock(FindWorkflowUseCase.class),
                 mock(FindAllWorkflowsUseCase.class), mock(ImportWorkflowsUseCase.class),
-                mock(ExportWorkflowUseCase.class), mapper);
+                mock(ExportWorkflowUseCase.class), mapper, mock(WorkflowReleaseParticipant.class));
         Workflow saved = Workflow.builder().orgKey(ORG).id("p1").name("Workflow 1").build();
         when(replaceUseCase.replace(eq(ORG), eq("p1"), any(Workflow.class))).thenReturn(saved);
 
@@ -345,7 +351,7 @@ class WorkflowDefinitionEndpointsTest {
         RoleDefinitionsEndpoint endpoint = new RoleDefinitionsEndpoint(
                 mock(CreateRoleDefinitionUseCase.class), replaceUseCase,
                 mock(DeleteRoleDefinitionUseCase.class), mock(FindRoleDefinitionUseCase.class),
-                mock(FindAllRoleDefinitionsUseCase.class), mapper);
+                mock(FindAllRoleDefinitionsUseCase.class), mapper, mock(RoleReleaseParticipant.class));
         when(replaceUseCase.replace(eq(ORG), eq("r1"), any(RoleDefinition.class)))
                 .thenReturn(RoleDefinition.builder().orgKey(ORG).id("r1").name("Role").build());
 

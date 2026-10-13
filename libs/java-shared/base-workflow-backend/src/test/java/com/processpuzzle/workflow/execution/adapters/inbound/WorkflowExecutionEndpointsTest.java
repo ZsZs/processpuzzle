@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;

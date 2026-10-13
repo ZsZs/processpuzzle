@@ -30,12 +30,12 @@ import java.util.Optional;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false, of = {"orgKey", "id"})
+@EqualsAndHashCode(callSuper = true, of = {"orgKey", "id"})
 @ToString
 @Entity
 @Table(name = "workflow_tool_definition")
 @IdClass(ToolDefinitionKey.class)
-public class ToolDefinition extends com.processpuzzle.workflow.common.Auditable {
+public class ToolDefinition extends ReleasableDefinition {
 
     @Id
     @Column(nullable = false)

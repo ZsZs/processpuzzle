@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
@@ -16,7 +17,7 @@ public class ReplaceToolDefinitionUseCase {
     private final ToolDefinitionRepository repository;
 
     public ToolDefinition replace(String orgKey, String id, ToolDefinition desiredState) {
-        ToolDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+        ToolDefinition existing = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No tool definition with id '%s'".formatted(id)));
 
         if (desiredState.getVersion() != null && !desiredState.getVersion().equals(existing.getVersion())) {

@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.common.ValidationException;
@@ -576,13 +577,13 @@ class WorkflowExecutionUseCasesTest {
 
         // Step with missing tool
         StepDefinition missingToolStep = StepDefinition.builder().id("s2").toolDefinitionId("missing-tool").build();
-        when(toolDefRepo.findByOrgKeyAndId(ORG, "missing-tool")).thenReturn(Optional.empty());
+        when(toolDefRepo.findByOrgKeyAndIdAndChannel(ORG, "missing-tool", Channel.RELEASED)).thenReturn(Optional.empty());
         List<StepResult> r2 = executor.execute(ORG, List.of(missingToolStep), new HashMap<>());
         assertThat(r2.get(0).getError()).contains("not found");
 
         // Step with missing operation
         ToolDefinition tool = ToolDefinition.builder().id("tool1").operations(List.of()).build();
-        when(toolDefRepo.findByOrgKeyAndId(ORG, "tool1")).thenReturn(Optional.of(tool));
+        when(toolDefRepo.findByOrgKeyAndIdAndChannel(ORG, "tool1", Channel.RELEASED)).thenReturn(Optional.of(tool));
         StepDefinition missingOpStep = StepDefinition.builder().id("s3").toolDefinitionId("tool1").toolOperation("missing-op").build();
         List<StepResult> r3 = executor.execute(ORG, List.of(missingOpStep), new HashMap<>());
         assertThat(r3.get(0).getError()).contains("Operation 'missing-op' not found");
@@ -590,7 +591,7 @@ class WorkflowExecutionUseCasesTest {
         // Successful invocation with input and output mapping
         ToolOperation op = ToolOperation.builder().id("op1").build();
         ToolDefinition toolWithOp = ToolDefinition.builder().id("tool1").operations(List.of(op)).build();
-        when(toolDefRepo.findByOrgKeyAndId(ORG, "tool1")).thenReturn(Optional.of(toolWithOp));
+        when(toolDefRepo.findByOrgKeyAndIdAndChannel(ORG, "tool1", Channel.RELEASED)).thenReturn(Optional.of(toolWithOp));
 
         StepDefinition fullStep = StepDefinition.builder()
                 .id("s4")

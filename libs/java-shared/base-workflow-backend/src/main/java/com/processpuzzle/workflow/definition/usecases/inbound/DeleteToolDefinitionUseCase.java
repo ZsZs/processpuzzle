@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
@@ -24,7 +25,7 @@ public class DeleteToolDefinitionUseCase {
     private final CatalogReferenceScanner referenceScanner;
 
     public void delete(String orgKey, String id) {
-        ToolDefinition tool = repository.findByOrgKeyAndId(orgKey, id)
+        ToolDefinition tool = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No tool definition with id '%s'".formatted(id)));
 
         List<String> workflows = referenceScanner.workflowsUsingTool(orgKey, id);

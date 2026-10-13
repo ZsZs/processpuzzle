@@ -19,6 +19,10 @@ public interface TaskInstanceRepository
 
     List<TaskInstance> findByOrgKeyAndWorkflowInstanceId(String orgKey, UUID workflowInstanceId);
 
+    /** Whether a task instance of that definition is in one of the statuses: what a release removing it checks. */
+    boolean existsByOrgKeyAndTaskDefinitionIdAndStatusIn(String orgKey, String taskDefinitionId,
+                                                         Collection<TaskInstanceStatus> statuses);
+
     /** The rows of one page of instances, for the list endpoint. */
     List<TaskInstance> findByOrgKeyAndWorkflowInstanceIdIn(String orgKey, Collection<UUID> workflowInstanceIds);
 

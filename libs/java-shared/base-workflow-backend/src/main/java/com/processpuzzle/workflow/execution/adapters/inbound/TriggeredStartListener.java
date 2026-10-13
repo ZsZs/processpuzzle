@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -49,7 +50,7 @@ public class TriggeredStartListener {
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void on(DefinedEventOccurred event) {
-        for (Workflow workflow : workflowRepository.findByOrgKey(event.orgKey())) {
+        for (Workflow workflow : workflowRepository.findByOrgKeyAndChannel(event.orgKey(), Channel.RELEASED)) {
             List<StartEvent> startEvents = workflow.getStartEvents() == null ? List.of() : workflow.getStartEvents();
             startEvents.stream()
                     .filter(startEvent -> startEvent.getStartType() == WorkflowStartConditionType.TRIGGERING_EVENT)

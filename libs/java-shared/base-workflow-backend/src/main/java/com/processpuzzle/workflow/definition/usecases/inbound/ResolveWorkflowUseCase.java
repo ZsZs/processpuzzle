@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
@@ -43,7 +44,7 @@ public class ResolveWorkflowUseCase {
     private final TaskDefinitionRepository taskRepository;
 
     public ResolvedWorkflow resolveByOrgKeyAndId(String orgKey, String workflowId) {
-        Workflow definition = workflowRepository.findByOrgKeyAndId(orgKey, workflowId)
+        Workflow definition = workflowRepository.findByOrgKeyAndIdAndChannel(orgKey, workflowId, Channel.RELEASED)
                 .orElseThrow(() -> new NotFoundException("No workflow with id '%s'".formatted(workflowId)));
         return resolve(definition);
     }
@@ -54,17 +55,17 @@ public class ResolveWorkflowUseCase {
         List<String> roleIds = definition.roleDefinitionIds();
         List<RoleDefinition> roles = inReferenceOrder(
                 roleIds,
-                byId(roleRepository.findByOrgKeyAndIdIn(orgKey, copyOf(roleIds)), RoleDefinition::getId),
+                byId(roleRepository.findByOrgKeyAndIdInAndChannel(orgKey, copyOf(roleIds), Channel.RELEASED), RoleDefinition::getId),
                 "role");
         List<String> artifactIds = definition.artifactDefinitionIds();
         List<ArtifactDefinition> artifacts = inReferenceOrder(
                 artifactIds,
-                byId(artifactRepository.findByOrgKeyAndIdIn(orgKey, copyOf(artifactIds)), ArtifactDefinition::getId),
+                byId(artifactRepository.findByOrgKeyAndIdInAndChannel(orgKey, copyOf(artifactIds), Channel.RELEASED), ArtifactDefinition::getId),
                 "artifact");
 
         List<String> taskIds = definition.taskDefinitionIds();
         Map<String, TaskDefinition> tasksById =
-                byId(taskRepository.findByOrgKeyAndIdIn(orgKey, copyOf(taskIds)), TaskDefinition::getId);
+                byId(taskRepository.findByOrgKeyAndIdInAndChannel(orgKey, copyOf(taskIds), Channel.RELEASED), TaskDefinition::getId);
 
         List<ResolvedWorkflow.ResolvedTask> tasks = new ArrayList<>();
         for (TaskUse assignment : definition.getTasks()) {

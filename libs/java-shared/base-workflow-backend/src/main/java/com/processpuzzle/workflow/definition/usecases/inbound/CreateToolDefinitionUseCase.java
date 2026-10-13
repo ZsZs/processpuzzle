@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
@@ -16,7 +17,7 @@ public class CreateToolDefinitionUseCase {
 
     public ToolDefinition create(String orgKey, ToolDefinition tool) {
         tool.setOrgKey(orgKey);
-        if (repository.existsByOrgKeyAndId(orgKey, tool.getId())) {
+        if (repository.existsByOrgKeyAndIdAndChannel(orgKey, tool.getId(), Channel.DRAFT)) {
             throw new ConflictException("Tool definition '%s' already exists".formatted(tool.getId()));
         }
         return repository.save(tool);
