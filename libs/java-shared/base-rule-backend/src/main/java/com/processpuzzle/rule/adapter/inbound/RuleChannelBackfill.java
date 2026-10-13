@@ -48,8 +48,13 @@ public class RuleChannelBackfill {
 
     static final String RULES = "rule_definitions";
     static final String FIELDS = "rule_definition_fields";
+    private static final String CHANNEL = "channel";
+    private static final String ORG_KEY = "org_key";
+    /** The rules' key before channels. */
+    private static final List<String> KEY_BEFORE_CHANNELS = List.of(ORG_KEY, "id");
     /** The order Hibernate lists {@code RuleDefinitionKey}'s columns in, which its foreign keys rely on. */
-    static final List<String> KEY_IN_HIBERNATE_ORDER = List.of("channel", "id", "org_key");
+    static final List<String> KEY_IN_HIBERNATE_ORDER = List.of(CHANNEL, "id", ORG_KEY);
+    private static final String KEY_COLUMNS = String.join(", ", KEY_IN_HIBERNATE_ORDER);
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_]\\w{0,62}");
     private static final Logger LOG = LoggerFactory.getLogger(RuleChannelBackfill.class);
 
@@ -76,14 +81,14 @@ public class RuleChannelBackfill {
     /** @return whether the tables were changed; {@code false} when they were migrated already, or never needed it */
     public boolean migrateOnce() {
         if (columnsOf(FIELDS).isEmpty()) {
-            return Boolean.TRUE.equals(transaction.execute(status -> backfill.migrate(RULES, List.of("org_key", "id"))));
+            return Boolean.TRUE.equals(transaction.execute(status -> backfill.migrate(RULES, KEY_BEFORE_CHANNELS)));
         }
         return Boolean.TRUE.equals(transaction.execute(status -> {
             oldForeignKeys().forEach(name -> jdbc.execute("ALTER TABLE " + FIELDS + " DROP CONSTRAINT " + identifier(name))); // NOSONAR java:S2077 - identifier() checked
-            if (!columnsOf(FIELDS).contains("channel")) {
+            if (!columnsOf(FIELDS).contains(CHANNEL)) {
                 jdbc.execute("ALTER TABLE " + FIELDS + " ADD COLUMN channel VARCHAR(16) DEFAULT 'DRAFT' NOT NULL"); // NOSONAR java:S2077 - constants only
             }
-            boolean migrated = backfill.migrate(RULES, List.of("org_key", "id"));
+            boolean migrated = backfill.migrate(RULES, KEY_BEFORE_CHANNELS);
             if (migrated) {
                 int copied = jdbc.update("INSERT INTO " + FIELDS + " (org_key, rule_id, field_name, channel) " // NOSONAR java:S2077 - constants only
                         + "SELECT org_key, rule_id, field_name, 'RELEASED' FROM " + FIELDS + " WHERE channel = 'DRAFT'");
@@ -103,14 +108,14 @@ public class RuleChannelBackfill {
     boolean alignPrimaryKey() {
         List<Map.Entry<String, String>> key = primaryKeyOf(RULES);
         List<String> columns = key.stream().map(Map.Entry::getValue).toList();
-        if (columns.isEmpty() || !columns.contains("channel") || columns.equals(KEY_IN_HIBERNATE_ORDER)
+        if (columns.isEmpty() || !columns.contains(CHANNEL) || columns.equals(KEY_IN_HIBERNATE_ORDER)
                 || !foreignKeysOf(FIELDS).isEmpty()) {
             return false;
         }
         jdbc.execute("ALTER TABLE " + RULES + " DROP CONSTRAINT " + identifier(key.getFirst().getKey())); // NOSONAR java:S2077 - identifier() checked
-        jdbc.execute("ALTER TABLE " + RULES + " ADD PRIMARY KEY (" + String.join(", ", KEY_IN_HIBERNATE_ORDER) + ")"); // NOSONAR java:S2077 - constants only
+        jdbc.execute("ALTER TABLE " + RULES + " ADD PRIMARY KEY (" + KEY_COLUMNS + ")"); // NOSONAR java:S2077 - constants only
         LOG.info("Rebuilt the primary key of {} as ({}), the order the foreign key of {} refers to it in.", RULES,
-                String.join(", ", KEY_IN_HIBERNATE_ORDER), FIELDS);
+                KEY_COLUMNS, FIELDS);
         return true;
     }
 
@@ -127,7 +132,7 @@ public class RuleChannelBackfill {
     /** The foreign keys of the fields table that do not include {@code channel}: the ones from before channels. */
     List<String> oldForeignKeys() {
         return foreignKeysOf(FIELDS).entrySet().stream()
-                .filter(entry -> !entry.getValue().contains("channel"))
+                .filter(entry -> !entry.getValue().contains(CHANNEL))
                 .map(Map.Entry::getKey)
                 .toList();
     }
