@@ -127,7 +127,6 @@ describe('propsSchemaToDescriptors', () => {
     const EXOTIC: PropsSchema = {
       type: 'object',
       properties: {
-        nested: { type: 'object', properties: { deep: { type: 'string' } } },
         rows: { type: 'array', items: { type: 'object' } },
         either: { oneOf: [{ type: 'string' }, { type: 'number' }] },
         untyped: { title: 'No type at all' },
@@ -136,8 +135,95 @@ describe('propsSchemaToDescriptors', () => {
 
     it('keeps every prop, using the open editor for the ones it cannot read', () => {
       const descriptors = propsSchemaToDescriptors(EXOTIC);
-      expect(descriptors.map((d) => d.attrName)).toEqual(['nested', 'rows', 'either', 'untyped']);
+      expect(descriptors.map((d) => d.attrName)).toEqual(['rows', 'either', 'untyped']);
       descriptors.forEach((d) => expect(d.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES));
+    });
+  });
+
+  describe('nested objects and embedded lists', () => {
+    const COMPLEX_SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        meta: {
+          type: 'object',
+          title: 'Metadata',
+          properties: {
+            author: { type: 'string', title: 'Author' },
+            rating: { type: 'integer', title: 'Rating' },
+          },
+          required: ['author'],
+        },
+        cards: {
+          type: 'array',
+          title: 'Cards',
+          maxItems: 10,
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', title: 'Title' },
+              subtitle: { type: 'string', title: 'Subtitle' },
+              actions: {
+                type: 'array',
+                title: 'Actions',
+                items: {
+                  type: 'object',
+                  properties: {
+                    caption: { type: 'string' },
+                    link: { type: 'string' },
+                  },
+                  required: ['caption', 'link'],
+                },
+              },
+            },
+            required: ['title'],
+          },
+        },
+      },
+    };
+
+    it('maps nested object to EMBEDDED_OBJECT with recursive child descriptors', () => {
+      const meta = descriptorFor(COMPLEX_SCHEMA, 'meta');
+      expect(meta.formControlType).toBe(FormControlType.EMBEDDED_OBJECT);
+      expect(meta.label).toBe('Metadata');
+      expect(meta.childDescriptors?.map((d) => d.attrName)).toEqual(['author', 'rating']);
+      expect((meta.childDescriptors?.[0] as BaseEntityAttrDescriptor).required).toBe(true);
+    });
+
+    it('maps array of objects to EMBEDDED_LIST with child descriptors, maxOccurs and rowLabelAttr', () => {
+      const cards = descriptorFor(COMPLEX_SCHEMA, 'cards');
+      expect(cards.formControlType).toBe(FormControlType.EMBEDDED_LIST);
+      expect(cards.maxOccurs).toBe(10);
+      expect(cards.multiplicity).toBe('0..x');
+      expect(cards.rowLabelAttr).toBe('title');
+      expect(cards.childDescriptors?.map((d) => d.attrName)).toEqual(['title', 'subtitle', 'actions']);
+
+      const actions = cards.childDescriptors?.find((d) => d.attrName === 'actions') as BaseEntityAttrDescriptor;
+      expect(actions.formControlType).toBe(FormControlType.EMBEDDED_LIST);
+      expect(actions.rowLabelAttr).toBe('caption');
+      expect(actions.childDescriptors?.map((d) => d.attrName)).toEqual(['caption', 'link']);
+    });
+
+    it('honours x-pp-rowLabel keyword override when present', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              'x-pp-rowLabel': 'code',
+              properties: {
+                title: { type: 'string' },
+                code: { type: 'string' },
+              },
+              required: ['title'],
+            },
+          },
+        },
+      };
+
+      const items = descriptorFor(schema, 'items');
+      expect(items.rowLabelAttr).toBe('code');
     });
   });
 

@@ -83,6 +83,8 @@ export interface PropsSchemaProperty {
   maxItems?: number;
   default?: unknown;
   items?: PropsSchemaProperty;
+  properties?: Record<string, PropsSchemaProperty>;
+  required?: string[];
   [key: string]: unknown;
 }
 
