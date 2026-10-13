@@ -104,7 +104,7 @@
     <base-entity-backend.version>1.5.1</base-entity-backend.version>
     <base-rule-backend.version>1.5.0</base-rule-backend.version>
     <base-starter-backend.version>0.2.2</base-starter-backend.version>
-    <base-release-backend.version>0.3.0</base-release-backend.version>
+    <base-release-backend.version>0.3.1</base-release-backend.version>
     <base-event-backend.version>0.2.0</base-event-backend.version>
     <base-state-backend.version>1.5.0</base-state-backend.version>
     <base-workflow-backend.version>1.4.0</base-workflow-backend.version>
