@@ -1,5 +1,6 @@
 package com.processpuzzle.event.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -58,7 +59,7 @@ public class ImportEventDefinitions {
         int created = 0;
         int updated = 0;
         for (EventDefinition definition : byId.values()) {
-            Optional<EventDefinition> existing = repository.findByOrgKeyAndId(orgKey, definition.getId());
+            Optional<EventDefinition> existing = repository.findByOrgKeyAndIdAndChannel(orgKey, definition.getId(), Channel.DRAFT);
             if (existing.isPresent()) {
                 existing.get().replaceWith(definition);
                 repository.save(existing.get());
@@ -68,7 +69,7 @@ public class ImportEventDefinitions {
                 created++;
             }
         }
-        return new ImportOutcome(created, updated, List.of());
+        return new ImportOutcome(created, updated, List.of(), List.copyOf(byId.keySet()));
     }
 
     private List<Entry> parse(InputStream input) throws IOException {

@@ -34,11 +34,14 @@ public class DefaultEventDefinitionImporter {
 
     private final ImportEventDefinitions importEventDefinitions;
     private final ResourcePatternResolver resourceResolver;
+    private final EventDefinitionReleaseParticipant releaseParticipant;
 
     public DefaultEventDefinitionImporter(ImportEventDefinitions importEventDefinitions,
-                                          ResourcePatternResolver resourceResolver) {
+                                          ResourcePatternResolver resourceResolver,
+                                          EventDefinitionReleaseParticipant releaseParticipant) {
         this.importEventDefinitions = importEventDefinitions;
         this.resourceResolver = resourceResolver;
+        this.releaseParticipant = releaseParticipant;
     }
 
     /**
@@ -76,6 +79,9 @@ public class DefaultEventDefinitionImporter {
         }
         try (InputStream input = resource.getInputStream()) {
             ImportOutcome outcome = importEventDefinitions.execute(orgKey, input);
+            // A seeded catalog is a vetted set the running application is meant to have, so it is released at once —
+            // what this file wrote, and nothing a designer drafted besides.
+            releaseParticipant.release(orgKey, outcome.written());
             LOG.info("Imported default event definitions from {} into organization '{}': created={}, updated={}, errors={}",
                     fileName, orgKey, outcome.created(), outcome.updated(), outcome.errors().size());
             outcome.errors().forEach(error -> LOG.warn("Default event definition import error in {}: {}", fileName, error));

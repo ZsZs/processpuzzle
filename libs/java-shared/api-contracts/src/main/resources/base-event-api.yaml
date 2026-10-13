@@ -33,6 +33,8 @@ paths:
       tags: [ Event Definitions ]
       summary: List all event definitions of an organization
       description: Returns the full definitions, so a list row can be opened for editing as it is.
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Event definitions
@@ -103,6 +105,8 @@ paths:
       operationId: getEventDefinition
       tags: [ Event Definitions ]
       summary: Get a single event definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Event definition
@@ -167,6 +171,18 @@ components:
       required: true
       schema:
         type: string
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of an event definition to read: the `draft` the designer edits, or the one the
+        organization last released (base-release-api.yaml), which is what the running application
+        matches events against. Writes always go to the draft.
 
   responses:
     BadRequest:
@@ -235,6 +251,15 @@ components:
             The version the caller last read. When supplied, the write is refused with 409 unless it
             still matches the stored one. Omit it to overwrite unconditionally.
 
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released,
+        CHANGED differs from the released row, RELEASED is what the running application uses.
+        Present on drafts only. A released definition whose draft was deleted is listed by the
+        Release section (base-release-api.yaml), not here.
+
     EventDefinition:
       allOf:
         - $ref: "#/components/schemas/EventDefinitionInput"
@@ -246,6 +271,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     ErrorResponse:
       type: object

@@ -2,6 +2,7 @@ package com.processpuzzle.event.adapter.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
@@ -69,8 +70,8 @@ class TenantDataCleanerTest {
 
         erase(ERASED);
 
-        assertThat(definitions.findByOrgKeyOrderByIdAsc(ERASED)).isEmpty();
-        assertThat(definitions.findByOrgKeyOrderByIdAsc(KEPT))
+        assertThat(definitions.findByOrgKeyAndChannelOrderByIdAsc(ERASED, Channel.DRAFT)).isEmpty();
+        assertThat(definitions.findByOrgKeyAndChannelOrderByIdAsc(KEPT, Channel.DRAFT))
                 .extracting(EventDefinition::getId).containsExactly("OrderCreatedEvent", "PaymentReceived");
     }
 
@@ -83,7 +84,7 @@ class TenantDataCleanerTest {
             status.setRollbackOnly();
         });
 
-        assertThat(definitions.findByOrgKeyOrderByIdAsc(ERASED)).hasSize(2);
+        assertThat(definitions.findByOrgKeyAndChannelOrderByIdAsc(ERASED, Channel.DRAFT)).hasSize(2);
     }
 
     /** A tenant with nothing here — or erased twice — is not an error. */

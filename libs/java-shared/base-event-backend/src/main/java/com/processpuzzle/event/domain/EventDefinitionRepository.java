@@ -1,5 +1,6 @@
 package com.processpuzzle.event.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import java.util.List;
 import java.util.Optional;
@@ -19,13 +20,13 @@ public interface EventDefinitionRepository extends JpaRepository<EventDefinition
     @Query("delete from EventDefinition e where e.orgKey = :orgKey")
     int eraseByOrgKey(@Param("orgKey") String orgKey);
 
-    Optional<EventDefinition> findByOrgKeyAndId(String orgKey, String id);
+    Optional<EventDefinition> findByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    boolean existsByOrgKeyAndId(String orgKey, String id);
+    boolean existsByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    List<EventDefinition> findByOrgKeyOrderByIdAsc(String orgKey);
+    List<EventDefinition> findByOrgKeyAndChannelOrderByIdAsc(String orgKey, Channel channel);
 
     /** The SYSTEM candidates for a fact; the state filter is applied by {@link EventDefinition#matches}. */
-    List<EventDefinition> findByOrgKeyAndKindAndSubjectTypeAndAction(
-            String orgKey, EventKind kind, String subjectType, PlatformEventAction action);
+    List<EventDefinition> findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(
+            String orgKey, Channel channel, EventKind kind, String subjectType, PlatformEventAction action);
 }
