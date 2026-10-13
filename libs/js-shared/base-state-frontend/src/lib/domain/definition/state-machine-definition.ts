@@ -1,4 +1,5 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
+import type { ReleaseState } from '@processpuzzle/util';
 
 /**
  * Frontend model of the knowledge layer of `base-state-api.yaml`: a `StateMachineDefinition` with its
@@ -146,6 +147,8 @@ export class StateMachineDefinition implements BaseEntity {
   version: number | undefined;
   createdAt: string | undefined;
   updatedAt: string | undefined;
+  /** Where this draft stands against the release; reported by the backend, never sent back. */
+  releaseState: ReleaseState | undefined;
   // endregion
 
   constructor(init: Partial<StateMachineDefinition> = {}) {
@@ -161,5 +164,6 @@ export class StateMachineDefinition implements BaseEntity {
     this.version = init.version;
     this.createdAt = init.createdAt;
     this.updatedAt = init.updatedAt;
+    this.releaseState = init.releaseState;
   }
 }

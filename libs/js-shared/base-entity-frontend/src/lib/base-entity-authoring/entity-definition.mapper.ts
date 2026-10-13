@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import type { BaseEntityMapper } from '../base-entity.mapper';
 import type { DateFormat } from '../base-entity/date-format';
 import { isBoundedByMaxOccurs, MULTIPLICITIES, type Multiplicity } from '../base-entity/multiplicity';
+import type { ReleaseState } from '@processpuzzle/util';
 import { EntityAttributeDefinition, EntityDefinition, type EntityDefinitionStatus, type EntityValueKind } from '../base-entity-definition/entity-definition';
 
 /** `BaseEntityAttributeInput` of `base-entity-api.yaml`, plus the `id` a response carries. */
@@ -32,6 +33,7 @@ interface EntityDefinitionDto {
   name?: string;
   description?: string;
   status?: EntityDefinitionStatus;
+  releaseState?: ReleaseState;
   componentParents?: string[];
   isEmbedded?: boolean;
   attributes?: EntityAttributeDto[];
@@ -61,7 +63,7 @@ interface EntityDefinitionDto {
  *
  * **`PUT /entity-definitions/{code}` is a full replacement**, so `toDto` emits `attributes` unconditionally
  * — an absent list is an emptied definition, not an untouched one. The three fields the contract marks
- * `readOnly` (`version`, `createdAt`, `updatedAt`) are for the same reason *not* emitted: the form shows
+ * `readOnly` (`version`, `createdAt`, `updatedAt`, and `releaseState`) are for the same reason *not* emitted: the form shows
  * them disabled, and sending a value back would be claiming to own something the backend assigns.
  */
 @Injectable({ providedIn: 'root' })
@@ -75,6 +77,7 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       name: source.name,
       description: source.description,
       status: source.status,
+      releaseState: source.releaseState,
       componentParents: source.componentParents,
       isEmbedded: source.isEmbedded,
       attributes: (source.attributes ?? []).map(toAttribute),

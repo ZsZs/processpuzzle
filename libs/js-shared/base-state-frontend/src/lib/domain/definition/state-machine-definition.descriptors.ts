@@ -41,6 +41,11 @@ function createStateMachineDefinitionAttrDescriptors(): AbstractAttrDescriptor[]
   const updatedAtAttr = new BaseEntityAttrDescriptor('updatedAt', FormControlType.TEXT_BOX, 'Updated At');
   updatedAtAttr.disabled = true;
 
+  // Whether the running application has this machine as it stands — new, changed since, or released — as the
+  // backend reports it. Changed only by a release, so never edited.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
+
   // region nested graph — kept on the entity as-is, so the full-replacement PUT preserves it
   // Containment, not association: the contract nests `states` and `transitions` inside the definition
   // document and gives neither an endpoint of its own, so the rows travel inside this entity's payload
@@ -57,7 +62,7 @@ function createStateMachineDefinitionAttrDescriptors(): AbstractAttrDescriptor[]
   transitionsAttr.hideInTable = true;
   // endregion
 
-  const identityRow = new FlexboxDescriptor([entityNameAttr, nameAttr], FlexDirection.ROW);
+  const identityRow = new FlexboxDescriptor([entityNameAttr, nameAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const bindingRow = new FlexboxDescriptor([stateAttributeKeyAttr, initialStateKeyAttr], FlexDirection.ROW);
   bindingRow.style = { 'column-gap': '10px' };

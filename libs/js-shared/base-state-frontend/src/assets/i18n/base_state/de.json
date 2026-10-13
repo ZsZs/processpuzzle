@@ -8,6 +8,7 @@
     "initialStateKey": "Startzustand",
     "version": "Version",
     "updatedAt": "Geändert am",
+    "releaseState": "Release-Stand",
     "states": "Zustände",
     "transitions": "Übergänge",
     "tabs": {
@@ -36,6 +37,7 @@
       "initialStateKey": "Der Schlüssel des Zustands, in dem jeder neue Datensatz beginnt, z. B. NEW. Er muss dem Schlüssel eines der Zustände unten entsprechen.",
       "version": "Erhöht sich mit jedem Speichern. Wird vom System gesetzt.",
       "updatedAt": "Wann die Zustandsmaschine zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diesen Zustandsautomaten so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "states": "Die Zustände, in denen sich ein Datensatz befinden kann, eine Zeile pro Zustand, z. B. NEW, CONFIRMED, SHIPPED. Mindestens einer ist erforderlich.",
       "transitions": "Die erlaubten Wechsel von einem Zustand in einen anderen, eine Zeile pro Wechsel, z. B. approve: NEW → CONFIRMED. Ein Datensatz kann seinen Zustand nur über einen hier aufgeführten Übergang ändern."
     }

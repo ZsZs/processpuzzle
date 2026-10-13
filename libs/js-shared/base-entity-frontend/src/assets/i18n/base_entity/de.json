@@ -47,16 +47,18 @@
     "attributes": "Attribute",
     "version": "Version",
     "updatedAt": "Aktualisiert am",
+    "releaseState": "Release-Stand",
     "_tooltips": {
       "code": "Eindeutiger Schlüssel des Entitätstyps in Ihrer Organisation, wird in Adressen verwendet. Kurz, kleingeschrieben und URL-tauglich, z. B. order; später möglichst nicht ändern.",
       "name": "Der Entitätsname, unter dem Seiten, Routen und Menüs der Anwendung diesen Typ ansprechen, z. B. Order.",
       "description": "Eine Notiz für Sie und Ihre Mitgestalter, wozu dieser Entitätstyp dient; Benutzer sehen sie nicht.",
-      "status": "DRAFT, solange Sie den Typ noch entwerfen, ACTIVE, um ihn in der Anwendung anzuzeigen, DEPRECATED, um ihn auszumustern. Angezeigt werden nur ACTIVE-Typen.",
+      "status": "ACTIVE für einen Typ in Gebrauch, DEPRECATED, um ihn auszumustern: Die Anwendung zeigt einen ausgemusterten Typ nicht mehr an. Ob die Anwendung den Typ überhaupt kennt, entscheidet seine Veröffentlichung, angezeigt unter Release-Stand.",
       "isEmbedded": "Ankreuzen, wenn Datensätze dieses Typs nur innerhalb eines anderen Datensatzes existieren, z. B. Bestellpositionen in einer Bestellung. Dann auch den übergeordneten Typ unter Übergeordnete Komponenten angeben.",
       "componentParents": "Für einen eingebetteten Typ: die Codes der Entitätstypen, deren Datensätze ihn enthalten, z. B. order. Pflicht, wenn Eingebettet angekreuzt ist.",
       "attributes": "Die Felder des Entitätstyps, eine Zeile pro Feld. Sie werden zusammen mit der Definition gespeichert.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
-      "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt."
+      "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt."
     }
   },
   "artifact": {

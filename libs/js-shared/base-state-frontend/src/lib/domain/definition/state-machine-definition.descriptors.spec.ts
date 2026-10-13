@@ -32,7 +32,7 @@ describe('createStateMachineDefinitionDescriptor', () => {
   });
 
   it('describes the machine, what it binds to and the graph it contains', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['entityName', 'name', 'stateAttributeKey', 'initialStateKey', 'version', 'updatedAt', 'description', 'states', 'transitions']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['entityName', 'name', 'releaseState', 'stateAttributeKey', 'initialStateKey', 'version', 'updatedAt', 'description', 'states', 'transitions']);
   });
 
   // The machine is addressed by the entity it governs, so that column is both the business key and the
@@ -52,6 +52,7 @@ describe('createStateMachineDefinitionDescriptor', () => {
   it('shows the server-assigned fields read-only', () => {
     expect(byName('version')?.disabled).toBe(true);
     expect(byName('updatedAt')?.disabled).toBe(true);
+    expect(byName('releaseState')?.disabled).toBe(true);
   });
 
   it('contains the states and the transitions, which have no endpoint of their own', () => {
@@ -78,6 +79,6 @@ describe('createStateMachineDefinitionDescriptor', () => {
   it('keeps the list to what tells two machines apart', () => {
     const tableColumns = attrs.filter((attr) => !attr.hideInTable).map((attr) => attr.attrName);
 
-    expect(tableColumns).toEqual(['entityName', 'name', 'stateAttributeKey', 'initialStateKey', 'version', 'updatedAt']);
+    expect(tableColumns).toEqual(['entityName', 'name', 'releaseState', 'stateAttributeKey', 'initialStateKey', 'version', 'updatedAt']);
   });
 });

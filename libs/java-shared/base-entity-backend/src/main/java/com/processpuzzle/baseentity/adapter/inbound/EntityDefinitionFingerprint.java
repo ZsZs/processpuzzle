@@ -11,13 +11,13 @@ import org.springframework.stereotype.Component;
  * compares a draft with its released row by. One place, so that the two cannot disagree about what changed.
  *
  * <p>Ids, versions and audit fields are left out at every depth — they are assigned, not authored, and a draft and
- * its released copy never share them.
+ * its released copy never share them. So is the release state, which is what this comparison answers.
  */
 @Component
 public class EntityDefinitionFingerprint {
 
     private static final Set<String> VOLATILE_FIELDS =
-        Set.of("id", "version", "createdAt", "createdBy", "updatedAt", "updatedBy", "organizationId");
+        Set.of("id", "version", "createdAt", "createdBy", "updatedAt", "updatedBy", "organizationId", "releaseState");
 
     private final EntityDefinitionMapper mapper;
 

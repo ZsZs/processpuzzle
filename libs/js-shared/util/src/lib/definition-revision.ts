@@ -9,6 +9,13 @@ import { inject, InjectionToken } from '@angular/core';
 export type DefinitionRevision = 'draft' | 'released';
 
 /**
+ * Where a draft stands against what the organization released — `ReleaseState` of the contracts, which the
+ * definition endpoints report on each draft: `NEW` was never released, `CHANGED` differs from the released row,
+ * `RELEASED` is what the running application uses. Read-only, and absent on a released row.
+ */
+export type ReleaseState = 'NEW' | 'CHANGED' | 'RELEASED';
+
+/**
  * Answers which revision of the definitions to read right now. Called on every read, so a host can answer from the
  * route it is on — the custom application answers `draft` inside its designer and `released` everywhere else.
  *

@@ -46,6 +46,14 @@ describe('StateMachineDefinitionMapper', () => {
       expect(entity.states[1].metadata).toEqual({ colour: 'green' });
     });
 
+    /** Reported by the backend on a draft; never sent back, since only a release changes it. */
+    it('reads the release state, and does not send it back', () => {
+      const entity = mapper.fromDto({ ...STATE_MACHINE_DEFINITION_DTO, releaseState: 'CHANGED' });
+
+      expect(entity.releaseState).toBe('CHANGED');
+      expect(mapper.toDto(entity)).not.toHaveProperty('releaseState');
+    });
+
     it('turns a machine with no transitions into empty lists rather than undefined', () => {
       const entity = mapper.fromDto({ entityName: 'order', name: 'Order' });
 

@@ -24,10 +24,13 @@ export class BaseRuleMapper implements BaseEntityMapper<BaseRule> {
       source.createdAt,
       source.updatedAt,
       source.fields,
+      source.releaseState,
     );
   }
 
+  /** Everything but the release state, which only the backend reports. */
   toDto(entity: BaseRule): unknown {
-    return { ...entity };
+    const { releaseState: _releaseState, ...dto } = entity;
+    return dto;
   }
 }

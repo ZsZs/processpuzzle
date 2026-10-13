@@ -143,6 +143,21 @@ against the released definition.
 - **References.** App routes → entity / document / module; rule context → entity; state machine →
   entity; workflow → events, roles, tasks, tools, artifacts, rules.
 
+### Release state of a draft
+
+Each definition endpoint reports a read-only `releaseState` on the drafts it answers with — entity
+definitions, state machines and rules for now: `NEW` (never released), `CHANGED` (differs from the released
+row) or `RELEASED` (what the running application uses). It is derived from the participant's own `pending`
+(`ReleaseState.ofDrafts` in `core.definition`), so a list and the Release section cannot disagree. A released
+definition whose draft was deleted has no row in a list; the Release section shows it as removed. A released
+row carries no state, and the fingerprints leave the field out.
+
+**What it replaced.** An entity definition's `status` used to be the only way to keep a definition off the
+running application (`DRAFT`). A release does that now, so `status` is the designer's lifecycle decision
+only — `ACTIVE` or `DEPRECATED`. `DRAFT` is still accepted and stored as `ACTIVE`; a definition stored with it
+before this was never live, so `EntityDefinitionStatusMigration` makes its draft `ACTIVE` and removes the
+released copy the channel backfill gave it — it then waits for its first release, as it waited before.
+
 ## Frontend
 
 - **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
@@ -158,6 +173,9 @@ against the released definition.
     **full page load** when crossing between them. The root caches (entity registries, governed
     entities, the rule engine) are then never filled from both revisions; resetting them in place is
     not reliable, since the dynamic screens' injection tokens are cached at the root too.
+- **Release column.** The entity-definition, state-machine and rule lists and forms show `releaseState`,
+  read-only (`ReleaseState` in `@processpuzzle/util`); the entity-definition status offers Active and
+  Deprecated only.
 - **Read-only Preview.** `ENTITY_PREVIEW_READ_ONLY` (`@processpuzzle/base-entity`), provided `true` by a
   host showing drafts, makes `EntityPreviewMode` disable New, Save and Delete on the screens of
   definition-built entity types — they show live objects through draft definitions. The designer's own,
