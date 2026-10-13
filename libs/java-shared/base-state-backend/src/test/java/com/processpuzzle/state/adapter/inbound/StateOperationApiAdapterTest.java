@@ -9,7 +9,6 @@ import com.processpuzzle.state.usecase.FireStateTransition;
 import com.processpuzzle.state.usecase.GetEntityObjectState;
 import com.processpuzzle.state.usecase.TransitionOutcome;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
-import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.state.usecase.exception.UnknownTriggerException;
 import com.processpuzzle.state.usecase.port.EntityObjectGateway;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
@@ -134,15 +133,15 @@ class StateOperationApiAdapterTest {
 
     @Test
     void stateAttributeKey_namesTheGoverningMachinesAttribute() {
-        when(findStateMachineDefinition.execute(ORG, ENTITY, Channel.RELEASED)).thenReturn(machineWithStateAttribute("status"));
+        when(findStateMachineDefinition.find(ORG, ENTITY, Channel.RELEASED)).thenReturn(java.util.Optional.of(machineWithStateAttribute("status")));
 
         assertThat(adapter.stateAttributeKey(ORG, ENTITY)).contains("status");
     }
 
     @Test
     void stateAttributeKey_isEmptyForAnUngovernedEntityOrABlankKey() {
-        when(findStateMachineDefinition.execute(ORG, ENTITY, Channel.RELEASED)).thenThrow(new StateMachineNotFoundException(ORG, ENTITY));
-        when(findStateMachineDefinition.execute(ORG, "invoice", Channel.RELEASED)).thenReturn(machineWithStateAttribute(" "));
+        when(findStateMachineDefinition.find(ORG, ENTITY, Channel.RELEASED)).thenReturn(java.util.Optional.empty());
+        when(findStateMachineDefinition.find(ORG, "invoice", Channel.RELEASED)).thenReturn(java.util.Optional.of(machineWithStateAttribute(" ")));
 
         assertThat(adapter.stateAttributeKey(ORG, ENTITY)).isEmpty();
         assertThat(adapter.stateAttributeKey(ORG, "invoice")).isEmpty();
