@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
+import type { ReleaseState } from '@processpuzzle/util';
 import { BeanRef, PropertyMap, State, StateMachineDefinition, Transition } from './state-machine-definition';
 
 /**
@@ -44,6 +45,7 @@ interface StateMachineDefinitionDto {
   version?: number;
   createdAt?: string;
   updatedAt?: string;
+  releaseState?: ReleaseState;
 }
 
 /**
@@ -85,12 +87,13 @@ export class StateMachineDefinitionMapper implements BaseEntityMapper<StateMachi
       version: source.version,
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
+      releaseState: source.releaseState,
     });
   }
 
   toDto(entity: StateMachineDefinition): StateMachineDefinitionDto {
     // Listed field by field rather than spread, so a control the form may gain later cannot leak into
-    // the payload unnoticed.
+    // the payload unnoticed — nor the release state, which only the backend reports.
     const entityName = entity.entityName || (entity.id ?? '');
     return {
       id: entityName,

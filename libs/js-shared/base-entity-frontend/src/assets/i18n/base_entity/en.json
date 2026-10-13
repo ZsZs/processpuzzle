@@ -47,16 +47,18 @@
     "attributes": "Attributes",
     "version": "Version",
     "updatedAt": "Updated At",
+    "releaseState": "Release",
     "_tooltips": {
       "code": "Unique key of the entity type within your organization, used in addresses. Short, lower-case and URL-safe, e.g. order; avoid changing it later.",
       "name": "The entity name the application's pages, routes and menus refer to this type by, e.g. Order.",
       "description": "A note for you and your fellow designers about what this entity type is for; users do not see it.",
-      "status": "DRAFT while you are still designing the type, ACTIVE to show it in the application, DEPRECATED to retire it. Only ACTIVE types are displayed.",
+      "status": "ACTIVE for a type in use, DEPRECATED to retire it: the application no longer shows a deprecated type. Whether the application has the type at all is its release, shown under Release.",
       "isEmbedded": "Tick when records of this type exist only inside another record, e.g. order lines inside an order. Then also name the parent under Component Parents.",
       "componentParents": "For an embedded type: the codes of the entity types whose records contain it, e.g. order. Required when Embedded is ticked.",
       "attributes": "The fields of the entity type, one row per field. They are saved together with the definition.",
       "version": "Increases with every save. Set by the system.",
-      "updatedAt": "When the definition was last saved. Set by the system."
+      "updatedAt": "When the definition was last saved. Set by the system.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system."
     }
   },
   "artifact": {

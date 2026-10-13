@@ -1,6 +1,7 @@
 import type { BaseEntity } from '../base-entity/base-entity';
 import type { DateFormat, DateStyle, TimeStyle } from '../base-entity/date-format';
 import type { Multiplicity } from '../base-entity/multiplicity';
+import type { ReleaseState } from '@processpuzzle/util';
 
 /**
  * The knowledge layer of `base-entity-api.yaml` as the frontend reads it: what an entity *type* is,
@@ -22,7 +23,11 @@ import type { Multiplicity } from '../base-entity/multiplicity';
  * entity *names* — the translation is the descriptor factory's job and is documented there.
  */
 
-/** `EntityDefinitionStatus` of the contract. Only `ACTIVE` definitions are rendered. */
+/**
+ * `EntityDefinitionStatus` of the contract: the definition's lifecycle, as its designer decides it. Whether it is
+ * live is its {@link ReleaseState}. `DRAFT` is retired — the backend stores it as `ACTIVE` — and is kept in the type
+ * only for what an older backend may still answer.
+ */
 export type EntityDefinitionStatus = 'DRAFT' | 'ACTIVE' | 'DEPRECATED';
 
 /** `ValueKind` of the contract: what the attribute's value *is*, as opposed to how it is edited. */
@@ -40,7 +45,7 @@ export type EntityValueKind = 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'DATE_TIM
  * members (`ADDITIONAL_PROPERTIES`, `FLEX_BOX`, `LABEL`, `TAGS`, `TITLE`) are rendering concerns a
  * definition cannot name. `CONTROL_TYPES` in `dynamic-entity.descriptor.ts` maps one onto the other.
  */
-export const ENTITY_DEFINITION_STATUSES: readonly EntityDefinitionStatus[] = ['DRAFT', 'ACTIVE', 'DEPRECATED'];
+export const ENTITY_DEFINITION_STATUSES: readonly EntityDefinitionStatus[] = ['ACTIVE', 'DEPRECATED'];
 export const ENTITY_VALUE_KINDS: readonly EntityValueKind[] = ['TEXT', 'NUMBER', 'BOOLEAN', 'DATE', 'DATE_TIME', 'ENUM', 'REFERENCE'];
 export const ENTITY_FORM_CONTROL_TYPES: readonly string[] = [
   'TEXT',
@@ -163,6 +168,8 @@ export class EntityDefinition implements BaseEntity {
   name: string;
   description?: string;
   status?: EntityDefinitionStatus;
+  /** Where this draft stands against the release; reported by the backend, never sent back. */
+  releaseState?: ReleaseState;
   /** **Codes** of the definitions that may aggregate this one; empty for a stand-alone entity. */
   componentParents?: string[];
   /** True when this definition's payload travels inside its parent's and it has no rows of its own. */
@@ -180,6 +187,7 @@ export class EntityDefinition implements BaseEntity {
     this.name = init.name ?? '';
     this.description = init.description;
     this.status = init.status;
+    this.releaseState = init.releaseState;
     // Empty arrays rather than undefined, so the TAGS control and the embedded list always have something
     // to append to.
     this.componentParents = init.componentParents ?? [];
@@ -214,7 +222,10 @@ export interface EntityDefinitionPage {
   content?: EntityDefinition[];
 }
 
-/** Only an `ACTIVE` definition is rendered; a draft is being authored and a deprecated one is on its way out. */
+/**
+ * A deprecated definition is not rendered. Which definitions the running application has at all is the release's
+ * business: it reads the released rows. (`DRAFT` is not rendered either, for an older backend that still answers it.)
+ */
 export function isRenderable(definition: EntityDefinition): boolean {
   return definition.status === undefined || definition.status === 'ACTIVE';
 }

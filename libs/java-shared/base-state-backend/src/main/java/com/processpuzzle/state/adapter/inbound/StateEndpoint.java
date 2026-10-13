@@ -1,5 +1,7 @@
 package com.processpuzzle.state.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.ReleaseState;
 import com.processpuzzle.shared.model.ImportResult;
 import com.processpuzzle.state.api.BaseStateApi;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -19,6 +21,7 @@ import com.processpuzzle.state.usecase.ImportStateMachineDefinitions;
 import com.processpuzzle.state.usecase.UpdateStateMachineDefinition;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -50,6 +53,7 @@ public class StateEndpoint implements BaseStateApi {
     private final GetEntityObjectState getEntityObjectState;
     private final FireStateTransition fireStateTransition;
     private final StateMapper mapper;
+    private final StateMachineReleaseParticipant releaseParticipant;
 
     public StateEndpoint(CreateStateMachineDefinition createStateMachineDefinition,
                          UpdateStateMachineDefinition updateStateMachineDefinition,
@@ -60,7 +64,8 @@ public class StateEndpoint implements BaseStateApi {
                          ExportStateMachineDefinitions exportStateMachineDefinitions,
                          GetEntityObjectState getEntityObjectState,
                          FireStateTransition fireStateTransition,
-                         StateMapper mapper) {
+                         StateMapper mapper,
+                         StateMachineReleaseParticipant releaseParticipant) {
         this.createStateMachineDefinition = createStateMachineDefinition;
         this.updateStateMachineDefinition = updateStateMachineDefinition;
         this.deleteStateMachineDefinition = deleteStateMachineDefinition;
@@ -71,15 +76,23 @@ public class StateEndpoint implements BaseStateApi {
         this.getEntityObjectState = getEntityObjectState;
         this.fireStateTransition = fireStateTransition;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     // ── Knowledge layer ────────────────────────────────────────
 
     @Override
     public ResponseEntity<PageOfStateMachineDefinition> listStateMachineDefinitions(
-            String orgKey, String where, String order, Integer page, Integer size) {
-        Page<StateMachineDefinition> result = findAllStateMachineDefinitions.execute(orgKey, where, order, page, size);
-        return ResponseEntity.ok(mapper.toModel(result));
+            String orgKey, String where, String order, Integer page, Integer size, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        Page<StateMachineDefinition> result =
+                findAllStateMachineDefinitions.execute(orgKey, channel, where, order, page, size);
+        PageOfStateMachineDefinition body = mapper.toModel(result);
+        if (channel == Channel.DRAFT && body.getContent() != null) {
+            Map<String, ReleaseState> states = ReleaseState.ofDrafts(releaseParticipant, orgKey);
+            body.getContent().forEach(machine -> machine.setReleaseState(releaseStateOf(states, machine.getEntityName())));
+        }
+        return ResponseEntity.ok(body);
     }
 
     @Override
@@ -92,9 +105,20 @@ public class StateEndpoint implements BaseStateApi {
 
     @Override
     public ResponseEntity<com.processpuzzle.state.model.StateMachineDefinition> getStateMachineDefinition(
-            String orgKey, String entityName) {
-        StateMachineDefinition definition = findStateMachineDefinition.execute(orgKey, entityName);
-        return ResponseEntity.ok(mapper.toModel(definition));
+            String orgKey, String entityName, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        StateMachineDefinition definition = findStateMachineDefinition.execute(orgKey, entityName, channel);
+        com.processpuzzle.state.model.StateMachineDefinition body = mapper.toModel(definition);
+        if (channel == Channel.DRAFT) {
+            body.setReleaseState(releaseStateOf(ReleaseState.ofDrafts(releaseParticipant, orgKey), entityName));
+        }
+        return ResponseEntity.ok(body);
+    }
+
+    /** A draft's release state, as the designer's list and form show it; only drafts have one. */
+    private static com.processpuzzle.state.model.ReleaseState releaseStateOf(Map<String, ReleaseState> states, String entityName) {
+        ReleaseState state = states.get(entityName);
+        return state == null ? null : com.processpuzzle.state.model.ReleaseState.fromValue(state.name());
     }
 
     @Override

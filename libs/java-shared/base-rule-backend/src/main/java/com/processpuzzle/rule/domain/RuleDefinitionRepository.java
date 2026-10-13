@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,16 +18,19 @@ import java.util.Optional;
 public interface RuleDefinitionRepository
         extends JpaRepository<RuleDefinition, RuleDefinitionKey>, JpaSpecificationExecutor<RuleDefinition> {
 
-    Optional<RuleDefinition> findByOrgKeyAndId(String orgKey, String id);
+    Optional<RuleDefinition> findByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    boolean existsByOrgKeyAndId(String orgKey, String id);
+    boolean existsByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
+    List<RuleDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
+
+    /** Both rows of every one of a tenant's rules — for removing them all, never for reading one. */
     List<RuleDefinition> findByOrgKey(String orgKey);
 
-    List<RuleDefinition> findByOrgKeyAndContext(String orgKey, String context);
+    List<RuleDefinition> findByOrgKeyAndContextAndChannel(String orgKey, String context, Channel channel);
 
-    /** The rules of {@code orgKey} that extend {@code extendsRuleId} — its dependents. */
-    List<RuleDefinition> findByOrgKeyAndExtendsRuleId(String orgKey, String extendsRuleId);
+    /** The rules of {@code orgKey} that extend {@code extendsRuleId} in one channel — its dependents there. */
+    List<RuleDefinition> findByOrgKeyAndExtendsRuleIdAndChannel(String orgKey, String extendsRuleId, Channel channel);
 
     void deleteByOrgKey(String orgKey);
 

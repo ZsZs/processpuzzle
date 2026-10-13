@@ -30,9 +30,14 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   descriptionAttr.styleClass = 'full-width';
   descriptionAttr.hideInTable = true;
 
-  // Only an `ACTIVE` definition is rendered (`isRenderable`), so the column belongs in the table: which
-  // types a tenant's application actually shows is the first thing this list has to answer.
+  // The lifecycle the designer decides: active, or deprecated and no longer offered by the running application.
   const statusAttr = new BaseEntityAttrDescriptor('status', FormControlType.DROPDOWN, 'Status', toSelectables(ENTITY_DEFINITION_STATUSES));
+
+  // Whether the running application has this definition as it stands — new, changed since, or released — as the
+  // backend reports it. In the table, because it is the first thing this list has to answer; never edited, since
+  // only a release changes it.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
 
   // region containment
   // `isEmbedded` without a `componentParents` entry is a 422 from the backend — an embedded definition has
@@ -69,7 +74,7 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   updatedAtAttr.disabled = true;
   // endregion
 
-  const identityRow = new FlexboxDescriptor([codeAttr, nameAttr, statusAttr], FlexDirection.ROW);
+  const identityRow = new FlexboxDescriptor([codeAttr, nameAttr, statusAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const containmentRow = new FlexboxDescriptor([isEmbeddedAttr, componentParentsAttr], FlexDirection.ROW);
   containmentRow.style = { 'column-gap': '10px' };

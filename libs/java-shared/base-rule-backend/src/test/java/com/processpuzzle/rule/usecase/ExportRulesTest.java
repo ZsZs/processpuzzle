@@ -1,5 +1,7 @@
 package com.processpuzzle.rule.usecase;
 
+import static org.mockito.ArgumentMatchers.eq;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -26,30 +28,30 @@ class ExportRulesTest {
 
     @Test
     void exportsEveryRuleOfTheOrganizationWhenNoContextIsGiven() throws IOException {
-        when(repository.findByOrgKey("demo")).thenReturn(List.of(
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT)).thenReturn(List.of(
                 rule("max-quantity", "Order", true, true, List.of("quantity")),
                 rule("has-customer", "Invoice", false, true, List.of())));
 
         String yaml = export(null);
 
         assertThat(yaml).contains("id: \"max-quantity\"", "id: \"has-customer\"");
-        verify(repository, never()).findByOrgKeyAndContext(anyString(), anyString());
+        verify(repository, never()).findByOrgKeyAndContextAndChannel(anyString(), anyString(), eq(Channel.DRAFT));
     }
 
     @Test
     void narrowsToOneContextWhenAsked() throws IOException {
-        when(repository.findByOrgKeyAndContext("demo", "Order"))
+        when(repository.findByOrgKeyAndContextAndChannel("demo", "Order", Channel.DRAFT))
                 .thenReturn(List.of(rule("max-quantity", "Order", false, true, List.of())));
 
         String yaml = export("Order");
 
         assertThat(yaml).contains("id: \"max-quantity\"");
-        verify(repository, never()).findByOrgKey(anyString());
+        verify(repository, never()).findByOrgKeyAndChannel(anyString(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void omitsTheOrgKeySoTheFileCanBeImportedIntoAnotherOrganization() throws IOException {
-        when(repository.findByOrgKey("demo"))
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT))
                 .thenReturn(List.of(rule("max-quantity", "Order", false, true, List.of("quantity"))));
 
         String yaml = export(null);
@@ -60,7 +62,7 @@ class ExportRulesTest {
 
     @Test
     void writesDefaultValuedFlagsAsAbsentRatherThanExplicitDefaults() throws IOException {
-        when(repository.findByOrgKey("demo"))
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT))
                 .thenReturn(List.of(rule("plain", "Order", false, true, List.of())));
 
         String yaml = export(null);
@@ -72,7 +74,7 @@ class ExportRulesTest {
 
     @Test
     void writesTheFlagsOnlyWhenTheyDivergeFromTheDefaults() throws IOException {
-        when(repository.findByOrgKey("demo"))
+        when(repository.findByOrgKeyAndChannel("demo", Channel.DRAFT))
                 .thenReturn(List.of(rule("odd", "Order", true, false, List.of("total"))));
 
         String yaml = export(null);

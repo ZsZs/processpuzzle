@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.rule.domain.RuleDefinition;
 import com.processpuzzle.rule.domain.RuleDefinitionRepository;
 import com.processpuzzle.rule.domain.Severity;
@@ -34,7 +35,7 @@ public class EvaluateObject {
         }
 
         List<RuleViolation> violations = new ArrayList<>();
-        for (RuleDefinition rule : repository.findByOrgKeyAndContext(orgKey, context)) {
+        for (RuleDefinition rule : repository.findByOrgKeyAndContextAndChannel(orgKey, context, Channel.RELEASED)) {
             if (!rule.isEnabled()) {
                 continue;
             }

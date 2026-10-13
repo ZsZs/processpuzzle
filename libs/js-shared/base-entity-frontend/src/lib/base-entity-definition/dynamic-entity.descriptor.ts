@@ -38,6 +38,8 @@ const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   DATE_TIME: FormControlType.DATE,
   DROPDOWN: FormControlType.DROPDOWN,
   EMBEDDED_COMPONENTS: FormControlType.EMBEDDED_COMPONENTS,
+  EMBEDDED_LIST: FormControlType.EMBEDDED_LIST,
+  EMBEDDED_OBJECT: FormControlType.EMBEDDED_OBJECT,
   ENUM_SELECT: FormControlType.DROPDOWN,
   FLEX_BOX: FormControlType.FLEX_BOX,
   FOREIGN_KEY: FormControlType.FOREIGN_KEY,

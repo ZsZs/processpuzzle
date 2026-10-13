@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.rule.api.BaseRuleApi;
 import com.processpuzzle.rule.model.*;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Map;
 
 @RestController
 @LogClass
@@ -29,6 +31,7 @@ public class RuleEndpoint implements BaseRuleApi {
     private final ExportRules exportRules;
     private final EvaluateObject evaluateObject;
     private final RuleMapper mapper;
+    private final RuleReleaseParticipant releaseParticipant;
 
     public RuleEndpoint(CreateRule createRule,
                         UpdateRule updateRule,
@@ -38,7 +41,8 @@ public class RuleEndpoint implements BaseRuleApi {
                         ImportRules importRules,
                         ExportRules exportRules,
                         EvaluateObject evaluateObject,
-                        RuleMapper mapper) {
+                        RuleMapper mapper,
+                        RuleReleaseParticipant releaseParticipant) {
         this.createRule = createRule;
         this.updateRule = updateRule;
         this.deleteRule = deleteRule;
@@ -48,6 +52,7 @@ public class RuleEndpoint implements BaseRuleApi {
         this.exportRules = exportRules;
         this.evaluateObject = evaluateObject;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
@@ -69,14 +74,32 @@ public class RuleEndpoint implements BaseRuleApi {
     }
 
     @Override
-    public ResponseEntity<RuleDefinition> getRule(String orgKey, String id) {
-        return ResponseEntity.ok(mapper.toModel(findRule.execute(orgKey, id)));
+    public ResponseEntity<RuleDefinition> getRule(String orgKey, String id, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        RuleDefinition rule = mapper.toModel(findRule.execute(orgKey, id, channel));
+        if (channel == Channel.DRAFT) {
+            rule.setReleaseState(releaseStateOf(com.processpuzzle.core.definition.ReleaseState.ofDrafts(releaseParticipant, orgKey), id));
+        }
+        return ResponseEntity.ok(rule);
     }
 
     @Override
     public ResponseEntity<PageOfRuleDefinition> listRules(String orgKey, String context, String where,
-                                                          String order, Integer page, Integer size) {
-        return ResponseEntity.ok(mapper.toModel(findAllRules.execute(orgKey, context, where, order, page, size)));
+                                                          String order, Integer page, Integer size, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        PageOfRuleDefinition rules = mapper.toModel(findAllRules.execute(orgKey, channel, context, where, order, page, size));
+        if (channel == Channel.DRAFT && rules.getContent() != null) {
+            Map<String, com.processpuzzle.core.definition.ReleaseState> states =
+                com.processpuzzle.core.definition.ReleaseState.ofDrafts(releaseParticipant, orgKey);
+            rules.getContent().forEach(rule -> rule.setReleaseState(releaseStateOf(states, rule.getId())));
+        }
+        return ResponseEntity.ok(rules);
+    }
+
+    /** A draft's release state, as the designer's list and form show it; only drafts have one. */
+    private static ReleaseState releaseStateOf(Map<String, com.processpuzzle.core.definition.ReleaseState> states, String id) {
+        com.processpuzzle.core.definition.ReleaseState state = states.get(id);
+        return state == null ? null : ReleaseState.fromValue(state.name());
     }
 
     @Override

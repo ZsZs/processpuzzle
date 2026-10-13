@@ -1,5 +1,6 @@
 package com.processpuzzle.state.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -72,15 +73,16 @@ class DiagramValueObjectsTest {
 
     @Test
     void diagramDefinitionKey_shouldBeValueEqual() {
-        DiagramDefinitionKey key = new DiagramDefinitionKey("org-1", "invoice");
+        DiagramDefinitionKey key = new DiagramDefinitionKey("org-1", "invoice", Channel.DRAFT);
 
-        assertThat(key).isEqualTo(new DiagramDefinitionKey("org-1", "invoice"))
-                .hasSameHashCodeAs(new DiagramDefinitionKey("org-1", "invoice"))
-                .isNotEqualTo(new DiagramDefinitionKey("org-2", "invoice"))
-                .isNotEqualTo(new DiagramDefinitionKey("org-1", "order"))
-                .isNotEqualTo("org-1/invoice");
-        assertThat(key).isEqualTo(key);
-        assertThat(key.toString()).isEqualTo("org-1/invoice");
+        assertThat(key).isEqualTo(new DiagramDefinitionKey("org-1", "invoice", Channel.DRAFT))
+                .hasSameHashCodeAs(new DiagramDefinitionKey("org-1", "invoice", Channel.DRAFT))
+                .isNotEqualTo(new DiagramDefinitionKey("org-2", "invoice", Channel.DRAFT))
+                .isNotEqualTo(new DiagramDefinitionKey("org-1", "order", Channel.DRAFT))
+                .isNotEqualTo(new DiagramDefinitionKey("org-1", "invoice", Channel.RELEASED))
+                .isNotEqualTo("org-1/invoice")
+                .isEqualTo(key)
+                .hasToString("org-1/invoice/DRAFT");
     }
 
     @Test

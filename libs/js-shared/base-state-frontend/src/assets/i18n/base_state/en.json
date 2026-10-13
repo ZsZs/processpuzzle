@@ -8,6 +8,7 @@
     "initialStateKey": "Initial State",
     "version": "Version",
     "updatedAt": "Updated At",
+    "releaseState": "Release",
     "states": "States",
     "transitions": "Transitions",
     "tabs": {
@@ -36,6 +37,7 @@
       "initialStateKey": "The key of the state every new record starts in, e.g. NEW. It must match the key of one of the states below.",
       "version": "Increases with every save. Set by the system.",
       "updatedAt": "When the state machine was last saved. Set by the system.",
+      "releaseState": "Whether the running application uses this state machine as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "states": "The states a record can be in, one row per state, e.g. NEW, CONFIRMED, SHIPPED. At least one is required.",
       "transitions": "The allowed moves from one state to another, one row per move, e.g. approve: NEW → CONFIRMED. A record can only change state along a transition listed here."
     }

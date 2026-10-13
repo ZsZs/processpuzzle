@@ -87,7 +87,8 @@ erases both tables with the tenant.
 | app | `AppDefinition` keeps `draftGraph` and `publishedGraph` on one row; releasing is `publish()` | `AppReleaseParticipant` (base-app) | step 1 |
 | module | `app_modules.channel`, primary key `(org_key, module_key, channel)` | `ModuleReleaseParticipant` (base-app) | step 1 |
 | entity | `base_entity_definition.channel`, unique `(org_key, code, channel)`; attributes follow their definition | `EntityDefinitionReleaseParticipant` (base-entity) | step 2 |
-| state, rule | `channel` on the definition tables and their children | step 2 | |
+| state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
+| rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
 | workflow, catalogue, event | `channel` on the definition tables | step 3 | |
 | document | `published_documents`, per translation | step 4 | |
 
@@ -134,21 +135,51 @@ against the released definition.
   added without a default; an attribute's value kind or multiplicity changed; a switch between embedded
   and stand-alone. Warning: an attribute removed; an attribute that becomes required. A rename is a
   removal and an addition. Entity objects are not migrated between releases.
-- **State.** Error: a state removed while objects are in it.
+- **State** (only while objects of the type exist). Error: a state removed while objects are in it; a changed
+  state attribute. Warning: the machine removed — its objects keep their state, ungoverned. A moved layout is
+  pending but never a problem. A renamed state is a removal and an addition.
 - **Workflow.** Error: a workflow removed while instances run, or a task removed while an active task
   instance uses it.
 - **References.** App routes → entity / document / module; rule context → entity; state machine →
   entity; workflow → events, roles, tasks, tools, artifacts, rules.
+
+### Release state of a draft
+
+Each definition endpoint reports a read-only `releaseState` on the drafts it answers with — entity
+definitions, state machines and rules for now: `NEW` (never released), `CHANGED` (differs from the released
+row) or `RELEASED` (what the running application uses). It is derived from the participant's own `pending`
+(`ReleaseState.ofDrafts` in `core.definition`), so a list and the Release section cannot disagree. A released
+definition whose draft was deleted has no row in a list; the Release section shows it as removed. A released
+row carries no state, and the fingerprints leave the field out.
+
+**What it replaced.** An entity definition's `status` used to be the only way to keep a definition off the
+running application (`DRAFT`). A release does that now, so `status` is the designer's lifecycle decision
+only — `ACTIVE` or `DEPRECATED`. `DRAFT` is still accepted and stored as `ACTIVE`; a definition stored with it
+before this was never live, so `EntityDefinitionStatusMigration` makes its draft `ACTIVE` and removes the
+released copy the channel backfill gave it — it then waits for its first release, as it waited before.
 
 ## Frontend
 
 - **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
   problems (errors block, warnings need confirming), Publish, and the release history.
 - **The live application** renders the published layout and its inline modules.
-- From step 2: one `DEFINITION_REVISION` token (`'released'` at the root) read by the run-time caches —
-  entity registries and screen resolver, governed entities, the rule engine — re-provided as `'draft'`
-  on the designer's route by `provideDraftDefinitionReaders()`, so the Preview reads drafts through its
-  own instances. A `READ_ONLY_ENTITY_SCREENS` token there disables create, save and delete.
+- **Revision of the reads (step 2).** `DEFINITION_REVISION` (`@processpuzzle/util`) answers, per read,
+  `draft` or `released`. Definition readers mark their GETs with `definitionRead()` — entity definitions,
+  state machines, diagrams, rules (via `BaseEntityRestService.readContext()`) — and the opt-in
+  `definitionRevisionInterceptor` adds `revision=<answer>` to them.
+  - **`draft` unless the host says otherwise**: that is what the endpoints serve without the parameter,
+    so a host that has not wired it up reads, and saves back, the drafts as before.
+  - The custom application answers `draft` on its designer route and `released` elsewhere, and does a
+    **full page load** when crossing between them. The root caches (entity registries, governed
+    entities, the rule engine) are then never filled from both revisions; resetting them in place is
+    not reliable, since the dynamic screens' injection tokens are cached at the root too.
+- **Release column.** The entity-definition, state-machine and rule lists and forms show `releaseState`,
+  read-only (`ReleaseState` in `@processpuzzle/util`); the entity-definition status offers Active and
+  Deprecated only.
+- **Read-only Preview.** `ENTITY_PREVIEW_READ_ONLY` (`@processpuzzle/base-entity`), provided `true` by a
+  host showing drafts, makes `EntityPreviewMode` disable New, Save and Delete on the screens of
+  definition-built entity types — they show live objects through draft definitions. The designer's own,
+  compiled screens stay editable.
 
 ## Starters and seeding
 
@@ -157,6 +188,18 @@ right after installing, in the same transaction — a starter is a vetted set an
 (`ReleaseOrganization.provision`, which skips the design-rights check). **A designer installing a starter**
 gets drafts like any other edit, and releases them from the Release section. A blank seed stays
 unreleased, which shows the "not published yet" page.
+
+**Rules.** `EvaluateObject` — the rule endpoint, state guards, workflow conditions — reads the released rules.
+The engine's in-memory registry holds released rules only: a designer's save no longer touches it, and
+`RuleReleaser` registers or unregisters after a release commits. A rule's reference is the rule it `extends`;
+rules hold no data, so a release checks nothing else about them. `RuleChannelBackfill` drops the fields' old
+foreign key first — the database refuses to drop the primary key it depends on — and adds the fields'
+`channel` column itself, since `ddl-auto` cannot add it `not null` to a table with rows. `SampleRuleLoader`
+releases the rules its file wrote.
+
+**Run-time readers of state machines** — firing a transition, an object's state, starting the machine of a new
+object, the startup consistency check, and `StateOperationApi` — read the released machine. `DefaultStateImporter`
+releases the machines its file wrote, and only those, through `StateMachineReleaser`.
 
 **Run-time readers of entity definitions** — object create and update, payload validation, RSQL paths,
 workflow labels, the AI subject directory — read the released row through `EntityDefinitionLookupPort`.

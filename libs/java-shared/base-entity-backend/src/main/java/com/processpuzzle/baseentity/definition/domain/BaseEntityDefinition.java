@@ -5,6 +5,8 @@ import com.processpuzzle.core.definition.Channel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -80,7 +82,7 @@ public class BaseEntityDefinition extends Auditable {
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private EntityDefinitionStatus status = EntityDefinitionStatus.DRAFT;
+    private EntityDefinitionStatus status = EntityDefinitionStatus.ACTIVE;
 
     /** Entity definition code(s) this one may be nested under. Empty for a stand-alone entity. */
     @JdbcTypeCode(SqlTypes.JSON)
@@ -111,6 +113,19 @@ public class BaseEntityDefinition extends Auditable {
     public void addAttribute(BaseEntityAttribute attribute) {
         attribute.setEntityDefinition(this);
         this.attributes.add(attribute);
+    }
+
+    /**
+     * Stores the retired {@link EntityDefinitionStatus#DRAFT}, and no status at all, as {@code ACTIVE}: a release is
+     * what keeps a definition off the running application now.
+     */
+    @PrePersist
+    @PreUpdate
+    @SuppressWarnings("deprecation")
+    void storeLifecycle() {
+        if (status == null || status == EntityDefinitionStatus.DRAFT) {
+            status = EntityDefinitionStatus.ACTIVE;
+        }
     }
 
     /** A new released row with the draft's content: what a definition's first release creates. */

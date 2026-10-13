@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -31,8 +32,8 @@ public class ExportRules {
      */
     public byte[] execute(String orgKey, String context) throws IOException {
         List<RuleDefinition> rules = context != null
-                ? repository.findByOrgKeyAndContext(orgKey, context)
-                : repository.findByOrgKey(orgKey);
+                ? repository.findByOrgKeyAndContextAndChannel(orgKey, context, Channel.DRAFT)
+                : repository.findByOrgKeyAndChannel(orgKey, Channel.DRAFT);
 
         List<RuleYamlEntry> entries = rules.stream()
                 .map(r -> new RuleYamlEntry(

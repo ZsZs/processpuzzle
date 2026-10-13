@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
@@ -50,7 +51,7 @@ class ImportExportStateMachineDefinitionsTest {
                 .states(states)
                 .transitions(List.of())
                 .build();
-        when(repository.findByOrgKeyAndEntityName(ORG, "order")).thenReturn(Optional.of(def));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "order", Channel.DRAFT)).thenReturn(Optional.of(def));
 
         byte[] yamlBytes = exportUseCase.execute(ORG, "order");
         String yaml = new String(yamlBytes, StandardCharsets.UTF_8);
@@ -73,7 +74,7 @@ class ImportExportStateMachineDefinitionsTest {
                 .states(states)
                 .transitions(List.of())
                 .build();
-        when(repository.findByOrgKey(ORG)).thenReturn(List.of(def));
+        when(repository.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).thenReturn(List.of(def));
 
         byte[] yamlBytes = exportUseCase.execute(ORG, null);
         String yaml = new String(yamlBytes, StandardCharsets.UTF_8);
@@ -85,7 +86,7 @@ class ImportExportStateMachineDefinitionsTest {
 
     @Test
     void export_singleEntityNotFound_shouldReturnEmptyList() throws IOException {
-        when(repository.findByOrgKeyAndEntityName(ORG, "nonexistent")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "nonexistent", Channel.DRAFT)).thenReturn(Optional.empty());
 
         byte[] yamlBytes = exportUseCase.execute(ORG, "nonexistent");
         String yaml = new String(yamlBytes, StandardCharsets.UTF_8);
@@ -106,7 +107,7 @@ class ImportExportStateMachineDefinitionsTest {
                         name: "Draft"
                     transitions: []
                 """;
-        when(repository.findByOrgKeyAndEntityName(ORG, "invoice")).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "invoice", Channel.DRAFT)).thenReturn(Optional.empty());
 
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
 
@@ -136,7 +137,7 @@ class ImportExportStateMachineDefinitionsTest {
                 .stateAttributeKey("status")
                 .initialStateKey("draft")
                 .build();
-        when(repository.findByOrgKeyAndEntityName(ORG, "invoice")).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "invoice", Channel.DRAFT)).thenReturn(Optional.of(existing));
 
         ImportOutcome outcome = importUseCase.execute(ORG, new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8)));
 

@@ -1,5 +1,6 @@
 package com.processpuzzle.state.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,10 +18,13 @@ public interface StateMachineDefinitionRepository
         extends JpaRepository<StateMachineDefinition, StateMachineDefinitionKey>,
         JpaSpecificationExecutor<StateMachineDefinition> {
 
-    Optional<StateMachineDefinition> findByOrgKeyAndEntityName(String orgKey, String entityName);
+    Optional<StateMachineDefinition> findByOrgKeyAndEntityNameAndChannel(String orgKey, String entityName, Channel channel);
 
-    boolean existsByOrgKeyAndEntityName(String orgKey, String entityName);
+    boolean existsByOrgKeyAndEntityNameAndChannel(String orgKey, String entityName, Channel channel);
 
+    List<StateMachineDefinition> findByOrgKeyAndChannel(String orgKey, Channel channel);
+
+    /** Both rows of every one of a tenant's definitions — for removing them all, never for reading one. */
     List<StateMachineDefinition> findByOrgKey(String orgKey);
 
     void deleteByOrgKey(String orgKey);

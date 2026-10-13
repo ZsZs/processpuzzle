@@ -8,6 +8,7 @@
     "initialStateKey": "État initial",
     "version": "Version",
     "updatedAt": "Modifié le",
+    "releaseState": "Publication",
     "states": "États",
     "transitions": "Transitions",
     "tabs": {
@@ -36,6 +37,7 @@
       "initialStateKey": "La clé de l'état dans lequel démarre chaque nouvel enregistrement, p. ex. NEW. Elle doit correspondre à la clé de l'un des états ci-dessous.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement de la machine à états. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette machine à états telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "states": "Les états dans lesquels un enregistrement peut se trouver, une ligne par état, p. ex. NEW, CONFIRMED, SHIPPED. Au moins un est requis.",
       "transitions": "Les passages autorisés d'un état à un autre, une ligne par passage, p. ex. approve : NEW → CONFIRMED. Un enregistrement ne peut changer d'état que par une transition listée ici."
     }

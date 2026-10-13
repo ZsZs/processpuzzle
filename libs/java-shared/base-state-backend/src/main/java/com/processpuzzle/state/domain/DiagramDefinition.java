@@ -1,5 +1,9 @@
 package com.processpuzzle.state.domain;
 
+import org.hibernate.annotations.ColumnDefault;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
+import com.processpuzzle.core.definition.Channel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -52,6 +56,13 @@ public class DiagramDefinition {
     @Id
     @Column(name = "entity_name", length = 100)
     private String entityName;
+
+    /** The layout's row, released together with its machine's: see the machine's own {@code channel}. */
+    @Id
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'DRAFT'")
+    @Column(name = "channel", length = 16, nullable = false)
+    private Channel channel = Channel.DRAFT;
 
     @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = NodeLayoutsConverter.class)
@@ -117,6 +128,26 @@ public class DiagramDefinition {
     /** The entity type whose state machine this lays out. Part of the identity, so no setter. */
     public String getEntityName() {
         return entityName;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    /** A new released layout with the draft's content, released together with its machine. */
+    public static DiagramDefinition releasedCopyOf(DiagramDefinition draft) {
+        DiagramDefinition released = DiagramDefinition.builder()
+                .orgKey(draft.orgKey)
+                .entityName(draft.entityName)
+                .build();
+        released.channel = Channel.RELEASED;
+        released.releaseFrom(draft);
+        return released;
+    }
+
+    /** Replaces this released layout with the draft's, keeping its own version and timestamps. */
+    public void releaseFrom(DiagramDefinition draft) {
+        replaceLayout(draft.nodes, draft.edges, draft.getViewport());
     }
 
     public List<NodeLayout> getNodes() {

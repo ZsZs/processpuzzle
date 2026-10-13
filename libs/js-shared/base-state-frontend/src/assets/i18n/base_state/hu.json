@@ -8,6 +8,7 @@
     "initialStateKey": "Kezdő állapot",
     "version": "Verzió",
     "updatedAt": "Módosítva",
+    "releaseState": "Kiadás",
     "states": "Állapotok",
     "transitions": "Átmenetek",
     "tabs": {
@@ -36,6 +37,7 @@
       "initialStateKey": "Annak az állapotnak a kulcsa, amelyben minden új rekord indul, pl. NEW. Meg kell egyeznie az alábbi állapotok egyikének kulcsával.",
       "version": "Minden mentéssel növekszik. A rendszer állítja be.",
       "updatedAt": "Az állapotgép utolsó mentésének időpontja. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás az állapotgépet a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "states": "Azok az állapotok, amelyekben egy rekord lehet, soronként egy, pl. NEW, CONFIRMED, SHIPPED. Legalább egy szükséges.",
       "transitions": "Az engedélyezett váltások egyik állapotból a másikba, soronként egy, pl. approve: NEW → CONFIRMED. Egy rekord csak az itt felsorolt átmeneteken keresztül válthat állapotot."
     }

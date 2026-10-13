@@ -47,16 +47,18 @@
     "attributes": "Attribútumok",
     "version": "Verzió",
     "updatedAt": "Módosítva",
+    "releaseState": "Kiadás",
     "_tooltips": {
       "code": "Az entitástípus egyedi kulcsa a szervezeten belül, a címekben is ez szerepel. Rövid, kisbetűs és URL-barát, pl. order; később lehetőleg ne módosítsa.",
       "name": "Az entitásnév, amellyel az alkalmazás oldalai, útvonalai és menüi erre a típusra hivatkoznak, pl. Order.",
       "description": "Megjegyzés Önnek és tervezőtársainak arról, mire szolgál ez az entitástípus; a felhasználók nem látják.",
-      "status": "DRAFT, amíg még tervezi a típust, ACTIVE, hogy megjelenjen az alkalmazásban, DEPRECATED a kivezetéséhez. Csak az ACTIVE típusok jelennek meg.",
+      "status": "ACTIVE a használatban lévő típushoz, DEPRECATED a kivezetéséhez: a kivezetett típust az alkalmazás már nem jeleníti meg. Hogy az alkalmazás egyáltalán ismeri-e a típust, azt a kiadása dönti el, lásd Kiadás.",
       "isEmbedded": "Jelölje be, ha az ilyen típusú rekordok csak egy másik rekordon belül léteznek, pl. rendelési tételek egy rendelésben. Ekkor a szülőt is adja meg a Szülő komponensek mezőben.",
       "componentParents": "Beágyazott típusnál: azoknak az entitástípusoknak a kódjai, amelyek rekordjai tartalmazzák, pl. order. Kötelező, ha a Beágyazott be van jelölve.",
       "attributes": "Az entitástípus mezői, mezőnként egy sor. A definícióval együtt mentődnek.",
       "version": "Minden mentéssel növekszik. A rendszer állítja be.",
-      "updatedAt": "A definíció utolsó mentésének időpontja. A rendszer állítja be."
+      "updatedAt": "A definíció utolsó mentésének időpontja. A rendszer állítja be.",
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be."
     }
   },
   "artifact": {

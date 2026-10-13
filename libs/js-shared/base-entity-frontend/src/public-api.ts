@@ -24,6 +24,8 @@ export type { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.bui
 export { ComponentsListComponent } from './lib/base-form/components/components-list.component';
 export { EmbeddedComponentsListComponent } from './lib/base-form/embedded-components/embedded-components-list.component';
 export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-components/embedded-component-ref.component';
+export { EmbeddedListComponent } from './lib/base-form/embedded-list/embedded-list.component';
+export { EmbeddedObjectComponent } from './lib/base-form/embedded-object/embedded-object.component';
 export { RelatedEntitiesListComponent } from './lib/base-form/related-entities/related-entities-list.component';
 export { BaseEntityDescriptor, type BaseEntityDescriptorOptions, type EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 export { EntityLabelPipe, translateLabel } from './lib/i18n/entity-label.pipe';
@@ -68,6 +70,7 @@ export { DynamicEntityMapper } from './lib/base-entity-definition/dynamic-entity
 export { DynamicEntityService } from './lib/base-entity-definition/dynamic-entity.service';
 export { DynamicEmbeddedEntityFacade, DynamicEntityFacade, dynamicEntityTypeOf } from './lib/base-entity-definition/dynamic-entity.facade';
 export { DynamicEntityRegistry, type ResolvedDynamicEntity } from './lib/base-entity-definition/dynamic-entity.registry';
+export { ENTITY_PREVIEW_READ_ONLY, EntityPreviewMode } from './lib/base-entity-definition/entity-preview-mode';
 
 // Mounting an entity's generated screens at a route — List and Details with the tabs, toolbar and status bar.
 // The seam a host application uses, whether its entities are compiled in or defined as metadata: base-app is

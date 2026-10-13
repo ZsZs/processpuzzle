@@ -89,6 +89,7 @@ paths:
         - $ref: "#/components/parameters/OrderParam"
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/SizeParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Paged list of state machine definitions
@@ -149,6 +150,8 @@ paths:
       operationId: getStateMachineDefinition
       summary: Get the state machine definition for an entity type
       tags: [ Base State ]
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: The state machine definition
@@ -288,6 +291,7 @@ paths:
         - $ref: "#/components/parameters/OrderParam"
         - $ref: "#/components/parameters/PageParam"
         - $ref: "#/components/parameters/SizeParam"
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: Paged list of diagram layouts
@@ -310,6 +314,8 @@ paths:
         modeler — it is how it learns to fall back to an automatic layout — and it is
         deliberately distinguishable from a layout that exists but is empty.
       tags: [ Base State Diagrams ]
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
       responses:
         "200":
           description: The diagram layout
@@ -579,6 +585,18 @@ components:
       schema:
         type: string
         format: uuid
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of a state machine or of its layout to read: the `draft` the designer edits, or
+        the one the organization last released (base-release-api.yaml), which is what the running
+        application uses. Writes always go to the draft.
     WhereParam:
       name: where
       in: query
@@ -788,6 +806,15 @@ components:
           items:
             $ref: "#/components/schemas/Transition"
 
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released,
+        CHANGED differs from the released row, RELEASED is what the running application uses.
+        Present on drafts only. A released definition whose draft was deleted is listed by the
+        Release section (base-release-api.yaml), not here.
+
     StateMachineDefinition:
       allOf:
         - $ref: "#/components/schemas/StateMachineDefinitionInput"
@@ -804,6 +831,10 @@ components:
             updatedAt:
               type: string
               format: date-time
+            releaseState:
+              allOf:
+                - $ref: "#/components/schemas/ReleaseState"
+              readOnly: true
 
     PageOf_StateMachineDefinition:
       type: object

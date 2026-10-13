@@ -1,4 +1,5 @@
 import { BaseEntity } from '../base-entity/base-entity';
+import { EntityPreviewMode } from '../base-entity-definition/entity-preview-mode';
 import { Component, computed, effect, inject, input, InputSignal, OnDestroy, OnInit, signal, Signal, untracked, ViewChild, WritableSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
@@ -33,6 +34,8 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : (this.store().loadById(this.entityId()) as Entity)));
   entityId: InputSignal<string> = input.required<string>();
   isAbstract = computed(() => this.entityDescriptor().isAbstract);
+  /** A preview of draft definitions over live objects: shown, never saved or deleted — see EntityPreviewMode. */
+  isReadOnly = computed(() => this.previewMode.isReadOnly(this.entityDescriptor().entityName));
   isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   store: Signal<BaseEntityStoreApi<Entity>> = computed(() => this.entityDescriptor().store as BaseEntityStoreApi<Entity>);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
@@ -55,6 +58,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   private readonly logger = inject(NGXLogger);
   private readonly ruleEngine = inject(RULE_ENGINE, { optional: true });
   private readonly violationsStore = inject(RuleViolationsSingletonStore);
+  private readonly previewMode = inject(EntityPreviewMode);
   private rules: EvaluatableRule[] = [];
   private readonly fieldsWithRuleErrors = new Set<string>();
   private readonly ruleLoad$ = new Subject<void>();
@@ -65,7 +69,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     const formEvents = toSignal(this.baseEntityForm.events, { initialValue: null });
     this.saveDisabled = computed(() => {
       formEvents(); // establishes the reactive dependency; child setValue()/markAsDirty() bubble value/status events to the parent group
-      return this.baseEntityForm.invalid || !this.baseEntityForm.dirty || this.isAbstract() || this.hasErrorViolations();
+      return this.baseEntityForm.invalid || !this.baseEntityForm.dirty || this.isAbstract() || this.isReadOnly() || this.hasErrorViolations();
     });
     this.registerEffects();
   }
@@ -93,6 +97,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   }
 
   async onDelete() {
+    if (this.isReadOnly()) return;
     await this.store().delete(this.entityId());
     await this.navigateBack();
   }
@@ -102,6 +107,8 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   }
 
   async onSubmit() {
+    // The button is disabled; Enter in a field submits the form regardless.
+    if (this.isReadOnly()) return;
     const objectToSave = { ...this.entity(), ...this.baseEntityForm.value };
     this.evaluateRules(objectToSave);
     if (this.hasErrorViolations()) return;

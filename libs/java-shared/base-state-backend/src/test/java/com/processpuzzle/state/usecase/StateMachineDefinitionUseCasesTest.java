@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinition;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
 import com.processpuzzle.state.domain.State;
@@ -62,7 +63,7 @@ class StateMachineDefinitionUseCasesTest {
 
     @Test
     void create_shouldSaveWhenEntityDoesNotExist() {
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(false);
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(false);
         when(repository.save(any(StateMachineDefinition.class))).thenAnswer(inv -> inv.getArgument(0));
 
         StateMachineDefinition input = sampleDefinition("Order SM", "desc", "state", "draft");
@@ -76,7 +77,7 @@ class StateMachineDefinitionUseCasesTest {
 
     @Test
     void create_shouldThrowWhenAlreadyExists() {
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
 
         StateMachineDefinition input = sampleDefinition("Order SM", null, "state", "draft");
         assertThatThrownBy(() -> createUseCase.execute(input))
@@ -86,7 +87,7 @@ class StateMachineDefinitionUseCasesTest {
     @Test
     void update_shouldReplaceTopologyWhenFound() {
         StateMachineDefinition existing = sampleDefinition("Old", null, "state", "draft");
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         StateMachineDefinition update = sampleDefinition("New", "new desc", "status", "draft");
@@ -100,7 +101,7 @@ class StateMachineDefinitionUseCasesTest {
 
     @Test
     void update_shouldThrowWhenNotFound() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.empty());
 
         StateMachineDefinition update = sampleDefinition("New", null, "state", "draft");
         assertThatThrownBy(() -> updateUseCase.execute(ORG, ENTITY, update))
@@ -109,29 +110,29 @@ class StateMachineDefinitionUseCasesTest {
 
     @Test
     void delete_shouldDeleteByIdWhenExists() {
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
-        when(diagramRepository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.empty());
 
         deleteUseCase.execute(ORG, ENTITY);
 
-        verify(repository).deleteById(new StateMachineDefinitionKey(ORG, ENTITY));
+        verify(repository).deleteById(new StateMachineDefinitionKey(ORG, ENTITY, Channel.DRAFT));
     }
 
     @Test
     void delete_shouldCascadeToTheDiagramLayout() {
         DiagramDefinition diagram = DiagramDefinition.builder().orgKey(ORG).entityName(ENTITY).build();
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
-        when(diagramRepository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(diagram));
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
+        when(diagramRepository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.of(diagram));
 
         deleteUseCase.execute(ORG, ENTITY);
 
         verify(diagramRepository).delete(diagram);
-        verify(repository).deleteById(new StateMachineDefinitionKey(ORG, ENTITY));
+        verify(repository).deleteById(new StateMachineDefinitionKey(ORG, ENTITY, Channel.DRAFT));
     }
 
     @Test
     void delete_shouldThrowWhenNotFound() {
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(false);
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(false);
 
         assertThatThrownBy(() -> deleteUseCase.execute(ORG, ENTITY))
                 .isInstanceOf(StateMachineNotFoundException.class);
@@ -141,17 +142,17 @@ class StateMachineDefinitionUseCasesTest {
     @Test
     void find_shouldReturnWhenExists() {
         StateMachineDefinition existing = sampleDefinition("SM", null, "state", "draft");
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.of(existing));
 
-        StateMachineDefinition result = findUseCase.execute(ORG, ENTITY);
+        StateMachineDefinition result = findUseCase.execute(ORG, ENTITY, Channel.DRAFT);
         assertThat(result).isSameAs(existing);
     }
 
     @Test
     void find_shouldThrowWhenNotFound() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> findUseCase.execute(ORG, ENTITY))
+        assertThatThrownBy(() -> findUseCase.execute(ORG, ENTITY, Channel.DRAFT))
                 .isInstanceOf(StateMachineNotFoundException.class);
     }
 
@@ -162,10 +163,10 @@ class StateMachineDefinitionUseCasesTest {
         when(repository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(existing)));
 
-        Page<StateMachineDefinition> page = findAllUseCase.execute(ORG, null, null, 0, 10);
+        Page<StateMachineDefinition> page = findAllUseCase.execute(ORG, Channel.DRAFT, null, null, 0, 10);
         assertThat(page.getContent()).containsExactly(existing);
 
-        Page<StateMachineDefinition> page2 = findAllUseCase.execute(ORG, "name=='SM'", "name,desc", null, null);
+        Page<StateMachineDefinition> page2 = findAllUseCase.execute(ORG, Channel.DRAFT, "name=='SM'", "name,desc", null, null);
         assertThat(page2.getContent()).containsExactly(existing);
     }
 

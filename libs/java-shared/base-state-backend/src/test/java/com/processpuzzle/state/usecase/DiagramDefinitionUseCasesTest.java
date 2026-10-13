@@ -1,5 +1,6 @@
 package com.processpuzzle.state.usecase;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.domain.DiagramDefinition;
 import com.processpuzzle.state.domain.DiagramDefinitionKey;
 import com.processpuzzle.state.domain.DiagramDefinitionRepository;
@@ -64,8 +65,8 @@ class DiagramDefinitionUseCasesTest {
     @Test
     void save_shouldInsertAndReportCreatedWhenNoLayoutExists() {
         DiagramDefinition incoming = layout("draft");
-        when(stateMachineRepository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
+        when(stateMachineRepository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.empty());
         when(repository.save(incoming)).thenReturn(incoming);
 
         SaveDiagramDefinition.Result result = saveUseCase.execute(incoming);
@@ -83,8 +84,8 @@ class DiagramDefinitionUseCasesTest {
     void save_shouldReplaceTheExistingLayoutAndReportNotCreated() {
         DiagramDefinition existing = layout("draft");
         DiagramDefinition incoming = layout("approved");
-        when(stateMachineRepository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(existing));
+        when(stateMachineRepository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
 
         SaveDiagramDefinition.Result result = saveUseCase.execute(incoming);
@@ -99,7 +100,7 @@ class DiagramDefinitionUseCasesTest {
     @Test
     void save_shouldRejectALayoutForAnEntityWithNoStateMachine() {
         DiagramDefinition incoming = layout("draft");
-        when(stateMachineRepository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(false);
+        when(stateMachineRepository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(false);
 
         assertThatThrownBy(() -> saveUseCase.execute(incoming))
                 .isInstanceOf(StateMachineNotFoundException.class);
@@ -114,8 +115,8 @@ class DiagramDefinitionUseCasesTest {
     @Test
     void save_shouldAcceptALayoutRowForAnUndeclaredState() {
         DiagramDefinition incoming = layout("a-state-the-machine-dropped");
-        when(stateMachineRepository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
+        when(stateMachineRepository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.empty());
         when(repository.save(incoming)).thenReturn(incoming);
 
         assertThat(saveUseCase.execute(incoming).created()).isTrue();
@@ -126,16 +127,16 @@ class DiagramDefinitionUseCasesTest {
     @Test
     void find_shouldReturnTheLayoutWhenArranged() {
         DiagramDefinition existing = layout("draft");
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.of(existing));
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.of(existing));
 
-        assertThat(findUseCase.execute(ORG, ENTITY)).isSameAs(existing);
+        assertThat(findUseCase.execute(ORG, ENTITY, Channel.DRAFT)).isSameAs(existing);
     }
 
     @Test
     void find_shouldThrowWhenNeverArranged() {
-        when(repository.findByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> findUseCase.execute(ORG, ENTITY))
+        assertThatThrownBy(() -> findUseCase.execute(ORG, ENTITY, Channel.DRAFT))
                 .isInstanceOf(DiagramDefinitionNotFoundException.class)
                 .hasMessageContaining(ENTITY)
                 .hasMessageContaining(ORG);
@@ -148,7 +149,7 @@ class DiagramDefinitionUseCasesTest {
         Page<DiagramDefinition> page = new PageImpl<>(List.of(layout("draft")));
         when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
-        Page<DiagramDefinition> result = findAllUseCase.execute(ORG, null, "entityName,asc", 2, 5);
+        Page<DiagramDefinition> result = findAllUseCase.execute(ORG, Channel.DRAFT, null, "entityName,asc", 2, 5);
 
         assertThat(result).isSameAs(page);
         verify(repository).findAll(any(Specification.class), org.mockito.ArgumentMatchers
@@ -160,7 +161,7 @@ class DiagramDefinitionUseCasesTest {
         when(repository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        findAllUseCase.execute(ORG, null, null, null, null);
+        findAllUseCase.execute(ORG, Channel.DRAFT, null, null, null, null);
 
         verify(repository).findAll(any(Specification.class), org.mockito.ArgumentMatchers
                 .argThat((Pageable p) -> p.getPageNumber() == 0 && p.getPageSize() == 20));
@@ -172,7 +173,7 @@ class DiagramDefinitionUseCasesTest {
         when(repository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
-        findAllUseCase.execute(ORG, "entityName==invoice", null, 0, 20);
+        findAllUseCase.execute(ORG, Channel.DRAFT, "entityName==invoice", null, 0, 20);
 
         verify(repository).findAll(any(Specification.class), any(Pageable.class));
     }
@@ -181,16 +182,16 @@ class DiagramDefinitionUseCasesTest {
 
     @Test
     void delete_shouldDeleteByIdWhenArranged() {
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(true);
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(true);
 
         deleteUseCase.execute(ORG, ENTITY);
 
-        verify(repository).deleteById(new DiagramDefinitionKey(ORG, ENTITY));
+        verify(repository).deleteById(new DiagramDefinitionKey(ORG, ENTITY, Channel.DRAFT));
     }
 
     @Test
     void delete_shouldThrowWhenNeverArranged() {
-        when(repository.existsByOrgKeyAndEntityName(ORG, ENTITY)).thenReturn(false);
+        when(repository.existsByOrgKeyAndEntityNameAndChannel(ORG, ENTITY, Channel.DRAFT)).thenReturn(false);
 
         assertThatThrownBy(() -> deleteUseCase.execute(ORG, ENTITY))
                 .isInstanceOf(DiagramDefinitionNotFoundException.class);

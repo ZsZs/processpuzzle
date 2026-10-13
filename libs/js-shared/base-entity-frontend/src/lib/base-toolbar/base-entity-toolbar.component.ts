@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, OnInit } from '@angular/core';
+import { EntityPreviewMode } from '../base-entity-definition/entity-preview-mode';
 import { CommonModule } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
@@ -56,10 +57,13 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   private readonly snackBar = inject(MatSnackBar);
   private readonly pdfExportService = inject(PdfExportService);
   private readonly translocoService = inject(TranslocoService);
+  private readonly previewMode = inject(EntityPreviewMode);
   store!: BaseEntityStoreApi<Entity>;
-  isDeleteEnabled = computed(() => this.store?.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract);
+  /** A preview of draft definitions over live objects: they may be opened, not created or deleted. */
+  isReadOnly = computed(() => this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  isDeleteEnabled = computed(() => this.store?.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract && !this.isReadOnly());
   isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
-  isNewEnabled = computed(() => !this.entityDescriptor().isAbstract);
+  isNewEnabled = computed(() => !this.entityDescriptor().isAbstract && !this.isReadOnly());
   isPdfExportEnabled = computed(() => (this.store?.entities().length ?? 0) > 0);
   /**
    * The toolbar acts on the *list* — filter, new, edit, delete, export — so it belongs to the list screen, and

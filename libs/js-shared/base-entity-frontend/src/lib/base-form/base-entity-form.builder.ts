@@ -4,7 +4,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseFormControlComponent } from './base-form-control.component';
-import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { AdditionalPropertiesComponent } from './additional-properties/additional-properties.component';
 import { ArtifactComponent } from './artifact/artifact.component';
 import { LabelComponent } from './label/label.component';
@@ -21,6 +21,8 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { ComponentsListComponent } from './components/components-list.component';
 import { EmbeddedComponentsListComponent } from './embedded-components/embedded-components-list.component';
+import { EmbeddedListComponent } from './embedded-list/embedded-list.component';
+import { EmbeddedObjectComponent } from './embedded-object/embedded-object.component';
 import { RelatedEntitiesListComponent } from './related-entities/related-entities-list.component';
 import { NGXLogger } from 'ngx-logging-kit';
 import { LookupComponent } from './lookup/lookup.component';
@@ -39,6 +41,8 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
   [FormControlType.DATE]: DatepickerComponent,
   [FormControlType.DROPDOWN]: DropdownComponent,
   [FormControlType.EMBEDDED_COMPONENTS]: EmbeddedComponentsListComponent,
+  [FormControlType.EMBEDDED_LIST]: EmbeddedListComponent,
+  [FormControlType.EMBEDDED_OBJECT]: EmbeddedObjectComponent,
   [FormControlType.LABEL]: LabelComponent,
   [FormControlType.LOOKUP]: LookupComponent,
   [FormControlType.RADIO]: RadioComponent,
@@ -124,6 +128,14 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   }
 
   private createFormControlFor(column: BaseEntityAttrDescriptor, currentAttrValue: unknown): AbstractControl {
+    if (column.formControlType === FormControlType.EMBEDDED_OBJECT) {
+      return new FormGroup({});
+    }
+    if (column.formControlType === FormControlType.EMBEDDED_LIST) {
+      const validators = [];
+      if (column.required) validators.push(Validators.required);
+      return new FormArray<FormGroup>([], validators);
+    }
     const validators = [];
     if (column.required) validators.push(Validators.required);
     // `Validators.pattern` on an empty value passes, so an optional patterned field stays optional — the two

@@ -2,7 +2,7 @@ import { assertPersistedEntity, BaseEntity, PersistedEntity } from '../base-enti
 import { map, Observable } from 'rxjs';
 import { inject, Inject } from '@angular/core';
 import { BaseEntityMapper } from '../base-entity.mapper';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
 import { BaseEntityLoadResponse, BaseEntityQueryCondition, OrderBy } from './base-entity-load-response';
 import { buildUrl } from 'build-url-ts';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
@@ -62,7 +62,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<PersistedEntity<Entity>> | PersistedEntity<Entity>[] | PersistedEntity<Entity>> {
     const fullUrl = this.buildFullUrl(this.resourceUrl, queryCondition);
     if (fullUrl) {
-      return this.httpClient.get(fullUrl, { headers: this.headers, observe: 'response' }).pipe(
+      return this.httpClient.get(fullUrl, { headers: this.headers, observe: 'response', context: this.readContext() }).pipe(
         map((httpResponse) => {
           if (httpResponse.status === 204 || this.isEmptyBody(httpResponse.body)) {
             throw new Error('The query returned no content.');
@@ -94,7 +94,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     const queryCondition: BaseEntityQueryCondition = { pathParams: new Map<string, string>([['id', String(id)]]) };
     const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}', queryCondition);
     if (fullUrl) {
-      return this.httpClient.get(fullUrl, { headers: this.headers }).pipe(
+      return this.httpClient.get(fullUrl, { headers: this.headers, context: this.readContext() }).pipe(
         map((httpResponse: unknown) => {
           return this.mapEntityResponse(httpResponse);
         }),
@@ -130,6 +130,15 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   // endregion
 
   // region protected, private helper methods
+  /**
+   * The context the reads of this service carry; none by default. A service whose entities are *definitions*
+   * returns `definitionRead()`, so that a host's `definitionRevisionInterceptor` addresses its reads to the draft or
+   * the released revision — writes always go to the draft and carry nothing.
+   */
+  protected readContext(): HttpContext | undefined {
+    return undefined;
+  }
+
   protected buildFullUrl(resourceUri: string, queryCondition: BaseEntityQueryCondition): string | undefined {
     const queryParams: Map<string, string> = new Map<string, string>();
     if (queryCondition.page !== undefined) queryParams.set('page', queryCondition.page.toString());

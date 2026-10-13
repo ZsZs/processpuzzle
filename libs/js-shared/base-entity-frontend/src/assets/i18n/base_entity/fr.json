@@ -47,16 +47,18 @@
     "attributes": "Attributs",
     "version": "Version",
     "updatedAt": "Mis à jour le",
+    "releaseState": "Publication",
     "_tooltips": {
       "code": "Clé unique du type d'entité dans votre organisation, utilisée dans les adresses. Courte, en minuscules et compatible URL, p. ex. order ; évitez de la modifier ensuite.",
       "name": "Le nom d'entité par lequel les pages, routes et menus de l'application désignent ce type, p. ex. Order.",
       "description": "Une note pour vous et les autres concepteurs sur le rôle de ce type d'entité ; les utilisateurs ne la voient pas.",
-      "status": "DRAFT tant que vous concevez le type, ACTIVE pour l'afficher dans l'application, DEPRECATED pour le retirer. Seuls les types ACTIVE sont affichés.",
+      "status": "ACTIVE pour un type en usage, DEPRECATED pour le retirer : l'application n'affiche plus un type retiré. Que l'application connaisse le type dépend de sa publication, indiquée sous Publication.",
       "isEmbedded": "Cochez si les enregistrements de ce type n'existent qu'à l'intérieur d'un autre enregistrement, p. ex. les lignes d'une commande. Indiquez alors aussi le parent dans Composants parents.",
       "componentParents": "Pour un type intégré : les codes des types d'entité dont les enregistrements le contiennent, p. ex. order. Obligatoire si Intégrée est cochée.",
       "attributes": "Les champs du type d'entité, une ligne par champ. Ils sont enregistrés avec la définition.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
-      "updatedAt": "Date du dernier enregistrement de la définition. Défini par le système."
+      "updatedAt": "Date du dernier enregistrement de la définition. Défini par le système.",
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système."
     }
   },
   "artifact": {

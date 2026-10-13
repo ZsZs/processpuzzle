@@ -13,9 +13,13 @@ import { PropsSchema, PropsSchemaProperty } from './widget-definition';
  * ## Deliberately a subset of JSON Schema
  *
  * Only the keywords that map onto a form control are read: `type`, `enum`, `format` (including the
- * {@link ARTIFACT_FORMAT} extension), `maxLength`,
- * `title`, `description`, `required`, and `items.type`, `items.format` and `maxItems` for arrays. Everything else — `oneOf`,
- * `$ref`, `patternProperties`, nested object schemas, tuple `items` — is *not* interpreted, and the
+ * {@link ARTIFACT_FORMAT} extension), `maxLength`, `title`, `description`, `required`,
+ * nested `type: 'object'` with `properties` (rendered via {@link FormControlType.EMBEDDED_OBJECT}), and
+ * `type: 'array'` of objects with `items.type: 'object'` and `items.properties` (rendered via
+ * {@link FormControlType.EMBEDDED_LIST}, with `maxItems` mapped to `maxOccurs` and row titles derived from
+ * `x-pp-rowLabel` or the first required string property).
+ *
+ * Everything else — `oneOf`, `$ref`, `patternProperties`, tuple `items` — is *not* interpreted, and the
  * property falls back to {@link FormControlType.ADDITIONAL_PROPERTIES}, the same open editor used
  * when there is no schema at all.
  *
@@ -48,11 +52,12 @@ export function hasDescribedProps(schema: PropsSchema | undefined | null): boole
 const TEXTAREA_MIN_LENGTH = 256;
 
 function toDescriptor(name: string, property: PropsSchemaProperty, isRequired: boolean): AbstractAttrDescriptor {
-  const descriptor = new BaseEntityAttrDescriptor(name, controlType(property), property.title ?? name, selectables(property), false, inputOptions(property));
+  const cType = controlType(property);
+  const descriptor = new BaseEntityAttrDescriptor(name, cType, property.title ?? name, selectables(property), false, inputOptions(property));
 
   descriptor.required = isRequired;
-  if (isArtifactArray(property)) {
-    // Several artifacts: unbounded, or capped by `maxItems`.
+  if (isArtifactArray(property) || isEmbeddedList(property)) {
+    // Several artifacts or list items: unbounded, or capped by `maxItems`.
     descriptor.multiplicity = property.maxItems === undefined ? '0..n' : '0..x';
     descriptor.maxOccurs = property.maxItems;
   }
@@ -62,7 +67,32 @@ function toDescriptor(name: string, property: PropsSchemaProperty, isRequired: b
     // No prose to show, so the default is the next most useful hint about what belongs here.
     descriptor.placeholder = `Default: ${JSON.stringify(property.default)}`;
   }
+
+  if (cType === FormControlType.EMBEDDED_OBJECT && property.properties) {
+    descriptor.childDescriptors = propsSchemaToDescriptors(property as PropsSchema);
+  } else if (cType === FormControlType.EMBEDDED_LIST && property.items?.properties) {
+    descriptor.childDescriptors = propsSchemaToDescriptors(property.items as PropsSchema);
+    descriptor.rowLabelAttr = resolveRowLabelAttr(property.items);
+  }
+
   return descriptor;
+}
+
+function isEmbeddedList(property: PropsSchemaProperty): boolean {
+  return property.type === 'array' && property.items?.type === 'object' && !!property.items?.properties;
+}
+
+function resolveRowLabelAttr(items: PropsSchemaProperty): string | undefined {
+  if (typeof items['x-pp-rowLabel'] === 'string' && (items['x-pp-rowLabel'] as string).trim() !== '') {
+    return (items['x-pp-rowLabel'] as string).trim();
+  }
+  const required = items.required ?? [];
+  const firstReqString = required.find((key) => items.properties?.[key]?.type === 'string');
+  if (firstReqString) {
+    return firstReqString;
+  }
+  const firstString = Object.entries(items.properties ?? {}).find(([_, prop]) => prop.type === 'string')?.[0];
+  return firstString;
 }
 
 /**
@@ -91,10 +121,16 @@ function controlType(property: PropsSchemaProperty): FormControlType {
       return FormControlType.TEXT_BOX;
     case 'boolean':
       return FormControlType.CHECKBOX;
+    case 'object':
+      return property.properties ? FormControlType.EMBEDDED_OBJECT : FormControlType.ADDITIONAL_PROPERTIES;
     case 'array':
-      // TAGS edits a flat list of scalars. An array of objects has no such control, so it falls
-      // back with everything else this function does not read.
-      return property.items?.type === 'string' ? FormControlType.TAGS : FormControlType.ADDITIONAL_PROPERTIES;
+      if (property.items?.type === 'string') {
+        return FormControlType.TAGS;
+      }
+      if (property.items?.type === 'object' && property.items?.properties) {
+        return FormControlType.EMBEDDED_LIST;
+      }
+      return FormControlType.ADDITIONAL_PROPERTIES;
     default:
       return FormControlType.ADDITIONAL_PROPERTIES;
   }
