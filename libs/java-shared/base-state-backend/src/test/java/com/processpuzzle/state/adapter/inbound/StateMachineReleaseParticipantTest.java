@@ -150,6 +150,21 @@ class StateMachineReleaseParticipantTest {
         assertThat(participant.check(ORG, EVERYTHING)).isEmpty();
     }
 
+    /** A layout saved before its machine is a draft too: the release carries it, so it is pending. */
+    @Test
+    void aLayoutWithoutAMachineIsADraftAndReleasedLikeOne() {
+        transaction.executeWithoutResult(status -> diagrams.save(diagram()));
+
+        assertThat(participant.drafts(ORG)).containsExactly("order");
+        assertThat(participant.pending(ORG)).extracting(PendingChange::key, PendingChange::change)
+                .containsExactly(tuple("order", PendingChange.Change.ADDED));
+
+        release();
+
+        assertThat(diagrams.findByOrgKeyAndEntityNameAndChannel(ORG, "order", Channel.RELEASED)).isPresent();
+        assertThat(participant.pending(ORG)).isEmpty();
+    }
+
     @Test
     void refusesToRemoveAStateObjectsAreIn_butNotOneNobodyIsIn() {
         saveDraft(machine("status", "NEW", "PACKED", "SHIPPED"));

@@ -67,7 +67,9 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
 
     @Override
     public Set<String> drafts(String orgKey) {
-        return machinesOf(orgKey, Channel.DRAFT).keySet();
+        Set<String> entityNames = new TreeSet<>(machinesOf(orgKey, Channel.DRAFT).keySet());
+        entityNames.addAll(diagramsOf(orgKey, Channel.DRAFT).keySet());
+        return entityNames;
     }
 
     @Override
@@ -76,8 +78,12 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
         Map<String, StateMachineDefinition> releasedMachines = machinesOf(orgKey, Channel.RELEASED);
         Map<String, DiagramDefinition> draftDiagrams = diagramsOf(orgKey, Channel.DRAFT);
         Map<String, DiagramDefinition> releasedDiagrams = diagramsOf(orgKey, Channel.RELEASED);
+        // A layout saved before its machine is still a draft the release carries (StateMachineReleaser
+        // releases it), so it has to count as a change too.
         Set<String> entityNames = new TreeSet<>(draftMachines.keySet());
         entityNames.addAll(releasedMachines.keySet());
+        entityNames.addAll(draftDiagrams.keySet());
+        entityNames.addAll(releasedDiagrams.keySet());
 
         List<PendingChange> pending = new ArrayList<>();
         for (String entityName : entityNames) {
@@ -161,13 +167,15 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
         return rows.stream().collect(Collectors.toMap(entityName, Function.identity(), (a, b) -> a, LinkedHashMap::new));
     }
 
-    /** The machine and its layout as one definition; {@code null} when there is no machine. */
+    /** The machine and its layout as one definition; {@code null} when there is neither. */
     static String fingerprint(StateMachineDefinition machine, DiagramDefinition diagram) {
-        if (machine == null) {
+        if (machine == null && diagram == null) {
             return null;
         }
         Map<String, Object> content = new LinkedHashMap<>();
-        content.put("machine", machineContent(machine));
+        if (machine != null) {
+            content.put("machine", machineContent(machine));
+        }
         if (diagram != null) {
             Map<String, Object> layout = new LinkedHashMap<>();
             layout.put("nodes", diagram.getNodes());
