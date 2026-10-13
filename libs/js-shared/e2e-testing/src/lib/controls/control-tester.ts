@@ -238,6 +238,9 @@ class CheckboxControlTester extends ControlTester {
 
   override async fill(context: ControlInteractionContext, value: string): Promise<void> {
     const inner = this.inner(context.page, context.descriptor);
+    // A tooltip left open by the previously hovered field overlays the checkbox and swallows its click.
+    await context.page.mouse.move(0, 0);
+    await expect(context.page.locator('mat-tooltip-component')).toHaveCount(0, expectOptions(context));
     if (value === 'true') await inner.check();
     else await inner.uncheck();
   }
