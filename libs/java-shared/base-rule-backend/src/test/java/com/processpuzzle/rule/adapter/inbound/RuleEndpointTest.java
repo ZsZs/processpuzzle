@@ -44,6 +44,7 @@ class RuleEndpointTest {
     private ImportRules importRules;
     private ExportRules exportRules;
     private EvaluateObject evaluateObject;
+    private RuleReleaseParticipant releaseParticipant;
     private RuleEndpoint endpoint;
 
     @BeforeEach
@@ -56,8 +57,9 @@ class RuleEndpointTest {
         importRules = mock(ImportRules.class);
         exportRules = mock(ExportRules.class);
         evaluateObject = mock(EvaluateObject.class);
+        releaseParticipant = mock(RuleReleaseParticipant.class);
         endpoint = new RuleEndpoint(createRule, updateRule, deleteRule, findRule, findAllRules,
-                importRules, exportRules, evaluateObject, new RuleMapper());
+                importRules, exportRules, evaluateObject, new RuleMapper(), releaseParticipant);
     }
 
     @Test
@@ -101,6 +103,9 @@ class RuleEndpointTest {
     @Test
     void getAnswers200WithTheMappedRule() {
         when(findRule.execute("demo", "max-quantity", Channel.DRAFT)).thenReturn(rule("max-quantity"));
+        when(releaseParticipant.drafts("demo")).thenReturn(java.util.Set.of("max-quantity"));
+        when(releaseParticipant.pending("demo")).thenReturn(List.of(new com.processpuzzle.core.definition.PendingChange(
+                "rule", "max-quantity", com.processpuzzle.core.definition.PendingChange.Change.ADDED, "{}")));
 
         ResponseEntity<com.processpuzzle.rule.model.RuleDefinition> response =
                 endpoint.getRule("demo", "max-quantity", null);
@@ -108,6 +113,19 @@ class RuleEndpointTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getId()).isEqualTo("max-quantity");
+        assertThat(response.getBody().getReleaseState()).isEqualTo(com.processpuzzle.rule.model.ReleaseState.NEW);
+    }
+
+    /** Only a draft has a release state: the released row is what it is compared with. */
+    @Test
+    void getReleased_carriesNoReleaseState() {
+        when(findRule.execute("demo", "max-quantity", Channel.RELEASED)).thenReturn(rule("max-quantity"));
+
+        ResponseEntity<com.processpuzzle.rule.model.RuleDefinition> response =
+                endpoint.getRule("demo", "max-quantity", "released");
+
+        assertThat(response.getBody().getReleaseState()).isNull();
+        verifyNoInteractions(releaseParticipant);
     }
 
     @Test
@@ -123,6 +141,8 @@ class RuleEndpointTest {
         assertThat(body).isNotNull();
         assertThat(body.getContent()).extracting(com.processpuzzle.rule.model.RuleDefinition::getId)
                 .containsExactly("max-quantity");
+        // Not among the participant's drafts: nothing to say about it.
+        assertThat(body.getContent().getFirst().getReleaseState()).isNull();
         assertThat(body.getTotalElements()).isEqualTo(11);
         assertThat(body.getTotalPages()).isEqualTo(3);
         assertThat(body.getNumber()).isEqualTo(2);

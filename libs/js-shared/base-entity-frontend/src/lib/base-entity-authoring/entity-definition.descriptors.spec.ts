@@ -31,7 +31,7 @@ describe('createEntityDefinitionDescriptor', () => {
   });
 
   it('authors every field of BaseEntityDefinitionInput', () => {
-    expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual(['attributes', 'code', 'componentParents', 'description', 'isEmbedded', 'name', 'status', 'updatedAt', 'version']);
+    expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual(['attributes', 'code', 'componentParents', 'description', 'isEmbedded', 'name', 'releaseState', 'status', 'updatedAt', 'version']);
   });
 
   /**
@@ -50,11 +50,21 @@ describe('createEntityDefinitionDescriptor', () => {
     expect(attrOf(attrs, 'name').required).toBe(true);
   });
 
-  it('offers the contract statuses, so only an ACTIVE definition can be rendered on purpose', () => {
+  /** The lifecycle only: whether a definition is live is its release state, which no designer sets by hand. */
+  it('offers active and deprecated as the status, and no longer draft', () => {
     const statusAttr = attrOf(attrs, 'status');
 
     expect(statusAttr.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(statusAttr.getSelectables()?.map((selectable) => selectable.value)).toEqual([...ENTITY_DEFINITION_STATUSES]);
+    expect(statusAttr.getSelectables()?.map((selectable) => selectable.value)).toEqual(['ACTIVE', 'DEPRECATED']);
+    expect(ENTITY_DEFINITION_STATUSES).not.toContain('DRAFT');
+  });
+
+  /** Reported by the backend and changed only by a release, so it is shown in the list and never edited. */
+  it('shows the release state, read-only', () => {
+    const releaseStateAttr = attrOf(attrs, 'releaseState');
+
+    expect(releaseStateAttr.disabled).toBe(true);
+    expect(releaseStateAttr.hideInTable).toBeFalsy();
   });
 
   /**

@@ -47,16 +47,18 @@
     "attributes": "Atributos",
     "version": "Versión",
     "updatedAt": "Actualizado el",
+    "releaseState": "Publicación",
     "_tooltips": {
       "code": "Clave única del tipo de entidad dentro de su organización, usada en las direcciones. Corta, en minúsculas y apta para URL, p. ej. order; evite cambiarla después.",
       "name": "El nombre de entidad con el que las páginas, rutas y menús de la aplicación se refieren a este tipo, p. ej. Order.",
       "description": "Una nota para usted y los demás diseñadores sobre la finalidad de este tipo de entidad; los usuarios no la ven.",
-      "status": "DRAFT mientras aún diseña el tipo, ACTIVE para mostrarlo en la aplicación, DEPRECATED para retirarlo. Solo se muestran los tipos ACTIVE.",
+      "status": "ACTIVE para un tipo en uso, DEPRECATED para retirarlo: la aplicación ya no muestra un tipo retirado. Si la aplicación tiene el tipo depende de su publicación, que se muestra en Publicación.",
       "isEmbedded": "Márquelo cuando los registros de este tipo solo existan dentro de otro registro, p. ej. las líneas de un pedido. Indique entonces también el padre en Componentes padre.",
       "componentParents": "Para un tipo incrustado: los códigos de los tipos de entidad cuyos registros lo contienen, p. ej. order. Obligatorio si Incrustada está marcado.",
       "attributes": "Los campos del tipo de entidad, una fila por campo. Se guardan junto con la definición.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
-      "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema."
+      "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema."
     }
   },
   "artifact": {

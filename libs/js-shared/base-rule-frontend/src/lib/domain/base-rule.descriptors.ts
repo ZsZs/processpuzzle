@@ -40,7 +40,12 @@ function createBaseRuleAttrDescriptors(getContextOptions: () => Array<Selectable
   const overrideAttr = new BaseEntityAttrDescriptor('override', FormControlType.CHECKBOX, 'Override');
   const enabledAttr = new BaseEntityAttrDescriptor('enabled', FormControlType.CHECKBOX, 'Enabled');
 
-  const row1 = new FlexboxDescriptor([nameAttr, contextAttr, enabledAttr], FlexDirection.ROW);
+  // Whether the running application evaluates this rule as it stands — new, changed since, or released — as the
+  // backend reports it. Changed only by a release, so never edited.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
+
+  const row1 = new FlexboxDescriptor([nameAttr, contextAttr, enabledAttr, releaseStateAttr], FlexDirection.ROW);
   row1.style = { 'column-gap': '10px' };
   const row2 = new FlexboxDescriptor([extendsRuleIdAttr, severityAttr, overrideAttr], FlexDirection.ROW);
   row2.style = { 'column-gap': '10px' };

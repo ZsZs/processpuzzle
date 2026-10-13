@@ -301,7 +301,11 @@ class EntityDefinitionMapperTest {
         for (com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus status : com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.values()) {
             EntityDefinitionStatus modelStatus = mapper.toModelStatus(status);
             assertThat(modelStatus).isNotNull();
-            assertThat(mapper.toDomainStatus(modelStatus)).isEqualTo(status);
+            // The retired DRAFT reads back as ACTIVE: no definition is held with it any longer.
+            assertThat(mapper.toDomainStatus(modelStatus)).isEqualTo(
+                    status == com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.DRAFT
+                            ? com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.ACTIVE
+                            : status);
         }
         assertThat(mapper.toModelStatus(null)).isNull();
         assertThat(mapper.toDomainStatus(null)).isNull();

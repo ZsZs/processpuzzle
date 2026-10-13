@@ -59,6 +59,7 @@ class StateEndpointTest {
     private GetEntityObjectState getStateUseCase;
     private FireStateTransition fireTransitionUseCase;
     private StateMapper mapper;
+    private StateMachineReleaseParticipant releaseParticipant;
     private StateEndpoint endpoint;
 
     @BeforeEach
@@ -73,10 +74,11 @@ class StateEndpointTest {
         getStateUseCase = mock(GetEntityObjectState.class);
         fireTransitionUseCase = mock(FireStateTransition.class);
         mapper = new StateMapper();
+        releaseParticipant = mock(StateMachineReleaseParticipant.class);
 
         endpoint = new StateEndpoint(
                 createUseCase, updateUseCase, deleteUseCase, findUseCase, findAllUseCase,
-                importUseCase, exportUseCase, getStateUseCase, fireTransitionUseCase, mapper);
+                importUseCase, exportUseCase, getStateUseCase, fireTransitionUseCase, mapper, releaseParticipant);
     }
 
     @Test
@@ -119,6 +121,9 @@ class StateEndpointTest {
                 .build();
 
         when(findUseCase.execute(ORG, ENTITY, Channel.DRAFT)).thenReturn(definition);
+        when(releaseParticipant.drafts(ORG)).thenReturn(java.util.Set.of(ENTITY));
+        when(releaseParticipant.pending(ORG)).thenReturn(List.of(new com.processpuzzle.core.definition.PendingChange(
+                "state", ENTITY, com.processpuzzle.core.definition.PendingChange.Change.CHANGED, "{}")));
 
         ResponseEntity<com.processpuzzle.state.model.StateMachineDefinition> response =
                 endpoint.getStateMachineDefinition(ORG, ENTITY, null);
@@ -126,6 +131,7 @@ class StateEndpointTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getEntityName()).isEqualTo(ENTITY);
+        assertThat(response.getBody().getReleaseState()).isEqualTo(com.processpuzzle.state.model.ReleaseState.CHANGED);
     }
 
     @Test
@@ -177,6 +183,7 @@ class StateEndpointTest {
 
         when(findAllUseCase.execute(ORG, Channel.DRAFT, "name=='Invoice Machine'", "name,asc", 0, 10))
                 .thenReturn(new PageImpl<>(List.of(def), PageRequest.of(0, 10), 1));
+        when(releaseParticipant.drafts(ORG)).thenReturn(java.util.Set.of(ENTITY));
 
         ResponseEntity<PageOfStateMachineDefinition> response =
                 endpoint.listStateMachineDefinitions(ORG, "name=='Invoice Machine'", "name,asc", 0, 10, null);
@@ -184,6 +191,24 @@ class StateEndpointTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getContent()).hasSize(1);
+        assertThat(response.getBody().getContent().getFirst().getReleaseState())
+                .isEqualTo(com.processpuzzle.state.model.ReleaseState.RELEASED);
+    }
+
+    /** Only a draft has a release state: the released row is what it is compared with. */
+    @Test
+    void listStateMachineDefinitions_released_carriesNoReleaseState() {
+        StateMachineDefinition def = StateMachineDefinition.builder()
+                .orgKey(ORG).entityName(ENTITY).name("Invoice Machine").stateAttributeKey("state").initialStateKey("draft")
+                .states(List.of(new State("draft", "Draft", null, false, false, null))).transitions(List.of()).build();
+        when(findAllUseCase.execute(ORG, Channel.RELEASED, null, null, 0, 10))
+                .thenReturn(new PageImpl<>(List.of(def), PageRequest.of(0, 10), 1));
+
+        ResponseEntity<PageOfStateMachineDefinition> response =
+                endpoint.listStateMachineDefinitions(ORG, null, null, 0, 10, "released");
+
+        assertThat(response.getBody().getContent().getFirst().getReleaseState()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(releaseParticipant);
     }
 
     @Test

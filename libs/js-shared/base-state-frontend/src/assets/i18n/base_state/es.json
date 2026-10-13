@@ -8,6 +8,7 @@
     "initialStateKey": "Estado inicial",
     "version": "Versión",
     "updatedAt": "Actualizado",
+    "releaseState": "Publicación",
     "states": "Estados",
     "transitions": "Transiciones",
     "tabs": {
@@ -36,6 +37,7 @@
       "initialStateKey": "La clave del estado en el que empieza cada registro nuevo, p. ej. NEW. Debe coincidir con la clave de uno de los estados de abajo.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó la máquina de estados por última vez. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta máquina de estados tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "states": "Los estados en los que puede estar un registro, una fila por estado, p. ej. NEW, CONFIRMED, SHIPPED. Se necesita al menos uno.",
       "transitions": "Los cambios permitidos de un estado a otro, una fila por cambio, p. ej. approve: NEW → CONFIRMED. Un registro solo puede cambiar de estado mediante una transición de esta lista."
     }

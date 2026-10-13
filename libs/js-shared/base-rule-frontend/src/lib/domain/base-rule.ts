@@ -1,4 +1,5 @@
 import { BaseEntity } from '@processpuzzle/base-entity';
+import type { ReleaseState } from '@processpuzzle/util';
 import { v4 as uuidv4 } from 'uuid';
 
 export enum Severity {
@@ -23,6 +24,8 @@ export class BaseRule implements BaseEntity {
   createdAt: string | undefined;
   updatedAt: string | undefined;
   fields: string[] | undefined;
+  /** Where this draft stands against the release; reported by the backend, never sent back. */
+  releaseState: ReleaseState | undefined;
 
   constructor(
     id?: string,
@@ -40,6 +43,7 @@ export class BaseRule implements BaseEntity {
     createdAt?: string,
     updatedAt?: string,
     fields?: string[],
+    releaseState?: ReleaseState,
   ) {
     this.id = id ? id : uuidv4();
     this.name = name != undefined ? name : 'BaseRule';
@@ -56,5 +60,6 @@ export class BaseRule implements BaseEntity {
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.fields = fields;
+    this.releaseState = releaseState;
   }
 }

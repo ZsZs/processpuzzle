@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.definition.adapters.inbound;
 
+import com.processpuzzle.baseentity.adapter.inbound.EntityDefinitionReleaseParticipant;
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.PendingChange;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.baseentity.common.BaseEntityApiExceptionHandler;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
@@ -19,6 +21,7 @@ import com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceEntityDef
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
 import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,6 +69,8 @@ class EntityDefinitionEndpointTest {
     private ReplaceAttributeUseCase replaceAttributeUseCase;
     @Mock
     private DeleteAttributeUseCase deleteAttributeUseCase;
+    @Mock
+    private EntityDefinitionReleaseParticipant releaseParticipant;
 
     private final EntityDefinitionMapper mapper = new EntityDefinitionMapper();
     private final ObjectMapper objectMapper = new ObjectMapper()
@@ -83,7 +88,8 @@ class EntityDefinitionEndpointTest {
                 addAttributeUseCase,
                 replaceAttributeUseCase,
                 deleteAttributeUseCase,
-                mapper
+                mapper,
+                releaseParticipant
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(endpoint)
@@ -102,11 +108,38 @@ class EntityDefinitionEndpointTest {
                 .build();
         Page<BaseEntityDefinition> page = new PageImpl<>(List.of(def));
         when(findAllUseCase.findAll(eq("test-org"), eq(Channel.DRAFT), any(), any(), any(Pageable.class))).thenReturn(page);
+        when(releaseParticipant.drafts("test-org")).thenReturn(Set.of("partner"));
+        when(releaseParticipant.pending("test-org"))
+                .thenReturn(List.of(new PendingChange("entity", "partner", PendingChange.Change.ADDED, "{}")));
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].code").value("partner"))
-                .andExpect(jsonPath("$.content[0].name").value("Partner"));
+                .andExpect(jsonPath("$.content[0].name").value("Partner"))
+                .andExpect(jsonPath("$.content[0].releaseState").value("NEW"));
+    }
+
+    /** Only a draft has a release state: the released row is what it is compared with. */
+    @Test
+    void findAll_released_carriesNoReleaseState() throws Exception {
+        BaseEntityDefinition def = BaseEntityDefinition.builder().code("partner").name("Partner").build();
+        when(findAllUseCase.findAll(eq("test-org"), eq(Channel.RELEASED), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(def)));
+
+        mockMvc.perform(get("/organizations/test-org/entity-definitions").param("revision", "released"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].releaseState").doesNotExist());
+        org.mockito.Mockito.verifyNoInteractions(releaseParticipant);
+    }
+
+    /** The retired DRAFT status is accepted and read as ACTIVE. */
+    @Test
+    void findAll_filteringByTheRetiredDraftStatus_readsActive() throws Exception {
+        when(findAllUseCase.findAll(eq("test-org"), eq(Channel.DRAFT), eq(EntityDefinitionStatus.ACTIVE), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/organizations/test-org/entity-definitions").param("status", "DRAFT"))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -136,11 +169,13 @@ class EntityDefinitionEndpointTest {
                 .status(EntityDefinitionStatus.ACTIVE)
                 .build();
         when(findByCodeUseCase.findByCode("test-org", "partner", Channel.DRAFT)).thenReturn(def);
+        when(releaseParticipant.drafts("test-org")).thenReturn(Set.of("partner"));
 
         mockMvc.perform(get("/organizations/test-org/entity-definitions/partner"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("partner"))
-                .andExpect(jsonPath("$.name").value("Partner"));
+                .andExpect(jsonPath("$.name").value("Partner"))
+                .andExpect(jsonPath("$.releaseState").value("RELEASED"));
     }
 
     @Test
@@ -148,7 +183,7 @@ class EntityDefinitionEndpointTest {
         BaseEntityDefinition def = BaseEntityDefinition.builder()
                 .code("partner")
                 .name("Partner")
-                .status(EntityDefinitionStatus.DRAFT)
+                .status(EntityDefinitionStatus.ACTIVE)
                 .build();
         when(createUseCase.create(eq("test-org"), any())).thenReturn(def);
 

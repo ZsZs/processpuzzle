@@ -541,6 +541,19 @@ components:
     EntityDefinitionStatus:
       type: string
       enum: [ DRAFT, ACTIVE, DEPRECATED ]
+      description: >-
+        The definition's lifecycle, as its designer decides it: ACTIVE, or DEPRECATED, which the
+        running application no longer offers. Whether it is live is its releaseState, not this.
+        DRAFT is still accepted and stored as ACTIVE.
+
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released,
+        CHANGED differs from the released row, RELEASED is what the running application uses.
+        Present on drafts only. A released definition whose draft was deleted is listed by the
+        Release section (base-release-api.yaml), not here.
 
     ValueKind:
       type: string
@@ -872,6 +885,10 @@ components:
               readOnly: true
             updatedBy:
               type: string
+              readOnly: true
+            releaseState:
+              allOf:
+                - $ref: '#/components/schemas/ReleaseState'
               readOnly: true
 
     BaseEntityDefinitionPage:

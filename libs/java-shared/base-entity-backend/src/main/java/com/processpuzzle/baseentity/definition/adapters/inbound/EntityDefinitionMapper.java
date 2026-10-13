@@ -128,8 +128,14 @@ public class EntityDefinitionMapper {
             .totalPages(page.getTotalPages());
     }
 
+    /** The retired {@code DRAFT} reads as {@code ACTIVE}, so that no definition is ever held with it. */
     public com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus toDomainStatus(com.processpuzzle.baseentity.model.EntityDefinitionStatus status) {
-        return status == null ? null : com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.valueOf(status.getValue());
+        if (status == null) {
+            return null;
+        }
+        return status == com.processpuzzle.baseentity.model.EntityDefinitionStatus.DRAFT
+            ? com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.ACTIVE
+            : com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus.valueOf(status.getValue());
     }
 
     public com.processpuzzle.baseentity.model.EntityDefinitionStatus toModelStatus(com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus status) {
