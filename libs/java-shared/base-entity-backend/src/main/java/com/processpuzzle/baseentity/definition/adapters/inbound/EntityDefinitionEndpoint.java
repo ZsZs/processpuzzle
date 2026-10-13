@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.definition.adapters.inbound;
 
+import com.processpuzzle.baseentity.adapter.inbound.EntityDefinitionReleaseParticipant;
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.ReleaseState;
 import com.processpuzzle.baseentity.api.BaseEntityDefinitionsApi;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
@@ -14,6 +16,7 @@ import com.processpuzzle.baseentity.model.EntityDefinitionStatus;
 import com.processpuzzle.baseentity.model.Page;
 import com.processpuzzle.core.logging.LogClass;
 import java.net.URI;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,14 +43,22 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
     private final com.processpuzzle.baseentity.definition.usecases.inbound.ReplaceAttributeUseCase replaceAttributeUseCase;
     private final DeleteAttributeUseCase deleteAttributeUseCase;
     private final EntityDefinitionMapper mapper;
+    private final EntityDefinitionReleaseParticipant releaseParticipant;
 
     @Override
     public ResponseEntity<Page> listEntityDefinitions(String orgKey, EntityDefinitionStatus status, Boolean isEmbedded, String revision,
                                                       Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20);
         var domainStatus = mapper.toDomainStatus(status);
-        return ResponseEntity.ok(mapper.toPage(
-            findAllUseCase.findAll(orgKey, Channel.ofRevision(revision), domainStatus, isEmbedded, pageable)));
+        Channel channel = Channel.ofRevision(revision);
+        Page result = mapper.toPage(findAllUseCase.findAll(orgKey, channel, domainStatus, isEmbedded, pageable));
+        if (channel == Channel.DRAFT && result.getContent() != null) {
+            Map<String, ReleaseState> states = ReleaseState.ofDrafts(releaseParticipant, orgKey);
+            result.getContent().stream()
+                .map(com.processpuzzle.baseentity.model.BaseEntityDefinition.class::cast)
+                .forEach(definition -> definition.setReleaseState(releaseStateOf(states, definition.getCode())));
+        }
+        return ResponseEntity.ok(result);
     }
 
     @Override
@@ -63,7 +74,18 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
     @Override
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> getEntityDefinition(String orgKey, String code,
                                                                                                        String revision) {
-        return ResponseEntity.ok(mapper.toModel(findByCodeUseCase.findByCode(orgKey, code, Channel.ofRevision(revision))));
+        Channel channel = Channel.ofRevision(revision);
+        var definition = mapper.toModel(findByCodeUseCase.findByCode(orgKey, code, channel));
+        if (channel == Channel.DRAFT) {
+            definition.setReleaseState(releaseStateOf(ReleaseState.ofDrafts(releaseParticipant, orgKey), code));
+        }
+        return ResponseEntity.ok(definition);
+    }
+
+    /** A draft's release state, as the designer's list and form show it; only drafts have one. */
+    private static com.processpuzzle.baseentity.model.ReleaseState releaseStateOf(Map<String, ReleaseState> states, String code) {
+        ReleaseState state = states.get(code);
+        return state == null ? null : com.processpuzzle.baseentity.model.ReleaseState.fromValue(state.name());
     }
 
     @Override

@@ -11,6 +11,7 @@ describe('EntityDefinitionMapper', () => {
     name: 'Order',
     description: 'A customer order',
     status: 'ACTIVE',
+    releaseState: 'CHANGED',
     componentParents: [],
     isEmbedded: false,
     version: 3,
@@ -50,6 +51,7 @@ describe('EntityDefinitionMapper', () => {
         name: 'Order',
         description: 'A customer order',
         status: 'ACTIVE',
+        releaseState: 'CHANGED',
         componentParents: [],
         isEmbedded: false,
         version: 3,
@@ -84,7 +86,8 @@ describe('EntityDefinitionMapper', () => {
       code: 'order-line',
       name: 'Order Line',
       description: 'One line of an order',
-      status: 'DRAFT',
+      status: 'DEPRECATED',
+      releaseState: 'RELEASED',
       componentParents: ['order'],
       isEmbedded: true,
       version: 7,
@@ -98,7 +101,7 @@ describe('EntityDefinitionMapper', () => {
         code: 'order-line',
         name: 'Order Line',
         description: 'One line of an order',
-        status: 'DRAFT',
+        status: 'DEPRECATED',
         componentParents: ['order'],
         isEmbedded: true,
       });
@@ -115,6 +118,7 @@ describe('EntityDefinitionMapper', () => {
       expect(dto).not.toHaveProperty('version');
       expect(dto).not.toHaveProperty('createdAt');
       expect(dto).not.toHaveProperty('updatedAt');
+      expect(dto).not.toHaveProperty('releaseState');
     });
 
     it('falls back to the id mirror when the code was cleared on the form', () => {

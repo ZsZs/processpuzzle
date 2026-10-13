@@ -7,9 +7,11 @@ import com.processpuzzle.baseentity.common.JpaAuditingConfig;
 import com.processpuzzle.baseentity.common.SecurityAuditorAware;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
 import com.processpuzzle.baseentity.definition.adapters.outbound.EntityDefinitionChannelBackfill;
+import com.processpuzzle.baseentity.definition.adapters.outbound.EntityDefinitionStatusMigration;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
+import com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus;
 import com.processpuzzle.baseentity.definition.domain.FormControlType;
 import com.processpuzzle.baseentity.definition.domain.Multiplicity;
 import com.processpuzzle.baseentity.definition.domain.ValueKind;
@@ -56,7 +58,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @EntityScan("com.processpuzzle.baseentity.definition.domain")
 @EnableJpaRepositories("com.processpuzzle.baseentity.definition.domain")
 @Import({EntityDefinitionReleaseParticipant.class, EntityDefinitionFingerprint.class, EntityDefinitionMapper.class,
-        EntityDefinitionChannelBackfill.class, JpaAuditingConfig.class, EntityDefinitionReleaseParticipantTest.Instances.class})
+        EntityDefinitionChannelBackfill.class, EntityDefinitionStatusMigration.class, JpaAuditingConfig.class, EntityDefinitionReleaseParticipantTest.Instances.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class EntityDefinitionReleaseParticipantTest {
 
@@ -104,6 +106,8 @@ class EntityDefinitionReleaseParticipantTest {
     private EntityDefinitionRepository repository;
     @Autowired
     private EntityDefinitionChannelBackfill backfill;
+    @Autowired
+    private EntityDefinitionStatusMigration statusMigration;
     @Autowired
     private Instances instances;
     @Autowired
@@ -259,6 +263,39 @@ class EntityDefinitionReleaseParticipantTest {
 
         assertThat(backfill.migrateOnce()).isZero();
         assertThat(repository.findByOrgKeyAndCodeAndChannel(ORG, "claim", Channel.RELEASED)).isEmpty();
+    }
+
+    /** The retired DRAFT status is never stored: a release keeps a definition off the running application now. */
+    @Test
+    @SuppressWarnings("deprecation")
+    void aDefinitionSavedAsDraftIsStoredActive() {
+        BaseEntityDefinition definition = definition("claim");
+        definition.setStatus(EntityDefinitionStatus.DRAFT);
+
+        saveDraft(definition);
+
+        assertThat(draft("claim").getStatus()).isEqualTo(EntityDefinitionStatus.ACTIVE);
+    }
+
+    /**
+     * A definition stored as DRAFT before releases existed was never live: it stays a draft, now ACTIVE, and loses the
+     * released copy the channel backfill gave it, so it waits for its first release.
+     */
+    @Test
+    void theStatusMigrationTurnsARetiredDraftIntoAnUnreleasedDefinition_once() {
+        saveDraft(definition("claim", attribute("amount", ValueKind.NUMBER)));
+        saveDraft(definition("order", attribute("number", ValueKind.TEXT)));
+        release();
+        jdbc.update("UPDATE base_entity_definition SET status = 'DRAFT' WHERE code = 'claim'");
+
+        assertThat(statusMigration.migrateOnce()).isEqualTo(1);
+
+        assertThat(draft("claim").getStatus()).isEqualTo(EntityDefinitionStatus.ACTIVE);
+        assertThat(repository.findByOrgKeyAndCodeAndChannel(ORG, "claim", Channel.RELEASED)).isEmpty();
+        assertThat(released("order").getStatus()).isEqualTo(EntityDefinitionStatus.ACTIVE);
+        assertThat(participant.pending(ORG)).extracting(PendingChange::key, PendingChange::change)
+            .containsExactly(tuple("claim", PendingChange.Change.ADDED));
+        assertThat(statusMigration.migrateOnce()).isZero();
     }
 
     private void release() {
