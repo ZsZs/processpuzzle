@@ -17,6 +17,7 @@
     "enumValues": "Enum Values",
     "dateStyle": "Date Style",
     "timeStyle": "Time Style",
+    "defaultAvatar": "Default Avatar",
     "_tooltips": {
       "code": "Key the value is stored under, unique within the entity type, e.g. orderNumber. Avoid changing it once records exist.",
       "name": "The field's label as users see it on forms and list columns, e.g. Order number.",
@@ -32,6 +33,7 @@
       "enumValues": "For the ENUM value kind: the options users choose from, one chip each, e.g. NEW, PAID, SHIPPED.",
       "linkedEntityType": "For reference fields (FOREIGN_KEY) and embedded rows (EMBEDDED_COMPONENTS): the code of the entity type they point at, e.g. customer.",
       "defaultValue": "Value pre-filled in new records, e.g. NEW or 1. Leave empty for none.",
+      "defaultAvatar": "For AVATAR controls: icon name (e.g. person, sailing) or image URL to show before an image is uploaded.",
       "dateStyle": "For DATE and DATE_TIME fields: how the date is shown, from short (12/31/26) to full (Thursday, December 31, 2026). Empty uses the default.",
       "timeStyle": "For DATE_TIME fields: how the time is shown, from short (14:30) to long (with seconds and time zone). Empty uses the default."
     }
@@ -63,6 +65,7 @@
   },
   "artifact": {
     "upload_failure": "Artifact upload failed. Please try again.",
+    "invalid_file_type": "Only image files are allowed.",
     "camera_capture": "Take photo or video"
   },
   "camera_capture": {

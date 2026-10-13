@@ -17,6 +17,7 @@
     "enumValues": "Valores de enumeración",
     "dateStyle": "Estilo de fecha",
     "timeStyle": "Estilo de hora",
+    "defaultAvatar": "Avatar predeterminado",
     "_tooltips": {
       "code": "Clave con la que se guarda el valor, única dentro del tipo de entidad, p. ej. orderNumber. No la cambie una vez que existan registros.",
       "name": "La etiqueta del campo tal como la ven los usuarios en formularios y columnas de lista, p. ej. Número de pedido.",
@@ -32,6 +33,7 @@
       "enumValues": "Para el tipo de valor ENUM: las opciones entre las que eligen los usuarios, una por chip, p. ej. NEW, PAID, SHIPPED.",
       "linkedEntityType": "Para campos de referencia (FOREIGN_KEY) y filas incrustadas (EMBEDDED_COMPONENTS): el código del tipo de entidad al que apuntan, p. ej. customer.",
       "defaultValue": "Valor que aparece ya rellenado en los registros nuevos, p. ej. NEW o 1. Déjelo vacío si no hay ninguno.",
+      "defaultAvatar": "Para controles AVATAR: nombre de icono (p. ej. person, sailing) o URL de imagen que se muestra antes de subir una imagen.",
       "dateStyle": "Para campos DATE y DATE_TIME: cómo se muestra la fecha, de short (31/12/26) a full (jueves, 31 de diciembre de 2026). Vacío usa el valor predeterminado.",
       "timeStyle": "Para campos DATE_TIME: cómo se muestra la hora, de short (14:30) a long (con segundos y zona horaria). Vacío usa el valor predeterminado."
     }
@@ -63,6 +65,7 @@
   },
   "artifact": {
     "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo.",
+    "invalid_file_type": "Solo se permiten archivos de imagen.",
     "camera_capture": "Tomar foto o vídeo"
   },
   "camera_capture": {

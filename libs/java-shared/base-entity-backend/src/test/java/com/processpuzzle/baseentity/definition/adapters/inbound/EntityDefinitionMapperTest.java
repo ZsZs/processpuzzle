@@ -105,6 +105,24 @@ class EntityDefinitionMapperTest {
     }
 
     @Test
+    void defaultAvatar_roundTripsFromInputToModelAndDescriptor() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("avatar");
+        attrInput.setValueKind(ValueKind.REFERENCE);
+        attrInput.setFormControlType(FormControlType.AVATAR);
+        attrInput.setDefaultAvatar("sailing");
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.getDefaultAvatar()).isEqualTo("sailing");
+        assertThat(mapper.toModel(domain).getDefaultAvatar()).isEqualTo("sailing");
+        assertThat(mapper.toAttributeDescriptor(domain).getDefaultAvatar()).isEqualTo("sailing");
+
+        com.processpuzzle.baseentity.model.AttributeDescriptor descriptorModel = mapper.toModel(mapper.toAttributeDescriptor(domain));
+        assertThat(descriptorModel.getDefaultAvatar()).isEqualTo("sailing");
+        assertThat(mapper.toDomain(descriptorModel).getDefaultAvatar()).isEqualTo("sailing");
+    }
+
+    @Test
     void multiplicity_roundTripsFromInputToModel() {
         BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
         attrInput.setCode("attachments");

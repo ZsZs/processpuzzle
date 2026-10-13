@@ -32,6 +32,7 @@ public class AttributeDescriptor extends AbstractAttrDescriptor {
     private Boolean visible = true;
     @lombok.Builder.Default
     private Boolean showThumbnail = true;
+    private String defaultAvatar;
     @lombok.Builder.Default
     private Boolean hideInTable = false;
     @lombok.Builder.Default

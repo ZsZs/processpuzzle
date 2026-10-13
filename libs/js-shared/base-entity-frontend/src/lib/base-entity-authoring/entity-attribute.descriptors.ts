@@ -94,6 +94,11 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   const defaultValueAttr = new BaseEntityAttrDescriptor('defaultValue', FormControlType.TEXT_BOX, 'Default Value');
   defaultValueAttr.hideInTable = true;
 
+  // The fallback icon name or image URL for AVATAR form control when no image is uploaded.
+  const defaultAvatarAttr = new BaseEntityAttrDescriptor('defaultAvatar', FormControlType.TEXT_BOX, 'Default Avatar');
+  defaultAvatarAttr.placeholder = 'Icon name or image URL for AVATAR fallback, e.g. person, sailing';
+  defaultAvatarAttr.hideInTable = true;
+
   // The two halves of `dateFormat`, for DATE / DATE_TIME only — the mapper drops them for any other kind,
   // and `timeStyle` for DATE. Left empty, a style falls back to the value kind's default.
   const dateStyleAttr = new BaseEntityAttrDescriptor('dateStyle', FormControlType.DROPDOWN, 'Date Style', toSelectables(DATE_STYLES));
@@ -110,7 +115,7 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   flagRow.style = { 'column-gap': '10px' };
   const multiplicityRow = new FlexboxDescriptor([multiplicityAttr, maxOccursAttr], FlexDirection.ROW);
   multiplicityRow.style = { 'column-gap': '10px' };
-  const referenceRow = new FlexboxDescriptor([linkedEntityTypeAttr, defaultValueAttr], FlexDirection.ROW);
+  const referenceRow = new FlexboxDescriptor([linkedEntityTypeAttr, defaultValueAttr, defaultAvatarAttr], FlexDirection.ROW);
   referenceRow.style = { 'column-gap': '10px' };
 
   const formatRow = new FlexboxDescriptor([dateStyleAttr, timeStyleAttr], FlexDirection.ROW);
