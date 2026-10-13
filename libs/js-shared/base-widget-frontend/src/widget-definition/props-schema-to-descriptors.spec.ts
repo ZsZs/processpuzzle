@@ -225,6 +225,124 @@ describe('propsSchemaToDescriptors', () => {
       const items = descriptorFor(schema, 'items');
       expect(items.rowLabelAttr).toBe('code');
     });
+
+    it('falls back to the first string property when no required string exists', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                count: { type: 'number' },
+                description: { type: 'string' },
+              },
+            },
+          },
+        },
+      };
+
+      const items = descriptorFor(schema, 'items');
+      expect(items.rowLabelAttr).toBe('description');
+    });
+
+    it('leaves rowLabelAttr undefined when no string properties exist in the item schema', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                count: { type: 'number' },
+                enabled: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      };
+
+      const items = descriptorFor(schema, 'items');
+      expect(items.rowLabelAttr).toBeUndefined();
+    });
+
+    it('ignores whitespace-only x-pp-rowLabel and falls back', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              'x-pp-rowLabel': '   ',
+              properties: {
+                name: { type: 'string' },
+              },
+            },
+          },
+        },
+      };
+
+      const items = descriptorFor(schema, 'items');
+      expect(items.rowLabelAttr).toBe('name');
+    });
+  });
+
+  describe('property types and placeholders', () => {
+    it('sets placeholder to default value when description is absent', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', default: 50 },
+        },
+      };
+
+      const limit = descriptorFor(schema, 'limit');
+      expect(limit.placeholder).toBe('Default: 50');
+    });
+
+    it('maps date and date-time formats to DATE control type', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          dueDate: { type: 'string', format: 'date' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      };
+
+      expect(descriptorFor(schema, 'dueDate').formControlType).toBe(FormControlType.DATE);
+      expect(descriptorFor(schema, 'createdAt').formControlType).toBe(FormControlType.DATE);
+    });
+
+    it('maps boolean to CHECKBOX control type', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          isActive: { type: 'boolean' },
+        },
+      };
+
+      expect(descriptorFor(schema, 'isActive').formControlType).toBe(FormControlType.CHECKBOX);
+    });
+
+    it('maps unbounded artifact array to multiplicity 0..n', () => {
+      const schema: PropsSchema = {
+        type: 'object',
+        properties: {
+          photos: {
+            type: 'array',
+            items: { format: 'artifact' },
+          },
+        },
+      };
+
+      const photos = descriptorFor(schema, 'photos');
+      expect(photos.formControlType).toBe(FormControlType.ARTIFACT);
+      expect(photos.multiplicity).toBe('0..n');
+      expect(photos.maxOccurs).toBeUndefined();
+    });
   });
 
   describe('absent and empty schemas', () => {

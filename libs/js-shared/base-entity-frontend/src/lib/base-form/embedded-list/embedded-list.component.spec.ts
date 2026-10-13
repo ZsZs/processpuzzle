@@ -34,8 +34,8 @@ describe('EmbeddedListComponent', () => {
 
     const formArray = component.formGroup.get('items') as FormArray<FormGroup>;
     expect(formArray).toBeInstanceOf(FormArray);
-    expect(formArray.length).toBe(2);
-    expect(component.rows().length).toBe(2);
+    expect(formArray).toHaveLength(2);
+    expect(component.rows()).toHaveLength(2);
     expect(formArray.at(0).get('title')?.value).toBe('First');
     expect(formArray.at(1).get('title')?.value).toBe('Second');
   });
@@ -67,8 +67,8 @@ describe('EmbeddedListComponent', () => {
     component.addRow();
 
     const formArray = component.formGroup.get('items') as FormArray<FormGroup>;
-    expect(formArray.length).toBe(2);
-    expect(component.rows().length).toBe(2);
+    expect(formArray).toHaveLength(2);
+    expect(component.rows()).toHaveLength(2);
     expect(formArray.dirty).toBe(true);
   });
 
@@ -81,8 +81,8 @@ describe('EmbeddedListComponent', () => {
     component.deleteRow(1);
 
     const formArray = component.formGroup.get('items') as FormArray<FormGroup>;
-    expect(formArray.length).toBe(2);
-    expect(component.rows().length).toBe(2);
+    expect(formArray).toHaveLength(2);
+    expect(component.rows()).toHaveLength(2);
     expect(formArray.at(0).get('title')?.value).toBe('A');
     expect(formArray.at(1).get('title')?.value).toBe('C');
     expect(formArray.dirty).toBe(true);

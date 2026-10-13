@@ -250,4 +250,153 @@ describe('toProps', () => {
       ],
     });
   });
+
+  it('handles null, undefined, and non-object values safely', () => {
+    expect(toProps(null, LABELLED)).toEqual({});
+    expect(toProps(undefined, LABELLED)).toEqual({});
+    expect(toProps('not-an-object', LABELLED)).toEqual({});
+    expect(toProps({ label: 'x' }, null)).toEqual({});
+    expect(toProps({ label: 'x' }, undefined)).toEqual({});
+    expect(toProps({ label: 'x' }, { type: 'object' })).toEqual({});
+  });
+
+  it('preserves artifact values as-is without coercing', () => {
+    const SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        photo: { format: 'artifact' },
+      },
+    };
+    const artifact = { id: 'art-1', name: 'photo.jpg' };
+    expect(toProps({ photo: artifact }, SCHEMA)).toEqual({ photo: artifact });
+  });
+
+  it('cleans boolean properties and ignores non-boolean values', () => {
+    const SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        active: { type: 'boolean' },
+        archived: { type: 'boolean' },
+        pending: { type: 'boolean' },
+      },
+    };
+    expect(toProps({ active: true, archived: false, pending: 'true' }, SCHEMA)).toEqual({
+      active: true,
+      archived: false,
+    });
+  });
+
+  it('cleans string properties: trims whitespace and preserves non-string raw fallback', () => {
+    const SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        blank: { type: 'string' },
+        numeric: { type: 'string' },
+      },
+    };
+    expect(toProps({ title: '  Hello  ', blank: '   ', numeric: 123 }, SCHEMA)).toEqual({
+      title: 'Hello',
+      numeric: 123,
+    });
+  });
+
+  it('cleans numeric and integer properties from numbers, valid strings, or invalid inputs', () => {
+    const SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        num: { type: 'number' },
+        intVal: { type: 'integer' },
+        nanVal: { type: 'number' },
+        emptyStr: { type: 'number' },
+        boolVal: { type: 'number' },
+      },
+    };
+    expect(
+      toProps(
+        {
+          num: 42.5,
+          intVal: ' 100 ',
+          nanVal: Number.NaN,
+          emptyStr: '   ',
+          boolVal: true,
+        },
+        SCHEMA,
+      ),
+    ).toEqual({
+      num: 42.5,
+      intVal: 100,
+    });
+  });
+
+  it('cleans object properties with and without nested schemas', () => {
+    const SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        unstructured: { type: 'object' },
+        emptyUnstructured: { type: 'object' },
+        invalidUnstructured: { type: 'object' },
+        structured: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        emptyStructured: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+      },
+    };
+
+    expect(
+      toProps(
+        {
+          unstructured: { key: 'val' },
+          emptyUnstructured: {},
+          invalidUnstructured: 'not-obj',
+          structured: { name: '  Widget  ' },
+          emptyStructured: { name: '   ' },
+        },
+        SCHEMA,
+      ),
+    ).toEqual({
+      unstructured: { key: 'val' },
+      structured: { name: 'Widget' },
+    });
+  });
+
+  it('cleans array properties: string arrays, non-array values, and fallback arrays', () => {
+    const SCHEMA: PropsSchema = {
+      type: 'object',
+      properties: {
+        tags: { type: 'array', items: { type: 'string' } },
+        emptyTags: { type: 'array', items: { type: 'string' } },
+        nonArray: { type: 'array', items: { type: 'string' } },
+        genericArray: { type: 'array' },
+        emptyGeneric: { type: 'array' },
+        otherType: { title: 'Unknown' },
+      },
+    };
+
+    expect(
+      toProps(
+        {
+          tags: ['first', '  second  ', '', 99],
+          emptyTags: ['', '   '],
+          nonArray: 'not-array',
+          genericArray: [1, 2, 3],
+          emptyGeneric: [],
+          otherType: 'custom-data',
+        },
+        SCHEMA,
+      ),
+    ).toEqual({
+      tags: ['first', 'second', '99'],
+      genericArray: [1, 2, 3],
+      otherType: 'custom-data',
+    });
+  });
 });

@@ -3,7 +3,7 @@ import { BaseFormHostDirective } from './base-form-host.directive';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BaseEntityFormBuilder } from './base-entity-form.builder';
 import { TestEntity } from '../test-entity';
-import { FormControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormControl, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -214,6 +214,22 @@ describe('BaseEntityFormBuilder', () => {
     expect(form.controls['optionalSlug'].valid).toBe(true);
     form.controls['mandatorySlug'].setValue('');
     expect(form.controls['mandatorySlug'].hasError('required')).toBe(true);
+  });
+
+  it('buildForm() creates a FormGroup for EMBEDDED_OBJECT and FormArray for EMBEDDED_LIST', () => {
+    const embeddedObj = new BaseEntityAttrDescriptor('objectProp', FormControlType.EMBEDDED_OBJECT);
+    const optionalList = new BaseEntityAttrDescriptor('optionalList', FormControlType.EMBEDDED_LIST);
+    const requiredList = new BaseEntityAttrDescriptor('requiredList', FormControlType.EMBEDDED_LIST);
+    requiredList.required = true;
+    const form: FormGroup = new FormGroup({});
+
+    formBuilder.buildForm(component.formHost.viewContainerRef, form, store, [embeddedObj, optionalList, requiredList], testEntity, 'Test Entity');
+
+    expect(form.controls['objectProp']).toBeInstanceOf(FormGroup);
+    expect(form.controls['optionalList']).toBeInstanceOf(FormArray);
+    expect(form.controls['optionalList'].valid).toBe(true);
+    expect(form.controls['requiredList']).toBeInstanceOf(FormArray);
+    expect(form.controls['requiredList'].hasError('required')).toBe(true);
   });
 
   describe('tooltips', () => {

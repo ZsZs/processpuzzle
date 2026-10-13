@@ -146,59 +146,83 @@ export function toProps(value: unknown, schema: PropsSchema | PropsSchemaPropert
   return props;
 }
 
+function cleanNumericProp(raw: unknown): number | undefined {
+  if (typeof raw === 'number') {
+    return Number.isNaN(raw) ? undefined : raw;
+  }
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed === '') return undefined;
+    const parsed = Number(trimmed);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+}
+
+function cleanStringProp(raw: unknown): unknown {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    return trimmed === '' ? undefined : trimmed;
+  }
+  return raw;
+}
+
+function cleanObjectProp(raw: unknown, property: PropsSchemaProperty): Record<string, unknown> | undefined {
+  if (property.properties) {
+    const cleanedObj = toProps(raw, property);
+    return Object.keys(cleanedObj).length > 0 ? cleanedObj : undefined;
+  }
+  return typeof raw === 'object' && raw !== null && Object.keys(raw).length > 0 ? (raw as Record<string, unknown>) : undefined;
+}
+
+function cleanObjectArrayRows(raw: unknown[], itemSchema: PropsSchemaProperty): Record<string, unknown>[] | undefined {
+  const rows: Record<string, unknown>[] = [];
+  for (const item of raw) {
+    if (typeof item === 'object' && item !== null) {
+      const cleanedRow = toProps(item, itemSchema);
+      if (Object.keys(cleanedRow).length > 0) {
+        rows.push(cleanedRow);
+      }
+    }
+  }
+  return rows.length > 0 ? rows : undefined;
+}
+
+function cleanStringArray(raw: unknown[]): string[] | undefined {
+  const strings = raw.map((s) => (typeof s === 'string' ? s.trim() : String(s))).filter((s) => s.length > 0);
+  return strings.length > 0 ? strings : undefined;
+}
+
+function cleanArrayProp(raw: unknown, property: PropsSchemaProperty): unknown[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  if (property.items?.type === 'object' && property.items?.properties) {
+    return cleanObjectArrayRows(raw, property.items);
+  }
+  if (property.items?.type === 'string') {
+    return cleanStringArray(raw);
+  }
+  return raw.length > 0 ? raw : undefined;
+}
+
 function cleanPropValue(raw: unknown, property: PropsSchemaProperty): unknown {
   if (property.format === ARTIFACT_FORMAT) {
     return raw;
   }
-  if (property.type === 'number' || property.type === 'integer') {
-    if (typeof raw === 'number' && !Number.isNaN(raw)) return raw;
-    if (typeof raw === 'string') {
-      const trimmed = raw.trim();
-      if (trimmed === '') return undefined;
-      const parsed = Number(trimmed);
-      return Number.isNaN(parsed) ? undefined : parsed;
-    }
-    return undefined;
+  switch (property.type) {
+    case 'number':
+    case 'integer':
+      return cleanNumericProp(raw);
+    case 'string':
+      return cleanStringProp(raw);
+    case 'boolean':
+      return typeof raw === 'boolean' ? raw : undefined;
+    case 'object':
+      return cleanObjectProp(raw, property);
+    case 'array':
+      return cleanArrayProp(raw, property);
+    default:
+      return raw;
   }
-  if (property.type === 'string') {
-    if (typeof raw === 'string') {
-      const trimmed = raw.trim();
-      return trimmed === '' ? undefined : trimmed;
-    }
-    return raw;
-  }
-  if (property.type === 'boolean') {
-    return typeof raw === 'boolean' ? raw : undefined;
-  }
-  if (property.type === 'object') {
-    if (property.properties) {
-      const cleanedObj = toProps(raw, property);
-      return Object.keys(cleanedObj).length > 0 ? cleanedObj : undefined;
-    }
-    return typeof raw === 'object' && raw !== null && Object.keys(raw).length > 0 ? raw : undefined;
-  }
-  if (property.type === 'array') {
-    if (!Array.isArray(raw)) return undefined;
-    if (property.items?.type === 'object' && property.items?.properties) {
-      const itemSchema = property.items;
-      const rows: Record<string, unknown>[] = [];
-      for (const item of raw) {
-        if (typeof item === 'object' && item !== null) {
-          const cleanedRow = toProps(item, itemSchema);
-          if (Object.keys(cleanedRow).length > 0) {
-            rows.push(cleanedRow);
-          }
-        }
-      }
-      return rows.length > 0 ? rows : undefined;
-    }
-    if (property.items?.type === 'string') {
-      const strings = raw.map((s) => (typeof s === 'string' ? s.trim() : String(s))).filter((s) => s.length > 0);
-      return strings.length > 0 ? strings : undefined;
-    }
-    return raw.length > 0 ? raw : undefined;
-  }
-  return raw;
 }
 
 export function createWidgetPropsAttrDescriptor(attrName = 'props', typeAttrName = 'type', label = 'Props'): WidgetPropsAttrDescriptor {
