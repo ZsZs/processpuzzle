@@ -8,7 +8,6 @@ import com.processpuzzle.state.usecase.FindStateMachineDefinition;
 import com.processpuzzle.state.usecase.FireStateTransition;
 import com.processpuzzle.state.usecase.GetEntityObjectState;
 import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionException;
-import com.processpuzzle.state.usecase.exception.StateMachineNotFoundException;
 import com.processpuzzle.state.usecase.exception.UnknownTriggerException;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
 import com.processpuzzle.state.usecase.service.EntityObjectGatewayResolver;
@@ -82,12 +81,11 @@ class StateOperationApiAdapter implements StateOperationApi {
 
     @Override
     public Optional<String> stateAttributeKey(String orgKey, String entityName) {
-        try {
-            // Asked while an object of the running application is saved, so about the released machine.
-            String key = findStateMachineDefinition.execute(orgKey, entityName, Channel.RELEASED).getStateAttributeKey();
-            return key == null || key.isBlank() ? Optional.empty() : Optional.of(key);
-        } catch (StateMachineNotFoundException e) {
-            return Optional.empty();
-        }
+        // Asked while an object of the running application is saved, so about the released machine — and inside that
+        // save's transaction, which is why an entity type without a machine is asked for, never caught as an exception
+        // (see FindStateMachineDefinition#find).
+        return findStateMachineDefinition.find(orgKey, entityName, Channel.RELEASED)
+                .map(machine -> machine.getStateAttributeKey())
+                .filter(key -> !key.isBlank());
     }
 }
