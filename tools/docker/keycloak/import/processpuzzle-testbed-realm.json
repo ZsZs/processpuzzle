@@ -1,5 +1,6 @@
 {
   "realm": "processpuzzle-testbed",
+  "displayName": "ProcessPuzzle Testbed",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,
