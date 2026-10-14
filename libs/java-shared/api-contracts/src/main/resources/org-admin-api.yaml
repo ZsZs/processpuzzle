@@ -64,8 +64,67 @@ tags:
     description: The tenant's user directory.
   - name: Organization Roles
     description: The realm roles a tenant declares, and their assignment.
+  - name: Registration
+    description: Self-registration into the stack's own realm.
 
 paths:
+  /registration:
+    post:
+      operationId: registerUser
+      tags: [ Registration ]
+      summary: Register a new account in the stack's own realm
+      description: >-
+        Unauthenticated self-registration, for stacks that allow it (Testbed). The backend creates
+        the account through the identity provider's Admin API with the password the caller supplies,
+        so the browser never talks to the provider's own registration page. The account is
+        enabled and holds the realm's default roles; when the deployment requires it, an
+        email-verification message is requested as well. Organization-per-tenant deployments are
+        invite-only and answer 404 here.
+
+        The endpoint is rate limited per client address (429 with `Retry-After`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistration"
+      responses:
+        "201":
+          description: The account was created. Sign in through the normal login flow.
+        "400":
+          description: >-
+            Invalid payload, or the password violates the realm's password policy
+            (`registration.password-policy`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Self-registration is not enabled for this deployment (`registration.disabled`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: An account with this email already exists (`user.already-exists`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many attempts from this address (`registration.rate-limited`).
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another attempt is accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
   /organizations/{orgKey}/admin/users:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -391,6 +450,28 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
+    UserRegistration:
+      type: object
+      required: [ email, password ]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Also the username.
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 128
+          description: Checked against the realm's password policy, not a policy of this contract.
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+
     InvitationRecoveryRequired:
       type: object
       required: [ errorId, errorText, operationId ]

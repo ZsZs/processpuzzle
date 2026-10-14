@@ -5,6 +5,9 @@ import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailabl
 import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
 import com.processpuzzle.orgadmin.model.InvitationRecoveryRequired;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspendedException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.PasswordPolicyViolationException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationDisabledException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationRateLimitedException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
@@ -12,6 +15,7 @@ import com.processpuzzle.orgadmin.usecases.inbound.exception.UserNotFoundExcepti
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -85,6 +89,23 @@ public class OrgAdminApiExceptionHandler {
     @ExceptionHandler(DirectoryUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleDirectoryUnavailable(DirectoryUnavailableException ex) {
         return error(HttpStatus.SERVICE_UNAVAILABLE, "user-directory.unavailable", ex.getMessage());
+    }
+
+    @ExceptionHandler(RegistrationDisabledException.class)
+    public ResponseEntity<ErrorResponse> handleRegistrationDisabled(RegistrationDisabledException ex) {
+        return error(HttpStatus.NOT_FOUND, "registration.disabled", ex.getMessage());
+    }
+
+    @ExceptionHandler(PasswordPolicyViolationException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordPolicy(PasswordPolicyViolationException ex) {
+        return error(HttpStatus.BAD_REQUEST, "registration.password-policy", ex.getMessage());
+    }
+
+    @ExceptionHandler(RegistrationRateLimitedException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimited(RegistrationRateLimitedException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfter().toSeconds())))
+                .body(new ErrorResponse("registration.rate-limited", ex.getMessage()));
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String errorId, String errorText) {

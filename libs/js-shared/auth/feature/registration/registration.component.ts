@@ -1,15 +1,14 @@
 import { Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatError, MatFormField } from '@angular/material/form-field';
 import { MatInput, MatLabel } from '@angular/material/input';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NavigateBackService } from '@processpuzzle/util';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain';
+import { RegistrationService } from '@processpuzzle/auth/domain';
 
 @Component({
   selector: 'pp-registration',
@@ -19,9 +18,9 @@ import { AUTHENTICATION_SERVICE, AuthService } from '@processpuzzle/auth/domain'
   providers: [provideTranslocoScope({ scope: 'auth' })],
 })
 export class RegistrationComponent {
-  private readonly authService: AuthService = inject(AUTHENTICATION_SERVICE);
+  private readonly registrationService = inject(RegistrationService);
+  private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
-  private readonly navigateBack = inject(NavigateBackService);
   private readonly snackBar = inject<MatSnackBar>(MatSnackBar);
   public registerForm: FormGroup;
   public isLoading = signal<boolean>(false);
@@ -61,30 +60,33 @@ export class RegistrationComponent {
 
     try {
       const { email, password } = this.registerForm.value;
-      await this.authService.login('', email, password);
+      await this.registrationService.register({ email, password });
+      this.snackBar.open('Your account was created. Please sign in.', 'Close', { duration: 5000 });
+      await this.router.navigateByUrl('/auth/login');
     } catch (error: unknown) {
-      const errorCode = (error as { code?: string; message?: string }).code || (error as { code?: string; message?: string }).message || 'unknown';
+      const errorCode = (error as { code?: string }).code ?? 'unknown';
       this.snackBar.open(this.getErrorMessage(errorCode), 'Close', {
         duration: 5000,
         panelClass: ['error-snackbar'],
       });
     } finally {
       this.isLoading.set(false);
-      this.errorMessage.set('');
-      this.navigateBack.goBack();
     }
   }
 
   private getErrorMessage(errorCode: string): string {
     switch (errorCode) {
-      case 'auth/email-already-in-use':
+      case 'user.already-exists':
         return 'This email address is already registered';
-      case 'auth/invalid-email':
-        return 'Please enter a valid email address';
-      case 'auth/operation-not-allowed':
-        return 'Email/password registration is not enabled';
-      case 'auth/weak-password':
+      case 'registration.password-policy':
         return 'Please choose a stronger password';
+      case 'registration.disabled':
+        return 'Registration is not enabled';
+      case 'registration.rate-limited':
+        return 'Too many attempts. Please try again later';
+      case 'registration.unreachable':
+      case 'user-directory.unavailable':
+        return 'Registration is temporarily unavailable. Please try again later';
       default:
         return 'An error occurred during registration. Please try again.';
     }
