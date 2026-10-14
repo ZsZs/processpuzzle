@@ -6,6 +6,7 @@
 The Auth library provides widgets and services for authentication and authorization. It offers:
 - [authentication menu](#auth-button)
 - [login](#login-component)
+- [Keycloak login form element](#keycloak-login-form-element)
 - [logout](#logout-component)
 - [registration](#registration-component)
 - [user profile](#my-profile-component)
@@ -465,3 +466,10 @@ export const routes: Routes = [
 #### Behavior
 - Returns `true` if the user is authenticated, allowing navigation to the protected route
 - Redirects to '/auth/login' and returns `false` if the user is not authenticated, preventing navigation to the protected route
+
+## Keycloak login form element
+`LoginFormComponent` (`pp-login-form`, import from `@processpuzzle/auth/login-form`) is a presentational sign-in
+form with no auth logic: inputs `action` (Keycloak's `url.loginAction`), `username`, `error`, `heading` and the
+label/link texts. It renders a plain HTML `POST` form, so Keycloak keeps owning credentials, CSRF and PKCE.
+`apps/login-element` packages it as an Angular Element for the Keycloak `processpuzzle` login theme; see
+`tools/docker/keycloak/README.md`.

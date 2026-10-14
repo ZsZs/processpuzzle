@@ -1,5 +1,7 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.WorkflowReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.DiagramEdgeLayout;
 import com.processpuzzle.workflow.definition.domain.DiagramNodeLayout;
 import com.processpuzzle.workflow.definition.domain.DiagramNodeSize;
@@ -46,7 +48,8 @@ class WorkflowDiagramsEndpointTest {
         findUseCase = mock(FindWorkflowDiagramUseCase.class);
         findAllUseCase = mock(FindAllWorkflowDiagramsUseCase.class);
         deleteUseCase = mock(DeleteWorkflowDiagramUseCase.class);
-        endpoint = new WorkflowDiagramsEndpoint(saveUseCase, findUseCase, findAllUseCase, deleteUseCase, new WorkflowDiagramMapper());
+        endpoint = new WorkflowDiagramsEndpoint(saveUseCase, findUseCase, findAllUseCase, deleteUseCase, new WorkflowDiagramMapper(),
+                mock(WorkflowReleaseParticipant.class));
     }
 
     private static WorkflowDiagram diagram() {
@@ -65,9 +68,9 @@ class WorkflowDiagramsEndpointTest {
 
     @Test
     void getWorkflowDiagram_answersTheArrangement() {
-        when(findUseCase.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID)).thenReturn(diagram());
+        when(findUseCase.findByOrgKeyAndWorkflowId(ORG, WORKFLOW_ID, Channel.DRAFT)).thenReturn(diagram());
 
-        ResponseEntity<com.processpuzzle.workflow.model.WorkflowDiagram> response = endpoint.getWorkflowDiagram(ORG, WORKFLOW_ID);
+        ResponseEntity<com.processpuzzle.workflow.model.WorkflowDiagram> response = endpoint.getWorkflowDiagram(ORG, WORKFLOW_ID, null);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody().getNodes()).hasSize(1);
@@ -112,9 +115,9 @@ class WorkflowDiagramsEndpointTest {
 
     @Test
     void listWorkflowDiagrams_answersAPageEnvelope() {
-        when(findAllUseCase.findAll(eq(ORG), any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(diagram())));
+        when(findAllUseCase.findAll(eq(ORG), eq(Channel.DRAFT), any(), any(), any(), any())).thenReturn(new PageImpl<>(List.of(diagram())));
 
-        var response = endpoint.listWorkflowDiagrams(ORG, null, null, null, null);
+        var response = endpoint.listWorkflowDiagrams(ORG, null, null, null, null, null);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody().getContent()).hasSize(1);

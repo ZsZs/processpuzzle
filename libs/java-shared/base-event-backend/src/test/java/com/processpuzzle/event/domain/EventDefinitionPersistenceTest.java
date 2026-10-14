@@ -2,6 +2,7 @@ package com.processpuzzle.event.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,16 +36,15 @@ class EventDefinitionPersistenceTest {
         elsewhere.setOrgKey("org-2");
         repository.saveAndFlush(elsewhere);
 
-        EventDefinition reloaded = repository.findByOrgKeyAndId("org-1", "OrderConfirmedEvent").orElseThrow();
+        EventDefinition reloaded = repository.findByOrgKeyAndIdAndChannel("org-1", "OrderConfirmedEvent", Channel.DRAFT).orElseThrow();
         assertThat(reloaded.getState()).isEqualTo("CONFIRMED");
         assertThat(reloaded.getVersion()).isZero();
         assertThat(reloaded.getCreatedAt()).isNotNull();
 
-        assertThat(repository.findByOrgKeyAndKindAndSubjectTypeAndAction(
-                "org-1", EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
+        assertThat(repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction("org-1", Channel.DRAFT, EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
                 .extracting(EventDefinition::getId).containsExactly("OrderCreatedEvent");
-        assertThat(repository.findByOrgKeyOrderByIdAsc("org-1"))
+        assertThat(repository.findByOrgKeyAndChannelOrderByIdAsc("org-1", Channel.DRAFT))
                 .extracting(EventDefinition::getId).containsExactly("OrderConfirmedEvent", "OrderCreatedEvent");
-        assertThat(repository.existsByOrgKeyAndId("org-2", "OrderConfirmedEvent")).isFalse();
+        assertThat(repository.existsByOrgKeyAndIdAndChannel("org-2", "OrderConfirmedEvent", Channel.DRAFT)).isFalse();
     }
 }

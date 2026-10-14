@@ -1,5 +1,8 @@
 package com.processpuzzle.workflow.definition.adapters.inbound;
 
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ReleaseStates;
+import com.processpuzzle.workflow.definition.adapters.inbound.release.ToolReleaseParticipant;
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.api.ToolDefinitionsApi;
 import com.processpuzzle.workflow.definition.usecases.inbound.CreateToolDefinitionUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.DeleteToolDefinitionUseCase;
@@ -24,25 +27,30 @@ public class ToolDefinitionsEndpoint implements ToolDefinitionsApi {
     private final FindToolDefinitionUseCase findToolDefinition;
     private final FindAllToolDefinitionsUseCase findAllToolDefinitions;
     private final WorkflowDefinitionMapper mapper;
+    private final ToolReleaseParticipant releaseParticipant;
 
     public ToolDefinitionsEndpoint(CreateToolDefinitionUseCase createToolDefinition,
                                     ReplaceToolDefinitionUseCase replaceToolDefinition,
                                     DeleteToolDefinitionUseCase deleteToolDefinition,
                                     FindToolDefinitionUseCase findToolDefinition,
                                     FindAllToolDefinitionsUseCase findAllToolDefinitions,
-                                    WorkflowDefinitionMapper mapper) {
+                                    WorkflowDefinitionMapper mapper,
+            ToolReleaseParticipant releaseParticipant) {
         this.createToolDefinition = createToolDefinition;
         this.replaceToolDefinition = replaceToolDefinition;
         this.deleteToolDefinition = deleteToolDefinition;
         this.findToolDefinition = findToolDefinition;
         this.findAllToolDefinitions = findAllToolDefinitions;
         this.mapper = mapper;
+        this.releaseParticipant = releaseParticipant;
     }
 
     @Override
-    public ResponseEntity<List<ToolDefinition>> listToolDefinitions(String orgKey, String where, String order) {
-        var tools = findAllToolDefinitions.findAll(orgKey, where, order);
-        return ResponseEntity.ok(tools.stream().map(mapper::toToolModel).toList());
+    public ResponseEntity<List<ToolDefinition>> listToolDefinitions(String orgKey, String where, String order, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var tools = findAllToolDefinitions.findAll(orgKey, channel, where, order).stream().map(mapper::toToolModel).toList();
+        return ResponseEntity.ok(ReleaseStates.stamp(channel, releaseParticipant, orgKey, tools,
+                ToolDefinition::getId, ToolDefinition::setReleaseState));
     }
 
     @Override
@@ -52,8 +60,11 @@ public class ToolDefinitionsEndpoint implements ToolDefinitionsApi {
     }
 
     @Override
-    public ResponseEntity<ToolDefinition> getToolDefinition(String orgKey, String toolId) {
-        return ResponseEntity.ok(mapper.toToolModel(findToolDefinition.findByOrgKeyAndId(orgKey, toolId)));
+    public ResponseEntity<ToolDefinition> getToolDefinition(String orgKey, String toolId, String revision) {
+        Channel channel = Channel.ofRevision(revision);
+        var tool = mapper.toToolModel(findToolDefinition.findByOrgKeyAndId(orgKey, toolId, channel));
+        return ResponseEntity.ok(ReleaseStates.stampOne(channel, releaseParticipant, orgKey, tool,
+                ToolDefinition::getId, ToolDefinition::setReleaseState));
     }
 
     @Override

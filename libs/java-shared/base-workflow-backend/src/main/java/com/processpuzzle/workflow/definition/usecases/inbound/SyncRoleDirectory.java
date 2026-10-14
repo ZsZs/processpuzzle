@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
@@ -128,7 +129,9 @@ public class SyncRoleDirectory {
      * reconciled.
      */
     public void reconcile() {
+        // The directory mirrors the released roles; a draft reaches it when it is released.
         Map<String, List<RoleDefinition>> byOrganization = repository.findAll().stream()
+                .filter(role -> role.getChannel() == Channel.RELEASED)
                 .filter(role -> role.getOrgKey() != null && role.getId() != null)
                 .collect(Collectors.groupingBy(RoleDefinition::getOrgKey));
 

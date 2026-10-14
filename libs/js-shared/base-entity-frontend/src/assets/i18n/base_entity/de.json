@@ -17,6 +17,7 @@
     "enumValues": "Aufzählungswerte",
     "dateStyle": "Datumsstil",
     "timeStyle": "Zeitstil",
+    "defaultAvatar": "Standard-Avatar",
     "_tooltips": {
       "code": "Schlüssel, unter dem der Wert gespeichert wird, eindeutig innerhalb des Entitätstyps, z. B. orderNumber. Nicht mehr ändern, sobald Datensätze existieren.",
       "name": "Die Beschriftung des Feldes, wie Benutzer sie in Formularen und Listenspalten sehen, z. B. Bestellnummer.",
@@ -32,6 +33,7 @@
       "enumValues": "Für die Wertart ENUM: die Optionen, aus denen Benutzer wählen, je ein Chip, z. B. NEW, PAID, SHIPPED.",
       "linkedEntityType": "Für Verweisfelder (FOREIGN_KEY) und eingebettete Zeilen (EMBEDDED_COMPONENTS): der Code des Entitätstyps, auf den sie zeigen, z. B. customer.",
       "defaultValue": "Wert, der in neuen Datensätzen vorausgefüllt ist, z. B. NEW oder 1. Leer lassen für keinen.",
+      "defaultAvatar": "Für AVATAR-Steuerelemente: Icon-Name (z. B. person, sailing) oder Bild-URL, die vor dem Hochladen eines Bildes angezeigt wird.",
       "dateStyle": "Für DATE- und DATE_TIME-Felder: wie das Datum angezeigt wird, von short (31.12.26) bis full (Donnerstag, 31. Dezember 2026). Leer bedeutet Standard.",
       "timeStyle": "Für DATE_TIME-Felder: wie die Uhrzeit angezeigt wird, von short (14:30) bis long (mit Sekunden und Zeitzone). Leer bedeutet Standard."
     }
@@ -63,6 +65,7 @@
   },
   "artifact": {
     "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen.",
+    "invalid_file_type": "Nur Bilddateien sind erlaubt.",
     "camera_capture": "Foto oder Video aufnehmen"
   },
   "camera_capture": {

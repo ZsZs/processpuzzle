@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { EventAction, EventDefinition, EventKind } from './event-definition';
@@ -12,6 +13,7 @@ export interface EventDefinitionDto {
   action?: EventAction | string;
   state?: string;
   version?: number;
+  releaseState?: ReleaseState;
 }
 
 /**
@@ -38,6 +40,7 @@ export class EventDefinitionMapper implements BaseEntityMapper<EventDefinition> 
       action: source.action as EventAction | undefined,
       state: source.state,
       version: source.version,
+      releaseState: source.releaseState,
     });
   }
 

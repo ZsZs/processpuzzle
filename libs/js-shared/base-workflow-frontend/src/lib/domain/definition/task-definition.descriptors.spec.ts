@@ -27,6 +27,7 @@ describe('createTaskDefinitionDescriptor', () => {
     expect(attrs.map((attr) => attr.attrName)).toEqual([
       'id',
       'name',
+      'releaseState',
       'preconditionRuleId',
       'postconditionRuleId',
       'version',

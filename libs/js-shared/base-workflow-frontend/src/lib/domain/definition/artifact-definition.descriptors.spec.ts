@@ -26,7 +26,7 @@ describe('createArtifactDefinitionDescriptor', () => {
   });
 
   it('describes the artifact, its cross-feature bindings and its revision', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'artifactType', 'artifactTypeId', 'stateMachineId', 'version', 'updatedAt', 'description']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'artifactType', 'releaseState', 'artifactTypeId', 'stateMachineId', 'version', 'updatedAt', 'description']);
   });
 
   it('is identified by its own id, which a task’s inputs and outputs name', () => {

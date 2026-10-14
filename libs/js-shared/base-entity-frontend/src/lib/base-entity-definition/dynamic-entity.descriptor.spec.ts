@@ -50,6 +50,16 @@ describe('descriptorOf', () => {
     expect(attrOf(ORDER_DEFINITION, 'total')?.required).toBe(false);
   });
 
+  it('propagates defaultAvatar to attribute descriptor', () => {
+    const definition: EntityDefinition = {
+      code: 'user',
+      name: 'User',
+      attributes: [{ code: 'avatar', formControlType: 'AVATAR', defaultAvatar: 'sailing' }],
+    };
+
+    expect(attrOf(definition, 'avatar')?.defaultAvatar).toBe('sailing');
+  });
+
   it('carries autosizeColumn through, so the list hugs the columns the author asked it to', () => {
     const definition = { code: 'x', name: 'X', attributes: [{ code: 'hugging', formControlType: 'TEXT', autosizeColumn: true }, { code: 'filling', formControlType: 'TEXT' }] };
 
@@ -143,6 +153,7 @@ describe('controlTypeOf', () => {
     ['RADIO', FormControlType.RADIO],
     ['TAGS', FormControlType.TAGS],
     ['ARTIFACT', FormControlType.ARTIFACT],
+    ['AVATAR', FormControlType.AVATAR],
     ['FOREIGN_KEY', FormControlType.FOREIGN_KEY],
     ['EMBEDDED_COMPONENTS', FormControlType.EMBEDDED_COMPONENTS],
     ['EMBEDDED_LIST', FormControlType.EMBEDDED_LIST],

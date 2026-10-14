@@ -15,7 +15,9 @@
       "kind": "SYSTEM: raised by the platform when a record changes. MESSAGE: sent to one receiver through the API. SIGNAL: broadcast to every listener through the API.",
       "subjectType": "For SYSTEM events only: the code of the entity type whose records raise the event, e.g. order.",
       "action": "For SYSTEM events only: what happens to the record: CREATED, UPDATED, DELETED or STATE_CHANGED.",
-      "state": "For STATE_CHANGED only: the state the record enters, e.g. CONFIRMED."
-    }
+      "state": "For STATE_CHANGED only: the state the record enters, e.g. CONFIRMED.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system."
+    },
+    "releaseState": "Release"
   }
 }

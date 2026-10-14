@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.TimerDefinition;

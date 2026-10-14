@@ -2,6 +2,7 @@ package com.processpuzzle.event.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import java.time.Instant;
@@ -119,14 +120,17 @@ class EventDefinitionTest {
     }
 
     @Test
-    void keyEqualityIsByOrgAndId() {
-        EventDefinitionKey key = new EventDefinitionKey(ORG, "x");
+    void keyEqualityIsByOrgIdAndChannel() {
+        EventDefinitionKey key = new EventDefinitionKey(ORG, "x", Channel.DRAFT);
         EventDefinitionKey same = new EventDefinitionKey();
         same.setOrgKey(ORG);
         same.setId("x");
+        same.setChannel(Channel.DRAFT);
 
         assertThat(key).isEqualTo(same).hasSameHashCodeAs(same)
-                .isNotEqualTo(new EventDefinitionKey(ORG, "y")).hasToString("org-1/x");
+                .isNotEqualTo(new EventDefinitionKey(ORG, "y", Channel.DRAFT))
+                .isNotEqualTo(new EventDefinitionKey(ORG, "x", Channel.RELEASED)).hasToString("org-1/x/DRAFT");
+        assertThat(same.getChannel()).isEqualTo(Channel.DRAFT);
         assertThat(same.getOrgKey()).isEqualTo(ORG);
         assertThat(same.getId()).isEqualTo("x");
     }

@@ -20,6 +20,14 @@ describe('EventDefinitionMapper', () => {
       expect(mapper.fromDto(ORDER_CONFIRMED_EVENT_DTO).state).toBe('CONFIRMED');
     });
 
+    /** Reported by the backend on a draft; never sent back, since only a release changes it. */
+    it('reads the release state, and does not send it back', () => {
+      const entity = mapper.fromDto({ ...ORDER_CREATED_EVENT_DTO, releaseState: 'CHANGED' });
+
+      expect(entity.releaseState).toBe('CHANGED');
+      expect(mapper.toDto(entity)).not.toHaveProperty('releaseState');
+    });
+
     it('defaults an absent kind to SYSTEM', () => {
       expect(mapper.fromDto({ id: 'x', name: 'X' }).kind).toBe(EventKind.SYSTEM);
     });

@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventKind;
 import com.processpuzzle.event.usecase.CreateEventDefinition;
@@ -59,7 +60,7 @@ class EventDefinitionsEndpointTest {
         importer = mock(ImportEventDefinitions.class);
         mvc = MockMvcBuilders
                 .standaloneSetup(new EventDefinitionsEndpoint(create, replace, deleteUseCase, find, importer,
-                        new EventDefinitionMapper()))
+                        new EventDefinitionMapper(), mock(EventDefinitionReleaseParticipant.class)))
                 .setControllerAdvice(new EventApiExceptionHandler())
                 .build();
     }
@@ -75,7 +76,7 @@ class EventDefinitionsEndpointTest {
 
     @Test
     void listsFullDefinitions() throws Exception {
-        when(find.findAll("org-1")).thenReturn(List.of(stored()));
+        when(find.findAll("org-1", Channel.DRAFT)).thenReturn(List.of(stored()));
 
         mvc.perform(get(BASE))
                 .andExpect(status().isOk())
@@ -89,7 +90,7 @@ class EventDefinitionsEndpointTest {
     @Test
     void createsGetsReplacesAndDeletes() throws Exception {
         when(create.create(eq("org-1"), any())).thenReturn(stored());
-        when(find.find("org-1", "OrderCreatedEvent")).thenReturn(stored());
+        when(find.find("org-1", "OrderCreatedEvent", Channel.DRAFT)).thenReturn(stored());
         when(replace.replace(eq("org-1"), eq("OrderCreatedEvent"), any())).thenReturn(stored());
 
         mvc.perform(post(BASE).contentType(MediaType.APPLICATION_JSON).content(BODY))
@@ -108,7 +109,7 @@ class EventDefinitionsEndpointTest {
 
     @Test
     void importsAYamlFile() throws Exception {
-        when(importer.execute(eq("org-1"), any())).thenReturn(new ImportOutcome(2, 1, List.of()));
+        when(importer.execute(eq("org-1"), any())).thenReturn(new ImportOutcome(2, 1, List.of(), List.of()));
 
         mvc.perform(multipart(BASE + "/import")
                         .file(new MockMultipartFile("file", "events.yaml", "application/x-yaml", "event-definitions: []".getBytes())))
@@ -119,7 +120,7 @@ class EventDefinitionsEndpointTest {
 
     @Test
     void mapsTheModulesExceptionsToErrorIds() throws Exception {
-        when(find.find("org-1", "nope")).thenThrow(new EventDefinitionNotFoundException("org-1", "nope"));
+        when(find.find("org-1", "nope", Channel.DRAFT)).thenThrow(new EventDefinitionNotFoundException("org-1", "nope"));
         when(create.create(eq("org-1"), any()))
                 .thenThrow(new EventDefinitionAlreadyExistsException("org-1", "OrderCreatedEvent"))
                 .thenThrow(new InvalidEventDefinitionException("OrderCreatedEvent", List.of("bad")));

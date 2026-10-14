@@ -98,7 +98,12 @@ function createWorkflowAttrDescriptors(): AbstractAttrDescriptor[] {
   eventsAttr.linkedEntityType = WORKFLOW_EVENT_USE_ENTITY_NAME;
   eventsAttr.hideInTable = true;
 
-  const identityRow = new FlexboxDescriptor([idAttr, nameAttr], FlexDirection.ROW);
+  // Whether the running application has this definition as it stands — new, changed since, or released — as
+  // the backend reports it. Changed only by a release, so never edited.
+  const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
+  releaseStateAttr.disabled = true;
+
+  const identityRow = new FlexboxDescriptor([idAttr, nameAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([extendsAttr, activeInstancesAttr, versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };

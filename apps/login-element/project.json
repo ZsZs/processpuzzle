@@ -1,0 +1,72 @@
+{
+  "name": "login-element",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "pp",
+  "sourceRoot": "apps/login-element/src",
+  "tags": [
+    "type:app"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/login-element",
+        "browser": "apps/login-element/src/main.ts",
+        "tsConfig": "apps/login-element/tsconfig.app.json",
+        "assets": [],
+        "index": "apps/login-element/src/index.html"
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "400kb",
+              "maximumError": "700kb"
+            }
+          ],
+          "outputHashing": "none"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "configurations": {
+        "production": {
+          "buildTarget": "login-element:build:production"
+        },
+        "development": {
+          "buildTarget": "login-element:build:development"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "package-login-theme": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "mkdir -p tools/docker/keycloak/themes/processpuzzle/login/resources/js",
+          "cp dist/apps/login-element/browser/main.js tools/docker/keycloak/themes/processpuzzle/login/resources/js/main.js"
+        ],
+        "parallel": false
+      }
+    }
+  }
+}

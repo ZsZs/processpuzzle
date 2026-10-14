@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.TimerDefinition;
 import com.processpuzzle.workflow.definition.domain.TimerType;
@@ -95,7 +96,7 @@ class StartTimerUseCasesTest {
     void aRemovedStartEventOrWorkflowLosesItsRow() {
         StartTimerSchedule stale = row("gone", NOW, "CYCLE:R/P1D");
         rows.add(stale);
-        when(workflows.findByOrgKeyAndId(ORG, "nightly")).thenReturn(Optional.empty());
+        when(workflows.findByOrgKeyAndIdAndChannel(ORG, "nightly", Channel.RELEASED)).thenReturn(Optional.empty());
 
         reconciler().reconcile(ORG, "nightly");
 
@@ -172,7 +173,7 @@ class StartTimerUseCasesTest {
     }
 
     private void define(StartEvent... startEvents) {
-        when(workflows.findByOrgKeyAndId(ORG, "nightly")).thenReturn(Optional.of(
+        when(workflows.findByOrgKeyAndIdAndChannel(ORG, "nightly", Channel.RELEASED)).thenReturn(Optional.of(
                 Workflow.builder().orgKey(ORG).id("nightly").startEvents(List.of(startEvents)).build()));
     }
 

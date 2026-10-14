@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,13 +18,13 @@ import java.util.Optional;
 public interface WorkflowRepository
         extends JpaRepository<Workflow, WorkflowKey>, JpaSpecificationExecutor<Workflow> {
 
-    Optional<Workflow> findByOrgKeyAndId(String orgKey, String id);
+    Optional<Workflow> findByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    boolean existsByOrgKeyAndId(String orgKey, String id);
+    boolean existsByOrgKeyAndIdAndChannel(String orgKey, String id, Channel channel);
 
-    List<Workflow> findByOrgKeyAndExtendsWorkflowId(String orgKey, String extendsWorkflowId);
+    List<Workflow> findByOrgKeyAndExtendsWorkflowIdAndChannel(String orgKey, String extendsWorkflowId, Channel channel);
 
-    List<Workflow> findByOrgKey(String orgKey);
+    List<Workflow> findByOrgKeyAndChannel(String orgKey, Channel channel);
 
     /**
      * Every workflow definition of a tenant in one statement, for erasing the tenant. A bulk delete, so it

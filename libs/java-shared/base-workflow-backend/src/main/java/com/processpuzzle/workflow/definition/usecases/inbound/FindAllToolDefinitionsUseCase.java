@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.rsql.RsqlSpecificationBuilder;
 import com.processpuzzle.core.rsql.SortParser;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
@@ -27,8 +28,9 @@ public class FindAllToolDefinitionsUseCase {
      * plain array (see base-workflow-api.yaml), consistent with tools being a small,
      * catalog-sized resource per organization.
      */
-    public List<ToolDefinition> findAll(String orgKey, String where, String order) {
-        Specification<ToolDefinition> spec = (root, query, cb) -> cb.equal(root.get("orgKey"), orgKey);
+    public List<ToolDefinition> findAll(String orgKey, Channel channel, String where, String order) {
+        Specification<ToolDefinition> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("orgKey"), orgKey), cb.equal(root.get("channel"), channel));
 
         Specification<ToolDefinition> whereSpec = rsqlBuilder.build(where);
         if (whereSpec != null) {

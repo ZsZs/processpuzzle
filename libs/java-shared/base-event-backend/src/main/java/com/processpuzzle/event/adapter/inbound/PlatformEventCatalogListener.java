@@ -1,5 +1,6 @@
 package com.processpuzzle.event.adapter.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
@@ -44,8 +45,9 @@ class PlatformEventCatalogListener {
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void on(PlatformEvent fact) {
-        List<EventDefinition> candidates = repository.findByOrgKeyAndKindAndSubjectTypeAndAction(
-                fact.orgKey(), EventKind.SYSTEM, fact.subjectType(), fact.action());
+        // The running application's facts, so matched against the released catalog only.
+        List<EventDefinition> candidates = repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(
+                fact.orgKey(), Channel.RELEASED, EventKind.SYSTEM, fact.subjectType(), fact.action());
         for (EventDefinition definition : candidates) {
             if (definition.matches(fact)) {
                 LOG.debug("{} {} {}/{} is '{}'.", fact.orgKey(), fact.action(), fact.subjectType(), fact.subjectId(),

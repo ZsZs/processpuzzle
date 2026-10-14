@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
@@ -21,7 +22,7 @@ public class ReplaceArtifactDefinitionUseCase {
     private final ArtifactDefinitionRepository repository;
 
     public ArtifactDefinition replace(String orgKey, String id, ArtifactDefinition desiredState) {
-        ArtifactDefinition existing = repository.findByOrgKeyAndId(orgKey, id)
+        ArtifactDefinition existing = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No artifact definition with id '%s'".formatted(id)));
 
         if (desiredState.getVersion() != null && !desiredState.getVersion().equals(existing.getVersion())) {

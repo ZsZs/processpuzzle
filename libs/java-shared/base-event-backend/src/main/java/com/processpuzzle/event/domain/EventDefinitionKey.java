@@ -1,5 +1,6 @@
 package com.processpuzzle.event.domain;
 
+import com.processpuzzle.core.definition.Channel;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -14,14 +15,24 @@ public class EventDefinitionKey implements Serializable {
 
     private String orgKey;
     private String id;
+    private Channel channel;
 
     public EventDefinitionKey() {
         // required by JPA
     }
 
-    public EventDefinitionKey(String orgKey, String id) {
+    public EventDefinitionKey(String orgKey, String id, Channel channel) {
         this.orgKey = orgKey;
         this.id = id;
+        this.channel = channel;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
+
+    public void setChannel(Channel channel) {
+        this.channel = channel;
     }
 
     public String getOrgKey() {
@@ -48,16 +59,16 @@ public class EventDefinitionKey implements Serializable {
         if (!(other instanceof EventDefinitionKey that)) {
             return false;
         }
-        return Objects.equals(orgKey, that.orgKey) && Objects.equals(id, that.id);
+        return Objects.equals(orgKey, that.orgKey) && Objects.equals(id, that.id) && channel == that.channel;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgKey, id);
+        return Objects.hash(orgKey, id, channel);
     }
 
     @Override
     public String toString() {
-        return orgKey + "/" + id;
+        return orgKey + "/" + id + "/" + channel;
     }
 }

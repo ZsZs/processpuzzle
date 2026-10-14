@@ -61,6 +61,7 @@ public class EntityDefinitionMapper {
             .dateFormat(toDomain(input.getDateFormat()))
             .linkedEntityType(input.getLinkedEntityType())
             .isLinkToDetails(Boolean.TRUE.equals(input.getIsLinkToDetails()))
+            .defaultAvatar(input.getDefaultAvatar())
             .autosizeColumn(Boolean.TRUE.equals(input.getAutosizeColumn()))
             .validationRules(input.getValidationRules())
             .build();
@@ -110,6 +111,7 @@ public class EntityDefinitionMapper {
         model.setDateFormat(toModel(attribute.getDateFormat()));
         model.setLinkedEntityType(attribute.getLinkedEntityType());
         model.setIsLinkToDetails(attribute.isLinkToDetails());
+        model.setDefaultAvatar(attribute.getDefaultAvatar());
         model.setAutosizeColumn(attribute.isAutosizeColumn());
         model.setValidationRules(attribute.getValidationRules());
         return model;
@@ -271,6 +273,7 @@ public class EntityDefinitionMapper {
             .selectables(input.getSelectables() != null ? input.getSelectables().stream().map(this::toDomain).toList() : null)
             .visible(input.getVisible())
             .showThumbnail(input.getShowThumbnail())
+            .defaultAvatar(input.getDefaultAvatar())
             .hideInTable(input.getHideInTable())
             .autosizeColumn(Boolean.TRUE.equals(input.getAutosizeColumn()))
             .isHeading(input.getIsHeading())
@@ -306,6 +309,7 @@ public class EntityDefinitionMapper {
         }
         model.setVisible(descriptor.getVisible());
         model.setShowThumbnail(descriptor.getShowThumbnail());
+        model.setDefaultAvatar(descriptor.getDefaultAvatar());
         model.setHideInTable(descriptor.getHideInTable());
         model.setAutosizeColumn(descriptor.isAutosizeColumn());
         model.setIsHeading(descriptor.getIsHeading());
@@ -389,6 +393,7 @@ public class EntityDefinitionMapper {
             .formControlType(toDomainFormControlType(com.processpuzzle.baseentity.model.FormControlType.fromValue(attribute.getFormControlType().name())))
             .required(attribute.isRequired())
             .isLinkToDetails(attribute.isLinkToDetails())
+            .defaultAvatar(attribute.getDefaultAvatar())
             .autosizeColumn(attribute.isAutosizeColumn())
             .linkedEntityType(attribute.getLinkedEntityType())
             .dateFormat(attribute.getDateFormat())

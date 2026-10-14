@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { PropertyMap } from '../property-map';
@@ -88,6 +89,7 @@ interface WorkflowDto {
   events?: EventUseDto[];
   activeInstances?: number;
   version?: number;
+  releaseState?: ReleaseState;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -140,6 +142,7 @@ export class WorkflowMapper implements BaseEntityMapper<Workflow> {
       events: (source.events ?? []).map(toEventUse),
       activeInstances: source.activeInstances,
       version: source.version,
+      releaseState: source.releaseState,
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
     });

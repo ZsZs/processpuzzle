@@ -7,6 +7,7 @@
     "extends": "Extiende",
     "activeInstances": "Instancias activas",
     "version": "Versión",
+    "releaseState": "Publicación",
     "updatedAt": "Actualizado el",
     "startEvents": "Eventos de inicio",
     "roles": "Roles",
@@ -67,6 +68,7 @@
       "extends": "Flujo de trabajo padre opcional cuyos roles, artefactos, herramientas y tareas hereda este. Un flujo no puede extenderse a sí mismo, ni directa ni indirectamente.",
       "activeInstances": "Cuántas ejecuciones de este flujo de trabajo están en curso. Lo establece el sistema.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó el flujo de trabajo por última vez. Lo establece el sistema.",
       "startEvents": "Las formas en que puede comenzar una ejecución de este flujo, p. ej. al crearse un pedido o cada mañana a las 8. Sin ninguno, cualquiera puede iniciarlo a mano.",
       "roles": "Los roles que participan en este flujo de trabajo. Todo rol que realice una de sus tareas debe figurar aquí.",
@@ -202,6 +204,7 @@
     "responsibleFor": "Responsable de",
     "entityRoleId": "Rol de entidad",
     "version": "Versión",
+    "releaseState": "Publicación",
     "updatedAt": "Actualizado el",
     "tabs": {
       "modeler": "Modelador de roles"
@@ -216,6 +219,7 @@
       "responsibleFor": "Los artefactos de cuyo resultado es responsable este rol, p. ej. la factura. Solo responsabilidad; lo que una tarea puede leer o escribir se define en la tarea.",
       "entityRoleId": "Rol de usuario equivalente de tu organización, opcional. Si se indica, solo los usuarios con ese rol pueden recibir tareas de este rol; vacío significa sin comprobación.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó el rol por última vez. Lo establece el sistema."
     }
   },
@@ -228,6 +232,7 @@
     "artifactTypeId": "Id de tipo",
     "stateMachineId": "Máquina de estados",
     "version": "Versión",
+    "releaseState": "Publicación",
     "updatedAt": "Actualizado el",
     "_tooltips": {
       "id": "Única dentro de tu organización; las tareas y los flujos se refieren al artefacto mediante ella. Corta, en minúsculas y con guiones, p. ej. order-entity; evita cambiarla después.",
@@ -237,6 +242,7 @@
       "artifactTypeId": "El elemento concreto que es este artefacto, según el Tipo de artefacto: el nombre de la entidad para ENTITY, del documento para DOCUMENT o del widget para WIDGET, p. ej. order.",
       "stateMachineId": "Id opcional de la máquina de estados que rige el ciclo de vida de este artefacto, p. ej. order-lifecycle. Sus nombres de estado son los que usan las tareas y los eventos de inicio.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó el artefacto por última vez. Lo establece el sistema."
     }
   },
@@ -249,6 +255,7 @@
     "preconditionRuleId": "Regla de precondición",
     "postconditionRuleId": "Regla de postcondición",
     "version": "Versión",
+    "releaseState": "Publicación",
     "updatedAt": "Actualizado el",
     "inputs": "Entradas",
     "outputs": "Salidas",
@@ -261,6 +268,7 @@
       "preconditionRuleId": "Id opcional de una regla de negocio que se comprueba antes de que la tarea se active; mientras no se cumpla, la tarea sigue esperando.",
       "postconditionRuleId": "Id opcional de una regla de negocio que debe cumplirse antes de poder completar la tarea.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó la tarea por última vez. Lo establece el sistema.",
       "inputs": "Los artefactos que lee esta tarea, p. ej. el pedido. Un flujo que use la tarea debe incluirlos entre sus Artefactos.",
       "outputs": "Los artefactos que crea o modifica esta tarea, p. ej. la factura. Un flujo que use la tarea debe incluirlos entre sus Artefactos.",
@@ -297,6 +305,7 @@
     "type": "Tipo de autenticación",
     "secretRef": "Referencia del secreto",
     "version": "Versión",
+    "releaseState": "Publicación",
     "createdAt": "Creado el",
     "operations": "Operaciones",
     "_tooltips": {
@@ -307,6 +316,7 @@
       "type": "Cómo se autentica el sistema ante la herramienta: NONE, BEARER_TOKEN, BASIC (usuario y contraseña) o API_KEY.",
       "secretRef": "Dónde se guarda la credencial: el nombre de una variable de entorno o una ruta de Vault, p. ej. JIRA_TOKEN. Nunca introduzcas la contraseña o el token.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "createdAt": "Cuándo se creó la herramienta. Lo establece el sistema.",
       "operations": "Las llamadas que ofrece esta herramienta, p. ej. create-issue. Los pasos de tarea eligen una por su id."
     }

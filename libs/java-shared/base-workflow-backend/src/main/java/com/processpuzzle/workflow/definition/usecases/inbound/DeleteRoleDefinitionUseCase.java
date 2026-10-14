@@ -1,12 +1,11 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionDeletedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,10 +27,9 @@ public class DeleteRoleDefinitionUseCase {
 
     private final RoleDefinitionRepository repository;
     private final CatalogReferenceScanner referenceScanner;
-    private final ApplicationEventPublisher events;
 
     public void delete(String orgKey, String id) {
-        RoleDefinition role = repository.findByOrgKeyAndId(orgKey, id)
+        RoleDefinition role = repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No role definition with id '%s'".formatted(id)));
 
         List<String> workflows = referenceScanner.workflowsUsingRole(orgKey, id);
@@ -43,6 +41,5 @@ public class DeleteRoleDefinitionUseCase {
             throw new ConflictException("Role '%s' is still offered by tasks %s in performedByRoles".formatted(id, tasks));
         }
         repository.delete(role);
-        events.publishEvent(new RoleDefinitionDeletedEvent(orgKey, id));
     }
 }

@@ -1,3 +1,4 @@
+import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { EntityReference, toReferenceIds } from '../reference-ids';
@@ -15,6 +16,7 @@ interface RoleDefinitionDto {
   responsibleFor?: EntityReference[];
   entityRoleId?: string;
   version?: number;
+  releaseState?: ReleaseState;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -45,6 +47,7 @@ export class RoleDefinitionMapper implements BaseEntityMapper<RoleDefinition> {
       responsibleFor: toReferenceIds(source.responsibleFor),
       entityRoleId: source.entityRoleId,
       version: source.version,
+      releaseState: source.releaseState,
       createdAt: source.createdAt,
       updatedAt: source.updatedAt,
     });

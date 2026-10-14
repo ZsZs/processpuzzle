@@ -15,16 +15,16 @@ import com.processpuzzle.baseentity.definition.domain.EntityDefinitionStatus;
 import com.processpuzzle.baseentity.definition.domain.FormControlType;
 import com.processpuzzle.baseentity.definition.domain.Multiplicity;
 import com.processpuzzle.baseentity.definition.domain.ValueKind;
-import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceExistenceCheckPort;
+import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceDataPort;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseProblem;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -90,13 +90,13 @@ class EntityDefinitionReleaseParticipantTest {
         }
     }
 
-    /** Which definition codes have objects, as the test sets it. */
-    static class Instances implements EntityInstanceExistenceCheckPort {
-        final Set<String> withObjects = new HashSet<>();
+    /** The objects of each definition code, as the test sets them. */
+    static class Instances implements EntityInstanceDataPort {
+        final Map<String, List<Map<String, Object>>> payloads = new HashMap<>();
 
         @Override
-        public boolean existsAnyInstanceOf(String orgKey, String entityDefinitionCode) {
-            return withObjects.contains(entityDefinitionCode);
+        public List<Map<String, Object>> payloadsOf(String orgKey, String entityDefinitionCode) {
+            return payloads.getOrDefault(entityDefinitionCode, List.of());
         }
     }
 
@@ -118,7 +118,7 @@ class EntityDefinitionReleaseParticipantTest {
     @BeforeEach
     void setUp() {
         repository.deleteAll();
-        instances.withObjects.clear();
+        instances.payloads.clear();
     }
 
     @Test
@@ -203,15 +203,66 @@ class EntityDefinitionReleaseParticipantTest {
             repository.save(claim);
             repository.delete(draft("order"));
         });
-        instances.withObjects.addAll(Set.of("claim", "order"));
+        instances.payloads.put("claim", List.of(
+            Map.of("amount", 12, "note", "urgent"),
+            Map.of("amount", 30, "status", "open")));
+        instances.payloads.put("order", List.of(Map.of("number", "A-1")));
 
-        assertThat(participant.check(ORG, EVERYTHING)).extracting(ReleaseProblem::severity, ReleaseProblem::key, ReleaseProblem::errorId)
+        assertThat(participant.check(ORG, EVERYTHING))
+            .extracting(ReleaseProblem::severity, ReleaseProblem::key, ReleaseProblem::errorId, ReleaseProblem::subject,
+                ReleaseProblem::affectedObjects)
             .containsExactlyInAnyOrder(
-                tuple(ReleaseProblem.Severity.WARNING, "claim", "entity.release.attributeRemoved"),
-                tuple(ReleaseProblem.Severity.ERROR, "claim", "entity.release.attributeTypeChanged"),
-                tuple(ReleaseProblem.Severity.WARNING, "claim", "entity.release.attributeNowRequired"),
-                tuple(ReleaseProblem.Severity.ERROR, "claim", "entity.release.requiredWithoutDefault"),
-                tuple(ReleaseProblem.Severity.ERROR, "order", "entity.release.removedWithObjects"));
+                tuple(ReleaseProblem.Severity.WARNING, "claim", "entity.release.attributeRemoved", "note", 1L),
+                tuple(ReleaseProblem.Severity.ERROR, "claim", "entity.release.attributeTypeChanged", "amount", 2L),
+                tuple(ReleaseProblem.Severity.WARNING, "claim", "entity.release.attributeNowRequired", "status", 1L),
+                tuple(ReleaseProblem.Severity.ERROR, "claim", "entity.release.requiredWithoutDefault", "reference", 2L),
+                tuple(ReleaseProblem.Severity.ERROR, "order", "entity.release.removedWithObjects", null, 1L));
+    }
+
+    /** The same changes as above, made while no object holds data they would contradict. */
+    @Test
+    void acceptsAChangeNoObjectsDataContradicts() {
+        saveDraft(definition("claim", attribute("amount", ValueKind.TEXT), attribute("note", ValueKind.TEXT),
+            attribute("status", ValueKind.TEXT)));
+        release();
+        transaction.executeWithoutResult(status -> {
+            BaseEntityDefinition claim = draft("claim");
+            claim.getAttributes().removeIf(attribute -> attribute.getCode().equals("note"));
+            claim.getAttributes().stream().filter(attribute -> attribute.getCode().equals("amount"))
+                .forEach(attribute -> attribute.setValueKind(ValueKind.NUMBER));
+            claim.getAttributes().stream().filter(attribute -> attribute.getCode().equals("status"))
+                .forEach(attribute -> attribute.setRequired(true));
+            // New to the definition, but the objects already hold values under its code.
+            BaseEntityAttribute reference = attribute("reference", ValueKind.TEXT);
+            reference.setRequired(true);
+            claim.addAttribute(reference);
+            repository.save(claim);
+        });
+        Map<String, Object> blankNote = new HashMap<>(Map.of("status", "open", "reference", "R-1", "note", " "));
+        blankNote.put("amount", null);
+        instances.payloads.put("claim", List.of(blankNote, Map.of("status", "closed", "reference", "R-2")));
+
+        assertThat(participant.check(ORG, EVERYTHING)).isEmpty();
+    }
+
+    @Test
+    void aTypeChangeIsRefusedForTheValuesThatDoNotFit_only() {
+        saveDraft(definition("claim", attribute("filed", ValueKind.TEXT)));
+        release();
+        transaction.executeWithoutResult(status -> {
+            BaseEntityDefinition claim = draft("claim");
+            claim.getAttributes().getFirst().setValueKind(ValueKind.DATE);
+            repository.save(claim);
+        });
+        instances.payloads.put("claim", List.of(Map.of("filed", "2026-10-14"), Map.of("filed", "14.10.2026"),
+            Map.of("filed", "yesterday")));
+
+        assertThat(participant.check(ORG, EVERYTHING)).singleElement()
+            .satisfies(problem -> {
+                assertThat(problem.errorId()).isEqualTo("entity.release.attributeTypeChanged");
+                assertThat(problem.affectedObjects()).isEqualTo(2L);
+                assertThat(problem.message()).contains("2 object(s)");
+            });
     }
 
     @Test

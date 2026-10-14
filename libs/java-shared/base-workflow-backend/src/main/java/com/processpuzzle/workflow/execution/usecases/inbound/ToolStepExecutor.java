@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.StepDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinition;
 import com.processpuzzle.workflow.definition.domain.ToolDefinitionRepository;
@@ -54,7 +55,7 @@ public class ToolStepExecutor {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now()).build();
         }
 
-        ToolDefinition tool = toolDefinitionRepository.findByOrgKeyAndId(orgKey, step.getToolDefinitionId()).orElse(null);
+        ToolDefinition tool = toolDefinitionRepository.findByOrgKeyAndIdAndChannel(orgKey, step.getToolDefinitionId(), Channel.RELEASED).orElse(null);
         if (tool == null) {
             return StepResult.builder().stepId(step.getId()).completedAt(Instant.now())
                     .error("Tool '" + step.getToolDefinitionId() + "' not found").build();

@@ -1,6 +1,8 @@
 // Public API Surface of @processpuzzle/base-entity
 
 export { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
+export { ArtifactComponent } from './lib/base-form/artifact/artifact.component';
+export { AvatarComponent } from './lib/base-form/avatar/avatar.component';
 export type { ArtifactAttr } from './lib/base-form/artifact/artifact-attr';
 export { ObjectStoreService } from './lib/object-store/object-store.service';
 export type { ObjectUriResponse } from './lib/object-store/object-store.service';

@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.NotFoundException;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
@@ -24,7 +25,7 @@ public class DeleteWorkflowDiagramUseCase {
     private final WorkflowDiagramRepository repository;
 
     public void delete(String orgKey, String workflowId) {
-        WorkflowDiagram diagram = repository.findByOrgKeyAndWorkflowId(orgKey, workflowId)
+        WorkflowDiagram diagram = repository.findByOrgKeyAndWorkflowIdAndChannel(orgKey, workflowId, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException(
                         "No diagram layout for workflow '%s'".formatted(workflowId)));
         repository.delete(diagram);

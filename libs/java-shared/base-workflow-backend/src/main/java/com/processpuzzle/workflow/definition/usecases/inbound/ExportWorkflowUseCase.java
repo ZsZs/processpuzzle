@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -75,15 +76,15 @@ public class ExportWorkflowUseCase {
     }
 
     public byte[] execute(String orgKey, String workflowId) throws IOException {
-        Workflow workflow = repository.findByOrgKeyAndId(orgKey, workflowId)
+        Workflow workflow = repository.findByOrgKeyAndIdAndChannel(orgKey, workflowId, Channel.DRAFT)
                 .orElseThrow(() -> new NotFoundException("No workflow with id '%s'".formatted(workflowId)));
 
         List<TaskDefinition> tasks = loadTasks(orgKey, workflow);
         List<RoleYamlEntry> roles = load(orgKey, roleIds(workflow, tasks),
-                roleRepository::findByOrgKeyAndIdIn, RoleDefinition::getId).stream()
+                (org, ids) -> roleRepository.findByOrgKeyAndIdInAndChannel(org, ids, Channel.DRAFT), RoleDefinition::getId).stream()
                 .map(mapper::toRoleYaml).toList();
         List<ArtifactYamlEntry> artifacts = load(orgKey, artifactIds(workflow, tasks),
-                artifactRepository::findByOrgKeyAndIdIn, ArtifactDefinition::getId).stream()
+                (org, ids) -> artifactRepository.findByOrgKeyAndIdInAndChannel(org, ids, Channel.DRAFT), ArtifactDefinition::getId).stream()
                 .map(mapper::toArtifactYaml).toList();
         List<ToolYamlEntry> tools = loadTools(orgKey, toolIds(workflow, tasks));
         List<TaskYamlEntry> taskEntries = tasks.stream().map(mapper::toTaskYaml).toList();
@@ -138,7 +139,7 @@ public class ExportWorkflowUseCase {
 
     private List<TaskDefinition> loadTasks(String orgKey, Workflow workflow) {
         Set<String> ids = new LinkedHashSet<>(workflow.taskDefinitionIds());
-        return load(orgKey, ids, taskRepository::findByOrgKeyAndIdIn, TaskDefinition::getId);
+        return load(orgKey, ids, (org, taskIds) -> taskRepository.findByOrgKeyAndIdInAndChannel(org, taskIds, Channel.DRAFT), TaskDefinition::getId);
     }
 
     /**
@@ -165,7 +166,7 @@ public class ExportWorkflowUseCase {
     private List<ToolYamlEntry> loadTools(String orgKey, Set<String> ids) {
         List<ToolYamlEntry> entries = new ArrayList<>(ids.size());
         for (String id : ids) {
-            toolRepository.findByOrgKeyAndId(orgKey, id).map(mapper::toToolYaml).ifPresent(entries::add);
+            toolRepository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT).map(mapper::toToolYaml).ifPresent(entries::add);
         }
         return entries;
     }

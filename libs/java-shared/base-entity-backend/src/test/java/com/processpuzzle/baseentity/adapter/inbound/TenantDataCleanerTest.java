@@ -203,6 +203,19 @@ class TenantDataCleanerTest {
         assertThat(releasedFiles.events).isEmpty();
     }
 
+    @Test
+    void avatarFilesAreReleasedOnTenantErasure() {
+        BaseEntityDefinition user = definition(ERASED, "user");
+        user.addAttribute(attribute("avatar", FormControlType.AVATAR, null));
+        definitions.saveAndFlush(user);
+        objects.saveAndFlush(object(ERASED, "user", Map.of("avatar", artifact(ERASED, "avatar-1"))));
+
+        erase(ERASED);
+
+        assertThat(objects.countByOrgKey(ERASED)).isZero();
+        assertThat(releasedFiles.refs()).containsExactly(new StoredObjectRef(bucket(ERASED), "avatar-1"));
+    }
+
     private void erase(String orgKey) {
         new TransactionTemplate(transactionManager)
                 .executeWithoutResult(status -> events.publishEvent(new OrganizationDeletedEvent(orgKey)));

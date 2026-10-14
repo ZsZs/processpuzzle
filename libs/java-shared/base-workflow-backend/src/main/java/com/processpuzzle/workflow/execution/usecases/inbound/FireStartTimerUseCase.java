@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.TimerExpressions;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -76,7 +77,7 @@ public class FireStartTimerUseCase {
     }
 
     private Optional<StartEvent> findTimedStartEvent(StartTimerSchedule row) {
-        return workflowRepository.findByOrgKeyAndId(row.getOrgKey(), row.getWorkflowId())
+        return workflowRepository.findByOrgKeyAndIdAndChannel(row.getOrgKey(), row.getWorkflowId(), Channel.RELEASED)
                 .map(Workflow::getStartEvents)
                 .orElse(List.of())
                 .stream()

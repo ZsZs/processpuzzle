@@ -107,6 +107,11 @@ public class BaseEntityAttribute {
     private boolean isLinkToDetails = false;
 
     /**
+     * Predefined avatar icon or image URL fallback for AVATAR form control.
+     */
+    private String defaultAvatar;
+
+    /**
      * The list column hugs its content instead of filling the remaining width. The column default lets
      * {@code ddl-auto: update} add the column to a table that already has rows.
      */
@@ -149,6 +154,7 @@ public class BaseEntityAttribute {
         this.dateFormat = source.dateFormat;
         this.linkedEntityType = source.linkedEntityType;
         this.isLinkToDetails = source.isLinkToDetails;
+        this.defaultAvatar = source.defaultAvatar;
         this.autosizeColumn = source.autosizeColumn;
         this.validationRules = source.validationRules;
     }

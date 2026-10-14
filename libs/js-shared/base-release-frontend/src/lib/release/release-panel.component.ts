@@ -4,6 +4,7 @@ import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { provideTranslocoScope, TranslocoPipe } from '@jsverse/transloco';
+import { BASE_RELEASE_TRANSLOCO_SCOPE } from '../base-release.i18n';
 import { ReleaseStore } from './release.store';
 
 /**
@@ -17,12 +18,12 @@ import { ReleaseStore } from './release.store';
   selector: 'pp-release-panel',
   standalone: true,
   imports: [TranslocoPipe, DatePipe, MatButton, MatCheckbox, MatProgressBar],
-  providers: [ReleaseStore, provideTranslocoScope({ scope: 'design' })],
+  providers: [ReleaseStore, provideTranslocoScope({ scope: BASE_RELEASE_TRANSLOCO_SCOPE, alias: BASE_RELEASE_TRANSLOCO_SCOPE })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="release">
-      <h2>{{ 'design.release_title' | transloco }}</h2>
-      <p class="release__hint">{{ 'design.release_intro' | transloco }}</p>
+      <h2>{{ 'base_release.release.title' | transloco }}</h2>
+      <p class="release__hint">{{ 'base_release.release.intro' | transloco }}</p>
 
       @if (store.isBusy()) {
         <mat-progress-bar mode="indeterminate" />
@@ -31,29 +32,29 @@ import { ReleaseStore } from './release.store';
         <p class="release__error" data-testid="release-error">{{ error }}</p>
       }
       @if (store.released(); as released) {
-        <p class="release__done" data-testid="release-done">{{ 'design.release_published' | transloco: { number: released.releaseNumber } }}</p>
+        <p class="release__done" data-testid="release-done">{{ 'base_release.release.published' | transloco: { number: released.releaseNumber } }}</p>
       }
 
       <section>
-        <h3>{{ 'design.release_pending' | transloco }}</h3>
+        <h3>{{ 'base_release.release.pending' | transloco }}</h3>
         @if (store.changesByKind().length === 0) {
-          <p data-testid="release-nothing-pending">{{ 'design.release_nothing-pending' | transloco }}</p>
+          <p data-testid="release-nothing-pending">{{ 'base_release.release.nothing-pending' | transloco }}</p>
         } @else {
           <table class="release__changes" data-testid="release-changes">
             <thead>
               <tr>
-                <th>{{ 'design.release_column_kind' | transloco }}</th>
-                <th>{{ 'design.release_column_key' | transloco }}</th>
-                <th>{{ 'design.release_column_change' | transloco }}</th>
+                <th>{{ 'base_release.release.column_kind' | transloco }}</th>
+                <th>{{ 'base_release.release.column_key' | transloco }}</th>
+                <th>{{ 'base_release.release.column_change' | transloco }}</th>
               </tr>
             </thead>
             <tbody>
               @for (group of store.changesByKind(); track group.kind) {
                 @for (change of group.changes; track change.key; let first = $first) {
                   <tr [attr.data-testid]="'release-change-' + change.kind + '-' + change.key">
-                    <td>{{ first ? ('design.release_kind_' + change.kind | transloco) : '' }}</td>
+                    <td>{{ first ? ('base_release.release.kind_' + change.kind | transloco) : '' }}</td>
                     <td><code>{{ change.key }}</code></td>
-                    <td [class]="'change change--' + change.change">{{ 'design.release_change_' + change.change | transloco }}</td>
+                    <td [class]="'change change--' + change.change">{{ 'base_release.release.change_' + change.change | transloco }}</td>
                   </tr>
                 }
               }
@@ -64,22 +65,22 @@ import { ReleaseStore } from './release.store';
 
       @if (store.errors().length || store.warnings().length) {
         <section>
-          <h3>{{ 'design.release_problems' | transloco }}</h3>
+          <h3>{{ 'base_release.release.problems' | transloco }}</h3>
           <ul class="release__problems" data-testid="release-problems">
             @for (problem of store.errors(); track $index) {
               <li class="problem problem--error">
-                <strong>{{ 'design.release_severity_error' | transloco }}</strong> {{ problem.message }}
+                <strong>{{ 'base_release.release.severity_error' | transloco }}</strong> {{ problem.message }}
               </li>
             }
             @for (problem of store.warnings(); track $index) {
               <li class="problem problem--warning">
-                <strong>{{ 'design.release_severity_warning' | transloco }}</strong> {{ problem.message }}
+                <strong>{{ 'base_release.release.severity_warning' | transloco }}</strong> {{ problem.message }}
               </li>
             }
           </ul>
           @if (store.warnings().length && !store.errors().length) {
             <mat-checkbox data-testid="release-acknowledge" [checked]="store.warningsAcknowledged()" (change)="store.acknowledgeWarnings($event.checked)">
-              {{ 'design.release_acknowledge' | transloco }}
+              {{ 'base_release.release.acknowledge' | transloco }}
             </mat-checkbox>
           }
         </section>
@@ -87,14 +88,14 @@ import { ReleaseStore } from './release.store';
 
       <div class="release__actions">
         <button mat-raised-button color="accent" type="button" data-testid="release-publish" [disabled]="!store.canPublish()" (click)="store.publish()">
-          {{ 'design.release_publish' | transloco }}
+          {{ 'base_release.release.publish' | transloco }}
         </button>
       </div>
 
       <section>
-        <h3>{{ 'design.release_history' | transloco }}</h3>
+        <h3>{{ 'base_release.release.history' | transloco }}</h3>
         @if (store.history().length === 0) {
-          <p data-testid="release-no-history">{{ 'design.release_no-history' | transloco }}</p>
+          <p data-testid="release-no-history">{{ 'base_release.release.no-history' | transloco }}</p>
         } @else {
           <ul class="release__history" data-testid="release-history">
             @for (release of store.history(); track release.releaseNumber) {
@@ -102,9 +103,9 @@ import { ReleaseStore } from './release.store';
                 <strong>#{{ release.releaseNumber }}</strong>
                 {{ release.releasedAt | date: 'medium' }}
                 @if (release.releasedBy) {
-                  · {{ 'design.release_by' | transloco: { name: release.releasedBy } }}
+                  · {{ 'base_release.release.by' | transloco: { name: release.releasedBy } }}
                 }
-                · {{ 'design.release_items' | transloco: { count: release.items.length } }}
+                · {{ 'base_release.release.items' | transloco: { count: release.items.length } }}
               </li>
             }
           </ul>

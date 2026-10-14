@@ -1,12 +1,11 @@
 package com.processpuzzle.workflow.definition.usecases.inbound;
 
+import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.workflow.common.ConflictException;
 import com.processpuzzle.workflow.common.ValidationException;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
-import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateRoleDefinitionUseCase {
 
     private final RoleDefinitionRepository repository;
-    private final ApplicationEventPublisher events;
 
     public RoleDefinition create(String orgKey, RoleDefinition role) {
         role.setOrgKey(orgKey);
@@ -36,12 +34,9 @@ public class CreateRoleDefinitionUseCase {
                     "Role id '%s' is reserved by the platform or the identity provider — choose another"
                             .formatted(role.getId()));
         }
-        if (repository.existsByOrgKeyAndId(orgKey, role.getId())) {
+        if (repository.existsByOrgKeyAndIdAndChannel(orgKey, role.getId(), Channel.DRAFT)) {
             throw new ConflictException("Role definition '%s' already exists".formatted(role.getId()));
         }
-        RoleDefinition created = repository.save(role);
-        events.publishEvent(new RoleDefinitionChangedEvent(
-                orgKey, created.getId(), created.getName(), created.getDescription()));
-        return created;
+        return repository.save(role);
     }
 }

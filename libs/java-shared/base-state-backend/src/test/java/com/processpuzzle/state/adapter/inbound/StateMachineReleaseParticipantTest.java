@@ -180,6 +180,8 @@ class StateMachineReleaseParticipantTest {
                 .extracting(ReleaseProblem::severity, ReleaseProblem::errorId)
                 .containsExactly(tuple(ReleaseProblem.Severity.ERROR, "state.release.stateRemovedWithObjects"));
         assertThat(participant.check(ORG, EVERYTHING).getFirst().message()).contains("PACKED").contains("2 object");
+        assertThat(participant.check(ORG, EVERYTHING)).extracting(ReleaseProblem::subject, ReleaseProblem::affectedObjects)
+                .containsExactly(tuple("PACKED", 2L));
     }
 
     @Test
@@ -192,8 +194,8 @@ class StateMachineReleaseParticipantTest {
             draft.setStateAttributeKey("phase");
             machines.save(draft);
         });
-        assertThat(participant.check(ORG, EVERYTHING)).extracting(ReleaseProblem::errorId)
-                .containsExactly("state.release.stateAttributeChanged");
+        assertThat(participant.check(ORG, EVERYTHING)).extracting(ReleaseProblem::errorId, ReleaseProblem::affectedObjects)
+                .containsExactly(tuple("state.release.stateAttributeChanged", 1L));
 
         transaction.executeWithoutResult(status ->
                 machines.delete(machines.findByOrgKeyAndEntityNameAndChannel(ORG, "order", Channel.DRAFT).orElseThrow()));
@@ -246,6 +248,21 @@ class StateMachineReleaseParticipantTest {
 
     private static DiagramDefinition diagram() {
         return DiagramDefinition.builder().orgKey(ORG).entityName("order").viewport(new DiagramViewport(1, 2, 0.5)).build();
+    }
+
+    /** Objects that already hold their state under the new attribute too are read correctly from it. */
+    @Test
+    void acceptsAChangedStateAttribute_whenEveryObjectHoldsAStateUnderTheNewOne() {
+        saveDraft(machine("status", "NEW"));
+        release();
+        objects.orders.add(new EntityObjectSnapshot(UUID.randomUUID(), 0, Map.of("status", "NEW", "phase", "NEW")));
+        transaction.executeWithoutResult(status -> {
+            StateMachineDefinition draft = machines.findByOrgKeyAndEntityNameAndChannel(ORG, "order", Channel.DRAFT).orElseThrow();
+            draft.setStateAttributeKey("phase");
+            machines.save(draft);
+        });
+
+        assertThat(participant.check(ORG, EVERYTHING)).isEmpty();
     }
 
     private static EntityObjectSnapshot order(String status) {

@@ -285,6 +285,16 @@ services:
       KEYCLOAK_CUSTOM_SMTP_PASSWORD: ${KEYCLOAK_CUSTOM_SMTP_PASSWORD:-}
       KEYCLOAK_CUSTOM_SMTP_STARTTLS: ${KEYCLOAK_CUSTOM_SMTP_STARTTLS:-false}
       KEYCLOAK_CUSTOM_SMTP_SSL: ${KEYCLOAK_CUSTOM_SMTP_SSL:-false}
+      # The first administrator of each application stack realm, created or reconciled on every start;
+      # both username and password, or neither (the realm imports' seed users then stay the only login).
+      # KEYCLOAK_REMOVE_SEED_USERS=true (stage/prod) deletes `test-user` and the seeded `platform-admin`.
+      FIRST_ADMIN_TESTBED_USERNAME: ${FIRST_ADMIN_TESTBED_USERNAME:-}
+      FIRST_ADMIN_TESTBED_PASSWORD: ${FIRST_ADMIN_TESTBED_PASSWORD:-}
+      FIRST_ADMIN_TESTBED_EMAIL: ${FIRST_ADMIN_TESTBED_EMAIL:-}
+      FIRST_ADMIN_ADMIN_USERNAME: ${FIRST_ADMIN_ADMIN_USERNAME:-}
+      FIRST_ADMIN_ADMIN_PASSWORD: ${FIRST_ADMIN_ADMIN_PASSWORD:-}
+      FIRST_ADMIN_ADMIN_EMAIL: ${FIRST_ADMIN_ADMIN_EMAIL:-}
+      KEYCLOAK_REMOVE_SEED_USERS: ${KEYCLOAK_REMOVE_SEED_USERS:-false}
       # The staff account the private repository's end-to-end suite logs in with, re-created on every
       # start because stage is reset regularly. Both or neither; unset locally and in CI, which use
       # the seeded `platform-admin` instead.

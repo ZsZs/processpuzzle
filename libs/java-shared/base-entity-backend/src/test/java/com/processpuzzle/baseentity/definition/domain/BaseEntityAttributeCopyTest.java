@@ -39,6 +39,7 @@ class BaseEntityAttributeCopyTest {
             .dateFormat(new DateFormat(DateStyle.SHORT, TimeStyle.SHORT))
             .linkedEntityType("currency")
             .isLinkToDetails(true)
+            .defaultAvatar("person")
             .autosizeColumn(true)
             .validationRules(Map.of("min", 0))
             .build();

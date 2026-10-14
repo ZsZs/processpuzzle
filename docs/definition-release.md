@@ -20,6 +20,10 @@ current *draft* of its modules.
 - **Scope.** App and modules; entities, state machines (with diagrams) and rules; workflows with their
   catalogue (roles, tasks, artifacts, tools) and events; documents. Widget definitions stay out: nothing
   reads them at run time, rendering uses the compiled widget registry.
+- **Documents are checked, not released** (2026-10-14). A document is content with an editorial workflow of
+  its own — editor and publisher roles, a public read path, Publish and Unpublish per translation — so a
+  release neither publishes nor withdraws one. Starters carry no documents yet; a document import
+  participant comes when a starter needs one.
 
 ## The release machinery
 
@@ -89,8 +93,10 @@ erases both tables with the tenant.
 | entity | `base_entity_definition.channel`, unique `(org_key, code, channel)`; attributes follow their definition | `EntityDefinitionReleaseParticipant` (base-entity) | step 2 |
 | state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
 | rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
-| workflow, catalogue, event | `channel` on the definition tables | step 3 | |
-| document | `published_documents`, per translation | step 4 | |
+| event | `event_definition.channel`, key `(org_key, id, channel)` | `EventDefinitionReleaseParticipant` (base-event) | step 3a |
+| artifact, role, tool, task | `channel` on `workflow_artifact_definition`, `workflow_role_definition`, `workflow_tool_definition`, `workflow_task_definition`, keys `(org_key, id, channel)` | `ArtifactReleaseParticipant`, `RoleReleaseParticipant`, `ToolReleaseParticipant`, `TaskReleaseParticipant` (base-workflow) | step 3b |
+| workflow | `workflow_definition.channel` and `workflow_diagram.channel`; a workflow and its diagram are released together, as one definition | `WorkflowReleaseParticipant` (base-workflow) | step 3b |
+| document | not released: `published_documents` keeps each translation's own published snapshot | `DocumentReleaseParticipant` (base-document), checks only | step 4 |
 
 **Designer CRUD reads and writes the draft only.** Endpoints are unchanged; reads take an optional
 `revision=draft|released`, `draft` by default. Reading the draft requires design rights, the released row
@@ -129,6 +135,63 @@ matching attributes by code — never clear-and-re-add, because Hibernate flushe
 deletes. `DefaultEntityLoader` releases what it seeds at once, since its sample objects are validated
 against the released definition.
 
+### Events (step 3a)
+
+- **Who reads which row.** The platform-fact matcher (`PlatformEventCatalogListener`) and the thrown-event
+  republisher (`ThrownEventCatalogListener`, via `FindEventDefinition.released`) read the released catalog.
+  Designer CRUD, import and the list and get endpoints (`revision`, `releaseState`) work on drafts, and so does
+  the workflow's `EventCatalogPort` (`FindEventDefinition.exists` / `kindOf`): it is asked while a designer saves
+  a workflow, which is designed against drafts.
+- **References.** A SYSTEM event refers to the entity type its facts are about (`subjectType`, an entity
+  code). An event holds no data of its own, so it has no compatibility checks; a running workflow that still
+  waits for a removed event is a reference of the workflow, checked on its side (step 3b).
+- **Seeding.** `DefaultEventDefinitionImporter` releases what its files wrote, and only that
+  (`ImportOutcome.written`).
+- **Backfill.** `EventChannelBackfill`: the generic `ChannelBackfill`, since the table has no children and no
+  foreign key onto it.
+
+### Workflows and their catalogue (step 3b)
+
+- **One mechanism, five kinds.** `DefinitionReleaseParticipant` (base-workflow) does what every kind does — pending by
+  a canonical fingerprint of the authored fields, release in place, removal — and each kind names its rows, content,
+  copy and references. Each catalogue item is its own entry in the Release section, since workflows share them; a
+  workflow's entry covers its diagram, so a moved node is a pending change.
+- **Who reads which row.** The running application reads released rows: `ResolveWorkflowUseCase` (every start, task
+  completion, assignment, skip, timer and catch event), `TriggeredStartListener`, `InputArtifactStartListener`,
+  `StartEventAdmission`, `FireStartTimerUseCase`, `StartTimerScheduleReconciler` and `ToolStepExecutor`. Designer CRUD,
+  import, export, the validators and `CatalogReferenceScanner` work on drafts; list and get take `revision` and
+  report `releaseState`.
+- **What follows the release instead of a save.** The organization's directory (Keycloak groups for roles): the
+  release announces `RoleDefinitionChangedEvent` / `RoleDefinitionDeletedEvent` for the roles it changes and removes,
+  and `SyncRoleDirectory` reconciles released roles only. The start timers: the release announces
+  `WorkflowChangedEvent`, and the reconciler reads the released workflow. Both listeners run after the release
+  commits. A designer's save announces neither any longer.
+- **References.** A workflow: the workflow it extends, its roles, artifacts, tools and tasks, the roles performing its
+  tasks and authorized to start it, the artifacts a start requires, and its events (triggering, thrown, caught). A
+  task: its roles, input and output artifacts, pre- and postcondition rules, and the tools of its steps. A role: the
+  artifacts it is responsible for. An artifact: its entity type (by name) and its state machine.
+- **Checks.** Error: a workflow removed while instances run (ACTIVE or SUSPENDED); a task removed while a task
+  instance has it open (PENDING, ACTIVE or BLOCKED). Running instances are not pinned to their revision: they continue
+  on the released definition (phase 3).
+- **Seeding.** `DefaultWorkflowImporter` releases what its file wrote (`ImportOutcome.written`, by kind) through
+  `ReleaseImportedWorkflows`, catalogue first.
+- **Backfill.** `WorkflowChannelBackfill`: the generic `ChannelBackfill` over the six tables.
+
+### Documents (step 4)
+
+`DocumentReleaseParticipant` takes part in every release without releasing anything: nothing is pending,
+and its `release` does nothing.
+
+- **Referable** are the documents with a published translation, by id and by slug, since that is what the
+  live application can show. An app route to a document nobody has published therefore refuses the
+  release, as a route to a missing entity type does. Until step 4, references into documents were not
+  checked at all.
+- **References** are the entity types the document's input ports are bound to, optional: the host resolves
+  a port's binding, and a port of a missing type shows nothing.
+- **Check:** a warning for every document with a translation whose draft is not what readers are served
+  (never published, or edited since), so whoever releases knows the live application still shows the
+  older text, or none.
+
 ### Compatibility checks (`check`), from step 2
 
 - **Entity** (only while objects of the type exist). Error: the definition removed; a required attribute
@@ -160,7 +223,7 @@ released copy the channel backfill gave it — it then waits for its first relea
 
 ## Frontend
 
-- **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
+- **Release section** in `@processpuzzle/base-release`, mounted by `@processpuzzle/design` at `/design/release`: the pending changes by kind, the
   problems (errors block, warnings need confirming), Publish, and the release history.
 - **The live application** renders the published layout and its inline modules.
 - **Revision of the reads (step 2).** `DEFINITION_REVISION` (`@processpuzzle/util`) answers, per read,
@@ -175,7 +238,8 @@ released copy the channel backfill gave it — it then waits for its first relea
     not reliable, since the dynamic screens' injection tokens are cached at the root too.
 - **Release column.** The entity-definition, state-machine and rule lists and forms show `releaseState`,
   read-only (`ReleaseState` in `@processpuzzle/util`); the entity-definition status offers Active and
-  Deprecated only.
+  Deprecated only. From step 3, so do the workflow, role, task, artifact, tool and event-definition screens, whose
+  services (with the workflow diagram's) mark their reads with `definitionRead()` too.
 - **Read-only Preview.** `ENTITY_PREVIEW_READ_ONLY` (`@processpuzzle/base-entity`), provided `true` by a
   host showing drafts, makes `EntityPreviewMode` disable New, Save and Delete on the screens of
   definition-built entity types — they show live objects through draft definitions. The designer's own,
@@ -214,7 +278,8 @@ be released with.
 2. **Entities, states, rules** — channels, backfill, participants with checks, run-time readers, the
    frontend revision token, a read-only Preview.
 3. **Workflows, catalogue, events.**
-4. **Documents** and the starter install's release.
+4. **Documents** — checked, not released; see [Documents](#documents-step-4). The starter install's
+   release is in place since step 2; starters carry no documents yet.
 
 Each is a core PR, then library releases, then a biz bump. The custom backend adds base-release-backend
 in step 1, and an application-level test asserts that every definition table with a `channel` column has

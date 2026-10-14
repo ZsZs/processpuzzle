@@ -2,6 +2,8 @@ import http from 'k6/http';
 import { check } from 'k6';
 import { AUTH, KEYCLOAK_URL, REALM, CLIENT_ID, USERNAME, PASSWORD } from './config.js';
 
+// Password grant. The testbed and biz clients no longer allow Direct Access Grants, so point
+// KC_CLIENT_ID at a throwaway client that does (a local/ci realm only, never stage or prod).
 // Password grant against the testbed's public client. Call in setup() so the (CPU-heavy) login is
 // not part of the measured API traffic; tokens last minutes, so long runs call refreshIfNeeded().
 export function login(user = USERNAME, pass = PASSWORD) {
