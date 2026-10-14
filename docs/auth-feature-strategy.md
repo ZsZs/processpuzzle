@@ -1,7 +1,9 @@
 # ProcessPuzzle Auth Feature — Strategy Note
 
 ## Status
-Login/Logout implemented. Self-registration (`POST /registration`) is implemented, and The branded sign-in page is implemented (see below; full-page redirect, the popup/`postMessage` flow is still open). Direct Access Grants are disabled on the testbed and biz clients (realm imports, plus reconciliation of existing realms by `bootstrap-platform-admin-client.sh`). The k6 performance tests, which use a password grant, need a dedicated client that allows it in a local/ci realm. `base-workflow-backend` synchronises roles from domain model to Keycloak. This note covers the design for the next phase: registration, a ProcessPuzzle-branded login experience, admin-driven role assignment, and default-administrator bootstrapping.
+Implemented: login/logout; self-registration (`POST /registration`); the branded sign-in page (full-page redirect); Direct Access Grants disabled on the testbed and biz clients (realm imports, with existing realms reconciled by `bootstrap-platform-admin-client.sh`); a first administrator per realm, bootstrapped from environment variables; the roles-vs-groups decision; and role assignment through the org-admin module (`UserDirectoryPort`, Keycloak Organization groups). `base-workflow-backend` synchronises roles from domain model to Keycloak.
+
+**Still open:** the popup/`postMessage` login flow, and a dedicated direct-grant client for the k6 performance tests (they use a password grant) in a local/ci realm. The sections below record the design behind each piece.
 
 ## Guiding decision: no Direct Access Grants
 Credential validation stays inside Keycloak via the Authorization Code + PKCE flow. Resource Owner Password Credentials (Direct Grant) was considered and rejected — it would expose password handling in the frontend/backend, forecloses MFA and social login, and is discouraged by current OIDC practice. This constraint shapes every choice below.
