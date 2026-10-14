@@ -225,6 +225,42 @@ class EntityDefinitionReleaseParticipantTest {
                 tuple(ReleaseProblem.Severity.ERROR, "order", "entity.release.removedWithObjects", null, 1L));
     }
 
+    @Test
+    void suggestsTheStepsThatWouldResolveAProblem() {
+        BaseEntityAttribute tier = attribute("tier", ValueKind.ENUM);
+        tier.setEnumValues(List.of("GOLD", "SILVER"));
+        saveDraft(definition("customer", attribute("customerName", ValueKind.TEXT), attribute("vip", ValueKind.BOOLEAN)));
+        release();
+        transaction.executeWithoutResult(status -> {
+            BaseEntityDefinition customer = draft("customer");
+            customer.getAttributes().removeIf(attribute -> attribute.getCode().equals("customerName"));
+            customer.addAttribute(attribute("name", ValueKind.TEXT));
+            customer.addAttribute(attribute("since", ValueKind.DATE));
+            customer.getAttributes().stream().filter(attribute -> attribute.getCode().equals("vip"))
+                .forEach(attribute -> attribute.setRequired(true));
+            tier.setRequired(true);
+            customer.addAttribute(tier);
+            repository.save(customer);
+        });
+        instances.payloads.put("customer", List.of(Map.of("customerName", "Acme GmbH")));
+
+        Map<String, ReleaseProblem> problems = new HashMap<>();
+        participant.check(ORG, EVERYTHING).forEach(problem -> problems.put(problem.subject(), problem));
+
+        assertThat(problems.get("customerName").resolutions()).singleElement().satisfies(rename -> {
+            assertThat(rename.step().operation()).isEqualTo("renameAttribute");
+            assertThat(rename.step().subject()).isEqualTo("customerName");
+            assertThat(rename.input()).isEqualTo("to");
+            assertThat(rename.choices()).containsExactly("name");
+        });
+        assertThat(problems.get("vip").resolutions()).singleElement().satisfies(fill -> {
+            assertThat(fill.step().operation()).isEqualTo("fillAttribute");
+            assertThat(fill.inputKind()).isEqualTo("boolean");
+        });
+        assertThat(problems.get("tier").resolutions()).singleElement()
+            .satisfies(fill -> assertThat(fill.choices()).containsExactly("GOLD", "SILVER"));
+    }
+
     /** The same changes as above, made while no object holds data they would contradict. */
     @Test
     void acceptsAChangeNoObjectsDataContradicts() {

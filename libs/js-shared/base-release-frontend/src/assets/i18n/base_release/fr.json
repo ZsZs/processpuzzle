@@ -33,6 +33,21 @@
     "kind_task": "Tâches",
     "kind_workflow": "Workflows",
     "kind_module": "Modules",
-    "kind_app": "Application"
+    "kind_app": "Application",
+    "steps": "Étapes de migration",
+    "steps-intro": "La publication exécute d’abord ces étapes, dans l’ordre, pour que les objets existants correspondent à vos brouillons. Les problèmes ci-dessus sont vérifiés sur les données telles que les étapes les laissent.",
+    "steps-run": "{{count}} étape(s) de migration",
+    "step_renameAttribute": "Renommer {{key}}.{{subject}}",
+    "step_fillAttribute": "Remplir {{key}}.{{subject}}",
+    "step_mapValues": "Faire correspondre les valeurs de {{key}}.{{subject}}",
+    "step_remove": "Retirer",
+    "outcome_applied": "{{count}} objet(s) seraient modifiés",
+    "outcome_skipped": "Ignorée :",
+    "outcome_failed": "Échouée :",
+    "resolve_renameAttribute": "Il a été renommé en",
+    "resolve_fillAttribute": "Remplir les objets sans valeur avec",
+    "resolve_mapValues": "Déplacer ces objets vers",
+    "resolve_choose": "Choisir…",
+    "resolve_apply": "Appliquer"
   }
 }

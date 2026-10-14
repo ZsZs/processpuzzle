@@ -33,6 +33,21 @@
     "kind_task": "Tareas",
     "kind_workflow": "Flujos de trabajo",
     "kind_module": "Módulos",
-    "kind_app": "Aplicación"
+    "kind_app": "Aplicación",
+    "steps": "Pasos de migración",
+    "steps-intro": "La versión ejecuta primero estos pasos, en orden, para que los objetos existentes se ajusten a sus borradores. Los problemas de arriba se comprueban sobre los datos tal como los dejan los pasos.",
+    "steps-run": "{{count}} paso(s) de migración",
+    "step_renameAttribute": "Renombrar {{key}}.{{subject}}",
+    "step_fillAttribute": "Rellenar {{key}}.{{subject}}",
+    "step_mapValues": "Asignar los valores de {{key}}.{{subject}}",
+    "step_remove": "Quitar",
+    "outcome_applied": "Cambiarían {{count}} objeto(s)",
+    "outcome_skipped": "Omitido:",
+    "outcome_failed": "Fallido:",
+    "resolve_renameAttribute": "Se renombró a",
+    "resolve_fillAttribute": "Rellenar los objetos sin valor con",
+    "resolve_mapValues": "Mover estos objetos a",
+    "resolve_choose": "Elegir…",
+    "resolve_apply": "Aplicar"
   }
 }
