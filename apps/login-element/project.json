@@ -63,7 +63,9 @@
       "options": {
         "commands": [
           "mkdir -p tools/docker/keycloak/themes/processpuzzle/login/resources/js",
-          "cp dist/apps/login-element/browser/main.js tools/docker/keycloak/themes/processpuzzle/login/resources/js/main.js"
+          "cp dist/apps/login-element/browser/main.js tools/docker/keycloak/themes/processpuzzle/login/resources/js/main.js",
+          "mkdir -p tools/docker/keycloak/themes/processpuzzle/login/resources/img",
+          "cp libs/js-shared/auth/feature/assets/auth/pp_card.svg tools/docker/keycloak/themes/processpuzzle/login/resources/img/pp_card.svg"
         ],
         "parallel": false
       }

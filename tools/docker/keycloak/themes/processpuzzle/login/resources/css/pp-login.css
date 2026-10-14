@@ -1,0 +1,10 @@
+/* The ProcessPuzzle backdrop for every Keycloak page of this theme. img/pp_card.svg is copied in from
+   libs/js-shared/auth/feature/assets/auth by `nx run login-element:package-login-theme`. */
+.pf-v5-c-login,
+.login-pf {
+  background-color: #eeeeee;
+  background-image: url('../img/pp_card.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
