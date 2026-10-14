@@ -12,4 +12,5 @@ export {
 } from './service/provide-authentication.service';
 export type { FirebaseAuthConfig } from './service/firebase-auth.config';
 export type { KeycloakAuthConfig } from './service/keycloak-auth.config';
+export { RegistrationError, RegistrationService, type RegistrationRequest } from './service/registration.service';
 export { User } from './user/user';

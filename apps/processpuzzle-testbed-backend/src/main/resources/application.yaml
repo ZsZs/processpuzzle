@@ -193,6 +193,13 @@ processpuzzle:
       # is appended. Not the public hostname: the vision server is not on the internet.
       callback-base-url: ${VISION_CALLBACK_BASE_URL:http://localhost:8080}
       stack: ${PROCESSPUZZLE_SECURITY_STACK_REALM:processpuzzle-testbed}
+  # Open sign-up for the Testbed only. POST /registration creates the account through the Keycloak
+  # Admin API, so the realm's own registration page (registrationAllowed) stays off. Needs
+  # keycloak.admin.client-secret. VERIFY_EMAIL needs SMTP configured in the realm, which the Testbed
+  # realm has not, hence off by default.
+  registration:
+    enabled: ${PROCESSPUZZLE_REGISTRATION_ENABLED:true}
+    verify-email: ${PROCESSPUZZLE_REGISTRATION_VERIFY_EMAIL:false}
 
 keycloak:
   admin:
