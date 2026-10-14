@@ -4,6 +4,7 @@
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
+  "loginTheme": "processpuzzle",
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,

@@ -120,3 +120,11 @@ The Compose file sets `KC_BOOTSTRAP_ADMIN_USERNAME=admin` / `KC_BOOTSTRAP_ADMIN_
 start, so rotating the password is a redeploy. The admin realm account gets `platform-admin`. Biz and custom have no seed user: biz is public sign-up, and custom tenants get admins through the org-admin invite flow. The imports' seed users (`test-user`, `platform-admin`) remain for local and CI; with
 `KEYCLOAK_REMOVE_SEED_USERS=true` (stage/prod) they are deleted, and the script refuses to do so for a realm
 whose first administrator is not configured. See `env/infrastructure/.env.example`.
+
+## The login theme
+
+`themes/processpuzzle/login` replaces Keycloak's sign-in page with the `<pp-login-form>` Angular Element
+(`apps/login-element`). The bundle is a build output, not committed: run
+`npx nx run login-element:package-login-theme` before building the image locally (CI does it through
+`.github/actions/build-login-theme`). Without the bundle `login.ftl` falls back to a plain form, so sign-in
+keeps working. Realms select it with `loginTheme`; `keycloak-init` sets it on realms imported earlier.

@@ -23,6 +23,9 @@ on:
       # makes an unaffected image nearly free, and the alternative is a path list that silently rots
       # every time a Dockerfile gains a COPY.
       - 'tools/docker/**'
+      - 'apps/login-element/**'
+      - 'libs/js-shared/auth/**'
+      - '.github/actions/build-login-theme/**'
       - 'tools/mock-backend/**'
       # The vision server's image is built from its source, not only from tools/docker/.
       - 'apps/vision-server/**'
@@ -33,6 +36,9 @@ on:
     branches: [ develop ]
     paths:
       - 'tools/docker/**'
+      - 'apps/login-element/**'
+      - 'libs/js-shared/auth/**'
+      - '.github/actions/build-login-theme/**'
       - 'tools/mock-backend/**'
       - 'apps/vision-server/**'
       - '.github/workflows/build-infrastructure.yml'
@@ -80,6 +86,12 @@ jobs:
       - name: Free disk space
         if: matrix.large
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL && df -h /
+
+      # The login theme's <pp-login-form> bundle is built from source, so the Keycloak image needs it
+      # on disk before its Dockerfile COPYs the themes.
+      - name: Build the login theme bundle
+        if: matrix.name == 'processpuzzle-keycloak'
+        uses: ./.github/actions/build-login-theme
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3

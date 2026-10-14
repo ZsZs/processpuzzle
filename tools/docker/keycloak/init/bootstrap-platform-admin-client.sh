@@ -698,6 +698,9 @@ for realm in processpuzzle-testbed processpuzzle-biz processpuzzle-admin process
     continue
   fi
 
+  # Same one-shot reason: the branded sign-in page (login-element) for realms imported before it existed.
+  "$KCADM" update "realms/${realm}" -s 'loginTheme=processpuzzle' ||     echo "  WARNING: could not set the login theme of '${realm}'."
+
   # Realm imports are one-shot, so realms created before Direct Access Grants and the built-in
   # registration page were switched off keep them until reconciled here (docs/auth-feature-strategy.md).
   for app_client in processpuzzle-testbed processpuzzle-biz; do
