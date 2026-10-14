@@ -13,11 +13,11 @@ describe('base-release SamplesComponent', () => {
     });
   });
 
-  it('offers no sample yet, so nothing is highlighted', async () => {
+  it('offers the Release panel, with nothing highlighted before one is chosen', async () => {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl('/base-release/samples', SamplesComponent);
 
-    expect(component.tabs).toEqual([]);
+    expect(component.tabs).toEqual([{ route: 'release', label: 'Release' }]);
     expect(component.selectedButton()).toBe('');
   });
 });

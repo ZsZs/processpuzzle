@@ -193,13 +193,13 @@
     "overview_tab_label": "Áttekintés",
     "samples_tab_label": "Minták",
     "samples_desc_1": "Egy kiadás az összes függő piszkozat-definíciót egyszerre élesíti, vagy egyiket sem, így a futó alkalmazás sosem lát félig közzétett tervet.",
-    "samples_desc_2": "A könyvtár még nem ad kiadási képernyőket; a minták itt jelennek meg, amint kiadás-specifikus komponensek készülnek.",
+    "samples_desc_2": "Az alábbi Release panel típus szerint mutatja a testbed szervezet függő vázlatait, azokat a problémákat, amelyek miatt egy kiadás elutasítva lenne vagy figyelmeztet, és az eddigi kiadásokat; a Közzététel mindet egyszerre adja ki.",
     "intro_heading": "ProcessPuzzle definíciókiadás",
     "frontend_heading": "Frontend — @processpuzzle/base-release",
     "backend_heading": "Backend — base-release-backend",
     "intro_paragraph_1": "A tervezők egy szervezet definícióinak piszkozatait szerkesztik; a futó alkalmazás csak a kiadottakat olvassa. Egy kiadás az összes függő piszkozatot egy tranzakcióban közzéteszi, miután együtt ellenőrizte őket.",
     "intro_paragraph_2": "A funkció két, közös doménszókincsen osztozó, egymást kiegészítő könyvtárból áll:",
-    "intro_frontend_desc": "Angular könyvtár, amely a kiadás-specifikus komponenseket fogja tartalmazni; egyelőre beállított váz.",
+    "intro_frontend_desc": "Angular könyvtár a Release panellel – függő változások, problémák és kiadási előzmények –, amelyet a tervező a /design/release útvonalon csatol.",
     "intro_backend_desc": "Spring Boot modul, amely megtervezi a kiadásokat, minden funkcióval kiadatja a definícióit, és rögzíti az előzményeket."
   },
   "base-workflows": {

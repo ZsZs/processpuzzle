@@ -193,13 +193,13 @@
     "overview_tab_label": "Übersicht",
     "samples_tab_label": "Beispiele",
     "samples_desc_1": "Ein Release macht alle ausstehenden Entwurfsdefinitionen auf einmal live — oder keine, sodass die laufende Anwendung nie ein halb veröffentlichtes Design sieht.",
-    "samples_desc_2": "Die Bibliothek liefert noch keine Release-Oberflächen; Beispiele erscheinen hier, sobald release-spezifische Komponenten hinzukommen.",
+    "samples_desc_2": "Das Release-Panel unten zeigt die ausstehenden Entwürfe der Testbed-Organisation nach Art, die Probleme, die ein Release verweigern oder vor denen es warnen würde, und die bisherigen Releases; Veröffentlichen gibt sie alle auf einmal frei.",
     "intro_heading": "ProcessPuzzle Definitions-Release",
     "frontend_heading": "Frontend — @processpuzzle/base-release",
     "backend_heading": "Backend — base-release-backend",
     "intro_paragraph_1": "Designer bearbeiten Entwürfe der Definitionen einer Organisation; die laufende Anwendung liest nur freigegebene. Ein Release veröffentlicht alle ausstehenden Entwürfe in einer Transaktion, nachdem sie gemeinsam geprüft wurden.",
     "intro_paragraph_2": "Das Feature besteht aus zwei sich ergänzenden Bibliotheken mit gemeinsamem Domänenvokabular:",
-    "intro_frontend_desc": "Angular-Bibliothek, die die release-spezifischen Komponenten aufnehmen wird; derzeit ein konfiguriertes Gerüst.",
+    "intro_frontend_desc": "Angular-Bibliothek mit dem Release-Panel – ausstehende Änderungen, Probleme und Release-Historie –, das der Designer unter /design/release einbindet.",
     "intro_backend_desc": "Spring-Boot-Modul, das Releases plant, jedes Feature seine Definitionen freigeben lässt und den Verlauf aufzeichnet."
   },
   "base-workflows": {

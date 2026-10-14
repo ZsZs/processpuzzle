@@ -193,13 +193,13 @@
     "overview_tab_label": "Aperçu",
     "samples_tab_label": "Exemples",
     "samples_desc_1": "Une version met en ligne toutes les définitions en brouillon en attente d'un coup, ou aucune, de sorte que l'application en cours ne voit jamais une conception à moitié publiée.",
-    "samples_desc_2": "La bibliothèque ne fournit pas encore d'écrans de version ; les exemples apparaîtront ici à mesure que des composants spécifiques seront ajoutés.",
+    "samples_desc_2": "Le panneau Release ci-dessous liste les brouillons en attente de l'organisation du testbed par type, les problèmes qui feraient refuser une publication ou la signaleraient, et les publications déjà faites ; Publier les publie tous à la fois.",
     "intro_heading": "Publication des Définitions ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-release",
     "backend_heading": "Backend — base-release-backend",
     "intro_paragraph_1": "Les concepteurs modifient des brouillons des définitions d'une organisation ; l'application en cours ne lit que ce qui a été publié. Une version publie tous les brouillons en attente dans une transaction, après les avoir vérifiés ensemble.",
     "intro_paragraph_2": "La fonctionnalité est répartie en deux bibliothèques complémentaires qui partagent un vocabulaire de domaine commun :",
-    "intro_frontend_desc": "Bibliothèque Angular qui accueillera les composants spécifiques aux versions ; pour l'instant un squelette configuré.",
+    "intro_frontend_desc": "Bibliothèque Angular avec le panneau Release — changements en attente, problèmes et historique des publications —, que le designer monte sous /design/release.",
     "intro_backend_desc": "Module Spring Boot qui planifie les versions, demande à chaque fonctionnalité de publier ses définitions et enregistre l'historique."
   },
   "base-workflows": {

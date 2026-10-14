@@ -193,13 +193,13 @@
     "overview_tab_label": "Resumen",
     "samples_tab_label": "Ejemplos",
     "samples_desc_1": "Una versión pone en producción todas las definiciones en borrador pendientes a la vez, o ninguna, de modo que la aplicación en ejecución nunca ve un diseño publicado a medias.",
-    "samples_desc_2": "La biblioteca aún no aporta pantallas de versiones; los ejemplos aparecerán aquí cuando se añadan componentes específicos.",
+    "samples_desc_2": "El panel Release de abajo muestra los borradores pendientes de la organización del testbed por tipo, los problemas por los que una publicación se rechazaría o avisaría, y las publicaciones hechas; Publicar los publica todos a la vez.",
     "intro_heading": "Publicación de Definiciones de ProcessPuzzle",
     "frontend_heading": "Frontend — @processpuzzle/base-release",
     "backend_heading": "Backend — base-release-backend",
     "intro_paragraph_1": "Los diseñadores editan borradores de las definiciones de una organización; la aplicación en ejecución solo lee lo publicado. Una versión publica todos los borradores pendientes en una transacción, tras comprobarlos en conjunto.",
     "intro_paragraph_2": "La funcionalidad se divide en dos bibliotecas complementarias que comparten un vocabulario de dominio común:",
-    "intro_frontend_desc": "Biblioteca Angular que alojará los componentes específicos de versiones; por ahora un andamiaje configurado.",
+    "intro_frontend_desc": "Biblioteca Angular con el panel Release —cambios pendientes, problemas e historial de publicaciones—, que el diseñador monta en /design/release.",
     "intro_backend_desc": "Módulo de Spring Boot que planifica las versiones, pide a cada funcionalidad que publique sus definiciones y registra el historial."
   },
   "base-workflows": {
