@@ -1,0 +1,23 @@
+name: Build the Keycloak login theme bundle
+description: >
+  Builds the <pp-login-form> Angular Element (apps/login-element) and places it where the Keycloak
+  image's `COPY themes/` picks it up. Run before building tools/docker/keycloak/Dockerfile.
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 24.x
+        cache: 'npm'
+        cache-dependency-path: |
+          package.json
+          package-lock.json
+
+    - name: Install JavaScript dependencies
+      shell: bash
+      run: npm install --legacy-peer-deps --ignore-scripts
+
+    - name: Build and package the login element
+      shell: bash
+      run: npx nx run login-element:package-login-theme
