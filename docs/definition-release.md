@@ -20,6 +20,10 @@ current *draft* of its modules.
 - **Scope.** App and modules; entities, state machines (with diagrams) and rules; workflows with their
   catalogue (roles, tasks, artifacts, tools) and events; documents. Widget definitions stay out: nothing
   reads them at run time, rendering uses the compiled widget registry.
+- **Documents are checked, not released** (2026-10-14). A document is content with an editorial workflow of
+  its own — editor and publisher roles, a public read path, Publish and Unpublish per translation — so a
+  release neither publishes nor withdraws one. Starters carry no documents yet; a document import
+  participant comes when a starter needs one.
 
 ## The release machinery
 
@@ -92,7 +96,7 @@ erases both tables with the tenant.
 | event | `event_definition.channel`, key `(org_key, id, channel)` | `EventDefinitionReleaseParticipant` (base-event) | step 3a |
 | artifact, role, tool, task | `channel` on `workflow_artifact_definition`, `workflow_role_definition`, `workflow_tool_definition`, `workflow_task_definition`, keys `(org_key, id, channel)` | `ArtifactReleaseParticipant`, `RoleReleaseParticipant`, `ToolReleaseParticipant`, `TaskReleaseParticipant` (base-workflow) | step 3b |
 | workflow | `workflow_definition.channel` and `workflow_diagram.channel`; a workflow and its diagram are released together, as one definition | `WorkflowReleaseParticipant` (base-workflow) | step 3b |
-| document | `published_documents`, per translation | step 4 | |
+| document | not released: `published_documents` keeps each translation's own published snapshot | `DocumentReleaseParticipant` (base-document), checks only | step 4 |
 
 **Designer CRUD reads and writes the draft only.** Endpoints are unchanged; reads take an optional
 `revision=draft|released`, `draft` by default. Reading the draft requires design rights, the released row
@@ -172,6 +176,21 @@ against the released definition.
 - **Seeding.** `DefaultWorkflowImporter` releases what its file wrote (`ImportOutcome.written`, by kind) through
   `ReleaseImportedWorkflows`, catalogue first.
 - **Backfill.** `WorkflowChannelBackfill`: the generic `ChannelBackfill` over the six tables.
+
+### Documents (step 4)
+
+`DocumentReleaseParticipant` takes part in every release without releasing anything: nothing is pending,
+and its `release` does nothing.
+
+- **Referable** are the documents with a published translation, by id and by slug, since that is what the
+  live application can show. An app route to a document nobody has published therefore refuses the
+  release, as a route to a missing entity type does. Until step 4, references into documents were not
+  checked at all.
+- **References** are the entity types the document's input ports are bound to, optional: the host resolves
+  a port's binding, and a port of a missing type shows nothing.
+- **Check:** a warning for every document with a translation whose draft is not what readers are served
+  (never published, or edited since), so whoever releases knows the live application still shows the
+  older text, or none.
 
 ### Compatibility checks (`check`), from step 2
 
@@ -259,7 +278,8 @@ be released with.
 2. **Entities, states, rules** — channels, backfill, participants with checks, run-time readers, the
    frontend revision token, a read-only Preview.
 3. **Workflows, catalogue, events.**
-4. **Documents** and the starter install's release.
+4. **Documents** — checked, not released; see [Documents](#documents-step-4). The starter install's
+   release is in place since step 2; starters carry no documents yet.
 
 Each is a core PR, then library releases, then a biz bump. The custom backend adds base-release-backend
 in step 1, and an application-level test asserts that every definition table with a `channel` column has

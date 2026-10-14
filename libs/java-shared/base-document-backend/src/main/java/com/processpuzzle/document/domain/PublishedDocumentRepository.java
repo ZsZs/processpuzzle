@@ -22,6 +22,8 @@ public interface PublishedDocumentRepository extends JpaRepository<PublishedDocu
 
     List<PublishedDocument> findByOrgKeyAndDocumentId(String orgKey, String documentId);
 
+    List<PublishedDocument> findByOrgKey(String orgKey);
+
     boolean existsByOrgKeyAndDocumentId(String orgKey, String documentId);
 
     void deleteByOrgKeyAndDocumentIdAndLocale(String orgKey, String documentId, String locale);

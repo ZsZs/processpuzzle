@@ -95,6 +95,11 @@
   "release_kind_rule": "Szabályok",
   "release_kind_widget": "Widgetek",
   "release_kind_document": "Dokumentumok",
+  "release_kind_event": "Események",
+  "release_kind_artifact": "Artefaktumok",
+  "release_kind_role": "Szerepkörök",
+  "release_kind_tool": "Eszközök",
+  "release_kind_task": "Feladatok",
   "release_kind_workflow": "Munkafolyamatok",
   "release_kind_module": "Modulok",
   "release_kind_app": "Alkalmazás"

@@ -95,6 +95,11 @@
   "release_kind_rule": "Reglas",
   "release_kind_widget": "Widgets",
   "release_kind_document": "Documentos",
+  "release_kind_event": "Eventos",
+  "release_kind_artifact": "Artefactos",
+  "release_kind_role": "Roles",
+  "release_kind_tool": "Herramientas",
+  "release_kind_task": "Tareas",
   "release_kind_workflow": "Flujos de trabajo",
   "release_kind_module": "Módulos",
   "release_kind_app": "Aplicación"
