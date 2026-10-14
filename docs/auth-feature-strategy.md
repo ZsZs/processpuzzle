@@ -24,7 +24,7 @@ Only Testbed needs self-registration (Custom/Biz are invite-only — see below).
 OrgAdmins never get direct Keycloak access. All invite, role-assignment, and group-assignment operations for their organisation go through ProcessPuzzle's own **org-admin-frontend/backend** module (a bounded context inside the Custom app, following the existing hexagonal/Spring Modulith conventions), which is the sole caller of the Keycloak Admin API for these operations.
 
 - **Invite**: backend creates the Keycloak user, adds them to the Keycloak Organization, then calls `execute-actions-email` (`UPDATE_PASSWORD`, `VERIFY_EMAIL`) so Keycloak sends a themed email with a set-password link — no custom invite-token system needed.
-- **Roles vs. groups**: only **roles** round-trip to Keycloak (they need to appear in the JWT for `OrganizationGuard`/authorization checks). **Groups** are proposed as a pure PP-domain concept (workflow/team assignment, e.g. `RoleUse` in the SPEM model) with no Keycloak representation, to keep the service account's Keycloak footprint minimal.
+- **Roles vs. groups** (decided, see the code, not the original proposal): authorization-relevant roles round-trip to Keycloak and appear in the JWT. `org-admin` / `org-member` are realm roles. A tenant's own workflow roles (projected by `base-workflow`) are **Keycloak Organization groups** (top-level only, Keycloak 26.6+), which scopes them to one tenant; the token carries them as `organization.<alias>.groups`, and `RealmRoleConverter` turns them into authorities only when the token names exactly one organization. `KeycloakOrganizationUserDirectoryAdapter` writes them. Nested groups are structure, not roles, and are ignored. **Groups that are not roles** (teams, workflow assignment, `RoleUse`) stay a pure PP-domain concept with no Keycloak representation, so the service account's footprint stays limited to roles.
 
 ## Admin-driven role assignment
 Reverses the existing sync direction (today: Keycloak → domain). A `KeycloakRoleAssignmentPort` outbound adapter, backed by the same service account, pushes role changes made in the PP Admin UI to Keycloak's Admin REST API (`role-mappings` endpoints), with a domain event keeping local state consistent.
@@ -41,5 +41,5 @@ The 4-separate-backend strategy stays as-is: Testbed, Admin, Biz, and Custom eac
   - What it does share is the `processpuzzle_admin` database, which is the one deliberate exception to §3's isolated-database-per-app rule in `processpuzzle-architecture-summary.md`. One tenant registry is the point: a signup taken on the public site has to be the row the staff console sees.
 
 ## Open items
-- Confirm whether "groups" in the org-admin module should ever need to affect Keycloak-issued token claims (would require reconsidering the Keycloak-groups-free approach above).
+- ~~Groups and token claims~~ — resolved: see "Roles vs. groups" above. Revisit only if a PP-domain team concept ever needs to gate access, which would mean projecting it as an organization group like a role.
 - The popup/`postMessage` login flow is the concrete next build tasks.
