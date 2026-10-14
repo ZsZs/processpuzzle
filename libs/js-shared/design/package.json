@@ -24,13 +24,14 @@
     "@ngrx/signals": "^21.1.1",
     "@processpuzzle/base-app": "^0.3.0",
     "@processpuzzle/base-document": "^0.3.0",
+    "@processpuzzle/base-event": "^0.0.1",
+    "@processpuzzle/base-release": "^0.0.1",
     "@processpuzzle/base-rule": "^0.2.0",
     "@processpuzzle/base-starter": "^0.0.1",
     "@processpuzzle/base-state": "^0.2.0",
-    "@processpuzzle/widgets": "^1.0.0",
     "@processpuzzle/base-workflow": "^0.1.1",
-    "@processpuzzle/base-event": "^0.0.1",
     "@processpuzzle/util": "^1.2.0",
+    "@processpuzzle/widgets": "^1.0.0",
     "rxjs": "~7.8.2"
   },
   "dependencies": {
