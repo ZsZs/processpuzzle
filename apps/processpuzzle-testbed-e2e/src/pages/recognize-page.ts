@@ -60,9 +60,16 @@ export class RecognizePage {
    */
   private async choose(testId: string, option: string): Promise<void> {
     const select = this.page.getByTestId(testId);
-    await select.focus();
-    await select.press('Enter');
-    await expect(select).toHaveAttribute('aria-expanded', 'true');
+    // A mat-select without options does not open, and the page loads its races after it renders: an Enter
+    // pressed before they arrive is lost, so it is pressed again until the panel opens.
+    await expect(async () => {
+      // Enter on an open panel would pick its active option, so only a closed select is pressed.
+      if ((await select.getAttribute('aria-expanded')) !== 'true') {
+        await select.focus();
+        await select.press('Enter');
+      }
+      await expect(select).toHaveAttribute('aria-expanded', 'true', { timeout: 1_000 });
+    }).toPass();
     const panelId = await select.getAttribute('aria-controls');
     const panel = panelId ? this.page.locator(`[id="${panelId}"]`) : this.page.locator('.mat-mdc-select-panel');
     await panel.locator('mat-option').filter({ hasText: new RegExp(`^\\s*${escape(option)}\\s*$`) }).first().click();

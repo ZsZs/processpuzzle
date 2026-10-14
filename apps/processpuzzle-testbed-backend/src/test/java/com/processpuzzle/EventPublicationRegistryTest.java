@@ -17,8 +17,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 /**
  * The event publication registry stores what the platform actually publishes. A {@code PlatformEvent}
  * carries an entity's whole payload; with the registry's default {@code varchar(255)} columns its INSERT
- * failed and took the publishing transaction — the Order being created — down with it. META-INF/orm.xml
- * widens the columns; H2 enforces the same limit, so this fails without it.
+ * failed and took the publishing transaction — the Order being created — down with it. processpuzzle-core's
+ * event-publication-orm.xml widens the columns; H2 enforces the same limit, so this fails without it.
  */
 @SpringBootTest
 class EventPublicationRegistryTest {
