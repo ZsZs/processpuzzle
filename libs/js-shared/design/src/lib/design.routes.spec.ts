@@ -4,7 +4,7 @@ import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer
 import { WORKFLOW_DESIGNER_TABS } from './workflow-designer/workflow-designer.tabs';
 import { APPLICATION_DESIGNER_TABS } from './application-designer/application-designer.tabs';
 import { DESIGN_ROUTES } from './design.routes';
-import { ReleasePanelComponent } from './release/release-panel.component';
+import { ReleasePanelComponent } from '@processpuzzle/base-release';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';

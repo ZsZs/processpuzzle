@@ -223,7 +223,7 @@ released copy the channel backfill gave it — it then waits for its first relea
 
 ## Frontend
 
-- **Release section** in `@processpuzzle/design` (`/design/release`): the pending changes by kind, the
+- **Release section** in `@processpuzzle/base-release`, mounted by `@processpuzzle/design` at `/design/release`: the pending changes by kind, the
   problems (errors block, warnings need confirming), Publish, and the release history.
 - **The live application** renders the published layout and its inline modules.
 - **Revision of the reads (step 2).** `DEFINITION_REVISION` (`@processpuzzle/util`) answers, per read,

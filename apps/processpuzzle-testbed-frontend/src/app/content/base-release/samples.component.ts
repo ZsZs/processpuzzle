@@ -2,8 +2,8 @@ import { Component, computed, viewChild } from '@angular/core';
 import { SampleHostComponent, SampleTab } from '../common/sample-host.component';
 
 /**
- * Host of the `base-release` samples. The library has no screens yet: when release components are added to
- * `BASE_RELEASE_ROUTES` (mounted as this route's children in `app.routes.ts`), list each one in `tabs`.
+ * Host of the `base-release` samples: one tab per screen of `BASE_RELEASE_ROUTES`, mounted as this route's
+ * children in `app.routes.ts`. The Release panel acts on the testbed organization, through base-release-backend.
  */
 @Component({
   selector: 'base-release-samples',
@@ -13,6 +13,6 @@ import { SampleHostComponent, SampleTab } from '../common/sample-host.component'
 })
 export class SamplesComponent {
   private readonly host = viewChild(SampleHostComponent);
-  readonly tabs: SampleTab[] = [];
+  readonly tabs: SampleTab[] = [{ route: 'release', label: 'Release' }];
   readonly selectedButton = computed(() => this.host()?.selectedButton() ?? '');
 }
