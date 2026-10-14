@@ -3,7 +3,7 @@ package com.processpuzzle.baseentity.adapter.inbound;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
-import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceExistenceCheckPort;
+import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceDataPort;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
@@ -26,27 +27,30 @@ import org.springframework.stereotype.Component;
  * Releases entity definitions: copies each draft onto its released row, and deletes the released rows whose draft
  * was deleted. The running application validates and stores entity objects against the released row only.
  *
- * <p><strong>What it refuses.</strong> Objects are not migrated from one release to the next, so a change the
- * existing objects of a type would no longer fit is an error while such objects exist:
+ * <p><strong>What it refuses.</strong> Objects are not migrated from one release to the next, so a change some
+ * existing objects would no longer fit is an error, which says how many objects:
  * <ul>
- *   <li>a definition removed;</li>
- *   <li>a required attribute added without a default — no existing object has a value for it;</li>
- *   <li>an attribute whose value kind or multiplicity changes — the stored values are of the old shape;</li>
- *   <li>a definition switching between embedded and stand-alone — its objects are stored the other way.</li>
+ *   <li>a definition removed while it has objects;</li>
+ *   <li>a required attribute added without a default, while objects have no value for it;</li>
+ *   <li>an attribute whose value kind or multiplicity changes, while objects hold values of another shape;</li>
+ *   <li>a definition switching between embedded and stand-alone while it has objects — they are stored the other
+ *   way.</li>
  * </ul>
- * Warnings, which a designer may release past: an attribute removed (its stored values stay, unread), and an
- * attribute that becomes required (existing objects without a value cannot be saved until one is given).
- * A rename is a removal and an addition, and is judged as such.
+ * Warnings, which a designer may release past: an attribute removed while objects hold values for it (they stay
+ * stored, unread), and an attribute that becomes required while objects have no value for it (they cannot be saved
+ * until they get one). The objects are judged by what they hold, so a change no object's data contradicts — a type
+ * changed on an attribute nobody filled in — is no problem. A rename is a removal and an addition, and is judged as
+ * such.
  */
 @Component
 public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
 
     private final EntityDefinitionRepository repository;
-    private final EntityInstanceExistenceCheckPort instances;
+    private final EntityInstanceDataPort instances;
     private final EntityDefinitionFingerprint fingerprint;
 
     public EntityDefinitionReleaseParticipant(EntityDefinitionRepository repository,
-                                              EntityInstanceExistenceCheckPort instances,
+                                              EntityInstanceDataPort instances,
                                               EntityDefinitionFingerprint fingerprint) {
         this.repository = repository;
         this.instances = instances;
@@ -125,53 +129,84 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
         List<ReleaseProblem> problems = new ArrayList<>();
         for (BaseEntityDefinition current : released.values()) {
             BaseEntityDefinition draft = drafts.get(current.getCode());
-            if (Objects.equals(fingerprint.of(draft), fingerprint.of(current))
-                || !instances.existsAnyInstanceOf(orgKey, current.getCode())) {
+            if (Objects.equals(fingerprint.of(draft), fingerprint.of(current))) {
+                continue;
+            }
+            List<Map<String, Object>> payloads = instances.payloadsOf(orgKey, current.getCode());
+            if (payloads.isEmpty()) {
                 continue;
             }
             if (draft == null) {
                 problems.add(ReleaseProblem.error(kind(), current.getCode(), "entity.release.removedWithObjects",
-                    "'%s' still has objects; delete them before releasing its removal.".formatted(current.getCode())));
+                        "'%s' still has %d object(s); delete them before releasing its removal."
+                            .formatted(current.getCode(), payloads.size()))
+                    .about(null, (long) payloads.size()));
             } else {
-                problems.addAll(attributeProblems(current, draft));
+                problems.addAll(attributeProblems(current, draft, payloads));
             }
         }
         return problems;
     }
 
     /** What changing {@code current} into {@code draft} would do to the objects that already exist. */
-    private List<ReleaseProblem> attributeProblems(BaseEntityDefinition current, BaseEntityDefinition draft) {
+    private List<ReleaseProblem> attributeProblems(BaseEntityDefinition current, BaseEntityDefinition draft,
+                                                   List<Map<String, Object>> payloads) {
         String code = current.getCode();
         List<ReleaseProblem> problems = new ArrayList<>();
         if (current.isEmbedded() != draft.isEmbedded()) {
             problems.add(ReleaseProblem.error(kind(), code, "entity.release.embeddingChanged",
-                "'%s' cannot switch between embedded and stand-alone while it has objects.".formatted(code)));
+                    "'%s' cannot switch between embedded and stand-alone while it has %d object(s)."
+                        .formatted(code, payloads.size()))
+                .about(null, (long) payloads.size()));
         }
         Map<String, BaseEntityAttribute> before = attributesOf(current);
         Map<String, BaseEntityAttribute> after = attributesOf(draft);
         before.forEach((attributeCode, old) -> {
             BaseEntityAttribute changed = after.get(attributeCode);
             if (changed == null) {
-                problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeRemoved",
-                    "'%s.%s' is removed; the values its objects hold stay stored but are no longer shown."
-                        .formatted(code, attributeCode)));
+                long holding = count(payloads, attributeCode, value -> !StoredValues.isBlank(value));
+                if (holding > 0) {
+                    problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeRemoved",
+                            "'%s.%s' is removed; the values %d object(s) hold for it stay stored but are no longer shown."
+                                .formatted(code, attributeCode, holding))
+                        .about(attributeCode, holding));
+                }
             } else if (old.getValueKind() != changed.getValueKind() || old.isMultiValued() != changed.isMultiValued()) {
-                problems.add(ReleaseProblem.error(kind(), code, "entity.release.attributeTypeChanged",
-                    "'%s.%s' changes its type while objects hold values of the old one.".formatted(code, attributeCode)));
+                long misfits = count(payloads, attributeCode, value -> !StoredValues.isBlank(value)
+                    && !StoredValues.fits(value, changed.getValueKind(), changed.isMultiValued()));
+                if (misfits > 0) {
+                    problems.add(ReleaseProblem.error(kind(), code, "entity.release.attributeTypeChanged",
+                            "'%s.%s' changes its type, but %d object(s) hold values that do not fit the new one."
+                                .formatted(code, attributeCode, misfits))
+                        .about(attributeCode, misfits));
+                }
             } else if (!old.isRequired() && changed.isRequired() && changed.getDefaultValue() == null) {
-                problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeNowRequired",
-                    "'%s.%s' becomes required; objects without a value cannot be saved until they get one."
-                        .formatted(code, attributeCode)));
+                long empty = count(payloads, attributeCode, StoredValues::isBlank);
+                if (empty > 0) {
+                    problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeNowRequired",
+                            "'%s.%s' becomes required; %d object(s) without a value cannot be saved until they get one."
+                                .formatted(code, attributeCode, empty))
+                        .about(attributeCode, empty));
+                }
             }
         });
         after.forEach((attributeCode, added) -> {
             if (!before.containsKey(attributeCode) && added.isRequired() && added.getDefaultValue() == null) {
-                problems.add(ReleaseProblem.error(kind(), code, "entity.release.requiredWithoutDefault",
-                    "'%s.%s' is required and has no default, but existing objects have no value for it."
-                        .formatted(code, attributeCode)));
+                long empty = count(payloads, attributeCode, StoredValues::isBlank);
+                if (empty > 0) {
+                    problems.add(ReleaseProblem.error(kind(), code, "entity.release.requiredWithoutDefault",
+                            "'%s.%s' is required and has no default, but %d object(s) have no value for it."
+                                .formatted(code, attributeCode, empty))
+                        .about(attributeCode, empty));
+                }
             }
         });
         return problems;
+    }
+
+    /** How many of the objects hold, under {@code attributeCode}, a value that {@code matches}. */
+    private static long count(List<Map<String, Object>> payloads, String attributeCode, Predicate<Object> matches) {
+        return payloads.stream().map(payload -> payload.get(attributeCode)).filter(matches).count();
     }
 
     @Override

@@ -48,15 +48,20 @@ class ReleaseEndpointTest {
         when(describePendingRelease.execute(ORG)).thenReturn(new PendingRelease(
                 List.of(new PendingChange("module", "claims", PendingChange.Change.ADDED, "{}"),
                         new PendingChange("app", "app", PendingChange.Change.CHANGED, "{}")),
-                List.of(ReleaseProblem.warning("app", "app", "release.unresolved-reference", "Mounts a missing module."))));
+                List.of(ReleaseProblem.warning("app", "app", "release.unresolved-reference", "Mounts a missing module."),
+                        ReleaseProblem.error("entity", "claim", "entity.release.attributeTypeChanged", "Changes its type.")
+                                .about("amount", 3L))));
 
         var body = endpoint.getPendingRelease(ORG).getBody();
 
         assertThat(body).isNotNull();
         assertThat(body.getChanges()).extracting(change -> change.getChange())
                 .containsExactly(DefinitionChange.ADDED, DefinitionChange.CHANGED);
-        assertThat(body.getProblems()).singleElement().satisfies(problem ->
-                assertThat(problem.getSeverity()).isEqualTo(com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.WARNING));
+        assertThat(body.getProblems()).extracting(problem -> problem.getSeverity(), problem -> problem.getSubject(),
+                        problem -> problem.getAffectedObjects())
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.WARNING, null, null),
+                        org.assertj.core.groups.Tuple.tuple(com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.ERROR, "amount", 3L));
     }
 
     @Test

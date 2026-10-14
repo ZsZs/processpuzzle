@@ -172,8 +172,9 @@ The sections above describe the target. A review against the release code (phase
 
 ### 12.5 Build order
 
-1. **Data-aware checks and dry run.** The checks count the objects that do not fit (decision 6). A dry-run endpoint and a "Check against data" button run the release and roll it back (decision 5), with no steps yet.
+1. **Data-aware checks.** The checks count the objects that do not fit (decision 6), and each problem names the attribute or state it is about (`subject`) and the number of objects (`affectedObjects`), which the Resolve forms build on. The existing pending-release view already is the dry run while there are no steps: the checks do not depend on `release()`.
 2. **Steps end to end.**
+   - The dry run of decision 5: an endpoint and a "Check against data" button that run the steps and the release, then roll back.
    - Pending step storage and the `ReleaseCandidate` carrying the steps.
    - `EntityObjectMigration` with the three operations.
    - The execution order of decision 4.
