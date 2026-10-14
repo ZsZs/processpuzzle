@@ -4,7 +4,9 @@ import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
+import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.core.definition.PendingChange;
+import com.processpuzzle.core.definition.ProblemResolution;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.definition.ReleaseProblem;
@@ -38,10 +40,14 @@ import org.springframework.stereotype.Component;
  *   state is stored under the old one;</li>
  *   <li>a machine removed is a warning — its objects keep their state value, but nothing governs it any longer.</li>
  * </ul>
- * A renamed state is a removal and an addition, and is judged as such. A changed layout alone is never a problem.
+ * A renamed state is a removal and an addition, and is judged as such. A state removed while objects are in it can be
+ * resolved by moving them to a state of the draft, which the problem offers as a migration step. A changed layout alone is never a problem.
  */
 @Component
 public class StateMachineReleaseParticipant implements ReleaseParticipant {
+
+    /** base-entity's migration operation that maps an attribute's values, the state attribute's among them. */
+    static final String MAP_VALUES = "mapValues";
 
     private final StateMachineDefinitionRepository machines;
     private final DiagramDefinitionRepository diagrams;
@@ -157,8 +163,20 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
                 .forEach(stateKey -> problems.add(ReleaseProblem.error(kind(), entityName, "state.release.stateRemovedWithObjects",
                         "'%s' removes state '%s', which %d object(s) are in; move them out of it first."
                                 .formatted(entityName, stateKey, inState.get(stateKey)))
-                        .about(stateKey, inState.get(stateKey))));
+                        .about(stateKey, inState.get(stateKey))
+                        .resolvableBy(List.of(moveOutOf(draft, stateKey)))));
         return problems;
+    }
+
+    /**
+     * Moving the objects in {@code stateKey} to a state of the draft: base-entity's {@code mapValues} on the state
+     * attribute, since an object's state is an attribute value like any other.
+     */
+    private static ProblemResolution moveOutOf(StateMachineDefinition draft, String stateKey) {
+        MigrationStep step = new MigrationStep(null, DefinitionKinds.ENTITY, draft.getEntityName(), MAP_VALUES,
+                draft.getStateAttributeKey(), Map.of());
+        return ProblemResolution.asking(step, "mapping." + stateKey, "text",
+                draft.getStates().stream().map(State::key).toList());
     }
 
     @Override

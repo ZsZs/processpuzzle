@@ -182,6 +182,14 @@ class StateMachineReleaseParticipantTest {
         assertThat(participant.check(ORG, EVERYTHING).getFirst().message()).contains("PACKED").contains("2 object");
         assertThat(participant.check(ORG, EVERYTHING)).extracting(ReleaseProblem::subject, ReleaseProblem::affectedObjects)
                 .containsExactly(tuple("PACKED", 2L));
+        assertThat(participant.check(ORG, EVERYTHING).getFirst().resolutions()).singleElement().satisfies(move -> {
+            assertThat(move.step().kind()).isEqualTo("entity");
+            assertThat(move.step().key()).isEqualTo("order");
+            assertThat(move.step().operation()).isEqualTo("mapValues");
+            assertThat(move.step().subject()).isEqualTo("status");
+            assertThat(move.input()).isEqualTo("mapping.PACKED");
+            assertThat(move.choices()).containsExactly("NEW");
+        });
     }
 
     @Test

@@ -211,6 +211,36 @@ components:
           format: int64
           description: How many existing objects the problem is about; absent when it is not about data.
           example: 3
+        resolutions:
+          type: array
+          description: The migration steps that would resolve the problem; absent or empty when no step can.
+          items:
+            $ref: "#/components/schemas/ProblemResolution"
+
+    ProblemResolution:
+      type: object
+      required: [ step ]
+      description: >-
+        A migration step prepared to resolve a problem, and the one value the designer still has to
+        give it. Applying it means filling in that value and adding the step to the pending steps.
+      properties:
+        step:
+          $ref: "#/components/schemas/MigrationStep"
+        input:
+          type: string
+          description: >-
+            The parameter the designer gives a value for - a name such as value, or a path into a
+            map parameter such as mapping.PENDING. Absent when the step needs nothing more.
+          example: to
+        inputKind:
+          type: string
+          description: The kind of value the input takes.
+          enum: [ text, number, boolean, date, dateTime ]
+        choices:
+          type: array
+          description: The values the input may take; absent or empty when any value of its kind will do.
+          items:
+            type: string
 
     PendingRelease:
       type: object

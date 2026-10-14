@@ -20,6 +20,7 @@ import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
 import com.processpuzzle.core.definition.PendingChange;
+import com.processpuzzle.core.definition.ProblemResolution;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseProblem;
 import java.util.HashMap;
@@ -223,6 +224,83 @@ class EntityDefinitionReleaseParticipantTest {
                 tuple(ReleaseProblem.Severity.WARNING, "claim", "entity.release.attributeNowRequired", "status", 1L),
                 tuple(ReleaseProblem.Severity.ERROR, "claim", "entity.release.requiredWithoutDefault", "reference", 2L),
                 tuple(ReleaseProblem.Severity.ERROR, "order", "entity.release.removedWithObjects", null, 1L));
+    }
+
+    @Test
+    void suggestsTheStepsThatWouldResolveAProblem() {
+        BaseEntityAttribute tier = attribute("tier", ValueKind.ENUM);
+        tier.setEnumValues(List.of("GOLD", "SILVER"));
+        saveDraft(definition("customer", attribute("customerName", ValueKind.TEXT), attribute("vip", ValueKind.BOOLEAN)));
+        release();
+        transaction.executeWithoutResult(status -> {
+            BaseEntityDefinition customer = draft("customer");
+            customer.getAttributes().removeIf(attribute -> attribute.getCode().equals("customerName"));
+            customer.addAttribute(attribute("name", ValueKind.TEXT));
+            customer.addAttribute(attribute("since", ValueKind.DATE));
+            customer.getAttributes().stream().filter(attribute -> attribute.getCode().equals("vip"))
+                .forEach(attribute -> attribute.setRequired(true));
+            tier.setRequired(true);
+            customer.addAttribute(tier);
+            repository.save(customer);
+        });
+        instances.payloads.put("customer", List.of(Map.of("customerName", "Acme GmbH")));
+
+        Map<String, ReleaseProblem> problems = new HashMap<>();
+        participant.check(ORG, EVERYTHING).forEach(problem -> problems.put(problem.subject(), problem));
+
+        assertThat(problems.get("customerName").resolutions()).singleElement().satisfies(rename -> {
+            assertThat(rename.step().operation()).isEqualTo("renameAttribute");
+            assertThat(rename.step().subject()).isEqualTo("customerName");
+            assertThat(rename.input()).isEqualTo("to");
+            assertThat(rename.choices()).containsExactly("name");
+        });
+        assertThat(problems.get("vip").resolutions()).singleElement().satisfies(fill -> {
+            assertThat(fill.step().operation()).isEqualTo("fillAttribute");
+            assertThat(fill.inputKind()).isEqualTo("boolean");
+        });
+        assertThat(problems.get("tier").resolutions()).singleElement()
+            .satisfies(fill -> assertThat(fill.choices()).containsExactly("GOLD", "SILVER"));
+    }
+
+    /**
+     * A rename is offered only to an attribute of the removed one's shape, and a fill only for a value a designer types,
+     * in the kind of field its value kind needs.
+     */
+    @Test
+    void offersOnlyTheStepsThatFit_andAsksForTheValueInItsKind() {
+        BaseEntityAttribute tags = attribute("tags", ValueKind.TEXT);
+        tags.setMultiplicity(Multiplicity.ZERO_TO_N);
+        saveDraft(definition("item", attribute("score", ValueKind.NUMBER), tags));
+        release();
+        transaction.executeWithoutResult(status -> {
+            BaseEntityDefinition item = draft("item");
+            item.getAttributes().clear();
+            item.addAttribute(attribute("label", ValueKind.TEXT));
+            for (BaseEntityAttribute added : List.of(attribute("count", ValueKind.NUMBER), attribute("due", ValueKind.DATE),
+                attribute("at", ValueKind.DATE_TIME), attribute("owner", ValueKind.REFERENCE), attribute("level", ValueKind.ENUM),
+                attribute("codes", ValueKind.NUMBER))) {
+                added.setRequired(true);
+                item.addAttribute(added);
+            }
+            item.getAttributes().stream().filter(attribute -> attribute.getCode().equals("codes"))
+                .forEach(attribute -> attribute.setMultiplicity(Multiplicity.ZERO_TO_N));
+            repository.save(item);
+        });
+        instances.payloads.put("item", List.of(Map.of("score", 3, "tags", List.of("a"))));
+
+        Map<String, ReleaseProblem> problems = new HashMap<>();
+        participant.check(ORG, EVERYTHING).forEach(problem -> problems.put(problem.subject(), problem));
+
+        assertThat(problems.get("score").resolutions()).singleElement()
+            .satisfies(rename -> assertThat(rename.choices()).containsExactly("count"));
+        assertThat(problems.get("tags").resolutions()).isEmpty();
+        assertThat(problems.get("count").resolutions()).extracting(ProblemResolution::inputKind).containsExactly("number");
+        assertThat(problems.get("due").resolutions()).extracting(ProblemResolution::inputKind).containsExactly("date");
+        assertThat(problems.get("at").resolutions()).extracting(ProblemResolution::inputKind).containsExactly("dateTime");
+        assertThat(problems.get("level").resolutions()).singleElement()
+            .satisfies(fill -> assertThat(fill.choices()).isEmpty());
+        assertThat(problems.get("owner").resolutions()).isEmpty();
+        assertThat(problems.get("codes").resolutions()).isEmpty();
     }
 
     /** The same changes as above, made while no object holds data they would contradict. */
