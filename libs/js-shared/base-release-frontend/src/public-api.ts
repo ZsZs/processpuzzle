@@ -6,4 +6,4 @@ export { BASE_RELEASE_ROUTES } from './lib/base-release.routes';
 export { ReleasePanelComponent } from './lib/release/release-panel.component';
 export { ReleaseService } from './lib/release/release.service';
 export type { PublishOutcome } from './lib/release/release.service';
-export type { PendingChange, PendingRelease, Release, ReleaseItem, ReleaseProblem } from './lib/release/release';
+export type { MigrationStep, MigrationStepOutcome, PendingChange, PendingRelease, Release, ReleaseItem, ReleaseProblem } from './lib/release/release';

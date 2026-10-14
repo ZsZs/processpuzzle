@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { PendingRelease, Release } from './release';
+import { MigrationStep, PendingRelease, Release } from './release';
 import { ReleaseService } from './release.service';
 
 const ROOT = 'http://backend/organizations/acme';
@@ -59,6 +59,22 @@ describe('ReleaseService', () => {
     http.expectOne(`${ROOT}/releases`).flush(null, { status: 403, statusText: 'Forbidden' });
 
     await expect(result).rejects.toBeDefined();
+  });
+
+  it('reads and replaces the pending migration steps', async () => {
+    const step: MigrationStep = { kind: 'entity', key: 'customer', operation: 'renameAttribute', subject: 'customerName', parameters: { to: 'name' } };
+
+    const listed = firstValueFrom(service.pendingSteps());
+    http.expectOne(`${ROOT}/releases/pending/steps`).flush([]);
+    await expect(listed).resolves.toEqual([]);
+
+    const replaced = firstValueFrom(service.replacePendingSteps([step]));
+    const request = http.expectOne(`${ROOT}/releases/pending/steps`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual([step]);
+    request.flush([{ ...step, id: 's-1' }]);
+
+    await expect(replaced).resolves.toEqual([{ ...step, id: 's-1' }]);
   });
 
   it('reads the history', async () => {

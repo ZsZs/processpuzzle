@@ -3,11 +3,13 @@ package com.processpuzzle.release.adapter.inbound;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.release.api.BaseReleaseApi;
+import com.processpuzzle.release.model.MigrationStep;
 import com.processpuzzle.release.model.PendingRelease;
 import com.processpuzzle.release.model.Release;
 import com.processpuzzle.release.model.ReleaseRequest;
 import com.processpuzzle.release.usecase.DescribePendingRelease;
 import com.processpuzzle.release.usecase.ListReleases;
+import com.processpuzzle.release.usecase.ManagePendingSteps;
 import com.processpuzzle.release.usecase.ReleaseOrganization;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,14 +24,17 @@ public class ReleaseEndpoint implements BaseReleaseApi {
     private final DescribePendingRelease describePendingRelease;
     private final ReleaseOrganization releaseOrganization;
     private final ListReleases listReleases;
+    private final ManagePendingSteps managePendingSteps;
     private final ReleaseMapper mapper;
     private final CurrentPrincipal currentPrincipal;
 
     public ReleaseEndpoint(DescribePendingRelease describePendingRelease, ReleaseOrganization releaseOrganization,
-                           ListReleases listReleases, ReleaseMapper mapper, CurrentPrincipal currentPrincipal) {
+                           ListReleases listReleases, ManagePendingSteps managePendingSteps, ReleaseMapper mapper,
+                           CurrentPrincipal currentPrincipal) {
         this.describePendingRelease = describePendingRelease;
         this.releaseOrganization = releaseOrganization;
         this.listReleases = listReleases;
+        this.managePendingSteps = managePendingSteps;
         this.mapper = mapper;
         this.currentPrincipal = currentPrincipal;
     }
@@ -49,6 +54,17 @@ public class ReleaseEndpoint implements BaseReleaseApi {
     @Override
     public ResponseEntity<List<Release>> listReleases(String orgKey) {
         return ResponseEntity.ok(listReleases.execute(orgKey).stream().map(mapper::toModel).toList());
+    }
+
+    @Override
+    public ResponseEntity<List<MigrationStep>> listPendingSteps(String orgKey) {
+        return ResponseEntity.ok(managePendingSteps.list(orgKey).stream().map(mapper::toModel).toList());
+    }
+
+    @Override
+    public ResponseEntity<List<MigrationStep>> replacePendingSteps(String orgKey, List<MigrationStep> steps) {
+        return ResponseEntity.ok(managePendingSteps.replace(orgKey, mapper.fromModel(steps)).stream()
+                .map(mapper::toModel).toList());
     }
 
     /** Who released, as a person reads it — not the token's subject, which is a UUID. */

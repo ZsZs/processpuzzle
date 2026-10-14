@@ -98,6 +98,12 @@ class EntityDefinitionReleaseParticipantTest {
         public List<Map<String, Object>> payloadsOf(String orgKey, String entityDefinitionCode) {
             return payloads.getOrDefault(entityDefinitionCode, List.of());
         }
+
+        @Override
+        public long rewritePayloads(String orgKey, String entityDefinitionCode,
+                                    java.util.function.UnaryOperator<Map<String, Object>> rewrite) {
+            throw new UnsupportedOperationException("A release participant does not rewrite objects.");
+        }
     }
 
     @Autowired

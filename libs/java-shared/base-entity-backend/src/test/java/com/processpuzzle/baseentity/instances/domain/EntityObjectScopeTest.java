@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.instances.domain;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -72,6 +75,26 @@ class EntityObjectScopeTest {
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "order")).thenReturn(orders);
 
         assertThat(scope.findAll(ORG, "order")).isSameAs(orders);
+    }
+
+    /** Only an object whose payload the rewrite changes is written. */
+    @Test
+    void rewriteAll_writesTheObjectsItChanges_only() {
+        EntityObject open = object(ORG, "order");
+        open.setPayload(new LinkedHashMap<>(Map.of("status", "OPEN")));
+        EntityObject done = EntityObject.builder().id(UUID.randomUUID()).orgKey(ORG).entityDefinitionCode("order")
+            .version(0L).payload(new LinkedHashMap<>(Map.of("status", "DONE"))).build();
+        when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "order")).thenReturn(List.of(open, done));
+
+        long written = scope.rewriteAll(ORG, "order", payload -> {
+            payload.replace("status", "OPEN", "SUBMITTED");
+            return payload;
+        });
+
+        assertThat(written).isEqualTo(1);
+        assertThat(open.getPayload()).containsEntry("status", "SUBMITTED");
+        verify(repository).save(open);
+        verify(repository, never()).save(done);
     }
 
     @Test

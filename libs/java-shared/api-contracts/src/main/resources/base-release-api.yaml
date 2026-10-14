@@ -15,9 +15,18 @@ info:
     own validation, or live data a changed definition no longer describes. A `warning` lets the
     release through once confirmed.
 
+    ## Migration steps
+
+    A step changes existing objects so that they fit the definitions a release carries: renames an
+    attribute's values, fills empty values, maps old values onto new ones. A designer adds steps to
+    resolve the problems a release reports. `PUT .../releases/pending/steps` replaces the pending
+    steps. While there are any, the pending view runs them, checks the data as they left it, and
+    rolls back: what it reports is what the release would find. The release runs them first in its
+    own transaction and records them with what it released.
+
     ## Release
 
-    `POST .../releases` checks again, inside the release's own transaction, and either releases
+    `POST .../releases` runs the pending steps, checks again, inside the release's own transaction, and either releases
     every pending definition of every kind or nothing at all. Refused with 409 and the same pending
     body while there are errors, while there are unconfirmed warnings, or while nothing is pending.
 
@@ -92,6 +101,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PendingRelease"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+
+  /organizations/{orgKey}/releases/pending/steps:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listPendingSteps
+      summary: The migration steps the next release runs, in order
+      tags: [ Base Release ]
+      responses:
+        "200":
+          description: The pending steps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MigrationStep"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+    put:
+      operationId: replacePendingSteps
+      summary: Replace the migration steps the next release runs
+      tags: [ Base Release ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/MigrationStep"
+      responses:
+        "200":
+          description: The pending steps as stored, each with its id
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MigrationStep"
+        "400":
+          description: A step names a kind or an operation no migration participant runs.
         "403":
           description: The authenticated principal may not author metadata for this organization.
 
@@ -170,8 +223,65 @@ components:
             $ref: "#/components/schemas/PendingChange"
         problems:
           type: array
+          description: Found on the data as the pending steps leave it.
           items:
             $ref: "#/components/schemas/ReleaseProblem"
+        steps:
+          type: array
+          description: What each pending step did in the dry run, in order.
+          items:
+            $ref: "#/components/schemas/MigrationStepOutcome"
+
+    MigrationStep:
+      type: object
+      required: [ kind, key, operation ]
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: Assigned when the step is stored.
+        kind:
+          type: string
+          description: The kind of the definition whose objects the step changes.
+          example: entity
+        key:
+          type: string
+          description: The key of that definition.
+          example: claim
+        operation:
+          type: string
+          description: >-
+            For entities - renameAttribute (parameter to), fillAttribute (parameters value, and
+            only - empty or always), mapValues (parameters mapping, and unmapped - keep or fail).
+          example: renameAttribute
+        subject:
+          type: string
+          description: The attribute the step is about.
+          example: customerName
+        parameters:
+          type: object
+          additionalProperties: true
+          description: What the operation needs besides its subject.
+
+    MigrationStepOutcome:
+      type: object
+      required: [ step, outcome ]
+      properties:
+        step:
+          $ref: "#/components/schemas/MigrationStep"
+        outcome:
+          type: string
+          description: >-
+            applied - the step ran; skipped - it cannot run against the definitions as they stand;
+            failed - some object could not be changed, which refuses the release.
+          enum: [ applied, skipped, failed ]
+        affectedObjects:
+          type: integer
+          format: int64
+          description: How many objects the step changed.
+        reason:
+          type: string
+          description: Why the step was skipped or failed.
 
     ReleaseRequest:
       type: object
@@ -212,3 +322,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReleaseItem"
+        steps:
+          type: array
+          description: The migration steps the release ran, in order.
+          items:
+            $ref: "#/components/schemas/MigrationStepOutcome"

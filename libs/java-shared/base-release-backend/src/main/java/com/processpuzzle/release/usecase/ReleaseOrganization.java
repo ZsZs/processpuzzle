@@ -3,6 +3,7 @@ package com.processpuzzle.release.usecase;
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
+import com.processpuzzle.release.domain.OrgMigrationStep;
 import com.processpuzzle.release.domain.OrgRelease;
 import com.processpuzzle.release.domain.OrgReleaseContent;
 import com.processpuzzle.release.domain.OrgReleaseContentRepository;
@@ -24,18 +25,20 @@ import org.springframework.transaction.support.TransactionTemplate;
 /**
  * Releases an organization: every pending definition of every kind, or nothing.
  *
- * <p>Plans again inside its own transaction rather than trusting a dry run the designer looked at, so
- * what is checked is what is released. Refuses while the plan has errors, while it has warnings the
+ * <p>Runs the pending migration steps first, then plans again inside its own transaction rather than
+ * trusting a dry run the designer looked at, so what is checked — the data as the steps left it — is what
+ * is released. Refuses while the plan has errors, while it has warnings the
  * caller has not confirmed, and while nothing is pending. Otherwise every participant releases its
  * kind in order, all in the one transaction — the platform runs on a single datasource — and the
  * release is recorded with the hash and the content of each definition it carried — see
- * {@link OrgReleaseContent}. A participant that fails rolls every kind back.
+ * {@link OrgReleaseContent} — and with the steps it ran. A participant that fails rolls every kind back,
+ * and every step with it.
  */
 @Service
 public class ReleaseOrganization {
 
     private final OrganizationGuard guard;
-    private final ReleasePlanner planner;
+    private final MigratingPlanner planner;
     private final ReleaseParticipants participants;
     private final OrgReleaseRepository releaseRepository;
     private final OrgReleaseItemRepository itemRepository;
@@ -44,7 +47,7 @@ public class ReleaseOrganization {
     private final Clock clock;
 
     ReleaseOrganization(OrganizationGuard guard,
-                        ReleasePlanner planner,
+                        MigratingPlanner planner,
                         ReleaseParticipants participants,
                         OrgReleaseRepository releaseRepository,
                         OrgReleaseItemRepository itemRepository,
@@ -81,7 +84,8 @@ public class ReleaseOrganization {
 
     private ReleaseRecord releaseAuthorized(String orgKey, boolean acknowledgeWarnings, String releasedBy) {
         return transactionTemplate.execute(status -> {
-            PendingRelease pending = planner.plan(orgKey);
+            MigratingPlanner.Planned planned = planner.plan(orgKey);
+            PendingRelease pending = planned.pending();
             if (pending.changes().isEmpty()) {
                 throw new ReleaseRefusedException(orgKey, pending, ReleaseRefusedException.Reason.NOTHING_PENDING);
             }
@@ -95,7 +99,9 @@ public class ReleaseOrganization {
             for (ReleaseParticipant participant : participants.inOrder()) {
                 participant.release(orgKey);
             }
-            return recordRelease(orgKey, pending.changes(), releasedBy);
+            ReleaseRecord released = recordRelease(orgKey, pending.changes(), releasedBy);
+            return new ReleaseRecord(released.release(), released.items(),
+                    recordSteps(released.release().getReleaseNumber(), planned.steps(), pending.steps()));
         });
     }
 
@@ -116,6 +122,17 @@ public class ReleaseOrganization {
                 .mapToObj(index -> new OrgReleaseContent(items.get(index).getId(), orgKey, changes.get(index).fingerprint()))
                 .toList());
         return new ReleaseRecord(release, items);
+    }
+
+    /** The steps the release ran, each with what it did; they are no longer pending. */
+    private static List<OrgMigrationStep> recordSteps(long number, List<OrgMigrationStep> steps, List<StepOutcome> outcomes) {
+        for (int index = 0; index < steps.size(); index++) {
+            StepOutcome outcome = outcomes.get(index);
+            steps.get(index).releasedIn(number,
+                    outcome.status() == StepOutcome.Status.APPLIED ? OrgMigrationStep.Outcome.APPLIED : OrgMigrationStep.Outcome.SKIPPED,
+                    outcome.affectedObjects(), outcome.reason());
+        }
+        return steps;
     }
 
     static String sha256(String fingerprint) {
