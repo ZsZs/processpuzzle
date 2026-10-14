@@ -1,7 +1,7 @@
 # ProcessPuzzle Auth Feature — Strategy Note
 
 ## Status
-Login/Logout implemented. Self-registration (`POST /registration`) is implemented, and Direct Access Grants are disabled on the testbed and biz clients (realm imports, plus reconciliation of existing realms by `bootstrap-platform-admin-client.sh`). The k6 performance tests, which use a password grant, need a dedicated client that allows it in a local/ci realm. `base-workflow-backend` synchronises roles from domain model to Keycloak. This note covers the design for the next phase: registration, a ProcessPuzzle-branded login experience, admin-driven role assignment, and default-administrator bootstrapping.
+Login/Logout implemented. Self-registration (`POST /registration`) is implemented, and The branded sign-in page is implemented (see below; full-page redirect, the popup/`postMessage` flow is still open). Direct Access Grants are disabled on the testbed and biz clients (realm imports, plus reconciliation of existing realms by `bootstrap-platform-admin-client.sh`). The k6 performance tests, which use a password grant, need a dedicated client that allows it in a local/ci realm. `base-workflow-backend` synchronises roles from domain model to Keycloak. This note covers the design for the next phase: registration, a ProcessPuzzle-branded login experience, admin-driven role assignment, and default-administrator bootstrapping.
 
 ## Guiding decision: no Direct Access Grants
 Credential validation stays inside Keycloak via the Authorization Code + PKCE flow. Resource Owner Password Credentials (Direct Grant) was considered and rejected — it would expose password handling in the frontend/backend, forecloses MFA and social login, and is discouraged by current OIDC practice. This constraint shapes every choice below.
@@ -12,6 +12,8 @@ The existing Angular pop-up login form is packaged as an **Angular Element (Web 
 - A custom Keycloak theme (`processpuzzle`) includes that bundle and renders `<pp-login-form>` in `login.ftl` in place of Keycloak's default markup.
 - The component's emitted username/password values feed the real `<form action="${url.loginAction}">` — required so Keycloak's CSRF/session handling and the PKCE code flow work unmodified.
 - The frontend opens the Keycloak authorization URL in a **popup window** (rather than a full-page redirect) to preserve the pop-up interaction users already know. A small callback route captures the returned auth code, `postMessage`s it to the opener, and closes itself; the main app performs the standard PKCE code exchange.
+
+**Implemented as:** `LoginFormComponent` (`libs/js-shared/auth/feature/login-form`) is a presentational element with no auth logic, built as `<pp-login-form>` by `apps/login-element` (`nx run login-element:package-login-theme`) into `tools/docker/keycloak/themes/processpuzzle/login/resources/js/main.js` (git-ignored; the `build-login-theme` CI action produces it before the Keycloak image). `login.ftl` passes Keycloak's texts and `url.loginAction` as attributes and keeps a plain fallback form that stays visible if the bundle is missing. All four realms use `loginTheme: processpuzzle`; the popup flow is not built yet.
 
 Net effect: users see the exact component already built and styled; Keycloak's default UI is never shown; the flow underneath is unchanged Authorization Code + PKCE.
 
@@ -40,4 +42,4 @@ The 4-separate-backend strategy stays as-is: Testbed, Admin, Biz, and Custom eac
 
 ## Open items
 - Confirm whether "groups" in the org-admin module should ever need to affect Keycloak-issued token claims (would require reconsidering the Keycloak-groups-free approach above).
-- Angular Elements extraction and theme scaffolding are the concrete next build tasks.
+- The popup/`postMessage` login flow is the concrete next build tasks.

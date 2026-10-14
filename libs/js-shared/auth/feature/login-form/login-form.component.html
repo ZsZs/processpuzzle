@@ -1,0 +1,26 @@
+<div class="pp-login-form">
+  <h2>{{ heading() }}</h2>
+
+  @if (error()) {
+    <div class="error-message" role="alert">{{ error() }}</div>
+  }
+
+  <form method="post" [attr.action]="action()" aria-label="Login Form">
+    <label for="username">{{ usernameLabel() }}</label>
+    <input id="username" name="username" type="text" autocomplete="username" required [value]="username()" />
+
+    <label for="password">{{ passwordLabel() }}</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required />
+
+    @if (forgotPasswordUrl()) {
+      <a class="link" [href]="forgotPasswordUrl()">{{ forgotPasswordLabel() }}</a>
+    }
+
+    <div class="actions">
+      @if (registerUrl()) {
+        <a class="button secondary" [href]="registerUrl()">{{ registerLabel() }}</a>
+      }
+      <button class="button primary" type="submit">{{ submitLabel() }}</button>
+    </div>
+  </form>
+</div>
