@@ -21,6 +21,8 @@ public interface DocumentDraftRepository extends JpaRepository<DocumentDraft, Do
 
     List<DocumentDraft> findByOrgKeyAndDocumentId(String orgKey, String documentId);
 
+    List<DocumentDraft> findByOrgKey(String orgKey);
+
     void deleteByOrgKeyAndDocumentId(String orgKey, String documentId);
 
     void deleteByOrgKey(String orgKey);
