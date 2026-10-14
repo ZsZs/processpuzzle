@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { catchError, map, Observable, of, throwError } from 'rxjs';
-import { isPendingRelease, PendingRelease, Release } from './release';
+import { isPendingRelease, MigrationStep, PendingRelease, Release } from './release';
 
 /** What publishing answered: the release it made, or the pending state that refused it. */
 export type PublishOutcome = { released: Release } | { refused: PendingRelease };
@@ -32,6 +32,16 @@ export class ReleaseService {
         error instanceof HttpErrorResponse && error.status === 409 && isPendingRelease(error.error) ? of<PublishOutcome>({ refused: error.error }) : throwError(() => error),
       ),
     );
+  }
+
+  /** The migration steps the next release runs, in order. */
+  pendingSteps(): Observable<MigrationStep[]> {
+    return this.http.get<MigrationStep[]>(`${this.root}/releases/pending/steps`);
+  }
+
+  /** Replaces the pending migration steps; answers them as stored, each with its id. */
+  replacePendingSteps(steps: MigrationStep[]): Observable<MigrationStep[]> {
+    return this.http.put<MigrationStep[]>(`${this.root}/releases/pending/steps`, steps);
   }
 
   /** The organization's releases, newest first. */

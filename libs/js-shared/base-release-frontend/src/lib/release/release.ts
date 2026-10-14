@@ -25,7 +25,30 @@ export interface ReleaseProblem {
 /** What a release would carry, and what would refuse or qualify it. Also the body of a refused release. */
 export interface PendingRelease {
   changes: PendingChange[];
+  /** Found on the data as the pending migration steps leave it. */
   problems: ReleaseProblem[];
+  /** What each pending migration step did in the dry run, in order. */
+  steps?: MigrationStepOutcome[];
+}
+
+/** A change a release makes to existing objects so that they fit the definitions it releases. */
+export interface MigrationStep {
+  /** Assigned when the step is stored. */
+  id?: string;
+  kind: string;
+  key: string;
+  /** For entities: `renameAttribute`, `fillAttribute` or `mapValues`. */
+  operation: string;
+  subject?: string;
+  parameters?: Record<string, unknown>;
+}
+
+/** `skipped`: the step cannot run against the definitions as they stand. `failed`: it refuses the release. */
+export interface MigrationStepOutcome {
+  step: MigrationStep;
+  outcome: 'applied' | 'skipped' | 'failed';
+  affectedObjects?: number;
+  reason?: string;
 }
 
 export interface ReleaseItem {
@@ -40,6 +63,8 @@ export interface Release {
   releasedAt: string;
   releasedBy?: string;
   items: ReleaseItem[];
+  /** The migration steps the release ran, in order. */
+  steps?: MigrationStepOutcome[];
 }
 
 export function isPendingRelease(value: unknown): value is PendingRelease {

@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceD
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,5 +20,10 @@ public class EntityInstanceDataAdapter implements EntityInstanceDataPort {
     @Override
     public List<Map<String, Object>> payloadsOf(String orgKey, String entityDefinitionCode) {
         return entityObjectScope.payloads(orgKey, entityDefinitionCode);
+    }
+
+    @Override
+    public long rewritePayloads(String orgKey, String entityDefinitionCode, UnaryOperator<Map<String, Object>> rewrite) {
+        return entityObjectScope.rewriteAll(orgKey, entityDefinitionCode, rewrite);
     }
 }

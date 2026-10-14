@@ -14,7 +14,9 @@ import com.processpuzzle.release.model.Release;
 import com.processpuzzle.release.model.ReleaseItem;
 import com.processpuzzle.release.model.ReleaseRequest;
 import com.processpuzzle.release.usecase.DescribePendingRelease;
+import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.release.usecase.ListReleases;
+import com.processpuzzle.release.usecase.ManagePendingSteps;
 import com.processpuzzle.release.usecase.PendingRelease;
 import com.processpuzzle.release.usecase.ReleaseOrganization;
 import com.processpuzzle.release.usecase.ReleaseRecord;
@@ -35,12 +37,34 @@ class ReleaseEndpointTest {
     private final DescribePendingRelease describePendingRelease = mock(DescribePendingRelease.class);
     private final ReleaseOrganization releaseOrganization = mock(ReleaseOrganization.class);
     private final ListReleases listReleases = mock(ListReleases.class);
+    private final ManagePendingSteps managePendingSteps = mock(ManagePendingSteps.class);
     private final CurrentPrincipal currentPrincipal = mock(CurrentPrincipal.class);
     private ReleaseEndpoint endpoint;
 
     @BeforeEach
     void setUp() {
-        endpoint = new ReleaseEndpoint(describePendingRelease, releaseOrganization, listReleases, new ReleaseMapper(), currentPrincipal);
+        endpoint = new ReleaseEndpoint(describePendingRelease, releaseOrganization, listReleases, managePendingSteps,
+                new ReleaseMapper(), currentPrincipal);
+    }
+
+    @Test
+    void replacingThePendingStepsPassesThemOnWithoutAnId_andAnswersThemAsStored() {
+        com.processpuzzle.release.model.MigrationStep sent =
+                new com.processpuzzle.release.model.MigrationStep("entity", "customer", "renameAttribute");
+        sent.setId("ignored");
+        sent.setSubject("customerName");
+        sent.setParameters(java.util.Map.of("to", "name"));
+        MigrationStep stored = new MigrationStep("s-1", "entity", "customer", "renameAttribute", "customerName",
+                java.util.Map.of("to", "name"));
+        when(managePendingSteps.replace(ORG, List.of(new MigrationStep(null, "entity", "customer", "renameAttribute",
+                "customerName", java.util.Map.of("to", "name"))))).thenReturn(List.of(stored));
+
+        var body = endpoint.replacePendingSteps(ORG, List.of(sent)).getBody();
+
+        assertThat(body).singleElement().satisfies(step -> {
+            assertThat(step.getId()).isEqualTo("s-1");
+            assertThat(step.getParameters()).containsEntry("to", "name");
+        });
     }
 
     @Test
