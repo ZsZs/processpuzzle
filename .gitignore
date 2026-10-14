@@ -127,3 +127,4 @@ apps/vision-server/out/
 
 # Built by login-element:package-login-theme; never committed.
 tools/docker/keycloak/themes/processpuzzle/login/resources/js/
+tools/docker/keycloak/themes/processpuzzle/login/resources/img/
