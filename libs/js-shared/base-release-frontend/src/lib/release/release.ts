@@ -16,6 +16,10 @@ export interface ReleaseProblem {
   key: string;
   errorId: string;
   message: string;
+  /** The part of the definition the problem is about — an attribute's code, a state's key. */
+  subject?: string;
+  /** How many existing objects the problem is about. */
+  affectedObjects?: number;
 }
 
 /** What a release would carry, and what would refuse or qualify it. Also the body of a refused release. */

@@ -10,8 +10,9 @@ import org.springframework.context.annotation.Bean;
  * is on the classpath; see {@code META-INF/processpuzzle/event-publication-orm.xml} for why.
  *
  * <p>A mapping file rather than a column alteration at startup: Hibernate 7's schema update aligns a column with its
- * mapping on every start, so only a mapping that says {@code text} keeps the column {@code text}. It also widens a
- * column a database created narrow, on the first start with this mapping.
+ * mapping on every start, so only a mapping that says {@code text} keeps the column {@code text}. It does not widen
+ * a column a database already holds narrow: Hibernate leaves a column with an explicit definition alone, in both
+ * directions, so such a column is widened once by hand (stage's custom backend, 2026-10-13).
  */
 @AutoConfiguration
 @ConditionalOnClass(name = {EventPublicationMappingAutoConfiguration.REGISTRY_ENTITY,

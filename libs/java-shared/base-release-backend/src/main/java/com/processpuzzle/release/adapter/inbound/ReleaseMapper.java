@@ -35,11 +35,14 @@ public class ReleaseMapper {
     }
 
     private com.processpuzzle.release.model.ReleaseProblem toModel(ReleaseProblem problem) {
-        return new com.processpuzzle.release.model.ReleaseProblem(
+        com.processpuzzle.release.model.ReleaseProblem model = new com.processpuzzle.release.model.ReleaseProblem(
                 problem.isError()
                         ? com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.ERROR
                         : com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.WARNING,
                 problem.kind(), problem.key(), problem.errorId(), problem.message());
+        model.setSubject(problem.subject());
+        model.setAffectedObjects(problem.affectedObjects());
+        return model;
     }
 
     private ReleaseItem toModel(OrgReleaseItem item) {

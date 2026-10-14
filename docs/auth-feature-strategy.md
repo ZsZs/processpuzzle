@@ -1,7 +1,9 @@
 # ProcessPuzzle Auth Feature — Strategy Note
 
 ## Status
-Login/Logout implemented. Self-registration (`POST /registration`) is implemented, and Direct Access Grants are disabled on the testbed and biz clients (realm imports, plus reconciliation of existing realms by `bootstrap-platform-admin-client.sh`). The k6 performance tests, which use a password grant, need a dedicated client that allows it in a local/ci realm. `base-workflow-backend` synchronises roles from domain model to Keycloak. This note covers the design for the next phase: registration, a ProcessPuzzle-branded login experience, admin-driven role assignment, and default-administrator bootstrapping.
+Implemented: login/logout; self-registration (`POST /registration`); the branded sign-in page (full-page redirect); Direct Access Grants disabled on the testbed and biz clients (realm imports, with existing realms reconciled by `bootstrap-platform-admin-client.sh`); a first administrator per realm, bootstrapped from environment variables; the roles-vs-groups decision; and role assignment through the org-admin module (`UserDirectoryPort`, Keycloak Organization groups). `base-workflow-backend` synchronises roles from domain model to Keycloak.
+
+**Still open:** the popup/`postMessage` login flow, and a dedicated direct-grant client for the k6 performance tests (they use a password grant) in a local/ci realm. The sections below record the design behind each piece.
 
 ## Guiding decision: no Direct Access Grants
 Credential validation stays inside Keycloak via the Authorization Code + PKCE flow. Resource Owner Password Credentials (Direct Grant) was considered and rejected — it would expose password handling in the frontend/backend, forecloses MFA and social login, and is discouraged by current OIDC practice. This constraint shapes every choice below.
@@ -13,6 +15,8 @@ The existing Angular pop-up login form is packaged as an **Angular Element (Web 
 - The component's emitted username/password values feed the real `<form action="${url.loginAction}">` — required so Keycloak's CSRF/session handling and the PKCE code flow work unmodified.
 - The frontend opens the Keycloak authorization URL in a **popup window** (rather than a full-page redirect) to preserve the pop-up interaction users already know. A small callback route captures the returned auth code, `postMessage`s it to the opener, and closes itself; the main app performs the standard PKCE code exchange.
 
+**Implemented as:** `LoginFormComponent` (`libs/js-shared/auth/feature/login-form`) is a presentational element with no auth logic, built as `<pp-login-form>` by `apps/login-element` (`nx run login-element:package-login-theme`) into `tools/docker/keycloak/themes/processpuzzle/login/resources/js/main.js` (git-ignored; the `build-login-theme` CI action produces it before the Keycloak image). `login.ftl` passes Keycloak's texts and `url.loginAction` as attributes and keeps a plain fallback form that stays visible if the bundle is missing. All four realms use `loginTheme: processpuzzle`; the popup flow is not built yet.
+
 Net effect: users see the exact component already built and styled; Keycloak's default UI is never shown; the flow underneath is unchanged Authorization Code + PKCE.
 
 ## Registration: bypass the theme, go through the backend
@@ -22,7 +26,7 @@ Only Testbed needs self-registration (Custom/Biz are invite-only — see below).
 OrgAdmins never get direct Keycloak access. All invite, role-assignment, and group-assignment operations for their organisation go through ProcessPuzzle's own **org-admin-frontend/backend** module (a bounded context inside the Custom app, following the existing hexagonal/Spring Modulith conventions), which is the sole caller of the Keycloak Admin API for these operations.
 
 - **Invite**: backend creates the Keycloak user, adds them to the Keycloak Organization, then calls `execute-actions-email` (`UPDATE_PASSWORD`, `VERIFY_EMAIL`) so Keycloak sends a themed email with a set-password link — no custom invite-token system needed.
-- **Roles vs. groups**: only **roles** round-trip to Keycloak (they need to appear in the JWT for `OrganizationGuard`/authorization checks). **Groups** are proposed as a pure PP-domain concept (workflow/team assignment, e.g. `RoleUse` in the SPEM model) with no Keycloak representation, to keep the service account's Keycloak footprint minimal.
+- **Roles vs. groups** (decided, see the code, not the original proposal): authorization-relevant roles round-trip to Keycloak and appear in the JWT. `org-admin` / `org-member` are realm roles. A tenant's own workflow roles (projected by `base-workflow`) are **Keycloak Organization groups** (top-level only, Keycloak 26.6+), which scopes them to one tenant; the token carries them as `organization.<alias>.groups`, and `RealmRoleConverter` turns them into authorities only when the token names exactly one organization. `KeycloakOrganizationUserDirectoryAdapter` writes them. Nested groups are structure, not roles, and are ignored. **Groups that are not roles** (teams, workflow assignment, `RoleUse`) stay a pure PP-domain concept with no Keycloak representation, so the service account's footprint stays limited to roles.
 
 ## Admin-driven role assignment
 Reverses the existing sync direction (today: Keycloak → domain). A `KeycloakRoleAssignmentPort` outbound adapter, backed by the same service account, pushes role changes made in the PP Admin UI to Keycloak's Admin REST API (`role-mappings` endpoints), with a domain event keeping local state consistent.
@@ -39,5 +43,5 @@ The 4-separate-backend strategy stays as-is: Testbed, Admin, Biz, and Custom eac
   - What it does share is the `processpuzzle_admin` database, which is the one deliberate exception to §3's isolated-database-per-app rule in `processpuzzle-architecture-summary.md`. One tenant registry is the point: a signup taken on the public site has to be the row the staff console sees.
 
 ## Open items
-- Confirm whether "groups" in the org-admin module should ever need to affect Keycloak-issued token claims (would require reconsidering the Keycloak-groups-free approach above).
-- Angular Elements extraction and theme scaffolding are the concrete next build tasks.
+- ~~Groups and token claims~~ — resolved: see "Roles vs. groups" above. Revisit only if a PP-domain team concept ever needs to gate access, which would mean projecting it as an organization group like a role.
+- The popup/`postMessage` login flow is the concrete next build tasks.

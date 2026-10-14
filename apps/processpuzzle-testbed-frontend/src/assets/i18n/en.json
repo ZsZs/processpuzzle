@@ -193,13 +193,13 @@
     "overview_tab_label": "Overview",
     "samples_tab_label": "Samples",
     "samples_desc_1": "A release makes every pending draft definition live at once, or none, so the running application never sees a half-published design.",
-    "samples_desc_2": "The library does not contribute release screens yet; samples will appear here as release-specific components are added.",
+    "samples_desc_2": "The Release panel below lists the testbed organization's pending drafts by kind, the problems a release would refuse or warn about, and the releases so far; Publish releases them all at once.",
     "intro_heading": "ProcessPuzzle Definition Release",
     "frontend_heading": "Frontend — @processpuzzle/base-release",
     "backend_heading": "Backend — base-release-backend",
     "intro_paragraph_1": "Designers edit drafts of an organization's definitions; the running application reads only what was released. A release publishes all pending drafts in one transaction, after checking them together.",
     "intro_paragraph_2": "The feature is split into two complementary libraries which share a common domain vocabulary:",
-    "intro_frontend_desc": "Angular library that will hold the release-specific components; currently a configured scaffold.",
+    "intro_frontend_desc": "Angular library with the Release panel — pending changes, problems and release history — mounted by the designer at /design/release.",
     "intro_backend_desc": "Spring Boot module that plans releases, asks each feature to release its definitions and records the history."
   },
   "base-workflows": {

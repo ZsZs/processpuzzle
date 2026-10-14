@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.instances.domain;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,14 @@ public class EntityObjectScope {
 
     public List<EntityObject> findAll(String orgKey, String entityDefinitionCode) {
         return repository.findAllByOrgKeyAndEntityDefinitionCode(storageOrgKey(orgKey, entityDefinitionCode), entityDefinitionCode);
+    }
+
+    /** The payloads alone of every object of {@code entityDefinitionCode}, without loading the objects as entities. */
+    public List<Map<String, Object>> payloads(String orgKey, String entityDefinitionCode) {
+        return repository.findPayloadsByOrgKeyAndEntityDefinitionCodeIn(storageOrgKey(orgKey, entityDefinitionCode),
+                List.of(entityDefinitionCode)).stream()
+            .map(EntityObjectRepository.PayloadView::getPayload)
+            .toList();
     }
 
     public boolean existsAny(String orgKey, String entityDefinitionCode) {

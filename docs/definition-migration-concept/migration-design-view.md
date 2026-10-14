@@ -1,6 +1,6 @@
 # Diff-to-Suggestion Flow in the Design View
 
-Status: draft, 2026-10-12
+Status: draft, 2026-10-12. The v1 scope is decided in `definition-migrations-concept.md` §12 and overrides this document where they differ.
 Part of: `definition-migrations-concept.md`, uses `migration-operation-catalog.md`
 
 ## 1. Goal

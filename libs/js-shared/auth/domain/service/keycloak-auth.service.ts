@@ -109,10 +109,12 @@ export class KeycloakAuthService extends AuthService {
   /**
    * Builds an absolute redirect URI that honours the app's <base href>
    * (e.g. "/cmdb/frontend/"), not just the origin. `target` is an Angular
-   * router URL such as "/home" (leading slash) or undefined.
+   * router URL such as "/home" (leading slash) or undefined. The auth pages themselves
+   * ("/en/auth/register", "/auth/login", ...) are never a destination: they fall back to the home page.
    */
   private toRedirectUri(target?: string): string {
-    const relative = (target ?? '').replace(/^\/+/, ''); // strip leading slash(es)
+    const stripped = (target ?? '').replace(/^\/+/, ''); // strip leading slash(es)
+    const relative = /^([a-z]{2}\/)?auth(\/|\?|#|$)/i.test(stripped) ? '' : stripped;
     return new URL(relative, document.baseURI).href;
   }
   // endregion

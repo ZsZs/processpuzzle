@@ -149,6 +149,15 @@ components:
         message:
           type: string
           description: Human-readable explanation in the platform's default language.
+        subject:
+          type: string
+          description: The part of the definition the problem is about, such as an attribute's code or a state's key; absent when it is about the definition as a whole.
+          example: amount
+        affectedObjects:
+          type: integer
+          format: int64
+          description: How many existing objects the problem is about; absent when it is not about data.
+          example: 3
 
     PendingRelease:
       type: object

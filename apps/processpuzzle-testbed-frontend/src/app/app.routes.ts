@@ -297,8 +297,7 @@ export const appRoutes: Route[] = [
       {
         path: 'samples',
         loadComponent: () => import('./content/base-release/samples.component').then((comp) => comp.SamplesComponent),
-        // `BASE_RELEASE_ROUTES` is empty until the library gains release screens; static children, like the
-        // branches above.
+        // `BASE_RELEASE_ROUTES` — the Release panel; static children, like the branches above.
         children: BASE_RELEASE_ROUTES,
       },
     ],

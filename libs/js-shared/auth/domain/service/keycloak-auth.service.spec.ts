@@ -97,6 +97,12 @@ describe('KeycloakAuthService', () => {
       });
     });
 
+    it.each(['/en/auth/register', '/auth/login', '/de/auth'])('should send the user home instead of back to the auth page %s', async (route) => {
+      mockKeycloakInstance.authenticated = false;
+      await service.login(route);
+      expect(mockKeycloakInstance.login).toHaveBeenCalledWith({ redirectUri: new URL('', document.baseURI).href });
+    });
+
     it('should not call keycloak.login if already authenticated', async () => {
       // Manual setup to simulate authenticated state in signals
       mockKeycloakInstance.authenticated = true;

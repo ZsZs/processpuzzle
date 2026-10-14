@@ -18,8 +18,10 @@
   "peerDependencies": {
     "@angular/common": "~22.0.1",
     "@angular/core": "~22.0.1",
+    "@angular/material": "^22.0.5",
     "@angular/router": "~22.0.1",
     "@jsverse/transloco": "8.4.0",
+    "@ngrx/signals": "^21.1.1",
     "@processpuzzle/util": "^1.2.0",
     "rxjs": "~7.8.2"
   },

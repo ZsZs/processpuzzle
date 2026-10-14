@@ -112,6 +112,12 @@ jobs:
         if: matrix.large
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL && df -h /
 
+      # The login theme's <pp-login-form> bundle is built from source, so the Keycloak image needs it
+      # on disk before its Dockerfile COPYs the themes.
+      - name: Build the login theme bundle
+        if: matrix.name == 'processpuzzle-keycloak'
+        uses: ./.github/actions/build-login-theme
+
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
 
