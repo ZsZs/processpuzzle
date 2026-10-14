@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RegistrationRateLimiterTest {
@@ -64,7 +65,7 @@ class RegistrationRateLimiterTest {
         limiter.acquire("1.1.1.1");
         limiter.acquire("1.1.1.1");
 
-        limiter.acquire("2.2.2.2");
+        assertThatCode(() -> limiter.acquire("2.2.2.2")).doesNotThrowAnyException();
     }
 
     @Test
@@ -74,6 +75,6 @@ class RegistrationRateLimiterTest {
         limiter.acquire("1.1.1.1");
         clock.advance(Duration.ofMinutes(10));
 
-        limiter.acquire("1.1.1.1");
+        assertThatCode(() -> limiter.acquire("1.1.1.1")).doesNotThrowAnyException();
     }
 }

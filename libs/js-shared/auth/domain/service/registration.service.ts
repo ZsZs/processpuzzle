@@ -48,13 +48,14 @@ export class RegistrationService {
   private serviceRoot(): string {
     const base = this.runtimeConfiguration ? Reflect.get(this.runtimeConfiguration, 'BASE_CONFIGURATION') : undefined;
     const root: string = (base && (Reflect.get(base, 'REGISTRATION_SERVICE_ROOT') ?? Reflect.get(base, 'OBJECT_STORE_SERVICE_ROOT'))) ?? '';
-    return root.replace(/\/+$/, '');
+    return root.endsWith('/') ? root.slice(0, -1) : root;
   }
 }
 
 function toRegistrationError(error: unknown): RegistrationError {
   if (error instanceof HttpErrorResponse) {
-    const code = typeof error.error?.errorId === 'string' ? error.error.errorId : error.status === 0 ? 'registration.unreachable' : `http.${error.status}`;
+    const fallback = error.status === 0 ? 'registration.unreachable' : `http.${error.status}`;
+    const code = typeof error.error?.errorId === 'string' ? error.error.errorId : fallback;
     return new RegistrationError(code, error.error?.errorText ?? error.message, error.status);
   }
   return new RegistrationError('registration.unknown', error instanceof Error ? error.message : 'unknown');

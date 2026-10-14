@@ -1,6 +1,7 @@
 package com.processpuzzle.orgadmin.usecases.inbound;
 
 import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationRateLimitedException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -24,6 +25,7 @@ public class RegistrationRateLimiter {
     private final Clock clock;
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
 
+    @Autowired
     public RegistrationRateLimiter(RegistrationProperties properties) {
         this(properties, Clock.systemUTC());
     }
