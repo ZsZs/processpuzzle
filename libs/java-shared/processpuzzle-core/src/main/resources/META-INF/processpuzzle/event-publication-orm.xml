@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Column types for the Spring Modulith event publication registry (spring-modulith-events-jpa).
+  Its entities declare plain @Column fields with no length, so Hibernate maps them as varchar(255) - and a
+  serialized PlatformEvent carries the entity's whole payload. An event that does not fit fails the INSERT, and
+  because the publication is written inside the publishing transaction, the business write fails with it:
+  creating an Order answered 500 on 2026-10-08 (testbed), saving an invoice on 2026-10-13 (custom backend).
+  Modulith ships schema scripts for its JDBC variant only; with JPA the schema is the application's to declare.
 
-  Its entities declare plain @Column fields with no length, so Hibernate's ddl-auto creates them as
-  varchar(255) — and a serialized PlatformEvent carries the entity's whole payload. An event that does not
-  fit fails the INSERT, and because the publication is written inside the publishing transaction, the
-  business write fails with it: creating an Order answered 500 on 2026-10-08. Modulith ships schema scripts
-  for its JDBC variant only; with JPA the schema is the application's to declare, and this file is where.
-
-  Spring picks up META-INF/orm.xml for the default persistence unit on its own. ddl-auto: update never
-  alters an existing column, so a database that already has event_publication from before this file needs
-  the table dropped once (it is an outbox; with completion-mode: delete it holds only undelivered events).
+  Here, in processpuzzle-core, for every backend that has the registry: registered by
+  com.processpuzzle.core.persistence.EventPublicationMappingAutoConfiguration, so no application needs a
+  META-INF/orm.xml of its own. Hibernate 7's schema update aligns a column with its mapping on every start, so
+  with this mapping a column a database created narrow is widened on the next start, and stays wide.
 -->
 <entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
