@@ -10,7 +10,7 @@ The `import/` directory is copied into `/opt/keycloak/data/import/` inside the i
 
 | File | Realm | Client | For |
 | --- | --- | --- | --- |
-| `processpuzzle-testbed-realm.json` | `processpuzzle-testbed` | `processpuzzle-testbed` | The testbed on `http://localhost:9090` (Docker) and `http://localhost:4200` (`nx serve`). Self-registration is on: the stack holds demonstration data only. Seeds a `test-user` / `test`. |
+| `processpuzzle-testbed-realm.json` | `processpuzzle-testbed` | `processpuzzle-testbed` | The testbed on `http://localhost:9090` (Docker) and `http://localhost:4200` (`nx serve`). Keycloak's built-in registration is off; users sign up through `POST /registration`. Seeds a `test-user` / `test`. |
 | `processpuzzle-biz-realm.json` | `processpuzzle-biz` | `processpuzzle-biz` | The Biz applications on `http://localhost:9092`. The public SPA client uses authorization-code flow with PKCE. |
 | `processpuzzle-admin-realm.json` | `processpuzzle-admin` | `processpuzzle-admin` | The staff administration app on `http://localhost:9091` / `http://localhost:4201`. Declares the `platform-admin` realm role and seeds a `platform-admin` / `platform-admin` user holding it. **The application itself is not built here** — it moved to the private `processpuzzle-biz` repository on 2026-09-04, while this realm stayed, because a realm is shared infrastructure rather than something a backend provisions for itself; see [Extracting platform-admin](../../../docs/platform-admin-extraction.md). Nothing in this repository's compose files logs into it. |
 | `processpuzzle-custom-realm.json` | `processpuzzle-custom` | — | The shared Custom realm. Native Keycloak Organizations is enabled; the Admin application provisions organizations and members, while the Custom application deployment supplies its shell client configuration. |
@@ -113,3 +113,10 @@ the service account's management roles, so `keycloak-init` has to be re-run afte
 ## Bootstrap admin
 
 The Compose file sets `KC_BOOTSTRAP_ADMIN_USERNAME=admin` / `KC_BOOTSTRAP_ADMIN_PASSWORD=admin_password`. These are only used on first boot to seed the `master` realm admin and are not part of either imported realm.
+
+## First administrator per stack realm
+
+`keycloak-init` creates or reconciles one administrator in each realm that ships a seed user (`processpuzzle-testbed`, `-admin`) from `FIRST_ADMIN_<STACK>_USERNAME` / `_PASSWORD` (both or neither; `_EMAIL` optional) on every
+start, so rotating the password is a redeploy. The admin realm account gets `platform-admin`. Biz and custom have no seed user: biz is public sign-up, and custom tenants get admins through the org-admin invite flow. The imports' seed users (`test-user`, `platform-admin`) remain for local and CI; with
+`KEYCLOAK_REMOVE_SEED_USERS=true` (stage/prod) they are deleted, and the script refuses to do so for a realm
+whose first administrator is not configured. See `env/infrastructure/.env.example`.

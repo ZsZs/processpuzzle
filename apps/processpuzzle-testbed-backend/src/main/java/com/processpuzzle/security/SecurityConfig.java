@@ -86,6 +86,13 @@ public class SecurityConfig {
             "/organizations/*/vision-notifications",
     };
 
+    /**
+     * Self-registration: the caller has no account yet, so no token. Abuse is bounded by the use
+     * case's per-address rate limit, and the endpoint answers 404 unless
+     * {@code processpuzzle.registration.enabled} is set.
+     */
+    private static final String[] REGISTRATION_PATHS = { "/api/registration", "/registration" };
+
     /** Operational and documentation endpoints, deliberately reachable without a token. */
     private static final String[] PUBLIC_PATHS = {
             "/actuator/health", "/actuator/health/**", "/actuator/info",
@@ -141,6 +148,7 @@ public class SecurityConfig {
                     requests.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     requests.requestMatchers(PUBLIC_PATHS).permitAll();
                     requests.requestMatchers(HttpMethod.POST, VISION_CALLBACK_PATHS).permitAll();
+                    requests.requestMatchers(HttpMethod.POST, REGISTRATION_PATHS).permitAll();
                     requests.requestMatchers("/api/platform/**", "/platform/**")
                             .hasAuthority(properties.getPlatformAdminAuthority());
                     requests.requestMatchers(ORG_ADMIN_PATHS).authenticated();

@@ -95,6 +95,11 @@
   "release_kind_rule": "Regeln",
   "release_kind_widget": "Widgets",
   "release_kind_document": "Dokumente",
+  "release_kind_event": "Ereignisse",
+  "release_kind_artifact": "Artefakte",
+  "release_kind_role": "Rollen",
+  "release_kind_tool": "Werkzeuge",
+  "release_kind_task": "Aufgaben",
   "release_kind_workflow": "Workflows",
   "release_kind_module": "Module",
   "release_kind_app": "Anwendung"

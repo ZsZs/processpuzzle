@@ -89,3 +89,12 @@ npm exec nx lint org-admin-backend
 ## License
 
 Apache License 2.0
+
+## Self-registration
+
+`POST /registration` (public) creates a user in the stack realm through the Keycloak Admin API. It is **off by
+default**: set `processpuzzle.registration.enabled=true` (`PROCESSPUZZLE_REGISTRATION_ENABLED`). It answers 404 in
+Organization mode. `processpuzzle.registration.verify-email` adds the `VERIFY_EMAIL` action (needs realm SMTP).
+Requests are rate limited per client (`max-attempts` per `window`, in-memory, per instance; keyed on `X-Real-IP`).
+Known limits: no captcha; a duplicate email returns 409 (user enumeration). Existing realms must have
+`registrationAllowed=false` applied by hand, since realm imports are one-shot.
