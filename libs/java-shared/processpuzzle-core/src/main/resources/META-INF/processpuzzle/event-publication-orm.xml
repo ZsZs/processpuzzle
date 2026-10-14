@@ -9,8 +9,10 @@
 
   Here, in processpuzzle-core, for every backend that has the registry: registered by
   com.processpuzzle.core.persistence.EventPublicationMappingAutoConfiguration, so no application needs a
-  META-INF/orm.xml of its own. Hibernate 7's schema update aligns a column with its mapping on every start, so
-  with this mapping a column a database created narrow is widened on the next start, and stays wide.
+  META-INF/orm.xml of its own. Hibernate 7's schema update aligns a plainly mapped column with its mapping on
+  every start, which narrowed a column widened by hand back to varchar(255); a column with an explicit definition
+  it leaves alone. So a new database gets text here, and a widened column stays text - but a column a database
+  already holds narrow is not widened by this mapping, and is altered once by hand.
 -->
 <entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
