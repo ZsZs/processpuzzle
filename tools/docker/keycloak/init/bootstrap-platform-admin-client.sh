@@ -594,7 +594,7 @@ service_account_user="service-account-${CLIENT_ID}"
 # --- the first administrator of every application stack realm -----------------------------------
 # docs/auth-feature-strategy.md: the platform's own realms are bootstrapped the way customer
 # organizations are, from environment-supplied credentials rather than a password baked into a
-# realm import. Per stack (TESTBED, BIZ, ADMIN, CUSTOM): FIRST_ADMIN_<STACK>_USERNAME and
+# realm import. Per stack (TESTBED, ADMIN: the two realms that ship a seed user): FIRST_ADMIN_<STACK>_USERNAME and
 # FIRST_ADMIN_<STACK>_PASSWORD, both or neither; FIRST_ADMIN_<STACK>_EMAIL is optional. The realm
 # role is `platform-admin` in the admin realm, `org-admin` in custom and none elsewhere. Re-run on
 # every start, so rotating the password is a redeploy. The imports' seed users (`test-user`,
@@ -646,11 +646,11 @@ remove_seed_user() {
   fi
 }
 
-for stack in TESTBED BIZ ADMIN CUSTOM; do
+for stack in TESTBED ADMIN; do
   realm="processpuzzle-$(echo "${stack}" | tr 'A-Z' 'a-z')"
   user_var="FIRST_ADMIN_${stack}_USERNAME"; pass_var="FIRST_ADMIN_${stack}_PASSWORD"; mail_var="FIRST_ADMIN_${stack}_EMAIL"
   admin_username="${!user_var:-}"; admin_password="${!pass_var:-}"; admin_email="${!mail_var:-}"
-  case "${stack}" in ADMIN) admin_role="platform-admin" ;; CUSTOM) admin_role="org-admin" ;; *) admin_role="" ;; esac
+  admin_role=""; [ "${stack}" = "ADMIN" ] && admin_role="platform-admin"
 
   if [ -n "${admin_username}" ] && [ -n "${admin_password}" ]; then
     ensure_first_admin "${realm}" "${admin_username}" "${admin_password}" "${admin_email:-${admin_username}@${stack,,}.processpuzzle.local}" "${admin_role}"
@@ -660,7 +660,7 @@ for stack in TESTBED BIZ ADMIN CUSTOM; do
   fi
 
   if [ "${REMOVE_SEED_USERS}" = "true" ]; then
-    if [ -z "${admin_username}" ] && [ "${stack}" != "BIZ" ] && [ "${stack}" != "CUSTOM" ]; then
+    if [ -z "${admin_username}" ]; then
       echo "ERROR: KEYCLOAK_REMOVE_SEED_USERS=true needs ${user_var}; removing the seed user would leave '${realm}' without an administrator." >&2
       exit 1
     fi
