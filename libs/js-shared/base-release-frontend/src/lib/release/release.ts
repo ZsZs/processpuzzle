@@ -91,7 +91,7 @@ export function inputValue(kind: ResolutionInputKind | undefined, value: string 
 /** The step a resolution makes once the designer has given its input `value`. */
 export function resolvedStep(resolution: ProblemResolution, value: string | boolean): MigrationStep {
   const step: MigrationStep = { ...resolution.step, id: undefined };
-  const parameters: Record<string, unknown> = { ...(step.parameters ?? {}) };
+  const parameters: Record<string, unknown> = { ...step.parameters };
   if (resolution.input) {
     const [name, ...path] = resolution.input.split('.');
     if (path.length) {
