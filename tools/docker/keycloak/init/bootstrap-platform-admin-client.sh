@@ -618,6 +618,19 @@ for realm in processpuzzle-testbed processpuzzle-biz processpuzzle-admin process
     continue
   fi
 
+  # Realm imports are one-shot, so realms created before Direct Access Grants and the built-in
+  # registration page were switched off keep them until reconciled here (docs/auth-feature-strategy.md).
+  for app_client in processpuzzle-testbed processpuzzle-biz; do
+    app_client_uuid="$("$KCADM" get clients -r "${realm}" --query "clientId=${app_client}" --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+    if [ -n "${app_client_uuid}" ]; then
+      echo "Disabling Direct Access Grants on '${app_client}' in '${realm}' ..."
+      "$KCADM" update "clients/${app_client_uuid}" -r "${realm}" -s 'directAccessGrantsEnabled=false' ||         echo "  WARNING: could not update '${app_client}' in '${realm}'."
+    fi
+  done
+  if [ "${realm}" = "processpuzzle-testbed" ]; then
+    "$KCADM" update "realms/${realm}" -s 'registrationAllowed=false' ||       echo "  WARNING: could not close Keycloak's built-in registration in '${realm}'."
+  fi
+
   management_client_id="$("$KCADM" get clients -r master --query "clientId=${realm}-realm"     --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
   if [ -z "${management_client_id}" ]; then
     echo "  WARNING: master has no '${realm}-realm' client; ${service_account_user} cannot administer that realm."
