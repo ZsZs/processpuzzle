@@ -591,6 +591,86 @@ fi
 
 service_account_user="service-account-${CLIENT_ID}"
 
+# --- the first administrator of every application stack realm -----------------------------------
+# docs/auth-feature-strategy.md: the platform's own realms are bootstrapped the way customer
+# organizations are, from environment-supplied credentials rather than a password baked into a
+# realm import. Per stack (TESTBED, ADMIN: the two realms that ship a seed user): FIRST_ADMIN_<STACK>_USERNAME and
+# FIRST_ADMIN_<STACK>_PASSWORD, both or neither; FIRST_ADMIN_<STACK>_EMAIL is optional. The realm
+# role is `platform-admin` in the admin realm, `org-admin` in custom and none elsewhere. Re-run on
+# every start, so rotating the password is a redeploy. The imports' seed users (`test-user`,
+# `platform-admin`) stay for local and CI; KEYCLOAK_REMOVE_SEED_USERS=true deletes them (stage/prod).
+REMOVE_SEED_USERS="${KEYCLOAK_REMOVE_SEED_USERS:-false}"
+
+ensure_first_admin() {
+  local realm="$1" username="$2" password="$3" email="$4" role="$5"
+  local user_id
+
+  login
+  if ! "$KCADM" get "realms/${realm}" >/dev/null 2>&1; then
+    echo "Realm '${realm}' is not present; skipping its first administrator."
+    return 0
+  fi
+  user_id="$("$KCADM" get users -r "${realm}" --query "username=${username}" --query exact=true --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+  # Names and an address because Keycloak's user profile requires them; without them the first
+  # login is interrupted by an "update your account" page.
+  if [ -z "${user_id}" ]; then
+    echo "Creating first administrator '${username}' in '${realm}' ..."
+    "$KCADM" create users -r "${realm}" \
+      -s "username=${username}" \
+      -s 'enabled=true' \
+      -s 'emailVerified=true' \
+      -s 'firstName=Platform' \
+      -s 'lastName=Administrator' \
+      -s "email=${email}"
+  else
+    echo "Reconciling first administrator '${username}' in '${realm}' ..."
+    "$KCADM" update "users/${user_id}" -r "${realm}" \
+      -s 'enabled=true' \
+      -s 'emailVerified=true' \
+      -s 'requiredActions=[]'
+  fi
+  "$KCADM" set-password -r "${realm}" --username "${username}" --new-password "${password}"
+  if [ -n "${role}" ]; then
+    "$KCADM" add-roles -r "${realm}" --uusername "${username}" --rolename "${role}"
+  fi
+}
+
+remove_seed_user() {
+  local realm="$1" username="$2" keep="$3" user_id
+  [ "${username}" = "${keep}" ] && return 0
+  login
+  user_id="$("$KCADM" get users -r "${realm}" --query "username=${username}" --query exact=true --fields id --format csv --noquotes 2>/dev/null | head -1 || true)"
+  if [ -n "${user_id}" ]; then
+    echo "Removing seed user '${username}' from '${realm}' ..."
+    "$KCADM" delete "users/${user_id}" -r "${realm}" || echo "  WARNING: could not remove '${username}'."
+  fi
+}
+
+for stack in TESTBED ADMIN; do
+  realm="processpuzzle-$(echo "${stack}" | tr 'A-Z' 'a-z')"
+  user_var="FIRST_ADMIN_${stack}_USERNAME"; pass_var="FIRST_ADMIN_${stack}_PASSWORD"; mail_var="FIRST_ADMIN_${stack}_EMAIL"
+  admin_username="${!user_var:-}"; admin_password="${!pass_var:-}"; admin_email="${!mail_var:-}"
+  admin_role=""; [ "${stack}" = "ADMIN" ] && admin_role="platform-admin"
+
+  if [ -n "${admin_username}" ] && [ -n "${admin_password}" ]; then
+    ensure_first_admin "${realm}" "${admin_username}" "${admin_password}" "${admin_email:-${admin_username}@${stack,,}.processpuzzle.local}" "${admin_role}"
+  elif [ -n "${admin_username}${admin_password}" ]; then
+    echo "ERROR: set both ${user_var} and ${pass_var}, or neither." >&2
+    exit 1
+  fi
+
+  if [ "${REMOVE_SEED_USERS}" = "true" ]; then
+    if [ -z "${admin_username}" ]; then
+      echo "ERROR: KEYCLOAK_REMOVE_SEED_USERS=true needs ${user_var}; removing the seed user would leave '${realm}' without an administrator." >&2
+      exit 1
+    fi
+    case "${stack}" in
+      TESTBED) remove_seed_user "${realm}" "test-user" "${admin_username}" ;;
+      ADMIN)   remove_seed_user "${realm}" "platform-admin" "${admin_username}" ;;
+    esac
+  fi
+done
+
 # --- create-realm, the one permission that cannot be realm-scoped ------------------------------
 echo "Granting create-realm to ${service_account_user} ..."
 "$KCADM" add-roles -r master --uusername "${service_account_user}" --rolename create-realm || \
