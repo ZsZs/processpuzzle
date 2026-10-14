@@ -1,7 +1,7 @@
 # ProcessPuzzle Auth Feature — Strategy Note
 
 ## Status
-Login/Logout implemented. `base-workflow-backend` synchronises roles from domain model to Keycloak. This note covers the design for the next phase: registration, a ProcessPuzzle-branded login experience, admin-driven role assignment, and default-administrator bootstrapping.
+Login/Logout implemented. Self-registration (`POST /registration`) is implemented, and Direct Access Grants are disabled on the testbed and biz clients (realm imports, plus reconciliation of existing realms by `bootstrap-platform-admin-client.sh`). The k6 performance tests, which use a password grant, need a dedicated client that allows it in a local/ci realm. `base-workflow-backend` synchronises roles from domain model to Keycloak. This note covers the design for the next phase: registration, a ProcessPuzzle-branded login experience, admin-driven role assignment, and default-administrator bootstrapping.
 
 ## Guiding decision: no Direct Access Grants
 Credential validation stays inside Keycloak via the Authorization Code + PKCE flow. Resource Owner Password Credentials (Direct Grant) was considered and rejected — it would expose password handling in the frontend/backend, forecloses MFA and social login, and is discouraged by current OIDC practice. This constraint shapes every choice below.
@@ -40,4 +40,4 @@ The 4-separate-backend strategy stays as-is: Testbed, Admin, Biz, and Custom eac
 
 ## Open items
 - Confirm whether "groups" in the org-admin module should ever need to affect Keycloak-issued token claims (would require reconsidering the Keycloak-groups-free approach above).
-- Angular Elements extraction, theme scaffolding, and the registration/Admin-API endpoint are the concrete next build tasks.
+- Angular Elements extraction and theme scaffolding are the concrete next build tasks.
