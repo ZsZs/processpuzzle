@@ -7,12 +7,18 @@ import static org.mockito.Mockito.mock;
 
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
+import com.processpuzzle.core.definition.MigrationParticipant;
+import com.processpuzzle.core.definition.MigrationStep;
+import com.processpuzzle.core.definition.MigrationStepFailedException;
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.definition.ReleaseProblem;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
+import com.processpuzzle.release.domain.OrgMigrationStep;
+import com.processpuzzle.release.domain.OrgMigrationStepRepository;
+import com.processpuzzle.release.domain.OrgReleaseContent;
 import com.processpuzzle.release.domain.OrgReleaseItem;
 import com.processpuzzle.release.domain.OrgReleaseContentRepository;
 import com.processpuzzle.release.domain.OrgReleaseItemRepository;
@@ -22,6 +28,11 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -63,6 +74,8 @@ class ReleaseOrganizationTest {
     @Autowired
     private OrgReleaseContentRepository contentRepository;
     @Autowired
+    private OrgMigrationStepRepository stepRepository;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private final List<String> calls = new ArrayList<>();
@@ -73,27 +86,165 @@ class ReleaseOrganizationTest {
     private DescribePendingRelease describePendingRelease;
     private ListReleases listReleases;
     private ReleaseHistory releaseHistory;
+    private ManagePendingSteps managePendingSteps;
+    private FakeMigration migration;
 
     @BeforeEach
     void setUp() {
+        stepRepository.deleteAll();
         contentRepository.deleteAll();
         itemRepository.deleteAll();
         releaseRepository.deleteAll();
         policy = mock(OrganizationAccessPolicy.class);
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         apps = new FakeParticipant(DefinitionKinds.APP, DefinitionKinds.APP_ORDER, calls);
+        migration = new FakeMigration();
         useParticipants(apps, entities);
     }
 
     private void useParticipants(ReleaseParticipant... participants) {
         OrganizationGuard guard = new OrganizationGuard(provider(policy));
         ReleaseParticipants all = ReleaseParticipants.of(List.of(participants));
-        ReleasePlanner planner = new ReleasePlanner(all);
+        MigrationParticipants migrations = MigrationParticipants.of(List.of(migration));
+        MigratingPlanner planner = new MigratingPlanner(new ReleasePlanner(all), migrations, stepRepository);
         releaseOrganization = new ReleaseOrganization(guard, planner, all, releaseRepository, itemRepository,
                 contentRepository, transactionManager, provider(Clock.fixed(NOW, ZoneOffset.UTC)));
         releaseHistory = new ReleaseHistory(itemRepository, contentRepository);
-        describePendingRelease = new DescribePendingRelease(guard, planner);
-        listReleases = new ListReleases(guard, releaseRepository, itemRepository);
+        describePendingRelease = new DescribePendingRelease(guard, planner, transactionManager);
+        listReleases = new ListReleases(guard, releaseRepository, itemRepository, stepRepository);
+        managePendingSteps = new ManagePendingSteps(guard, migrations, stepRepository, transactionManager);
+    }
+
+    /** Runs {@value #FILL} on entities: logs the call, writes a row through the transaction, and does what a test sets. */
+    private class FakeMigration implements MigrationParticipant {
+        static final String FILL = "fillAttribute";
+        Supplier<Long> onApply = () -> 3L;
+        Optional<String> unusable = Optional.empty();
+
+        @Override
+        public String kind() {
+            return DefinitionKinds.ENTITY;
+        }
+
+        @Override
+        public Set<String> operations() {
+            return Set.of(FILL);
+        }
+
+        @Override
+        public Optional<String> unusable(String orgKey, MigrationStep step) {
+            return unusable;
+        }
+
+        @Override
+        public long apply(String orgKey, MigrationStep step) {
+            calls.add("migrate " + step.subject());
+            contentRepository.save(new OrgReleaseContent(UUID.randomUUID(), ORG, "written by the step"));
+            return onApply.get();
+        }
+    }
+
+    private static MigrationStep fill(String attribute) {
+        return new MigrationStep(null, DefinitionKinds.ENTITY, "Claim", FakeMigration.FILL, attribute, Map.of("value", "EUR"));
+    }
+
+    /** The step runs before the checks, so a problem it resolves is gone by the time they look. */
+    @Test
+    void runsThePendingStepsFirst_andRecordsThemWithTheRelease() {
+        entities.withDraft("Claim", PendingChange.Change.CHANGED);
+        ReleaseProblem unfilled = ReleaseProblem.error(DefinitionKinds.ENTITY, "Claim", "entity.release.requiredWithoutDefault",
+                "No currency.");
+        entities.problems.add(unfilled);
+        migration.onApply = () -> {
+            entities.problems.remove(unfilled);
+            return 3L;
+        };
+        managePendingSteps.replace(ORG, List.of(fill("currency")));
+
+        ReleaseRecord released = releaseOrganization.execute(ORG, false, null);
+
+        assertThat(calls).containsExactly("migrate currency", "release entity", "release app");
+        assertThat(released.steps()).extracting(OrgMigrationStep::getSubject, OrgMigrationStep::getOutcome,
+                        OrgMigrationStep::getAffectedObjects)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("currency", OrgMigrationStep.Outcome.APPLIED, 3L));
+        assertThat(managePendingSteps.list(ORG)).isEmpty();
+        assertThat(listReleases.execute(ORG).getFirst().steps()).extracting(OrgMigrationStep::getReleaseNumber)
+                .containsExactly(1L);
+    }
+
+    @Test
+    void theDryRunRunsTheStepsAndRollsTheirWritesBack() {
+        entities.withDraft("Claim", PendingChange.Change.CHANGED);
+        managePendingSteps.replace(ORG, List.of(fill("currency")));
+
+        PendingRelease pending = describePendingRelease.execute(ORG);
+
+        assertThat(pending.steps()).extracting(StepOutcome::status, StepOutcome::affectedObjects)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(StepOutcome.Status.APPLIED, 3L));
+        assertThat(calls).containsExactly("migrate currency");
+        assertThat(contentRepository.count()).isZero();
+        assertThat(managePendingSteps.list(ORG)).extracting(MigrationStep::subject).containsExactly("currency");
+    }
+
+    @Test
+    void aFailingStepRefusesTheRelease_andRollsBackWhatTheOthersWrote() {
+        entities.withDraft("Claim", PendingChange.Change.CHANGED);
+        managePendingSteps.replace(ORG, List.of(fill("currency"), fill("total")));
+        migration.onApply = () -> {
+            if (calls.size() == 2) {
+                throw new MigrationStepFailedException("2 object(s) do not fit.");
+            }
+            return 1L;
+        };
+
+        assertThatThrownBy(() -> releaseOrganization.execute(ORG, true, null))
+                .isInstanceOfSatisfying(ReleaseRefusedException.class, refused -> {
+                    assertThat(refused.getReason()).isEqualTo(ReleaseRefusedException.Reason.ERRORS);
+                    assertThat(refused.getPending().problems()).extracting(ReleaseProblem::errorId, ReleaseProblem::subject)
+                            .containsExactly(org.assertj.core.groups.Tuple.tuple(StepOutcome.FAILED_STEP, "total"));
+                });
+
+        assertThat(contentRepository.count()).isZero();
+        assertThat(releaseRepository.count()).isZero();
+        assertThat(managePendingSteps.list(ORG)).hasSize(2);
+    }
+
+    @Test
+    void aStepThatCannotRunIsSkippedWithAWarning() {
+        entities.withDraft("Claim", PendingChange.Change.CHANGED);
+        managePendingSteps.replace(ORG, List.of(fill("currency")));
+        migration.unusable = Optional.of("'Claim.currency' is not an attribute of the draft.");
+
+        PendingRelease pending = describePendingRelease.execute(ORG);
+
+        assertThat(pending.steps()).extracting(StepOutcome::status).containsExactly(StepOutcome.Status.SKIPPED);
+        assertThat(pending.problems()).extracting(ReleaseProblem::severity, ReleaseProblem::errorId)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(ReleaseProblem.Severity.WARNING, StepOutcome.SKIPPED_STEP));
+        assertThat(calls).isEmpty();
+
+        ReleaseRecord released = releaseOrganization.execute(ORG, true, null);
+        assertThat(released.steps()).extracting(OrgMigrationStep::getOutcome).containsExactly(OrgMigrationStep.Outcome.SKIPPED);
+    }
+
+    @Test
+    void replacingRefusesAStepNothingRuns_andKeepsTheOnesBefore() {
+        managePendingSteps.replace(ORG, List.of(fill("currency")));
+
+        assertThatThrownBy(() -> managePendingSteps.replace(ORG, List.of(
+                new MigrationStep(null, DefinitionKinds.STATE, "Claim", "mapStates", null, Map.of()))))
+                .isInstanceOf(ManagePendingSteps.UnknownMigrationStepException.class);
+
+        assertThat(managePendingSteps.list(ORG)).extracting(MigrationStep::subject).containsExactly("currency");
+    }
+
+    @Test
+    void replacingKeepsTheOrderTheStepsAreGivenIn() {
+        managePendingSteps.replace(ORG, List.of(fill("currency")));
+
+        List<MigrationStep> stored = managePendingSteps.replace(ORG, List.of(fill("total"), fill("currency")));
+
+        assertThat(stored).extracting(MigrationStep::subject).containsExactly("total", "currency");
+        assertThat(stored).allSatisfy(step -> assertThat(step.id()).isNotBlank());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.processpuzzle.release.adapter.inbound;
 
+import com.processpuzzle.release.domain.OrgMigrationStepRepository;
 import com.processpuzzle.release.domain.OrgReleaseContentRepository;
 import com.processpuzzle.release.domain.OrgReleaseItemRepository;
 import com.processpuzzle.release.domain.OrgReleaseRepository;
@@ -24,17 +25,20 @@ public class TenantDataCleaner {
     private final OrgReleaseRepository releaseRepository;
     private final OrgReleaseItemRepository itemRepository;
     private final OrgReleaseContentRepository contentRepository;
+    private final OrgMigrationStepRepository stepRepository;
 
     public TenantDataCleaner(OrgReleaseRepository releaseRepository, OrgReleaseItemRepository itemRepository,
-                             OrgReleaseContentRepository contentRepository) {
+                             OrgReleaseContentRepository contentRepository, OrgMigrationStepRepository stepRepository) {
         this.releaseRepository = releaseRepository;
         this.itemRepository = itemRepository;
         this.contentRepository = contentRepository;
+        this.stepRepository = stepRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrganizationDeleted(OrganizationDeletedEvent event) {
         LOG.info("Organization '{}' deleted; removing its release history.", event.orgKey());
+        stepRepository.eraseByOrgKey(event.orgKey());
         contentRepository.eraseByOrgKey(event.orgKey());
         itemRepository.eraseByOrgKey(event.orgKey());
         releaseRepository.eraseByOrgKey(event.orgKey());

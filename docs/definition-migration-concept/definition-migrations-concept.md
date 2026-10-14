@@ -157,8 +157,8 @@ The sections above describe the target. A review against the release code (phase
 9. **Storage.**
    - *Pending steps* are JSON rows owned by base-release: org, kind, key, op, parameters, and the resolved error id.
    - *At publish*, the steps are copied into the release record and become immutable. A correction is a new release.
-   - *Obsolete steps.* A step whose problem no longer exists after a later draft edit is dropped when the release is planned.
-10. **Execution in base-entity.** base-release orchestrates. base-entity executes the steps behind an `EntityObjectMigration` port with set-based JSONB SQL. Every update bumps `version`, so a concurrent edit fails on the optimistic lock instead of overwriting migrated data.
+   - *Steps that no longer fit.* A step that cannot run against the drafts as they stand, for example after a later draft edit removed its attribute, is kept but skipped, and reported as a warning (`release.step.skipped`) so the designer sees it and removes it.
+10. **Execution in base-entity.** base-release orchestrates through the `MigrationParticipant` interface in processpuzzle-core, as it does releases through `ReleaseParticipant`. base-entity's `EntityMigrationParticipant` runs the three operations by rewriting each object's payload. Every written object's `version` moves on, so a concurrent edit fails on the optimistic lock instead of overwriting migrated data. A step that cannot change every object, such as a rename onto an attribute that already holds a value, fails (`release.step.failed`), which refuses the release. v1 rewrites object by object. Set-based JSONB SQL can replace that when volumes need it.
 11. **Removed values are moved aside.** On release, the values of a removed attribute move to a reserved `_removed.<code>` key. Otherwise they would come back if the same code is added again later.
 12. **Workflows stay refused.** The existing refusals stay: `workflowRemovedWhileRunning` and `taskRemovedWhileOpen`. `workflowInstancePolicy` is not offered until instances are pinned to a release.
 
@@ -173,13 +173,14 @@ The sections above describe the target. A review against the release code (phase
 ### 12.5 Build order
 
 1. **Data-aware checks.** The checks count the objects that do not fit (decision 6), and each problem names the attribute or state it is about (`subject`) and the number of objects (`affectedObjects`), which the Resolve forms build on. The existing pending-release view already is the dry run while there are no steps: the checks do not depend on `release()`.
-2. **Steps end to end.**
-   - The dry run of decision 5: an endpoint and a "Check against data" button that run the steps and the release, then roll back.
-   - Pending step storage and the `ReleaseCandidate` carrying the steps.
-   - `EntityObjectMigration` with the three operations.
+2. **Steps end to end (backend).**
+   - Pending steps in `org_migration_steps`, replaced as a whole through `PUT .../releases/pending/steps`.
+   - `EntityMigrationParticipant` with the three operations.
    - The execution order of decision 4.
-   - Steps recorded with the release.
-3. **Resolve forms** in the Release section: the rename question, the fill value, and the mapping table pre-filled with the distinct values found in the data.
+   - The dry run of decision 5 is the pending view itself. `GET .../releases/pending` runs the steps, plans, and rolls back, and reports each step's outcome.
+   - Steps recorded with the release, and listed in its history.
+   - A state is remapped with `mapValues` on the entity's state attribute. No state-specific operation is needed.
+3. **Resolve forms and the step list** in the Release section: the rename question, the fill value, and the mapping table pre-filled with the distinct values found in the data.
 4. **Moving removed values aside** (decision 11).
 
 ### 12.6 Later

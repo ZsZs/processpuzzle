@@ -1,9 +1,11 @@
 package com.processpuzzle.baseentity.instances.domain;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -56,6 +58,28 @@ public class EntityObjectScope {
                 List.of(entityDefinitionCode)).stream()
             .map(EntityObjectRepository.PayloadView::getPayload)
             .toList();
+    }
+
+    /**
+     * Rewrites the payload of every object of {@code entityDefinitionCode} — a release migrating the objects to fit
+     * the definition it releases. {@code rewrite} gets a copy of each payload and returns the payload the object should
+     * have; an object whose payload it leaves equal is not written. Each written object's version moves on, so an edit
+     * made from the old payload fails on the optimistic lock instead of undoing the rewrite. Not validated and
+     * publishes no event: the release checks the result, and a migration is not a business event.
+     *
+     * @return how many objects were written
+     */
+    public long rewriteAll(String orgKey, String entityDefinitionCode, UnaryOperator<Map<String, Object>> rewrite) {
+        long written = 0;
+        for (EntityObject object : findAll(orgKey, entityDefinitionCode)) {
+            Map<String, Object> rewritten = rewrite.apply(new LinkedHashMap<>(object.getPayload()));
+            if (!rewritten.equals(object.getPayload())) {
+                object.setPayload(rewritten);
+                repository.save(object);
+                written++;
+            }
+        }
+        return written;
     }
 
     public boolean existsAny(String orgKey, String entityDefinitionCode) {
