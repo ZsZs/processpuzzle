@@ -34,7 +34,8 @@ import org.springframework.stereotype.Component;
  * state attribute, and are not migrated from one release to the next. So, while objects of the type exist:
  * <ul>
  *   <li>a state removed while objects are in it is an error — they would sit in a state the machine no longer has;</li>
- *   <li>a changed state attribute is an error — every object's state is stored under the old one;</li>
+ *   <li>a changed state attribute is an error while objects hold no state of the machine under the new one — their
+ *   state is stored under the old one;</li>
  *   <li>a machine removed is a warning — its objects keep their state value, but nothing governs it any longer.</li>
  * </ul>
  * A renamed state is a removal and an addition, and is judged as such. A changed layout alone is never a problem.
@@ -127,15 +128,24 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
         if (draft == null) {
             return List.of(ReleaseProblem.warning(kind(), entityName, "state.release.machineRemoved",
                     "'%s' loses its state machine; its %d object(s) keep their state, but nothing governs it any longer."
-                            .formatted(entityName, governed.size())));
-        }
-        if (!Objects.equals(current.getStateAttributeKey(), draft.getStateAttributeKey())) {
-            return List.of(ReleaseProblem.error(kind(), entityName, "state.release.stateAttributeChanged",
-                    "'%s' keeps its state in '%s'; its %d object(s) would be read from '%s' instead."
-                            .formatted(entityName, current.getStateAttributeKey(), governed.size(),
-                                    draft.getStateAttributeKey())));
+                            .formatted(entityName, governed.size()))
+                    .about(null, (long) governed.size()));
         }
         Set<String> kept = draft.getStates().stream().map(State::key).collect(Collectors.toSet());
+        if (!Objects.equals(current.getStateAttributeKey(), draft.getStateAttributeKey())) {
+            long misread = governed.stream()
+                    .map(object -> object.attribute(draft.getStateAttributeKey()))
+                    .filter(state -> state == null || !kept.contains(state.toString()))
+                    .count();
+            if (misread == 0) {
+                return List.of();
+            }
+            return List.of(ReleaseProblem.error(kind(), entityName, "state.release.stateAttributeChanged",
+                    "'%s' keeps its state in '%s'; %d object(s) hold no state of the machine in '%s', where it would be read from instead."
+                            .formatted(entityName, current.getStateAttributeKey(), misread,
+                                    draft.getStateAttributeKey()))
+                    .about(draft.getStateAttributeKey(), misread));
+        }
         Map<String, Long> inState = governed.stream()
                 .map(object -> object.attribute(current.getStateAttributeKey()))
                 .filter(Objects::nonNull)
@@ -146,7 +156,8 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
                 .filter(stateKey -> !kept.contains(stateKey) && inState.getOrDefault(stateKey, 0L) > 0)
                 .forEach(stateKey -> problems.add(ReleaseProblem.error(kind(), entityName, "state.release.stateRemovedWithObjects",
                         "'%s' removes state '%s', which %d object(s) are in; move them out of it first."
-                                .formatted(entityName, stateKey, inState.get(stateKey)))));
+                                .formatted(entityName, stateKey, inState.get(stateKey)))
+                        .about(stateKey, inState.get(stateKey))));
         return problems;
     }
 
