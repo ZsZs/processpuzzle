@@ -158,6 +158,26 @@ class DefinitionUseCasesTest {
     }
 
     @Test
+    void replaceEntityDefinition_keepsTheAttributesDefaultAvatar() {
+        BaseEntityAttribute existingAttribute = BaseEntityAttribute.builder().code("photo").name("Photo").defaultAvatar("old.png").build();
+        BaseEntityDefinition existing = BaseEntityDefinition.builder()
+            .id(UUID.randomUUID())
+            .code("partner")
+            .name("Partner")
+            .attributes(new ArrayList<>(List.of(existingAttribute)))
+            .build();
+        BaseEntityAttribute updatedAttribute = BaseEntityAttribute.builder().code("photo").name("Photo").defaultAvatar("new.png").build();
+        BaseEntityDefinition update = BaseEntityDefinition.builder().code("partner").name("Partner").attributes(List.of(updatedAttribute)).build();
+
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "partner", Channel.DRAFT)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        replaceUseCase.replace(ORG, "partner", update);
+
+        assertThat(existingAttribute.getDefaultAvatar()).isEqualTo("new.png");
+    }
+
+    @Test
     void replaceEntityDefinition_codeMismatch_throwsConflict() {
         BaseEntityDefinition existing = BaseEntityDefinition.builder().id(UUID.randomUUID()).code("partner").name("Old").build();
         BaseEntityDefinition update = BaseEntityDefinition.builder().code("different").name("New").build();

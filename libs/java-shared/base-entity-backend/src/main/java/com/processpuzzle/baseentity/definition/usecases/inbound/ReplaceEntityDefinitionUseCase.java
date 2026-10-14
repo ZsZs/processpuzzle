@@ -58,25 +58,8 @@ public class ReplaceEntityDefinitionUseCase {
                 existing.addAttribute(desired);
                 continue;
             }
-            copyAttributeState(attribute, desired);
+            // The same copy a release makes, so a field the attribute gains cannot be left out of one of them.
+            attribute.copyFrom(desired);
         }
-    }
-
-    private void copyAttributeState(BaseEntityAttribute existing, BaseEntityAttribute desired) {
-        existing.setName(desired.getName());
-        existing.setDisplayOrder(desired.getDisplayOrder());
-        existing.setValueKind(desired.getValueKind());
-        existing.setFormControlType(desired.getFormControlType());
-        existing.setMultiplicity(desired.getMultiplicity());
-        existing.setMaxOccurs(desired.getMaxOccurs());
-        existing.setRequired(desired.isRequired());
-        existing.setIndexed(desired.isIndexed());
-        existing.setDefaultValue(desired.getDefaultValue());
-        existing.setEnumValues(desired.getEnumValues());
-        existing.setDateFormat(desired.getDateFormat());
-        existing.setLinkedEntityType(desired.getLinkedEntityType());
-        existing.setLinkToDetails(desired.isLinkToDetails());
-        existing.setAutosizeColumn(desired.isAutosizeColumn());
-        existing.setValidationRules(desired.getValidationRules());
     }
 }
