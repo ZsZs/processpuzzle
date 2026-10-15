@@ -1,7 +1,8 @@
 package com.processpuzzle.orgadmin.adapters.outbound;
 
-import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakTenantDirectory;
+import com.processpuzzle.core.identity.TenantScope.OrganizationScope;
 import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
@@ -13,7 +14,6 @@ import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -23,13 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.processpuzzle.orgadmin.adapters.outbound.KeycloakUserDirectoryAdapter.estimateTotal;
 import static com.processpuzzle.orgadmin.adapters.outbound.KeycloakUserDirectoryAdapter.str;
 import static com.processpuzzle.orgadmin.adapters.outbound.KeycloakUserDirectoryAdapter.toUser;
+import static com.processpuzzle.orgadmin.adapters.outbound.KeycloakUserDirectoryAdapter.wrap;
 
 /**
  * The tenant's user directory when every tenant is a Keycloak <b>Organization</b> inside one shared
@@ -39,6 +39,8 @@ import static com.processpuzzle.orgadmin.adapters.outbound.KeycloakUserDirectory
  * returned, which by the platform's convention is the {@code orgKey}. Here it names the
  * organization by alias; the realm is fixed, {@code keycloak.admin.organization-realm}. An alias no
  * organization carries is a 404, not a 503: the tenant does not exist, and retrying will not help.
+ * Finding the organization, its role groups and its members is core's
+ * {@code KeycloakTenantDirectory}; what they mean to user management is this class's.
  *
  * <h2>Membership is the tenant boundary</h2>
  *
@@ -66,23 +68,18 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakOrganizationUserDirectoryAdapter.class);
 
-    private static final Set<String> PLATFORM_ROLES = Set.of(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER);
-
-    /** Organizations have a handful of role groups; one page that no tenant will fill. */
-    private static final int GROUP_PAGE = 500;
-
     private final KeycloakAdminClient client;
-    private final String realm;
+    private final KeycloakTenantDirectory tenants;
 
-    public KeycloakOrganizationUserDirectoryAdapter(KeycloakAdminClient client, String realm) {
+    public KeycloakOrganizationUserDirectoryAdapter(KeycloakAdminClient client, KeycloakTenantDirectory tenants) {
         this.client = client;
-        this.realm = realm;
+        this.tenants = tenants;
     }
 
     @Override
     public DirectoryPage findUsers(String directory, String search, int page, int size) {
-        String org = organizationId(directory);
-        StringBuilder path = new StringBuilder(orgPath(org)).append("/members?first=")
+        OrganizationScope org = organization(directory);
+        StringBuilder path = new StringBuilder(org.organizationPath()).append("/members?first=")
                 .append((long) page * size).append("&max=").append(size);
         if (search != null && !search.isBlank()) {
             path.append("&search=").append(URLEncoder.encode(search, StandardCharsets.UTF_8));
@@ -97,16 +94,16 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
 
     @Override
     public Optional<DirectoryUser> findUser(String directory, String userId) {
-        String org = organizationId(directory);
+        OrganizationScope org = organization(directory);
         return member(org, userId).map(raw -> toUser(raw, roleNames(org, userId)));
     }
 
     @Override
     public DirectoryUser inviteUser(String directory, NewUser user, List<String> roles) {
-        String org = organizationId(directory);
-        return new KeycloakInvitation(client).invite(realm, directory, user, roles, userId -> {
+        OrganizationScope org = organization(directory);
+        return new KeycloakInvitation(client).invite(org, directory, user, roles, userId -> {
             // Spring writes String bodies verbatim; Keycloak requires a JSON string.
-            wrap(() -> client.exchange(HttpMethod.POST, orgPath(org) + "/members", "\"" + userId + "\"", null));
+            wrap(() -> client.exchange(HttpMethod.POST, org.organizationPath() + "/members", "\"" + userId + "\"", null));
             applyRoles(org, userId, Set.of(), Set.copyOf(roles == null ? List.of() : roles));
         }, userId -> member(org, userId).map(raw -> toUser(raw, roleNames(org, userId)))
                 .orElseThrow(() -> new DirectoryUnavailableException(
@@ -115,8 +112,8 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
 
     @Override
     public DirectoryUser updateUser(String directory, String userId, UserProfile profile) {
-        String org = organizationId(directory);
-        requireMember(org, directory, userId);
+        OrganizationScope org = organization(directory);
+        requireMember(org, userId);
         Map<String, Object> representation = new LinkedHashMap<>();
         representation.put("email", profile.email());
         representation.put("firstName", profile.firstName());
@@ -124,7 +121,7 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
         if (profile.enabled() != null) {
             representation.put("enabled", profile.enabled());
         }
-        wrap(() -> client.exchange(HttpMethod.PUT, realmPath() + "/users/" + userId, representation, null));
+        wrap(() -> client.exchange(HttpMethod.PUT, userPath(org, userId), representation, null));
         return findUser(directory, userId).orElseThrow(() -> new DirectoryUnavailableException(
                 "User '" + userId + "' left organization '" + directory + "' during an update."));
     }
@@ -136,35 +133,36 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
      */
     @Override
     public void deleteUser(String directory, String userId) {
-        String org = organizationId(directory);
-        requireMember(org, directory, userId);
-        wrap(() -> client.exchange(HttpMethod.DELETE, orgPath(org) + "/members/" + userId, null, null));
+        OrganizationScope org = organization(directory);
+        requireMember(org, userId);
+        wrap(() -> client.exchange(HttpMethod.DELETE, memberPath(org, userId), null, null));
         boolean elsewhere = !wrap(() -> client.getList(
-                realmPath() + "/organizations/members/" + userId + "/organizations")).isEmpty();
+                org.adminRealmPath() + "/organizations/members/" + userId + "/organizations")).isEmpty();
         if (!elsewhere) {
-            wrap(() -> client.exchange(HttpMethod.DELETE, realmPath() + "/users/" + userId, null, null));
+            wrap(() -> client.exchange(HttpMethod.DELETE, userPath(org, userId), null, null));
         }
     }
 
     @Override
     public List<DirectoryRole> findRoles(String directory) {
-        String org = organizationId(directory);
-        return Stream.concat(platformRoles().stream(), roleGroups(org).stream().map(
+        OrganizationScope org = organization(directory);
+        List<Map<String, Object>> groups = wrap(() -> tenants.topLevelGroupRepresentations(org));
+        return Stream.concat(platformRoles(org).stream(), groups.stream().map(
                         group -> new DirectoryRole(str(group.get("name")), str(group.get("description")), false)))
                 .toList();
     }
 
     @Override
     public List<DirectoryRole> findUserRoles(String directory, String userId) {
-        String org = organizationId(directory);
-        requireMember(org, directory, userId);
+        OrganizationScope org = organization(directory);
+        requireMember(org, userId);
         return userRoles(org, userId);
     }
 
     @Override
     public List<DirectoryRole> replaceRoles(String directory, String userId, List<String> roles) {
-        String org = organizationId(directory);
-        requireMember(org, directory, userId);
+        OrganizationScope org = organization(directory);
+        requireMember(org, userId);
         Set<String> held = userRoles(org, userId).stream().map(DirectoryRole::name)
                 .collect(Collectors.toUnmodifiableSet());
         applyRoles(org, userId, held, Set.copyOf(roles == null ? List.of() : roles));
@@ -177,143 +175,107 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
      * Moves the user from {@code held} to {@code wanted}. Revokes before granting, for the reason the
      * realm adapter gives: a user must never momentarily hold the union of the two states.
      */
-    private void applyRoles(String org, String userId, Set<String> held, Set<String> wanted) {
+    private void applyRoles(OrganizationScope org, String userId, Set<String> held, Set<String> wanted) {
         List<String> revoke = held.stream().filter(role -> !wanted.contains(role)).toList();
         List<String> grant = wanted.stream().filter(role -> !held.contains(role)).toList();
 
-        List<Map<String, Object>> platformRevoke = platformMappings(revoke);
+        List<Map<String, Object>> platformRevoke = platformMappings(org, revoke);
         if (!platformRevoke.isEmpty()) {
-            wrap(() -> client.exchange(HttpMethod.DELETE, realmRoleMappingPath(userId), platformRevoke, null));
+            wrap(() -> client.exchange(HttpMethod.DELETE, realmRoleMappingPath(org, userId), platformRevoke, null));
         }
-        Map<String, String> groupIds = roleGroups(org).stream()
-                .collect(Collectors.toMap(group -> str(group.get("name")), group -> str(group.get("id")), (a, b) -> a));
+        Map<String, String> groupIds = wrap(() -> tenants.topLevelGroups(org));
         for (String role : revoke) {
-            if (!PLATFORM_ROLES.contains(role) && groupIds.containsKey(role)) {
+            if (!TenantRoles.ALL.contains(role) && groupIds.containsKey(role)) {
                 wrap(() -> client.exchange(HttpMethod.DELETE, groupMemberPath(org, groupIds.get(role), userId), null, null));
             }
         }
 
-        List<Map<String, Object>> platformGrant = platformMappings(grant);
+        List<Map<String, Object>> platformGrant = platformMappings(org, grant);
         if (!platformGrant.isEmpty()) {
-            wrap(() -> client.exchange(HttpMethod.POST, realmRoleMappingPath(userId), platformGrant, null));
+            wrap(() -> client.exchange(HttpMethod.POST, realmRoleMappingPath(org, userId), platformGrant, null));
         }
         for (String role : grant) {
-            if (PLATFORM_ROLES.contains(role)) {
+            if (TenantRoles.ALL.contains(role)) {
                 continue;
             }
             String groupId = groupIds.get(role);
             if (groupId == null) {
                 // As in the realm adapter: the use case refused unknown names already, so the group
                 // vanished underneath this request. Dropping one role beats abandoning the rest.
-                LOG.warn("Organization '{}' no longer has role group '{}'; skipped.", org, role);
+                LOG.warn("Organization '{}' no longer has role group '{}'; skipped.", org.alias(), role);
                 continue;
             }
             wrap(() -> client.exchange(HttpMethod.PUT, groupMemberPath(org, groupId, userId), null, null));
         }
     }
 
-    private List<DirectoryRole> userRoles(String org, String userId) {
-        List<DirectoryRole> platform = wrap(() -> client.getList(realmRoleMappingPath(userId))).stream()
-                .filter(role -> PLATFORM_ROLES.contains(str(role.get("name"))))
+    private List<DirectoryRole> userRoles(OrganizationScope org, String userId) {
+        List<DirectoryRole> platform = wrap(() -> client.getList(realmRoleMappingPath(org, userId))).stream()
+                .filter(role -> TenantRoles.ALL.contains(str(role.get("name"))))
                 .map(role -> new DirectoryRole(str(role.get("name")), str(role.get("description")), true))
                 .toList();
-        List<DirectoryRole> own = wrap(() -> client.getList(orgPath(org) + "/members/" + userId + "/groups")).stream()
-                .filter(KeycloakOrganizationUserDirectoryAdapter::isTopLevel)
+        List<DirectoryRole> own = wrap(() -> client.getList(memberPath(org, userId) + "/groups"))
+                .stream()
+                .filter(KeycloakTenantDirectory::isTopLevel)
                 .map(group -> new DirectoryRole(str(group.get("name")), str(group.get("description")), false))
                 .toList();
         return Stream.concat(platform.stream(), own.stream()).toList();
     }
 
-    private List<String> roleNames(String org, String userId) {
+    private List<String> roleNames(OrganizationScope org, String userId) {
         return userRoles(org, userId).stream().map(DirectoryRole::name).toList();
     }
 
-    private List<DirectoryRole> platformRoles() {
-        return wrap(() -> client.getList(realmPath() + "/roles")).stream()
-                .filter(role -> PLATFORM_ROLES.contains(str(role.get("name"))))
+    private List<DirectoryRole> platformRoles(OrganizationScope org) {
+        return wrap(() -> client.getList(org.adminRealmPath() + "/roles")).stream()
+                .filter(role -> TenantRoles.ALL.contains(str(role.get("name"))))
                 .map(role -> new DirectoryRole(str(role.get("name")), str(role.get("description")), true))
                 .toList();
     }
 
     /** The {@code {id, name}} pairs Keycloak's role-mapping endpoints want, for the platform roles among {@code roles}. */
-    private List<Map<String, Object>> platformMappings(List<String> roles) {
-        if (roles.stream().noneMatch(PLATFORM_ROLES::contains)) {
+    private List<Map<String, Object>> platformMappings(OrganizationScope org, List<String> roles) {
+        if (roles.stream().noneMatch(TenantRoles.ALL::contains)) {
             return List.of();
         }
-        return wrap(() -> client.getList(realmPath() + "/roles")).stream()
-                .filter(role -> PLATFORM_ROLES.contains(str(role.get("name"))) && roles.contains(str(role.get("name"))))
+        return wrap(() -> client.getList(org.adminRealmPath() + "/roles")).stream()
+                .filter(role -> TenantRoles.ALL.contains(str(role.get("name"))) && roles.contains(str(role.get("name"))))
                 .map(role -> Map.of("id", role.get("id"), "name", role.get("name")))
                 .toList();
     }
 
-    private List<Map<String, Object>> roleGroups(String org) {
-        return wrap(() -> client.getList(orgPath(org) + "/groups?first=0&max=" + GROUP_PAGE)).stream()
-                .filter(KeycloakOrganizationUserDirectoryAdapter::isTopLevel)
-                .toList();
-    }
-
-    /** {@code path} is relative to the organization: a role group is {@code /reviewer}. */
-    private static boolean isTopLevel(Map<String, Object> group) {
-        return ("/" + str(group.get("name"))).equals(str(group.get("path")));
-    }
-
     // --- organization and membership -----------------------------------------------------
 
-    /**
-     * The organization's id from its alias. {@code exact=true} and an alias comparison both: the
-     * search also matches names, and a tenant must never be resolved to a look-alike.
-     */
-    private String organizationId(String alias) {
-        String encoded = URLEncoder.encode(alias, StandardCharsets.UTF_8);
-        return wrap(() -> client.getList(realmPath() + "/organizations?exact=true&search=" + encoded)).stream()
-                .filter(org -> alias.equals(str(org.get("alias"))))
-                .map(org -> str(org.get("id")))
-                .findFirst()
-                .orElseThrow(() -> new UnknownOrganizationException(alias));
+    /** The organization behind the tenant's alias; one that no organization carries is a 404. */
+    private OrganizationScope organization(String alias) {
+        return wrap(() -> tenants.organization(alias)).orElseThrow(() -> new UnknownOrganizationException(alias));
     }
 
-    @SuppressWarnings("unchecked")
-    private Optional<Map<String, Object>> member(String org, String userId) {
-        try {
-            return client.exchange(HttpMethod.GET, orgPath(org) + "/members/" + userId, null, Map.class)
-                    .map(raw -> (Map<String, Object>) raw);
-        } catch (IdentityProviderUnavailableException ex) {
-            if (ex.getCause() instanceof HttpClientErrorException.NotFound) {
-                return Optional.empty();
-            }
-            throw new DirectoryUnavailableException(ex.getMessage(), ex);
-        }
+    private Optional<Map<String, Object>> member(OrganizationScope org, String userId) {
+        return wrap(() -> tenants.findMember(org, userId));
     }
 
-    private void requireMember(String org, String directory, String userId) {
+    private void requireMember(OrganizationScope org, String userId) {
         if (member(org, userId).isEmpty()) {
-            throw new UserNotFoundException(directory, userId);
+            throw new UserNotFoundException(org.alias(), userId);
         }
     }
 
-    // --- paths and errors ----------------------------------------------------------------
+    // --- paths ---------------------------------------------------------------------------
 
-    private String realmPath() {
-        return "/admin/realms/" + realm;
+    private static String userPath(OrganizationScope org, String userId) {
+        return org.adminRealmPath() + "/users/" + userId;
     }
 
-    private String orgPath(String org) {
-        return realmPath() + "/organizations/" + org;
+    private static String memberPath(OrganizationScope org, String userId) {
+        return org.organizationPath() + "/members/" + userId;
     }
 
-    private String realmRoleMappingPath(String userId) {
-        return realmPath() + "/users/" + userId + "/role-mappings/realm";
+    private static String realmRoleMappingPath(OrganizationScope org, String userId) {
+        return userPath(org, userId) + "/role-mappings/realm";
     }
 
-    private String groupMemberPath(String org, String groupId, String userId) {
-        return orgPath(org) + "/groups/" + groupId + "/members/" + userId;
-    }
-
-    private static <T> T wrap(Supplier<T> call) {
-        try {
-            return call.get();
-        } catch (IdentityProviderUnavailableException ex) {
-            throw new DirectoryUnavailableException(ex.getMessage(), ex);
-        }
+    private static String groupMemberPath(OrganizationScope org, String groupId, String userId) {
+        return org.organizationPath() + "/groups/" + groupId + "/members/" + userId;
     }
 }

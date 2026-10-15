@@ -2,6 +2,7 @@ package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.TenantScope;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
@@ -29,12 +30,12 @@ final class KeycloakInvitation {
         this.client = client;
     }
 
-    DirectoryUser invite(String realm, String directory, NewUser user, List<String> roles,
+    DirectoryUser invite(TenantScope scope, String directory, NewUser user, List<String> roles,
                          Consumer<String> provision, Function<String, DirectoryUser> read) {
         String operationId = UUID.randomUUID().toString();
-        String usersPath = "/admin/realms/" + realm + "/users";
+        String usersPath = scope.adminRealmPath() + "/users";
         LOG.info("Starting invitation '{}' in realm '{}' for directory '{}', username '{}'.",
-                operationId, realm, directory, user.username());
+                operationId, scope.realm(), directory, user.username());
         String userId = create(usersPath, directory, user, operationId);
         LOG.info("Invitation '{}' created account '{}'.", operationId, userId);
         try {
@@ -70,7 +71,7 @@ final class KeycloakInvitation {
                     .orElseThrow(() -> recoveryRequired(operationId, null,
                             new DirectoryUnavailableException("Keycloak returned no created account id.")));
         } catch (IdentityProviderUnavailableException failure) {
-            if (failure.getHttpStatus().stream().anyMatch(status -> status == 409)) {
+            if (failure.getHttpStatus().stream().anyMatch(status -> status == KeycloakAdminClient.HTTP_CONFLICT)) {
                 throw new UserAlreadyExistsException(directory, user.username());
             }
             // Even a server error can follow a committed create. Never search by username and
@@ -81,7 +82,8 @@ final class KeycloakInvitation {
 
     private void compensate(String usersPath, String userId, String operationId, RuntimeException failure) {
         try {
-            client.exchangeTolerating(HttpMethod.DELETE, usersPath + "/" + userId, null, 404);
+            client.exchangeTolerating(HttpMethod.DELETE, usersPath + "/" + userId, null,
+                    KeycloakAdminClient.HTTP_NOT_FOUND);
         } catch (IdentityProviderUnavailableException cleanup) {
             failure.addSuppressed(cleanup);
             throw recoveryRequired(operationId, userId, failure);

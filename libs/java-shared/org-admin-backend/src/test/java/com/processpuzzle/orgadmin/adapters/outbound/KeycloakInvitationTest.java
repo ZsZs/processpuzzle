@@ -2,6 +2,7 @@ package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.TenantScope;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
@@ -155,7 +156,7 @@ class KeycloakInvitationTest {
     }
 
     private DirectoryUser invite() {
-        return invitation.invite("shared", "acme", NEW_USER, List.of("org-member"), provision, read);
+        return invitation.invite(new TenantScope.RealmScope("shared"), "acme", NEW_USER, List.of("org-member"), provision, read);
     }
 
     private static DirectoryUser user(boolean enabled) {

@@ -1,6 +1,7 @@
 package com.processpuzzle.workflow.definition.adapters.outbound;
 
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.TenantScope.RealmScope;
 import com.processpuzzle.workflow.definition.usecases.outbound.RoleDirectoryPort;
 import org.springframework.http.HttpMethod;
 
@@ -28,23 +29,14 @@ import java.util.Objects;
  * the 409 on the create branch is tolerated anyway — two requests can create the same role at once,
  * and the loser of that race has still had its work done.
  *
- * <p><b>The read is the role list, not {@code GET /roles/{name}}.</b> Keycloak answers 404 for a role
- * that is not there, and {@link KeycloakAdminClient#exchange} raises any 4xx as an
- * {@link com.processpuzzle.core.identity.IdentityProviderUnavailableException} rather than returning
- * an empty {@code Optional} — so a single-role probe cannot express "absent", and would send every
- * create down the failure path instead. {@code GET /roles} always answers 200, and a tenant's realm
- * holds tens of roles, so listing them is the cheaper mistake to make.
+ * <p><b>The read is the role list, not {@code GET /roles/{name}}.</b> {@code GET /roles} always
+ * answers 200 and is the same read {@link #findRoleNames} makes; a tenant's realm holds tens of
+ * roles, so one list is no dearer than a {@link KeycloakAdminClient#find} probe.
  *
  * <p>Deliberately not a {@code @Component}: {@code RoleDirectoryConfiguration} registers either this
  * or the no-op, depending on whether an admin secret is configured.
  */
 public class KeycloakRoleDirectoryAdapter implements RoleDirectoryPort {
-
-    /** Keycloak's answer when a role with that name is already there — a retry, not a failure. */
-    private static final int CONFLICT = 409;
-
-    /** Keycloak's answer when the role is already gone — the requested end state, reached. */
-    private static final int NOT_FOUND = 404;
 
     private final KeycloakAdminClient client;
 
@@ -61,13 +53,15 @@ public class KeycloakRoleDirectoryAdapter implements RoleDirectoryPort {
         if (findRoleNames(orgKey).contains(roleName)) {
             client.exchange(HttpMethod.PUT, rolePath(orgKey, roleName), representation, null);
         } else {
-            client.exchangeTolerating(HttpMethod.POST, rolesPath(orgKey), representation, CONFLICT);
+            client.exchangeTolerating(HttpMethod.POST, rolesPath(orgKey), representation,
+                    KeycloakAdminClient.HTTP_CONFLICT);
         }
     }
 
     @Override
     public void deleteRole(String orgKey, String roleName) {
-        client.exchangeTolerating(HttpMethod.DELETE, rolePath(orgKey, roleName), null, NOT_FOUND);
+        client.exchangeTolerating(HttpMethod.DELETE, rolePath(orgKey, roleName), null,
+                KeycloakAdminClient.HTTP_NOT_FOUND);
     }
 
     @Override
@@ -80,7 +74,7 @@ public class KeycloakRoleDirectoryAdapter implements RoleDirectoryPort {
     }
 
     private static String rolesPath(String orgKey) {
-        return "/admin/realms/" + orgKey + "/roles";
+        return new RealmScope(orgKey).adminRealmPath() + "/roles";
     }
 
     private static String rolePath(String orgKey, String roleName) {

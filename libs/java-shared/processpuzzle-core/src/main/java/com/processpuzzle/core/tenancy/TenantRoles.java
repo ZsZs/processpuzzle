@@ -1,5 +1,7 @@
 package com.processpuzzle.core.tenancy;
 
+import java.util.Set;
+
 /**
  * The two realm roles ProcessPuzzle itself interprets, as opposed to the arbitrary ones a tenant
  * defines for its own application.
@@ -16,6 +18,9 @@ public final class TenantRoles {
 
     /** Realm role every member of a tenant holds. */
     public static final String ORG_MEMBER = "org-member";
+
+    /** Both of them: the roles a tenant may be granted but never define, rename or delete. */
+    public static final Set<String> ALL = Set.of(ORG_ADMIN, ORG_MEMBER);
 
     private TenantRoles() {
     }

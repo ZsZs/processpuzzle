@@ -275,6 +275,45 @@ class KeycloakAdminClientTest {
         server.verify();
     }
 
+    @Test
+    void findAnswersEmptyForNotFoundAndRaisesEveryOtherFailure() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        KeycloakAdminClient client = client(builder);
+
+        expectToken(server);
+        server.expect(requestTo("https://keycloak.example/admin/realms/acme/roles/reviewer"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"name\":\"reviewer\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://keycloak.example/admin/realms/acme/roles/absent"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+        server.expect(requestTo("https://keycloak.example/admin/realms/acme/roles/forbidden"))
+                .andRespond(withForbiddenRequest());
+
+        assertThat(client.find("/admin/realms/acme/roles/reviewer", Map.class)).contains(Map.of("name", "reviewer"));
+        assertThat(client.find("/admin/realms/acme/roles/absent", Map.class)).isEmpty();
+        assertThatThrownBy(() -> client.find("/admin/realms/acme/roles/forbidden", Map.class))
+                .isInstanceOfSatisfying(IdentityProviderUnavailableException.class, failure ->
+                        assertThat(failure.getHttpStatus()).hasValue(403));
+        server.verify();
+    }
+
+    @Test
+    void derivesTheTenancyFromTheProperties() {
+        KeycloakAdminProperties properties = new KeycloakAdminProperties();
+        assertThat(new KeycloakAdminClient(properties, RestClient.builder()).tenancy())
+                .isEqualTo(KeycloakTenancy.UNCONFIGURED);
+
+        properties.setClientSecret("secret");
+        assertThat(new KeycloakAdminClient(properties, RestClient.builder()).tenancy())
+                .isEqualTo(KeycloakTenancy.REALM_PER_TENANT);
+
+        properties.setOrganizationRealm("shared");
+        KeycloakAdminClient client = new KeycloakAdminClient(properties, RestClient.builder());
+        assertThat(client.tenancy()).isEqualTo(KeycloakTenancy.ORGANIZATION);
+        assertThat(client.organizationRealm()).contains("shared");
+    }
+
     private static KeycloakAdminClient client(RestClient.Builder builder) {
         KeycloakAdminProperties properties = new KeycloakAdminProperties();
         properties.setUrl("https://keycloak.example");

@@ -2,6 +2,7 @@ package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakTenantDirectory;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
@@ -47,7 +48,8 @@ class KeycloakOrganizationUserDirectoryAdapterTest {
     @BeforeEach
     void setUp() {
         client = mock(KeycloakAdminClient.class);
-        adapter = new KeycloakOrganizationUserDirectoryAdapter(client, "shared");
+        when(client.organizationRealm()).thenReturn(Optional.of("shared"));
+        adapter = new KeycloakOrganizationUserDirectoryAdapter(client, new KeycloakTenantDirectory(client));
         when(client.getList(REALM_PATH + "/organizations?exact=true&search=acme"))
                 .thenReturn(List.of(Map.of("id", "org-1", "alias", "acme")));
         when(client.getList(REALM_PATH + "/roles"))
@@ -141,8 +143,7 @@ class KeycloakOrganizationUserDirectoryAdapterTest {
                     List.of(Map.of("id", "org-member-id", "name", "org-member")), null);
             case "group" -> doThrow(failure).when(client).exchange(HttpMethod.PUT,
                     ORG_PATH + "/groups/reviewer-id/members/" + ALICE, null, null);
-            case "member-read" -> doThrow(failure).when(client).exchange(
-                    HttpMethod.GET, ORG_PATH + "/members/" + ALICE, null, Map.class);
+            case "member-read" -> doThrow(failure).when(client).find(ORG_PATH + "/members/" + ALICE, Map.class);
             case "roles-read" -> when(client.getList(ORG_PATH + "/members/" + ALICE + "/groups"))
                     .thenThrow(failure);
             case "missing-member" -> givenNotAMember(ALICE);
@@ -238,14 +239,12 @@ class KeycloakOrganizationUserDirectoryAdapterTest {
     // --- fixtures ------------------------------------------------------------------------
 
     private void givenMember(String userId) {
-        when(client.exchange(HttpMethod.GET, ORG_PATH + "/members/" + userId, null, Map.class))
-                .thenReturn(Optional.of(user(userId)));
+        when(client.find(ORG_PATH + "/members/" + userId, Map.class)).thenReturn(Optional.of(user(userId)));
     }
 
+    /** {@code find} answers empty for Keycloak's 404 — see {@code KeycloakAdminClientTest}. */
     private void givenNotAMember(String userId) {
-        doThrow(new IdentityProviderUnavailableException("Keycloak admin call failed",
-                HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null)))
-                .when(client).exchange(HttpMethod.GET, ORG_PATH + "/members/" + userId, null, Map.class);
+        when(client.find(ORG_PATH + "/members/" + userId, Map.class)).thenReturn(Optional.empty());
     }
 
     private void givenRoles(String userId, List<Map<String, Object>> realmRoles, List<Map<String, Object>> groups) {
