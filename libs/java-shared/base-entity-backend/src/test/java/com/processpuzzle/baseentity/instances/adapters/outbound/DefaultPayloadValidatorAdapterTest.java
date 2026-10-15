@@ -285,7 +285,9 @@ class DefaultPayloadValidatorAdapterTest {
                 "Order Line".equals(entityName) && Integer.valueOf(0).equals(object.get("quantity")) ? List.of("Quantity must be positive.") : List.of();
         validator = new DefaultPayloadValidatorAdapter(definitionLookupPort, rules);
 
-        assertThatThrownBy(() -> validator.validate(ORG, orderDef, Map.of("lineItems", List.of(Map.of("quantity", 1), Map.of("quantity", 0)))))
+        Map<String, Object> payload = Map.of("lineItems", List.of(Map.of("quantity", 1), Map.of("quantity", 0)));
+
+        assertThatThrownBy(() -> validator.validate(ORG, orderDef, payload))
                 .isInstanceOf(ValidationException.class)
                 .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message").containsExactly("Quantity must be positive."));
     }
