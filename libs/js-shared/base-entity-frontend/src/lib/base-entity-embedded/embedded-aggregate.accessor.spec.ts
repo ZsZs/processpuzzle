@@ -52,7 +52,8 @@ function setupAccessor(levels: Array<{ entityName: string; entityId?: string }>,
   const rootStore = {
     loadById: vi.fn((id: string) => (rootLoaded && id === '1' ? aggregate : undefined)),
     currentEntity: signal(rootLoaded ? aggregate : undefined),
-    update: vi.fn(() => Promise.resolve(undefined)),
+    update: vi.fn((entity: unknown) => Promise.resolve(entity)),
+    error: signal<string | undefined>(undefined),
   };
   const rootFacade = new InjectionToken<unknown>('ROOT_FACADE');
 
@@ -141,5 +142,17 @@ describe('EmbeddedAggregateAccessor', () => {
     await accessor.writeRoot(resolved as ResolvedEmbeddedAggregate, { id: '1', embeddedComponents: [] });
 
     expect(rootStore.update).toHaveBeenCalledWith({ id: '1', embeddedComponents: [] });
+  });
+
+  it('throws the containing store\'s error when the write of the containing document was refused', async () => {
+    const { accessor, rootStore } = setupAccessor([
+      { entityName: 'Test Entity', entityId: '1' },
+      { entityName: 'Embedded Component', entityId: 'embedded_1_1' },
+    ]);
+    rootStore.update.mockImplementation(() => Promise.resolve(undefined));
+    rootStore.error.set('Order total does not match the sum of line item subtotals.');
+    const resolved = accessor.resolve('Embedded Component') as ResolvedEmbeddedAggregate;
+
+    await expect(accessor.writeRoot(resolved, { id: '1', embeddedComponents: [] })).rejects.toThrow('Order total does not match the sum of line item subtotals.');
   });
 });

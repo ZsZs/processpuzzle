@@ -38,7 +38,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
                 .filter(BaseEntityAttribute::isLinkToDetails)
                 .map(BaseEntityAttribute::getCode)
                 .findFirst()
-                .orElse(null)
+                .orElse(null),
+            definition.getName()
         );
     }
 

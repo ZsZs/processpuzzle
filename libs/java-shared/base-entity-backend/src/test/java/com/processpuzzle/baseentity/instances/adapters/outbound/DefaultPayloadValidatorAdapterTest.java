@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.port.EntityRulesPort;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +31,7 @@ class DefaultPayloadValidatorAdapterTest {
 
     @BeforeEach
     void setUp() {
-        validator = new DefaultPayloadValidatorAdapter(definitionLookupPort);
+        validator = new DefaultPayloadValidatorAdapter(definitionLookupPort, EntityRulesPort.NONE);
     }
 
     @Test
@@ -258,5 +259,45 @@ class DefaultPayloadValidatorAdapterTest {
         );
 
         validator.validate(ORG, partnerDef, payload);
+    }
+
+    @Test
+    void validate_blockingRuleViolation_throwsValidationExceptionWithTheRuleMessage() {
+        EntityDefinitionView def = new EntityDefinitionView("order", false, List.of(), null, "Order");
+        Map<String, Object> payload = Map.of("total", 10);
+        EntityRulesPort rules = (org, entityName, object) ->
+                "Order".equals(entityName) ? List.of("Order total does not match the sum of line item subtotals.") : List.of();
+        validator = new DefaultPayloadValidatorAdapter(definitionLookupPort, rules);
+
+        assertThatThrownBy(() -> validator.validate(ORG, def, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations())
+                        .containsExactly(new ValidationException.Violation(null, "Order total does not match the sum of line item subtotals.")));
+    }
+
+    @Test
+    void validate_embeddedRows_areCheckedAgainstTheRulesOfTheirOwnDefinition() {
+        EntityDefinitionView lineDef = new EntityDefinitionView("order-line", true, List.of(), null, "Order Line");
+        EntityDefinitionView orderDef = new EntityDefinitionView("order", false, List.of(
+                new EntityAttributeView("lineItems", ValueKindView.REFERENCE, true, true, "order-line", false)), null, "Order");
+        when(definitionLookupPort.findByCode(ORG, "order-line")).thenReturn(Optional.of(lineDef));
+        EntityRulesPort rules = (org, entityName, object) ->
+                "Order Line".equals(entityName) && Integer.valueOf(0).equals(object.get("quantity")) ? List.of("Quantity must be positive.") : List.of();
+        validator = new DefaultPayloadValidatorAdapter(definitionLookupPort, rules);
+
+        Map<String, Object> payload = Map.of("lineItems", List.of(Map.of("quantity", 1), Map.of("quantity", 0)));
+
+        assertThatThrownBy(() -> validator.validate(ORG, orderDef, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message").containsExactly("Quantity must be positive."));
+    }
+
+    @Test
+    void validate_definitionWithoutName_usesItsCodeAsRuleContext() {
+        EntityDefinitionView def = new EntityDefinitionView("order", false, List.of());
+        EntityRulesPort rules = (org, entityName, object) -> "order".equals(entityName) ? List.of("broken") : List.of();
+        validator = new DefaultPayloadValidatorAdapter(definitionLookupPort, rules);
+
+        assertThatThrownBy(() -> validator.validate(ORG, def, Map.of())).isInstanceOf(ValidationException.class);
     }
 }
