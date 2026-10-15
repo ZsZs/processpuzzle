@@ -118,6 +118,26 @@ describe('GenericEntityFormComponent', () => {
       expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
 
+    it('onSubmit() re-claims the navigator entity name an embedded child left behind, and leaves the form pristine', async () => {
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      component.baseEntityForm.get('boolean')?.setValue(false);
+      component.baseEntityForm.markAsDirty();
+      vi.spyOn(store, 'update').mockResolvedValue(undefined);
+      let entityNameOnNavigate: string | undefined;
+      vi.spyOn(formNavigator, 'navigateBack').mockImplementation(async () => {
+        entityNameOnNavigate = formNavigator.entityName();
+      });
+      formNavigator.setEntityName('embedded-child');
+
+      await component.onSubmit();
+
+      expect(entityNameOnNavigate).toBe(component.entityDescriptor().entityName);
+      expect(component.baseEntityForm.pristine).toBe(true);
+      expect(component.saveDisabled()).toBe(true);
+    });
+
     it('enables Save after a signal-less programmatic mutation (zoneless-safe reactive binding)', async () => {
       // Reproduces the components-list navigator flow: setValue()/markAsDirty() with no DOM event and no signal write.
       const { fixture, component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
