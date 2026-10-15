@@ -118,6 +118,8 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     } else {
       await this.store().update(objectToSave);
     }
+    // Saved: should navigating away fail, the form must not keep offering Save for edits already persisted.
+    this.baseEntityForm.markAsPristine();
     await this.navigateBack();
   }
   // endregion
@@ -127,8 +129,13 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
    * Leaving an embedded child goes to the form of the entity that contains it. Only a fallback: a drill-down
    * already records where it came from. It is a page opened straight on its URL — a deep link, a reload —
    * that has nothing recorded, and would otherwise land on the child's own list.
+   *
+   * The navigator's entity name is re-claimed first: it is a singleton, and an embedded child opened below
+   * this form — which outlives the child, so `ngOnInit` does not run again — leaves the child's name behind.
+   * The list fallback would then aim at the child's list, which an embedded type does not have.
    */
   private async navigateBack(): Promise<void> {
+    this.formNavigator.setEntityName(this.entityDescriptor().entityName);
     await this.formNavigator.navigateBack(this.entityDescriptor().isEmbedded ? this.formNavigator.determineOwnerUrl() : undefined);
   }
 
