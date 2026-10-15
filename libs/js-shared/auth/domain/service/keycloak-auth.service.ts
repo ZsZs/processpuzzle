@@ -74,6 +74,19 @@ export class KeycloakAuthService extends AuthService {
       return false;
     }
   }
+
+  /**
+   * Keycloak's account console. `returnUrl` is passed through as is, unlike {@link login}'s target: the
+   * profile page that links here lives under `/auth`, which {@link toRedirectUri} would send home.
+   */
+  override getAccountManagementUrl(returnUrl?: string): string | undefined {
+    try {
+      return this.keycloak.createAccountUrl(returnUrl ? { redirectUri: returnUrl } : undefined);
+    } catch {
+      // Not initialized yet, so the realm URL is unknown. The page shows no link rather than a broken one.
+      return undefined;
+    }
+  }
   // endregion
 
   // region protected, private helper methods

@@ -4,6 +4,7 @@ import { MyProfileComponent } from './my-profile/my-profile.component';
 import { RegistrationComponent } from './registration/registration.component';
 import { LogoutComponent } from './logout/logout.component';
 import { authGuard } from './auth.guard';
+import { loginRequiredGuard } from './login-required.guard';
 import { loginResolver } from './login/login.resolver';
 import { provideTranslocoScope } from '@jsverse/transloco';
 
@@ -12,5 +13,5 @@ export const authRoutes: Routes = [
   { path: 'login', component: LoginComponent, title: 'login', data: { icon: 'login', authToggle: true }, resolve: { signedInUser: loginResolver }, canActivate: [authGuard] },
   { path: 'logout', component: LogoutComponent, title: 'logout', data: { icon: 'logout', authToggle: false }, canActivate: [authGuard] },
   { path: 'register', component: RegistrationComponent, title: 'register', data: { icon: 'person_add', authToggle: true } },
-  { path: 'my-profile', component: MyProfileComponent, title: 'my_profile', data: { icon: 'person', authToggle: false } },
+  { path: 'my-profile', component: MyProfileComponent, title: 'my_profile', data: { icon: 'person', authToggle: false }, canActivate: [loginRequiredGuard] },
 ];

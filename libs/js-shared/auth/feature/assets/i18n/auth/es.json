@@ -38,5 +38,15 @@
     "password_err_mismatch": "Las contraseñas no coinciden",
     "create_button": "Crear cuenta",
     "sign_in_button": "¿Ya tienes una cuenta? Inicia sesión"
+  },
+  "my_profile_form": {
+    "title": "Mi perfil",
+    "email_label": "Correo electrónico",
+    "first_name_label": "Nombre",
+    "last_name_label": "Apellido",
+    "roles_label": "Mis roles",
+    "no_roles": "No tiene roles.",
+    "not_signed_in": "No ha iniciado sesión.",
+    "manage_account_button": "Gestionar cuenta"
   }
 }

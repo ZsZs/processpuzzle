@@ -38,5 +38,15 @@
     "password_err_mismatch": "Les mots de passe ne correspondent pas",
     "create_button": "Créer un compte",
     "sign_in_button": "Vous avez déjà un compte? Connectez-vous"
+  },
+  "my_profile_form": {
+    "title": "Mon Profil",
+    "email_label": "E-mail",
+    "first_name_label": "Prénom",
+    "last_name_label": "Nom",
+    "roles_label": "Mes rôles",
+    "no_roles": "Vous n'avez aucun rôle.",
+    "not_signed_in": "Vous n'êtes pas connecté.",
+    "manage_account_button": "Gérer le compte"
   }
 }

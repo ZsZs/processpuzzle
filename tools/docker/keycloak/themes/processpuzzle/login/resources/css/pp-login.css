@@ -1,10 +1,18 @@
-/* The ProcessPuzzle backdrop for every Keycloak page of this theme. img/pp_card.svg is copied in from
-   libs/js-shared/auth/feature/assets/auth by `nx run login-element:package-login-theme`. */
-.pf-v5-c-login,
-.login-pf {
+/* The ProcessPuzzle card framing the dialog on every Keycloak page of this theme. img/pp_card.svg is copied in
+   from libs/js-shared/auth/feature/assets/auth by `nx run login-element:package-login-theme`. */
+.pf-v5-c-login {
   background-color: #eeeeee;
+}
+
+/* The card is square: its header band takes the top ~30% and the puzzle pieces the bottom ~20%, so the dialog
+   is padded into the free band between them. Percentage padding resolves against the width, which keeps the
+   band in place at every card size; a dialog taller than the band grows the card and stretches the frame. */
+.pf-v5-c-login__main {
+  width: min(44rem, 100%);
+  aspect-ratio: 1 / 1;
+  padding: 32% 10% 20%;
+  box-sizing: border-box;
   background-image: url('../img/pp_card.svg');
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
+  background-size: 100% 100%;
 }
