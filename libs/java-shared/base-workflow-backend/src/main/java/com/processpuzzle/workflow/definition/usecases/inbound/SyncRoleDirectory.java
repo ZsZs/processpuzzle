@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Converges the identity provider's realm roles onto the organization's role catalog.
@@ -57,8 +58,8 @@ public class SyncRoleDirectory {
      * them would let a tenant grant itself platform authority by authoring a row, and deleting the
      * definition again would revoke a role the realm needs.
      */
-    public static final Set<String> RESERVED_ROLE_IDS =
-            Set.of(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER, "offline_access", "uma_authorization");
+    public static final Set<String> RESERVED_ROLE_IDS = Stream.concat(TenantRoles.ALL.stream(),
+            Stream.of("offline_access", "uma_authorization")).collect(Collectors.toUnmodifiableSet());
 
     /**
      * Prefix of Keycloak's per-realm composite default role ({@code default-roles-<realm>}), which

@@ -8,6 +8,7 @@ import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
+import com.processpuzzle.core.identity.TenantScope.RealmScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
@@ -45,10 +46,6 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakUserDirectoryAdapter.class);
 
-    /** The two roles created with every realm, which ProcessPuzzle itself interprets. */
-    private static final Set<String> PLATFORM_ROLES =
-            Set.of(TenantRoles.ORG_ADMIN, TenantRoles.ORG_MEMBER);
-
     private final KeycloakAdminClient client;
 
     public KeycloakUserDirectoryAdapter(KeycloakAdminClient client) {
@@ -57,8 +54,8 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     @Override
     public DirectoryPage findUsers(String realm, String search, int page, int size) {
-        StringBuilder path = new StringBuilder("/admin/realms/").append(realm)
-                .append("/users?first=").append((long) page * size).append("&max=").append(size);
+        StringBuilder path = new StringBuilder(usersPath(realm))
+                .append("?first=").append((long) page * size).append("&max=").append(size);
         if (search != null && !search.isBlank()) {
             path.append("&search=").append(URLEncoder.encode(search, StandardCharsets.UTF_8));
         }
@@ -73,14 +70,14 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
     @Override
     public Optional<DirectoryUser> findUser(String realm, String userId) {
         Optional<Map<String, Object>> raw = wrap(() ->
-                client.exchange(HttpMethod.GET, "/admin/realms/" + realm + "/users/" + userId,
+                client.exchange(HttpMethod.GET, usersPath(realm) + "/" + userId,
                         null, Map.class).map(KeycloakUserDirectoryAdapter::asMap));
         return raw.map(user -> toUser(user, rolesOf(realm, userId)));
     }
 
     @Override
     public DirectoryUser inviteUser(String realm, NewUser user, List<String> roles) {
-        return new KeycloakInvitation(client).invite(realm, realm, user, roles,
+        return new KeycloakInvitation(client).invite(new RealmScope(realm), realm, user, roles,
                 userId -> grantRoles(realm, userId, roles),
                 userId -> findUser(realm, userId).orElseThrow(() -> new DirectoryUnavailableException(
                         "Keycloak will not read back the invited account '" + userId + "'.")));
@@ -95,7 +92,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
         if (profile.enabled() != null) {
             representation.put("enabled", profile.enabled());
         }
-        wrap(() -> client.exchange(HttpMethod.PUT, "/admin/realms/" + realm + "/users/" + userId,
+        wrap(() -> client.exchange(HttpMethod.PUT, usersPath(realm) + "/" + userId,
                 representation, null));
         return findUser(realm, userId).orElseThrow(() -> new DirectoryUnavailableException(
                 "User '" + userId + "' disappeared from realm '" + realm + "' during an update."));
@@ -104,20 +101,19 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
     @Override
     public void deleteUser(String realm, String userId) {
         wrap(() -> client.exchange(HttpMethod.DELETE,
-                "/admin/realms/" + realm + "/users/" + userId, null, null));
+                usersPath(realm) + "/" + userId, null, null));
     }
 
     @Override
     public List<DirectoryRole> findRoles(String realm) {
-        return wrap(() -> client.getList("/admin/realms/" + realm + "/roles")).stream()
+        return wrap(() -> client.getList(rolesPath(realm))).stream()
                 .map(KeycloakUserDirectoryAdapter::toRole)
                 .toList();
     }
 
     @Override
     public List<DirectoryRole> findUserRoles(String realm, String userId) {
-        return wrap(() -> client.getList(
-                "/admin/realms/" + realm + "/users/" + userId + "/role-mappings/realm")).stream()
+        return wrap(() -> client.getList(roleMappingPath(realm, userId))).stream()
                 .map(KeycloakUserDirectoryAdapter::toRole)
                 .toList();
     }
@@ -142,8 +138,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
         List<Map<String, Object>> mappings = roleMappings(realm, roles);
         if (!mappings.isEmpty()) {
             wrap(() -> client.exchange(HttpMethod.POST,
-                    "/admin/realms/" + realm + "/users/" + userId + "/role-mappings/realm",
-                    mappings, null));
+                    roleMappingPath(realm, userId), mappings, null));
         }
     }
 
@@ -151,8 +146,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
         List<Map<String, Object>> mappings = roleMappings(realm, roles);
         if (!mappings.isEmpty()) {
             wrap(() -> client.exchange(HttpMethod.DELETE,
-                    "/admin/realms/" + realm + "/users/" + userId + "/role-mappings/realm",
-                    mappings, null));
+                    roleMappingPath(realm, userId), mappings, null));
         }
     }
 
@@ -168,13 +162,24 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
         }
         List<Map<String, Object>> mappings = new ArrayList<>(roles.size());
         for (String role : roles) {
-            wrap(() -> client.exchange(HttpMethod.GET, "/admin/realms/" + realm + "/roles/" + role,
-                    null, Map.class))
+            wrap(() -> client.find(rolesPath(realm) + "/" + role, Map.class))
                     .ifPresentOrElse(
                             found -> mappings.add(Map.of("id", found.get("id"), "name", found.get("name"))),
                             () -> LOG.warn("Realm '{}' no longer declares role '{}'; skipped.", realm, role));
         }
         return mappings;
+    }
+
+    private static String usersPath(String realm) {
+        return new RealmScope(realm).adminRealmPath() + "/users";
+    }
+
+    private static String rolesPath(String realm) {
+        return new RealmScope(realm).adminRealmPath() + "/roles";
+    }
+
+    private static String roleMappingPath(String realm, String userId) {
+        return usersPath(realm) + "/" + userId + "/role-mappings/realm";
     }
 
     private List<String> rolesOf(String realm, String userId) {
@@ -209,7 +214,7 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     private static DirectoryRole toRole(Map<String, Object> raw) {
         String name = str(raw.get("name"));
-        return new DirectoryRole(name, str(raw.get("description")), PLATFORM_ROLES.contains(name));
+        return new DirectoryRole(name, str(raw.get("description")), TenantRoles.ALL.contains(name));
     }
 
     @SuppressWarnings("unchecked")
@@ -223,9 +228,10 @@ public class KeycloakUserDirectoryAdapter implements UserDirectoryPort {
 
     /**
      * Re-throws core's transport failure as this module's, so this module's advice — which
-     * is scoped to this module's controllers — is the one that answers it.
+     * is scoped to this module's controllers — is the one that answers it. Shared with
+     * {@link KeycloakOrganizationUserDirectoryAdapter}.
      */
-    private static <T> T wrap(Supplier<T> call) {
+    static <T> T wrap(Supplier<T> call) {
         try {
             return call.get();
         } catch (IdentityProviderUnavailableException ex) {

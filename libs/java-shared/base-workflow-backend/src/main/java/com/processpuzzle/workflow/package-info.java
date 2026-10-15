@@ -30,8 +30,10 @@
  * <h2>The one thing this module writes outside itself</h2>
  *
  * <p>base-workflow projects its organization-scoped role catalog into the identity provider's realm
- * roles — {@code RoleDirectoryPort} and, in this library, {@code KeycloakRoleDirectoryAdapter} over
- * core's {@code KeycloakAdminClient}. That is the <b>only outbound write this module owns</b>:
+ * roles — {@code RoleDirectoryPort} and, in this library, {@code KeycloakRoleDirectoryAdapter}
+ * (realm roles, realm-per-tenant) or {@code KeycloakOrganizationRoleDirectoryAdapter} (Organization
+ * groups in a shared realm), over core's {@code KeycloakAdminClient} and
+ * {@code KeycloakTenantDirectory}, which knows how a tenant maps onto Keycloak. That is the <b>only outbound write this module owns</b>:
  * everything else it needs from outside is either read through another feature's named interface or
  * declared as a port for the host application to satisfy.
  *

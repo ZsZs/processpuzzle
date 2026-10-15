@@ -29,14 +29,17 @@ import java.util.OptionalInt;
  * {@code ObjectProvider<RestClient.Builder>} constructor so the class is usable outside a Spring
  * context.
  *
- * <h2>Why this is shared with org-admin</h2>
+ * <h2>Who shares it</h2>
  *
- * <p>{@code org-admin-backend} manages users in the same realms and therefore needs the same
- * conversation. It reaches this class through the {@code platformadmin :: keycloak} named interface
- * rather than opening its own: a second client would mean a second token cache expiring on its own
- * schedule and a second copy of {@code keycloak.admin.*} free to drift from this one. Exposing an
- * adapter package is a deliberate exception to the usual "ports and use cases only" rule, made
- * visible in both modules' {@code @ApplicationModule} declarations rather than hidden.
+ * <p>Every feature that writes into Keycloak goes through this one client — base-workflow projecting
+ * its role catalog, org-admin managing a tenant's users, invitations and self-registration — because
+ * {@code core} is an open module both already depend on. A second client would mean a second token
+ * cache expiring on its own schedule and a second copy of {@code keycloak.admin.*} free to drift
+ * from this one.
+ *
+ * <p>This class only speaks the Admin API. How a tenant maps onto Keycloak — a realm of its own, or
+ * an Organization in a shared realm — is {@link KeycloakTenancy} and {@link KeycloakTenantDirectory},
+ * so that the features keep only their own semantics.
  *
  * <h2>Token handling</h2>
  *
@@ -46,6 +49,12 @@ import java.util.OptionalInt;
  */
 @Component
 public class KeycloakAdminClient {
+
+    /** Keycloak's answer when the resource is already there — on a create, usually a retry. */
+    public static final int HTTP_CONFLICT = 409;
+
+    /** Keycloak's answer when the resource is not there. */
+    public static final int HTTP_NOT_FOUND = 404;
 
     /** Refresh this far ahead of expiry, so no request goes out with a token about to die. */
     private static final Duration EXPIRY_MARGIN = Duration.ofSeconds(30);
@@ -81,6 +90,14 @@ public class KeycloakAdminClient {
         return properties.isOrganizationMode() ? Optional.of(properties.getOrganizationRealm()) : Optional.empty();
     }
 
+    /** How tenants map onto Keycloak in this deployment. */
+    public KeycloakTenancy tenancy() {
+        if (!properties.isConfigured()) {
+            return KeycloakTenancy.UNCONFIGURED;
+        }
+        return properties.isOrganizationMode() ? KeycloakTenancy.ORGANIZATION : KeycloakTenancy.REALM_PER_TENANT;
+    }
+
     /**
      * Sends a request to the Admin API and returns the deserialized body.
      *
@@ -92,6 +109,22 @@ public class KeycloakAdminClient {
      */
     public <T> Optional<T> exchange(HttpMethod method, String path, Object body, Class<T> responseType) {
         return exchangeAuthenticated(method, path, body, responseType, accessToken());
+    }
+
+    /**
+     * Reads one resource, answering empty when Keycloak says 404 — the way to ask "is it there?"
+     * without sending the absent case down the failure path. Every other failure is raised as by
+     * {@link #exchange}.
+     */
+    public <T> Optional<T> find(String path, Class<T> responseType) {
+        try {
+            return exchange(HttpMethod.GET, path, null, responseType);
+        } catch (IdentityProviderUnavailableException ex) {
+            if (hasStatus(ex, HTTP_NOT_FOUND)) {
+                return Optional.empty();
+            }
+            throw ex;
+        }
     }
 
     private <T> Optional<T> exchangeAuthenticated(HttpMethod method, String path, Object body,

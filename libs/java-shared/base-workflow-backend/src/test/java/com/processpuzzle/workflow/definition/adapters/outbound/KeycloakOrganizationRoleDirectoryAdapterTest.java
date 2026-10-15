@@ -2,12 +2,14 @@ package com.processpuzzle.workflow.definition.adapters.outbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakTenantDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +31,8 @@ class KeycloakOrganizationRoleDirectoryAdapterTest {
     @BeforeEach
     void setUp() {
         client = mock(KeycloakAdminClient.class);
-        adapter = new KeycloakOrganizationRoleDirectoryAdapter(client, "shared");
+        when(client.organizationRealm()).thenReturn(Optional.of("shared"));
+        adapter = new KeycloakOrganizationRoleDirectoryAdapter(client, new KeycloakTenantDirectory(client));
         when(client.getList("/admin/realms/shared/organizations?exact=true&search=acme"))
                 .thenReturn(List.of(Map.of("id", "org-1", "alias", "acme")));
         when(client.getList(GROUPS + "?first=0&max=500")).thenReturn(List.of(

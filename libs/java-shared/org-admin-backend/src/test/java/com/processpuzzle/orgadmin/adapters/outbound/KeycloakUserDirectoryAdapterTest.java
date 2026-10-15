@@ -88,7 +88,7 @@ class KeycloakUserDirectoryAdapterTest {
         UserDirectoryPort.NewUser user =
                 new UserDirectoryPort.NewUser("ada", "ada@example.com", "Ada", "Lovelace");
         when(client.createAndReturnId(anyString(), any())).thenReturn(Optional.of(USER_ID));
-        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/roles/org-member", null, Map.class))
+        when(client.find("/admin/realms/acme/roles/org-member", Map.class))
                 .thenReturn(Optional.of(role("org-member")));
         when(client.exchange(HttpMethod.GET, "/admin/realms/acme/users/user-1", null, Map.class))
                 .thenReturn(Optional.of(user(USER_ID, true, 1000L)));
@@ -163,7 +163,7 @@ class KeycloakUserDirectoryAdapterTest {
     @Test
     void compensatesRoleGrantFailuresAndNeverEnablesTheAccount() {
         when(client.createAndReturnId(anyString(), any())).thenReturn(Optional.of(USER_ID));
-        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/roles/org-member", null, Map.class))
+        when(client.find("/admin/realms/acme/roles/org-member", Map.class))
                 .thenReturn(Optional.of(role("org-member")));
         doThrow(unavailable("grant failed")).when(client).exchange(HttpMethod.POST,
                 "/admin/realms/acme/users/user-1/role-mappings/realm",
@@ -232,9 +232,9 @@ class KeycloakUserDirectoryAdapterTest {
         when(client.getList("/admin/realms/acme/users/user-1/role-mappings/realm"))
                 .thenReturn(List.of(role("old"), role("keep")))
                 .thenReturn(List.of(role("keep"), role("new")));
-        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/roles/old", null, Map.class))
+        when(client.find("/admin/realms/acme/roles/old", Map.class))
                 .thenReturn(Optional.of(role("old")));
-        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/roles/new", null, Map.class))
+        when(client.find("/admin/realms/acme/roles/new", Map.class))
                 .thenReturn(Optional.of(role("new")));
 
         assertThat(adapter.replaceRoles(REALM, USER_ID, List.of("keep", "new")))
@@ -248,7 +248,7 @@ class KeycloakUserDirectoryAdapterTest {
     @Test
     void skipsMissingRolesAndDoesNotWriteEmptyMappings() {
         when(client.getList("/admin/realms/acme/users/user-1/role-mappings/realm")).thenReturn(List.of());
-        when(client.exchange(HttpMethod.GET, "/admin/realms/acme/roles/missing", null, Map.class))
+        when(client.find("/admin/realms/acme/roles/missing", Map.class))
                 .thenReturn(Optional.empty());
 
         assertThat(adapter.replaceRoles(REALM, USER_ID, List.of("missing"))).isEmpty();
