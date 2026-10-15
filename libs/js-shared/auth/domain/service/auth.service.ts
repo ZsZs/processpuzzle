@@ -39,6 +39,17 @@ export abstract class AuthService {
     return false;
   }
 
+  /**
+   * Where the user edits their own account — name, e-mail, password — at the identity provider, coming
+   * back to `returnUrl` afterwards; `undefined` when the provider hosts no such page.
+   *
+   * The profile screen only displays the user: the identity provider owns the account, and editing it
+   * there keeps its own policies (verification, password rules, re-authentication) in force.
+   */
+  getAccountManagementUrl(_returnUrl?: string): string | undefined {
+    return undefined;
+  }
+
   // region protected, private helper methods
   protected throwError(message: string) {
     throw new Error(message);
