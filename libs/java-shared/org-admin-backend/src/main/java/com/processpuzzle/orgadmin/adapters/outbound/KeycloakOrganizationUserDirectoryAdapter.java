@@ -121,7 +121,7 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
         if (profile.enabled() != null) {
             representation.put("enabled", profile.enabled());
         }
-        wrap(() -> client.exchange(HttpMethod.PUT, org.adminRealmPath() + "/users/" + userId, representation, null));
+        wrap(() -> client.exchange(HttpMethod.PUT, userPath(org, userId), representation, null));
         return findUser(directory, userId).orElseThrow(() -> new DirectoryUnavailableException(
                 "User '" + userId + "' left organization '" + directory + "' during an update."));
     }
@@ -135,11 +135,11 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
     public void deleteUser(String directory, String userId) {
         OrganizationScope org = organization(directory);
         requireMember(org, userId);
-        wrap(() -> client.exchange(HttpMethod.DELETE, org.organizationPath() + "/members/" + userId, null, null));
+        wrap(() -> client.exchange(HttpMethod.DELETE, memberPath(org, userId), null, null));
         boolean elsewhere = !wrap(() -> client.getList(
                 org.adminRealmPath() + "/organizations/members/" + userId + "/organizations")).isEmpty();
         if (!elsewhere) {
-            wrap(() -> client.exchange(HttpMethod.DELETE, org.adminRealmPath() + "/users/" + userId, null, null));
+            wrap(() -> client.exchange(HttpMethod.DELETE, userPath(org, userId), null, null));
         }
     }
 
@@ -214,7 +214,7 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
                 .filter(role -> TenantRoles.ALL.contains(str(role.get("name"))))
                 .map(role -> new DirectoryRole(str(role.get("name")), str(role.get("description")), true))
                 .toList();
-        List<DirectoryRole> own = wrap(() -> client.getList(org.organizationPath() + "/members/" + userId + "/groups"))
+        List<DirectoryRole> own = wrap(() -> client.getList(memberPath(org, userId) + "/groups"))
                 .stream()
                 .filter(KeycloakTenantDirectory::isTopLevel)
                 .map(group -> new DirectoryRole(str(group.get("name")), str(group.get("description")), false))
@@ -263,8 +263,16 @@ public class KeycloakOrganizationUserDirectoryAdapter implements UserDirectoryPo
 
     // --- paths ---------------------------------------------------------------------------
 
+    private static String userPath(OrganizationScope org, String userId) {
+        return org.adminRealmPath() + "/users/" + userId;
+    }
+
+    private static String memberPath(OrganizationScope org, String userId) {
+        return org.organizationPath() + "/members/" + userId;
+    }
+
     private static String realmRoleMappingPath(OrganizationScope org, String userId) {
-        return org.adminRealmPath() + "/users/" + userId + "/role-mappings/realm";
+        return userPath(org, userId) + "/role-mappings/realm";
     }
 
     private static String groupMemberPath(OrganizationScope org, String groupId, String userId) {
