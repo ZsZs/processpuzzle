@@ -62,7 +62,10 @@ export class EmbeddedAggregateAccessor {
   /** Persists the aggregate with `rootPayload` replaced — an embedded row has no endpoint of its own. */
   async writeRoot(resolved: ResolvedEmbeddedAggregate, rootPayload: Record<string, unknown>): Promise<void> {
     // The payload is the root entity with one branch rebuilt, so it carries the same id it was read by.
-    await resolved.rootStore.update(rootPayload as unknown as PersistedEntity<BaseEntity>);
+    const saved = await resolved.rootStore.update(rootPayload as unknown as PersistedEntity<BaseEntity>);
+    // The root store reports a failure through its state, not by throwing; the child's store must see it
+    // thrown, or it records a row the server refused — a rule of the owner, say.
+    if (saved === undefined) throw new Error(resolved.rootStore.error() ?? 'The entity containing this one could not be saved.');
   }
 
   /**

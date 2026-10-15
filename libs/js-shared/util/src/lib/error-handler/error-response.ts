@@ -41,6 +41,7 @@ export function httpErrorId(error: unknown): string | undefined {
  *
  * Precedence, and why each step is there:
  *  1. `errorText` — our own services, the case that matters.
+ *     Or `violations` — base-entity's 422: the messages of the failed checks and rules, joined.
  *  2. a string `message` on the body — errors from things that are not ours: Firebase Auth, a reverse
  *     proxy, Spring Boot's own `/error` when nothing handled the exception.
  *  3. a plain string body — `text/plain` failures, which is what a proxy or a route stub returns.
@@ -81,12 +82,26 @@ function bodyMessage(body: unknown): string | undefined {
   if (isErrorResponse(body)) return body.errorText;
 
   if (typeof body === 'object' && body !== null) {
+    const violations = violationMessages(body);
+    if (violations) return violations;
     const message = (body as { message?: unknown }).message;
     if (typeof message === 'string' && message.length > 0) return message;
     return undefined;
   }
 
   return typeof body === 'string' && body.length > 0 ? body : undefined;
+}
+
+function violationMessages(body: object): string | undefined {
+  const violations = (body as { violations?: unknown }).violations;
+  if (!Array.isArray(violations)) return undefined;
+  const messages = violations
+    .map((violation: { attributeCode?: unknown; message?: unknown }) => {
+      if (typeof violation?.message !== 'string' || violation.message.length === 0) return undefined;
+      return typeof violation.attributeCode === 'string' ? `${violation.attributeCode}: ${violation.message}` : violation.message;
+    })
+    .filter((message): message is string => message !== undefined);
+  return messages.length > 0 ? messages.join('; ') : undefined;
 }
 
 export function formatHttpError(error: HttpErrorResponse): string {

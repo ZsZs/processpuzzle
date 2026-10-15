@@ -6,10 +6,12 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
+import com.processpuzzle.baseentity.port.EntityRulesPort;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,15 +19,27 @@ import org.springframework.stereotype.Component;
  * the definition side and isn't yet exposed through EntityAttributeView — add it there if you
  * want required-ness enforced here rather than only at form-generation time on the frontend);
  * this adapter's job today is recursing embedded-component sub-payloads against their own
- * definitions via EntityDefinitionLookupPort. A module with base-rule on the classpath should
- * supply its own PayloadValidatorPort bean (@ConditionalOnMissingBean lets that override happen
- * without touching this one).
+ * definitions via EntityDefinitionLookupPort.
+ *
+ * <p>Each level — the root and every embedded row — is also checked against the rules of its own
+ * definition through {@link EntityRulesPort}. A blocking rule violation is reported with a null
+ * {@code attributeCode}: a rule judges the object, not one attribute of it.
  */
 @Component
-@RequiredArgsConstructor
 public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
 
     private final EntityDefinitionLookupPort definitionLookupPort;
+    private final EntityRulesPort entityRulesPort;
+
+    @Autowired
+    public DefaultPayloadValidatorAdapter(EntityDefinitionLookupPort definitionLookupPort, ObjectProvider<EntityRulesPort> entityRulesProvider) {
+        this(definitionLookupPort, entityRulesProvider.getIfUnique(() -> EntityRulesPort.NONE));
+    }
+
+    public DefaultPayloadValidatorAdapter(EntityDefinitionLookupPort definitionLookupPort, EntityRulesPort entityRulesPort) {
+        this.definitionLookupPort = definitionLookupPort;
+        this.entityRulesPort = entityRulesPort;
+    }
 
     @Override
     public void validate(String orgKey, EntityDefinitionView definition, Map<String, Object> payload) {
@@ -41,6 +55,8 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             Object value = payload.get(attribute.code());
             validateAttributePayload(orgKey, definition, attribute, value, violations);
         }
+        entityRulesPort.blockingViolationsOf(orgKey, definition.ruleContext(), payload)
+            .forEach(message -> violations.add(new Violation(null, message)));
     }
 
     private void validateAttributePayload(String orgKey, EntityDefinitionView definition, EntityAttributeView attribute, Object value, List<Violation> violations) {

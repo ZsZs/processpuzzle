@@ -64,6 +64,11 @@ describe('httpErrorMessage', () => {
     expect(httpErrorMessage(httpError(anErrorResponse, 409))).not.toContain('Http failure response');
   });
 
+  it("joins base-entity's 422 violations, naming the attribute when one is given", () => {
+    const body = { title: 'Validation failed', status: 422, violations: [{ attributeCode: 'name', message: 'required' }, { attributeCode: null, message: 'Total does not match.' }] };
+    expect(httpErrorMessage(httpError(body, 422))).toBe('name: required; Total does not match.');
+  });
+
   it('tolerates a message key, because errors from things that are not ours use it', () => {
     expect(httpErrorMessage(httpError({ message: 'Firebase: Error (auth/user-not-found).' }, 401))).toBe('Firebase: Error (auth/user-not-found).');
   });

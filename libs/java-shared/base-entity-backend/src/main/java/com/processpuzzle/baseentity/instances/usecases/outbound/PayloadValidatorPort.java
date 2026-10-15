@@ -4,9 +4,8 @@ import java.util.Map;
 
 /**
  * Validates an EntityObject payload (including recursing into embedded-component sub-payloads)
- * before persistence. A default structural-only implementation is provided; a module with
- * base-rule on the classpath should supply its own adapter bean
- * ({@code @ConditionalOnMissingBean}) that also runs ConstraintRule evaluation.
+ * before persistence. The default implementation checks structure, and asks
+ * {@link com.processpuzzle.baseentity.port.EntityRulesPort} for the rules the host application enforces.
  */
 public interface PayloadValidatorPort {
 

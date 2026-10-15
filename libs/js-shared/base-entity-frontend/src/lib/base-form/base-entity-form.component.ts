@@ -113,10 +113,12 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     this.evaluateRules(objectToSave);
     if (this.hasErrorViolations()) return;
     this.store().setCurrentEntity(undefined);
-    if (this.isNewObject()) {
-      await this.store().add(objectToSave);
-    } else {
-      await this.store().update(objectToSave);
+    const saved = this.isNewObject() ? await this.store().add(objectToSave) : await this.store().update(objectToSave);
+    // Refused — by a rule the server enforces, a conflict, the network: the edits stay on the form, and the
+    // store's error says why.
+    if (saved === undefined) {
+      if (!this.isNewObject()) this.store().setCurrentEntity(this.entityId());
+      return;
     }
     // Saved: should navigating away fail, the form must not keep offering Save for edits already persisted.
     this.baseEntityForm.markAsPristine();

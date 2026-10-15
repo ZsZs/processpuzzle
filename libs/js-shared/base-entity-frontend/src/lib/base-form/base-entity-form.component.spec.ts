@@ -89,6 +89,26 @@ describe('GenericEntityFormComponent', () => {
       expect(formNavigator.navigateBack).toHaveBeenCalled();
     });
 
+    it('onSubmit() stays on the form, dirty, when the store refuses the save', async () => {
+      // SETUP:
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      component.baseEntityForm.markAsDirty();
+      vi.spyOn(store, 'update').mockResolvedValue(undefined);
+      vi.spyOn(store, 'setCurrentEntity');
+      vi.spyOn(formNavigator, 'navigateBack');
+
+      // EXERCISE:
+      await component.onSubmit();
+
+      // VERIFY:
+      expect(store.update).toHaveBeenCalled();
+      expect(formNavigator.navigateBack).not.toHaveBeenCalled();
+      expect(component.baseEntityForm.dirty).toBe(true);
+      expect(store.setCurrentEntity).toHaveBeenLastCalledWith(component.entityId());
+    });
+
     it('onSubmit(), when its new object saves it in store.', async () => {
       // SETUP:
       const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], undefined, true);
@@ -124,7 +144,7 @@ describe('GenericEntityFormComponent', () => {
       await fixture.whenStable();
       component.baseEntityForm.get('boolean')?.setValue(false);
       component.baseEntityForm.markAsDirty();
-      vi.spyOn(store, 'update').mockResolvedValue(undefined);
+      vi.spyOn(store, 'update').mockImplementation(async (entity) => entity);
       let entityNameOnNavigate: string | undefined;
       vi.spyOn(formNavigator, 'navigateBack').mockImplementation(async () => {
         entityNameOnNavigate = formNavigator.entityName();
