@@ -36,6 +36,23 @@ class EventJsonRoundTripTest {
                 .isEqualTo(occurred);
     }
 
+    // The parameters are what a reacting workflow binds its records from, so they have to survive the registry.
+    @Test
+    void anOccurrenceWithParametersRoundTrips() {
+        DefinedEventOccurred occurred = new DefinedEventOccurred("org-1", "OrderCreatedEvent", "order", "42",
+                Map.of("orderNumber", "O-1"), WHEN, java.util.List.of(
+                        new OccurredParameter(OccurredParameter.SUBJECT, EventParameterType.ENTITY_REF, "order", "42"),
+                        new OccurredParameter("orderNumber", EventParameterType.STRING, null, "O-1"),
+                        new OccurredParameter("note", EventParameterType.STRING, null, null)));
+
+        DefinedEventOccurred read = mapper.readValue(mapper.writeValueAsString(occurred), DefinedEventOccurred.class);
+
+        assertThat(read).isEqualTo(occurred);
+        assertThat(read.parameter(OccurredParameter.SUBJECT).isReference()).isTrue();
+        assertThat(read.parameter("note").value()).isNull();
+        assertThat(read.parameter("missing")).isNull();
+    }
+
     @Test
     void aPublicationStoredBeforeKindExistedReadsAsSystem() {
         String legacy = """
@@ -47,6 +64,7 @@ class EventJsonRoundTripTest {
         assertThat(occurred.kind()).isNull();
         assertThat(occurred.effectiveKind()).isEqualTo(CatalogEventKind.SYSTEM);
         assertThat(occurred.payload()).containsEntry("customer", "ACME");
+        assertThat(occurred.parameters()).isEmpty();
     }
 
     @Test

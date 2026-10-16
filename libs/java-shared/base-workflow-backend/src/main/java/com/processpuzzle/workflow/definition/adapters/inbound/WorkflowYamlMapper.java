@@ -175,7 +175,8 @@ public class WorkflowYamlMapper {
     }
 
     private ArtifactUse toArtifactUseDomain(ArtifactUseYaml entry) {
-        return ArtifactUse.builder().artifactDefinitionId(entry.artifactDefinitionId()).objectName(entry.objectName()).build();
+        return ArtifactUse.builder().artifactDefinitionId(entry.artifactDefinitionId()).objectName(entry.objectName())
+                .bindFrom(entry.bindFrom()).build();
     }
 
     private ToolUse toToolUseDomain(ToolUseYaml entry) {
@@ -314,7 +315,7 @@ public class WorkflowYamlMapper {
                 safeList(workflow.getRoles()).stream()
                         .map(use -> new RoleUseYaml(use.getRoleDefinitionId())).toList(),
                 safeList(workflow.getArtifacts()).stream()
-                        .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId(), use.getObjectName())).toList(),
+                        .map(use -> new ArtifactUseYaml(use.getArtifactDefinitionId(), use.getObjectName(), use.getBindFrom())).toList(),
                 safeList(workflow.getTools()).stream()
                         .map(use -> new ToolUseYaml(use.getToolDefinitionId())).toList(),
                 safeList(workflow.getTasks()).stream().map(this::toTaskUseYaml).toList(),

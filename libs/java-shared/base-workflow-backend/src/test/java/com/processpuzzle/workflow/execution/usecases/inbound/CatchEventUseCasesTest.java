@@ -205,7 +205,9 @@ class CatchEventUseCasesTest {
 
     private OccurCatchEventUseCase useCase(WorkflowProgression progression) {
         return new OccurCatchEventUseCase(events, instances, resolve,
-                new CatchOccurrence(events, tasks, progression, publisher));
+                new CatchOccurrence(events, tasks, progression, publisher,
+                        new ArtifactBinder(org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository.class),
+                                org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway.class))));
     }
 
     private static EventInstance waiting() {

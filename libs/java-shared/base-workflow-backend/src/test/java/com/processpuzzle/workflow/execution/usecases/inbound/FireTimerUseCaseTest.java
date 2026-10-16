@@ -68,7 +68,9 @@ class FireTimerUseCaseTest {
                 .status(WorkflowInstanceStatus.ACTIVE).build();
         when(instances.findByOrgKeyAndId(ORG, INSTANCE_ID)).thenReturn(Optional.of(instance));
         useCase = new FireTimerUseCase(events, instances, tasks, resolve,
-                new CatchOccurrence(events, tasks, progression, publisher), publisher, Clock.fixed(NOW, ZoneOffset.UTC));
+                new CatchOccurrence(events, tasks, progression, publisher,
+                        new ArtifactBinder(org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository.class),
+                                org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway.class))), publisher, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test

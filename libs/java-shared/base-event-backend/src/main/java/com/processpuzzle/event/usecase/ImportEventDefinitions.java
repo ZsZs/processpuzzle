@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
+import com.processpuzzle.event.domain.EventParameter;
 import com.processpuzzle.event.domain.EventKind;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,8 +36,17 @@ public class ImportEventDefinitions {
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    public ImportEventDefinitions(EventDefinitionRepository repository) {
+    private final EventDefinitionValidator validator;
+
+    @Autowired
+    public ImportEventDefinitions(EventDefinitionRepository repository, EventDefinitionValidator validator) {
         this.repository = repository;
+        this.validator = validator;
+    }
+
+    /** Without an entity catalog to check parameters against. */
+    public ImportEventDefinitions(EventDefinitionRepository repository) {
+        this(repository, new EventDefinitionValidator(SubjectAttributePort.UNKNOWN));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -45,7 +56,7 @@ public class ImportEventDefinitions {
         Map<String, EventDefinition> byId = new LinkedHashMap<>();
         for (Entry entry : entries) {
             EventDefinition definition = entry.toDomain(orgKey);
-            List<String> violations = definition.validate();
+            List<String> violations = validator.validate(definition);
             if (!violations.isEmpty()) {
                 errors.add("'%s': %s".formatted(definition.getId(), String.join("; ", violations)));
             } else if (byId.put(definition.getId(), definition) != null) {
@@ -88,7 +99,7 @@ public class ImportEventDefinitions {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record Entry(String id, String name, String description, EventKind kind, String subjectType,
-                 PlatformEventAction action, String state) {
+                 PlatformEventAction action, String state, List<EventParameter> parameters) {
 
         EventDefinition toDomain(String orgKey) {
             return EventDefinition.builder()
@@ -100,6 +111,7 @@ public class ImportEventDefinitions {
                     .subjectType(subjectType)
                     .action(action)
                     .state(state)
+                    .parameters(parameters == null ? new ArrayList<>() : new ArrayList<>(parameters))
                     .build();
         }
     }

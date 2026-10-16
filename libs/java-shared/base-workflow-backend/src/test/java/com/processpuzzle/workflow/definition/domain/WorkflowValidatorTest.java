@@ -801,6 +801,51 @@ class WorkflowValidatorTest {
                 .correlationKey(correlationKey).dependsOn(List.of(dependsOn)).build();
     }
 
+    // region bindings — docs/event-parameters.md
+    @Test
+    void acceptsTwoArtifactsOfOneTypeWhenAllButOneNameTheirSource() {
+        Workflow workflow = withOrders(null, "order-created.subject");
+
+        assertThatCode(() -> validator.validate(workflow)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void rejectsTwoArtifactsOfOneTypeNamingNoSource() {
+        Workflow workflow = withOrders(null, null);
+
+        assertThatThrownBy(() -> validator.validate(workflow))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("are all records of 'order'");
+    }
+
+    @Test
+    void rejectsABindFromThatIsNoEventParameter() {
+        assertThatThrownBy(() -> validator.validate(withOrders(null, "subject")))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("is not <event>.<parameter>");
+    }
+
+    @Test
+    void rejectsABindFromNamingAnEventTheWorkflowDoesNotHave() {
+        assertThatThrownBy(() -> validator.validate(withOrders(null, "order-replaced.replacement")))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("has no start event or event 'order-replaced'");
+    }
+
+    /** Two order artifacts — the original and a replacement — and the start event the order arrives by. */
+    private Workflow withOrders(String originalBindFrom, String replacementBindFrom) {
+        catalog(List.of("clerk"), List.of("order-entity", "replacement-order"), List.of(), List.of(task("review", "clerk")));
+        when(artifactRepository.findByOrgKeyAndIdInAndChannel(eq("acme"), anyList(), eq(Channel.DRAFT))).thenReturn(List.of(
+                ArtifactDefinition.builder().id("order-entity").name("Order").artifactType(ArtifactType.ENTITY).artifactTypeId("order").build(),
+                ArtifactDefinition.builder().id("replacement-order").name("Replacement").artifactType(ArtifactType.ENTITY).artifactTypeId("Order").build()));
+        Workflow workflow = workflow(List.of("clerk"), List.of(), List.of(), assignment("review", "clerk"));
+        workflow.setArtifacts(List.of(
+                ArtifactUse.builder().artifactDefinitionId("order-entity").bindFrom(originalBindFrom).build(),
+                ArtifactUse.builder().artifactDefinitionId("replacement-order").bindFrom(replacementBindFrom).build()));
+        return withStartEvents(workflow, StartEvent.builder().id("order-created").startType(WorkflowStartConditionType.ROLE_DEFINITION).build());
+    }
+    // endregion
+
     private Workflow withStartEvents(Workflow workflow, StartEvent... startEvents) {
         workflow.setStartEvents(List.of(startEvents));
         return workflow;

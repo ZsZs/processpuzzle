@@ -81,14 +81,18 @@ public class WorkflowExecutionMapper {
 
     /** The subject's name; its id when it has no type to resolve a name by, or the host names nothing. */
     private String entityLabelOf(WorkflowInstance instance) {
-        if (instance.getEntityId() == null) {
+        return labelOf(instance.getOrgKey(), instance.getEntityType(), instance.getEntityId());
+    }
+
+    /** A record's name as its type shows it, falling back to its id — a run's subject's, or a bound artifact's. */
+    private String labelOf(String orgKey, String entityType, String entityId) {
+        if (entityId == null) {
             return null;
         }
-        if (instance.getEntityType() == null) {
-            return instance.getEntityId();
+        if (entityType == null) {
+            return entityId;
         }
-        return entityLabels.labelOf(instance.getOrgKey(), instance.getEntityType(), instance.getEntityId())
-                .orElse(instance.getEntityId());
+        return entityLabels.labelOf(orgKey, entityType, entityId).orElse(entityId);
     }
 
     /**
@@ -156,7 +160,8 @@ public class WorkflowExecutionMapper {
                 .dueAt(toOffsetDateTime(instance.getDueAt()))
                 .fireCount(instance.firings())
                 .payload(instance.getPayload())
-                .contextContribution(instance.getContextContribution());
+                .contextContribution(instance.getContextContribution())
+                .parameters(instance.getParameters());
     }
 
     // -- Artifact Instance ------------------------------------------------
@@ -168,6 +173,8 @@ public class WorkflowExecutionMapper {
                 .name(instance.getName())
                 .type(com.processpuzzle.workflow.model.ArtifactType.fromValue(instance.getType().name()))
                 .entityId(instance.getEntityId())
+                .entityType(instance.getEntityType())
+                .entityLabel(labelOf(instance.getOrgKey(), instance.getEntityType(), instance.getEntityId()))
                 .stateMachineInstanceId(instance.getStateMachineInstanceId())
                 .currentState(instance.getCurrentState())
                 .updatedAt(toOffsetDateTime(instance.getUpdatedAt()));

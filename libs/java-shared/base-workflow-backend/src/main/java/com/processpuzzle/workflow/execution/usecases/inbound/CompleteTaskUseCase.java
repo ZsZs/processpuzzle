@@ -56,6 +56,7 @@ public class CompleteTaskUseCase {
     private final ToolStepExecutor toolStepExecutor;
     private final WorkflowProgression progression;
     private final ApplicationEventPublisher eventPublisher;
+    private final ArtifactBinder binder;
 
     public CompleteTaskUseCase(WorkflowInstanceRepository workflowInstanceRepository,
                                 ResolveWorkflowUseCase resolveWorkflow,
@@ -64,7 +65,8 @@ public class CompleteTaskUseCase {
                                 RuleEvaluationPort ruleEvaluationPort,
                                 ToolStepExecutor toolStepExecutor,
                                 WorkflowProgression progression,
-                                ApplicationEventPublisher eventPublisher) {
+                                ApplicationEventPublisher eventPublisher,
+                                ArtifactBinder binder) {
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.resolveWorkflow = resolveWorkflow;
         this.taskInstanceRepository = taskInstanceRepository;
@@ -73,6 +75,7 @@ public class CompleteTaskUseCase {
         this.toolStepExecutor = toolStepExecutor;
         this.progression = progression;
         this.eventPublisher = eventPublisher;
+        this.binder = binder;
     }
 
     public Result complete(String orgKey, UUID workflowInstanceId, String taskDefinitionId, Map<String, Object> additionalContext) {
@@ -112,7 +115,10 @@ public class CompleteTaskUseCase {
         // picks those up along with what the caller passed.
         var stepResults = toolStepExecutor.execute(orgKey, taskDef.getSteps(), workingContext);
         taskInstance.setStepResults(stepResults);
-        taskInstance.setContextContribution(WorkflowContext.contributionOf(inheritedContext, workingContext));
+        Map<String, Object> contribution = WorkflowContext.contributionOf(inheritedContext, workingContext);
+        taskInstance.setContextContribution(contribution);
+        // A completion naming an unbound artifact's object — `invoice: <document id>` — binds it to that record.
+        binder.bindByObjectNames(orgKey, workflowInstanceId, definition, contribution);
         taskInstance.setStatus(TaskInstanceStatus.COMPLETED);
         taskInstance.setCompletedAt(Instant.now());
         taskInstanceRepository.save(taskInstance);

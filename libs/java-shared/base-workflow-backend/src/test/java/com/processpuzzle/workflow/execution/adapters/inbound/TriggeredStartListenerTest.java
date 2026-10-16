@@ -2,6 +2,7 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,7 +46,7 @@ class TriggeredStartListenerTest {
         workflowRepository = mock(WorkflowRepository.class);
         startUseCase = mock(StartWorkflowInstanceUseCase.class);
         listener = new TriggeredStartListener(workflowRepository, startUseCase);
-        when(startUseCase.startTriggered(anyString(), anyString(), anyString(), anyString(), anyString(), anyMap()))
+        when(startUseCase.startTriggered(anyString(), anyString(), anyString(), anyString(), anyString(), anyMap(), anyList()))
                 .thenReturn(Optional.of(WorkflowInstance.builder().id(UUID.randomUUID()).build()));
     }
 
@@ -68,7 +69,8 @@ class TriggeredStartListenerTest {
         listener.on(ORDER_CREATED);
 
         ArgumentCaptor<Map<String, Object>> context = ArgumentCaptor.forClass(Map.class);
-        verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture());
+        verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture(),
+                eq(List.of()));
         assertThat(context.getValue()).containsEntry("orderId", "order-1").containsEntry("customer", "ACME");
     }
 
@@ -91,13 +93,13 @@ class TriggeredStartListenerTest {
                 workflow("broken", triggering("start", "OrderCreatedEvent", Map.of("x", "not-a-path"))),
                 workflow("failing", triggering("start", "OrderCreatedEvent", null)),
                 workflow("healthy", triggering("start", "OrderCreatedEvent", null))));
-        when(startUseCase.startTriggered(eq(ORG), eq("failing"), any(), any(), any(), any()))
+        when(startUseCase.startTriggered(eq(ORG), eq("failing"), any(), any(), any(), any(), any()))
                 .thenThrow(new IllegalStateException("boom"));
-        when(startUseCase.startTriggered(eq(ORG), eq("healthy"), any(), any(), any(), any())).thenReturn(Optional.empty());
+        when(startUseCase.startTriggered(eq(ORG), eq("healthy"), any(), any(), any(), any(), any())).thenReturn(Optional.empty());
 
         listener.on(ORDER_CREATED);
 
-        verify(startUseCase).startTriggered(eq(ORG), eq("healthy"), eq("start"), eq("order-1"), eq("order"), anyMap());
+        verify(startUseCase).startTriggered(eq(ORG), eq("healthy"), eq("start"), eq("order-1"), eq("order"), anyMap(), anyList());
     }
 
     @Test

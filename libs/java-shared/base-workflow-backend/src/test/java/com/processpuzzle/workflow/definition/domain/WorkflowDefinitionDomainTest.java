@@ -119,7 +119,7 @@ class WorkflowDefinitionDomainTest {
                 .isEqualTo(new RoleUse("analyst"))
                 .hasToString("RoleUse(roleDefinitionId=analyst)");
         assertThat(ArtifactUse.builder().artifactDefinitionId("spec").build())
-                .isEqualTo(new ArtifactUse("spec", null));
+                .isEqualTo(new ArtifactUse("spec", null, null));
         assertThat(ToolUse.builder().toolDefinitionId("jira").build())
                 .isEqualTo(new ToolUse("jira"));
 

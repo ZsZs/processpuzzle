@@ -1,6 +1,7 @@
 package com.processpuzzle.workflow.definition.usecases.outbound;
 
 import com.processpuzzle.shared.event.CatalogEventKind;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -31,5 +32,13 @@ public interface EventCatalogPort {
      */
     default Optional<CatalogStateChange> stateChangeOf(String orgKey, String eventDefinitionId) {
         return Optional.empty();
+    }
+
+    /**
+     * The parameters the released definition declares — what a running workflow throwing it fills from its context.
+     * Empty when it declares none, or the adapter cannot tell: the throw then sends its payload mapping only.
+     */
+    default List<CatalogParameter> releasedParametersOf(String orgKey, String eventDefinitionId) {
+        return List.of();
     }
 }

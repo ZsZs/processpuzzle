@@ -97,6 +97,11 @@ class WorkflowExecutionUseCasesTest {
         when(instanceNumbers.next(ORG)).thenReturn(7L, 8L);
     }
 
+    /** The real binder over the mocked artifact repository; base-state is not deployed here. */
+    private ArtifactBinder binder() {
+        return new ArtifactBinder(wpInstRepo, org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway.class));
+    }
+
     /** The real close-out over the mocked activation service, so the tests still see the instance close. */
     private WorkflowProgression progression() {
         return new WorkflowProgression(taskActivationService, procInstRepo, eventPublisher);
@@ -106,7 +111,7 @@ class WorkflowExecutionUseCasesTest {
     void startWorkflowInstanceUseCase_startsWorkflowWithTasksAndArtifacts() {
         StartEventAdmission admission = mock(StartEventAdmission.class);
         StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(
-                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher);
+                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher, binder());
 
         ArtifactDefinition wpDef = ArtifactDefinition.builder().id("wp-1").name("Doc")
                 .artifactType(ArtifactType.DOCUMENT).stateMachineId("sm-1").build();
@@ -144,6 +149,79 @@ class WorkflowExecutionUseCasesTest {
     }
 
     /**
+     * docs/event-parameters.md: a triggered start records what its event carried under the start event's id, and binds
+     * the run's artifact of the subject's type to the subject — so the order that started the run is its order.
+     */
+    @Test
+    void startTriggered_bindsTheSubjectAndNamespacesTheParameters() {
+        StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(resolveWorkflow, mock(StartEventAdmission.class), instanceNumbers,
+                procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher, binder());
+        ArtifactDefinition order = ArtifactDefinition.builder().id("order-entity").name("Order").artifactType(ArtifactType.ENTITY)
+                .artifactTypeId("order").build();
+        ResolvedWorkflow procDef = resolved("proc-1", "Proc 1", List.of(order), TaskDefinition.builder().id("t-1").name("T").build());
+        procDef.definition().setArtifacts(List.of(com.processpuzzle.workflow.definition.domain.ArtifactUse.builder()
+                .artifactDefinitionId("order-entity").objectName("new_order").build()));
+        when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1")).thenReturn(procDef);
+        when(procInstRepo.save(any(WorkflowInstance.class))).thenAnswer(inv -> {
+            WorkflowInstance pi = inv.getArgument(0);
+            if (pi.getId() == null) pi.setId(UUID.randomUUID());
+            return pi;
+        });
+        List<ArtifactInstance> saved = new java.util.ArrayList<>();
+        when(wpInstRepo.save(any(ArtifactInstance.class))).thenAnswer(inv -> {
+            ArtifactInstance artifact = inv.getArgument(0);
+            if (!saved.contains(artifact)) saved.add(artifact);
+            return artifact;
+        });
+        when(wpInstRepo.findByOrgKeyAndWorkflowInstanceId(eq(ORG), any())).thenAnswer(inv -> saved);
+
+        WorkflowInstance instance = useCase.startTriggered(ORG, "proc-1", "order-created", "order-1", "order", Map.of(), List.of(
+                new com.processpuzzle.shared.event.OccurredParameter("subject", com.processpuzzle.shared.event.EventParameterType.ENTITY_REF, "order", "order-1"),
+                new com.processpuzzle.shared.event.OccurredParameter("orderNumber", com.processpuzzle.shared.event.EventParameterType.STRING, null, "O-1")))
+                .orElseThrow();
+
+        assertThat(instance.getInitialContext())
+                .containsEntry("order-created", Map.of("subject", "order-1", "orderNumber", "O-1"))
+                .containsEntry("new_order", "order-1");
+        assertThat(saved).singleElement().satisfies(artifact -> {
+            assertThat(artifact.getEntityId()).isEqualTo("order-1");
+            assertThat(artifact.getEntityType()).isEqualTo("order");
+        });
+    }
+
+    // An explicit start carries no event, but its subject is still the run's record.
+    @Test
+    void start_bindsTheSubjectOfAnExplicitStart() {
+        StartEventAdmission admission = mock(StartEventAdmission.class);
+        when(admission.admit(any(), any(), any(), any())).thenReturn(Optional.empty());
+        StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(resolveWorkflow, admission, instanceNumbers,
+                procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher, binder());
+        ArtifactDefinition order = ArtifactDefinition.builder().id("order-entity").name("Order").artifactType(ArtifactType.ENTITY)
+                .artifactTypeId("order").build();
+        ResolvedWorkflow procDef = resolved("proc-1", "Proc 1", List.of(order), TaskDefinition.builder().id("t-1").name("T").build());
+        procDef.definition().setArtifacts(List.of(com.processpuzzle.workflow.definition.domain.ArtifactUse.builder()
+                .artifactDefinitionId("order-entity").objectName("new_order").build()));
+        when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1")).thenReturn(procDef);
+        when(procInstRepo.save(any(WorkflowInstance.class))).thenAnswer(inv -> {
+            WorkflowInstance pi = inv.getArgument(0);
+            if (pi.getId() == null) pi.setId(UUID.randomUUID());
+            return pi;
+        });
+        List<ArtifactInstance> saved = new java.util.ArrayList<>();
+        when(wpInstRepo.save(any(ArtifactInstance.class))).thenAnswer(inv -> {
+            ArtifactInstance artifact = inv.getArgument(0);
+            if (!saved.contains(artifact)) saved.add(artifact);
+            return artifact;
+        });
+        when(wpInstRepo.findByOrgKeyAndWorkflowInstanceId(eq(ORG), any())).thenAnswer(inv -> saved);
+
+        WorkflowInstance instance = useCase.start(ORG, "proc-1", "order-7", null, Map.of());
+
+        assertThat(instance.getInitialContext()).containsEntry("new_order", "order-7");
+        assertThat(saved.getFirst().getEntityId()).isEqualTo("order-7");
+    }
+
+    /**
      * A triggered start skips admission — nobody asked, so there is no principal to admit — and does
      * nothing for a subject that already has a running instance, because the publication registry can
      * deliver the same event twice.
@@ -152,7 +230,7 @@ class WorkflowExecutionUseCasesTest {
     void startTriggered_bypassesAdmissionAndIsIdempotentPerSubject() {
         StartEventAdmission admission = mock(StartEventAdmission.class);
         StartWorkflowInstanceUseCase useCase = new StartWorkflowInstanceUseCase(
-                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher);
+                resolveWorkflow, admission, instanceNumbers, procInstRepo, taskInstRepo, eventInstRepo, wpInstRepo, taskActivationService, eventPublisher, binder());
         ResolvedWorkflow procDef = resolved("proc-1", "Proc 1", List.of(), TaskDefinition.builder().id("t-1").name("T").build());
         when(resolveWorkflow.resolveByOrgKeyAndId(ORG, "proc-1")).thenReturn(procDef);
         when(procInstRepo.save(any(WorkflowInstance.class))).thenAnswer(inv -> {
@@ -305,7 +383,7 @@ class WorkflowExecutionUseCasesTest {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
                 procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
-                progression(), eventPublisher);
+                progression(), eventPublisher, binder());
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -377,7 +455,7 @@ class WorkflowExecutionUseCasesTest {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
                 procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
-                progression(), eventPublisher);
+                progression(), eventPublisher, binder());
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -419,7 +497,7 @@ class WorkflowExecutionUseCasesTest {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
                 procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
-                progression(), eventPublisher);
+                progression(), eventPublisher, binder());
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
@@ -453,7 +531,7 @@ class WorkflowExecutionUseCasesTest {
         ToolStepExecutor stepExecutor = new ToolStepExecutor(toolDefRepo, toolInvocationPort);
         CompleteTaskUseCase useCase = new CompleteTaskUseCase(
                 procInstRepo, resolveWorkflow, taskInstRepo, eventInstRepo, ruleEvaluationPort, stepExecutor,
-                progression(), eventPublisher);
+                progression(), eventPublisher, binder());
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1")
