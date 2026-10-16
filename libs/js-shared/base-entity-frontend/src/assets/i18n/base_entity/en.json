@@ -107,7 +107,9 @@
     "filter_tooltip": "Filter the loaded rows by text",
     "edit_tooltip": "Edit the selected record",
     "new_tooltip": "Create a new record",
-    "delete_tooltip": "Delete the selected records"
+    "delete_tooltip": "Delete the selected records",
+    "export_menu": "Export",
+    "actions_menu": "Choose action"
   },
   "pdf_export": {
     "button": "PDF",

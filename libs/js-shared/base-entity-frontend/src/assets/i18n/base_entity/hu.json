@@ -107,7 +107,9 @@
     "filter_tooltip": "Betöltött sorok szűrése szöveg alapján",
     "edit_tooltip": "Kijelölt rekord szerkesztése",
     "new_tooltip": "Új rekord létrehozása",
-    "delete_tooltip": "Kijelölt rekordok törlése"
+    "delete_tooltip": "Kijelölt rekordok törlése",
+    "export_menu": "Exportálás",
+    "actions_menu": "Művelet választása"
   },
   "pdf_export": {
     "button": "PDF",

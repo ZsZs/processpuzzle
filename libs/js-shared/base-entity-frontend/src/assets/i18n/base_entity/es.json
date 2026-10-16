@@ -107,7 +107,9 @@
     "filter_tooltip": "Filtrar las filas cargadas por texto",
     "edit_tooltip": "Editar el registro seleccionado",
     "new_tooltip": "Crear un nuevo registro",
-    "delete_tooltip": "Eliminar los registros seleccionados"
+    "delete_tooltip": "Eliminar los registros seleccionados",
+    "export_menu": "Exportar",
+    "actions_menu": "Elegir acción"
   },
   "pdf_export": {
     "button": "PDF",
