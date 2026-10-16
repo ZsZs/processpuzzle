@@ -16,6 +16,8 @@ import com.processpuzzle.workflow.definition.domain.StateTransitionCoverage.Gap;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
+import com.processpuzzle.workflow.definition.domain.ThrowParameterCoverage;
+import com.processpuzzle.workflow.definition.domain.ThrowParameterCoverage.Shortfall;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
@@ -23,6 +25,7 @@ import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogParameter;
 import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
 import com.processpuzzle.workflow.definition.usecases.outbound.NoStateMachineCatalogPort;
 import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
@@ -59,7 +62,9 @@ import org.springframework.stereotype.Component;
  * finish. And a workflow that leaves a state transition of its artifacts unhandled — a task expects the order in
  * DRAFT, the order's machine can cancel it from there, and nothing in the workflow says what happens then (see
  * {@link StateTransitionCoverage}): published, its runs would wait forever on a task about an object that has moved
- * on. A released workflow's start timers follow the release, not the draft: the release announces
+ * on. And a workflow throwing an event whose required parameter nothing before the throw produces (see
+ * {@link ThrowParameterCoverage}): its runs would hold the throw. One only a task's completion could supply is a
+ * warning — the completion's free context cannot be read ahead. A released workflow's start timers follow the release, not the draft: the release announces
  * {@link WorkflowChangedEvent}, which reschedules them after it commits.
  */
 @Component
@@ -185,7 +190,46 @@ public class WorkflowReleaseParticipant extends DefinitionReleaseParticipant<Wor
                         "The workflow '%s' is removed, but instances of it are still running.".formatted(workflowId)))
                 .toList());
         problems.addAll(unhandledTransitions(orgKey, drafts.values()));
+        problems.addAll(unfilledThrowParameters(orgKey, drafts.values()));
         return problems;
+    }
+
+    /**
+     * One problem per required parameter a draft workflow's throw may send without — see {@link ThrowParameterCoverage}.
+     * Read against the drafts of the event catalog and the task definitions, which this release publishes too.
+     */
+    private List<ReleaseProblem> unfilledThrowParameters(String orgKey, Collection<Workflow> drafts) {
+        if (drafts.isEmpty()) {
+            return List.of();
+        }
+        Map<String, TaskDefinition> tasksById = tasks.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
+                .collect(Collectors.toMap(TaskDefinition::getId, Function.identity(), (first, second) -> first));
+        Map<String, List<CatalogParameter>> parametersById = new HashMap<>();
+        List<ReleaseProblem> problems = new ArrayList<>();
+        for (Workflow workflow : drafts) {
+            ThrowParameterCoverage.shortfallsOf(workflow,
+                            id -> parametersById.computeIfAbsent(id, eventId -> eventCatalog.draftParametersOf(orgKey, eventId)),
+                            id -> eventCatalog.kindOf(orgKey, id),
+                            id -> Optional.ofNullable(tasksById.get(id)))
+                    .forEach(shortfall -> problems.add(unfilled(workflow, shortfall)));
+        }
+        return problems;
+    }
+
+    private ReleaseProblem unfilled(Workflow workflow, Shortfall shortfall) {
+        String throwOf = "Workflow '%s': the throw '%s' of '%s' needs its parameter '%s'"
+                .formatted(nameOf(workflow.getName(), workflow.getId()), shortfall.eventUseId(), shortfall.eventDefinitionId(),
+                        shortfall.parameter());
+        ReleaseProblem problem = switch (shortfall.reason()) {
+            case UNFILLED -> ReleaseProblem.error(kind(), workflow.getId(), "workflow.release.unfilledThrowParameter",
+                    throwOf + ", but nothing before it produces that name. Map it in the throw's payload mapping.");
+            case AMBIGUOUS -> ReleaseProblem.error(kind(), workflow.getId(), "workflow.release.ambiguousThrowParameter",
+                    throwOf + ", which %s all carry. Say which in the throw's payload mapping."
+                            .formatted(String.join(", ", shortfall.carriers())));
+            case TASK_ONLY -> ReleaseProblem.warning(kind(), workflow.getId(), "workflow.release.throwParameterFromTaskOnly",
+                    throwOf + ", which only a task's completion before it could supply. If it does not, the run holds the throw.");
+        };
+        return problem.about(shortfall.eventUseId(), null);
     }
 
     /**

@@ -91,6 +91,19 @@ describe('WorkflowInstanceMapper', () => {
       expect(mapper.fromDto({ id: 'i1' }).events).toEqual([]);
     });
 
+    it('reads why a throw is held, and a null as absent', () => {
+      const [held, sent] = mapper.fromDto({
+        id: 'i1',
+        events: [
+          { id: 'e1', eventUseId: 'a', direction: 'THROW', status: 'PENDING', blockedReason: 'orderNumber resolves to nothing' },
+          { id: 'e2', eventUseId: 'b', direction: 'THROW', status: 'THROWN', blockedReason: null },
+        ],
+      }).events;
+
+      expect(held.blockedReason).toBe('orderNumber resolves to nothing');
+      expect(sent.blockedReason).toBeUndefined();
+    });
+
     it('reads when a timer fires next and how often it has, and a timer catch without a catalog event', () => {
       const [timer] = mapper.fromDto({
         id: 'i1',

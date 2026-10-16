@@ -404,6 +404,7 @@
       "unassigned": "nincs hozzárendelve",
       "assigned_to": "Hozzárendelve",
       "waiting_for": "Várakozik:",
+      "held": "Visszatartva:",
       "context": "Kontextusváltozók",
       "context_none": "Ennek a futásnak nincsenek kontextusváltozói."
     }
@@ -430,7 +431,9 @@
     "occurredAt": "Bekövetkezett",
     "dueAt": "Esedékes",
     "fireCount": "Kiváltások száma",
+    "blockedReason": "Blokkolás oka",
     "payload": "Adatok",
+    "parameters": "Paraméterek",
     "contextContribution": "Kontextushoz adott"
   },
   "task_step_result": {

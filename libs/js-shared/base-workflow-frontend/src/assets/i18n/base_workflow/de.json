@@ -404,6 +404,7 @@
       "unassigned": "nicht zugewiesen",
       "assigned_to": "Zugewiesen an",
       "waiting_for": "Wartet auf",
+      "held": "Angehalten:",
       "context": "Kontextvariablen",
       "context_none": "Diese Ausführung enthält keine Kontextvariablen."
     }
@@ -430,7 +431,9 @@
     "occurredAt": "Eingetreten am",
     "dueAt": "Fällig am",
     "fireCount": "Auslösungen",
+    "blockedReason": "Blockierungsgrund",
     "payload": "Nutzdaten",
+    "parameters": "Parameter",
     "contextContribution": "Kontextbeitrag"
   },
   "task_step_result": {

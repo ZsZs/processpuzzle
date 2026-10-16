@@ -48,8 +48,15 @@ describe('createEventInstanceDescriptor', () => {
     expect(byName('fireCount')?.formControlType).toBe(FormControlType.TEXT_BOX);
   });
 
-  it('keeps the payload and the contribution out of the table', () => {
+  it('keeps the payload, the parameters and the contribution out of the table', () => {
     expect(byName('payload')?.hideInTable).toBe(true);
+    expect(byName('parameters')?.formControlType).toBe(FormControlType.ADDITIONAL_PROPERTIES);
+    expect(byName('parameters')?.hideInTable).toBe(true);
     expect(byName('contextContribution')?.hideInTable).toBe(true);
+  });
+
+  // A held throw says why it is not sent.
+  it('shows why a throw is held', () => {
+    expect(byName('blockedReason')?.formControlType).toBe(FormControlType.TEXTAREA);
   });
 });

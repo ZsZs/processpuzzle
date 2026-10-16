@@ -8,7 +8,11 @@ import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
+import com.processpuzzle.event.domain.EventParameter;
+import com.processpuzzle.shared.event.EventParameterType;
 import com.processpuzzle.shared.event.PlatformEventAction;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +35,19 @@ class FindEventDefinitionTest {
         assertThat(find.stateChangeOf("org-1", "InvoiceIssued")).isEmpty();
         assertThat(find.stateChangeOf("org-1", "Nope")).isEmpty();
         assertThat(find.stateChangeOf("org-1", null)).isEmpty();
+    }
+
+    @Test
+    void readsTheParametersOfTheAskedChannel() {
+        EventParameter number = EventParameter.builder().name("invoiceNumber").type(EventParameterType.STRING).required(true).build();
+        when(repository.findByOrgKeyAndIdAndChannel("org-1", "InvoiceIssued", Channel.RELEASED))
+                .thenReturn(Optional.of(EventDefinition.builder().id("InvoiceIssued").kind(EventKind.MESSAGE)
+                        .parameters(new ArrayList<>(List.of(number))).build()));
+
+        assertThat(find.parametersOf("org-1", "InvoiceIssued", Channel.RELEASED))
+                .containsExactly(new DeclaredParameter("invoiceNumber", EventParameterType.STRING, null, true));
+        assertThat(find.parametersOf("org-1", "InvoiceIssued", Channel.DRAFT)).isEmpty();
+        assertThat(find.parametersOf("org-1", null, Channel.DRAFT)).isEmpty();
     }
 
     private void draft(EventDefinition definition) {

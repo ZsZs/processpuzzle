@@ -404,6 +404,7 @@
       "unassigned": "unassigned",
       "assigned_to": "Assigned to",
       "waiting_for": "Waiting for",
+      "held": "Held:",
       "context": "Context variables",
       "context_none": "This run holds no context variables."
     }
@@ -430,7 +431,9 @@
     "occurredAt": "Occurred At",
     "dueAt": "Due At",
     "fireCount": "Fire Count",
+    "blockedReason": "Blocked Reason",
     "payload": "Payload",
+    "parameters": "Parameters",
     "contextContribution": "Context Contribution"
   },
   "task_step_result": {

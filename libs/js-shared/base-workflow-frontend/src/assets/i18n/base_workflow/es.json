@@ -404,6 +404,7 @@
       "unassigned": "sin asignar",
       "assigned_to": "Asignada a",
       "waiting_for": "Esperando",
+      "held": "Retenido:",
       "context": "Variables de contexto",
       "context_none": "Esta ejecución no tiene variables de contexto."
     }
@@ -430,7 +431,9 @@
     "occurredAt": "Ocurrido el",
     "dueAt": "Vence el",
     "fireCount": "Disparos",
+    "blockedReason": "Motivo del bloqueo",
     "payload": "Carga",
+    "parameters": "Parámetros",
     "contextContribution": "Aporte al contexto"
   },
   "task_step_result": {

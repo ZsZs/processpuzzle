@@ -404,6 +404,7 @@
       "unassigned": "non attribuée",
       "assigned_to": "Attribuée à",
       "waiting_for": "En attente de",
+      "held": "Retenu :",
       "context": "Variables de contexte",
       "context_none": "Cette exécution ne contient aucune variable de contexte."
     }
@@ -430,7 +431,9 @@
     "occurredAt": "Survenu le",
     "dueAt": "Échéance",
     "fireCount": "Déclenchements",
+    "blockedReason": "Motif du blocage",
     "payload": "Charge utile",
+    "parameters": "Paramètres",
     "contextContribution": "Contribution au contexte"
   },
   "task_step_result": {

@@ -161,7 +161,8 @@ public class WorkflowExecutionMapper {
                 .fireCount(instance.firings())
                 .payload(instance.getPayload())
                 .contextContribution(instance.getContextContribution())
-                .parameters(instance.getParameters());
+                .parameters(instance.getParameters())
+                .blockedReason(instance.getBlockedReason());
     }
 
     // -- Artifact Instance ------------------------------------------------

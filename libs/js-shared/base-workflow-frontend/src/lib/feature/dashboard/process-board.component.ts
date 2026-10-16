@@ -47,6 +47,12 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                 }</span
               >
             }
+            <!-- A throw that is due but held: a required parameter of its event resolves to nothing. -->
+            @for (event of heldEvents(instance.events); track event.id) {
+              <span class="board__held" [attr.data-testid]="'board-held-' + event.eventUseId" [title]="event.blockedReason"
+                >{{ heldKey | transloco }} {{ event.name || event.eventDefinitionId || event.eventUseId }}</span
+              >
+            }
           </div>
           <span class="board__status" [attr.data-testid]="'board-status-' + (instance.status ?? 'unknown')">{{ instance.status }}</span>
         </header>
@@ -127,6 +133,16 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
       background-color: #fff4e5;
       font-size: 11px;
       color: #8a5300;
+    }
+    .board__held {
+      display: inline-block;
+      margin-top: 4px;
+      margin-right: 6px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      background-color: #fdecea;
+      font-size: 11px;
+      color: #b3261e;
     }
     .board__status {
       font-size: 11px;
@@ -210,6 +226,7 @@ export class ProcessBoardComponent {
   protected readonly unassignedKey = `${TASK_DASHBOARD_I18N_SCOPE}.unassigned`;
   protected readonly noRunKey = `${TASK_DASHBOARD_I18N_SCOPE}.run_none`;
   protected readonly waitingForKey = `${TASK_DASHBOARD_I18N_SCOPE}.waiting_for`;
+  protected readonly heldKey = `${TASK_DASHBOARD_I18N_SCOPE}.held`;
 
   // `@switch` compares against values, so the enum members are fields rather than reachable as a type.
   protected readonly blocked = TaskInstanceStatus.BLOCKED;
@@ -219,6 +236,10 @@ export class ProcessBoardComponent {
 
   protected waitingEvents(events: EventInstance[] | undefined): EventInstance[] {
     return (events ?? []).filter((event) => event.status === EventInstanceStatus.WAITING);
+  }
+
+  protected heldEvents(events: EventInstance[] | undefined): EventInstance[] {
+    return (events ?? []).filter((event) => event.status === EventInstanceStatus.PENDING && !!event.blockedReason);
   }
 
   protected isSelected(row: DashboardTask): boolean {
