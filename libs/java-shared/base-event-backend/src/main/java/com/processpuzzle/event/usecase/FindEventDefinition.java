@@ -56,6 +56,19 @@ public class FindEventDefinition {
                 .map(definition -> new EventStateChange(definition.getSubjectType(), definition.getState()));
     }
 
+    /**
+     * The parameters the definition of that id declares on {@code channel} — the draft for a workflow being released,
+     * the released row for one that runs. Empty when there is no such definition.
+     */
+    public List<DeclaredParameter> parametersOf(String orgKey, String id, Channel channel) {
+        return id == null ? List.of() : repository.findByOrgKeyAndIdAndChannel(orgKey, id, channel)
+                .map(definition -> definition.getParameters().stream()
+                        .map(parameter -> new DeclaredParameter(parameter.getName(), parameter.getType(),
+                                parameter.getEntityType(), parameter.isRequired()))
+                        .toList())
+                .orElse(List.of());
+    }
+
     /** Whether a draft of that id exists; see {@link #kindOf}. */
     public boolean exists(String orgKey, String id) {
         return id != null && repository.existsByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT);

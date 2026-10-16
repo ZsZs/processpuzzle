@@ -2361,6 +2361,14 @@ components:
             The parameters the occurrence carried, by name (THROW: sent, CATCH: received). Also in the
             context, namespaced under this event's eventUseId.
           additionalProperties: true
+        blockedReason:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            THROW — set while the throw is held: it is due, but a required parameter of its event
+            resolves to nothing, so it stays PENDING rather than send an incomplete message, and is
+            tried again as the run advances.
         dueAt:
           type: string
           format: date-time

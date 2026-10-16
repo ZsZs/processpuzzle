@@ -41,4 +41,12 @@ public interface EventCatalogPort {
     default List<CatalogParameter> releasedParametersOf(String orgKey, String eventDefinitionId) {
         return List.of();
     }
+
+    /**
+     * The parameters the definition's draft declares — what a workflow being released is checked against. Empty when it
+     * declares none, or the adapter cannot tell: the release then checks no parameter of it.
+     */
+    default List<CatalogParameter> draftParametersOf(String orgKey, String eventDefinitionId) {
+        return List.of();
+    }
 }

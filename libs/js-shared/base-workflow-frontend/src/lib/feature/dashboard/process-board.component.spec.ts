@@ -145,6 +145,22 @@ describe('ProcessBoardComponent', () => {
     expect(host.querySelector('[data-testid="board-waiting-request-invoice"]')).toBeNull();
   });
 
+  it('names a throw that is held, with why on hover', () => {
+    store.selectInstance(RUN_ID);
+    store.reload();
+    const [request, issued] = WORKFLOW_INSTANCE_DTO.events;
+    const reason = "The required parameter(s) orderNumber of 'InvoiceRequested' resolve to nothing in the run's context.";
+    controller
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [{ ...request, status: 'PENDING', blockedReason: reason }, { ...issued, status: 'PENDING' }] }] });
+
+    const host = render();
+    const held = host.querySelector('[data-testid="board-held-request-invoice"]');
+    expect(held?.textContent).toContain(request.name);
+    expect(held?.getAttribute('title')).toBe(reason);
+    expect(host.querySelector('[data-testid="board-held-invoice-issued"]')).toBeNull();
+  });
+
   it('marks an empty column rather than collapsing it', () => {
     store.selectInstance(RUN_ID);
 

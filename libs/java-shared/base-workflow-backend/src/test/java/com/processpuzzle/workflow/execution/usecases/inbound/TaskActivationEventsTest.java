@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.shared.event.EventParameterType;
 import com.processpuzzle.shared.event.EventThrown;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.definition.domain.EventUse;
@@ -17,6 +19,8 @@ import com.processpuzzle.workflow.definition.domain.TaskUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow.ResolvedTask;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogParameter;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
@@ -103,6 +107,52 @@ class TaskActivationEventsTest {
         assertThat(thrown.subjectId()).isEqualTo("order-42");
         assertThat(thrown.sourceWorkflowInstanceId()).isEqualTo(INSTANCE_ID);
         assertThat(thrown.sourceWorkflowId()).isEqualTo("order");
+    }
+
+    @Test
+    void aThrowFillsItsEventsParametersByName() {
+        catalogDeclares("InvoiceIssued", required("invoiceNumber"), optional("note"));
+        ResolvedWorkflow workflow = workflow(List.of(), List.of(throwing("issued", "InvoiceIssued", null, null)));
+        pending(workflow);
+
+        service.activateEligibleTasks(ORG, workflow, INSTANCE_ID, Map.of("invoiceNumber", "INV-7"));
+
+        EventInstance issued = event("issued");
+        assertThat(issued.getStatus()).isEqualTo(EventInstanceStatus.THROWN);
+        assertThat(issued.getParameters()).containsExactly(Map.entry("invoiceNumber", "INV-7"));
+        assertThat(issued.getBlockedReason()).isNull();
+        assertThat(thrown().getFirst().payload()).containsEntry("invoiceNumber", "INV-7");
+    }
+
+    @Test
+    void aThrowMissingARequiredParameterIsHeldAndItsDependentsWait() {
+        catalogDeclares("InvoiceIssued", required("invoiceNumber"));
+        ResolvedWorkflow workflow = workflow(List.of(task("deliver", "issued")),
+                List.of(throwing("issued", "InvoiceIssued", null, null)));
+        pending(workflow);
+
+        service.activateEligibleTasks(ORG, workflow, INSTANCE_ID, Map.of());
+
+        EventInstance issued = event("issued");
+        assertThat(issued.getStatus()).isEqualTo(EventInstanceStatus.PENDING);
+        assertThat(issued.getBlockedReason()).contains("invoiceNumber").contains("InvoiceIssued");
+        verify(publisher, never()).publishEvent(any(EventThrown.class));
+        assertThat(taskRow("deliver").getStatus()).isEqualTo(TaskInstanceStatus.PENDING);
+    }
+
+    @Test
+    void aHeldThrowIsRaisedOnceItsParameterResolves() {
+        catalogDeclares("InvoiceIssued", required("invoiceNumber"));
+        ResolvedWorkflow workflow = workflow(List.of(), List.of(throwing("issued", "InvoiceIssued", null, null)));
+        pending(workflow);
+        service.activateEligibleTasks(ORG, workflow, INSTANCE_ID, Map.of());
+
+        service.activateEligibleTasks(ORG, workflow, INSTANCE_ID, Map.of("invoiceNumber", "INV-7"));
+
+        EventInstance issued = event("issued");
+        assertThat(issued.getStatus()).isEqualTo(EventInstanceStatus.THROWN);
+        assertThat(issued.getBlockedReason()).isNull();
+        assertThat(thrown()).hasSize(1);
     }
 
     @Test
@@ -246,6 +296,20 @@ class TaskActivationEventsTest {
                                      String... dependsOn) {
         return EventUse.builder().id(id).eventDefinitionId(definition).direction(EventDirection.THROW)
                 .correlationKey(correlationKey).payloadMapping(payload).dependsOn(Arrays.asList(dependsOn)).build();
+    }
+
+    private void catalogDeclares(String eventDefinitionId, CatalogParameter... parameters) {
+        EventCatalogPort catalog = mock(EventCatalogPort.class);
+        when(catalog.releasedParametersOf(ORG, eventDefinitionId)).thenReturn(List.of(parameters));
+        service.setEventCatalog(catalog);
+    }
+
+    private static CatalogParameter required(String name) {
+        return new CatalogParameter(name, EventParameterType.STRING, null, true);
+    }
+
+    private static CatalogParameter optional(String name) {
+        return new CatalogParameter(name, EventParameterType.STRING, null, false);
     }
 
     private static EventUse catching(String id, String definition, String correlationKey, String... dependsOn) {

@@ -18,7 +18,8 @@ import java.util.Objects;
  *   the throw's payload mapping has to say which.</li>
  * </ol>
  *
- * <p>A parameter nothing fills is left out rather than sent as null.
+ * <p>A parameter nothing fills is left out rather than sent as null; a required one left out holds the throw
+ * ({@link #missing}).
  */
 public final class ThrownParameters {
 
@@ -33,6 +34,15 @@ public final class ThrownParameters {
             }
         }
         return filled;
+    }
+
+    /** The required parameters among {@code declared} that {@code filled} has no value for, in declaration order. */
+    public static List<String> missing(List<CatalogParameter> declared, Map<String, Object> filled) {
+        return (declared == null ? List.<CatalogParameter>of() : declared).stream()
+                .filter(CatalogParameter::required)
+                .map(CatalogParameter::name)
+                .filter(name -> !filled.containsKey(name))
+                .toList();
     }
 
     private static Object valueOf(String name, Map<String, Object> payload, Map<String, Object> context) {

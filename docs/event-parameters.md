@@ -1,6 +1,6 @@
 # Event parameters — what an event carries, declared once
 
-Status: **accepted** (2026-10-16). Phase 1 is specified in detail; phases 2 and 3 in outline.
+Status: **accepted** (2026-10-16). Phases 1 and 2 are specified in detail; phase 3 in outline.
 
 ## Decisions (2026-10-16)
 
@@ -171,14 +171,38 @@ redundant once phase 3 lets those readers use the namespaced values.
 **Compatibility** — a definition without parameters behaves exactly as today, except that every SYSTEM event
 now binds its subject. Existing instances keep unbound artifacts; nothing is back-filled.
 
-## Phase 2 — checked parameters (outline)
+## Phase 2 — checked parameters
 
-- **Release:** a THROW of an event with a required parameter that the workflow can neither fill by name nor
-  by its `payloadMapping` is a release error. "Can fill by name" means the name is produced upstream: a start
-  or catch parameter, a `payloadMapping` target, or a step `outputMapping` target. A task's free key/value
-  completion context cannot be known statically, so a name only it could supply is a **warning**.
-- **Runtime:** a THROW whose required parameter resolves to nothing records the event instance with an error
-  rather than publishing an incomplete message.
+**Release** (`ThrowParameterCoverage`, read by `WorkflowReleaseParticipant` against the drafts of the event
+catalog and the task definitions). A required parameter of a thrown event is filled when
+
+- the THROW's `payloadMapping` names it; or
+- a plain variable of that name is written **upstream** — a start event's or an upstream catch's `payloadMapping`
+  target, an upstream task's step `outputMapping` target, or an artifact's `objectName`; or
+- exactly one carrier upstream declares a parameter of that name: the start events taken together (a run begins on
+  one of them), and each upstream catch. A SYSTEM event carries its `subject` without declaring it.
+
+Upstream is what the THROW depends on, transitively; a boundary event depends on its task. A join of `ANY` is read
+as if every branch ran — the check refuses what no path could fill, not what one path might miss. Otherwise:
+
+| Case | Severity | `errorId` |
+| --- | --- | --- |
+| Nothing upstream produces the name | error | `workflow.release.unfilledThrowParameter` |
+| Several carriers, no plain variable | error | `workflow.release.ambiguousThrowParameter` |
+| Only an upstream task's completion could supply it | warning | `workflow.release.throwParameterFromTaskOnly` |
+
+Each problem's `subject` is the THROW's event use id. `EventCatalogPort.draftParametersOf` supplies the draft
+parameters; an event the catalog cannot tell parameters of is not checked.
+
+**Runtime.** A due THROW whose required parameter resolves to nothing is **held**: it stays `PENDING`, records why
+in the new, read-only `EventInstance.blockedReason`, publishes nothing, and its dependents wait. Every advance of
+the run tries it again; once the parameter resolves it is thrown and the reason cleared. A new status was not
+added: Hibernate keeps an enum column's check constraint under `ddl-auto: update`, so a new value would be refused
+by existing databases — and `PENDING` already means "not sent yet, retried". The dashboard shows a held throw as a
+chip on the run's board, with the reason on hover; the Event Instance form shows the reason and the parameters.
+
+Phase 2 also wires `EventCatalogPort.releasedParametersOf` in the testbed's `EventCatalogAdapter`: phase 1
+declared it, but the adapter did not implement it, so a deployed throw filled no parameters.
 
 ## Phase 3 — mappings by convention (outline)
 

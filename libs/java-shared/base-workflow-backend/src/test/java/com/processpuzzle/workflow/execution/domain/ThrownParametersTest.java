@@ -38,4 +38,11 @@ class ThrownParametersTest {
     void fillsNothingWithoutDeclaredParameters() {
         assertThat(ThrownParameters.fill(null, Map.of("order", "o-1"), Map.of("order", "o-1"))).isEmpty();
     }
+
+    @Test
+    void namesTheRequiredParametersNothingFilled() {
+        assertThat(ThrownParameters.missing(INVOICE_ISSUED, Map.of("order", "o-1"))).containsExactly("invoiceNumber");
+        assertThat(ThrownParameters.missing(INVOICE_ISSUED, Map.of("order", "o-1", "invoiceNumber", "I-1"))).isEmpty();
+        assertThat(ThrownParameters.missing(null, Map.of())).isEmpty();
+    }
 }

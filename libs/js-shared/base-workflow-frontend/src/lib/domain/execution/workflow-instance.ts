@@ -168,6 +168,11 @@ export class EventInstance implements BaseEntity {
    * context, namespaced under {@link eventUseId}.
    */
   parameters?: PropertyMap;
+  /**
+   * THROW: set while the throw is held — it is due, but a required parameter of its event resolves to nothing, so it
+   * stays PENDING rather than send an incomplete message. Server-set.
+   */
+  blockedReason?: string;
   /** Timer catches — when the timer fires next. */
   dueAt?: string;
   /** Timer catches — how many times it has fired; a CYCLE fires more than once. */
@@ -186,6 +191,7 @@ export class EventInstance implements BaseEntity {
     this.payload = init.payload;
     this.contextContribution = init.contextContribution;
     this.parameters = init.parameters;
+    this.blockedReason = init.blockedReason;
     this.dueAt = init.dueAt;
     this.fireCount = init.fireCount;
   }

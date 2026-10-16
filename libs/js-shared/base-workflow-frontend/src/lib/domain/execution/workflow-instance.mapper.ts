@@ -54,6 +54,7 @@ interface EventInstanceDto {
   payload?: PropertyMap | null;
   contextContribution?: PropertyMap | null;
   parameters?: PropertyMap | null;
+  blockedReason?: string | null;
   dueAt?: string | null;
   fireCount?: number;
 }
@@ -227,6 +228,7 @@ function toEventInstance(dto: EventInstanceDto): EventInstance {
     payload: dto.payload ?? undefined,
     contextContribution: dto.contextContribution ?? undefined,
     parameters: dto.parameters ?? undefined,
+    blockedReason: dto.blockedReason ?? undefined,
     dueAt: dto.dueAt ?? undefined,
     fireCount: dto.fireCount,
   });
@@ -246,6 +248,7 @@ function fromEventInstance(event: EventInstance): EventInstanceDto {
     payload: event.payload,
     contextContribution: event.contextContribution,
     parameters: event.parameters,
+    blockedReason: event.blockedReason,
     dueAt: event.dueAt,
     fireCount: event.fireCount,
   };
