@@ -341,10 +341,11 @@ interface DocumentLevel {
  * saved, returning to the one containing it, until the root's Save persists the whole document.
  */
 async function persistDocument(context: RelationshipTestContext, chain: DocumentLevel[]): Promise<void> {
+  // One page, so the Saves are sequential by nature: each lands on the form the next one is clicked on.
   for (let index = chain.length - 1; index >= 0; index--) {
     const form = formPO(context, chain[index].descriptor);
-    if (index > 0) await form.saveReturningTo(chain[index - 1].url);
-    else await form.save();
+    if (index > 0) await form.saveReturningTo(chain[index - 1].url); // NOSONAR typescript:S9382 - sequential UI steps
+    else await form.save(); // NOSONAR typescript:S9382 - sequential UI steps
   }
 }
 
@@ -361,7 +362,9 @@ async function exerciseEmbeddedLevel(
   maxDepth: number,
 ): Promise<void> {
   const { page, routes, descriptorMap } = context;
-  const { descriptor: ownerDescriptor, url: ownerUrl } = chain[chain.length - 1];
+  const owner = chain.at(-1);
+  if (!owner) return;
+  const { descriptor: ownerDescriptor, url: ownerUrl } = owner;
   const breadcrumbTrail = chain.map((level) => level.descriptor.entityName);
   const childDescriptor = descriptorMap.get(tester.linkedEntityName() ?? '');
   if (!childDescriptor) return;
@@ -432,7 +435,7 @@ async function exerciseEmbeddedLevel(
         });
         continue;
       }
-      await exerciseEmbeddedLevel(context, [...chain, { descriptor: childDescriptor, url: childUrl }], nestedTester, depth + 1, maxDepth);
+      await exerciseEmbeddedLevel(context, [...chain, { descriptor: childDescriptor, url: childUrl }], nestedTester, depth + 1, maxDepth); // NOSONAR typescript:S9382 - one page, levels run in turn
     }
   }
 
