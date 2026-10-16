@@ -6,14 +6,15 @@ import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO } from '../../domain/definition/test-artifact-definition';
 import { OTHER_ROLE_DEFINITION_DTO, ROLE_DEFINITION_DTO } from '../../domain/definition/test-role-definition';
 import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO } from '../../domain/definition/test-task-definition';
+import { OTHER_TOOL_DEFINITION_DTO, TOOL_DEFINITION_DTO } from '../../domain/definition/test-tool-definition';
 import { pageOfWorkflows, WORKFLOW_DTO } from '../../domain/definition/test-workflow';
 import { OTHER_WORKFLOW_INSTANCE_DTO, pageOfWorkflowInstances, WORKFLOW_INSTANCE_DTO } from '../../domain/execution/test-workflow-instance';
 
 /**
  * What the dashboard's component specs need in common.
  *
- * Every one of them injects `WorkflowDashboardStore`, which injects five root stores, each of which loads
- * its collection on init — so five requests exist before any component has rendered. Answering them is
+ * Every one of them injects `WorkflowDashboardStore`, which injects six root stores, each of which loads
+ * its collection on init — so six requests exist before any component has rendered. Answering them is
  * mechanical and identical in each spec, so it lives here rather than five times over.
  *
  * The English bundle is the real one, keyed under the `base_workflow` alias transloco flattens the scope
@@ -44,6 +45,8 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.artifacts_out': 'Writes',
   'base_workflow.task_instance.dashboard.artifacts_none': 'This task declares no artifacts.',
   'base_workflow.task_instance.dashboard.not_created': 'not created yet',
+  'base_workflow.task_instance.dashboard.required_state': 'required: {{state}}',
+  'base_workflow.task_instance.dashboard.complete_blocked': 'Tick every step and bring each output into its required state to complete the task.',
   'base_workflow.task_instance.dashboard.note': 'Notes',
   'base_workflow.task_instance.dashboard.complete': 'Complete task',
   'base_workflow.task_instance.dashboard.skip': 'Skip',
@@ -64,7 +67,7 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
 }
 
 /**
- * Answers the five collection reads the store's construction issues, by URL rather than in order — which
+ * Answers the six collection reads the store's construction issues, by URL rather than in order — which
  * store is built first is an implementation detail of `withComputed`.
  *
  * `runs` defaults to both seeded instances: the active `order-fulfillment-workflow` run with a completed,
@@ -77,6 +80,7 @@ export function flushDashboardCatalogs(controller: HttpTestingController, ...run
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/roles`).flush([ROLE_DEFINITION_DTO, OTHER_ROLE_DEFINITION_DTO]);
+  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/tools`).flush([TOOL_DEFINITION_DTO, OTHER_TOOL_DEFINITION_DTO]);
 }
 
 /** The ids the specs address, named once so a fixture reorder is one edit rather than five. */

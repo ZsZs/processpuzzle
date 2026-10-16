@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ArtifactType } from '../../domain/definition/artifact-definition';
@@ -13,8 +14,20 @@ describe('ArtifactPanelComponent', () => {
     name: 'Order Entity',
     type: ArtifactType.ENTITY,
     instance: new ArtifactInstance({ id: 'a1', artifactDefinitionId: 'order-entity', name: 'Order Entity', type: ArtifactType.ENTITY, currentState: 'CONFIRMED' }),
+    requiredState: undefined,
+    satisfied: true,
+    link: undefined,
   };
-  const invoice: ResolvedArtifact = { artifactDefinitionId: 'fulfillment-invoice', direction: 'output', name: 'Fulfillment Invoice', type: ArtifactType.DOCUMENT, instance: undefined };
+  const invoice: ResolvedArtifact = {
+    artifactDefinitionId: 'fulfillment-invoice',
+    direction: 'output',
+    name: 'Fulfillment Invoice',
+    type: ArtifactType.DOCUMENT,
+    instance: undefined,
+    requiredState: undefined,
+    satisfied: true,
+    link: undefined,
+  };
 
   let fixture: ComponentFixture<ArtifactPanelComponent>;
 
@@ -22,6 +35,7 @@ describe('ArtifactPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ArtifactPanelComponent],
       providers: [
+        provideRouter([]),
         provideTranslocoTesting({
           translations: {
             en: {

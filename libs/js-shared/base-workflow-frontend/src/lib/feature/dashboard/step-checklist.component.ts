@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
+import { StepTool } from '../../domain/dashboard/dashboard-task';
 import { StepDefinition, TaskStepType } from '../../domain/definition/task-definition';
 import { StepResult } from '../../domain/execution/workflow-instance';
 
@@ -12,13 +14,15 @@ import { StepResult } from '../../domain/execution/workflow-instance';
  * misstate who does the work:
  *
  * - **`USER_STEP`** — guidance the engine does not enforce. A checkbox and its description. The checkbox is
- *   **client-side only**: the contract has no endpoint to mark one step done, so ticking it is a progress
- *   aid that lives until the task is switched, not something that round-trips. Whether it should persist is
- *   open (open-questions #5); nothing here depends on the answer.
+ *   **client-side only**: the contract has no endpoint to mark one step done, so ticking it lives until the
+ *   task is switched, not something that round-trips. Whether it should persist is open (open-questions #5).
+ *   The ticks are the host's — {@link checkedIds} in, {@link stepToggled} out — because the dashboard gates
+ *   Complete on every user step being ticked; the contract has no "optional step", so every one counts.
  * - **`SERVICE_STEP`** — a call the engine makes through the step's tool. A passive status row, not a
  *   checkbox, because the user does not do it. It shows what happened: waiting, done, or failed with
  *   `StepResult.error` spelled out, which is the one thing on this screen a user cannot work around and
- *   therefore has to be able to read.
+ *   therefore has to be able to read. The tool it calls is named beside it, as a link to the tool's
+ *   definition when the host mounts the tool catalog.
  *
  * A tool call that failed is shown as prominently as the contract allows and no more: `toolResponse` is an
  * open map, so it is offered as the raw text it is rather than parsed into a summary that would be wrong for
@@ -27,7 +31,7 @@ import { StepResult } from '../../domain/execution/workflow-instance';
 @Component({
   selector: 'pp-step-checklist',
   standalone: true,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (steps().length === 0) {
@@ -54,6 +58,13 @@ import { StepResult } from '../../domain/execution/workflow-instance';
               <span class="step__title">
                 <span class="step__name" [class.step__name--done]="!isService(step) && checkedIds().has(step.id)">{{ step.name || index + 1 }}</span>
                 <span class="step__type">{{ (isService(step) ? serviceKey : userKey) | transloco }}</span>
+                @if (toolFor(step); as tool) {
+                  @if (tool.link) {
+                    <a class="step__tool" [routerLink]="tool.link" [attr.data-testid]="'step-tool-' + step.id">{{ tool.name }}</a>
+                  } @else {
+                    <span class="step__tool" [attr.data-testid]="'step-tool-' + step.id">{{ tool.name }}</span>
+                  }
+                }
               </span>
               @if (step.description) {
                 <span class="step__description">{{ step.description }}</span>
@@ -130,6 +141,10 @@ import { StepResult } from '../../domain/execution/workflow-instance';
       font-size: 11px;
       color: #999999;
     }
+    .step__tool {
+      font-size: 11px;
+      color: var(--pp-color-dark-blue, rgb(24, 111, 206));
+    }
     .step__description {
       font-size: 12px;
       color: #666666;
@@ -157,26 +172,27 @@ export class StepChecklistComponent {
   /** True while the task is not the session's to work on — the checkboxes are then a read-only preview. */
   readonly readOnly = input<boolean>(false);
 
+  /** The user steps ticked so far. */
+  readonly checkedIds = input<ReadonlySet<string>>(new Set<string>());
+
+  /** The tools the service steps call, by tool definition id. */
+  readonly tools = input<ReadonlyMap<string, StepTool>>(new Map<string, StepTool>());
+
+  /** A user step was ticked or unticked. */
+  readonly stepToggled = output<string>();
+
   protected readonly userKey = `${TASK_DASHBOARD_I18N_SCOPE}.step_user`;
   protected readonly serviceKey = `${TASK_DASHBOARD_I18N_SCOPE}.step_service`;
   protected readonly emptyKey = `${TASK_DASHBOARD_I18N_SCOPE}.steps_none`;
-
-  /**
-   * Which user steps have been ticked, locally.
-   *
-   * `linkedSignal` rather than `signal`, for the "derived default, then independently writable" shape: the
-   * set is recomputed from `steps()`, so selecting a different task clears it, and writable in between so a
-   * tick sticks. A plain signal would carry one task's ticks onto the next task's steps.
-   */
-  protected readonly checkedIds = linkedSignal<StepDefinition[], Set<string>>({
-    source: this.steps,
-    computation: () => new Set<string>(),
-  });
 
   private readonly resultsByStepId = computed(() => new Map(this.stepResults().map((result) => [result.stepId, result])));
 
   protected isService(step: StepDefinition): boolean {
     return step.stepType === TaskStepType.SERVICE_STEP;
+  }
+
+  protected toolFor(step: StepDefinition): StepTool | undefined {
+    return step.toolDefinitionId ? this.tools().get(step.toolDefinitionId) : undefined;
   }
 
   protected resultFor(stepId: string): StepResult | undefined {
@@ -202,11 +218,7 @@ export class StepChecklistComponent {
   }
 
   protected toggle(stepId: string): void {
-    if (this.readOnly()) return;
-    const next = new Set(this.checkedIds());
-    if (next.has(stepId)) next.delete(stepId);
-    else next.add(stepId);
-    this.checkedIds.set(next);
+    if (!this.readOnly()) this.stepToggled.emit(stepId);
   }
 }
 

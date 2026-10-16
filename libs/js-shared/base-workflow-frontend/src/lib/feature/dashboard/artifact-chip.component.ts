@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ResolvedArtifact } from '../../domain/dashboard/dashboard-task';
@@ -24,21 +25,36 @@ import { modelerIconUrl } from '../../domain/modeler/modeler-icons';
  * `currentState` (open-questions #4). Until then neutral is the honest rendering — see
  * {@link TaskStatusBadgeComponent} for the case where coloring *is* warranted, and why.
  *
+ * **The one mark that is not neutral is a missed required state**, and it does not contradict the above: when
+ * the workflow names the state a task expects an input in or leaves an output in, the chip shows it, and
+ * flags the chip when the artifact is not there yet. That compares two strings the workflow's author wrote
+ * against each other; it says nothing about whether either state is a good one.
+ *
+ * The name is a link to the artifact — its record when the run has one, its definition otherwise — whenever
+ * the host mounts a screen for it; see `DashboardLinkResolver`.
+ *
  * The symbol is the modeler's own `Artifact.svg`, so an artifact looks the same here as on the diagram.
  */
 @Component({
   selector: 'pp-artifact-chip',
   standalone: true,
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span class="chip" [class.chip--pending]="!artifact().instance" [attr.data-testid]="'artifact-chip-' + artifact().artifactDefinitionId">
+    <span class="chip" [class.chip--pending]="!artifact().instance" [class.chip--unmet]="!artifact().satisfied" [attr.data-testid]="'artifact-chip-' + artifact().artifactDefinitionId">
       <img class="chip__symbol" [src]="symbol" alt="" aria-hidden="true" />
-      <span class="chip__name">{{ artifact().name }}</span>
+      @if (artifact().link; as link) {
+        <a class="chip__name chip__name--link" [routerLink]="link" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ artifact().name }}</a>
+      } @else {
+        <span class="chip__name">{{ artifact().name }}</span>
+      }
       @if (artifact().instance) {
         <span class="chip__state">{{ stateText() }}</span>
       } @else {
         <span class="chip__state" data-testid="artifact-not-created">{{ notCreatedKey | transloco }}</span>
+      }
+      @if (artifact().requiredState; as state) {
+        <span class="chip__required" [attr.data-testid]="'artifact-required-' + artifact().artifactDefinitionId">{{ requiredKey | transloco: { state } }}</span>
       }
     </span>
   `,
@@ -59,6 +75,21 @@ import { modelerIconUrl } from '../../domain/modeler/modeler-icons';
       border-style: dashed;
       background-color: #ffffff;
       color: #888888;
+    }
+    /* A required state not reached yet: amber, the one structural mark the chip makes — see the class comment. */
+    .chip--unmet {
+      border-color: #c77700;
+    }
+    .chip__name--link {
+      color: var(--pp-color-dark-blue, rgb(24, 111, 206));
+    }
+    .chip__required {
+      color: #777777;
+      font-style: italic;
+      white-space: nowrap;
+    }
+    .chip--unmet .chip__required {
+      color: #8a5300;
     }
     .chip__symbol {
       width: 14px;
@@ -81,6 +112,7 @@ export class ArtifactChipComponent {
 
   protected readonly symbol = modelerIconUrl('artifact');
   protected readonly notCreatedKey = `${TASK_DASHBOARD_I18N_SCOPE}.not_created`;
+  protected readonly requiredKey = `${TASK_DASHBOARD_I18N_SCOPE}.required_state`;
 
   /**
    * The chip's second segment for an artifact that exists: its type, and its state when a machine is

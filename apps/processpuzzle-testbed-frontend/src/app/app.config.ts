@@ -11,6 +11,7 @@ import {
   provideLoggingService,
   provideTranslocoService,
   RUNTIME_CONFIGURATION,
+  TASK_DASHBOARD_ROUTE,
   TRANSLATION_SOURCE_REGISTRY,
 } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
@@ -35,7 +36,14 @@ import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCU
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
 import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
-import { BASE_WORKFLOW_ENTITY_FACADES, BASE_WORKFLOW_FACADE_PROVIDERS, BASE_WORKFLOW_TRANSLATION_SOURCE, CurrentUserContext, WorkflowRoleDescriptionSource } from '@processpuzzle/base-workflow';
+import {
+  BASE_WORKFLOW_ENTITY_FACADES,
+  BASE_WORKFLOW_FACADE_PROVIDERS,
+  BASE_WORKFLOW_TRANSLATION_SOURCE,
+  CurrentUserContext,
+  WORKFLOW_DASHBOARD_PATH,
+  WorkflowRoleDescriptionSource,
+} from '@processpuzzle/base-workflow';
 import { SessionUserContext } from './content/base-workflows/session-user.context';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
@@ -101,6 +109,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       { provide: CurrentUserContext, useClass: SessionUserContext },
       // And the other way round: My Profile describes the user's roles from base-workflow's role catalog.
       { provide: ROLE_DESCRIPTION_SOURCE, useExisting: WorkflowRoleDescriptionSource },
+      // The header's task dashboard button: the testbed mounts the dashboard among the base-workflow samples.
+      { provide: TASK_DASHBOARD_ROUTE, useValue: `/base-workflow/samples/${WORKFLOW_DASHBOARD_PATH}` },
       // Adds the read-only State Machine tab to every entity a state machine governs — `Order` and
       // `Dynamic Entity` in this tenant, both of them metadata-defined entities that name base-state
       // nowhere. base-entity asks the registered contributors when it resolves an entity's screens, so

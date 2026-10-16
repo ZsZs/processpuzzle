@@ -173,6 +173,11 @@ export class WorkflowDashboardComponent {
 
   protected readonly isProcess = computed(() => this.store.scope() === 'process');
 
+  constructor() {
+    // The store outlives this screen — see `refresh` for why entering it re-reads the runs.
+    this.store.refresh();
+  }
+
   protected scopeKey(scope: InboxScope): string {
     return `${TASK_DASHBOARD_I18N_SCOPE}.scopes.${scope}`;
   }

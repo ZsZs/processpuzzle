@@ -24,6 +24,7 @@ describe('CompletionFormComponent', () => {
               'base_workflow.task_instance.dashboard.skip': 'Skip',
               'base_workflow.task_instance.dashboard.skip_reason': 'Reason for skipping',
               'base_workflow.task_instance.dashboard.unstated_refusal': 'Not accepted yet, and the server gave no detail.',
+              'base_workflow.task_instance.dashboard.complete_blocked': 'Not ready yet.',
             },
           },
         }),
@@ -167,6 +168,24 @@ describe('CompletionFormComponent', () => {
     const disabled = Array.from(host().querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button')).map((control) => control.disabled);
 
     expect(disabled.every(Boolean)).toBe(true);
+  });
+
+  describe('a task that is not ready', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('canSkip', true);
+      fixture.componentRef.setInput('isReady', false);
+      fixture.detectChanges();
+    });
+
+    it('disables Complete and says why', () => {
+      expect(required<HTMLButtonElement>(host(), '[data-testid="complete-task"]').disabled).toBe(true);
+      expect(host().querySelector('[data-testid="complete-blocked"]')?.textContent?.trim()).toBe('Not ready yet.');
+    });
+
+    // An override is exactly what a task that cannot be finished the normal way needs.
+    it('still lets a process owner skip it', () => {
+      expect(required<HTMLButtonElement>(host(), '[data-testid="skip-task"]').disabled).toBe(false);
+    });
   });
 
   it('does not emit on its own', () => {

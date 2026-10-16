@@ -1,16 +1,18 @@
 <mat-toolbar color="primary" class="app-header">
-  <pp-navigate-back/>
+  <pp-navigate-back />
   @if (!layoutService.isSmallDevice()) {
     @if (!isDesignRoute()) {
       <a [routerLink]="['/home']">
         <img
           ngSrc="../../../assets/processpuzzle-logo-with-title.jpg"
           class="app-logo"
-          priority width="75"
+          priority
+          width="75"
           height="85"
           (click)="onLogoClick()"
           (keydown)="onLogoKeyPress($event)"
-          alt="ProcessPuzzle Logo" />
+          alt="ProcessPuzzle Logo"
+        />
       </a>
     }
     <button mat-icon-button (click)="sidenavToggle()" class="example-icon" aria-label="Example icon-button with menu icon">
@@ -36,9 +38,10 @@
     <h1>{{ title() }}</h1>
   }
   <span class="toolbar-spacer"></span>
-  <pp-design-button/>
-  <pp-like-button/>
-  <pp-share-button/>
-  <pp-language-selector/>
-  <pp-auth-button/>
+  <pp-task-dashboard-button />
+  <pp-design-button />
+  <pp-like-button />
+  <pp-share-button />
+  <pp-language-selector />
+  <pp-auth-button />
 </mat-toolbar>

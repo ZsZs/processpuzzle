@@ -22,6 +22,7 @@ export {
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
   SPACER_WIDGET,
+  TASK_DASHBOARD_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideAppLogoWidget,
@@ -40,6 +41,7 @@ export {
   providePhotoAlbumWidget,
   provideShareButtonWidget,
   provideSpacerWidget,
+  provideTaskDashboardButtonWidget,
   provideThemesButtonWidget,
   provideVersionButtonWidget,
 } from './base-widget.providers';
@@ -48,6 +50,7 @@ export { CopyrightComponent } from './copyright/copyright.component';
 export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';
+export { TaskDashboardButtonComponent } from './task-dashboard-button/task-dashboard-button.component';
 export { ImageZoomComponent } from './image-zoom/image-zoom.component';
 export { PhotoAlbumComponent } from './photo-album/photo-album.component';
 export type { PhotoAlbumImage } from './photo-album/photo-album.component';

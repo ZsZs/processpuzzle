@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { StepDefinition, TaskStepType } from '../../domain/definition/task-definition';
@@ -16,6 +17,7 @@ describe('StepChecklistComponent', () => {
     await TestBed.configureTestingModule({
       imports: [StepChecklistComponent],
       providers: [
+        provideRouter([]),
         provideTranslocoTesting({
           translations: {
             en: {
@@ -85,43 +87,65 @@ describe('StepChecklistComponent', () => {
     });
   });
 
-  describe('the local checkbox state', () => {
+  describe('the checkboxes', () => {
     const check = (host: HTMLElement, stepId: string): void => {
       required<HTMLInputElement>(host, `[data-testid="step-check-${stepId}"]`).dispatchEvent(new Event('change'));
       fixture.detectChanges();
     };
 
-    it('ticks and unticks', () => {
+    const toggled = (): string[] => {
+      const emitted: string[] = [];
+      fixture.componentInstance.stepToggled.subscribe((stepId) => emitted.push(stepId));
+      return emitted;
+    };
+
+    // The ticks are the host's, because the host gates Complete on them.
+    it('shows the ticks it is given', () => {
+      fixture.componentRef.setInput('checkedIds', new Set(['read-order']));
       const host = render([userStep]);
 
-      check(host, 'read-order');
       expect(required<HTMLInputElement>(host, '[data-testid="step-check-read-order"]').checked).toBe(true);
-
-      check(host, 'read-order');
-      expect(required<HTMLInputElement>(host, '[data-testid="step-check-read-order"]').checked).toBe(false);
     });
 
-    /**
-     * The reason it is a `linkedSignal`. Nothing persists a per-step acknowledgment (open-questions #5), so
-     * the ticks are local — and local state that survived a task switch would show the previous task's
-     * progress on this one's steps.
-     */
-    it('resets when a different task’s steps arrive', () => {
+    it('reports a tick rather than keeping it', () => {
+      const emitted = toggled();
       const host = render([userStep]);
+
       check(host, 'read-order');
 
-      render([new StepDefinition({ id: 'read-order', name: 'Read the order', stepType: TaskStepType.USER_STEP })]);
-
-      expect(required<HTMLInputElement>(host, '[data-testid="step-check-read-order"]').checked).toBe(false);
+      expect(emitted).toEqual(['read-order']);
     });
 
     // A task somebody else holds is shown, not offered: the checkboxes are a preview of their work.
     it('refuses a tick while the task is not the session’s own', () => {
+      const emitted = toggled();
       const host = render([userStep], [], true);
 
       expect(required<HTMLInputElement>(host, '[data-testid="step-check-read-order"]').disabled).toBe(true);
       check(host, 'read-order');
-      expect(required<HTMLInputElement>(host, '[data-testid="step-check-read-order"]').checked).toBe(false);
+      expect(emitted).toEqual([]);
+    });
+  });
+
+  describe('a service step’s tool', () => {
+    it('is a link when the host mounts the tool catalog', () => {
+      fixture.componentRef.setInput(
+        'tools',
+        new Map([['automated-check-tool', { toolDefinitionId: 'automated-check-tool', name: 'Automated Check Tool', link: '/tool-definition/automated-check-tool/details' }]]),
+      );
+      const host = render([serviceStep]);
+
+      const tool = required<HTMLAnchorElement>(host, '[data-testid="step-tool-check-items"]');
+      expect(tool.tagName).toBe('A');
+      expect(tool.getAttribute('href')).toBe('/tool-definition/automated-check-tool/details');
+      expect(tool.textContent?.trim()).toBe('Automated Check Tool');
+    });
+
+    it('is plain text when nothing is mounted for it', () => {
+      fixture.componentRef.setInput('tools', new Map([['automated-check-tool', { toolDefinitionId: 'automated-check-tool', name: 'Automated Check Tool', link: undefined }]]));
+      const host = render([serviceStep]);
+
+      expect(required(host, '[data-testid="step-tool-check-items"]').tagName).toBe('SPAN');
     });
   });
 

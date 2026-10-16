@@ -19,6 +19,9 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
  * else the sections are shown read-only rather than hidden, because seeing what a colleague is doing is not
  * the same as being invited to do it.
  *
+ * Complete is enabled once every user step is ticked and every output is in the state this workflow says the
+ * task leaves it in — `WorkflowDashboardStore.isReadyToComplete`.
+ *
  * The completion form appears only for an `ACTIVE` task that is the session's own. A `PENDING` task has not
  * been activated by the engine, and a `COMPLETED` or `SKIPPED` one is finished — in both cases `complete`
  * answers `409`, so the button is absent rather than present and doomed.
@@ -58,7 +61,14 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
         } @else {
           <section class="detail__section">
             <h5 class="detail__section-heading">{{ stepsKey | transloco }}</h5>
-            <pp-step-checklist [steps]="store.selectedDefinition()?.steps ?? []" [stepResults]="row.task.stepResults" [readOnly]="!store.isMine()" />
+            <pp-step-checklist
+              [steps]="store.selectedDefinition()?.steps ?? []"
+              [stepResults]="row.task.stepResults"
+              [readOnly]="!store.isMine()"
+              [checkedIds]="store.checkedStepIdSet()"
+              [tools]="store.selectedTools()"
+              (stepToggled)="store.toggleStep($event)"
+            />
           </section>
 
           <section class="detail__section">
@@ -69,6 +79,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
             <section class="detail__section">
               <pp-completion-form
                 [isBusy]="store.isActing()"
+                [isReady]="store.isReadyToComplete()"
                 [canSkip]="store.canSkip()"
                 [postconditionDetail]="store.postconditionDetail()"
                 (completeRequested)="complete($event)"
