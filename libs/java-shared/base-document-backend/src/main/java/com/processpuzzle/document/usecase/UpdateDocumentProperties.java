@@ -5,10 +5,13 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentStatus;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.stereotype.Service;
@@ -39,19 +42,22 @@ public class UpdateDocumentProperties {
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public UpdateDocumentProperties(DocumentRepository repository,
                                     DocumentDraftRepository draftRepository,
                                     PublishedDocumentRepository publishedRepository,
                                     DocumentReferentialIntegrityChecker integrityChecker,
                                     DocumentTranslationAssembler assembler,
-                                    DocumentGuard guard) {
+                                    DocumentGuard guard,
+                                    DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
+        this.facts = facts;
     }
 
     public DocumentDetails execute(String orgKey, String documentId, DocumentProperties input) {
@@ -65,16 +71,19 @@ public class UpdateDocumentProperties {
 
         DocumentPorts newPorts = input.ports();
         List<DocumentDraft> drafts = draftRepository.findByOrgKeyAndDocumentId(orgKey, documentId);
+        List<PublishedDocument> snapshots = publishedRepository.findByOrgKeyAndDocumentId(orgKey, documentId);
         List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
-                integrityChecker.checkPortChange(newPorts, drafts, Map.of(),
-                        publishedRepository.findByOrgKeyAndDocumentId(orgKey, documentId)));
+                integrityChecker.checkPortChange(newPorts, drafts, Map.of(), snapshots));
         if (!blocking.isEmpty()) {
             throw new IllegalArgumentException("Invalid document properties: " + blocking);
         }
 
+        DocumentStatus before = DocumentPlatformFacts.defaultStatusOf(document, drafts, snapshots);
         input.applyTo(document);
 
         Document saved = repository.save(document);
+        // No content changes here, but switching the source locale switches whose status is the document's.
+        facts.stateChanged(saved, before, DocumentPlatformFacts.defaultStatusOf(saved, drafts, snapshots));
         return new DocumentDetails(saved,
                 assembler.contentOf(saved, saved.getSourceLocale(), true).orElse(null),
                 assembler.statesOf(saved));

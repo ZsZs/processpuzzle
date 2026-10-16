@@ -17,6 +17,9 @@ import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
+import com.processpuzzle.document.domain.PublishedDocument;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +45,7 @@ class UnpublishDocumentTranslationTest {
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
     private List<Object> events;
+    private List<PlatformEvent> facts;
 
     @BeforeEach
     void setUp() {
@@ -49,6 +53,7 @@ class UnpublishDocumentTranslationTest {
         draftRepository = mock(DocumentDraftRepository.class);
         publishedRepository = mock(PublishedDocumentRepository.class);
         events = new ArrayList<>();
+        facts = new ArrayList<>();
     }
 
     @Test
@@ -96,6 +101,32 @@ class UnpublishDocumentTranslationTest {
     }
 
     @Test
+    void unpublishingTheDefaultTranslationReturnsTheDocumentToDraft() {
+        DocumentDraft draft = draft();
+        stubFound(DocumentRoles.unrestricted(), draft);
+        when(publishedRepository.findByOrgKeyAndDocumentIdAndLocale(ORG, ID, "en")).thenReturn(Optional.of(
+                new PublishedDocument(ORG, ID, "en", draft.getContent(), 1L, java.time.Instant.now(), "ada")));
+
+        unpublish(TestPolicies.permitAll()).execute(ORG, ID, "en");
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+            assertThat(fact.subjectType()).isEqualTo("document");
+            assertThat(fact.subjectId()).isEqualTo(ID);
+            assertThat(fact.state()).isEqualTo("DRAFT");
+        });
+    }
+
+    @Test
+    void unpublishingWhatIsNotPublishedChangesNoState() {
+        stubFound(DocumentRoles.unrestricted(), draft());
+
+        unpublish(TestPolicies.permitAll()).execute(ORG, ID, "en");
+
+        assertThat(facts).isEmpty();
+    }
+
+    @Test
     void anUntranslatedLocaleIsNotFound() {
         stubFound(DocumentRoles.unrestricted(), draft());
 
@@ -126,7 +157,7 @@ class UnpublishDocumentTranslationTest {
         ApplicationEventPublisher publisher = event -> events.add(event);
         return new UnpublishDocumentTranslation(repository, draftRepository, publishedRepository,
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.with(policy), publisher);
+                TestGuards.with(policy), publisher, TestFacts.recordingInto(facts));
     }
 
     private void stubFound(DocumentRoles roles, DocumentDraft draft) {

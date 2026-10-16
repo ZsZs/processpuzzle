@@ -17,6 +17,8 @@ import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +46,7 @@ class UpdateDocumentPropertiesTest {
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
     private UpdateDocumentProperties updateDocumentProperties;
+    private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -56,7 +59,8 @@ class UpdateDocumentPropertiesTest {
                 publishedRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.permitAll());
+                TestGuards.permitAll(),
+                TestFacts.recordingInto(facts));
     }
 
     @Test
@@ -119,7 +123,7 @@ class UpdateDocumentPropertiesTest {
         PublishDocumentTranslation publish = new PublishDocumentTranslation(repository, draftRepository,
                 publishedRepository, new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.permitAll(), event -> { });
+                TestGuards.permitAll(), event -> { }, TestFacts.ignored());
         publish.execute(ORG, ID, "en");
         publish.execute(ORG, ID, "de");
         english.replaceBlocks(List.of());
@@ -142,6 +146,33 @@ class UpdateDocumentPropertiesTest {
         snapshots.clear();
         assertThat(updateDocumentProperties.execute(ORG, ID, input("getting-started", "Renamed", DocumentPorts.empty()))
                 .document().getPorts().inputPorts()).isEmpty();
+    }
+
+    @Test
+    void switchingTheSourceLocaleSwitchesWhoseStatusIsTheDocuments() {
+        Document document = existing();
+        DocumentDraft english = draft("en", List.of());
+        stubFound(document, english, draft("de", List.of()));
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(new PublishedDocument(
+                ORG, ID, "en", english.getContent(), english.getRevision(), java.time.Instant.now(), "ada")));
+
+        updateDocumentProperties.execute(ORG, ID, new DocumentProperties("getting-started", "Original", null, null,
+                "ada", "de", false, null, new DocumentPorts(List.of(customerPort()), List.of())));
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+            assertThat(fact.state()).isEqualTo("DRAFT");
+            assertThat(fact.payload()).containsEntry("sourceLocale", "de");
+        });
+    }
+
+    @Test
+    void editingPropertiesAloneChangesNoState() {
+        stubFound(existing(), draft(List.of()));
+
+        updateDocumentProperties.execute(ORG, ID, input("Renamed"));
+
+        assertThat(facts).isEmpty();
     }
 
     @Test

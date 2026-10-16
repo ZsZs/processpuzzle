@@ -10,13 +10,17 @@ import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
@@ -33,6 +37,7 @@ class DeleteDocumentTest {
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
+    private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -56,6 +61,21 @@ class DeleteDocumentTest {
     }
 
     @Test
+    void publishesADeletedFactWithAnEmptyPayload() {
+        when(repository.findByOrgKeyAndId(ORG, ID)).thenReturn(Optional.of(document(DocumentRoles.unrestricted())));
+
+        deleteDocument(TestPolicies.permitAll()).execute(ORG, ID);
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.DELETED);
+            assertThat(fact.orgKey()).isEqualTo(ORG);
+            assertThat(fact.subjectType()).isEqualTo("document");
+            assertThat(fact.subjectId()).isEqualTo(ID);
+            assertThat(fact.payload()).isEmpty();
+        });
+    }
+
+    @Test
     void unknownDocumentIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
 
@@ -74,11 +94,13 @@ class DeleteDocumentTest {
         verify(publishedRepository, never()).deleteByOrgKeyAndDocumentId(any(), any());
         verify(draftRepository, never()).deleteByOrgKeyAndDocumentId(any(), any());
         verify(repository, never()).deleteById(any());
+        assertThat(facts).isEmpty();
     }
 
     // region fixtures
     private DeleteDocument deleteDocument(DocumentAccessPolicy policy) {
-        return new DeleteDocument(repository, draftRepository, publishedRepository, TestGuards.with(policy));
+        return new DeleteDocument(repository, draftRepository, publishedRepository, TestGuards.with(policy),
+                TestFacts.recordingInto(facts));
     }
 
     private static Document document(DocumentRoles roles) {

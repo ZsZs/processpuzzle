@@ -2,6 +2,7 @@ package com.processpuzzle.document.usecase;
 
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentDraft;
+import com.processpuzzle.document.domain.DocumentStatus;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
@@ -10,6 +11,7 @@ import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Copies one locale's draft into its published snapshot — the single point at which content becomes
@@ -40,6 +43,7 @@ public class PublishDocumentTranslation {
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
     private final ApplicationEventPublisher events;
+    private final DocumentPlatformFacts facts;
 
     public PublishDocumentTranslation(DocumentRepository repository,
                                       DocumentDraftRepository draftRepository,
@@ -47,7 +51,8 @@ public class PublishDocumentTranslation {
                                       DocumentReferentialIntegrityChecker integrityChecker,
                                       DocumentTranslationAssembler assembler,
                                       DocumentGuard guard,
-                                      ApplicationEventPublisher events) {
+                                      ApplicationEventPublisher events,
+                                      DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
@@ -55,6 +60,7 @@ public class PublishDocumentTranslation {
         this.assembler = assembler;
         this.guard = guard;
         this.events = events;
+        this.facts = facts;
     }
 
     public DocumentTranslationView execute(String orgKey, String documentId, String locale) {
@@ -73,10 +79,12 @@ public class PublishDocumentTranslation {
 
         Instant now = Instant.now();
         String principal = guard.currentPrincipal();
-        PublishedDocument snapshot = publishedRepository
-                .findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
-                .orElseGet(() -> new PublishedDocument(orgKey, documentId, locale,
-                        draft.getContent(), draft.getRevision(), now, principal));
+        Optional<PublishedDocument> existing = publishedRepository
+                .findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale);
+        DocumentStatus before = DocumentStatus.derive(draft.getRevision(),
+                existing.map(PublishedDocument::getPublishedRevision).orElse(null));
+        PublishedDocument snapshot = existing.orElseGet(() -> new PublishedDocument(orgKey, documentId, locale,
+                draft.getContent(), draft.getRevision(), now, principal));
         snapshot.replaceSnapshot(draft.getContent(), draft.getRevision(), now, principal);
         publishedRepository.save(snapshot);
 
@@ -85,6 +93,9 @@ public class PublishDocumentTranslation {
 
         events.publishEvent(new DocumentPublished(
                 orgKey, documentId, document.getSlug(), locale, draft.getRevision(), now, principal));
+        if (locale.equals(document.getSourceLocale())) {
+            facts.stateChanged(document, before, DocumentStatus.PUBLISHED);
+        }
 
         return DocumentTranslationView.ofDraft(draft, snapshot, assembler.sourceRevisionOf(document));
     }

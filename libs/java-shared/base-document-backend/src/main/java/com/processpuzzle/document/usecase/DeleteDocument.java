@@ -7,6 +7,7 @@ import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +28,18 @@ public class DeleteDocument {
     private final DocumentDraftRepository draftRepository;
     private final PublishedDocumentRepository publishedRepository;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public DeleteDocument(DocumentRepository repository,
                           DocumentDraftRepository draftRepository,
                           PublishedDocumentRepository publishedRepository,
-                          DocumentGuard guard) {
+                          DocumentGuard guard,
+                          DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.guard = guard;
+        this.facts = facts;
     }
 
     public void execute(String orgKey, String documentId) {
@@ -46,5 +50,6 @@ public class DeleteDocument {
         publishedRepository.deleteByOrgKeyAndDocumentId(orgKey, documentId);
         draftRepository.deleteByOrgKeyAndDocumentId(orgKey, documentId);
         repository.deleteById(new DocumentKey(orgKey, documentId));
+        facts.deleted(document);
     }
 }
