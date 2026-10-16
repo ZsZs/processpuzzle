@@ -135,5 +135,23 @@
     "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it.",
     "move_up": "Move up",
     "move_down": "Move down"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Text formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "strike": "Strikethrough",
+      "code": "Inline code",
+      "heading_1": "Heading 1",
+      "heading_2": "Heading 2",
+      "heading_3": "Heading 3",
+      "bullet_list": "Bullet list",
+      "ordered_list": "Numbered list",
+      "blockquote": "Quote",
+      "horizontal_rule": "Divider",
+      "undo": "Undo",
+      "redo": "Redo"
+    }
   }
 }

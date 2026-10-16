@@ -19,23 +19,7 @@
     "content": {
       "loading": "Inhalt wird geladen…",
       "add_text_block": "Textblock hinzufügen",
-      "add_widget_block": "Widget hinzufügen",
-      "toolbar": {
-        "label": "Textformatierung",
-        "bold": "Fett",
-        "italic": "Kursiv",
-        "strike": "Durchgestrichen",
-        "code": "Inline-Code",
-        "heading_1": "Überschrift 1",
-        "heading_2": "Überschrift 2",
-        "heading_3": "Überschrift 3",
-        "bullet_list": "Aufzählung",
-        "ordered_list": "Nummerierte Liste",
-        "blockquote": "Zitat",
-        "horizontal_rule": "Trennlinie",
-        "undo": "Rückgängig",
-        "redo": "Wiederherstellen"
-      }
+      "add_widget_block": "Widget hinzufügen"
     },
     "_tooltips": {
       "slug": "Der Schlüssel des Dokuments in seiner Adresse, eindeutig in Ihrer Organisation. Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. getting-started.",

@@ -29,6 +29,9 @@ export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-componen
 export { EmbeddedListComponent } from './lib/base-form/embedded-list/embedded-list.component';
 export { EmbeddedObjectComponent } from './lib/base-form/embedded-object/embedded-object.component';
 export { RelatedEntitiesListComponent } from './lib/base-form/related-entities/related-entities-list.component';
+// The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.
+export { EMPTY_RICH_TEXT, isRichTextEmpty, RichTextEditorComponent, type RichTextContent } from './lib/rich-text/rich-text-editor.component';
+export { RichTextToolbarComponent } from './lib/rich-text/rich-text-toolbar.component';
 export { BaseEntityDescriptor, type BaseEntityDescriptorOptions, type EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 export { EntityLabelPipe, translateLabel } from './lib/i18n/entity-label.pipe';
 export { DateFormatPipe } from './lib/i18n/date-format.pipe';

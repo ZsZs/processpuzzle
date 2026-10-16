@@ -135,5 +135,23 @@
     "save_owner_first": "Guarde este registro antes de añadir {{ entity }}: un componente incrustado se almacena dentro de él.",
     "move_up": "Subir",
     "move_down": "Bajar"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Formato de texto",
+      "bold": "Negrita",
+      "italic": "Cursiva",
+      "strike": "Tachado",
+      "code": "Código en línea",
+      "heading_1": "Encabezado 1",
+      "heading_2": "Encabezado 2",
+      "heading_3": "Encabezado 3",
+      "bullet_list": "Lista con viñetas",
+      "ordered_list": "Lista numerada",
+      "blockquote": "Cita",
+      "horizontal_rule": "Separador",
+      "undo": "Deshacer",
+      "redo": "Rehacer"
+    }
   }
 }

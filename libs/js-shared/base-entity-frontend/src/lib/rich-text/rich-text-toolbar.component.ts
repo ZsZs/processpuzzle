@@ -6,7 +6,7 @@ import { Editor } from '@tiptap/core';
 
 /** One button: what it looks like, when it is lit, and what it does to the block being edited. */
 interface ToolbarAction {
-  /** Doubles as the i18n key under `document.content.toolbar` and as the test-id suffix. */
+  /** Doubles as the i18n key under `base_entity.rich_text.toolbar` and as the test-id suffix. */
   readonly name: string;
   readonly icon: string;
   /** Absent for actions with no on/off state — undo has nothing to be "on". */
@@ -19,8 +19,8 @@ interface ToolbarAction {
 }
 
 /**
- * Only what StarterKit actually registers — the extension list in DocumentTextBlockComponent is the
- * contract here, so there is no Link or Underline button for a mark no editor would accept.
+ * Only what StarterKit actually registers — every editor this toolbar drives is built on it (see
+ * RichTextEditorComponent), so there is no Link or Underline button for a mark no editor would accept.
  */
 const TOOLBAR_ACTIONS: readonly ToolbarAction[] = [
   { name: 'bold', icon: 'format_bold', activeWhen: (e) => e.isActive('bold'), apply: (e) => e.chain().focus().toggleBold().run() },
@@ -39,21 +39,23 @@ const TOOLBAR_ACTIONS: readonly ToolbarAction[] = [
 ];
 
 /**
- * The formatting bar for the one TEXT block currently being edited. It is per block rather than one bar for
- * the whole document because every command it issues targets a single Tiptap `Editor`, and this library gives
- * each block its own (see DocumentTextBlockComponent) — a document-level bar would have to track which of N
- * editors last had the caret, and would sit a screen away from it in a long document. Rendered into the strip
- * DocumentTextBlockComponent reserves above each block, so appearing and disappearing shifts nothing.
+ * The formatting bar of one Tiptap `Editor` — a document's TEXT block, a comment being written. It is per
+ * editor rather than one bar per page because every command it issues targets a single `Editor`: a page-level
+ * bar would have to track which of N editors last had the caret, and would sit a screen away from it. Absolutely
+ * positioned, so its host reserves a strip above the editor to draw it into and appearing shifts nothing.
+ *
+ * Lives in base-entity rather than base-document because both features edit rich text and base-entity is the
+ * one the other depends on. `testIdPrefix` keeps the test ids each caller's e2e suite already selects by.
  *
  * `mousedown` is cancelled on every button: pressing one must not move focus out of the editor, or the command
  * would run against a collapsed, blurred selection and the caret would be lost after each click.
  */
 @Component({
-  selector: 'pp-document-text-block-toolbar',
+  selector: 'pp-rich-text-toolbar',
   standalone: true,
   imports: [MatIcon, MatTooltip, TranslocoPipe],
   template: `
-    <div class="pp-block-toolbar" role="toolbar" [attr.aria-label]="'base_document.document.content.toolbar.label' | transloco" data-testid="document-text-block-toolbar">
+    <div class="pp-block-toolbar" role="toolbar" [attr.aria-label]="'base_entity.rich_text.toolbar.label' | transloco" [attr.data-testid]="testIdPrefix() + '-toolbar'">
       @for (action of actions; track action.name) {
         @if (action.startsGroup) {
           <span class="pp-block-toolbar__separator"></span>
@@ -65,7 +67,7 @@ const TOOLBAR_ACTIONS: readonly ToolbarAction[] = [
           [disabled]="disabledActions().has(action.name)"
           [attr.aria-pressed]="action.activeWhen ? activeActions().has(action.name) : null"
           [attr.data-testid]="testIdOf(action)"
-          [matTooltip]="'base_document.document.content.toolbar.' + action.name | transloco"
+          [matTooltip]="'base_entity.rich_text.toolbar.' + action.name | transloco"
           (mousedown)="$event.preventDefault()"
           (click)="onApply(action)"
         >
@@ -132,8 +134,10 @@ const TOOLBAR_ACTIONS: readonly ToolbarAction[] = [
     `,
   ],
 })
-export class DocumentTextBlockToolbarComponent {
+export class RichTextToolbarComponent {
   readonly editor = input.required<Editor>();
+  /** Leading part of every test id: `<prefix>-toolbar`, `<prefix>-bold`, … */
+  readonly testIdPrefix = input('rich-text');
 
   protected readonly actions = TOOLBAR_ACTIONS;
 
@@ -156,7 +160,7 @@ export class DocumentTextBlockToolbarComponent {
   protected readonly disabledActions = computed(() => this.namesMatching((action, editor) => action.enabledWhen?.(editor) === false));
 
   protected testIdOf(action: ToolbarAction): string {
-    return `document-text-block-${action.name.replaceAll('_', '-')}`;
+    return `${this.testIdPrefix()}-${action.name.replaceAll('_', '-')}`;
   }
 
   protected onApply(action: ToolbarAction): void {

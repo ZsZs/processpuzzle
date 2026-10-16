@@ -1,10 +1,10 @@
 import { AfterViewInit, Component, computed, DestroyRef, ElementRef, EnvironmentInjector, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import { RichTextToolbarComponent } from '@processpuzzle/base-entity';
 import { WIDGET_REGISTRY, WidgetRegistration } from '@processpuzzle/widgets';
 import { DocumentBlock } from '../../domain/base-document';
 import { DocumentContentStore } from './document-content.store';
-import { DocumentTextBlockToolbarComponent } from './document-text-block-toolbar.component';
 import { createWidgetEmbedExtension } from './widget-embed-node';
 
 /**
@@ -17,10 +17,10 @@ import { createWidgetEmbedExtension } from './widget-embed-node';
 @Component({
   selector: 'pp-document-text-block',
   standalone: true,
-  imports: [DocumentTextBlockToolbarComponent],
+  imports: [RichTextToolbarComponent],
   template: `
     @if (isToolbarVisible()) {
-      <pp-document-text-block-toolbar [editor]="editorInstance()!" />
+      <pp-rich-text-toolbar [editor]="editorInstance()!" testIdPrefix="document-text-block" />
     }
     <div #editorHost class="pp-document-text-block" [class.pp-document-text-block--readonly]="!block().editable"></div>
   `,

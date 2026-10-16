@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { Editor } from '@tiptap/core';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DocumentTextBlockToolbarComponent } from './document-text-block-toolbar.component';
+import { RichTextToolbarComponent } from './rich-text-toolbar.component';
 
 /**
  * A stand-in for Tiptap's Editor rather than a real one: what this component owes its caller is the mapping
@@ -50,19 +50,19 @@ function editorStub(options: { active?: string[]; canUndo?: boolean; canRedo?: b
   };
 }
 
-describe('DocumentTextBlockToolbarComponent', () => {
-  let fixture: ComponentFixture<DocumentTextBlockToolbarComponent>;
+describe('RichTextToolbarComponent', () => {
+  let fixture: ComponentFixture<RichTextToolbarComponent>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       // Flat dotted keys: TestTranslocoLoader drops nested objects when no scope is configured.
-      providers: [provideTranslocoTesting({ translations: { en: { 'base_document.document.content.toolbar.bold': 'Bold', 'base_document.document.content.toolbar.undo': 'Undo' } } })],
+      providers: [provideTranslocoTesting({ translations: { en: { 'base_entity.rich_text.toolbar.bold': 'Bold', 'base_entity.rich_text.toolbar.undo': 'Undo' } } })],
     });
-    fixture = TestBed.createComponent(DocumentTextBlockToolbarComponent);
+    fixture = TestBed.createComponent(RichTextToolbarComponent);
   });
 
   function button(name: string): HTMLButtonElement {
-    return fixture.nativeElement.querySelector(`[data-testid="document-text-block-${name}"]`);
+    return fixture.nativeElement.querySelector(`[data-testid="rich-text-${name}"]`);
   }
 
   function render(stub: ReturnType<typeof editorStub>) {
@@ -122,6 +122,14 @@ describe('DocumentTextBlockToolbarComponent', () => {
 
     expect(button('bold').getAttribute('aria-pressed')).toBe('false');
     expect(button('italic').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('prefixes its test ids as its host asks, so each caller keeps the ids its e2e suite selects by', () => {
+    fixture.componentRef.setInput('testIdPrefix', 'document-text-block');
+    render(editorStub());
+
+    expect(fixture.nativeElement.querySelector('[data-testid="document-text-block-toolbar"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="document-text-block-bold"]')).not.toBeNull();
   });
 
   /** History buttons are the only ones with an availability of their own; the rest are always offered. */

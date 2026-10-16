@@ -135,5 +135,23 @@
     "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké.",
     "move_up": "Monter",
     "move_down": "Descendre"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Mise en forme du texte",
+      "bold": "Gras",
+      "italic": "Italique",
+      "strike": "Barré",
+      "code": "Code en ligne",
+      "heading_1": "Titre 1",
+      "heading_2": "Titre 2",
+      "heading_3": "Titre 3",
+      "bullet_list": "Liste à puces",
+      "ordered_list": "Liste numérotée",
+      "blockquote": "Citation",
+      "horizontal_rule": "Séparateur",
+      "undo": "Annuler",
+      "redo": "Rétablir"
+    }
   }
 }

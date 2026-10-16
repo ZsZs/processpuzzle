@@ -135,5 +135,23 @@
     "save_owner_first": "Mentse ezt a rekordot, mielőtt {{ entity }} elemet ad hozzá — a beágyazott komponens ebben tárolódik.",
     "move_up": "Feljebb",
     "move_down": "Lejjebb"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Szövegformázás",
+      "bold": "Félkövér",
+      "italic": "Dőlt",
+      "strike": "Áthúzott",
+      "code": "Beágyazott kód",
+      "heading_1": "Címsor 1",
+      "heading_2": "Címsor 2",
+      "heading_3": "Címsor 3",
+      "bullet_list": "Felsorolás",
+      "ordered_list": "Számozott lista",
+      "blockquote": "Idézet",
+      "horizontal_rule": "Elválasztó",
+      "undo": "Visszavonás",
+      "redo": "Újra"
+    }
   }
 }

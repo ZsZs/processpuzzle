@@ -135,5 +135,23 @@
     "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert.",
     "move_up": "Nach oben",
     "move_down": "Nach unten"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Textformatierung",
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "strike": "Durchgestrichen",
+      "code": "Inline-Code",
+      "heading_1": "Überschrift 1",
+      "heading_2": "Überschrift 2",
+      "heading_3": "Überschrift 3",
+      "bullet_list": "Aufzählung",
+      "ordered_list": "Nummerierte Liste",
+      "blockquote": "Zitat",
+      "horizontal_rule": "Trennlinie",
+      "undo": "Rückgängig",
+      "redo": "Wiederherstellen"
+    }
   }
 }
