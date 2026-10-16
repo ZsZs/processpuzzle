@@ -50,7 +50,7 @@ export class ObjectNameResolver {
       const record = (await firstValueFrom(facade.service.findById(entityId))) as Record<string, unknown> | undefined;
       const attrName = facade.descriptor.titleAttrName();
       const value = record && attrName ? record[attrName] : undefined;
-      return value != null && value !== '' ? String(value) : undefined;
+      return nameFrom(value);
     } catch {
       return undefined;
     }
@@ -68,6 +68,16 @@ export class ObjectNameResolver {
     const definition = [...(await this.definitions.load()).values()].find((candidate) => normalized(candidate.code) === wanted || normalized(candidate.name) === wanted);
     return definition ? (await this.dynamicEntities.resolve(definition.name))?.facade : undefined;
   }
+}
+
+/**
+ * A title attribute's value as a name — a string, number or boolean. Anything else, an embedded object or a
+ * list, would stringify as `[object Object]`, which is worse than the label the caller already shows.
+ */
+function nameFrom(value: unknown): string | undefined {
+  if (typeof value === 'string') return value === '' ? undefined : value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return undefined;
 }
 
 function keyOf(artifactTypeId: string, entityId: string): string {

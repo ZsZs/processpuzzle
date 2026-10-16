@@ -6,7 +6,11 @@ import { ObjectNameResolver } from './object-name.resolver';
 
 /** A facade is all the resolver reads: a service to fetch the record by, and the attribute that titles it. */
 class OrderFacade {
-  readonly findById = vi.fn((id: string) => (id === 'missing' ? throwError(() => new Error('404')) : of({ id, orderNumber: `ORD-${id}` })));
+  readonly findById = vi.fn((id: string) => {
+    if (id === 'missing') return throwError(() => new Error('404'));
+    if (id === 'structured') return of({ id, orderNumber: { prefix: 'ORD', value: 1 } });
+    return of({ id, orderNumber: id === 'numeric' ? 1001 : `ORD-${id}` });
+  });
   readonly service = { findById: this.findById };
   readonly descriptor = { titleAttrName: () => 'orderNumber' };
 }
@@ -58,6 +62,21 @@ describe('ObjectNameResolver', () => {
     await settle();
 
     expect(resolver.nameOf('order', 'missing')).toBeUndefined();
+  });
+
+  it('names a record whose title is a number', async () => {
+    resolver.request('order', 'numeric');
+    await settle();
+
+    expect(resolver.nameOf('order', 'numeric')).toBe('1001');
+  });
+
+  // An object would read as "[object Object]" — the label the caller already shows is better.
+  it('leaves a record whose title is not a plain value unnamed', async () => {
+    resolver.request('order', 'structured');
+    await settle();
+
+    expect(resolver.nameOf('order', 'structured')).toBeUndefined();
   });
 
   it('leaves a record of an entity nobody registered unnamed', async () => {
