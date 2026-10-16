@@ -144,9 +144,17 @@ public class ArtifactBinder {
 
     /** The type of the records an artifact stands for: its entity's definition code, or {@link #DOCUMENT_TYPE}. */
     private static Optional<String> entityTypeOf(ResolvedWorkflow definition, ArtifactUse use) {
-        return artifactDefinition(definition, use).flatMap(artifact -> artifact.getArtifactType() == ArtifactType.DOCUMENT
-                ? Optional.of(DOCUMENT_TYPE)
-                : artifact.getArtifactType() == ArtifactType.ENTITY ? Optional.ofNullable(artifact.getArtifactTypeId()) : Optional.empty());
+        return artifactDefinition(definition, use).flatMap(ArtifactBinder::recordTypeOf);
+    }
+
+    private static Optional<String> recordTypeOf(ArtifactDefinition artifact) {
+        if (artifact.getArtifactType() == ArtifactType.DOCUMENT) {
+            return Optional.of(DOCUMENT_TYPE);
+        }
+        if (artifact.getArtifactType() == ArtifactType.ENTITY) {
+            return Optional.ofNullable(artifact.getArtifactTypeId());
+        }
+        return Optional.empty();
     }
 
     private static Optional<ArtifactDefinition> artifactDefinition(ResolvedWorkflow definition, ArtifactUse use) {

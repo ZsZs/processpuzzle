@@ -4,6 +4,7 @@ import com.processpuzzle.workflow.definition.usecases.outbound.CatalogParameter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Fills a thrown event's declared parameters from the throwing run's context, by name (docs/event-parameters.md):
@@ -48,7 +49,7 @@ public final class ThrownParameters {
                 .filter(Map.class::isInstance)
                 .map(Map.class::cast)
                 .map(values -> values.get(name))
-                .filter(value -> value != null)
+                .filter(Objects::nonNull)
                 .map(Object.class::cast)
                 .toList();
         return namespaced.size() == 1 ? namespaced.getFirst() : null;

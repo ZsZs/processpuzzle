@@ -60,7 +60,8 @@ public class CatchOccurrence {
         event.setOccurredAt(occurrence.at());
         event.setOccurrenceId(occurrence.occurrenceId());
         event.setPayload(occurrence.payload());
-        event.setParameters(occurrence.parameterValues());
+        Map<String, Object> parameters = occurrence.parameterValues();
+        event.setParameters(parameters.isEmpty() ? null : parameters);
         event.setContextContribution(contributionOf(orgKey, definition, instance, event, occurrence));
         eventInstanceRepository.save(event);
 
@@ -75,11 +76,6 @@ public class CatchOccurrence {
     }
 
     /**
-     * @param occurrenceId the occurrence delivered; a timer passes its own row's id
-     * @param payload      what the catch received; null for a timer
-     * @param contribution what the catch's payload mapping took from it into the context
-     */
-    /**
      * What the catch adds to the context: what its payload mapping read, the occurrence's parameters under the event's
      * own id — {@code invoice-issued.invoiceNumber} — and the records the parameters bound, under their objects' names.
      */
@@ -87,7 +83,7 @@ public class CatchOccurrence {
                                                EventInstance event, Occurrence occurrence) {
         Map<String, Object> contribution = new LinkedHashMap<>(occurrence.contribution() == null ? Map.of() : occurrence.contribution());
         Map<String, Object> parameters = occurrence.parameterValues();
-        if (parameters != null) {
+        if (!parameters.isEmpty()) {
             contribution.put(event.getEventUseId(), parameters);
         }
         contribution.putAll(binder.bind(orgKey, instance.getId(), definition, event.getEventUseId(), occurrence.parameters()));
@@ -97,7 +93,10 @@ public class CatchOccurrence {
     /**
      * One arrival at a catch.
      *
-     * @param parameters the occurrence's parameters, resolved by base-event; empty for a timer
+     * @param occurrenceId the occurrence delivered; a timer passes its own row's id
+     * @param payload      what the catch received; null for a timer
+     * @param contribution what the catch's payload mapping took from it into the context
+     * @param parameters   the occurrence's parameters, resolved by base-event; empty for a timer
      */
     public record Occurrence(Instant at, UUID occurrenceId, Map<String, Object> payload,
                              Map<String, Object> contribution, List<OccurredParameter> parameters) {
@@ -111,11 +110,8 @@ public class CatchOccurrence {
             this(at, occurrenceId, payload, contribution, List.of());
         }
 
-        /** The parameters by name, or null when there are none — what the event instance records. */
+        /** The parameters by name; empty when there are none. */
         public Map<String, Object> parameterValues() {
-            if (parameters.isEmpty()) {
-                return null;
-            }
             Map<String, Object> values = new LinkedHashMap<>();
             parameters.forEach(parameter -> values.put(parameter.name(), parameter.value()));
             return values;

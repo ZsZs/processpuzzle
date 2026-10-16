@@ -18,7 +18,9 @@ import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
@@ -206,8 +208,8 @@ class CatchEventUseCasesTest {
     private OccurCatchEventUseCase useCase(WorkflowProgression progression) {
         return new OccurCatchEventUseCase(events, instances, resolve,
                 new CatchOccurrence(events, tasks, progression, publisher,
-                        new ArtifactBinder(org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository.class),
-                                org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway.class))));
+                        new ArtifactBinder(mock(ArtifactInstanceRepository.class),
+                                mock(EntityStateGateway.class))));
     }
 
     private static EventInstance waiting() {

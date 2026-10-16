@@ -27,6 +27,7 @@ import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
@@ -99,7 +100,7 @@ class WorkflowExecutionUseCasesTest {
 
     /** The real binder over the mocked artifact repository; base-state is not deployed here. */
     private ArtifactBinder binder() {
-        return new ArtifactBinder(wpInstRepo, org.mockito.Mockito.mock(com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway.class));
+        return new ArtifactBinder(wpInstRepo, mock(EntityStateGateway.class));
     }
 
     /** The real close-out over the mocked activation service, so the tests still see the instance close. */

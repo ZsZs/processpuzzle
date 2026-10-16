@@ -820,14 +820,18 @@ class WorkflowValidatorTest {
 
     @Test
     void rejectsABindFromThatIsNoEventParameter() {
-        assertThatThrownBy(() -> validator.validate(withOrders(null, "subject")))
+        Workflow workflow = withOrders(null, "subject");
+
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("is not <event>.<parameter>");
     }
 
     @Test
     void rejectsABindFromNamingAnEventTheWorkflowDoesNotHave() {
-        assertThatThrownBy(() -> validator.validate(withOrders(null, "order-replaced.replacement")))
+        Workflow workflow = withOrders(null, "order-replaced.replacement");
+
+        assertThatThrownBy(() -> validator.validate(workflow))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("has no start event or event 'order-replaced'");
     }

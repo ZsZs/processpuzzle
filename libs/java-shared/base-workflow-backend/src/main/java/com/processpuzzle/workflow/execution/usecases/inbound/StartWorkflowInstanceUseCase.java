@@ -116,7 +116,7 @@ public class StartWorkflowInstanceUseCase {
     public Optional<WorkflowInstance> startTriggered(String orgKey, String workflowId, String startEventId,
                                                      String entityId, String entityType,
                                                      Map<String, Object> initialContext) {
-        return startTriggered(orgKey, workflowId, startEventId, entityId, entityType, initialContext, List.of());
+        return triggeredStart(orgKey, workflowId, startEventId, entityId, entityType, initialContext, List.of());
     }
 
     /**
@@ -128,6 +128,13 @@ public class StartWorkflowInstanceUseCase {
                                                      String entityId, String entityType,
                                                      Map<String, Object> initialContext,
                                                      List<OccurredParameter> parameters) {
+        return triggeredStart(orgKey, workflowId, startEventId, entityId, entityType, initialContext, parameters);
+    }
+
+    private Optional<WorkflowInstance> triggeredStart(String orgKey, String workflowId, String startEventId,
+                                                      String entityId, String entityType,
+                                                      Map<String, Object> initialContext,
+                                                      List<OccurredParameter> parameters) {
         if (entityId != null && workflowInstanceRepository.existsByOrgKeyAndWorkflowIdAndEntityIdAndStatusIn(
                 orgKey, workflowId, entityId, NON_TERMINAL)) {
             return Optional.empty();
@@ -147,11 +154,6 @@ public class StartWorkflowInstanceUseCase {
         return createInstance(orgKey, definition, null, null, startEventId, Map.of(), List.of());
     }
 
-    /**
-     * The entity type an explicitly started run's subject is of: the workflow's first ENTITY artifact. An
-     * explicit start names an object, not its type, and the artifact is the workflow's own statement of
-     * which entity it works on.
-     */
     /**
      * Binds the run's artifacts to the records the start names, and records what it carried in the initial context:
      * the parameters under the start event's id ({@code order-created.orderNumber}), each bound record under its
@@ -179,6 +181,11 @@ public class StartWorkflowInstanceUseCase {
         }
     }
 
+    /**
+     * The entity type an explicitly started run's subject is of: the workflow's first ENTITY artifact. An
+     * explicit start names an object, not its type, and the artifact is the workflow's own statement of
+     * which entity it works on.
+     */
     private static String entityTypeOf(ResolvedWorkflow definition) {
         return definition.artifacts().stream()
                 .filter(artifact -> artifact.getArtifactType() == ArtifactType.ENTITY)
