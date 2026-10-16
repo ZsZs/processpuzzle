@@ -59,13 +59,15 @@ export class EmbeddedAggregateAccessor {
     return this.descriptorRegistry.getStore<BaseEntityStoreApi<BaseEntity>>(levels[0].entityName);
   }
 
-  /** Persists the aggregate with `rootPayload` replaced — an embedded row has no endpoint of its own. */
-  async writeRoot(resolved: ResolvedEmbeddedAggregate, rootPayload: Record<string, unknown>): Promise<void> {
+  /**
+   * Stages the aggregate with `rootPayload` replaced — an embedded row has no endpoint of its own, and it is
+   * not persisted on its own either: the root's Save writes the whole document once the user is back on it.
+   * Persisting each child step would put the document's own rules in the way of building it — an order's
+   * total cannot match its lines while a line is being added — and leave half-finished documents behind.
+   */
+  stageRoot(resolved: ResolvedEmbeddedAggregate, rootPayload: Record<string, unknown>): void {
     // The payload is the root entity with one branch rebuilt, so it carries the same id it was read by.
-    const saved = await resolved.rootStore.update(rootPayload as unknown as PersistedEntity<BaseEntity>);
-    // The root store reports a failure through its state, not by throwing; the child's store must see it
-    // thrown, or it records a row the server refused — a rule of the owner, say.
-    if (saved === undefined) throw new Error(resolved.rootStore.error() ?? 'The entity containing this one could not be saved.');
+    resolved.rootStore.stage(rootPayload as unknown as PersistedEntity<BaseEntity>);
   }
 
   /**

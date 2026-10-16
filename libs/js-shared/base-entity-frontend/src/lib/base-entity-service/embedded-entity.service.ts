@@ -1,5 +1,4 @@
-import { defer, from, Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { defer, Observable, of } from 'rxjs';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { appendRow, asPersisted, EmbeddedRow, findRow, readRows, removeRow, replaceRow, rowId, writeRows } from '../base-entity-embedded/embedded-aggregate';
 import { EmbeddedAggregateAccessor, ResolvedEmbeddedAggregate } from '../base-entity-embedded/embedded-aggregate.accessor';
@@ -14,8 +13,9 @@ import { BaseEntityService } from './base-entity.service';
  * enough — the child's `BaseEntityListComponent` and `BaseEntityFormComponent`, and the store between them,
  * are the stock ones and know nothing about any of this.
  *
- * A write is a write of the whole root document (see {@link EmbeddedAggregateAccessor.writeRoot}), which is
- * what makes a child's Save persist immediately rather than waiting for the root's form.
+ * A write is a write of the whole root document, **staged** in the root's store rather than persisted (see
+ * {@link EmbeddedAggregateAccessor.stageRoot}): a child's Save, Add or Delete changes the document the root's
+ * form is editing, and the root's own Save — or Cancel — commits or discards all of it at once.
  */
 export class EmbeddedEntityService<Entity extends BaseEntity> implements BaseEntityService<Entity> {
   constructor(
@@ -94,7 +94,8 @@ export class EmbeddedEntityService<Entity extends BaseEntity> implements BaseEnt
 
   private commit<Result>(resolved: ResolvedEmbeddedAggregate, rows: readonly EmbeddedRow[], result: Result): Observable<Result> {
     const rootPayload = writeRows(resolved.rootPayload, resolved.context.path, resolved.context.attrName, rows);
-    return from(this.accessor.writeRoot(resolved, rootPayload)).pipe(map(() => result));
+    this.accessor.stageRoot(resolved, rootPayload);
+    return of(result);
   }
 
   /** A write without an owner would silently go nowhere, so it names the entity instead. */

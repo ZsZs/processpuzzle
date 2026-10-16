@@ -60,8 +60,9 @@ export interface ExcludedRelationship {
  *   row it is **still in that list**.
  * - `COMPONENTS` — the child is created, read, edited and destroyed **through the owner's form alone**; its
  *   own fields take its own Save, the reference array takes the owner's, and removing a row destroys it.
- * - `EMBEDDED_COMPONENTS` — the same, one step further: the child has no endpoint at all, so its Save writes
- *   the owner's document, the owner's form never saves, and the child's screens hang below the owner's route.
+ * - `EMBEDDED_COMPONENTS` — the same, one step further: the child has no endpoint at all, so its Save only
+ *   stages the owner's document, the owner's Save persists it, and the child's screens hang below the
+ *   owner's route.
  *
  * The two containment flows therefore never address the child's own URL. A component's list exists only as the
  * picker the owner's add button opens, and an embedded child has no list at all.
@@ -301,8 +302,9 @@ async function exerciseComponents(
 // region EMBEDDED_COMPONENTS
 /**
  * Containment inside the owner's document. Rows are added, edited and deleted on routes nested below the
- * owner's form, and each of those actions writes the containing document — so no save on the owner's form
- * takes part in this flow, and a reload is what proves the row was persisted.
+ * owner's form; each of those actions only stages the containing document, and the owner's Save persists it.
+ * So every step saves the document (see {@link persistDocument}) before a reload proves the row was persisted
+ * — and a reload without that Save would prove the opposite, that a staged change is discarded.
  */
 async function exerciseEmbeddedComponents(
   context: RelationshipTestContext,
@@ -324,7 +326,26 @@ async function exerciseEmbeddedComponents(
   const ownerForm = formPO(context, ownerDescriptor);
   await ownerForm.navigateToDetail(owner.id);
 
-  await exerciseEmbeddedLevel(context, ownerDescriptor, ownerForm.currentUrl(), tester, [ownerDescriptor.entityName], 1, maxEmbeddedDepth);
+  await exerciseEmbeddedLevel(context, [{ descriptor: ownerDescriptor, url: ownerForm.currentUrl() }], tester, 1, maxEmbeddedDepth);
+}
+
+/** One form of the document being edited: the root entity's, or an embedded row's below it. */
+interface DocumentLevel {
+  descriptor: BaseEntityDescriptor;
+  url: string;
+}
+
+/**
+ * Saves the document a row was just staged in, from the form that is open — the row's owner, the last of
+ * `chain` — out to the root. An embedded owner's Save only stages the next level up in turn, so each form is
+ * saved, returning to the one containing it, until the root's Save persists the whole document.
+ */
+async function persistDocument(context: RelationshipTestContext, chain: DocumentLevel[]): Promise<void> {
+  for (let index = chain.length - 1; index >= 0; index--) {
+    const form = formPO(context, chain[index].descriptor);
+    if (index > 0) await form.saveReturningTo(chain[index - 1].url);
+    else await form.save();
+  }
 }
 
 /**
@@ -333,14 +354,15 @@ async function exerciseEmbeddedComponents(
  */
 async function exerciseEmbeddedLevel(
   context: RelationshipTestContext,
-  ownerDescriptor: BaseEntityDescriptor,
-  ownerUrl: string,
+  /** The owner of these rows, last, and the forms containing it, outermost first. */
+  chain: DocumentLevel[],
   tester: RelationshipControlTester,
-  breadcrumbTrail: string[],
   depth: number,
   maxDepth: number,
 ): Promise<void> {
   const { page, routes, descriptorMap } = context;
+  const { descriptor: ownerDescriptor, url: ownerUrl } = chain[chain.length - 1];
+  const breadcrumbTrail = chain.map((level) => level.descriptor.entityName);
   const childDescriptor = descriptorMap.get(tester.linkedEntityName() ?? '');
   if (!childDescriptor) return;
 
@@ -367,8 +389,9 @@ async function exerciseEmbeddedLevel(
   await fieldset.assertRow(rowName);
   await fieldset.assertRowCount(rowsBefore + 1);
 
-  // Reload from the URL: the row has no endpoint of its own, so seeing it again proves the owner's document
-  // carries it — and that a deep link to this level resolves.
+  // Reload from the URL once the document is saved: the row has no endpoint of its own, so seeing it again
+  // proves the owner's document carries it — and that a deep link to this level resolves.
+  await persistDocument(context, chain);
   await page.goto(ownerUrl);
   await fieldset.assertRow(rowName);
 
@@ -377,10 +400,10 @@ async function exerciseEmbeddedLevel(
   await page.waitForURL((url) => url.toString().startsWith(`${ownerUrl}/`) && url.toString().endsWith('/details'));
   await childForm.assertFieldValues(childData, {}, contextOptions);
 
-  // Edit: the change is made here, so the Save on this form is the effective one — and it writes the
-  // containing document, which is why the owner's form never saves in this flow and the reload below is what
-  // proves the edit was persisted. The identification attribute is left alone, so the row keeps its address —
-  // which is also why an entity identified by its only editable attribute has nothing left to change here.
+  // Edit: the change is made here, and this form's Save stages it in the containing document; the document's
+  // Save persists it, and the reload below is what proves that. The identification attribute is left alone, so
+  // the row keeps its address — which is also why an entity identified by its only editable attribute has
+  // nothing left to change here.
   const updatedChildData = buildUpdateDataForContext(
     { descriptor: childDescriptor, descriptorMap, uniqueSuffix: `${context.suffix}-d${depth}`, fixtureOverrides: context.options.fixtureOverrides },
     childData,
@@ -388,6 +411,7 @@ async function exerciseEmbeddedLevel(
   if (differsFrom(updatedChildData, childData)) {
     await childForm.fillForm(updatedChildData, {}, {}, contextOptions);
     await childForm.saveReturningTo(ownerUrl);
+    await persistDocument(context, chain);
     await page.goto(ownerUrl);
     await fieldset.openRow(rowName);
     await page.waitForURL((url) => url.toString().startsWith(`${ownerUrl}/`) && url.toString().endsWith('/details'));
@@ -408,14 +432,15 @@ async function exerciseEmbeddedLevel(
         });
         continue;
       }
-      await exerciseEmbeddedLevel(context, childDescriptor, childUrl, nestedTester, [...breadcrumbTrail, childDescriptor.entityName], depth + 1, maxDepth);
+      await exerciseEmbeddedLevel(context, [...chain, { descriptor: childDescriptor, url: childUrl }], nestedTester, depth + 1, maxDepth);
     }
   }
 
-  // Delete: reaches the containing document straight away, so the reload below is the persistence check.
+  // Delete: staged like every other change, so the document is saved before the reload checks persistence.
   await page.goto(ownerUrl);
   await fieldset.removeRow(rowName);
   await fieldset.assertNoRow(rowName);
+  await persistDocument(context, chain);
   await page.goto(ownerUrl);
   await fieldset.assertNoRow(rowName);
   await fieldset.assertRowCount(rowsBefore);

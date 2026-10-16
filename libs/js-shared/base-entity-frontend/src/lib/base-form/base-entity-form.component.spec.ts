@@ -62,6 +62,33 @@ describe('GenericEntityFormComponent', () => {
       expect(component.onCancel).toHaveBeenCalled();
     });
 
+    /** An embedded child's Save only staged this document; abandoning the form must not leave that behind. */
+    it('onCancel() discards the embedded-child changes staged in the document', async () => {
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      vi.spyOn(store, 'reload').mockResolvedValue(testEntity);
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+
+      await component.onCancel();
+
+      expect(store.reload).toHaveBeenCalledWith(component.entityId());
+      expect(formNavigator.navigateBack).toHaveBeenCalled();
+    });
+
+    it('onCancel() re-reads nothing when no child change is staged', async () => {
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      vi.spyOn(store, 'reload');
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+
+      await component.onCancel();
+
+      expect(store.reload).not.toHaveBeenCalled();
+    });
+
     it('onSubmit(), when its an existing object updates it in store.', async () => {
       // SETUP:
       const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);

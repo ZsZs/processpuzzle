@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { EntityKeyResolver, entityKeyById, EntityStoreHandle } from './base-entity.store';
+import { unstage } from './stageEntity';
 
 export const deleteEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>, keyOf: EntityKeyResolver<Entity> = entityKeyById) => {
   return async (id: string): Promise<void> => {
@@ -17,6 +18,7 @@ export const deleteEntity = <Entity extends BaseEntity>(store: EntityStoreHandle
         currentId: undefined,
         entities: remainingEntities,
         selectedEntities: remainingSelectedEntities,
+        stagedIds: unstage(store, id),
         isLoading: false,
       });
     } catch (error) {

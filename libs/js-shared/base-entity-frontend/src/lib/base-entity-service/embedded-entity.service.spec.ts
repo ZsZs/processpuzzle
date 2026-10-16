@@ -25,7 +25,7 @@ function anAggregate() {
 
 /**
  * Stands in for the accessor, which is the piece that knows an embedded write is a write of the containing
- * document. `writeRoot` records what would have been persisted.
+ * document. `stageRoot` records what would have been staged.
  */
 function setupService({ rootPayload = anAggregate() as unknown, path = [] as { attrName: string; index: number }[], attrName = 'embeddedComponents', referenceIdField = 'id', resolvable = true } = {}) {
   const written: Record<string, unknown>[] = [];
@@ -37,7 +37,7 @@ function setupService({ rootPayload = anAggregate() as unknown, path = [] as { a
 
   const accessor = {
     resolve: vi.fn(() => (resolvable ? resolved : undefined)),
-    writeRoot: vi.fn(async (_resolved: ResolvedEmbeddedAggregate, payload: Record<string, unknown>) => {
+    stageRoot: vi.fn((_resolved: ResolvedEmbeddedAggregate, payload: Record<string, unknown>) => {
       written.push(payload);
     }),
   } as unknown as EmbeddedAggregateAccessor;

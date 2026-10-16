@@ -8,6 +8,7 @@ import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { BaseEntityDescriptor } from '../../base-entity/base-entity.descriptor';
 import { EmbeddedRow } from '../../base-entity-embedded/embedded-aggregate';
+import { EmbeddedAggregateAccessor } from '../../base-entity-embedded/embedded-aggregate.accessor';
 import type { EmbeddedBreadcrumbLevel } from '../../base-entity-embedded/embedded-route-context';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../../base-entity-facade/base-entity-facade-registry';
 import { BaseFormNavigatorSingletonStore } from '../../base-form-navigator/base-form-navigator.store';
@@ -65,6 +66,7 @@ async function setupList({
   breadcrumb = [],
   navigator,
   dialog,
+  stagedDocument,
 }: {
   config?: BaseEntityAttrDescriptor;
   descriptor?: BaseEntityDescriptor;
@@ -77,6 +79,8 @@ async function setupList({
   breadcrumb?: EmbeddedBreadcrumbLevel[];
   navigator?: Partial<Record<'navigateToEmbedded', unknown>>;
   dialog?: MockProxy<MatDialog>;
+  /** Set, the containing document is resolved, and says whether it holds staged child changes. */
+  stagedDocument?: boolean;
 } = {}) {
   const entity = new TestEntity('parent-1', 'Parent');
   // TestEntity mints an id of its own, so an unsaved owner has to have it cleared.
@@ -85,6 +89,11 @@ async function setupList({
   // The stub stands in for the whole navigator, so it has to carry the breadcrumb the control reads as well.
   if (navigator) providers.push({ provide: BaseFormNavigatorSingletonStore, useValue: { breadcrumb: signal(breadcrumb), ...navigator } });
   if (dialog) providers.push({ provide: MatDialog, useValue: dialog });
+  if (stagedDocument !== undefined) {
+    const rootStore = { entities: signal([]), hasStagedChanges: vi.fn((id: string) => stagedDocument && id === 'parent-1') };
+    const accessor = { rootStoreFor: () => rootStore, resolve: () => ({ context: { rootId: 'parent-1' }, rootStore }) };
+    providers.push({ provide: EmbeddedAggregateAccessor, useValue: accessor });
+  }
 
   const harness = await setupFormControlTest(EmbeddedComponentsListComponent, config, entity, providers);
   return { ...harness, entity, store, component: harness.component as EmbeddedComponentsListComponent<TestEntity> };
@@ -325,7 +334,7 @@ describe('EmbeddedComponentsListComponent', () => {
   });
 
   /**
-   * A child's save rewrites the containing document, so the owner's form value has to follow — otherwise the
+   * A child's save restages the containing document, so the owner's form value has to follow — otherwise the
    * owner's own save would merge the array as it looked when the form was built back over the saved one.
    */
   it('mirrors the rows into the attribute’s control', async () => {
@@ -336,6 +345,30 @@ describe('EmbeddedComponentsListComponent', () => {
     fixture.detectChanges();
 
     expect(component.formGroup.get('embeddedComponents')?.value).toEqual([{ id: 'a' }, { id: 'b' }]);
+    expect(component.formGroup.get('embeddedComponents')?.dirty).toBe(false);
+  });
+
+  /**
+   * A child's Save only stages the containing document; the owner's Save persists it. So rows a child has
+   * changed are an edit the owner's form still carries, and its Save has to be offered.
+   */
+  it('dirties the attribute’s control while the containing document holds staged child changes', async () => {
+    const store = makeEmbeddedStore([{ id: 'a' }]);
+    const { component, fixture } = await setupList({ store, stagedDocument: true });
+
+    store.entities.set([{ id: 'a' }, { id: 'b' }]);
+    fixture.detectChanges();
+
+    expect(component.formGroup.get('embeddedComponents')?.dirty).toBe(true);
+  });
+
+  it('leaves the control pristine when the rows are merely the ones the server holds', async () => {
+    const store = makeEmbeddedStore([{ id: 'a' }]);
+    const { component, fixture } = await setupList({ store, stagedDocument: false });
+
+    store.entities.set([{ id: 'a' }, { id: 'b' }]);
+    fixture.detectChanges();
+
     expect(component.formGroup.get('embeddedComponents')?.dirty).toBe(false);
   });
 });
