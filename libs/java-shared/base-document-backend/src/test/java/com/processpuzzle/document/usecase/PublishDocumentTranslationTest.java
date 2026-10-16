@@ -21,6 +21,8 @@ import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundE
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -48,6 +50,7 @@ class PublishDocumentTranslationTest {
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
     private List<Object> publishedEvents;
+    private List<PlatformEvent> facts;
 
     @BeforeEach
     void setUp() {
@@ -55,6 +58,7 @@ class PublishDocumentTranslationTest {
         draftRepository = mock(DocumentDraftRepository.class);
         publishedRepository = mock(PublishedDocumentRepository.class);
         publishedEvents = new ArrayList<>();
+        facts = new ArrayList<>();
     }
 
     @Test
@@ -118,6 +122,44 @@ class PublishDocumentTranslationTest {
     }
 
     @Test
+    void publishingTheDefaultTranslationIsAStateChangeOfTheDocument() {
+        stub(document(), draftAtRevision(2L, List.of()), null);
+
+        publisher(permitAll()).execute(ORG, ID, "en");
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+            assertThat(fact.orgKey()).isEqualTo(ORG);
+            assertThat(fact.subjectType()).isEqualTo("document");
+            assertThat(fact.subjectId()).isEqualTo(ID);
+            assertThat(fact.state()).isEqualTo("PUBLISHED");
+            assertThat(fact.payload()).containsEntry("slug", "getting-started").containsEntry("sourceLocale", "en");
+        });
+    }
+
+    @Test
+    void republishingCurrentContentChangesNoState() {
+        DocumentDraft draft = draftAtRevision(3L, List.of());
+        stub(document(), draft, new PublishedDocument(ORG, ID, "en", draft.getContent(), 3L,
+                java.time.Instant.now(), "ada"));
+
+        publisher(permitAll()).execute(ORG, ID, "en");
+
+        assertThat(facts).isEmpty();
+    }
+
+    @Test
+    void publishingAnotherTranslationIsNotTheDocumentsState() {
+        Document document = document();
+        DocumentDraft german = new DocumentDraft(ORG, ID, "de", DocumentContent.of(List.of()), 1L);
+        stub(document, german, null);
+
+        publisher(permitAll()).execute(ORG, ID, "de");
+
+        assertThat(facts).isEmpty();
+    }
+
+    @Test
     void refusesToPublishContentThatDoesNotValidate() {
         // A widget bound to a port that no longer exists. Publishing it would put a page in front of
         // readers that cannot render, so this is a conflict rather than a warning.
@@ -131,6 +173,7 @@ class PublishDocumentTranslationTest {
                 .hasMessageContaining("cannot be published");
         verify(publishedRepository, never()).save(any());
         assertThat(publishedEvents).isEmpty();
+        assertThat(facts).isEmpty();
     }
 
     @Test
@@ -176,7 +219,8 @@ class PublishDocumentTranslationTest {
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
                 TestGuards.with(policy),
-                events);
+                events,
+                TestFacts.recordingInto(facts));
     }
 
     private void stub(Document document, DocumentDraft draft, PublishedDocument existingSnapshot) {

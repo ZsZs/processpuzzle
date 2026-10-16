@@ -1,6 +1,11 @@
 # The testbed tenant's event catalog. Each SYSTEM event names a platform fact about an entity type —
 # its definition code, as in base-entity's seed — and the workflows in base-workflow's seed refer to
 # them by id. order-fulfillment-workflow starts on OrderCreatedEvent.
+#
+# `parameters` declare what an occurrence carries (docs/event-parameters.md). A SYSTEM event always carries
+# its `subject` without declaring it, and a declared parameter takes the payload attribute of its name — so
+# it has to be an attribute of the subject's entity. A thrown event's parameters are filled from the throwing
+# run's context by name.
 event-definitions:
   - id: OrderCreatedEvent
     name: Order created
@@ -8,6 +13,9 @@ event-definitions:
     kind: SYSTEM
     subjectType: order
     action: CREATED
+    parameters:
+      - { name: orderNumber,  type: STRING, required: true }
+      - { name: customerName, type: STRING }
 
   - id: OrderConfirmedEvent
     name: Order confirmed
@@ -42,8 +50,16 @@ event-definitions:
     name: Invoice requested
     description: An approved Order asks for its invoice.
     kind: MESSAGE
+    parameters:
+      - { name: order,        type: ENTITY_REF, entityType: order, required: true }
+      - { name: orderNumber,  type: STRING,                        required: true }
+      - { name: customerName, type: STRING }
 
   - id: InvoiceIssued
     name: Invoice issued
     description: The invoice of an Order was issued.
     kind: MESSAGE
+    parameters:
+      - { name: order,         type: ENTITY_REF, entityType: order,    required: true }
+      - { name: invoice,       type: ENTITY_REF, entityType: document }
+      - { name: invoiceNumber, type: STRING,                           required: true }

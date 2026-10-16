@@ -219,6 +219,8 @@ workflows:
     # workflow throws InvoiceRequested — a MESSAGE of base-event's catalog, correlated on the order's
     # id — which starts invoicing-workflow; then it waits until InvoiceIssued comes back for the same
     # order before delivery can be confirmed. The catch copies the invoice number into the context.
+    # InvoiceRequested's `order` parameter is this workflow's `new_order`, so the throw names it; its
+    # other parameters are filled by name.
     events:
       - id: request-invoice
         name: Invoice requested
@@ -227,6 +229,7 @@ workflows:
         dependsOn: [ approve-shipment ]
         correlationKey: orderId
         payloadMapping:
+          order: $.new_order
           orderNumber: $.orderNumber
           customerName: $.customerName
 

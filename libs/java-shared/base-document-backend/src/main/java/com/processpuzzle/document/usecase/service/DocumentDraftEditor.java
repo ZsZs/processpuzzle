@@ -6,6 +6,9 @@ import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentStatus;
+import com.processpuzzle.document.domain.PublishedDocument;
+import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.DocumentValidationProblem;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
@@ -33,17 +36,23 @@ public class DocumentDraftEditor {
 
     private final DocumentRepository documentRepository;
     private final DocumentDraftRepository draftRepository;
+    private final PublishedDocumentRepository publishedRepository;
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public DocumentDraftEditor(DocumentRepository documentRepository,
                                DocumentDraftRepository draftRepository,
+                               PublishedDocumentRepository publishedRepository,
                                DocumentReferentialIntegrityChecker integrityChecker,
-                               DocumentGuard guard) {
+                               DocumentGuard guard,
+                               DocumentPlatformFacts facts) {
         this.documentRepository = documentRepository;
         this.draftRepository = draftRepository;
+        this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.guard = guard;
+        this.facts = facts;
     }
 
     /**
@@ -63,8 +72,19 @@ public class DocumentDraftEditor {
             throw new IllegalArgumentException("Invalid document content: " + blocking);
         }
 
+        // The first edit after a publish is a state change of the document when this is its default
+        // translation; later edits only move the revision further and change nothing.
+        Long publishedRevision = locale.equals(document.getSourceLocale())
+                ? publishedRepository.findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
+                        .map(PublishedDocument::getPublishedRevision).orElse(null)
+                : null;
+        DocumentStatus before = DocumentStatus.derive(draft.getRevision(), publishedRevision);
         draft.replaceBlocks(candidate);
-        return draftRepository.save(draft);
+        DocumentDraft saved = draftRepository.save(draft);
+        if (locale.equals(document.getSourceLocale())) {
+            facts.stateChanged(document, before, DocumentStatus.derive(saved.getRevision(), publishedRevision));
+        }
+        return saved;
     }
 
     /** Loads a document and rejects the call unless the principal may edit it. */

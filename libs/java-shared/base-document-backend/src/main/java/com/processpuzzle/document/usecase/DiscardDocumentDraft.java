@@ -4,12 +4,14 @@ import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentStatus;
 import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,17 +32,20 @@ public class DiscardDocumentDraft {
     private final PublishedDocumentRepository publishedRepository;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public DiscardDocumentDraft(DocumentRepository repository,
                                 DocumentDraftRepository draftRepository,
                                 PublishedDocumentRepository publishedRepository,
                                 DocumentTranslationAssembler assembler,
-                                DocumentGuard guard) {
+                                DocumentGuard guard,
+                                DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.assembler = assembler;
         this.guard = guard;
+        this.facts = facts;
     }
 
     public DocumentTranslationView execute(String orgKey, String documentId, String locale) {
@@ -54,8 +59,12 @@ public class DiscardDocumentDraft {
                 .findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
                 .orElseThrow(() -> DocumentPublishingConflictException.nothingToRevertTo(documentId, locale));
 
+        DocumentStatus before = DocumentStatus.derive(draft.getRevision(), snapshot.getPublishedRevision());
         draft.revertTo(snapshot.getContent(), snapshot.getPublishedRevision());
         DocumentDraft reverted = draftRepository.save(draft);
+        if (locale.equals(document.getSourceLocale())) {
+            facts.stateChanged(document, before, DocumentStatus.PUBLISHED);
+        }
 
         return DocumentTranslationView.ofDraft(reverted, snapshot, assembler.sourceRevisionOf(document));
     }

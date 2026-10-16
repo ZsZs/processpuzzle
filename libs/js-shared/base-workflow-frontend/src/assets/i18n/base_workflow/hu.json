@@ -403,7 +403,9 @@
       "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
       "unassigned": "nincs hozzárendelve",
       "assigned_to": "Hozzárendelve",
-      "waiting_for": "Várakozik:"
+      "waiting_for": "Várakozik:",
+      "context": "Kontextusváltozók",
+      "context_none": "Ennek a futásnak nincsenek kontextusváltozói."
     }
   },
   "artifact_instance": {

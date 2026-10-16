@@ -115,7 +115,15 @@ export class ArtifactInstance implements BaseEntity {
   artifactDefinitionId: string;
   name: string;
   type: ArtifactType | undefined;
+  /**
+   * The record this artifact is in this run — an entity's or a document's. Bound by the run from an
+   * `ENTITY_REF` event parameter or a task completion naming the artifact's object name; never re-bound.
+   */
   entityId?: string;
+  /** The bound record's type — the base-entity definition code, or `document`. Server-set. */
+  entityType?: string;
+  /** The bound record's name — its order number — resolved per response; the id when nameless. Server-set. */
+  entityLabel?: string;
   stateMachineInstanceId?: string;
   currentState?: string;
   updatedAt?: string;
@@ -126,6 +134,8 @@ export class ArtifactInstance implements BaseEntity {
     this.name = init.name ?? '';
     this.type = init.type;
     this.entityId = init.entityId;
+    this.entityType = init.entityType;
+    this.entityLabel = init.entityLabel;
     this.stateMachineInstanceId = init.stateMachineInstanceId;
     this.currentState = init.currentState;
     this.updatedAt = init.updatedAt;
@@ -153,6 +163,11 @@ export class EventInstance implements BaseEntity {
   payload?: PropertyMap;
   /** CATCH: what the payload mapping added to the context. */
   contextContribution?: PropertyMap;
+  /**
+   * The parameters the occurrence carried, by name (THROW: sent, CATCH: received). Server-set; also in the
+   * context, namespaced under {@link eventUseId}.
+   */
+  parameters?: PropertyMap;
   /** Timer catches — when the timer fires next. */
   dueAt?: string;
   /** Timer catches — how many times it has fired; a CYCLE fires more than once. */
@@ -170,6 +185,7 @@ export class EventInstance implements BaseEntity {
     this.occurredAt = init.occurredAt;
     this.payload = init.payload;
     this.contextContribution = init.contextContribution;
+    this.parameters = init.parameters;
     this.dueAt = init.dueAt;
     this.fireCount = init.fireCount;
   }

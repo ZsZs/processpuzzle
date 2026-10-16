@@ -1,15 +1,10 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { EVENT_DEFINITION_I18N_SCOPE } from '../base-event.i18n';
 import { EventAction, EventKind } from './event-definition';
+import { EVENT_DEFINITION_ENTITY_NAME, EVENT_PARAMETER_ENTITY_NAME } from './event-entity-names';
+import { EVENT_PARAMETER_ID_FIELD } from './event-parameter.descriptors';
 
-/**
- * Entity name of the catalog entry. Other features name it as a string — base-workflow's start event points
- * its `eventType` `FOREIGN_KEY` at it — and resolve it through `BASE_ENTITY_FACADE_REGISTRY`, so this value
- * is a cross-feature contract: renaming it silently empties their pickers.
- *
- * The route segment is `snakeCaseName()` of it, `event-definition`.
- */
-export const EVENT_DEFINITION_ENTITY_NAME = 'Event Definition';
+export { EVENT_DEFINITION_ENTITY_NAME };
 
 function createEventDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // Author-chosen and the record's identity: other features store it, so it is the link into the form and
@@ -44,12 +39,19 @@ function createEventDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
   releaseStateAttr.disabled = true;
 
+  // Containment: the contract nests the parameters inside the definition and gives them no endpoint of
+  // their own, so they travel inside this entity's payload and are saved with it.
+  const parametersAttr = new BaseEntityAttrDescriptor('parameters', FormControlType.EMBEDDED_COMPONENTS, 'Parameters');
+  parametersAttr.linkedEntityType = EVENT_PARAMETER_ENTITY_NAME;
+  parametersAttr.referenceIdField = EVENT_PARAMETER_ID_FIELD;
+  parametersAttr.hideInTable = true;
+
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, kindAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const subjectRow = new FlexboxDescriptor([subjectTypeAttr, actionAttr, stateAttr], FlexDirection.ROW);
   subjectRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, subjectRow, descriptionAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, subjectRow, descriptionAttr, parametersAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

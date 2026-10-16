@@ -16,8 +16,25 @@
       "subjectType": "Uniquement pour les événements SYSTEM : le code du type d'entité dont les enregistrements émettent l'événement, p. ex. order.",
       "action": "Uniquement pour les événements SYSTEM : ce qui arrive à l'enregistrement : CREATED, UPDATED, DELETED ou STATE_CHANGED.",
       "state": "Uniquement pour STATE_CHANGED : l'état dans lequel entre l'enregistrement, p. ex. CONFIRMED.",
-      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système."
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
+      "parameters": "Les valeurs que porte chaque occurrence de l'événement, p. ex. une commande et son numéro. Les workflows les lisent par leur nom."
     },
-    "releaseState": "Publication"
+    "releaseState": "Publication",
+    "parameters": "Paramètres"
+  },
+  "event_parameter": {
+    "_self": "Paramètre",
+    "name": "Nom",
+    "type": "Type",
+    "entityType": "Type d'entité",
+    "required": "Obligatoire",
+    "description": "Description",
+    "_tooltips": {
+      "name": "Unique au sein de l'événement ; lettres, chiffres et _, p. ex. invoiceNumber. Un événement SYSTEM le remplit avec l'attribut du même nom de l'enregistrement. Le nom subject est réservé.",
+      "type": "Le genre de valeur : STRING, NUMBER, BOOLEAN, DATE, ou ENTITY_REF pour une référence à un enregistrement.",
+      "entityType": "Pour ENTITY_REF uniquement : le code du type d'entité auquel appartient l'enregistrement, p. ex. order ou document.",
+      "required": "Si chaque occurrence de l'événement doit porter une valeur pour ce paramètre.",
+      "description": "Une note sur la signification de la valeur ; les utilisateurs ne la voient pas."
+    }
   }
 }

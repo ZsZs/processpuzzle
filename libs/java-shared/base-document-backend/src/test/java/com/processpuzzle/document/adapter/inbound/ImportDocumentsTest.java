@@ -3,6 +3,7 @@ package com.processpuzzle.document.adapter.inbound;
 import com.processpuzzle.document.usecase.DocumentCommand;
 import com.processpuzzle.document.usecase.ImportDocuments;
 import com.processpuzzle.document.usecase.ImportOutcome;
+import com.processpuzzle.document.usecase.TestFacts;
 import com.processpuzzle.document.usecase.TestGuards;
 import com.processpuzzle.document.usecase.TestPolicies;
 import com.processpuzzle.document.domain.BlockKind;
@@ -22,6 +23,8 @@ import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,6 +34,7 @@ import org.mockito.ArgumentCaptor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +55,7 @@ class ImportDocumentsTest {
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
+    private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -90,6 +95,11 @@ class ImportDocumentsTest {
         assertThat(saved.getValue().getSubject()).isEqualTo("Onboarding");
 
         assertThat(savedDrafts()).extracting(DocumentDraft::getLocale).containsExactlyInAnyOrder("en", "de");
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.CREATED);
+            assertThat(fact.subjectType()).isEqualTo("document");
+            assertThat(fact.payload()).containsEntry("slug", "getting-started");
+        });
     }
 
     @Test
@@ -179,6 +189,35 @@ class ImportDocumentsTest {
         assertThat(existing.getTitle()).isEqualTo("Renamed");
         assertThat(english.getBlocks()).extracting(DocumentBlock::id).containsExactly("fresh");
         assertThat(english.getRevision()).isEqualTo(2L);
+        assertThat(facts).isEmpty();
+    }
+
+    @Test
+    void reimportingOverAPublishedDocumentLeavesItWithDraftChanges() throws IOException {
+        Document existing = new Document(ORG, ID, "getting-started", "Original", "en", "ada");
+        DocumentDraft english = new DocumentDraft(ORG, ID, "en", DocumentContent.of(List.of(text("old"))), null);
+        when(repository.findByOrgKeyAndSlug(ORG, "getting-started")).thenReturn(Optional.of(existing));
+        when(draftRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(english));
+        when(publishedRepository.findByOrgKeyAndDocumentId(ORG, ID)).thenReturn(List.of(new PublishedDocument(
+                ORG, ID, "en", english.getContent(), 1L, java.time.Instant.now(), "ada")));
+
+        importDocuments(TestPolicies.permitAll()).execute(ORG, yaml("""
+                documents:
+                  - slug: getting-started
+                    title: Original
+                    sourceLocale: en
+                    translations:
+                      - locale: en
+                        blocks:
+                          - id: fresh
+                            kind: TEXT
+                """));
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+            assertThat(fact.subjectId()).isEqualTo(ID);
+            assertThat(fact.state()).isEqualTo("PUBLISHED_WITH_DRAFT_CHANGES");
+        });
     }
 
     @Test
@@ -536,7 +575,7 @@ class ImportDocumentsTest {
     // region fixtures
     private ImportDocuments importDocuments(DocumentAccessPolicy policy) {
         return new ImportDocuments(repository, draftRepository, publishedRepository, new DocumentReferentialIntegrityChecker(),
-                TestGuards.with(policy));
+                TestGuards.with(policy), TestFacts.recordingInto(facts));
     }
 
     private void importSilently(String yaml) {

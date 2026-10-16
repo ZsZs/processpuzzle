@@ -13,10 +13,13 @@ import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsExc
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +39,7 @@ class CreateDocumentTest {
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
+    private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -64,6 +68,19 @@ class CreateDocumentTest {
         // The source locale is based on nothing, which is what keeps it from ever reporting itself stale.
         assertThat(saved.getValue().getBasedOnRevision()).isNull();
         verify(publishedRepository, never()).save(any());
+    }
+
+    @Test
+    void publishesACreatedFactForTheNewDocument() {
+        DocumentDetails details = create(TestPolicies.permitAll()).execute(ORG, input());
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.CREATED);
+            assertThat(fact.orgKey()).isEqualTo(ORG);
+            assertThat(fact.subjectType()).isEqualTo("document");
+            assertThat(fact.subjectId()).isEqualTo(details.document().getId());
+            assertThat(fact.state()).isNull();
+        });
     }
 
     @Test
@@ -114,6 +131,7 @@ class CreateDocumentTest {
         assertThatThrownBy(() -> create(TestPolicies.permitAll()).execute(ORG, input()))
                 .isInstanceOf(DocumentSlugAlreadyExistsException.class);
         verify(repository, never()).save(any());
+        assertThat(facts).isEmpty();
     }
 
     @Test
@@ -164,7 +182,8 @@ class CreateDocumentTest {
                 draftRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.with(policy));
+                TestGuards.with(policy),
+                TestFacts.recordingInto(facts));
     }
 
 

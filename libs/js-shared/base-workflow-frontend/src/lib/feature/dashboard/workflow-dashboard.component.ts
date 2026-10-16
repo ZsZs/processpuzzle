@@ -5,6 +5,7 @@ import { INBOX_SCOPES, InboxScope } from '../../domain/dashboard/dashboard-task'
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
 import { ProcessBoardComponent } from './process-board.component';
 import { ProcessDiagramComponent } from './process-diagram.component';
+import { RunContextComponent } from './run-context.component';
 import { TaskDetailComponent } from './task-detail.component';
 import { TaskListComponent } from './task-list.component';
 
@@ -29,8 +30,8 @@ import { TaskListComponent } from './task-list.component';
  *
  * The Process scope lays out differently on purpose: a four-column board squeezed into a third of the width
  * is four unreadable columns, so it takes the full row and the task detail moves below it, with the run's
- * workflow diagram above it — see `ProcessDiagramComponent`. The other two are
- * a list beside a detail — the standard two-pane inbox.
+ * workflow diagram above it — see `ProcessDiagramComponent` — and its context variables below it — see
+ * `RunContextComponent`. The other two are a list beside a detail — the standard two-pane inbox.
  *
  * **A title of its own, unless the host already names it.** Mounted as a page — where a task dashboard button
  * leads — the screen says what it is. A host that shows it as one tab among others names it in the tab bar,
@@ -43,7 +44,7 @@ import { TaskListComponent } from './task-list.component';
 @Component({
   selector: 'pp-workflow-dashboard',
   standalone: true,
-  imports: [TranslocoPipe, TaskListComponent, TaskDetailComponent, ProcessBoardComponent, ProcessDiagramComponent],
+  imports: [TranslocoPipe, TaskListComponent, TaskDetailComponent, ProcessBoardComponent, ProcessDiagramComponent, RunContextComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dashboard">
@@ -85,6 +86,7 @@ import { TaskListComponent } from './task-list.component';
         @if (isProcess()) {
           <pp-process-diagram />
           <pp-process-board />
+          <pp-run-context />
         } @else {
           <pp-task-list />
         }

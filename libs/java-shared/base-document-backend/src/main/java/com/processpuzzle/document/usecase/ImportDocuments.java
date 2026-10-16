@@ -6,8 +6,11 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentStatus;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,17 +48,20 @@ public class ImportDocuments {
     private final PublishedDocumentRepository publishedRepository;
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public ImportDocuments(DocumentRepository repository,
                            DocumentDraftRepository draftRepository,
                            PublishedDocumentRepository publishedRepository,
                            DocumentReferentialIntegrityChecker integrityChecker,
-                           DocumentGuard guard) {
+                           DocumentGuard guard,
+                           DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.guard = guard;
+        this.facts = facts;
     }
 
     @Transactional
@@ -135,27 +141,36 @@ public class ImportDocuments {
         byLocale.forEach((locale, content) -> draftRepository.save(new DocumentDraft(
                 orgKey, documentId, locale, content,
                 locale.equals(entry.properties().sourceLocale()) ? null : sourceRevision)));
+        facts.created(document);
     }
 
     private void applyToExisting(String orgKey, DocumentCommand entry) {
         Document existing = repository.findByOrgKeyAndSlug(orgKey, entry.properties().slug()).orElseThrow();
-        entry.properties().applyTo(existing);
-        repository.save(existing);
-
         Map<String, DocumentDraft> draftsByLocale = new HashMap<>();
         for (DocumentDraft draft : draftRepository.findByOrgKeyAndDocumentId(orgKey, existing.getId())) {
             draftsByLocale.put(draft.getLocale(), draft);
         }
+        List<PublishedDocument> snapshots = publishedRepository.findByOrgKeyAndDocumentId(orgKey, existing.getId());
+        DocumentStatus before = DocumentPlatformFacts.defaultStatusOf(existing, draftsByLocale.values(), snapshots);
+
+        entry.properties().applyTo(existing);
+        repository.save(existing);
+
+        List<DocumentDraft> written = new ArrayList<>(draftsByLocale.values());
         contentByLocale(entry).forEach((locale, content) -> {
             DocumentDraft draft = draftsByLocale.get(locale);
             if (draft == null) {
-                draftRepository.save(new DocumentDraft(orgKey, existing.getId(), locale, content,
-                        locale.equals(entry.properties().sourceLocale()) ? null : sourceRevisionOf(draftsByLocale, entry)));
+                DocumentDraft added = new DocumentDraft(orgKey, existing.getId(), locale, content,
+                        locale.equals(entry.properties().sourceLocale()) ? null : sourceRevisionOf(draftsByLocale, entry));
+                draftRepository.save(added);
+                written.add(added);
             } else {
                 draft.replaceBlocks(content.blocks());
                 draftRepository.save(draft);
             }
         });
+        // Re-importing over a published document leaves unpublished changes behind — a state change.
+        facts.stateChanged(existing, before, DocumentPlatformFacts.defaultStatusOf(existing, written, snapshots));
     }
 
     private static Long sourceRevisionOf(Map<String, DocumentDraft> draftsByLocale, DocumentCommand entry) {

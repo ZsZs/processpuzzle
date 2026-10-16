@@ -16,8 +16,25 @@
       "subjectType": "Csak SYSTEM eseményeknél: annak az entitástípusnak a kódja, amelynek rekordjai kiváltják az eseményt, pl. order.",
       "action": "Csak SYSTEM eseményeknél: mi történik a rekorddal: CREATED, UPDATED, DELETED vagy STATE_CHANGED.",
       "state": "Csak STATE_CHANGED esetén: az állapot, amelybe a rekord kerül, pl. CONFIRMED.",
-      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be."
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
+      "parameters": "Az esemény minden előfordulásában szereplő értékek, pl. egy megrendelés és annak száma. A munkafolyamatok név szerint olvassák őket."
     },
-    "releaseState": "Kiadás"
+    "releaseState": "Kiadás",
+    "parameters": "Paraméterek"
+  },
+  "event_parameter": {
+    "_self": "Paraméter",
+    "name": "Név",
+    "type": "Típus",
+    "entityType": "Entitástípus",
+    "required": "Kötelező",
+    "description": "Leírás",
+    "_tooltips": {
+      "name": "Az eseményen belül egyedi; betűk, számjegyek és _, pl. invoiceNumber. SYSTEM eseménynél a rekord azonos nevű attribútumából töltődik. A subject név foglalt.",
+      "type": "Az érték fajtája: STRING, NUMBER, BOOLEAN, DATE, vagy ENTITY_REF egy rekordra mutató hivatkozáshoz.",
+      "entityType": "Csak ENTITY_REF esetén: annak az entitástípusnak a kódja, amelyhez a rekord tartozik, pl. order vagy document.",
+      "required": "Az esemény minden előfordulásának tartalmaznia kell-e értéket ehhez a paraméterhez.",
+      "description": "Megjegyzés arról, mit jelent az érték; a felhasználók nem látják."
+    }
   }
 }
