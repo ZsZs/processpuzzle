@@ -31,4 +31,20 @@ describe('WorkflowRoleDescriptionSource', () => {
     expect(descriptions.get('clerk')).toEqual({ name: 'Order Clerk', description: ROLE_DEFINITION_DTO.description });
     expect(descriptions.get('manager')).toEqual({ name: 'Order Manager', description: 'Approves orders for shipment.' });
   });
+
+  it('reads a paged answer', async () => {
+    const pending = firstValueFrom(source.describeRoles());
+
+    controller.expectOne(`${serviceRoot}/roles`).flush({ content: [ROLE_DEFINITION_DTO], number: 0, size: 20, totalElements: 1, totalPages: 1 });
+
+    expect([...(await pending).keys()]).toEqual(['clerk']);
+  });
+
+  it('reads a single-row answer', async () => {
+    const pending = firstValueFrom(source.describeRoles());
+
+    controller.expectOne(`${serviceRoot}/roles`).flush(OTHER_ROLE_DEFINITION_DTO);
+
+    expect([...(await pending).keys()]).toEqual(['manager']);
+  });
 });

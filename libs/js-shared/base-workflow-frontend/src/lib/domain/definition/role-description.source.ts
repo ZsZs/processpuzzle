@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
+import type { BaseEntityLoadResponse } from '@processpuzzle/base-entity';
 import { RoleDefinition } from './role-definition';
 import { RoleDefinitionService } from './role-definition.service';
 
@@ -15,11 +16,13 @@ export class WorkflowRoleDescriptionSource {
   private readonly service = inject(RoleDefinitionService);
 
   describeRoles(): Observable<ReadonlyMap<string, { name?: string; description?: string }>> {
-    return this.service.findAll().pipe(
-      map((response) => {
-        const roles: RoleDefinition[] = Array.isArray(response) ? response : 'content' in response ? response.content : [response];
-        return new Map(roles.map((role) => [role.id, { name: role.name, description: role.description }]));
-      }),
-    );
+    return this.service.findAll().pipe(map((response) => new Map(asList(response).map((role) => [role.id, { name: role.name, description: role.description }]))));
   }
+}
+
+/** `findAll` answers with a list, a page or — for a one-row collection — the row itself. */
+function asList(response: BaseEntityLoadResponse<RoleDefinition> | RoleDefinition[] | RoleDefinition): RoleDefinition[] {
+  if (Array.isArray(response)) return response;
+  if ('content' in response) return response.content;
+  return [response];
 }
