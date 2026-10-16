@@ -16,8 +16,25 @@
       "subjectType": "Nur für SYSTEM-Ereignisse: der Code des Entitätstyps, dessen Datensätze das Ereignis auslösen, z. B. order.",
       "action": "Nur für SYSTEM-Ereignisse: was mit dem Datensatz geschieht: CREATED, UPDATED, DELETED oder STATE_CHANGED.",
       "state": "Nur für STATE_CHANGED: der Zustand, den der Datensatz annimmt, z. B. CONFIRMED.",
-      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt."
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
+      "parameters": "Die Werte, die jedes Auftreten des Ereignisses mitführt, z. B. eine Bestellung und ihre Bestellnummer. Workflows lesen sie über ihren Namen."
     },
-    "releaseState": "Release-Stand"
+    "releaseState": "Release-Stand",
+    "parameters": "Parameter"
+  },
+  "event_parameter": {
+    "_self": "Parameter",
+    "name": "Name",
+    "type": "Typ",
+    "entityType": "Entitätstyp",
+    "required": "Erforderlich",
+    "description": "Beschreibung",
+    "_tooltips": {
+      "name": "Eindeutig innerhalb des Ereignisses; Buchstaben, Ziffern und _, z. B. invoiceNumber. Ein SYSTEM-Ereignis füllt ihn aus dem gleichnamigen Attribut des Datensatzes. Der Name subject ist reserviert.",
+      "type": "Die Art des Werts: STRING, NUMBER, BOOLEAN, DATE oder ENTITY_REF für einen Verweis auf einen Datensatz.",
+      "entityType": "Nur für ENTITY_REF: der Code des Entitätstyps, zu dem der Datensatz gehört, z. B. order oder document.",
+      "required": "Ob jedes Auftreten des Ereignisses einen Wert für diesen Parameter mitführen muss.",
+      "description": "Eine Notiz dazu, was der Wert bedeutet; Benutzer sehen sie nicht."
+    }
   }
 }

@@ -21,6 +21,9 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
 /** Key root of the `Event Definition` entity name (`._self`) and of its attribute labels. */
 export const EVENT_DEFINITION_I18N_SCOPE = `${BASE_EVENT_TRANSLOCO_SCOPE}.event_definition`;
 
+/** Key root of the `Event Parameter` rows embedded in an event definition. */
+export const EVENT_PARAMETER_I18N_SCOPE = `${BASE_EVENT_TRANSLOCO_SCOPE}.event_parameter`;
+
 /**
  * Where this library's transloco bundles come from when the application ships without its assets.
  *

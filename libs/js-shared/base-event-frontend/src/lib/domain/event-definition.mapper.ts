@@ -1,7 +1,16 @@
 import type { ReleaseState } from '@processpuzzle/util';
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
-import { EventAction, EventDefinition, EventKind } from './event-definition';
+import { EventAction, EventDefinition, EventKind, EventParameter, EventParameterType } from './event-definition';
+
+/** One parameter of an event definition as `base-event-api.yaml` puts it on the wire. */
+export interface EventParameterDto {
+  name?: string;
+  type?: EventParameterType | string;
+  entityType?: string | null;
+  required?: boolean;
+  description?: string | null;
+}
 
 /** An event definition as `base-event-api.yaml` puts it on the wire. */
 export interface EventDefinitionDto {
@@ -12,6 +21,7 @@ export interface EventDefinitionDto {
   subjectType?: string;
   action?: EventAction | string;
   state?: string;
+  parameters?: EventParameterDto[];
   version?: number;
   releaseState?: ReleaseState;
 }
@@ -26,6 +36,11 @@ export interface EventDefinitionDto {
  * `STATE_CHANGED`. base-entity has no conditional visibility, so a user who switches the kind keeps whatever
  * the hidden-in-meaning fields held; sending them would make the backend refuse a definition the form shows
  * as valid. Empty strings — what a cleared text box writes back — are sent as absent for the same reason.
+ *
+ * **The parameters are mapped element by element**, never passed through — an embedded row is edited as the
+ * entity the generic form builds, so it reaches `toDto` as whatever the form wrote back. A parameter's
+ * `entityType` is dropped unless its type is `ENTITY_REF`, for the reason above. `parameters` is always
+ * sent: `PUT /event-definitions/{id}` is a full replacement, so removing the last row has to send `[]`.
  */
 @Injectable({ providedIn: 'root' })
 export class EventDefinitionMapper implements BaseEntityMapper<EventDefinition> {
@@ -39,6 +54,7 @@ export class EventDefinitionMapper implements BaseEntityMapper<EventDefinition> 
       subjectType: source.subjectType,
       action: source.action as EventAction | undefined,
       state: source.state,
+      parameters: (source.parameters ?? []).map(toEventParameter),
       version: source.version,
       releaseState: source.releaseState,
     });
@@ -55,9 +71,31 @@ export class EventDefinitionMapper implements BaseEntityMapper<EventDefinition> 
       subjectType: isSystem ? presentOrUndefined(entity.subjectType) : undefined,
       action,
       state: action === EventAction.STATE_CHANGED ? presentOrUndefined(entity.state) : undefined,
+      parameters: (entity.parameters ?? []).map(fromEventParameter),
       version: entity.version,
     };
   }
+}
+
+function toEventParameter(dto: EventParameterDto): EventParameter {
+  return new EventParameter({
+    name: dto.name,
+    type: dto.type as EventParameterType | undefined,
+    entityType: dto.entityType ?? undefined,
+    required: dto.required,
+    description: dto.description ?? undefined,
+  });
+}
+
+function fromEventParameter(parameter: EventParameter): EventParameterDto {
+  return {
+    name: parameter.name,
+    type: parameter.type,
+    entityType: parameter.type === EventParameterType.ENTITY_REF ? presentOrUndefined(parameter.entityType) : undefined,
+    // A checkbox never touched leaves whatever the blank row held; the contract defaults it to false.
+    required: parameter.required === true,
+    description: presentOrUndefined(parameter.description),
+  };
 }
 
 function presentOrUndefined<T extends string>(value: T | undefined | null): T | undefined {

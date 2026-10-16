@@ -6,12 +6,13 @@ import es from '../../assets/i18n/base_event/es.json';
 import fr from '../../assets/i18n/base_event/fr.json';
 import hu from '../../assets/i18n/base_event/hu.json';
 import { createEventDefinitionDescriptor } from './event-definition.descriptors';
+import { createEventParameterDescriptor } from './event-parameter.descriptors';
 
 /**
  * Every field of the event catalog's form carries a tooltip, in every language the library ships.
  */
 describe('base-event form tooltips', () => {
-  const descriptors: BaseEntityDescriptor[] = [createEventDefinitionDescriptor()];
+  const descriptors: BaseEntityDescriptor[] = [createEventDefinitionDescriptor(), createEventParameterDescriptor()];
   const keys = descriptors.flatMap((descriptor) => attributesOf(descriptor.attrDescriptors).map((attr) => attr.tooltipI18nKey()));
 
   it.each(Object.entries({ en, de, es, fr, hu }))('has a tooltip for every form field in %s', (_lang, translation) => {
