@@ -411,6 +411,17 @@ widgetDefinitions:
       type: object
       properties: {}
       additionalProperties: false
+  - key: task-dashboard-button
+    name: Task dashboard button
+    translocoId: base_widget.task_dashboard_button.name
+    description: >-
+      Leads to the workflow task dashboard, at the route the application provides, and marks itself while it is open.
+    category: Navigation
+    icon: checklist
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
   - key: copyright
     name: Copyright
     translocoId: base_widget.copyright.name

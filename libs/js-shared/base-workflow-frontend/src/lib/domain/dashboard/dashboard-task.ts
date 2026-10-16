@@ -68,4 +68,24 @@ export interface ResolvedArtifact {
   readonly type: ArtifactType | undefined;
   /** Absent when nothing has produced this artifact in this run yet. */
   readonly instance: ArtifactInstance | undefined;
+  /**
+   * The state this workflow's assignment of the task names for the artifact — `TaskArtifactState.inputState`
+   * for an input, `outputState` for an output. Absent when the workflow says nothing about it.
+   */
+  readonly requiredState: string | undefined;
+  /**
+   * Whether the artifact is where {@link requiredState} says it should be: always true without one, false
+   * for an artifact nothing has produced yet. Compared case-insensitively, because the state is a name
+   * typed into the workflow and the instance's `currentState` is the one base-state reports.
+   */
+  readonly satisfied: boolean;
+  /** Where the artifact can be opened, when the host mounts a screen for it — see `DashboardLinkResolver`. */
+  readonly link: string | undefined;
+}
+
+/** The tool a service step calls, named and — when the host mounts the tool catalog — linked. */
+export interface StepTool {
+  readonly toolDefinitionId: string;
+  readonly name: string;
+  readonly link: string | undefined;
 }

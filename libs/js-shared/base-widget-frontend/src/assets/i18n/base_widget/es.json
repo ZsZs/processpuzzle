@@ -77,6 +77,9 @@
   "design_button": {
     "name": "Botón de diseño"
   },
+  "task_dashboard_button": {
+    "name": "Botón del panel de tareas"
+  },
   "image_zoom": {
     "name": "Zoom de imagen"
   },

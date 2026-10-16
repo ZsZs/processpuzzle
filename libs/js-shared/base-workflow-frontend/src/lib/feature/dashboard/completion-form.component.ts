@@ -31,6 +31,11 @@ interface ContextRow {
  * task still `ACTIVE`: the user has to change something and resubmit, so the reason belongs beside the
  * fields they are about to change and has to survive being read twice.
  *
+ * **Complete waits for the task to be ready** — {@link CompletionFormComponent.isReady}, which the dashboard
+ * derives from the ticked steps and the outputs' required states. Disabled with a one-line reason rather than
+ * hidden: the user should see the button they are working towards. Skip is not gated by it, an override
+ * being exactly what is needed when the task cannot be finished the normal way.
+ *
  * **Skip is not a peer of Complete.** The contract calls it a manager override, so it is behind
  * {@link CompletionFormComponent.canSkip} and asks for a reason — an override with no record of why is the
  * kind of thing that is only ever discovered later.
@@ -90,10 +95,13 @@ interface ContextRow {
             {{ skipKey | transloco }}
           </button>
         }
-        <button type="button" class="form__button form__button--primary" [disabled]="isBusy()" data-testid="complete-task" (click)="requestComplete()">
+        <button type="button" class="form__button form__button--primary" [disabled]="isBusy() || !isReady()" data-testid="complete-task" (click)="requestComplete()">
           {{ completeKey | transloco }}
         </button>
       </div>
+      @if (!isReady()) {
+        <p class="form__hint" data-testid="complete-blocked">{{ blockedKey | transloco }}</p>
+      }
     </div>
   `,
   styles: `
@@ -165,6 +173,12 @@ interface ContextRow {
       background-color: var(--pp-button-primary-bg, rgb(24, 111, 206));
       color: var(--pp-button-primary-text, #eeeeee);
     }
+    .form__hint {
+      margin: 0;
+      font-size: 12px;
+      color: #777777;
+      text-align: right;
+    }
     .form__button:disabled {
       opacity: 0.5;
       cursor: default;
@@ -174,6 +188,9 @@ interface ContextRow {
 export class CompletionFormComponent {
   /** Whether a verb is in flight — both buttons and every field are disabled while one is. */
   readonly isBusy = input<boolean>(false);
+
+  /** Whether every user step is ticked and every output is in its required state — what enables Complete. */
+  readonly isReady = input<boolean>(true);
 
   /** Whether this session may override — see the class comment on why Skip is gated. */
   readonly canSkip = input<boolean>(false);
@@ -193,6 +210,7 @@ export class CompletionFormComponent {
   protected readonly skipKey = `${TASK_DASHBOARD_I18N_SCOPE}.skip`;
   protected readonly skipReasonKey = `${TASK_DASHBOARD_I18N_SCOPE}.skip_reason`;
   protected readonly unstatedKey = `${TASK_DASHBOARD_I18N_SCOPE}.unstated_refusal`;
+  protected readonly blockedKey = `${TASK_DASHBOARD_I18N_SCOPE}.complete_blocked`;
   protected readonly unstatedRefusal = UNSTATED_REFUSAL;
 
   private readonly editedRows = signal<ContextRow[]>([{ key: '', value: '' }]);

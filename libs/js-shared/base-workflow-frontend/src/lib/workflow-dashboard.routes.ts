@@ -23,7 +23,7 @@ export const WORKFLOW_DASHBOARD_PATH = 'workflow-dashboard';
  *
  * **No `entityName` in `data` and no `BaseEntityContainerComponent`**, unlike every branch of
  * `BASE_WORKFLOW_ROUTES`: this screen is not a generated list and form over one aggregate, so it has no
- * breadcrumb level to contribute and no facade to bind to `ACTIVE_ENTITY_FACADE`. It reads five stores and
+ * breadcrumb level to contribute and no facade to bind to `ACTIVE_ENTITY_FACADE`. It reads six stores and
  * renders its own layout. The segment is therefore free of the `snakeCaseName(entityName)` constraint the
  * others carry — `BaseFormNavigatorSingletonStore` builds no URL into it.
  *
