@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.event.usecase.EventStateChange;
 import com.processpuzzle.event.usecase.FindEventDefinition;
 import com.processpuzzle.shared.event.CatalogEventKind;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogStateChange;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -30,5 +32,15 @@ class EventCatalogAdapterTest {
 
         assertThat(adapter.kindOf("org-1", "InvoiceIssued")).contains(CatalogEventKind.MESSAGE);
         assertThat(adapter.kindOf("org-1", "Nope")).isEmpty();
+    }
+
+    @Test
+    void readsTheStateChangeASystemEventStandsFor() {
+        FindEventDefinition find = mock(FindEventDefinition.class);
+        when(find.stateChangeOf("org-1", "OrderCancelledEvent")).thenReturn(Optional.of(new EventStateChange("order", "CANCELLED")));
+        EventCatalogAdapter adapter = new EventCatalogAdapter(find);
+
+        assertThat(adapter.stateChangeOf("org-1", "OrderCancelledEvent")).contains(new CatalogStateChange("order", "CANCELLED"));
+        assertThat(adapter.stateChangeOf("org-1", "Nope")).isEmpty();
     }
 }

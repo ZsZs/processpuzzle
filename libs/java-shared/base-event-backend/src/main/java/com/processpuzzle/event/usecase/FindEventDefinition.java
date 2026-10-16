@@ -3,8 +3,10 @@ package com.processpuzzle.event.usecase;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
+import com.processpuzzle.event.domain.EventKind;
 import com.processpuzzle.event.usecase.exception.EventDefinitionNotFoundException;
 import com.processpuzzle.shared.event.CatalogEventKind;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,17 @@ public class FindEventDefinition {
     public Optional<CatalogEventKind> kindOf(String orgKey, String id) {
         return id == null ? Optional.empty() : repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
                 .map(definition -> CatalogEventKind.valueOf(definition.getKind().name()));
+    }
+
+    /**
+     * The state change the definition's draft stands for, or empty when it is not a SYSTEM state-change event —
+     * the draft, because that is what a workflow being released is checked against.
+     */
+    public Optional<EventStateChange> stateChangeOf(String orgKey, String id) {
+        return id == null ? Optional.empty() : repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT)
+                .filter(definition -> definition.getKind() == EventKind.SYSTEM)
+                .filter(definition -> definition.getAction() == PlatformEventAction.STATE_CHANGED)
+                .map(definition -> new EventStateChange(definition.getSubjectType(), definition.getState()));
     }
 
     /** Whether a draft of that id exists; see {@link #kindOf}. */

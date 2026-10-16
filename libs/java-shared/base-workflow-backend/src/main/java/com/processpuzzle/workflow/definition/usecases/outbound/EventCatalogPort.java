@@ -24,4 +24,12 @@ public interface EventCatalogPort {
     default Optional<CatalogEventKind> kindOf(String orgKey, String eventDefinitionId) {
         return Optional.empty();
     }
+
+    /**
+     * The state change the definition's draft stands for, or empty when it is not a SYSTEM state-change event —
+     * or the adapter cannot tell, which leaves a catch of it handling no transition at release.
+     */
+    default Optional<CatalogStateChange> stateChangeOf(String orgKey, String eventDefinitionId) {
+        return Optional.empty();
+    }
 }

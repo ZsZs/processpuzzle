@@ -25,6 +25,16 @@ event-definitions:
     action: STATE_CHANGED
     state: DELIVERED
 
+  # The order's exception path: its state machine cancels it from DRAFT and from CONFIRMED.
+  # order-fulfillment-workflow catches it on the two tasks that wait on the order in those states.
+  - id: OrderCancelledEvent
+    name: Order cancelled
+    description: An Order entered state CANCELLED.
+    kind: SYSTEM
+    subjectType: order
+    action: STATE_CHANGED
+    state: CANCELLED
+
   # MESSAGE events of the invoice round trip: order-fulfillment-workflow throws InvoiceRequested, which
   # starts invoicing-workflow; that throws InvoiceIssued back, which order-fulfillment catches. Both
   # are correlated on the order's id.
