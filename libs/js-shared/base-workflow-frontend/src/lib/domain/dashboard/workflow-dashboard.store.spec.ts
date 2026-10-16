@@ -451,17 +451,24 @@ describe('WorkflowDashboardStore', () => {
   });
 
   describe('refresh', () => {
+    const instanceReads = () => controller.match(`${serviceRoot}/instances`);
+
     it('re-reads the runs when the dashboard is entered again', () => {
       store.refresh();
 
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      const reads = instanceReads();
+      expect(reads).toHaveLength(1);
+      reads[0].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      expect(store.instances().map((instance) => instance.id)).toEqual([runId]);
     });
 
     it('does not double a read already in flight', () => {
       store.reload();
       store.refresh();
 
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      const reads = instanceReads();
+      expect(reads).toHaveLength(1);
+      reads[0].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
   });
 });
