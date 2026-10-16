@@ -45,7 +45,6 @@ public class FindEventDefinition {
                 .map(definition -> CatalogEventKind.valueOf(definition.getKind().name()));
     }
 
-    /** Whether a draft of that id exists; see {@link #kindOf}. */
     /**
      * The state change the definition's draft stands for, or empty when it is not a SYSTEM state-change event —
      * the draft, because that is what a workflow being released is checked against.
@@ -57,6 +56,7 @@ public class FindEventDefinition {
                 .map(definition -> new EventStateChange(definition.getSubjectType(), definition.getState()));
     }
 
+    /** Whether a draft of that id exists; see {@link #kindOf}. */
     public boolean exists(String orgKey, String id) {
         return id != null && repository.existsByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT);
     }

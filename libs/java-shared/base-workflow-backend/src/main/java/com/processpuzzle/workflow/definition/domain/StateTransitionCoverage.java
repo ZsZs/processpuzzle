@@ -51,26 +51,29 @@ public final class StateTransitionCoverage {
         List<Gap> gaps = new ArrayList<>();
         for (TaskUse task : nonNull(workflow.getTasks())) {
             List<CatalogStateChange> caught = caughtOn(workflow, task.getTaskDefinitionId(), stateChanges);
-            for (TaskArtifactState state : nonNull(task.getArtifactStates())) {
-                if (isBlank(state.getInputState())) {
-                    continue;
-                }
-                Optional<String> machineId = artifacts.apply(state.getArtifactDefinitionId())
-                        .map(ArtifactDefinition::getStateMachineId)
-                        .filter(id -> !isBlank(id));
-                Optional<Machine> machine = machineId.flatMap(machines);
-                if (machine.isEmpty() || !machine.get().hasState(state.getInputState())) {
-                    continue;
-                }
-                for (Transition transition : machine.get().transitionsFrom(state.getInputState())) {
-                    if (!isHandled(transition, state, machine.get(), caught)) {
-                        gaps.add(new Gap(task.getTaskDefinitionId(), state.getArtifactDefinitionId(), machineId.get(),
-                                state.getInputState(), transition));
-                    }
-                }
-            }
+            nonNull(task.getArtifactStates()).stream()
+                    .filter(state -> !isBlank(state.getInputState()))
+                    .forEach(state -> gaps.addAll(gapsOf(task, state, caught, artifacts, machines)));
         }
         return gaps;
+    }
+
+    /** The transitions out of the state one task expects one artifact in that neither the task nor a catch on it handles. */
+    private static List<Gap> gapsOf(TaskUse task, TaskArtifactState state, List<CatalogStateChange> caught,
+                                    Function<String, Optional<ArtifactDefinition>> artifacts,
+                                    Function<String, Optional<Machine>> machines) {
+        Optional<String> machineId = artifacts.apply(state.getArtifactDefinitionId())
+                .map(ArtifactDefinition::getStateMachineId)
+                .filter(id -> !isBlank(id));
+        Optional<Machine> machine = machineId.flatMap(machines).filter(candidate -> candidate.hasState(state.getInputState()));
+        if (machine.isEmpty()) {
+            return List.of();
+        }
+        return machine.get().transitionsFrom(state.getInputState()).stream()
+                .filter(transition -> !isHandled(transition, state, machine.get(), caught))
+                .map(transition -> new Gap(task.getTaskDefinitionId(), state.getArtifactDefinitionId(), machineId.get(),
+                        state.getInputState(), transition))
+                .toList();
     }
 
     private static boolean isHandled(Transition transition, TaskArtifactState state, Machine machine,
