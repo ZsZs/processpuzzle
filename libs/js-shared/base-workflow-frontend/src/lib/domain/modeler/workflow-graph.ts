@@ -125,6 +125,12 @@ export interface WorkflowNodeData {
    */
   unresolved?: boolean;
   /**
+   * Where a running instance of the workflow stands on this element — the `TaskInstanceStatus` of a task,
+   * the `EventInstanceStatus` of an event. Set only when the diagram is drawn for one run, as the task
+   * dashboard's Process view does; the modeler draws definitions and leaves it unset.
+   */
+  runStatus?: string;
+  /**
    * An intermediate event's direction — whether it raises its catalog event or waits for it, which picks
    * the filled or the outlined symbol. Unset on every other kind, and on an event row not yet given one.
    */

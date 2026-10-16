@@ -39,6 +39,12 @@ export interface WorkflowFlowGraphOptions {
   data?: boolean;
   /** Tool nodes and the service steps that call them. */
   tools?: boolean;
+  /**
+   * Artifact definition id → the name of the object a run actually holds, replacing the workflow's
+   * `ArtifactUse.objectName` in the artifact's label. Set by the dashboard's Process view; the modeler
+   * draws the workflow's own names.
+   */
+  objectNames?: ReadonlyMap<string, string>;
   labels?: {
     /** Lane name for tasks with no stated performer. */
     unassignedLane?: string;
@@ -141,7 +147,10 @@ export class WorkflowFlowGraphConverter {
     const rolesById = new Map(roles.map((role) => [role.id, role]));
     const artifactsById = new Map(artifacts.map((artifact) => [artifact.id, artifact]));
     const toolsById = new Map(tools.map((tool) => [tool.id, tool]));
-    const objectNamesById = new Map(workflow.artifacts.map((use) => [use.artifactDefinitionId, use.objectName]));
+    const objectNamesById = new Map(workflow.artifacts.map((use) => [use.artifactDefinitionId, options.objectNames?.get(use.artifactDefinitionId) ?? use.objectName]));
+    options.objectNames?.forEach((name, artifactId) => {
+      if (!objectNamesById.has(artifactId)) objectNamesById.set(artifactId, name);
+    });
     const objectOf = (artifactId: string, state?: string): WorkflowNode =>
       artifactNode(artifactId, artifactsById.get(artifactId), objectNamesById.get(artifactId), state);
 

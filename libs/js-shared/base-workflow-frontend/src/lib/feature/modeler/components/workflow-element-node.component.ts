@@ -42,6 +42,7 @@ const EVENT_KINDS: ReadonlySet<WorkflowElementKind> = new Set(['start', 'end', '
       [attr.data-testid]="'workflow-node-' + data().kind"
       [attr.data-highlighted]="highlighted() ? 'true' : null"
       [attr.data-unresolved]="unresolved() ? 'true' : null"
+      [attr.data-run-status]="data().runStatus ?? null"
       [class.element--timer]="data().timer === true"
       [class.element--boundary]="isBoundary()"
       [class.element--non-interrupting]="isBoundary() && data().interrupting === false"
@@ -117,6 +118,28 @@ const EVENT_KINDS: ReadonlySet<WorkflowElementKind> = new Set(['start', 'end', '
         0 0 0 3px var(--pp-color-light-green, rgb(92, 218, 207)),
         0 0 0 8px rgba(92, 218, 207, 0.3),
         0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    /* A run's status on the element, for the dashboard's Process view. Rings outside the card, like the
+       highlight above and for the same reason: nothing here may change the box ng-diagram measured. Work in
+       progress and a waiting catch are marked loudest, a blocked task in red, finished work recedes. */
+    [data-run-status='ACTIVE'],
+    [data-run-status='WAITING'] {
+      box-shadow:
+        0 0 0 3px var(--pp-color-dark-blue, rgb(24, 111, 206)),
+        0 0 0 8px rgba(24, 111, 206, 0.25),
+        0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    [data-run-status='BLOCKED'] {
+      box-shadow:
+        0 0 0 3px #b3261e,
+        0 0 0 8px rgba(179, 38, 30, 0.2);
+    }
+    [data-run-status='COMPLETED'],
+    [data-run-status='SKIPPED'],
+    [data-run-status='CANCELLED'],
+    [data-run-status='OCCURRED'],
+    [data-run-status='THROWN'] {
+      opacity: 0.55;
     }
     /* A reference to something the catalog does not contain. The border *style* changes and its width does
        not, so the card measures the same as any other and the layout is unaffected. */

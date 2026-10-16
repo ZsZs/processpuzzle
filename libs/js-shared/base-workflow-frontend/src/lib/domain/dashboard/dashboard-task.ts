@@ -68,6 +68,8 @@ export interface ResolvedArtifact {
   readonly type: ArtifactType | undefined;
   /** Absent when nothing has produced this artifact in this run yet. */
   readonly instance: ArtifactInstance | undefined;
+  /** The name of the record the instance points at — `ORD-0042` — once base-entity has answered. */
+  readonly recordName?: string;
   /**
    * The state this workflow's assignment of the task names for the artifact — `TaskArtifactState.inputState`
    * for an input, `outputState` for an output. Absent when the workflow says nothing about it.
