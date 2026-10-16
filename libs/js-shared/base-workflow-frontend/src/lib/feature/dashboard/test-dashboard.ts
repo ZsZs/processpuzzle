@@ -54,6 +54,8 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.unstated_refusal': 'Not accepted yet, and the server gave no detail.',
   'base_workflow.task_instance.dashboard.unassigned': 'unassigned',
   'base_workflow.task_instance.dashboard.assigned_to': 'Assigned to',
+  'base_workflow.task_instance.dashboard.context': 'Context variables',
+  'base_workflow.task_instance.dashboard.context_none': 'This run holds no context variables.',
 };
 
 /** HTTP, the tenant-bearing service root, and the dashboard's own labels. */

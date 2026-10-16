@@ -120,7 +120,7 @@ class ImportDocumentCommandsTest {
 
     private ImportDocuments importer(DocumentAccessPolicy policy) {
         return new ImportDocuments(documents, drafts, publications, new DocumentReferentialIntegrityChecker(),
-                TestGuards.with(policy));
+                TestGuards.with(policy), TestFacts.ignored());
     }
 
     private static DocumentCommand candidate(String slug) {

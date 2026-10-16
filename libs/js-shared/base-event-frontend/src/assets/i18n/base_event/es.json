@@ -16,8 +16,25 @@
       "subjectType": "Solo para eventos SYSTEM: el código del tipo de entidad cuyos registros generan el evento, p. ej. order.",
       "action": "Solo para eventos SYSTEM: qué le ocurre al registro: CREATED, UPDATED, DELETED o STATE_CHANGED.",
       "state": "Solo para STATE_CHANGED: el estado al que pasa el registro, p. ej. CONFIRMED.",
-      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema."
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
+      "parameters": "Los valores que lleva cada ocurrencia del evento, p. ej. un pedido y su número. Los flujos de trabajo los leen por su nombre."
     },
-    "releaseState": "Publicación"
+    "releaseState": "Publicación",
+    "parameters": "Parámetros"
+  },
+  "event_parameter": {
+    "_self": "Parámetro",
+    "name": "Nombre",
+    "type": "Tipo",
+    "entityType": "Tipo de entidad",
+    "required": "Obligatorio",
+    "description": "Descripción",
+    "_tooltips": {
+      "name": "Único dentro del evento; letras, dígitos y _, p. ej. invoiceNumber. Un evento SYSTEM lo rellena con el atributo del mismo nombre del registro. El nombre subject está reservado.",
+      "type": "El tipo de valor: STRING, NUMBER, BOOLEAN, DATE, o ENTITY_REF para una referencia a un registro.",
+      "entityType": "Solo para ENTITY_REF: el código del tipo de entidad al que pertenece el registro, p. ej. order o document.",
+      "required": "Si cada ocurrencia del evento debe llevar un valor para este parámetro.",
+      "description": "Una nota sobre lo que significa el valor; los usuarios no la ven."
+    }
   }
 }

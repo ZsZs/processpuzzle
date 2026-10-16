@@ -1,9 +1,8 @@
-import { computed, effect, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { computed, inject } from '@angular/core';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
-import { ArtifactType } from '../definition/artifact-definition';
 import { ArtifactDefinitionStore } from '../definition/artifact-definition.store';
 import { RoleDefinitionStore } from '../definition/role-definition.store';
 import { TaskDefinition, TaskStepType } from '../definition/task-definition';
@@ -16,8 +15,7 @@ import { WorkflowInstanceStore } from '../execution/workflow-instance.store';
 import { PropertyMap } from '../property-map';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from './current-user.context';
 import { DashboardLinkResolver } from './dashboard-link.resolver';
-import { DashboardTask, InboxScope, ResolvedArtifact, StepTool } from './dashboard-task';
-import { ObjectNameResolver } from './object-name.resolver';
+import { ContextVariable, DashboardTask, InboxScope, ResolvedArtifact, StepTool } from './dashboard-task';
 import { TaskActionService } from './task-action.service';
 
 /**
@@ -135,25 +133,27 @@ export const WorkflowDashboardStore = signalStore(
     const roleStore = inject(RoleDefinitionStore);
     const toolStore = inject(ToolDefinitionStore);
     const links = inject(DashboardLinkResolver);
-    const objectNames = inject(ObjectNameResolver);
     const session = inject(CurrentUserContext);
 
     const instances = computed<WorkflowInstance[]>(() => instanceStore.entities());
 
     const artifactCatalog = computed(() => new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact])));
 
-    /** The name of the record an artifact instance points at, once `ObjectNameResolver` has it. */
-    const recordNameOf = (artifact: ArtifactInstance | undefined): string | undefined =>
-      artifact?.entityId ? objectNames.nameOf(artifactCatalog().get(artifact.artifactDefinitionId)?.artifactTypeId, artifact.entityId) : undefined;
+    /**
+     * The name of the record an artifact instance is bound to: the label the backend resolved for it, or the
+     * bare id when it answered none. `undefined` while the run has not bound the artifact yet — the caller then
+     * keeps the artifact's own name.
+     */
+    const recordNameOf = (artifact: ArtifactInstance | undefined): string | undefined => (artifact?.entityId ? artifact.entityLabel || artifact.entityId : undefined);
 
     /**
-     * The name of the record a run is about — the artifact instance holding the run's own `entityId` — or
-     * that id itself until the name is known, and `undefined` for a run started for nothing in particular.
+     * The name of the record a run is about — the run's own `entityLabel`, else the label of the artifact bound
+     * to the run's `entityId`, else that id itself — and `undefined` for a run started for nothing in particular.
      */
     const subjectNameOf = (instance: WorkflowInstance): string | undefined => {
       if (!instance.entityId) return undefined;
       const subject = (instance.artifacts ?? []).find((artifact) => artifact.entityId === instance.entityId);
-      return recordNameOf(subject) ?? instance.entityId;
+      return instance.entityLabel || recordNameOf(subject) || instance.entityId;
     };
 
     /**
@@ -336,7 +336,7 @@ export const WorkflowDashboardStore = signalStore(
 
       /**
        * Artifact definition id → the name of the record the open run holds for it, for the Process view's
-       * diagram. Only the artifacts whose record has been named; the rest keep the workflow's object name.
+       * diagram. Only the artifacts the run has bound; the rest keep the workflow's object name.
        */
       selectedObjectNames: computed<ReadonlyMap<string, string>>(() => {
         const names = new Map<string, string>();
@@ -360,6 +360,11 @@ export const WorkflowDashboardStore = signalStore(
             }),
           ),
       ),
+      /**
+       * The open run's context variables, flattened to dotted keys — an event's namespaced parameters read as
+       * `order-created.orderNumber` — in the order the backend keeps them. See {@link flattenContext}.
+       */
+      selectedContext: computed<ContextVariable[]>(() => flattenContext(selectedInstance()?.context)),
       selectedDefinition,
       selectedTask: computed<TaskInstance | undefined>(() => selectedRow()?.task),
       selectedInputs,
@@ -531,30 +536,33 @@ export const WorkflowDashboardStore = signalStore(
     };
   }),
 
-  withHooks({
-    /**
-     * Asks for the record name behind every artifact instance of every loaded run — the picker names each run
-     * by its record, and the open one's diagram and chips name all of its objects. `ObjectNameResolver`
-     * asks once per record, so a reload costs nothing for the records already named.
-     */
-    onInit: () => {
-      const instanceStore = inject(WorkflowInstanceStore);
-      const artifactDefinitionStore = inject(ArtifactDefinitionStore);
-      const objectNames = inject(ObjectNameResolver);
-      effect(() => {
-        const catalog = new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact]));
-        instanceStore.entities().forEach((instance) =>
-          (instance.artifacts ?? []).forEach((artifact) => {
-            const definition = catalog.get(artifact.artifactDefinitionId);
-            if (definition?.artifactType === ArtifactType.ENTITY) objectNames.request(definition.artifactTypeId, artifact.entityId);
-          }),
-        );
-      });
-    },
-  }),
   withDevtools('WorkflowDashboard'),
 );
 
 function sameState(actual: string | undefined, required: string): boolean {
   return !!actual && actual.trim().toLowerCase() === required.trim().toLowerCase();
+}
+
+/**
+ * A context map as rows: a nested map — the parameters an event carried, namespaced under its id — opens into
+ * one row per leaf, keyed by the dotted path; anything else is one row. A list or an empty map stays whole,
+ * as JSON, since a key per element would read as structure the author never declared.
+ */
+export function flattenContext(context: Readonly<Record<string, unknown>> | undefined, prefix = ''): ContextVariable[] {
+  return Object.entries(context ?? {}).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (isNestedMap(value)) return flattenContext(value as Record<string, unknown>, path);
+    return [{ key: path, value: displayValueOf(value) }];
+  });
+}
+
+function isNestedMap(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+function displayValueOf(value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return value.toString();
+  return JSON.stringify(value) ?? '—';
 }

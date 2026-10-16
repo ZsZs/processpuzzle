@@ -68,7 +68,7 @@ export interface ResolvedArtifact {
   readonly type: ArtifactType | undefined;
   /** Absent when nothing has produced this artifact in this run yet. */
   readonly instance: ArtifactInstance | undefined;
-  /** The name of the record the instance points at — `ORD-0042` — once base-entity has answered. */
+  /** The name of the record the run bound the instance to — `ORD-0042`, its `entityLabel`. Absent while unbound. */
   readonly recordName?: string;
   /**
    * The state this workflow's assignment of the task names for the artifact — `TaskArtifactState.inputState`
@@ -90,4 +90,10 @@ export interface StepTool {
   readonly toolDefinitionId: string;
   readonly name: string;
   readonly link: string | undefined;
+}
+
+/** One variable of a run's context, as the Process view lists it: a dotted key and its value as text. */
+export interface ContextVariable {
+  readonly key: string;
+  readonly value: string;
 }

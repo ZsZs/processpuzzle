@@ -12,6 +12,8 @@ import com.processpuzzle.document.domain.DocumentInputPort;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.domain.DocumentRoles;
+import com.processpuzzle.document.domain.PublishedDocument;
+import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.WidgetPlacement;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
@@ -23,8 +25,12 @@ import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentDraftEditor;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.junit.jupiter.api.BeforeEach;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,12 +55,15 @@ class DocumentBlockEditingTest {
 
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
+    private PublishedDocumentRepository publishedRepository;
     private DocumentDraft draft;
+    private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         repository = mock(DocumentRepository.class);
         draftRepository = mock(DocumentDraftRepository.class);
+        publishedRepository = mock(PublishedDocumentRepository.class);
         when(draftRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -224,10 +233,52 @@ class DocumentBlockEditingTest {
                 .isInstanceOf(DocumentTranslationNotFoundException.class);
     }
 
+    // ── platform facts ──────────────────────────────────────────
+
+    @Test
+    void theFirstEditAfterAPublishIsAStateChangeOfTheDocument() {
+        stubFound(DocumentRoles.unrestricted(), text("intro"));
+        when(publishedRepository.findByOrgKeyAndDocumentIdAndLocale(ORG, ID, "en")).thenReturn(Optional.of(
+                new PublishedDocument(ORG, ID, "en", draft.getContent(), 1L, Instant.now(), "ada")));
+
+        new AppendDocumentBlock(editor(TestPolicies.permitAll())).execute(ORG, ID, "en", textInput());
+        new AppendDocumentBlock(editor(TestPolicies.permitAll())).execute(ORG, ID, "en", textInput());
+
+        // The second edit leaves it PUBLISHED_WITH_DRAFT_CHANGES, so it is no fact.
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+            assertThat(fact.subjectType()).isEqualTo("document");
+            assertThat(fact.subjectId()).isEqualTo(ID);
+            assertThat(fact.state()).isEqualTo("PUBLISHED_WITH_DRAFT_CHANGES");
+        });
+    }
+
+    @Test
+    void editingAnUnpublishedDraftChangesNoState() {
+        stubFound(DocumentRoles.unrestricted(), text("intro"));
+
+        new AppendDocumentBlock(editor(TestPolicies.permitAll())).execute(ORG, ID, "en", textInput());
+
+        assertThat(facts).isEmpty();
+    }
+
+    @Test
+    void editingAnotherTranslationIsNotTheDocumentsState() {
+        stubFound(DocumentRoles.unrestricted(), text("intro"));
+        DocumentDraft german = new DocumentDraft(ORG, ID, "de", DocumentContent.of(List.of(text("intro"))), 1L);
+        when(draftRepository.findByOrgKeyAndDocumentIdAndLocale(ORG, ID, "de")).thenReturn(Optional.of(german));
+        when(publishedRepository.findByOrgKeyAndDocumentIdAndLocale(ORG, ID, "de")).thenReturn(Optional.of(
+                new PublishedDocument(ORG, ID, "de", german.getContent(), 1L, Instant.now(), "ada")));
+
+        new AppendDocumentBlock(editor(TestPolicies.permitAll())).execute(ORG, ID, "de", textInput());
+
+        assertThat(facts).isEmpty();
+    }
+
     // region fixtures
     private DocumentDraftEditor editor(DocumentAccessPolicy policy) {
-        return new DocumentDraftEditor(repository, draftRepository, new DocumentReferentialIntegrityChecker(),
-                TestGuards.with(policy));
+        return new DocumentDraftEditor(repository, draftRepository, publishedRepository,
+                new DocumentReferentialIntegrityChecker(), TestGuards.with(policy), TestFacts.recordingInto(facts));
     }
 
     private DeleteDocumentBlock deleteBlock(DocumentAccessPolicy policy) {

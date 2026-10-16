@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, FlexboxDescriptor, FormControlType, snakeCaseName } from '@processpuzzle/base-entity';
 import { createEventDefinitionDescriptor, EVENT_DEFINITION_ENTITY_NAME } from './event-definition.descriptors';
+import { EVENT_PARAMETER_ENTITY_NAME } from './event-parameter.descriptors';
 
 function flatten(descriptors: AbstractAttrDescriptor[]): BaseEntityAttrDescriptor[] {
   return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? flatten(descriptor.attrDescriptors) : [descriptor as BaseEntityAttrDescriptor]));
@@ -10,7 +11,10 @@ describe('createEventDefinitionDescriptor', () => {
   const descriptor = createEventDefinitionDescriptor();
   const attrs = flatten(descriptor.attrDescriptors);
   const byName = (attrName: string) => attrs.find((attr) => attr.attrName === attrName);
-  const keysOf = (attrName: string) => byName(attrName)?.getSelectables()?.map((selectable) => selectable.key);
+  const keysOf = (attrName: string) =>
+    byName(attrName)
+      ?.getSelectables()
+      ?.map((selectable) => selectable.key);
 
   // Other features point a FOREIGN_KEY at this name without importing the library.
   it('names the entity other features refer to, and the route segment follows from it', () => {
@@ -30,8 +34,17 @@ describe('createEventDefinitionDescriptor', () => {
     expect(byName('kind')?.i18nKey()).toBe('base_event.event_definition.kind');
   });
 
-  it('describes the identity, the kind and the subject', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'kind', 'releaseState', 'subjectType', 'action', 'state', 'description']);
+  it('describes the identity, the kind, the subject and the parameters', () => {
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'kind', 'releaseState', 'subjectType', 'action', 'state', 'description', 'parameters']);
+  });
+
+  // No endpoint of their own: the rows travel inside the definition and are keyed by their name.
+  it('embeds the parameters as rows identified by their name', () => {
+    const parametersAttr = byName('parameters');
+
+    expect(parametersAttr?.formControlType).toBe(FormControlType.EMBEDDED_COMPONENTS);
+    expect(parametersAttr?.linkedEntityType).toBe(EVENT_PARAMETER_ENTITY_NAME);
+    expect(parametersAttr?.referenceIdField).toBe('name');
   });
 
   it('identifies a definition by its author-chosen id', () => {

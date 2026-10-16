@@ -46,7 +46,7 @@ describe('ProcessBoardComponent', () => {
       const host = render();
 
       expect(host.querySelector('[data-testid="board-workflow"]')?.textContent?.trim()).toBe('Order Fulfillment Workflow');
-      expect(host.querySelector('[data-testid="board-entity"]')?.textContent?.trim()).toBe('1');
+      expect(host.querySelector('[data-testid="board-entity"]')?.textContent?.trim()).toBe('ORD-1001');
       expect(host.querySelector('[data-testid="board-started"]')?.textContent?.trim()).toBeTruthy();
       expect(host.querySelector('[data-testid="board-status-ACTIVE"]')).not.toBeNull();
     });

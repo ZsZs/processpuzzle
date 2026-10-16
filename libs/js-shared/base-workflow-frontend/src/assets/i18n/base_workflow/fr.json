@@ -403,7 +403,9 @@
       "unstated_refusal": "Pas encore acceptée, et le serveur n’a donné aucun détail.",
       "unassigned": "non attribuée",
       "assigned_to": "Attribuée à",
-      "waiting_for": "En attente de"
+      "waiting_for": "En attente de",
+      "context": "Variables de contexte",
+      "context_none": "Cette exécution ne contient aucune variable de contexte."
     }
   },
   "artifact_instance": {

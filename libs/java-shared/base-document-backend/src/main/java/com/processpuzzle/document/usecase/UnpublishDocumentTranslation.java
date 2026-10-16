@@ -4,11 +4,14 @@ import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentStatus;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.domain.event.DocumentUnpublished;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -37,19 +40,22 @@ public class UnpublishDocumentTranslation {
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
     private final ApplicationEventPublisher events;
+    private final DocumentPlatformFacts facts;
 
     public UnpublishDocumentTranslation(DocumentRepository repository,
                                         DocumentDraftRepository draftRepository,
                                         PublishedDocumentRepository publishedRepository,
                                         DocumentTranslationAssembler assembler,
                                         DocumentGuard guard,
-                                        ApplicationEventPublisher events) {
+                                        ApplicationEventPublisher events,
+                                        DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.assembler = assembler;
         this.guard = guard;
         this.events = events;
+        this.facts = facts;
     }
 
     public DocumentTranslationView execute(String orgKey, String documentId, String locale) {
@@ -60,9 +66,17 @@ public class UnpublishDocumentTranslation {
         DocumentDraft draft = draftRepository.findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
                 .orElseThrow(() -> new DocumentTranslationNotFoundException(orgKey, documentId, locale));
 
+        DocumentStatus before = locale.equals(document.getSourceLocale())
+                ? DocumentStatus.derive(draft.getRevision(), publishedRepository
+                        .findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
+                        .map(PublishedDocument::getPublishedRevision).orElse(null))
+                : null;
         publishedRepository.deleteByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale);
         events.publishEvent(new DocumentUnpublished(
                 orgKey, documentId, document.getSlug(), locale, Instant.now(), guard.currentPrincipal()));
+        if (before != null) {
+            facts.stateChanged(document, before, DocumentStatus.DRAFT);
+        }
 
         return DocumentTranslationView.ofDraft(draft, null, assembler.sourceRevisionOf(document));
     }

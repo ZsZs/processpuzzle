@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO } from '../definition/test-artifact-definition';
 import { OTHER_ROLE_DEFINITION_DTO, ROLE_DEFINITION_DTO } from '../definition/test-role-definition';
 import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO } from '../definition/test-task-definition';
@@ -12,8 +12,7 @@ import { TaskDefinitionStore } from '../definition/task-definition.store';
 import { TaskInstanceStatus } from '../execution/workflow-instance';
 import { OTHER_WORKFLOW_INSTANCE_DTO, pageOfWorkflowInstances, WORKFLOW_INSTANCE_DTO } from '../execution/test-workflow-instance';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from './current-user.context';
-import { ObjectNameResolver } from './object-name.resolver';
-import { WorkflowDashboardStore } from './workflow-dashboard.store';
+import { flattenContext, WorkflowDashboardStore } from './workflow-dashboard.store';
 
 /**
  * The dashboard reads six root stores and each one loads on init, so creating the store is what issues
@@ -473,31 +472,70 @@ describe('WorkflowDashboardStore', () => {
     });
   });
 
-  /** The record a run is about, named by base-entity — stubbed here, `ObjectNameResolver` has its own spec. */
+  /** The records a run is bound to, named by the backend's `entityLabel` — no client-side lookup. */
   describe('the records behind a run', () => {
-    const nameRecords = (): void => {
-      vi.spyOn(TestBed.inject(ObjectNameResolver), 'nameOf').mockImplementation((artifactTypeId, entityId) => (artifactTypeId === 'order' && entityId === '1' ? 'ORD-0001' : undefined));
+    const unlabelled = {
+      ...WORKFLOW_INSTANCE_DTO,
+      entityLabel: undefined,
+      artifacts: WORKFLOW_INSTANCE_DTO.artifacts.map((artifact) => ({ ...artifact, entityLabel: undefined })),
     };
 
-    it('names the open run by its record', () => {
-      nameRecords();
+    it('names the open run and its bound artifacts by their labels', () => {
       store.select(runId, reviewOrderTaskId);
 
-      expect(store.selectedSubjectName()).toBe('ORD-0001');
-      expect(store.selectedObjectNames().get('order-entity')).toBe('ORD-0001');
-      expect(store.selectedInputs()[0].recordName).toBe('ORD-0001');
+      expect(store.selectedSubjectName()).toBe('ORD-1001');
+      expect(store.selectedObjectNames().get('order-entity')).toBe('ORD-1001');
+      expect(store.selectedInputs()[0].recordName).toBe('ORD-1001');
     });
 
-    it('falls back to the record’s id until the name is known', () => {
+    it('leaves an unbound artifact unnamed, so it keeps its own name', () => {
+      store.select(runId, reviewOrderTaskId);
+
+      expect(store.selectedObjectNames().has('fulfillment-invoice')).toBe(false);
+    });
+
+    it('falls back to the record’s id when the backend answered no label', () => {
+      reloadWith(unlabelled);
       store.select(runId, reviewOrderTaskId);
 
       expect(store.selectedSubjectName()).toBe('1');
+      expect(store.selectedObjectNames().get('order-entity')).toBe('1');
     });
 
     it('labels every run in the picker by its workflow and its record', () => {
-      nameRecords();
+      expect(store.instanceLabels().get(runId)).toBe('Order Fulfillment Workflow · ORD-1001');
+      expect(store.instanceLabels().get(OTHER_WORKFLOW_INSTANCE_DTO.id)).toBe('Order Fulfillment Workflow · 2');
+    });
+  });
 
-      expect(store.instanceLabels().get(runId)).toBe('Order Fulfillment Workflow · ORD-0001');
+  describe('the run’s context', () => {
+    it('lists the open run’s variables, an event’s parameters under dotted keys', () => {
+      store.selectInstance(runId);
+
+      expect(store.selectedContext()).toEqual([
+        { key: 'channel', value: 'web' },
+        { key: 'priority', value: 'normal' },
+        { key: 'order-created.subject', value: '1' },
+        { key: 'order-created.orderNumber', value: 'ORD-1001' },
+        { key: 'new_order', value: '1' },
+      ]);
+    });
+
+    it('is empty without an open run, or for a run with no context', () => {
+      expect(store.selectedContext()).toEqual([]);
+
+      store.selectInstance(OTHER_WORKFLOW_INSTANCE_DTO.id);
+      expect(store.selectedContext()).toEqual([]);
+    });
+
+    it('keeps lists, empty maps and absent values whole rather than inventing structure', () => {
+      expect(flattenContext({ lines: [1, 2], empty: {}, missing: null, deep: { a: { b: true, n: 3 } } })).toEqual([
+        { key: 'lines', value: '[1,2]' },
+        { key: 'empty', value: '{}' },
+        { key: 'missing', value: '—' },
+        { key: 'deep.a.b', value: 'true' },
+        { key: 'deep.a.n', value: '3' },
+      ]);
     });
   });
 });
