@@ -164,23 +164,23 @@ public class EventDefinition {
     private void validateParameters(List<String> errors) {
         Set<String> names = new HashSet<>();
         for (EventParameter parameter : getParameters()) {
-            String name = parameter.getName();
-            if (isBlank(name) || !PARAMETER_NAME.matcher(name).matches()) {
-                errors.add("parameter name '%s' is not an identifier".formatted(name));
+            String parameterName = parameter.getName();
+            if (isBlank(parameterName) || !PARAMETER_NAME.matcher(parameterName).matches()) {
+                errors.add("parameter name '%s' is not an identifier".formatted(parameterName));
                 continue;
             }
-            if (!names.add(name)) {
-                errors.add("parameter '%s' is declared twice".formatted(name));
+            if (!names.add(parameterName)) {
+                errors.add("parameter '%s' is declared twice".formatted(parameterName));
             }
-            if (OccurredParameter.SUBJECT.equals(name)) {
+            if (OccurredParameter.SUBJECT.equals(parameterName)) {
                 errors.add("parameter name 'subject' is reserved for the record a SYSTEM event is about");
             }
             if (parameter.getType() == null) {
-                errors.add("parameter '%s' needs a 'type'".formatted(name));
+                errors.add("parameter '%s' needs a 'type'".formatted(parameterName));
             } else if (parameter.getType() == EventParameterType.ENTITY_REF && isBlank(parameter.getEntityType())) {
-                errors.add("parameter '%s' is an ENTITY_REF and needs an 'entityType'".formatted(name));
+                errors.add("parameter '%s' is an ENTITY_REF and needs an 'entityType'".formatted(parameterName));
             } else if (parameter.getType() != EventParameterType.ENTITY_REF && !isBlank(parameter.getEntityType())) {
-                errors.add("parameter '%s' is no ENTITY_REF — leave 'entityType' empty".formatted(name));
+                errors.add("parameter '%s' is no ENTITY_REF — leave 'entityType' empty".formatted(parameterName));
             }
         }
     }
@@ -238,7 +238,7 @@ public class EventDefinition {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private static final Pattern PARAMETER_NAME = Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*$");
+    private static final Pattern PARAMETER_NAME = Pattern.compile("^[A-Za-z_]\\w*$");
 
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
