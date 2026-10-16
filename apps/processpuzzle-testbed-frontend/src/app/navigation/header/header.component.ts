@@ -1,9 +1,9 @@
-import { Component, computed, inject, output } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
-import { Router, RouterLink } from '@angular/router';
-import { NgClass, NgOptimizedImage } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { NgClass } from '@angular/common';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { appRoutes } from '../../app.routes';
 import { MatListItemIcon, MatListItemTitle } from '@angular/material/list';
@@ -14,16 +14,42 @@ import { AuthButtonComponent } from '@processpuzzle/auth';
 import { DesignRouteService } from '@processpuzzle/design';
 import { LayoutService, NavigateBackComponent, SubstringPipe } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { DesignButtonComponent, LanguageSelectorComponent, LikeButtonComponent, provideAppPropertyStore, ShareButtonComponent, TaskDashboardButtonComponent } from '@processpuzzle/widgets';
+import {
+  APPLICATION_CONTEXT,
+  type ApplicationContext,
+  AppLogoComponent,
+  AppTitleComponent,
+  DesignButtonComponent,
+  LanguageSelectorComponent,
+  LikeButtonComponent,
+  provideAppPropertyStore,
+  ShareButtonComponent,
+  TaskDashboardButtonComponent,
+} from '@processpuzzle/widgets';
+
+/**
+ * The testbed's own application context, which the header's `pp-app-logo` and `pp-app-title` read — the same
+ * widgets a base-app application places in its header, fed here by hand rather than from an `AppDefinition`.
+ * The name follows the Design Tools, which share this header.
+ */
+function testbedApplicationContext(): ApplicationContext {
+  const isDesignRoute = inject(DesignRouteService).isDesignRoute;
+  return {
+    name: computed(() => (isDesignRoute() ? 'Design Tools' : 'ProcessPuzzle Testbed')),
+    logoUrl: signal('assets/processpuzzle-logo-with-title.jpg'),
+    navItems: signal([]),
+  };
+}
 
 @Component({
   selector: 'app-header',
   imports: [
     AuthButtonComponent,
+    AppLogoComponent,
+    AppTitleComponent,
     MatToolbar,
     MatIcon,
     MatIconButton,
-    NgOptimizedImage,
     MatButton,
     MatMenu,
     MatMenuTrigger,
@@ -43,38 +69,17 @@ import { DesignButtonComponent, LanguageSelectorComponent, LikeButtonComponent, 
   ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
-  providers: [provideAppPropertyStore()],
+  providers: [provideAppPropertyStore(), { provide: APPLICATION_CONTEXT, useFactory: testbedApplicationContext }],
 })
 export class HeaderComponent {
   readonly layoutService = inject(LayoutService);
-  readonly router = inject(Router);
   readonly routes = appRoutes.filter((item) => item.title !== null && item.title !== undefined);
   readonly toggleSideNav = output<undefined>();
   readonly isDesignRoute = inject(DesignRouteService).isDesignRoute;
-  readonly title = computed(() => (this.isDesignRoute() ? 'Design Tools' : 'ProcessPuzzle Testbed'));
 
   // region event handlers
-  async onLogoClick() {
-    await this.navigateToHome();
-  }
-
-  async onLogoKeyPress(event: KeyboardEvent) {
-    if (event.key === 'Enter' || event.key === ' ' || event.code === 'Space') {
-      event.preventDefault(); // Prevent default behavior (like scrolling for space)
-      await this.onLogoClick();
-    }
-  }
-
   sidenavToggle() {
     this.toggleSideNav.emit(undefined);
   }
-
-  // endregion
-
-  // region protected, private helper methods
-  private async navigateToHome() {
-    await this.router.navigateByUrl('/');
-  }
-
   // endregion
 }

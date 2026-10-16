@@ -11,6 +11,8 @@ import { NavigateBackComponent } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AuthButtonComponent } from '@processpuzzle/auth';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- a stub for the logo widget's dependency, as the imports above
+import { ObjectStoreService } from '@processpuzzle/base-entity';
 
 @Component({ selector: 'pp-like-button', template: `<p>Mock Like Button</p>` })
 class MockLikeButtonComponent {}
@@ -44,6 +46,8 @@ describe('HeaderComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AUTHENTICATION_SERVICE, useValue: { isAuthenticated: signal(false) } },
+        // The logo comes from the application context's URL, so the object store is never asked.
+        { provide: ObjectStoreService, useValue: {} },
       ],
     })
       .overrideComponent(HeaderComponent, {
@@ -66,18 +70,15 @@ describe('HeaderComponent', () => {
     expect(matToolbar).toBeTruthy();
   });
 
-  it('navigates home for a logo click or an accessible keyboard activation', async () => {
-    const navigateByUrl = vi.spyOn(component.router, 'navigateByUrl').mockResolvedValue(true);
-    const preventDefault = vi.fn();
+  it('shows the testbed through the shared logo and title widgets, the logo linking home', () => {
+    const logo = fixture.debugElement.query(By.css('pp-app-logo a')).nativeElement as HTMLAnchorElement;
+    const image = fixture.debugElement.query(By.css('pp-app-logo img')).nativeElement as HTMLImageElement;
+    const title = fixture.debugElement.query(By.css('pp-app-title h1')).nativeElement as HTMLElement;
 
-    await component.onLogoClick();
-    await component.onLogoKeyPress({ key: 'Enter', preventDefault } as unknown as KeyboardEvent);
-    await component.onLogoKeyPress({ code: 'Space', preventDefault } as unknown as KeyboardEvent);
-    await component.onLogoKeyPress({ key: 'Escape', preventDefault } as unknown as KeyboardEvent);
-
-    expect(navigateByUrl).toHaveBeenCalledTimes(3);
-    expect(navigateByUrl).toHaveBeenCalledWith('/');
-    expect(preventDefault).toHaveBeenCalledTimes(2);
+    expect(logo.getAttribute('href')).toBe('/home');
+    expect(image.getAttribute('src')).toBe('assets/processpuzzle-logo-with-title.jpg');
+    expect(image.getAttribute('alt')).toBe('ProcessPuzzle Testbed');
+    expect(title.textContent?.trim()).toBe('ProcessPuzzle Testbed');
   });
 
   it('emits a sidenav toggle request', () => {

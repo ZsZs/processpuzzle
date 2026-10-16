@@ -1,4 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { LayoutService } from '@processpuzzle/util';
 import { APPLICATION_CONTEXT } from '../app-context/application-context';
 
 /**
@@ -8,12 +9,15 @@ import { APPLICATION_CONTEXT } from '../app-context/application-context';
  * Coloured by the theme: `--mat-sys-primary` by default, `--pp-app-title-color` to override it per surface
  * (the shell's header sets it to the on-header colour, so the title stays legible on the header surface).
  * Grows to fill a row, so that in a header the widgets after it line up at the far end.
+ *
+ * Hidden on a small screen, where the header row has no room for it. Only the heading goes: the host stays and
+ * keeps growing, so the widgets after it still line up at the far end.
  */
 @Component({
   selector: 'pp-app-title',
   standalone: true,
   template: `
-    @if (text(); as text) {
+    @if (!layoutService.isSmallDevice() && text(); as text) {
       <h1 class="pp-app-title">{{ text }}</h1>
     }
   `,
@@ -38,6 +42,7 @@ import { APPLICATION_CONTEXT } from '../app-context/application-context';
 export class AppTitleComponent {
   readonly title = input<string | undefined>(undefined);
 
+  protected readonly layoutService = inject(LayoutService);
   private readonly context = inject(APPLICATION_CONTEXT, { optional: true });
 
   protected readonly text = computed(() => this.title() || this.context?.name() || '');
