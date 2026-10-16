@@ -53,6 +53,7 @@ function setupAccessor(levels: Array<{ entityName: string; entityId?: string }>,
     loadById: vi.fn((id: string) => (rootLoaded && id === '1' ? aggregate : undefined)),
     currentEntity: signal(rootLoaded ? aggregate : undefined),
     update: vi.fn((entity: unknown) => Promise.resolve(entity)),
+    stage: vi.fn(),
     error: signal<string | undefined>(undefined),
   };
   const rootFacade = new InjectionToken<unknown>('ROOT_FACADE');
@@ -131,7 +132,11 @@ describe('EmbeddedAggregateAccessor', () => {
     expect(accessor.resolve('Embedded Component')).toBeUndefined();
   });
 
-  it('persists an embedded write as a write of the containing document', async () => {
+  /**
+   * Staged, not persisted: a rule spanning the document — an order's total against its lines — would refuse
+   * every intermediate step of building it. The owner's Save persists the finished document.
+   */
+  it('stages an embedded write in the containing document without persisting it', () => {
     const { accessor, rootStore } = setupAccessor([
       { entityName: 'Test Entity', entityId: '1' },
       { entityName: 'Embedded Component', entityId: 'embedded_1_1' },
@@ -139,20 +144,9 @@ describe('EmbeddedAggregateAccessor', () => {
     const resolved = accessor.resolve('Embedded Component');
     expect(resolved).toBeDefined();
 
-    await accessor.writeRoot(resolved as ResolvedEmbeddedAggregate, { id: '1', embeddedComponents: [] });
+    accessor.stageRoot(resolved as ResolvedEmbeddedAggregate, { id: '1', embeddedComponents: [] });
 
-    expect(rootStore.update).toHaveBeenCalledWith({ id: '1', embeddedComponents: [] });
-  });
-
-  it('throws the containing store\'s error when the write of the containing document was refused', async () => {
-    const { accessor, rootStore } = setupAccessor([
-      { entityName: 'Test Entity', entityId: '1' },
-      { entityName: 'Embedded Component', entityId: 'embedded_1_1' },
-    ]);
-    rootStore.update.mockImplementation(() => Promise.resolve(undefined));
-    rootStore.error.set('Order total does not match the sum of line item subtotals.');
-    const resolved = accessor.resolve('Embedded Component') as ResolvedEmbeddedAggregate;
-
-    await expect(accessor.writeRoot(resolved, { id: '1', embeddedComponents: [] })).rejects.toThrow('Order total does not match the sum of line item subtotals.');
+    expect(rootStore.stage).toHaveBeenCalledWith({ id: '1', embeddedComponents: [] });
+    expect(rootStore.update).not.toHaveBeenCalled();
   });
 });

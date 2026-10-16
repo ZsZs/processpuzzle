@@ -83,6 +83,8 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   }
 
   ngOnDestroy(): void {
+    // Left without Save — by Cancel, or by navigating elsewhere. A Save that succeeded has already cleared the mark.
+    void this.discardStagedChanges();
     this.ruleSubscription?.unsubscribe();
     this.ruleLoad$.complete();
     this.clearFieldRuleErrors();
@@ -93,6 +95,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // region event handlers
   async onCancel() {
     this.store().setCurrentEntity(undefined);
+    await this.discardStagedChanges();
     await this.navigateBack();
   }
 
@@ -127,6 +130,15 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // endregion
 
   // region protected, private helper methods
+  /**
+   * Drops the embedded-child changes staged in this entity's document (see `BaseEntityStoreApi.stage`) by
+   * re-reading it, so an abandoned edit cannot later pass for a saved one. A new object has no document yet.
+   */
+  private async discardStagedChanges(): Promise<void> {
+    if (this.isNewObject() || !this.store().hasStagedChanges(this.entityId())) return;
+    await this.store().reload(this.entityId());
+  }
+
   /**
    * Leaving an embedded child goes to the form of the entity that contains it. Only a fallback: a drill-down
    * already records where it came from. It is a page opened straight on its URL — a deep link, a reload —

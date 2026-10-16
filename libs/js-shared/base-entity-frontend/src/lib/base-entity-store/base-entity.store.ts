@@ -8,6 +8,7 @@ import { deleteEntity } from './deleteEntity';
 import { deleteAllEntities } from './deleteAllEntities';
 import { updateEntity } from './updateEntity';
 import { reloadEntity } from './reloadEntity';
+import { stageEntity } from './stageEntity';
 import { findByQuery } from './findByQuery';
 import { BaseEntityQueryCondition } from '../base-entity-service/base-entity-load-response';
 
@@ -24,16 +25,20 @@ export interface EntityStoreState<Entity extends BaseEntity> {
   isLoading: boolean;
   error: string | undefined;
   selectedEntities: Array<Entity>;
+  /** Keys of rows changed in this store but not yet persisted — see {@link BaseEntityStoreApi.stage}. */
+  stagedIds: string[];
 }
 
 export type EntityStoreHandle<Entity extends BaseEntity> = WritableStateSource<EntityStoreState<Entity>> & {
   entities: Signal<Entity[]>;
   selectedEntities: Signal<Entity[]>;
+  stagedIds: Signal<string[]>;
 };
 
 export interface BaseEntityStoreApi<Entity extends BaseEntity> {
   entities: Signal<Entity[]>;
   selectedEntities: Signal<Entity[]>;
+  stagedIds: Signal<string[]>;
   currentEntity: Signal<Entity | undefined>;
   currentId: Signal<string | undefined>;
   isLoading: Signal<boolean>;
@@ -55,11 +60,22 @@ export interface BaseEntityStoreApi<Entity extends BaseEntity> {
   deselectEntity(id: string): void;
   load(query: BaseEntityQueryCondition): void;
   loadById(id: string): Entity | undefined;
-  /** Re-reads one row from the repository — after something other than this store changed it on the server. */
+  /**
+   * Re-reads one row from the repository — after something other than this store changed it on the server.
+   * Also how staged changes are discarded: the row is replaced by what the server holds.
+   */
   reload(id: string): Promise<PersistedEntity<Entity> | undefined>;
   resetErrorState(): void;
   selectEntity(id: string): void;
   setCurrentEntity(id: string | undefined): void;
+  /**
+   * Replaces a row in this store **without** persisting it, and remembers that it is unsaved. An embedded
+   * child's Save lands here: its row lives inside this entity's document, which is only written when the
+   * document's own Save runs — so a rule spanning the document (an order's total against its lines) judges
+   * the finished document, not each step towards it. `update` persists and clears the mark; `reload` discards.
+   */
+  stage(entity: PersistedEntity<Entity>): void;
+  hasStagedChanges(id: string): boolean;
   update(entity: PersistedEntity<Entity>): Promise<PersistedEntity<Entity> | undefined>;
   clearCurrentEntity(): void;
   createEntity(): Entity;
@@ -94,12 +110,14 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       isLoading: false,
       error: undefined,
       selectedEntities: [],
+      stagedIds: [],
     }),
     withMethods((store, repository = getRepository()) => ({
       clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
       createEntity: (): Entity => new entityType(),
       add: addEntity(store, repository),
       delete: deleteEntity(store, repository, keyOf),
+      hasStagedChanges: (id: string): boolean => store.stagedIds().includes(id),
       deleteAll: deleteAllEntities(store, repository),
       deselectAll: () => {
         patchState(store, { selectedEntities: [] });
@@ -133,6 +151,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
           patchState(store, { currentEntity: foundEntity[0], currentId: keyOf(foundEntity[0]) });
         } else patchState(store, { currentEntity: undefined, currentId: undefined });
       },
+      stage: stageEntity(store, keyOf),
       update: updateEntity(store, repository, keyOf),
     })),
     withHooks((store) => ({

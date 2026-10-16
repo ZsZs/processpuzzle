@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { EntityKeyResolver, entityKeyById, EntityStoreHandle } from './base-entity.store';
+import { unstage } from './stageEntity';
 
 /**
  * Replaces one row with what the repository answers for it now. For a change the server made on its own — a
@@ -19,7 +20,7 @@ export const reloadEntity = <Entity extends BaseEntity>(store: EntityStoreHandle
       const index = entities.findIndex((item) => keyOf(item) === id);
       if (index >= 0) entities[index] = reloaded;
       else entities.push(reloaded);
-      patchState(store, { entities });
+      patchState(store, { entities, stagedIds: unstage(store, id) });
       return reloaded;
     } catch (error) {
       patchState(store, { error: httpErrorMessage(error) });
