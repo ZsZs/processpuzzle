@@ -23,12 +23,19 @@
           </mat-form-field>
 
           <h3>{{ t('auth.my_profile_form.roles_label') }}</h3>
-          @if (user.roles.length > 0) {
-            <mat-chip-set [attr.aria-label]="t('auth.my_profile_form.roles_label')">
-              @for (role of user.roles; track role) {
-                <mat-chip>{{ role }}</mat-chip>
+          @if (roles().length > 0) {
+            <ul class="roles" [attr.aria-label]="t('auth.my_profile_form.roles_label')">
+              @for (role of roles(); track role.id) {
+                <li>
+                  <mat-chip disableRipple>{{ role.name }}</mat-chip>
+                  @if (role.description) {
+                    <span class="role-description">{{ role.description }}</span>
+                  } @else if (role.descriptionKey) {
+                    <span class="role-description">{{ t(role.descriptionKey) }}</span>
+                  }
+                </li>
               }
-            </mat-chip-set>
+            </ul>
           } @else {
             <p class="hint">{{ t('auth.my_profile_form.no_roles') }}</p>
           }

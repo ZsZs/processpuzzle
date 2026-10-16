@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { screen } from '@testing-library/angular';
 import { ANIMATION_MODULE_TYPE, signal } from '@angular/core';
-import { AUTHENTICATION_SERVICE, User } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE, ROLE_DESCRIPTION_SOURCE, type RoleDescription, User } from '@processpuzzle/auth/domain';
+import { Observable, of, throwError } from 'rxjs';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 
@@ -21,12 +22,13 @@ const testConfig: TranslocoTestConfig = {
 describe('MyProfileComponent', () => {
   const getAccountManagementUrl = vi.fn();
 
-  const renderComponent = async (user?: User) => {
+  const renderComponent = async (user?: User, describeRoles?: () => Observable<ReadonlyMap<string, RoleDescription>>) => {
     return await setUpTranslocoTestBed(MyProfileComponent, testConfig, {
       providers: [
         { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: AUTHENTICATION_SERVICE, useValue: { currentUser: signal(user), getAccountManagementUrl } },
         { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
+        ...(describeRoles ? [{ provide: ROLE_DESCRIPTION_SOURCE, useValue: { describeRoles } }] : []),
       ],
     });
   };
@@ -50,6 +52,43 @@ describe('MyProfileComponent', () => {
     await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe'));
 
     expect(screen.getByText(authEn.my_profile_form.no_roles)).toBeInTheDocument();
+  });
+
+  it('should leave out the built-in roles of the identity provider', async () => {
+    await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['org-member', 'offline_access', 'uma_authorization', 'default-roles-acme']));
+
+    expect(screen.getByText('org-member')).toBeInTheDocument();
+    expect(screen.queryByText('offline_access')).not.toBeInTheDocument();
+    expect(screen.queryByText('uma_authorization')).not.toBeInTheDocument();
+    expect(screen.queryByText('default-roles-acme')).not.toBeInTheDocument();
+  });
+
+  it('should say so when the user holds only built-in roles', async () => {
+    await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['offline_access', 'uma_authorization']));
+
+    expect(screen.getByText(authEn.my_profile_form.no_roles)).toBeInTheDocument();
+  });
+
+  it('should describe the roles of the platform itself', async () => {
+    await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['org-admin', 'org-member']));
+
+    expect(screen.getByText(authEn.my_profile_form.platform_roles.org_admin)).toBeInTheDocument();
+    expect(screen.getByText(authEn.my_profile_form.platform_roles.org_member)).toBeInTheDocument();
+  });
+
+  it('should name and describe tenant roles from the description source', async () => {
+    const describeRoles = () => of(new Map([['order-clerk', { name: 'Order Clerk', description: 'Takes and checks incoming orders.' }]]));
+    await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['order-clerk', 'reviewer']), describeRoles);
+
+    expect(screen.getByText('Order Clerk')).toBeInTheDocument();
+    expect(screen.getByText('Takes and checks incoming orders.')).toBeInTheDocument();
+    expect(screen.getByText('reviewer')).toBeInTheDocument();
+  });
+
+  it('should still show the roles by id when the description source fails', async () => {
+    await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['order-clerk']), () => throwError(() => new Error('unreachable')));
+
+    expect(screen.getByText('order-clerk')).toBeInTheDocument();
   });
 
   it('should link to the account page and come back to this one', async () => {
