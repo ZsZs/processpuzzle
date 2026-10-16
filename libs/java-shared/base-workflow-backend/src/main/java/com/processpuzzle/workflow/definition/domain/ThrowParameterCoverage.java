@@ -66,21 +66,28 @@ public final class ThrowParameterCoverage {
         List<Shortfall> shortfalls = new ArrayList<>();
         Map<String, List<String>> dependencies = dependenciesOf(workflow);
         for (EventUse use : nonNull(workflow.getEvents())) {
-            if (!use.isThrow() || isBlank(use.getEventDefinitionId())) {
-                continue;
-            }
-            List<CatalogParameter> required = nonNull(parameters.apply(use.getEventDefinitionId())).stream()
-                    .filter(CatalogParameter::required)
-                    .toList();
-            if (required.isEmpty()) {
-                continue;
-            }
-            Upstream upstream = upstreamOf(workflow, use, dependencies, parameters, kinds, tasks);
-            for (CatalogParameter parameter : required) {
-                shortfallOf(use, parameter.name(), upstream).ifPresent(shortfalls::add);
+            if (use.isThrow() && !isBlank(use.getEventDefinitionId())) {
+                shortfalls.addAll(shortfallsOf(workflow, use, dependencies, parameters, kinds, tasks));
             }
         }
         return shortfalls;
+    }
+
+    /** The required parameters of one throw's event that it may not fill. */
+    private static List<Shortfall> shortfallsOf(Workflow workflow, EventUse use, Map<String, List<String>> dependencies,
+                                                Function<String, List<CatalogParameter>> parameters,
+                                                Function<String, Optional<CatalogEventKind>> kinds,
+                                                Function<String, Optional<TaskDefinition>> tasks) {
+        List<CatalogParameter> required = nonNull(parameters.apply(use.getEventDefinitionId())).stream()
+                .filter(CatalogParameter::required)
+                .toList();
+        if (required.isEmpty()) {
+            return List.of();
+        }
+        Upstream upstream = upstreamOf(workflow, use, dependencies, parameters, kinds, tasks);
+        return required.stream()
+                .flatMap(parameter -> shortfallOf(use, parameter.name(), upstream).stream())
+                .toList();
     }
 
     private static Optional<Shortfall> shortfallOf(EventUse use, String name, Upstream upstream) {
