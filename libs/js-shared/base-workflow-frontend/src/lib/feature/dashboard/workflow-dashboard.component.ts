@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { INBOX_SCOPES, InboxScope } from '../../domain/dashboard/dashboard-task';
@@ -32,6 +32,10 @@ import { TaskListComponent } from './task-list.component';
  * workflow diagram above it — see `ProcessDiagramComponent`. The other two are
  * a list beside a detail — the standard two-pane inbox.
  *
+ * **A title of its own, unless the host already names it.** Mounted as a page — where a task dashboard button
+ * leads — the screen says what it is. A host that shows it as one tab among others names it in the tab bar,
+ * and sets {@link showTitle} off through the route's `data` rather than saying it twice.
+ *
  * The run picker is a plain `<select>`, like every other control on this screen: the library declares no
  * `@angular/material` peer dependency, which is why the modeler's toolbar is bare checkboxes and its Save is
  * a bare `<button>`.
@@ -43,6 +47,9 @@ import { TaskListComponent } from './task-list.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dashboard">
+      @if (showTitle()) {
+        <h2 class="dashboard__title" data-testid="dashboard-title">{{ titleKey | transloco }}</h2>
+      }
       <div class="dashboard__toolbar">
         <div class="dashboard__scopes" role="tablist" [attr.aria-label]="titleKey | transloco">
           @for (scope of scopes; track scope) {
@@ -94,6 +101,11 @@ import { TaskListComponent } from './task-list.component';
       background-color: #ffffff;
       border-radius: 6px;
       padding: 16px 20px 24px;
+    }
+    .dashboard__title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
     }
     .dashboard__toolbar {
       display: flex;
@@ -169,6 +181,13 @@ import { TaskListComponent } from './task-list.component';
 })
 export class WorkflowDashboardComponent {
   protected readonly store = inject(WorkflowDashboardStore);
+
+  /**
+   * Whether the screen names itself; see the class description. Bound from route `data` by
+   * `withComponentInputBinding` — which sets an input the route does not mention to `undefined`, so that reads
+   * as the default rather than as "off".
+   */
+  readonly showTitle = input(true, { transform: (show: boolean | undefined) => show ?? true });
 
   protected readonly scopes = INBOX_SCOPES;
   protected readonly titleKey = `${TASK_DASHBOARD_I18N_SCOPE}.title`;

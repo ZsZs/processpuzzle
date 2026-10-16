@@ -11,7 +11,6 @@ import {
   provideLoggingService,
   provideTranslocoService,
   RUNTIME_CONFIGURATION,
-  TASK_DASHBOARD_ROUTE,
   TRANSLATION_SOURCE_REGISTRY,
 } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
@@ -41,7 +40,6 @@ import {
   BASE_WORKFLOW_FACADE_PROVIDERS,
   BASE_WORKFLOW_TRANSLATION_SOURCE,
   CurrentUserContext,
-  WORKFLOW_DASHBOARD_PATH,
   WorkflowRoleDescriptionSource,
 } from '@processpuzzle/base-workflow';
 import { SessionUserContext } from './content/base-workflows/session-user.context';
@@ -109,8 +107,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       { provide: CurrentUserContext, useClass: SessionUserContext },
       // And the other way round: My Profile describes the user's roles from base-workflow's role catalog.
       { provide: ROLE_DESCRIPTION_SOURCE, useExisting: WorkflowRoleDescriptionSource },
-      // The header's task dashboard button: the testbed mounts the dashboard among the base-workflow samples.
-      { provide: TASK_DASHBOARD_ROUTE, useValue: `/base-workflow/samples/${WORKFLOW_DASHBOARD_PATH}` },
       // Adds the read-only State Machine tab to every entity a state machine governs — `Order` and
       // `Dynamic Entity` in this tenant, both of them metadata-defined entities that name base-state
       // nowhere. base-entity asks the registered contributors when it resolves an entity's screens, so

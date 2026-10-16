@@ -342,7 +342,8 @@ export const appRoutes: Route[] = [
         // `document` branch, which brings its own scopes.
         children: [
           { path: '', pathMatch: 'full', redirectTo: WORKFLOW_DASHBOARD_PATH },
-          ...WORKFLOW_DASHBOARD_ROUTES,
+          // The samples' tab bar names this screen already, so the dashboard does not title itself here.
+          ...WORKFLOW_DASHBOARD_ROUTES.map((route) => ({ ...route, data: { ...route.data, showTitle: false } })),
           ...BASE_WORKFLOW_ROUTES,
           {
             path: ORDER_PATH,
@@ -446,6 +447,14 @@ export const appRoutes: Route[] = [
     path: 'design',
     loadChildren: () => import('@processpuzzle/design').then((m) => m.DESIGN_ROUTES),
     providers: [provideTranslocoScope({ scope: 'design', alias: 'design' })],
+  },
+  // The plain task board, where the header's task dashboard button leads: the dashboard as a page of its own,
+  // titled, at `/workflow-dashboard` — `TASK_DASHBOARD_ROUTE`'s default. Its mount among the base-workflow
+  // samples above is a sample of the screen, not the user's inbox. The wrapper carries no `title`, which is
+  // what keeps the sidenav, listing every titled top-level route, from offering it a second time.
+  {
+    path: '',
+    children: [...WORKFLOW_DASHBOARD_ROUTES],
   },
   {
     path: 'entity-registry',
