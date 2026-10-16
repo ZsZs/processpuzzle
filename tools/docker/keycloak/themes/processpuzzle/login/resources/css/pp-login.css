@@ -4,50 +4,148 @@
   background-color: #eeeeee;
 }
 
-/* keycloak.v2 fixes the column at 34rem; the card needs a little more for the dialog to fit between its bands. */
+/* keycloak.v2 fixes the column at 34rem; the card is a little wider. */
 .pf-v5-c-login__container {
   grid-template-columns: min(40rem, 100vw - 2rem);
 }
 
-/* The card is square: its header band takes the top ~28% and the puzzle pieces the bottom ~20%, so the dialog
-   is padded into the free band between them. Percentage padding resolves against the width, which keeps the
-   band in place at every card size.
+/* The card is taken apart rather than drawn whole: its header band on top, its puzzle row at the bottom, and
+   the card's blue in between for as long as the dialog needs. A square card only fits the sign-in form; the
+   profile, registration and reset pages are longer, and would run over the puzzles. Both bands are the same
+   image, each in a box with that band's own aspect ratio and anchored to the band's edge, so the rest of the
+   image is clipped.
 
    The card is the dialog's only surface: PatternFly's own (white, or near-black under pf-v5-theme-dark) and
-   its shadow would show wherever the square image does not reach. The image does not follow the OS colour
-   scheme, so neither does what is drawn on it. */
+   its shadow are dropped. The image does not follow the OS colour scheme, so neither does what is drawn on it. */
 .pf-v5-c-login__main {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  padding: 28% 12% 20%;
-  box-sizing: border-box;
-  background-color: transparent;
-  background-image: url('../img/pp_card.svg');
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  padding: 0;
+  background-color: #346faf;
   box-shadow: none;
   color-scheme: light;
   color: #eeeeee;
 }
 
-/* keycloak.v2 draws a blue rule above the title; on the card it is a stray line across the header band. */
+.pf-v5-c-login__main::before,
+.pf-v5-c-login__main::after {
+  content: '';
+  display: block;
+  background-image: url('../img/pp_card.svg');
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+}
+
+/* The header band is the top 27.2% of the card. */
+.pf-v5-c-login__main::before {
+  aspect-ratio: 1000 / 272;
+  margin-bottom: 1rem;
+  background-position: top;
+}
+
+/* The puzzle row, labels included, is the bottom 20%. */
+.pf-v5-c-login__main::after {
+  aspect-ratio: 100 / 20;
+  margin-top: 1rem;
+  background-position: bottom;
+}
+
+/* keycloak.v2 draws a blue rule above the title; on the card it is a stray line. */
 .pf-v5-c-login__main-header {
   border-top: 0;
-  padding: 0;
+  padding: 0 12% 0.75rem;
 }
 
 .pf-v5-c-login__main-body,
 .pf-v5-c-login__main-footer {
-  padding: 0;
+  padding: 0 12%;
 }
 
-/* <pp-login-form> carries its own heading, and the card's header band already carries the logo. */
+@media (max-width: 42rem) {
+  .pf-v5-c-login__main-header,
+  .pf-v5-c-login__main-body,
+  .pf-v5-c-login__main-footer {
+    padding-inline: 1.5rem;
+  }
+}
+
+/* keycloak.v2 forces the realm name white, for its dark backdrop; on this grey page it would barely show. */
+#kc-header-wrapper {
+  color: rgb(24, 111, 206) !important;
+}
+
+/* Keycloak's own forms (profile, registration, reset, ...): a compact title and tight field spacing, so a
+   page of several fields stays a card rather than a column. Text is light on the card's blue. */
+.pf-v5-c-login__main #kc-page-title {
+  font-size: 1.25rem;
+  text-align: center;
+  color: inherit;
+}
+
+.pf-v5-c-login__main .subtitle {
+  font-size: 0.8rem;
+}
+
+.pf-v5-c-login__main .pf-v5-c-form {
+  --pf-v5-c-form--GridGap: 0.6rem;
+}
+
+.pf-v5-c-login__main .pf-v5-u-mb-md-on-md {
+  margin-bottom: 0.5rem !important;
+}
+
+.pf-v5-c-login__main .pf-v5-c-form__label,
+.pf-v5-c-login__main .pf-v5-c-helper-text__item-text {
+  color: inherit;
+}
+
+/* The fields are always white, but under pf-v5-theme-dark they would inherit PatternFly's light text colour
+   and their typed text would all but vanish. Covers PatternFly's controls, the element's and the fallback
+   form shown until the element loads. */
+.pf-v5-c-login__main .pf-v5-c-form-control,
+.pf-v5-c-login__main pp-login-form input,
+.pf-v5-c-login__main #pp-fallback-form input {
+  --pf-v5-c-form-control--Color: #151515;
+  --pf-v5-c-form-control--BackgroundColor: #ffffff;
+  color: #151515;
+  background-color: #ffffff;
+}
+
+/* The brand dark blue primary button all but disappears on the card's blue: inside the card it is reversed
+   out instead, for PatternFly's buttons and the element's alike. The element's secondary (register) button
+   would then look the same, so it becomes an outline. */
+.pf-v5-c-login__main .pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--m-primary--BackgroundColor: #eeeeee;
+  --pf-v5-c-button--m-primary--Color: rgb(24, 111, 206);
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: #ffffff;
+  --pf-v5-c-button--m-primary--hover--Color: rgb(24, 111, 206);
+  --pf-v5-c-button--m-primary--focus--BackgroundColor: #ffffff;
+  --pf-v5-c-button--m-primary--focus--Color: rgb(24, 111, 206);
+  --pf-v5-c-button--m-primary--active--BackgroundColor: #ffffff;
+  --pf-v5-c-button--m-primary--active--Color: rgb(24, 111, 206);
+}
+
+/* PatternFly declares its button variables on the button itself, so those must be set there; the element
+   reads its own from the card. */
+.pf-v5-c-login__main {
+  --pp-button-primary-bg: #eeeeee;
+  --pp-button-primary-text: rgb(24, 111, 206);
+  --pp-button-secondary-bg: transparent;
+  --pp-button-secondary-text: #eeeeee;
+}
+
+.pf-v5-c-login__main pp-login-form .secondary {
+  box-shadow: inset 0 0 0 1px #eeeeee;
+}
+
+/* <pp-login-form> carries its own heading. */
 .pf-v5-c-login__main:has(pp-login-form) .pf-v5-c-login__main-header {
   display: none;
 }
 
-/* The element's own card would be a second surface on top of this one, and its margins would push the
-   form down over the puzzle pieces. Selectors carry the element name so they outrank its emulated styles. */
+/* The element's own card would be a second surface on top of this one. Selectors carry the element name so
+   they outrank its emulated styles. */
 .pf-v5-c-login__main pp-login-form .pp-login-form {
   max-width: none;
   margin: 0;
@@ -60,56 +158,7 @@
   margin: 0 0 1rem;
 }
 
-/* The element's dark-blue link would vanish on the card's dark-blue body. */
+/* The element's dark-blue link would vanish on the card's blue. */
 .pf-v5-c-login__main pp-login-form .link {
   color: #eeeeee;
-}
-
-/* keycloak.v2 forces the realm name white, for its dark backdrop; on this grey page it would barely show. */
-#kc-header-wrapper {
-  color: rgb(24, 111, 206) !important;
-}
-
-/* Below ~42rem the square card is too small for the dialog to fit between its bands, so the card is taken
-   apart: its header band on top, the puzzle row at the bottom, and the card's blue in between for as long
-   as the dialog needs. Both bands are the same image, each in a box with that band's own aspect ratio and
-   anchored to the band's edge, so the rest of the image is simply clipped. */
-@media (max-width: 42rem) {
-  .pf-v5-c-login__main {
-    display: flex;
-    flex-direction: column;
-    aspect-ratio: auto;
-    padding: 0;
-    background-color: #346faf;
-    background-image: none;
-  }
-
-  .pf-v5-c-login__main::before,
-  .pf-v5-c-login__main::after {
-    content: '';
-    display: block;
-    background-image: url('../img/pp_card.svg');
-    background-repeat: no-repeat;
-    background-size: 100% auto;
-  }
-
-  /* The header band is the top 27.2% of the card. */
-  .pf-v5-c-login__main::before {
-    aspect-ratio: 1000 / 272;
-    margin-bottom: 1rem;
-    background-position: top;
-  }
-
-  /* The puzzle row, labels included, is the bottom 20%. */
-  .pf-v5-c-login__main::after {
-    aspect-ratio: 100 / 20;
-    margin-top: 1rem;
-    background-position: bottom;
-  }
-
-  .pf-v5-c-login__main-header,
-  .pf-v5-c-login__main-body,
-  .pf-v5-c-login__main-footer {
-    padding-inline: 1.5rem;
-  }
 }
