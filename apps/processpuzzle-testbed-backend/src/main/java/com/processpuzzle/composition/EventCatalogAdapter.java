@@ -1,9 +1,7 @@
 package com.processpuzzle.composition;
 
-import com.processpuzzle.event.domain.EventKind;
 import com.processpuzzle.event.usecase.FindEventDefinition;
 import com.processpuzzle.shared.event.CatalogEventKind;
-import com.processpuzzle.shared.event.PlatformEventAction;
 import com.processpuzzle.workflow.definition.usecases.outbound.CatalogStateChange;
 import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
 import java.util.Optional;
@@ -35,9 +33,7 @@ public class EventCatalogAdapter implements EventCatalogPort {
 
     @Override
     public Optional<CatalogStateChange> stateChangeOf(String orgKey, String eventDefinitionId) {
-        return findEventDefinition.draft(orgKey, eventDefinitionId)
-                .filter(definition -> definition.getKind() == EventKind.SYSTEM)
-                .filter(definition -> definition.getAction() == PlatformEventAction.STATE_CHANGED)
-                .map(definition -> new CatalogStateChange(definition.getSubjectType(), definition.getState()));
+        return findEventDefinition.stateChangeOf(orgKey, eventDefinitionId)
+                .map(change -> new CatalogStateChange(change.subjectType(), change.state()));
     }
 }
