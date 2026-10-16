@@ -22,7 +22,7 @@ describe('WorkflowInstanceMapper', () => {
       expect(instance.entityLabel).toBe('ORD-1001');
       expect(instance.instanceNumber).toBe(3);
       expect(instance.title).toBe('Order Fulfillment Workflow #3');
-      expect(instance.context).toEqual({ channel: 'web', priority: 'normal' });
+      expect(instance.context).toEqual({ channel: 'web', priority: 'normal', 'order-created': { subject: '1', orderNumber: 'ORD-1001' }, new_order: '1' });
     });
 
     it('maps every task and artifact rather than passing the lists through', () => {
@@ -32,6 +32,12 @@ describe('WorkflowInstanceMapper', () => {
       expect(instance.artifacts[0]).toBeInstanceOf(ArtifactInstance);
       expect(instance.artifacts[0].type).toBe(ArtifactType.ENTITY);
       expect(instance.artifacts[0].currentState).toBe('CONFIRMED');
+    });
+
+    it('reads the record the run bound an artifact to, and its name', () => {
+      expect(instance.artifacts[0]).toMatchObject({ entityId: '1', entityType: 'order', entityLabel: 'ORD-1001' });
+      expect(instance.artifacts[1].entityId).toBeUndefined();
+      expect(instance.artifacts[1].entityLabel).toBeUndefined();
     });
 
     it('maps the third level down — a task’s step results', () => {
@@ -73,13 +79,15 @@ describe('WorkflowInstanceMapper', () => {
       const [waiting, occurred] = mapper.fromDto({
         id: 'i1',
         events: [
-          { id: 'e1', eventUseId: 'a', direction: 'CATCH', status: 'WAITING', correlationValue: '42', waitingSince: '2026-10-08T10:00:00Z', occurredAt: null, payload: null, contextContribution: null, name: null },
-          { id: 'e2', eventUseId: 'b', direction: 'CATCH', status: 'OCCURRED', occurredAt: '2026-10-08T11:00:00Z', payload: { invoiceNumber: 'I-1' }, contextContribution: { invoiceNumber: 'I-1' } },
+          { id: 'e1', eventUseId: 'a', direction: 'CATCH', status: 'WAITING', correlationValue: '42', waitingSince: '2026-10-08T10:00:00Z', occurredAt: null, payload: null, contextContribution: null, parameters: null, name: null },
+          { id: 'e2', eventUseId: 'b', direction: 'CATCH', status: 'OCCURRED', occurredAt: '2026-10-08T11:00:00Z', payload: { invoiceNumber: 'I-1' }, contextContribution: { invoiceNumber: 'I-1' }, parameters: { invoiceNumber: 'I-1' } },
         ],
       }).events;
 
       expect(waiting).toMatchObject({ correlationValue: '42', waitingSince: '2026-10-08T10:00:00Z', occurredAt: undefined, payload: undefined, name: undefined });
       expect(occurred.contextContribution).toEqual({ invoiceNumber: 'I-1' });
+      expect(occurred.parameters).toEqual({ invoiceNumber: 'I-1' });
+      expect(waiting.parameters).toBeUndefined();
       expect(mapper.fromDto({ id: 'i1' }).events).toEqual([]);
     });
 
@@ -120,6 +128,7 @@ describe('WorkflowInstanceMapper', () => {
       expect(dto.tasks?.[0].stepResults).toHaveLength(1);
       expect(dto.artifacts).toHaveLength(2);
       expect(dto.artifacts?.[0].stateMachineInstanceId).toBe('order-1');
+      expect(dto.artifacts?.[0].entityLabel).toBe('ORD-1001');
     });
 
     it('emits both nested lists unconditionally', () => {

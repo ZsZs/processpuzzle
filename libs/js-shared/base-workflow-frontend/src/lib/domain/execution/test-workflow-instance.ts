@@ -16,7 +16,9 @@ export const WORKFLOW_INSTANCE_DTO = {
   entityType: 'order',
   entityLabel: 'ORD-1001',
   startedAt: '2026-08-20T08:15:00Z',
-  context: { channel: 'web', priority: 'normal' },
+  // The plain variables a run starts with, the start event's parameters namespaced under its id, and the bound
+  // order under the artifact's object name — the shape docs/event-parameters.md gives the context.
+  context: { channel: 'web', priority: 'normal', 'order-created': { subject: '1', orderNumber: 'ORD-1001' }, new_order: '1' },
   tasks: [
     {
       id: '5a1b2c3d-0001-4a00-8000-000000000001',
@@ -46,6 +48,8 @@ export const WORKFLOW_INSTANCE_DTO = {
       name: 'Order Entity',
       type: 'ENTITY',
       entityId: '1',
+      entityType: 'order',
+      entityLabel: 'ORD-1001',
       stateMachineInstanceId: 'order-1',
       currentState: 'CONFIRMED',
       updatedAt: '2026-08-20T09:02:00Z',

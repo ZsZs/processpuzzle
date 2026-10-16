@@ -33,7 +33,9 @@ interface ArtifactInstanceDto {
   artifactDefinitionId?: string;
   name?: string;
   type?: ArtifactType;
-  entityId?: string;
+  entityId?: string | null;
+  entityType?: string | null;
+  entityLabel?: string | null;
   stateMachineInstanceId?: string;
   currentState?: string;
   updatedAt?: string;
@@ -51,6 +53,7 @@ interface EventInstanceDto {
   occurredAt?: string | null;
   payload?: PropertyMap | null;
   contextContribution?: PropertyMap | null;
+  parameters?: PropertyMap | null;
   dueAt?: string | null;
   fireCount?: number;
 }
@@ -187,7 +190,9 @@ function toArtifactInstance(dto: ArtifactInstanceDto): ArtifactInstance {
     artifactDefinitionId: dto.artifactDefinitionId,
     name: dto.name,
     type: dto.type,
-    entityId: dto.entityId,
+    entityId: dto.entityId ?? undefined,
+    entityType: dto.entityType ?? undefined,
+    entityLabel: dto.entityLabel ?? undefined,
     stateMachineInstanceId: dto.stateMachineInstanceId,
     currentState: dto.currentState,
     updatedAt: dto.updatedAt,
@@ -201,6 +206,8 @@ function fromArtifactInstance(artifact: ArtifactInstance): ArtifactInstanceDto {
     name: artifact.name,
     type: artifact.type,
     entityId: artifact.entityId,
+    entityType: artifact.entityType,
+    entityLabel: artifact.entityLabel,
     stateMachineInstanceId: artifact.stateMachineInstanceId,
     currentState: artifact.currentState,
     updatedAt: artifact.updatedAt,
@@ -219,6 +226,7 @@ function toEventInstance(dto: EventInstanceDto): EventInstance {
     occurredAt: dto.occurredAt ?? undefined,
     payload: dto.payload ?? undefined,
     contextContribution: dto.contextContribution ?? undefined,
+    parameters: dto.parameters ?? undefined,
     dueAt: dto.dueAt ?? undefined,
     fireCount: dto.fireCount,
   });
@@ -237,6 +245,7 @@ function fromEventInstance(event: EventInstance): EventInstanceDto {
     occurredAt: event.occurredAt,
     payload: event.payload,
     contextContribution: event.contextContribution,
+    parameters: event.parameters,
     dueAt: event.dueAt,
     fireCount: event.fireCount,
   };

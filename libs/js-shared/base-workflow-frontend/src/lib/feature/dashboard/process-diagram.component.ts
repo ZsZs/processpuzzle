@@ -31,7 +31,7 @@ type LayoutLookup = { readonly layout: WorkflowDiagram | undefined };
  *   active work and a waiting catch loudest, a blocked task in red, finished work faded;
  * - the open task is `highlighted`, the mark the modeler uses for "the element you came from";
  * - each artifact is labelled with the record the run actually holds — `ORD-0042 : Order` — rather than the
- *   workflow's object name, as soon as `ObjectNameResolver` has it.
+ *   workflow's object name, once the run has bound it (`ArtifactInstance.entityLabel`).
  *
  * **Read-only**, which is `WorkflowDiagramComponent`'s default: nothing drags, and there is no Save. Clicking a
  * task opens it in the pane below, as a click on its board card does.
