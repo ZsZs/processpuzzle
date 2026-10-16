@@ -50,6 +50,7 @@ import { RelatedEntityFacade } from './content/base-forms/related-entity/related
 import { EmbeddedComponentFacade } from './content/base-forms/embedded-component/embedded-component.facade';
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
+import { provideTestbedApplicationContext } from './testbed-application-context';
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -105,6 +106,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // property of which section of the testbed you happen to be in, and a second mount of the dashboard
       // would otherwise show an empty inbox for no visible reason.
       { provide: CurrentUserContext, useClass: SessionUserContext },
+      // What the header's logo and title widgets name and show; see provideTestbedApplicationContext.
+      provideTestbedApplicationContext(),
       // And the other way round: My Profile describes the user's roles from base-workflow's role catalog.
       { provide: ROLE_DESCRIPTION_SOURCE, useExisting: WorkflowRoleDescriptionSource },
       // Adds the read-only State Machine tab to every entity a state machine governs — `Order` and

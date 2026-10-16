@@ -1,4 +1,4 @@
-import { Component, computed, inject, output, signal } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -15,8 +15,6 @@ import { DesignRouteService } from '@processpuzzle/design';
 import { LayoutService, NavigateBackComponent, SubstringPipe } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import {
-  APPLICATION_CONTEXT,
-  type ApplicationContext,
   AppLogoComponent,
   AppTitleComponent,
   DesignButtonComponent,
@@ -26,20 +24,6 @@ import {
   ShareButtonComponent,
   TaskDashboardButtonComponent,
 } from '@processpuzzle/widgets';
-
-/**
- * The testbed's own application context, which the header's `pp-app-logo` and `pp-app-title` read — the same
- * widgets a base-app application places in its header, fed here by hand rather than from an `AppDefinition`.
- * The name follows the Design Tools, which share this header.
- */
-function testbedApplicationContext(): ApplicationContext {
-  const isDesignRoute = inject(DesignRouteService).isDesignRoute;
-  return {
-    name: computed(() => (isDesignRoute() ? 'Design Tools' : 'ProcessPuzzle Testbed')),
-    logoUrl: signal('assets/processpuzzle-logo-with-title.jpg'),
-    navItems: signal([]),
-  };
-}
 
 @Component({
   selector: 'app-header',
@@ -69,7 +53,7 @@ function testbedApplicationContext(): ApplicationContext {
   ],
   templateUrl: 'header.component.html',
   styleUrl: 'header.component.scss',
-  providers: [provideAppPropertyStore(), { provide: APPLICATION_CONTEXT, useFactory: testbedApplicationContext }],
+  providers: [provideAppPropertyStore()],
 })
 export class HeaderComponent {
   readonly layoutService = inject(LayoutService);

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
+import { provideTestbedApplicationContext } from '../../testbed-application-context';
 import { By } from '@angular/platform-browser';
 import { Component, signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { LanguageSelectorComponent, LikeButtonComponent, ShareButtonComponent } from '@processpuzzle/widgets';
@@ -44,8 +45,10 @@ describe('HeaderComponent', () => {
         }),
       ],
       providers: [
-        provideRouter([]),
+        // A design route to navigate to: the header renames itself there and leaves the logo out.
+        provideRouter([{ path: 'design', children: [] }]),
         { provide: AUTHENTICATION_SERVICE, useValue: { isAuthenticated: signal(false) } },
+        provideTestbedApplicationContext(),
         // The logo comes from the application context's URL, so the object store is never asked.
         { provide: ObjectStoreService, useValue: {} },
       ],
@@ -79,6 +82,15 @@ describe('HeaderComponent', () => {
     expect(image.getAttribute('src')).toBe('assets/processpuzzle-logo-with-title.jpg');
     expect(image.getAttribute('alt')).toBe('ProcessPuzzle Testbed');
     expect(title.textContent?.trim()).toBe('ProcessPuzzle Testbed');
+  });
+
+  it('names itself Design Tools on a design route, without the testbed logo', async () => {
+    await TestBed.inject(Router).navigateByUrl('/design');
+    fixture.detectChanges();
+
+    const title = fixture.debugElement.query(By.css('pp-app-title h1')).nativeElement as HTMLElement;
+    expect(title.textContent?.trim()).toBe('Design Tools');
+    expect(fixture.debugElement.query(By.css('pp-app-logo'))).toBeNull();
   });
 
   it('emits a sidenav toggle request', () => {
