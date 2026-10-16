@@ -36,6 +36,55 @@
         "owner": "alice",
         "region": "eu-west-1"
       },
+      "comments": [
+        {
+          "author": "Alice Example",
+          "authorId": "alice",
+          "createdAt": "2026-10-01T09:30:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Created for the comments demo."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "author": "Bob Example",
+          "authorId": "bob",
+          "createdAt": "2026-10-02T14:15:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Reviewed — "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ],
+                    "text": "looks good"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
       "components": [
         "1",
         "2",
@@ -106,6 +155,55 @@
         "name": "HUK24_Versicherungsschein",
         "mimeType": "application/pdf"
       },
+      "comments": [
+        {
+          "author": "Alice Example",
+          "authorId": "alice",
+          "createdAt": "2026-10-03T08:00:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Waiting for the second review."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "author": "Carol Example",
+          "authorId": "carol",
+          "createdAt": "2026-10-04T16:45:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Approved."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Ready to ship."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
       "components": [
         "4",
         "5"
