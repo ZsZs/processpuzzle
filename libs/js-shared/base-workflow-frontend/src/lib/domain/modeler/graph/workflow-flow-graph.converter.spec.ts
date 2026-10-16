@@ -837,6 +837,18 @@ describe('WorkflowFlowGraphConverter', () => {
       expect(graph.nodes.find((node) => node.id === INVOICE)?.data.label).toBe(':Fulfillment Invoice');
     });
 
+    // The dashboard's Process view draws one run, whose objects are records with names of their own.
+    it('labels an artifact with the name of the record a run holds, when given one', () => {
+      const objectNames = new Map([
+        ['order-entity', 'ORD-0042'],
+        ['fulfillment-invoice', 'INV-7'],
+      ]);
+      const graph = convert(stateless(), { objectNames });
+
+      expect(graph.nodes.find((node) => node.id === ORDER)?.data.label).toBe('ORD-0042 : Order');
+      expect(graph.nodes.find((node) => node.id === INVOICE)?.data.label).toBe('INV-7 : Fulfillment Invoice');
+    });
+
     // The artifact feeds the event it starts, not the root after it.
     it('feeds a start event the artifacts it waits for', () => {
       const start = edgesOfRelation(convert(), 'start');

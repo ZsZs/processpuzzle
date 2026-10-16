@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO } from '../definition/test-artifact-definition';
 import { OTHER_ROLE_DEFINITION_DTO, ROLE_DEFINITION_DTO } from '../definition/test-role-definition';
 import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO } from '../definition/test-task-definition';
@@ -12,6 +12,7 @@ import { TaskDefinitionStore } from '../definition/task-definition.store';
 import { TaskInstanceStatus } from '../execution/workflow-instance';
 import { OTHER_WORKFLOW_INSTANCE_DTO, pageOfWorkflowInstances, WORKFLOW_INSTANCE_DTO } from '../execution/test-workflow-instance';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from './current-user.context';
+import { ObjectNameResolver } from './object-name.resolver';
 import { WorkflowDashboardStore } from './workflow-dashboard.store';
 
 /**
@@ -469,6 +470,34 @@ describe('WorkflowDashboardStore', () => {
       const reads = instanceReads();
       expect(reads).toHaveLength(1);
       reads[0].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+    });
+  });
+
+  /** The record a run is about, named by base-entity — stubbed here, `ObjectNameResolver` has its own spec. */
+  describe('the records behind a run', () => {
+    const nameRecords = (): void => {
+      vi.spyOn(TestBed.inject(ObjectNameResolver), 'nameOf').mockImplementation((artifactTypeId, entityId) => (artifactTypeId === 'order' && entityId === '1' ? 'ORD-0001' : undefined));
+    };
+
+    it('names the open run by its record', () => {
+      nameRecords();
+      store.select(runId, reviewOrderTaskId);
+
+      expect(store.selectedSubjectName()).toBe('ORD-0001');
+      expect(store.selectedObjectNames().get('order-entity')).toBe('ORD-0001');
+      expect(store.selectedInputs()[0].recordName).toBe('ORD-0001');
+    });
+
+    it('falls back to the record’s id until the name is known', () => {
+      store.select(runId, reviewOrderTaskId);
+
+      expect(store.selectedSubjectName()).toBe('1');
+    });
+
+    it('labels every run in the picker by its workflow and its record', () => {
+      nameRecords();
+
+      expect(store.instanceLabels().get(runId)).toBe('Order Fulfillment Workflow · ORD-0001');
     });
   });
 });

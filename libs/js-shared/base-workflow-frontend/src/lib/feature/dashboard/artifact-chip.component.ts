@@ -44,9 +44,9 @@ import { modelerIconUrl } from '../../domain/modeler/modeler-icons';
     <span class="chip" [class.chip--pending]="!artifact().instance" [class.chip--unmet]="!artifact().satisfied" [attr.data-testid]="'artifact-chip-' + artifact().artifactDefinitionId">
       <img class="chip__symbol" [src]="symbol" alt="" aria-hidden="true" />
       @if (artifact().link; as link) {
-        <a class="chip__name chip__name--link" [routerLink]="link" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ artifact().name }}</a>
+        <a class="chip__name chip__name--link" [routerLink]="link" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ displayName() }}</a>
       } @else {
-        <span class="chip__name">{{ artifact().name }}</span>
+        <span class="chip__name">{{ displayName() }}</span>
       }
       @if (artifact().instance) {
         <span class="chip__state">{{ stateText() }}</span>
@@ -123,6 +123,15 @@ export class ArtifactChipComponent {
    * enum value, and no screen in this workspace translates one. Lower-cased only because it reads as a
    * word here rather than as a field value.
    */
+  /**
+   * The artifact, and the record it is when the run holds one — `ORD-0042 : Order`, in the object notation
+   * the diagram uses for the same thing.
+   */
+  protected readonly displayName = computed(() => {
+    const { name, recordName } = this.artifact();
+    return recordName ? `${recordName} : ${name}` : name;
+  });
+
   protected readonly stateText = computed(() => {
     const artifact = this.artifact();
     const type = artifact.instance?.type?.toLowerCase() ?? artifact.type?.toLowerCase() ?? '';

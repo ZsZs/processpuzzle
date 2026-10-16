@@ -1,8 +1,9 @@
-import { computed, inject } from '@angular/core';
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { computed, effect, inject } from '@angular/core';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
+import { ArtifactType } from '../definition/artifact-definition';
 import { ArtifactDefinitionStore } from '../definition/artifact-definition.store';
 import { RoleDefinitionStore } from '../definition/role-definition.store';
 import { TaskDefinition, TaskStepType } from '../definition/task-definition';
@@ -16,6 +17,7 @@ import { PropertyMap } from '../property-map';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from './current-user.context';
 import { DashboardLinkResolver } from './dashboard-link.resolver';
 import { DashboardTask, InboxScope, ResolvedArtifact, StepTool } from './dashboard-task';
+import { ObjectNameResolver } from './object-name.resolver';
 import { TaskActionService } from './task-action.service';
 
 /**
@@ -133,9 +135,26 @@ export const WorkflowDashboardStore = signalStore(
     const roleStore = inject(RoleDefinitionStore);
     const toolStore = inject(ToolDefinitionStore);
     const links = inject(DashboardLinkResolver);
+    const objectNames = inject(ObjectNameResolver);
     const session = inject(CurrentUserContext);
 
     const instances = computed<WorkflowInstance[]>(() => instanceStore.entities());
+
+    const artifactCatalog = computed(() => new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact])));
+
+    /** The name of the record an artifact instance points at, once `ObjectNameResolver` has it. */
+    const recordNameOf = (artifact: ArtifactInstance | undefined): string | undefined =>
+      artifact?.entityId ? objectNames.nameOf(artifactCatalog().get(artifact.artifactDefinitionId)?.artifactTypeId, artifact.entityId) : undefined;
+
+    /**
+     * The name of the record a run is about — the artifact instance holding the run's own `entityId` — or
+     * that id itself until the name is known, and `undefined` for a run started for nothing in particular.
+     */
+    const subjectNameOf = (instance: WorkflowInstance): string | undefined => {
+      if (!instance.entityId) return undefined;
+      const subject = (instance.artifacts ?? []).find((artifact) => artifact.entityId === instance.entityId);
+      return recordNameOf(subject) ?? instance.entityId;
+    };
 
     /**
      * Workflow id → (task definition id → the role that performs it).
@@ -252,7 +271,7 @@ export const WorkflowDashboardStore = signalStore(
       const definition = selectedDefinition();
       if (!definition) return [];
       const instancesByDefinitionId = new Map<string, ArtifactInstance>((selectedInstance()?.artifacts ?? []).map((artifact) => [artifact.artifactDefinitionId, artifact]));
-      const catalog = new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact]));
+      const catalog = artifactCatalog();
       const states = selectedArtifactStates();
       const declared = direction === 'input' ? definition.inputs : definition.outputs;
       return declared.map((artifactDefinitionId) => {
@@ -267,6 +286,7 @@ export const WorkflowDashboardStore = signalStore(
           name: instance?.name ?? catalogEntry?.name ?? artifactDefinitionId,
           type: instance?.type ?? catalogEntry?.artifactType,
           instance,
+          recordName: recordNameOf(instance),
           requiredState,
           satisfied: !requiredState || sameState(instance?.currentState, requiredState),
           link: links.artifactLink(artifactDefinitionId, catalogEntry, instance),
@@ -307,6 +327,39 @@ export const WorkflowDashboardStore = signalStore(
 
       selectedRow,
       selectedInstance,
+
+      /** The name of the record the open run is about — see {@link subjectNameOf}. */
+      selectedSubjectName: computed<string | undefined>(() => {
+        const instance = selectedInstance();
+        return instance ? subjectNameOf(instance) : undefined;
+      }),
+
+      /**
+       * Artifact definition id → the name of the record the open run holds for it, for the Process view's
+       * diagram. Only the artifacts whose record has been named; the rest keep the workflow's object name.
+       */
+      selectedObjectNames: computed<ReadonlyMap<string, string>>(() => {
+        const names = new Map<string, string>();
+        (selectedInstance()?.artifacts ?? []).forEach((artifact) => {
+          const name = recordNameOf(artifact);
+          if (name) names.set(artifact.artifactDefinitionId, name);
+        });
+        return names;
+      }),
+
+      /**
+       * Run id → how the run picker names it: its workflow, and the record it is about when it is about one —
+       * the run's own id only for a run started for nothing in particular.
+       */
+      instanceLabels: computed<ReadonlyMap<string, string>>(
+        () =>
+          new Map(
+            instances().map((instance) => {
+              const workflow = instance.workflowName || instance.workflowId;
+              return [instance.id, `${workflow} · ${subjectNameOf(instance) ?? instance.id}`];
+            }),
+          ),
+      ),
       selectedDefinition,
       selectedTask: computed<TaskInstance | undefined>(() => selectedRow()?.task),
       selectedInputs,
@@ -478,6 +531,27 @@ export const WorkflowDashboardStore = signalStore(
     };
   }),
 
+  withHooks({
+    /**
+     * Asks for the record name behind every artifact instance of every loaded run — the picker names each run
+     * by its record, and the open one's diagram and chips name all of its objects. `ObjectNameResolver`
+     * asks once per record, so a reload costs nothing for the records already named.
+     */
+    onInit: () => {
+      const instanceStore = inject(WorkflowInstanceStore);
+      const artifactDefinitionStore = inject(ArtifactDefinitionStore);
+      const objectNames = inject(ObjectNameResolver);
+      effect(() => {
+        const catalog = new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact]));
+        instanceStore.entities().forEach((instance) =>
+          (instance.artifacts ?? []).forEach((artifact) => {
+            const definition = catalog.get(artifact.artifactDefinitionId);
+            if (definition?.artifactType === ArtifactType.ENTITY) objectNames.request(definition.artifactTypeId, artifact.entityId);
+          }),
+        );
+      });
+    },
+  }),
   withDevtools('WorkflowDashboard'),
 );
 

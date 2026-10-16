@@ -16,10 +16,8 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
  *
  * **What this deliberately does not draw is sequence.** It shows *what* is stuck, not *where* in the flow it
  * sits relative to its siblings, or whether a `parallel` group is half finished. That is structural
- * information and the modeler already draws it from `WorkflowTaskAssignment.dependsOn` / `joinType` /
- * `parallel`. A second graph view here would be two layouts of one model to keep in step, and the better
- * move if the board turns out to be insufficient is to layer live status onto the modeler's existing nodes —
- * not to grow a diagram in this component.
+ * information, and `ProcessDiagramComponent` above the board draws it — the modeler's own diagram with live
+ * status layered onto its nodes, rather than a second graph grown in this component.
  *
  * Column headings carry the raw status for the same reason the badges do: nothing in this workspace
  * translates an enum value, and a translated heading above untranslated cards would read as two fields.
@@ -36,7 +34,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
           <div>
             <div class="board__title" data-testid="board-workflow">{{ instance.workflowName || instance.workflowId }}</div>
             <div class="board__subtitle">
-              <span data-testid="board-entity">{{ instance.entityId || '—' }}</span>
+              <span data-testid="board-entity">{{ store.selectedSubjectName() || '—' }}</span>
               @if (instance.startedAt) {
                 <span data-testid="board-started">{{ instance.startedAt | date: 'short' }}</span>
               }

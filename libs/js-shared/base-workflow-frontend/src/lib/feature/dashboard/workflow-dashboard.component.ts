@@ -4,6 +4,7 @@ import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { INBOX_SCOPES, InboxScope } from '../../domain/dashboard/dashboard-task';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
 import { ProcessBoardComponent } from './process-board.component';
+import { ProcessDiagramComponent } from './process-diagram.component';
 import { TaskDetailComponent } from './task-detail.component';
 import { TaskListComponent } from './task-list.component';
 
@@ -27,7 +28,8 @@ import { TaskListComponent } from './task-list.component';
  * | Process | one run's board, grouped by status | where is this run stuck |
  *
  * The Process scope lays out differently on purpose: a four-column board squeezed into a third of the width
- * is four unreadable columns, so it takes the full row and the task detail moves below it. The other two are
+ * is four unreadable columns, so it takes the full row and the task detail moves below it, with the run's
+ * workflow diagram above it — see `ProcessDiagramComponent`. The other two are
  * a list beside a detail — the standard two-pane inbox.
  *
  * The run picker is a plain `<select>`, like every other control on this screen: the library declares no
@@ -37,7 +39,7 @@ import { TaskListComponent } from './task-list.component';
 @Component({
   selector: 'pp-workflow-dashboard',
   standalone: true,
-  imports: [TranslocoPipe, TaskListComponent, TaskDetailComponent, ProcessBoardComponent],
+  imports: [TranslocoPipe, TaskListComponent, TaskDetailComponent, ProcessBoardComponent, ProcessDiagramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dashboard">
@@ -65,7 +67,7 @@ import { TaskListComponent } from './task-list.component';
             <select class="dashboard__select" [value]="store.selectedInstanceId() ?? ''" data-testid="dashboard-run" (change)="pickRun($event)">
               <option value="">—</option>
               @for (instance of store.selectableInstances(); track instance.id) {
-                <option [value]="instance.id">{{ instance.workflowName || instance.workflowId }} · {{ instance.id }}</option>
+                <option [value]="instance.id">{{ store.instanceLabels().get(instance.id) }}</option>
               }
             </select>
           </label>
@@ -74,6 +76,7 @@ import { TaskListComponent } from './task-list.component';
 
       <div class="dashboard__body" [class.dashboard__body--stacked]="isProcess()">
         @if (isProcess()) {
+          <pp-process-diagram />
           <pp-process-board />
         } @else {
           <pp-task-list />
