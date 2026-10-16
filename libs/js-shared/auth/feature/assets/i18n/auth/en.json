@@ -47,6 +47,10 @@
     "roles_label": "My roles",
     "no_roles": "You hold no roles.",
     "not_signed_in": "You are not signed in.",
-    "manage_account_button": "Manage account"
+    "manage_account_button": "Manage account",
+    "platform_roles": {
+      "org_admin": "Administers the organization: members, roles and settings.",
+      "org_member": "Member of the organization; may sign in and work in its applications."
+    }
   }
 }

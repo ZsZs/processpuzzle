@@ -47,6 +47,10 @@
     "roles_label": "Mis roles",
     "no_roles": "No tiene roles.",
     "not_signed_in": "No ha iniciado sesión.",
-    "manage_account_button": "Gestionar cuenta"
+    "manage_account_button": "Gestionar cuenta",
+    "platform_roles": {
+      "org_admin": "Administra la organización: miembros, roles y configuración.",
+      "org_member": "Miembro de la organización; puede iniciar sesión y trabajar en sus aplicaciones."
+    }
   }
 }

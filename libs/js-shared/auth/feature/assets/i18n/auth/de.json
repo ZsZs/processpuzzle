@@ -47,6 +47,10 @@
     "roles_label": "Meine Rollen",
     "no_roles": "Sie haben keine Rollen.",
     "not_signed_in": "Sie sind nicht angemeldet.",
-    "manage_account_button": "Konto verwalten"
+    "manage_account_button": "Konto verwalten",
+    "platform_roles": {
+      "org_admin": "Verwaltet die Organisation: Mitglieder, Rollen und Einstellungen.",
+      "org_member": "Mitglied der Organisation; darf sich anmelden und in ihren Anwendungen arbeiten."
+    }
   }
 }

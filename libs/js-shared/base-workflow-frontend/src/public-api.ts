@@ -5,7 +5,23 @@
 // region models
 export { type PropertyMap } from './lib/domain/property-map';
 export { toReferenceIds } from './lib/domain/reference-ids';
-export { ArtifactUse, EventDirection, EventUse, JoinType, RequiredStartArtifact, RoleUse, StartEvent, TaskArtifactState, type TimerDefinition, timerOf, TimerType, ToolUse, Workflow, WorkflowStartConditionType, WorkflowTaskAssignment } from './lib/domain/definition/workflow';
+export {
+  ArtifactUse,
+  EventDirection,
+  EventUse,
+  JoinType,
+  RequiredStartArtifact,
+  RoleUse,
+  StartEvent,
+  TaskArtifactState,
+  type TimerDefinition,
+  timerOf,
+  TimerType,
+  ToolUse,
+  Workflow,
+  WorkflowStartConditionType,
+  WorkflowTaskAssignment,
+} from './lib/domain/definition/workflow';
 export { RoleDefinition } from './lib/domain/definition/role-definition';
 export { ArtifactDefinition, ArtifactType } from './lib/domain/definition/artifact-definition';
 export { StepDefinition, TaskDefinition, TaskStepType } from './lib/domain/definition/task-definition';
@@ -75,6 +91,7 @@ export { WorkflowStore } from './lib/domain/definition/workflow.store';
 export { RoleDefinitionMapper } from './lib/domain/definition/role-definition.mapper';
 export { RoleDefinitionService } from './lib/domain/definition/role-definition.service';
 export { RoleDefinitionStore } from './lib/domain/definition/role-definition.store';
+export { WorkflowRoleDescriptionSource } from './lib/domain/definition/role-description.source';
 export { ArtifactDefinitionMapper } from './lib/domain/definition/artifact-definition.mapper';
 export { ArtifactDefinitionService } from './lib/domain/definition/artifact-definition.service';
 export { ArtifactDefinitionStore } from './lib/domain/definition/artifact-definition.store';
