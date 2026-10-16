@@ -155,13 +155,15 @@ public class WorkflowDefinitionMapper {
     }
 
     public ArtifactUse toArtifactUseDomain(com.processpuzzle.workflow.model.ArtifactUse input) {
-        return ArtifactUse.builder().artifactDefinitionId(input.getArtifactDefinitionId()).objectName(input.getObjectName()).build();
+        return ArtifactUse.builder().artifactDefinitionId(input.getArtifactDefinitionId()).objectName(input.getObjectName())
+                .bindFrom(input.getBindFrom()).build();
     }
 
     public com.processpuzzle.workflow.model.ArtifactUse toArtifactUseModel(ArtifactUse use) {
         return new com.processpuzzle.workflow.model.ArtifactUse()
                 .artifactDefinitionId(use.getArtifactDefinitionId())
-                .objectName(use.getObjectName());
+                .objectName(use.getObjectName())
+                .bindFrom(use.getBindFrom());
     }
 
     public ToolUse toToolUseDomain(com.processpuzzle.workflow.model.ToolUse input) {

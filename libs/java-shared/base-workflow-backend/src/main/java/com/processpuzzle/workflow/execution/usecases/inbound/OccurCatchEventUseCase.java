@@ -70,7 +70,7 @@ public class OccurCatchEventUseCase {
                 .orElse(null);
         catchOccurrence.occur(orgKey, definition, instance, event,
                 new CatchOccurrence.Occurrence(Instant.now(), occurred.occurrenceId(),
-                        occurred.payload(), PayloadPath.map(OccurredEventDocument.of(occurred), mapping)));
+                        occurred.payload(), PayloadPath.map(OccurredEventDocument.of(occurred), mapping), occurred.parameters()));
         return true;
     }
 }

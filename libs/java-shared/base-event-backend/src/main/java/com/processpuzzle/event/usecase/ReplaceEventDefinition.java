@@ -7,6 +7,7 @@ import com.processpuzzle.event.usecase.exception.EventDefinitionNotFoundExceptio
 import com.processpuzzle.event.usecase.exception.InvalidEventDefinitionException;
 import com.processpuzzle.event.usecase.exception.StaleEventDefinitionException;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +22,17 @@ public class ReplaceEventDefinition {
 
     private final EventDefinitionRepository repository;
 
-    public ReplaceEventDefinition(EventDefinitionRepository repository) {
+    private final EventDefinitionValidator validator;
+
+    @Autowired
+    public ReplaceEventDefinition(EventDefinitionRepository repository, EventDefinitionValidator validator) {
         this.repository = repository;
+        this.validator = validator;
+    }
+
+    /** Without an entity catalog to check parameters against. */
+    public ReplaceEventDefinition(EventDefinitionRepository repository) {
+        this(repository, new EventDefinitionValidator(SubjectAttributePort.UNKNOWN));
     }
 
     public EventDefinition replace(String orgKey, String id, EventDefinition desiredState) {
@@ -34,7 +44,7 @@ public class ReplaceEventDefinition {
         }
 
         existing.replaceWith(desiredState);
-        List<String> errors = existing.validate();
+        List<String> errors = validator.validate(existing);
         if (!errors.isEmpty()) {
             throw new InvalidEventDefinitionException(id, errors);
         }

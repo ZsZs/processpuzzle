@@ -65,7 +65,7 @@ public class TriggeredStartListener {
             Map<String, Object> context = PayloadPath.map(OccurredEventDocument.of(event), startEvent.getPayloadMapping());
             startWorkflowInstance.startTriggered(
                             event.orgKey(), workflow.getId(), startEvent.getId(), event.subjectId(),
-                            event.subjectType(), context)
+                            event.subjectType(), context, event.parameters())
                     .ifPresentOrElse(
                             instance -> LOG.info("'{}' on {}/{} started workflow '{}' as instance {}.",
                                     event.eventDefinitionId(), event.subjectType(), event.subjectId(),

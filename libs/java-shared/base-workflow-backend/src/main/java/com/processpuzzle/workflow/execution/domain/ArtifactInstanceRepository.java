@@ -30,6 +30,9 @@ public interface ArtifactInstanceRepository
     /** Used by the (future) base-state change listener to find the row to refresh. */
     Optional<ArtifactInstance> findByOrgKeyAndStateMachineInstanceId(String orgKey, String stateMachineInstanceId);
 
+    /** Every artifact instance bound to one record, across runs — what a state change of that record refreshes. */
+    List<ArtifactInstance> findByOrgKeyAndEntityTypeAndEntityId(String orgKey, String entityType, String entityId);
+
     /**
      * Every artifact instance of a tenant in one statement, for erasing the tenant. A bulk delete, so it
      * neither loads the rows nor checks their version.

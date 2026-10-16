@@ -216,6 +216,41 @@ components:
       type: string
       enum: [ CREATED, UPDATED, DELETED, STATE_CHANGED ]
 
+    EventParameterType:
+      type: string
+      enum: [ STRING, NUMBER, BOOLEAN, DATE, ENTITY_REF ]
+      description: >-
+        ENTITY_REF is a reference to one record of `entityType` — its id. A workflow run binds the
+        artifact of that entity type to it (docs/event-parameters.md).
+
+    EventParameter:
+      type: object
+      required: [ name, type ]
+      description: >-
+        One value an occurrence of the event carries. A SYSTEM event fills a declared parameter from
+        the subject's attribute of the same name — which has to exist — and always carries the
+        implicit ENTITY_REF `subject`, which is not declared. A MESSAGE or SIGNAL thrown by a workflow
+        fills it from the thrower's context, by name.
+      properties:
+        name:
+          type: string
+          pattern: "^[A-Za-z_][A-Za-z0-9_]*$"
+          description: Unique within the definition; `subject` is reserved.
+          example: invoiceNumber
+        type:
+          $ref: "#/components/schemas/EventParameterType"
+        entityType:
+          type: string
+          nullable: true
+          description: ENTITY_REF only — the base-entity definition code, or `document`.
+          example: order
+        required:
+          type: boolean
+          default: false
+        description:
+          type: string
+          nullable: true
+
     EventDefinitionInput:
       type: object
       required: [ id, name, kind ]
@@ -243,6 +278,11 @@ components:
           nullable: true
           description: STATE_CHANGED only — the state entered. Omit to match every state change.
           example: CONFIRMED
+        parameters:
+          type: array
+          description: What an occurrence carries — see EventParameter.
+          items:
+            $ref: "#/components/schemas/EventParameter"
         version:
           type: integer
           format: int64

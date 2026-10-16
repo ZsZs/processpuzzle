@@ -1955,8 +1955,17 @@ components:
           nullable: true
           description: >-
             The name the artifact's object goes by in this workflow — the `new_order` of UML's
-            `new_order : Order` object notation. Display only; absent draws an anonymous object.
+            `new_order : Order` object notation. Once the run binds the artifact to a record, the
+            record's id is the context variable of this name.
           example: new_order
+        bindFrom:
+          type: string
+          nullable: true
+          description: >-
+            Which event parameter binds this artifact to its record: `<startEventId|eventUseId>.<parameter>`.
+            Needed only when the workflow declares more than one artifact of the same entity type;
+            otherwise the run binds the artifact from any ENTITY_REF parameter of its type.
+          example: order-created.subject
 
     # ── Tool Use ────────────────────────────────────────────
     ToolUse:
@@ -2344,6 +2353,14 @@ components:
           nullable: true
           description: CATCH — what the payload mapping added to the workflow context.
           additionalProperties: true
+        parameters:
+          type: object
+          nullable: true
+          readOnly: true
+          description: >-
+            The parameters the occurrence carried, by name (THROW: sent, CATCH: received). Also in the
+            context, namespaced under this event's eventUseId.
+          additionalProperties: true
         dueAt:
           type: string
           format: date-time
@@ -2426,7 +2443,22 @@ components:
         entityId:
           type: string
           nullable: true
-          description: ID of the actual entity instance in base-entity.
+          description: >-
+            Id of the record this artifact is in this run — an entity's or a document's. Bound by the run
+            from an ENTITY_REF parameter of the event it starts on or catches, or from a task completion
+            naming the artifact's objectName; never re-bound once set. Null until then.
+        entityType:
+          type: string
+          nullable: true
+          readOnly: true
+          description: The record's type — the base-entity definition code, or `document`.
+        entityLabel:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The bound record's name as its type shows it, resolved per response like
+            WorkflowInstance.entityLabel; falls back to entityId.
         stateMachineInstanceId:
           type: string
           nullable: true
@@ -2438,8 +2470,8 @@ components:
           type: string
           nullable: true
           description: >-
-            Cached current state name from base-state, refreshed when
-            EntityStateChangedEvent is received. Provided here as a convenience so
+            The bound record's current state, refreshed from every state-change fact about it — base-state's
+            for an entity, base-document's for a document. Provided here as a convenience so
             clients don't need to query base-state just to render a workflow overview.
         updatedAt:
           type: string

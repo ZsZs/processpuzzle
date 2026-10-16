@@ -396,10 +396,10 @@
               <skipValidateSpec>true</skipValidateSpec>
               <apiPackage>com.processpuzzle.event.api</apiPackage>
               <modelPackage>com.processpuzzle.event.model</modelPackage>
-              <!-- PlatformEventAction is the shared event contract's own enum, so a definition's
+              <!-- PlatformEventAction and EventParameterType are the shared event contract's own enums, so a definition's
                    binding and the fact it matches cannot drift apart. -->
               <schemaMappings>
-                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,PlatformEventAction=com.processpuzzle.shared.event.PlatformEventAction
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult,PlatformEventAction=com.processpuzzle.shared.event.PlatformEventAction,EventParameterType=com.processpuzzle.shared.event.EventParameterType
               </schemaMappings>
               <configOptions>
                 <delegatePattern>false</delegatePattern>

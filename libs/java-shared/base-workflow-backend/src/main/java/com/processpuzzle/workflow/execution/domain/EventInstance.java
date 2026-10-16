@@ -111,6 +111,14 @@ public class EventInstance {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> contextContribution;
 
+    /**
+     * The parameters the occurrence carried, by name — THROW: sent, CATCH: received (docs/event-parameters.md). Also in
+     * the context, under this event's {@link #eventUseId}.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> parameters;
+
     /** Timer catches — when the timer fires next; null when it will not fire (again). */
     @Column(name = "due_at")
     private Instant dueAt;

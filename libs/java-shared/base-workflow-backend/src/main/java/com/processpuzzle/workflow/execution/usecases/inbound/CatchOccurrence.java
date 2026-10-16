@@ -1,5 +1,6 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
@@ -11,6 +12,8 @@ import com.processpuzzle.workflow.execution.domain.WorkflowContext;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.events.TaskInterruptedEvent;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,15 +40,18 @@ public class CatchOccurrence {
     private final TaskInstanceRepository taskInstanceRepository;
     private final WorkflowProgression progression;
     private final ApplicationEventPublisher eventPublisher;
+    private final ArtifactBinder binder;
 
     public CatchOccurrence(EventInstanceRepository eventInstanceRepository,
                            TaskInstanceRepository taskInstanceRepository,
                            WorkflowProgression progression,
-                           ApplicationEventPublisher eventPublisher) {
+                           ApplicationEventPublisher eventPublisher,
+                           ArtifactBinder binder) {
         this.eventInstanceRepository = eventInstanceRepository;
         this.taskInstanceRepository = taskInstanceRepository;
         this.progression = progression;
         this.eventPublisher = eventPublisher;
+        this.binder = binder;
     }
 
     public void occur(String orgKey, ResolvedWorkflow definition, WorkflowInstance instance, EventInstance event,
@@ -54,7 +60,9 @@ public class CatchOccurrence {
         event.setOccurredAt(occurrence.at());
         event.setOccurrenceId(occurrence.occurrenceId());
         event.setPayload(occurrence.payload());
-        event.setContextContribution(occurrence.contribution());
+        Map<String, Object> parameters = occurrence.parameterValues();
+        event.setParameters(parameters.isEmpty() ? null : parameters);
+        event.setContextContribution(contributionOf(orgKey, definition, instance, event, occurrence));
         eventInstanceRepository.save(event);
 
         definition.definition().findEventUse(event.getEventUseId())
@@ -68,12 +76,47 @@ public class CatchOccurrence {
     }
 
     /**
+     * What the catch adds to the context: what its payload mapping read, the occurrence's parameters under the event's
+     * own id — {@code invoice-issued.invoiceNumber} — and the records the parameters bound, under their objects' names.
+     */
+    private Map<String, Object> contributionOf(String orgKey, ResolvedWorkflow definition, WorkflowInstance instance,
+                                               EventInstance event, Occurrence occurrence) {
+        Map<String, Object> contribution = new LinkedHashMap<>(occurrence.contribution() == null ? Map.of() : occurrence.contribution());
+        Map<String, Object> parameters = occurrence.parameterValues();
+        if (!parameters.isEmpty()) {
+            contribution.put(event.getEventUseId(), parameters);
+        }
+        contribution.putAll(binder.bind(orgKey, instance.getId(), definition, event.getEventUseId(), occurrence.parameters()));
+        return contribution;
+    }
+
+    /**
+     * One arrival at a catch.
+     *
      * @param occurrenceId the occurrence delivered; a timer passes its own row's id
      * @param payload      what the catch received; null for a timer
      * @param contribution what the catch's payload mapping took from it into the context
+     * @param parameters   the occurrence's parameters, resolved by base-event; empty for a timer
      */
     public record Occurrence(Instant at, UUID occurrenceId, Map<String, Object> payload,
-                             Map<String, Object> contribution) {}
+                             Map<String, Object> contribution, List<OccurredParameter> parameters) {
+
+        public Occurrence {
+            parameters = parameters == null ? List.of() : parameters;
+        }
+
+        /** An arrival that carries no parameters — a timer's. */
+        public Occurrence(Instant at, UUID occurrenceId, Map<String, Object> payload, Map<String, Object> contribution) {
+            this(at, occurrenceId, payload, contribution, List.of());
+        }
+
+        /** The parameters by name; empty when there are none. */
+        public Map<String, Object> parameterValues() {
+            Map<String, Object> values = new LinkedHashMap<>();
+            parameters.forEach(parameter -> values.put(parameter.name(), parameter.value()));
+            return values;
+        }
+    }
 
     private void interrupt(String orgKey, WorkflowInstance instance, EventUse boundary, Instant at) {
         taskInstanceRepository.findByOrgKeyAndWorkflowInstanceIdAndTaskDefinitionId(orgKey, instance.getId(),

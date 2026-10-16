@@ -5,11 +5,14 @@ import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow.ResolvedTask;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.PayloadPath;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
+import com.processpuzzle.workflow.execution.domain.ThrownParameters;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
@@ -98,6 +101,7 @@ public class TaskActivationService {
     private final RuleEvaluationPort ruleEvaluationPort;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
+    private EventCatalogPort eventCatalog = new PermitAllEventCatalogPort();
 
     @Autowired
     public TaskActivationService(TaskInstanceRepository taskInstanceRepository,
@@ -121,6 +125,15 @@ public class TaskActivationService {
                                  ApplicationEventPublisher eventPublisher) {
         this(taskInstanceRepository, eventInstanceRepository, workflowInstanceRepository, ruleEvaluationPort,
                 eventPublisher, Clock.systemUTC());
+    }
+
+    /**
+     * The catalog a throw reads its event's declared parameters from. Optional, so a host without base-event — and the
+     * tests constructing this service — throw with their payload mapping only.
+     */
+    @Autowired(required = false)
+    public void setEventCatalog(EventCatalogPort eventCatalog) {
+        this.eventCatalog = eventCatalog;
     }
 
     /**
@@ -218,11 +231,15 @@ public class TaskActivationService {
     private void raise(Run run, EventUse use, EventInstance event) {
         WorkflowInstance instance = run.instance();
         Instant now = clock.instant();
-        Map<String, Object> payload = PayloadPath.map(run.context, use.getPayloadMapping());
+        Map<String, Object> payload = new LinkedHashMap<>(PayloadPath.map(run.context, use.getPayloadMapping()));
+        Map<String, Object> parameters = ThrownParameters.fill(
+                eventCatalog.releasedParametersOf(run.orgKey, use.getEventDefinitionId()), payload, run.context);
+        payload.putAll(parameters);
         String correlationValue = use.getCorrelationKey() == null ? null : stringOf(run.context.get(use.getCorrelationKey()));
         event.setStatus(EventInstanceStatus.THROWN);
         event.setCorrelationValue(correlationValue);
         event.setPayload(payload);
+        event.setParameters(parameters.isEmpty() ? null : parameters);
         event.setOccurredAt(now);
         event.setOccurrenceId(event.getId());
         eventInstanceRepository.save(event);

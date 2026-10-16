@@ -1,6 +1,7 @@
 package com.processpuzzle.event.adapter.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -10,7 +11,10 @@ import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
+import com.processpuzzle.event.domain.EventParameter;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
+import com.processpuzzle.shared.event.EventParameterType;
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import java.time.Instant;
@@ -58,7 +62,24 @@ class PlatformEventCatalogListenerTest {
         listener.on(PlatformEvent.of(ORG, "order", "42", PlatformEventAction.CREATED, Map.of("customer", "ACME"), WHEN));
 
         assertThat(published()).containsExactly(new DefinedEventOccurred(
-                ORG, "OrderCreatedEvent", "order", "42", Map.of("customer", "ACME"), WHEN));
+                ORG, "OrderCreatedEvent", "order", "42", Map.of("customer", "ACME"), WHEN,
+                List.of(new OccurredParameter(OccurredParameter.SUBJECT, EventParameterType.ENTITY_REF, "order", "42"))));
+    }
+
+    // The declared parameters come from the payload attribute of the same name; one the fact lacks is null.
+    @Test
+    void carriesTheDeclaredParametersFromThePayload() {
+        EventDefinition created = definition("OrderCreatedEvent", PlatformEventAction.CREATED, null);
+        created.setParameters(List.of(
+                EventParameter.builder().name("orderNumber").type(EventParameterType.STRING).build(),
+                EventParameter.builder().name("customerName").type(EventParameterType.STRING).build()));
+        when(repository.findByOrgKeyAndChannelAndKindAndSubjectTypeAndAction(ORG, Channel.RELEASED, EventKind.SYSTEM, "order", PlatformEventAction.CREATED))
+                .thenReturn(List.of(created));
+
+        listener.on(PlatformEvent.of(ORG, "order", "42", PlatformEventAction.CREATED, Map.of("orderNumber", "O-1"), WHEN));
+
+        assertThat(published().getFirst().parameters()).extracting(OccurredParameter::name, OccurredParameter::value)
+                .containsExactly(tuple(OccurredParameter.SUBJECT, "42"), tuple("orderNumber", "O-1"), tuple("customerName", null));
     }
 
     @Test

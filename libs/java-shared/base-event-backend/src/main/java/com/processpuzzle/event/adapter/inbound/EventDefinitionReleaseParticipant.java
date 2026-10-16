@@ -136,6 +136,7 @@ public class EventDefinitionReleaseParticipant implements ReleaseParticipant {
         content.put("subjectType", event.getSubjectType());
         content.put("action", event.getAction());
         content.put("state", event.getState());
+        content.put("parameters", event.getParameters());
         return CanonicalJson.of(content, Set.of());
     }
 }

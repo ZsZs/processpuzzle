@@ -17,8 +17,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Recognises raw platform facts: every SYSTEM {@link EventDefinition} of the fact's organization whose
- * binding matches it is republished as a {@link DefinedEventOccurred}. That is all — nothing is
- * stored, and a fact no definition names is dropped.
+ * binding matches it is republished as a {@link DefinedEventOccurred}, carrying the definition's parameters
+ * resolved against the fact — the implicit {@code subject} and the declared ones from its payload. That is all —
+ * nothing is stored, and a fact no definition names is dropped.
  *
  * <p>{@code @TransactionalEventListener} with {@code REQUIRES_NEW}, the same shape as base-state's
  * {@code EntityObjectCreatedListener}: after commit, because a fact that rolled back never happened;
@@ -53,7 +54,7 @@ class PlatformEventCatalogListener {
                 LOG.debug("{} {} {}/{} is '{}'.", fact.orgKey(), fact.action(), fact.subjectType(), fact.subjectId(),
                         definition.getId());
                 eventPublisher.publishEvent(new DefinedEventOccurred(fact.orgKey(), definition.getId(),
-                        fact.subjectType(), fact.subjectId(), fact.payload(), fact.occurredAt()));
+                        fact.subjectType(), fact.subjectId(), fact.payload(), fact.occurredAt(), definition.parametersOf(fact)));
             }
         }
     }
