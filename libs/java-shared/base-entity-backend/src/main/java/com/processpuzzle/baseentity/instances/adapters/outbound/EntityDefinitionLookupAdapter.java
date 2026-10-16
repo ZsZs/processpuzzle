@@ -50,7 +50,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             attribute.isMultiValued(),
             attribute.getFormControlType() == FormControlType.EMBEDDED_COMPONENTS,
             attribute.getLinkedEntityType(),
-            attribute.isRequired()
+            attribute.isRequired(),
+            attribute.getFormControlType() == FormControlType.COMMENTS
         );
     }
 }

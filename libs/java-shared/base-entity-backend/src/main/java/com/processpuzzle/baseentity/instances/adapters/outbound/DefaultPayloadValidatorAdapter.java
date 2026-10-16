@@ -7,6 +7,8 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinition
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
 import com.processpuzzle.baseentity.port.EntityRulesPort;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,10 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             violations.add(new Violation(attribute.code(), "required"));
             return;
         }
+        if (value != null && attribute.comments()) {
+            validateComments(attribute, value, violations);
+            return;
+        }
         if (value == null || !attribute.embeddedComponent()) {
             return;
         }
@@ -95,6 +101,48 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
     private void validateSingleEmbedded(String orgKey, EntityDefinitionView childDefinition, Object value, List<Violation> violations) {
         if (value instanceof Map<?, ?> mapValue) {
             validateInto(orgKey, childDefinition, (Map<String, Object>) mapValue, violations);
+        }
+    }
+
+    /**
+     * Every entry of a COMMENTS attribute is {@code {author, authorId?, createdAt, content}}: a non-blank author, an
+     * ISO-8601 instant and Tiptap JSON content. That the stored entries are unchanged is the update use case's check.
+     */
+    private void validateComments(EntityAttributeView attribute, Object value, List<Violation> violations) {
+        if (!(value instanceof List<?> comments)) {
+            violations.add(new Violation(attribute.code(), "expected an array of comments"));
+            return;
+        }
+        for (int i = 0; i < comments.size(); i++) {
+            String problem = commentProblem(comments.get(i));
+            if (problem != null) {
+                violations.add(new Violation(attribute.code(), "comment %d %s".formatted(i, problem)));
+            }
+        }
+    }
+
+    private String commentProblem(Object comment) {
+        if (!(comment instanceof Map<?, ?> entry)) {
+            return "is not an object";
+        }
+        if (!(entry.get("author") instanceof String author) || author.isBlank()) {
+            return "needs an author";
+        }
+        if (!(entry.get("createdAt") instanceof String createdAt) || !isInstant(createdAt)) {
+            return "needs an ISO-8601 createdAt";
+        }
+        if (!(entry.get("content") instanceof Map<?, ?>)) {
+            return "needs rich text content";
+        }
+        return null;
+    }
+
+    private boolean isInstant(String value) {
+        try {
+            Instant.parse(value);
+            return true;
+        } catch (DateTimeParseException e) {
+            return false;
         }
     }
 

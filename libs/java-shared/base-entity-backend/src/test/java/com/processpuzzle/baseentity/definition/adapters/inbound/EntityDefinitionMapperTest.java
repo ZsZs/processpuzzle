@@ -31,6 +31,17 @@ class EntityDefinitionMapperTest {
         mapper = new EntityDefinitionMapper();
     }
 
+    /** Mapped by name, so a member added to one enum and not the other only fails when a definition uses it. */
+    @Test
+    void formControlType_contractAndDomainNameTheSameMembers() {
+        for (FormControlType type : FormControlType.values()) {
+            assertThat(mapper.toModelFormControlType(mapper.toDomainFormControlType(type))).isEqualTo(type);
+        }
+        assertThat(com.processpuzzle.baseentity.definition.domain.FormControlType.values()).hasSameSizeAs(FormControlType.values());
+        assertThat(mapper.toDomainFormControlType(FormControlType.COMMENTS))
+                .isEqualTo(com.processpuzzle.baseentity.definition.domain.FormControlType.COMMENTS);
+    }
+
     @Test
     void toDomain_and_toModel_roundTrip() {
         BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();

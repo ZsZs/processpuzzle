@@ -59,6 +59,19 @@ public class EntityDefinitionValidator {
         }
         validateDateFormat(attribute, violations);
         validateMultiplicity(attribute, violations);
+        validateComments(attribute, violations);
+    }
+
+    /** A comment history is a list of structured entries owned by the record — not a reference to another type. */
+    private void validateComments(BaseEntityAttribute attribute, List<Violation> violations) {
+        if (attribute.getFormControlType() != FormControlType.COMMENTS) {
+            return;
+        }
+        if (attribute.getValueKind() != ValueKind.REFERENCE || !attribute.isMultiValued()
+            || (attribute.getLinkedEntityType() != null && !attribute.getLinkedEntityType().isBlank())) {
+            violations.add(new Violation(attribute.getCode(),
+                "COMMENTS attributes must declare valueKind=REFERENCE, a multi-valued multiplicity and no linkedEntityType"));
+        }
     }
 
     private void validateMultiplicity(BaseEntityAttribute attribute, List<Violation> violations) {

@@ -11,8 +11,15 @@ public record EntityAttributeView(
     boolean multiValued,
     boolean embeddedComponent,
     String linkedEntityType,
-    boolean required
+    boolean required,
+    /** A COMMENTS attribute — an append-only list of {@code {author, authorId?, createdAt, content}} entries. */
+    boolean comments
 ) {
+    public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
+                               String linkedEntityType, boolean required) {
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false);
+    }
+
     public enum ValueKindView {
         TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE
     }

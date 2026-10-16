@@ -68,6 +68,8 @@ public class UpdateEntityInstanceUseCase {
             .orElseThrow(() -> new NotFoundException(
                 "No entity definition with code '%s'".formatted(entityObject.getEntityDefinitionCode())));
         Map<String, Object> effectivePayload = keepManagedAttributes(orgKey, entityObject, payload);
+        // Before setPayload: the stored payload is still the old one here, which is what the history is checked against.
+        effectivePayload = CommentHistoryGuard.guard(definition, entityObject.getPayload(), effectivePayload);
         payloadValidatorPort.validate(orgKey, definition, effectivePayload);
 
         entityObject.setPayload(effectivePayload);

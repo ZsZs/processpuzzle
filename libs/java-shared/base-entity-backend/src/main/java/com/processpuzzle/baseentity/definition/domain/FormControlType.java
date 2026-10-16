@@ -23,6 +23,11 @@ public enum FormControlType {
     RELATED_ENTITIES,
     ARTIFACT,
     AVATAR,
+    /**
+     * An append-only history of rich-text comments: valueKind REFERENCE, multi-valued, no linkedEntityType.
+     * Each entry is {@code {author, authorId?, createdAt, content}} with Tiptap JSON content.
+     */
+    COMMENTS,
     TAGS,
     TITLE,
     LABEL,

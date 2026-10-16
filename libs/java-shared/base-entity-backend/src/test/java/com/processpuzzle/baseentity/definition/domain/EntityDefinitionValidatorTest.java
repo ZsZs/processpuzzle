@@ -100,6 +100,31 @@ class EntityDefinitionValidatorTest {
         assertThat(Multiplicity.ZERO_TO_N.notation()).isEqualTo("0..n");
     }
 
+    @Test
+    void validate_commentsAsMultiValuedReference_passes() {
+        validator.validate(definitionWith(commentsAttribute(ValueKind.REFERENCE, Multiplicity.ZERO_TO_N, null)));
+    }
+
+    @Test
+    void validate_commentsOfAnotherShape_throwsValidationException() {
+        String message = "COMMENTS attributes must declare valueKind=REFERENCE, a multi-valued multiplicity and no linkedEntityType";
+        assertSingleViolation(commentsAttribute(ValueKind.TEXT, Multiplicity.ZERO_TO_N, null), message);
+        assertSingleViolation(commentsAttribute(ValueKind.REFERENCE, Multiplicity.ZERO_TO_ONE, null), message);
+        assertSingleViolation(commentsAttribute(ValueKind.REFERENCE, null, null), message);
+        assertSingleViolation(commentsAttribute(ValueKind.REFERENCE, Multiplicity.ZERO_TO_N, "note"), message);
+    }
+
+    private static BaseEntityAttribute commentsAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
+        return BaseEntityAttribute.builder()
+                .code("comments")
+                .name("Comments")
+                .valueKind(valueKind)
+                .formControlType(FormControlType.COMMENTS)
+                .multiplicity(multiplicity)
+                .linkedEntityType(linkedEntityType)
+                .build();
+    }
+
     private static BaseEntityAttribute multiplicityAttribute(Multiplicity multiplicity, Integer maxOccurs) {
         return BaseEntityAttribute.builder()
                 .code("attachments")

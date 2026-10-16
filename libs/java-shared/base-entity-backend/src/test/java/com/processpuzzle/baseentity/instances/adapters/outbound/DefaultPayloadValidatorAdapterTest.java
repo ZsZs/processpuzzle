@@ -300,4 +300,49 @@ class DefaultPayloadValidatorAdapterTest {
 
         assertThatThrownBy(() -> validator.validate(ORG, def, Map.of())).isInstanceOf(ValidationException.class);
     }
+
+    private static final EntityDefinitionView NOTE_DEF = new EntityDefinitionView("note", false, List.of(
+            new EntityAttributeView("comments", ValueKindView.REFERENCE, true, false, null, false, true)));
+
+    private static Map<String, Object> comment(Object author, Object createdAt, Object content) {
+        Map<String, Object> entry = new java.util.HashMap<>();
+        entry.put("author", author);
+        entry.put("createdAt", createdAt);
+        entry.put("content", content);
+        return entry;
+    }
+
+    @Test
+    void validate_wellFormedComments_pass() {
+        Map<String, Object> payload = Map.of("comments", List.of(
+                comment("Ada", "2026-10-01T09:30:00.000Z", Map.of("type", "doc")),
+                Map.of("author", "Grace", "authorId", "grace", "createdAt", "2026-10-02T10:00:00Z", "content", Map.of("type", "doc"))));
+
+        validator.validate(ORG, NOTE_DEF, payload);
+    }
+
+    @Test
+    void validate_commentsThatAreNotAnArray_throwValidationException() {
+        assertThatThrownBy(() -> validator.validate(ORG, NOTE_DEF, Map.of("comments", "hello")))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations())
+                        .containsExactly(new ValidationException.Violation("comments", "expected an array of comments")));
+    }
+
+    @Test
+    void validate_malformedCommentEntries_areEachReported() {
+        Map<String, Object> payload = Map.of("comments", List.of(
+                "plain text",
+                comment(" ", "2026-10-01T09:30:00Z", Map.of("type", "doc")),
+                comment("Ada", "yesterday", Map.of("type", "doc")),
+                comment("Ada", "2026-10-01T09:30:00Z", "<p>html</p>")));
+
+        assertThatThrownBy(() -> validator.validate(ORG, NOTE_DEF, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message").containsExactly(
+                        "comment 0 is not an object",
+                        "comment 1 needs an author",
+                        "comment 2 needs an ISO-8601 createdAt",
+                        "comment 3 needs rich text content"));
+    }
 }

@@ -598,6 +598,7 @@ components:
         - RELATED_ENTITIES
         - ARTIFACT
         - AVATAR
+        - COMMENTS
         - TAGS
         - TITLE
         - LABEL

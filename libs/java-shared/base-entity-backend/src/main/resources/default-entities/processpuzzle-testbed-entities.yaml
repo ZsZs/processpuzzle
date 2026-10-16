@@ -259,6 +259,14 @@ entityDefinitions:
         formControlType: EMBEDDED_COMPONENTS
         linkedEntityType: order-line
         multiplicity: '0..n'
+      # An append-only history: each entry is {author, authorId?, createdAt, content} with Tiptap JSON content.
+      # Like every attribute here it reaches only fresh databases — the loader creates definitions, never updates.
+      - code: comments
+        name: Comments
+        displayOrder: 7
+        valueKind: REFERENCE
+        formControlType: COMMENTS
+        multiplicity: '0..n'
 
   # 6. Embedded component definition: special-order-line
   #

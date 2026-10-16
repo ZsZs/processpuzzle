@@ -87,6 +87,7 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(viewAttr1.embeddedComponent()).isFalse();
         assertThat(viewAttr1.required()).isTrue();
         assertThat(viewAttr1.linkedEntityType()).isNull();
+        assertThat(viewAttr1.comments()).isFalse();
 
         EntityAttributeView viewAttr2 = view.attributes().get(1);
         assertThat(viewAttr2.code()).isEqualTo("addresses");
@@ -95,5 +96,23 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(viewAttr2.embeddedComponent()).isTrue();
         assertThat(viewAttr2.required()).isFalse();
         assertThat(viewAttr2.linkedEntityType()).isEqualTo("address");
+    }
+
+    @Test
+    void findByCode_flagsACommentsAttribute() {
+        BaseEntityAttribute commentsAttr = BaseEntityAttribute.builder()
+                .code("comments")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.COMMENTS)
+                .multiplicity(Multiplicity.ZERO_TO_N)
+                .build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("order").attributes(List.of(commentsAttr)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "order", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        EntityAttributeView view = adapter.findByCode("acme", "order").orElseThrow().attributes().get(0);
+
+        assertThat(view.comments()).isTrue();
+        assertThat(view.embeddedComponent()).isFalse();
+        assertThat(view.multiValued()).isTrue();
     }
 }
