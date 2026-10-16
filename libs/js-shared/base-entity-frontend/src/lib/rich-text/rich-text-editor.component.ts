@@ -18,12 +18,14 @@ export function isRichTextEmpty(content: RichTextContent | null | undefined): bo
 }
 
 /**
- * One Tiptap `Editor` on StarterKit, with the formatting toolbar while it is focused.
+ * One Tiptap `Editor` on StarterKit, with the formatting toolbar above it while it is editable.
  *
  * Content travels as Tiptap JSON rather than HTML: it is stored that way, and rendering it back through an
  * editor means only nodes StarterKit (plus `extensions`) defines can ever appear — there is no markup to
- * sanitize. With `editable` off the same component is the read-only rendering, without the toolbar and the
- * strip reserved for it.
+ * sanitize. With `editable` off the same component is the read-only rendering, without the toolbar.
+ *
+ * The toolbar sits in the flow rather than over the text, as base-document's floating one does: in a narrow form
+ * column it wraps onto a second row, and a floating bar would then cover the first line being typed.
  *
  * `content` is the initial document and may be replaced later; a value equal to what the editor already holds
  * is ignored, so feeding `contentChange` straight back does not reset the caret.
@@ -39,18 +41,18 @@ export function isRichTextEmpty(content: RichTextContent | null | undefined): bo
     @if (isToolbarVisible()) {
       <pp-rich-text-toolbar [editor]="editorInstance()!" [testIdPrefix]="testIdPrefix()" />
     }
-    @if (isPlaceholderVisible()) {
-      <span class="pp-rich-text-editor__placeholder" aria-hidden="true">{{ placeholder() }}</span>
-    }
-    <div #editorHost class="pp-rich-text-editor" [attr.data-testid]="testIdPrefix() + '-content'"></div>
+    <div class="pp-rich-text-editor__body">
+      @if (isPlaceholderVisible()) {
+        <span class="pp-rich-text-editor__placeholder" aria-hidden="true">{{ placeholder() }}</span>
+      }
+      <div #editorHost class="pp-rich-text-editor" [attr.data-testid]="testIdPrefix() + '-content'"></div>
+    </div>
   `,
   styles: [
     `
-      /* The top strip is what the toolbar is drawn into; reserved up front so focusing moves no text. */
       :host {
         display: block;
-        position: relative;
-        padding: 32px 8px 8px;
+        padding: 6px 8px 8px;
         border-radius: 4px;
         outline: 1px solid rgba(0, 0, 0, 0.12);
       }
@@ -61,10 +63,19 @@ export function isRichTextEmpty(content: RichTextContent | null | undefined): bo
         padding: 0;
         outline: none;
       }
+      /* The toolbar's own styles float it over a block's reserved strip; here it takes its place in the flow. */
+      pp-rich-text-toolbar {
+        position: static;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .pp-rich-text-editor__body {
+        position: relative;
+      }
       .pp-rich-text-editor__placeholder {
         position: absolute;
-        top: 32px;
-        left: 8px;
+        top: 0;
+        left: 0;
         color: rgba(0, 0, 0, 0.42);
         pointer-events: none;
       }
@@ -96,9 +107,8 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy {
 
   /** Set once the Editor exists, so the toolbar — which needs one — can only render after ngAfterViewInit. */
   protected readonly editorInstance = signal<Editor | null>(null);
-  protected readonly isFocused = signal(false);
   protected readonly isEmpty = signal(true);
-  protected readonly isToolbarVisible = computed(() => this.editable() && this.isFocused() && this.editorInstance() !== null);
+  protected readonly isToolbarVisible = computed(() => this.editable() && this.editorInstance() !== null);
   protected readonly isPlaceholderVisible = computed(() => this.editable() && this.isEmpty() && this.placeholder().length > 0);
 
   private readonly editorHost = viewChild.required<ElementRef<HTMLElement>>('editorHost');
@@ -132,10 +142,6 @@ export class RichTextEditorComponent implements AfterViewInit, OnDestroy {
         this.isEmpty.set(isRichTextEmpty(json));
         this.contentChange.emit(json);
       },
-      // Focus, not hover, is what "being edited" means — the toolbar has to stay up while the pointer travels
-      // to it, and its buttons cancel their mousedown so reaching for one does not blur the editor.
-      onFocus: () => this.isFocused.set(true),
-      onBlur: () => this.isFocused.set(false),
     });
     this.isEmpty.set(isRichTextEmpty(editor.getJSON()));
     this.editorInstance.set(editor);

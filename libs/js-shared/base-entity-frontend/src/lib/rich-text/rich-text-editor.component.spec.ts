@@ -61,16 +61,12 @@ describe('RichTextEditorComponent', () => {
     expect(element().querySelector('pp-rich-text-toolbar')).toBeNull();
   });
 
-  it('shows the toolbar only while the editor has focus', () => {
+  it('shows the toolbar, under its own test-id prefix, while editable', () => {
     fixture.componentRef.setInput('testIdPrefix', 'note');
-    fixture.detectChanges();
-    expect(element().querySelector('[data-testid="note-toolbar"]')).toBeNull();
-
-    editor().emit('focus', { editor: editor(), event: new FocusEvent('focus'), transaction: editor().state.tr });
     fixture.detectChanges();
     expect(element().querySelector('[data-testid="note-toolbar"]')).not.toBeNull();
 
-    editor().emit('blur', { editor: editor(), event: new FocusEvent('blur'), transaction: editor().state.tr });
+    fixture.componentRef.setInput('editable', false);
     fixture.detectChanges();
     expect(element().querySelector('[data-testid="note-toolbar"]')).toBeNull();
   });

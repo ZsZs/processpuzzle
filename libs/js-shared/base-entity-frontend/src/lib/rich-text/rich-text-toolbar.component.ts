@@ -42,7 +42,8 @@ const TOOLBAR_ACTIONS: readonly ToolbarAction[] = [
  * The formatting bar of one Tiptap `Editor` — a document's TEXT block, a comment being written. It is per
  * editor rather than one bar per page because every command it issues targets a single `Editor`: a page-level
  * bar would have to track which of N editors last had the caret, and would sit a screen away from it. Absolutely
- * positioned, so its host reserves a strip above the editor to draw it into and appearing shifts nothing.
+ * positioned, so a host either reserves a strip above the editor to draw it into — base-document's blocks do, and
+ * appearing shifts nothing — or puts it back in the flow, as RichTextEditorComponent does.
  *
  * Lives in base-entity rather than base-document because both features edit rich text and base-entity is the
  * one the other depends on. `testIdPrefix` keeps the test ids each caller's e2e suite already selects by.
