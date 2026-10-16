@@ -187,7 +187,8 @@ workflows:
     # Strictly sequential: each task waits for the previous one. `performedBy` picks one of the
     # referenced task definition's performedByRoles — review-order offers both, and here the clerk
     # does it. `artifactStates` walk the order through its base-state machine, DRAFT → CONFIRMED →
-    # SHIPPED → DELIVERED; recorded and drawn, not yet enforced.
+    # SHIPPED → DELIVERED; recorded and drawn, not yet enforced. The release checks them against that
+    # machine, though: see the cancellation catches under `events`.
     tasks:
       - taskDefinitionId: review-order
         performedBy: clerk
@@ -249,6 +250,24 @@ workflows:
         timer:
           type: CYCLE
           expression: R2/PT5M
+
+      # The cancellation path. The order's state machine can cancel it from DRAFT and from CONFIRMED —
+      # the states review-order and approve-shipment wait on it in — so each of those tasks carries an
+      # interrupting boundary catch of OrderCancelledEvent (order, STATE_CHANGED to CANCELLED). Cancelling
+      # the order interrupts the task, the rest of the flow becomes unreachable, and the run ends there;
+      # the modeler draws the catch leading to an "Order cancelled" end. Without these, the release refuses
+      # the workflow: a transition out of a state a task waits in has to be the workflow's business.
+      - id: order-cancelled-in-review
+        name: Order cancelled
+        eventDefinitionId: OrderCancelledEvent
+        direction: CATCH
+        attachedTo: review-order
+
+      - id: order-cancelled-before-shipment
+        name: Order cancelled
+        eventDefinitionId: OrderCancelledEvent
+        direction: CATCH
+        attachedTo: approve-shipment
 
   - id: invoicing-workflow
     name: Invoicing Workflow

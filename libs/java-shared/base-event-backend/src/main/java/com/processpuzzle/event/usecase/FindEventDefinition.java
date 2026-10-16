@@ -44,6 +44,11 @@ public class FindEventDefinition {
     }
 
     /** Whether a draft of that id exists; see {@link #kindOf}. */
+    /** The draft of one definition — what a workflow being saved or released is checked against. */
+    public Optional<EventDefinition> draft(String orgKey, String id) {
+        return id == null ? Optional.empty() : repository.findByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT);
+    }
+
     public boolean exists(String orgKey, String id) {
         return id != null && repository.existsByOrgKeyAndIdAndChannel(orgKey, id, Channel.DRAFT);
     }

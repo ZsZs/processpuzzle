@@ -70,7 +70,10 @@ export interface WorkflowFlowGraphOptions {
  * - **The end.** The model has no end element: an instance completes when every task has. One end event is
  *   *derived* nevertheless, fed by every task nothing depends on, so that the flow reads as closed. Not
  *   drawn when no task qualifies — a dependency cycle, which the backend refuses — because an end with
- *   nothing leading into it would claim an exit the flow does not have.
+ *   nothing leading into it would claim an exit the flow does not have. An **interrupting boundary event
+ *   nothing depends on** ends the run too — its task is cancelled and what follows it becomes unreachable —
+ *   so it leads to an end of its own, named after the event: the order cancelled during review leads to
+ *   "Order cancelled". One such end per catalog event, however many tasks catch it.
  * - **The join.** `joinType: ANY` on a task with two or more dependencies is the model's only gateway. It
  *   has no element of its own, so it is written on the edges it qualifies.
  * - **The intermediate events.** An `EventUse` takes part in the flow like a task — its `dependsOn` and a
@@ -223,9 +226,25 @@ export class WorkflowFlowGraphConverter {
     });
 
     if (sinks.length > 0) {
-      builder.addNode(endEventNode(endEventLabel, lanes ? sinks.at(-1)?.lane : undefined));
+      builder.addNode(endEventNode(END_EVENT_NODE_ID, endEventLabel, lanes ? sinks.at(-1)?.lane : undefined));
       sinks.forEach((sink) => builder.addEdge(sink.nodeId, END_EVENT_NODE_ID, 'sequence'));
     }
+
+    // The ends the interrupting boundary events imply. Keyed by the catalog event, so the order cancelled
+    // in review and the order cancelled before shipment end in the same place; in the lane of the last task
+    // catching it, which is where the swimlane layout ranks the end anyway — one column after that task.
+    const outcomeEnds = new Map<string, { label: string; lane: string | undefined; feeders: string[] }>();
+    events
+      .filter((event) => boundaryIds.has(event.id) && event.interrupting !== false && !dependedOnIds.has(event.id))
+      .forEach((event) => {
+        const nodeId = elementNodeId('end', `on:${event.eventDefinitionId || event.id}`);
+        const end = outcomeEnds.get(nodeId) ?? { label: event.name || event.eventDefinitionId || endEventLabel, lane: undefined, feeders: [] };
+        outcomeEnds.set(nodeId, { ...end, lane: lanes ? eventLaneOf(event) : undefined, feeders: [...end.feeders, elementNodeId('event', event.id)] });
+      });
+    outcomeEnds.forEach((end, nodeId) => {
+      builder.addNode(endEventNode(nodeId, end.label, end.lane));
+      end.feeders.forEach((feeder) => builder.addEdge(feeder, nodeId, 'sequence', undefined, 'port-bottom'));
+    });
     // endregion
 
     // region sequence — the flow only declaration order states
@@ -630,10 +649,10 @@ function intermediateEventNode(event: EventUse, laneRoleId: string | undefined):
   };
 }
 
-/** The derived end event. No `elementId`: there is no row behind it to name. */
-function endEventNode(label: string, laneRoleId: string | undefined): WorkflowNode {
+/** A derived end event. No `elementId`: there is no row behind it to name. */
+function endEventNode(id: string, label: string, laneRoleId: string | undefined): WorkflowNode {
   return {
-    id: END_EVENT_NODE_ID,
+    id,
     type: WORKFLOW_NODE_TYPE,
     position: { x: 0, y: 0 },
     size: { ...EVENT_NODE_SIZE },

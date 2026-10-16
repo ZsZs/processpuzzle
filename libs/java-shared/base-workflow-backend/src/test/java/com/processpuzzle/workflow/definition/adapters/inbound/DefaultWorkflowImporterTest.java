@@ -200,7 +200,14 @@ class DefaultWorkflowImporterTest {
             assertThat(def.getEvents()).extracting(EventUse::getId, EventUse::getDirection, EventUse::getEventDefinitionId)
                     .containsExactly(tuple("request-invoice", EventDirection.THROW, "InvoiceRequested"),
                             tuple("invoice-issued", EventDirection.CATCH, "InvoiceIssued"),
-                            tuple("approval-reminder", EventDirection.CATCH, null));
+                            tuple("approval-reminder", EventDirection.CATCH, null),
+                            tuple("order-cancelled-in-review", EventDirection.CATCH, "OrderCancelledEvent"),
+                            tuple("order-cancelled-before-shipment", EventDirection.CATCH, "OrderCancelledEvent"));
+            // The cancellation path: the two tasks waiting on the order where its machine can cancel it catch
+            // that, interrupting — which is what the release's state-coverage check asks of them.
+            assertThat(def.getEvents()).filteredOn(event -> "OrderCancelledEvent".equals(event.getEventDefinitionId()))
+                    .extracting(EventUse::getAttachedTo, EventUse::isInterrupting)
+                    .containsExactly(tuple("review-order", true), tuple("approve-shipment", true));
             // A reminder while the manager has not approved: a non-interrupting cycle on the task.
             assertThat(def.findEventUse("approval-reminder")).hasValueSatisfying(reminder -> {
                 assertThat(reminder.getAttachedTo()).isEqualTo("approve-shipment");
