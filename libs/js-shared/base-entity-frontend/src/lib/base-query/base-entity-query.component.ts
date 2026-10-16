@@ -22,12 +22,16 @@ import { RsqlFieldMetadataProvider } from '../query-editor/rsql-field-metadata.m
   providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
   template: `
     <ng-container *transloco="let t">
-      <div class="query-wrapper">
-        <label class="field-label" [attr.for]="entityDescriptor().createTestId('query-input')">{{ t('base_entity.toolbar.query_label') }}</label>
+      <div class="query-wrapper" [class.compact]="compact()">
+        @if (!compact()) {
+          <label class="field-label" [attr.for]="entityDescriptor().createTestId('query-input')">{{ t('base_entity.toolbar.query_label') }}</label>
+        }
         <mat-form-field class="query-field" subscriptSizing="dynamic">
           <input
             [id]="entityDescriptor().createTestId('query-input')"
             [attr.data-testid]="entityDescriptor().createTestId('query')"
+            [attr.placeholder]="compact() ? t('base_entity.toolbar.query_label') : null"
+            [attr.aria-label]="compact() ? t('base_entity.toolbar.query_label') : null"
             matInput
             type="text"
             [matTooltip]="t('base_entity.toolbar.query_tooltip')"
@@ -64,11 +68,28 @@ import { RsqlFieldMetadataProvider } from '../query-editor/rsql-field-metadata.m
       .query-field {
         width: 320px;
       }
+      /*
+       * Compact: the label is the placeholder, and the field takes the room the toolbar leaves it — a larger
+       * share than the filter's, since its suffix buttons take two of the slots its text would have.
+       */
+      :host:has(.compact) {
+        flex: 1.6 1 0;
+        min-width: 0;
+      }
+      .query-wrapper.compact {
+        display: flex;
+      }
+      .query-wrapper.compact .query-field {
+        width: 100%;
+        min-width: 0;
+      }
     `,
   ],
 })
 export class BaseEntityQueryComponent<Entity extends BaseEntity> implements OnInit {
   entityDescriptor = input.required<BaseEntityDescriptor>();
+  /** For a medium or small screen: the label moves inside the field, and the field gives up its fixed width. */
+  compact = input(false);
   queryValue = signal<string>('');
   appliedQuery = signal<string | undefined>(undefined);
   queryActive = computed(() => this.appliedQuery() !== undefined && this.queryValue() === this.appliedQuery());

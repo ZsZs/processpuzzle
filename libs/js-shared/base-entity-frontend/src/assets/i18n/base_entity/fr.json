@@ -107,7 +107,9 @@
     "filter_tooltip": "Filtrer les lignes chargées par texte",
     "edit_tooltip": "Modifier l'enregistrement sélectionné",
     "new_tooltip": "Créer un nouvel enregistrement",
-    "delete_tooltip": "Supprimer les enregistrements sélectionnés"
+    "delete_tooltip": "Supprimer les enregistrements sélectionnés",
+    "export_menu": "Exporter",
+    "actions_menu": "Choisir une action"
   },
   "pdf_export": {
     "button": "PDF",

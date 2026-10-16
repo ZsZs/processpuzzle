@@ -1,11 +1,13 @@
-<mat-toolbar *ngIf="isVisible()">
+<mat-toolbar *ngIf="isVisible()" [class.compact]="compact()">
   <ng-container *transloco="let t;">
-    <div class="dense-3 toolbar-inputs" [ngStyle]="{'padding-top': '12px' }">
-      <base-entity-query [entityDescriptor]="entityDescriptor()"></base-entity-query>
+    <div class="dense-3 toolbar-inputs" [ngStyle]="{'padding-top': compact() ? '0' : '12px' }">
+      <base-entity-query [entityDescriptor]="entityDescriptor()" [compact]="compact()"></base-entity-query>
       <div class="filter-wrapper">
-        <label class="field-label" [attr.for]="entityDescriptor().createTestId('filter-input')">{{ t('base_entity.toolbar.filter_label') }}</label>
-        <mat-form-field subscriptSizing="dynamic">
-          <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" matInput type="text" [matTooltip]="t('base_entity.toolbar.filter_tooltip')" (keyup)="onDoFilter( $event )">
+        @if (!compact()) {
+          <label class="field-label" [attr.for]="entityDescriptor().createTestId('filter-input')">{{ t('base_entity.toolbar.filter_label') }}</label>
+        }
+        <mat-form-field class="filter-field" subscriptSizing="dynamic">
+          <input #filterInput [id]="entityDescriptor().createTestId('filter-input')" [attr.data-testid]="entityDescriptor().createTestId('filter')" [attr.placeholder]="compact() ? t('base_entity.toolbar.filter_label') : null" [attr.aria-label]="compact() ? t('base_entity.toolbar.filter_label') : null" matInput type="text" [matTooltip]="t('base_entity.toolbar.filter_tooltip')" (keyup)="onDoFilter( $event )">
           @if (filterInput.value) {
             <button [attr.data-testid]="entityDescriptor().createTestId('filter-clear')" type="button" mat-icon-button matSuffix aria-label="Clear filter" (click)="onClearFilter(filterInput)">
               <mat-icon>cancel</mat-icon>
@@ -16,26 +18,31 @@
     </div>
   </ng-container>
   <span class="toolbar-spacer"></span>
-  @if(isSmallDevice()) {
-    <div [ngClass]="layoutService.layoutClass()">
-      <button test-id="menu-button" mat-button [matMenuTriggerFor]="beforeMenu"><mat-icon>menu</mat-icon> Choose action</button>
-      <mat-menu #beforeMenu="matMenu" xPosition="before">
-        @if (isPdfExportEnabled()) {
-          <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-menu-item [disabled]="isExporting()" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
-        }
-        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="!isEditEnabled()" [matTooltip]="t('base_entity.toolbar.edit_tooltip')" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
-        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item [disabled]="!isNewEnabled()" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="!isDeleteEnabled()" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+  <div class="toolbar-actions" [ngClass]="layoutService.layoutClass()" *transloco="let t">
+    @if (isSmallDevice()) {
+      <button test-id="menu-button" mat-icon-button [matMenuTriggerFor]="actionsMenu" [attr.aria-label]="t('base_entity.toolbar.actions_menu')" [matTooltip]="t('base_entity.toolbar.actions_menu')"><mat-icon>more_vert</mat-icon></button>
+      <mat-menu #actionsMenu="matMenu" xPosition="before">
+        <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-menu-item [disabled]="!isEditEnabled()" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+        <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-menu-item [disabled]="!isNewEnabled()" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+        <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-menu-item [disabled]="!isDeleteEnabled()" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
       </mat-menu>
-    </div>
-  } @else {
-    <div [ngClass]="layoutService.layoutClass()">
-      @if (isPdfExportEnabled()) {
-        <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-button [disabled]="isExporting()" [matTooltip]="t('base_entity.pdf_export.tooltip')" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
-      }
-      <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="!isEditEnabled()" [matTooltip]="t('base_entity.toolbar.edit_tooltip')" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
-      <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button [disabled]="!isNewEnabled()" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
-      <button *transloco="let t" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
-    </div>
-  }
+    } @else if (compact()) {
+      <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-icon-button [disabled]="!isEditEnabled()" aria-label="Edit" [matTooltip]="t('base_entity.toolbar.edit_tooltip')" (click)="onEditEntity()"><mat-icon>edit</mat-icon></button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-icon-button [disabled]="!isNewEnabled()" aria-label="New" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon></button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-icon-button [disabled]="!isDeleteEnabled()" aria-label="Delete" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon></button>
+    } @else {
+      <button [attr.data-testid]="entityDescriptor().createTestId('edit')" mat-button [disabled]="!isEditEnabled()" [matTooltip]="t('base_entity.toolbar.edit_tooltip')" (click)="onEditEntity()"><mat-icon>edit</mat-icon> Edit</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button [disabled]="!isNewEnabled()" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
+      <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
+    }
+    <!-- Export is always the last action: a button with room for it, a menu without (where Report will join PDF). -->
+    @if (compact()) {
+      <button [attr.data-testid]="entityDescriptor().createTestId('export-menu')" mat-icon-button [matMenuTriggerFor]="exportMenu" [attr.aria-label]="t('base_entity.toolbar.export_menu')" [matTooltip]="t('base_entity.toolbar.export_menu')"><mat-icon>download</mat-icon></button>
+      <mat-menu #exportMenu="matMenu" xPosition="before">
+        <button [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-menu-item [disabled]="!isPdfExportEnabled() || isExporting()" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
+      </mat-menu>
+    } @else if (isPdfExportEnabled()) {
+      <button [attr.data-testid]="entityDescriptor().createTestId('pdf-export')" mat-button [disabled]="isExporting()" [matTooltip]="t('base_entity.pdf_export.tooltip')" (click)="onExportPdf()"><mat-icon>picture_as_pdf</mat-icon> {{ t('base_entity.pdf_export.button') }}</button>
+    }
+  </div>
 </mat-toolbar>

@@ -107,7 +107,9 @@
     "filter_tooltip": "Geladene Zeilen nach Text filtern",
     "edit_tooltip": "Ausgewählten Datensatz bearbeiten",
     "new_tooltip": "Neuen Datensatz erstellen",
-    "delete_tooltip": "Ausgewählte Datensätze löschen"
+    "delete_tooltip": "Ausgewählte Datensätze löschen",
+    "export_menu": "Exportieren",
+    "actions_menu": "Aktion wählen"
   },
   "pdf_export": {
     "button": "PDF",

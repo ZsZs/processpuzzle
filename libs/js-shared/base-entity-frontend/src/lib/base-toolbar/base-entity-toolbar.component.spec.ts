@@ -42,6 +42,51 @@ describe('BaseEntityToolbarComponent', () => {
       expect(deleteButton).toBeTruthy();
     });
 
+    it('puts export behind a menu, as the last action, on a medium or small screen', async () => {
+      const { fixture, breakpointObserver } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+      const lastAction = () => fixture.debugElement.query(By.css('mat-toolbar .toolbar-actions > button:last-of-type')).nativeElement as HTMLElement;
+      expect(lastAction().getAttribute('data-testid')).toBe('testEntity-pdf-export');
+
+      for (const width of [800, 599]) {
+        breakpointObserver.resize(width);
+        fixture.detectChanges();
+
+        expect(lastAction().getAttribute('data-testid')).toBe('testEntity-export-menu');
+        expect(fixture.debugElement.query(By.css('mat-toolbar .toolbar-actions > button[data-testid="testEntity-pdf-export"]'))).toBeFalsy();
+      }
+
+      lastAction().click();
+      fixture.detectChanges();
+      expect(document.querySelector('.mat-mdc-menu-panel button[data-testid="testEntity-pdf-export"]')).toBeTruthy();
+    });
+
+    it('keeps the actions as icon buttons on a medium screen', async () => {
+      const { fixture, breakpointObserver } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+
+      breakpointObserver.resize(800);
+      fixture.detectChanges();
+
+      const newButton = fixture.debugElement.query(By.css('mat-toolbar button[data-testid="testEntity-new"]')).nativeElement as HTMLElement;
+      expect(newButton.hasAttribute('mat-icon-button')).toBe(true);
+      expect(fixture.debugElement.query(By.css('button[test-id=menu-button]'))).toBeFalsy();
+    });
+
+    it('moves the query and filter labels inside their fields on a medium or small screen', async () => {
+      const { fixture, breakpointObserver } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+      const filter = () => fixture.debugElement.query(By.css('input[data-testid="testEntity-filter"]')).nativeElement as HTMLInputElement;
+      const query = () => fixture.debugElement.query(By.css('input[data-testid="testEntity-query"]')).nativeElement as HTMLInputElement;
+      expect(fixture.debugElement.queryAll(By.css('mat-toolbar label.field-label'))).toHaveLength(2);
+      expect(filter().placeholder).toBe('');
+
+      breakpointObserver.resize(800);
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.queryAll(By.css('mat-toolbar label.field-label'))).toHaveLength(0);
+      expect(filter().placeholder).not.toBe('');
+      expect(filter().getAttribute('aria-label')).toBe(filter().placeholder);
+      expect(query().placeholder).not.toBe('');
+    });
+
     it('when activated route aint RouteSegments.LIST_ROUTE toolbar is not displayed', async () => {
       const { fixture, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent);
       await formNavigator.navigateToDetails('TestEntity', '1');
