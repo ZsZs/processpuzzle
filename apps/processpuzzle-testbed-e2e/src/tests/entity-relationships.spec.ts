@@ -94,5 +94,24 @@ defineEntityRelationshipSuite({
       update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x' },
       reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one',
     },
+    {
+      // The owner of [Event Definition] parameters, pinned as in entity-crud.spec.ts: the generator takes the
+      // first Action, CREATED, while filling State, which EventDefinition.validate allows only with
+      // STATE_CHANGED — the read-back found State empty. The generated subjectType names no entity base-entity
+      // knows, so the check of SYSTEM parameters against its attributes does not apply.
+      entityName: 'Event Definition',
+      create: { kind: 'SYSTEM', action: 'STATE_CHANGED' },
+      update: { kind: 'SYSTEM', action: 'STATE_CHANGED' },
+      reason: "'state' is only meaningful with action STATE_CHANGED",
+    },
+    {
+      // A parameter's name is an identifier — `<event>.<name>` in a context — and generated prose is not one,
+      // so it is pinned, the same on both steps since it is what the row is addressed by. Type is pinned to
+      // ENTITY_REF because the mapper sends Entity Type for that type only.
+      entityName: 'Event Parameter',
+      create: { name: 'orderNumber', type: 'ENTITY_REF' },
+      update: { name: 'orderNumber', type: 'ENTITY_REF' },
+      reason: 'name must be an identifier, and entityType is kept only on an ENTITY_REF parameter',
+    },
   ],
 });
