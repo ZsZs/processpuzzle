@@ -66,6 +66,7 @@ export const ENTITY_FORM_CONTROL_TYPES: readonly string[] = [
   'RELATED_ENTITIES',
   'ARTIFACT',
   'AVATAR',
+  'COMMENTS',
 ];
 
 /**

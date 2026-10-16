@@ -39,6 +39,7 @@ describe('DescriptorBackedFieldMetadataProvider', () => {
       new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES),
       new BaseEntityAttrDescriptor('components', FormControlType.COMPONENTS),
       new BaseEntityAttrDescriptor('label', FormControlType.LABEL),
+      new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS),
       new BaseEntityAttrDescriptor('title', FormControlType.TITLE),
       new BaseEntityAttrDescriptor('kept', FormControlType.TEXT_BOX),
     ];

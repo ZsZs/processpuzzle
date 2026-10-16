@@ -153,5 +153,11 @@
       "undo": "Visszavonás",
       "redo": "Újra"
     }
+  },
+  "comments": {
+    "title": "Megjegyzések",
+    "new_placeholder": "Írjon megjegyzést…",
+    "unknown_author": "Ismeretlen",
+    "count": "{{ count }} megjegyzés"
   }
 }

@@ -91,6 +91,25 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.([{ name: 'a.pdf' }, { objectId: 'obj-2' }, null], {})).toBe('a.pdf, obj-2');
   });
 
+  it('summarizes COMMENTS as their count and the latest author and time', () => {
+    const comments = new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS, 'Comments');
+    comments.hideInTable = false;
+
+    const [column] = entityDescriptorToPdfColumns([comments], 'en-US');
+
+    const history = [
+      { author: 'Ada', createdAt: '2026-10-01T09:30:00.000Z', content: { type: 'doc' } },
+      { author: 'Grace', createdAt: '2026-10-02T10:00:00.000Z', content: { type: 'doc' } },
+    ];
+    expect(column.formatter?.(history, {})).toMatch(/^2 \(Grace, Oct 2, 2026/);
+    expect(column.formatter?.([], {})).toBe('');
+    expect(column.formatter?.(null, {})).toBe('');
+  });
+
+  it('leaves COMMENTS out unless the descriptor asks for them', () => {
+    expect(entityDescriptorToPdfColumns([new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS)])).toEqual([]);
+  });
+
   it('leaves plain text columns without a formatter', () => {
     const text = new BaseEntityAttrDescriptor('description', FormControlType.TEXT_BOX, 'Description');
 

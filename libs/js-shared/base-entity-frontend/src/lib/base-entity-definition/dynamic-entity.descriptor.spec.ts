@@ -152,6 +152,7 @@ describe('controlTypeOf', () => {
     ['DROPDOWN', FormControlType.DROPDOWN],
     ['RADIO', FormControlType.RADIO],
     ['TAGS', FormControlType.TAGS],
+    ['COMMENTS', FormControlType.COMMENTS],
     ['ARTIFACT', FormControlType.ARTIFACT],
     ['AVATAR', FormControlType.AVATAR],
     ['FOREIGN_KEY', FormControlType.FOREIGN_KEY],

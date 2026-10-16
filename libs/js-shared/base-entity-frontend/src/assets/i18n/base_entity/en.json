@@ -153,5 +153,11 @@
       "undo": "Undo",
       "redo": "Redo"
     }
+  },
+  "comments": {
+    "title": "Comments",
+    "new_placeholder": "Write a comment…",
+    "unknown_author": "Unknown",
+    "count": "{{ count }} comments"
   }
 }

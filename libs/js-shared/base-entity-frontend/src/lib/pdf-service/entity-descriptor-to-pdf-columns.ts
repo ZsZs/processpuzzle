@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
-import { effectiveDateFormat, formatDateValue } from '../base-entity/date-format';
+import { DEFAULT_DATE_TIME_FORMAT, effectiveDateFormat, formatDateValue } from '../base-entity/date-format';
+import { commentsOf } from '../base-form/comments/entity-comment';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import type { PdfColumnDefinition } from './pdf-export.types';
 
@@ -48,6 +49,9 @@ function columnFormatter(descriptor: BaseEntityAttrDescriptor, locale: string | 
     case FormControlType.AVATAR:
       return formatArtifact;
 
+    case FormControlType.COMMENTS:
+      return (value) => formatComments(value, locale);
+
     // TEXT_BOX, TEXTAREA, DROPDOWN, FOREIGN_KEY, LOOKUP, etc. → default string coercion in the service
     default:
       return undefined;
@@ -68,6 +72,15 @@ function formatDate(value: unknown, descriptor: BaseEntityAttrDescriptor, locale
 function formatTags(value: unknown): string {
   if (Array.isArray(value)) return value.join(', ');
   return toText(value);
+}
+
+/** The history's size and its latest entry — the comments themselves are rich text, not a table cell. */
+function formatComments(value: unknown, locale: string | undefined): string {
+  const comments = commentsOf(value);
+  const latest = comments.at(-1);
+  if (!latest) return '';
+  const when = toText(formatDateValue(latest.createdAt, DEFAULT_DATE_TIME_FORMAT, locale ?? navigator.language));
+  return `${comments.length} (${[latest.author, when].filter(Boolean).join(', ')})`;
 }
 
 /** A multi-valued attribute holds an array; its names are joined. */

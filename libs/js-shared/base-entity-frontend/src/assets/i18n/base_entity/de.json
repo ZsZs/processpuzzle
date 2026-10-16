@@ -153,5 +153,11 @@
       "undo": "Rückgängig",
       "redo": "Wiederherstellen"
     }
+  },
+  "comments": {
+    "title": "Kommentare",
+    "new_placeholder": "Kommentar schreiben…",
+    "unknown_author": "Unbekannt",
+    "count": "{{ count }} Kommentare"
   }
 }

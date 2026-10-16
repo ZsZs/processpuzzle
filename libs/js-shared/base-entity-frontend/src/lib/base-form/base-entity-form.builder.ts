@@ -18,6 +18,7 @@ import { RadioComponent } from './radio/radio.component';
 import { TextareaComponent } from './textarea/textarea.component';
 import { FlexBoxComponent } from './flex-box/flex-box.component';
 import { TagsComponent } from './tags/tags.component';
+import { CommentsComponent } from './comments/comments.component';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { ComponentsListComponent } from './components/components-list.component';
@@ -39,6 +40,7 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
   [FormControlType.ARTIFACT]: ArtifactComponent,
   [FormControlType.AVATAR]: AvatarComponent,
   [FormControlType.CHECKBOX]: CheckboxComponent,
+  [FormControlType.COMMENTS]: CommentsComponent,
   [FormControlType.COMPONENTS]: ComponentsListComponent,
   [FormControlType.DATE]: DatepickerComponent,
   [FormControlType.DROPDOWN]: DropdownComponent,

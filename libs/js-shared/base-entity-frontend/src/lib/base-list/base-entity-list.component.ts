@@ -22,6 +22,8 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { EntityLabelPipe } from '../i18n/entity-label.pipe';
 import { DateFormatPipe } from '../i18n/date-format.pipe';
 import { ForeignKeyLabels } from '../base-form/foreign-key/foreign-key-labels';
+import { commentsOf } from '../base-form/comments/entity-comment';
+import { TranslocoPipe } from '@jsverse/transloco';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -29,6 +31,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
   selector: 'base-list',
   standalone: true,
   imports: [
+    TranslocoPipe,
     MatTable,
     MatSort,
     MatHeaderCell,
@@ -134,6 +137,11 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   artifactsOf(value: unknown): ArtifactAttr[] {
     if (value == null) return [];
     return (Array.isArray(value) ? value : [value]).filter((item): item is ArtifactAttr => typeof item === 'object' && item !== null);
+  }
+
+  /** A COMMENTS cell shows how many comments the record has, not the comments. */
+  commentCount(value: unknown): number {
+    return commentsOf(value).length;
   }
 
   onDownloadObject(artifact: ArtifactAttr, event?: MouseEvent): void {

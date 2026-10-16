@@ -153,5 +153,11 @@
       "undo": "Deshacer",
       "redo": "Rehacer"
     }
+  },
+  "comments": {
+    "title": "Comentarios",
+    "new_placeholder": "Escribe un comentario…",
+    "unknown_author": "Desconocido",
+    "count": "{{ count }} comentarios"
   }
 }

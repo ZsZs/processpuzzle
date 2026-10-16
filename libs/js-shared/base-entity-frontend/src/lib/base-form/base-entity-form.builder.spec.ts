@@ -182,6 +182,20 @@ describe('BaseEntityFormBuilder', () => {
     expect(component.form.controls['embeddedComponents']).toBeInstanceOf(FormControl);
   });
 
+  // The history and the stamped draft travel as one array value, which the control replaces whole.
+  it('buildForm() renders a COMMENTS attribute backed by a plain FormControl holding the history', () => {
+    const history = [{ author: 'Ada', createdAt: '2026-10-01T09:30:00.000Z', content: { type: 'doc' } }];
+    const commentsAttr = new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS);
+    const form: FormGroup = new FormGroup({});
+
+    formBuilder.buildForm(component.formHost.viewContainerRef, form, store, [commentsAttr], testEntity, 'Test Entity', { comments: history });
+    fixture.detectChanges();
+
+    expect(form.controls['comments']).toBeInstanceOf(FormControl);
+    expect(form.controls['comments'].value).toEqual(history);
+    expect(fixture.debugElement.query(By.css('base-comments'))).toBeTruthy();
+  });
+
   // A field the backend constrains beyond "not empty" — a slug, a locale tag — is rejected on the form the
   // user typed it into rather than by a 400 whose message comes from the server's validation locale.
   it('buildForm() applies the pattern declared on an attribute as a validator', () => {

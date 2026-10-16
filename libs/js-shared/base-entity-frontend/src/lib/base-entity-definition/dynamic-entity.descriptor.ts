@@ -34,6 +34,7 @@ const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   AVATAR: FormControlType.AVATAR,
   BOOLEAN: FormControlType.CHECKBOX,
   CHECKBOX: FormControlType.CHECKBOX,
+  COMMENTS: FormControlType.COMMENTS,
   COMPONENTS: FormControlType.COMPONENTS,
   DATE: FormControlType.DATE,
   DATE_TIME: FormControlType.DATE,

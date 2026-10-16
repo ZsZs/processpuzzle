@@ -3,6 +3,11 @@ export enum FormControlType {
   ARTIFACT = 'ARTIFACT',
   AVATAR = 'AVATAR',
   CHECKBOX = 'CHECKBOX',
+  /**
+   * An append-only history of rich-text comments, each stamped with its author and time — the value is an
+   * array of `EntityComment`, oldest first. A new comment is written below the history and saved with the record.
+   */
+  COMMENTS = 'COMMENTS',
   COMPONENTS = 'COMPONENTS',
   /** Rendered by the descriptor's own `component` — the extension point for controls base-entity cannot know. */
   CUSTOM = 'CUSTOM',

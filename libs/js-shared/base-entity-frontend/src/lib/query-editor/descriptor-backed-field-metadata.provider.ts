@@ -6,6 +6,7 @@ import { RsqlFieldMetadata, RsqlFieldMetadataProvider, RsqlFieldType, RSQL_OPERA
 const SKIP_CONTROL_TYPES: ReadonlySet<FormControlType> = new Set([
   FormControlType.ARTIFACT,
   FormControlType.AVATAR,
+  FormControlType.COMMENTS,
   FormControlType.COMPONENTS,
   FormControlType.CUSTOM,
   FormControlType.EMBEDDED_COMPONENTS,

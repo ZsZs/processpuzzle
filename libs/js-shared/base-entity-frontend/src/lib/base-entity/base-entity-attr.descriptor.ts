@@ -82,6 +82,8 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
     this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
     this.options = { inputType: 'text', ...options };
+    // A comment history is not a table cell; a descriptor that wants the count in its list says so.
+    if (formControlType === FormControlType.COMMENTS) this.hideInTable = true;
     if (options && 'defaultAvatar' in options && typeof options.defaultAvatar === 'string') {
       this.defaultAvatar = options.defaultAvatar;
     }
