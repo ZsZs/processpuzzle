@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApplicationInitStatus } from '@angular/core';
+import { ApplicationInitStatus, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { AUTHENTICATION_SERVICE, AuthenticationConfiguration, provideAuthenticationService } from './provide-authentication.service';
-import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { AUTHENTICATION_SERVICE, AuthenticationConfiguration, displayNameOf, provideAuthenticationService } from './provide-authentication.service';
+import { RUNTIME_CONFIGURATION, SessionUser } from '@processpuzzle/util';
+import { User } from '../user/user';
 import { KeycloakAuthService } from './keycloak-auth.service';
 
 describe('provideAuthenticationService', () => {
@@ -108,5 +109,41 @@ describe('provideAuthenticationService', () => {
     // Must resolve (not reject) so app bootstrap is never blocked.
     await expect(TestBed.inject(ApplicationInitStatus).donePromise).resolves.toBeUndefined();
     expect(consoleErrorSpy).toHaveBeenCalledWith('Authentication initialization failed', error);
+  });
+
+  // What the feature libraries read: base-entity's comment author, base-workflow's inbox owner.
+  it('keeps SessionUser in step with the signed-in user', async () => {
+    vi.spyOn(KeycloakAuthService.prototype, 'authenticate').mockResolvedValue(true);
+    setupTestBed({ BASE_CONFIGURATION: mockBaseConfig, AUTHENTICATION_CONFIGURATION: keycloakConfig });
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+    const user = (TestBed.inject(AUTHENTICATION_SERVICE) as unknown as { _user: WritableSignal<User | undefined> })._user;
+    const sessionUser = TestBed.inject(SessionUser);
+
+    user.set(new User('ada@example.test', 'user-1', 'Ada', 'Lovelace'));
+    TestBed.tick();
+    expect(sessionUser.userId()).toBe('user-1');
+    expect(sessionUser.displayName()).toBe('Ada Lovelace');
+
+    user.set(undefined);
+    TestBed.tick();
+    expect(sessionUser.userId()).toBe('');
+    expect(sessionUser.displayName()).toBe('');
+  });
+
+  it('leaves SessionUser empty when no authentication service can be built', () => {
+    setupTestBed({ BASE_CONFIGURATION: mockBaseConfig, AUTHENTICATION_CONFIGURATION: {} });
+
+    TestBed.tick();
+
+    expect(TestBed.inject(SessionUser).userId()).toBe('');
+  });
+});
+
+describe('displayNameOf', () => {
+  it('is the full name, else the email, else empty', () => {
+    expect(displayNameOf(new User('ada@example.test', 'u', 'Ada', 'Lovelace'))).toBe('Ada Lovelace');
+    expect(displayNameOf(new User('ada@example.test', 'u', ' ', ''))).toBe('ada@example.test');
+    expect(displayNameOf(new User(null, 'u'))).toBe('');
+    expect(displayNameOf(undefined)).toBe('');
   });
 });
