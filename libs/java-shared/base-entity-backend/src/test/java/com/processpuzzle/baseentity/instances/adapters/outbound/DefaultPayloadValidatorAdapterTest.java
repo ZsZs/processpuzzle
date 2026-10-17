@@ -358,7 +358,9 @@ class DefaultPayloadValidatorAdapterTest {
 
     @Test
     void validate_addressThatIsNotAnObject_throwsValidationException() {
-        assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, Map.of("address", "Fő utca 1.")))
+        Map<String, Object> payload = Map.of("address", "Fő utca 1.");
+
+        assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, payload))
                 .isInstanceOf(ValidationException.class)
                 .satisfies(ex -> assertThat(((ValidationException) ex).getViolations())
                         .containsExactly(new ValidationException.Violation("address", "expected an address object")));
@@ -371,8 +373,9 @@ class DefaultPayloadValidatorAdapterTest {
         address.put("country", "Hungary");
         address.put("latitude", 47.5);
         address.put("locationSource", "GUESSED");
+        Map<String, Object> payload = Map.of("address", address);
 
-        assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, Map.of("address", address)))
+        assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, payload))
                 .isInstanceOf(ValidationException.class)
                 .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message").containsExactly(
                         "address city must be text",
@@ -385,7 +388,8 @@ class DefaultPayloadValidatorAdapterTest {
     void validate_addressCoordinatesOutOfRange_throwValidationException() {
         for (Map<String, Object> address : List.of(Map.<String, Object>of("latitude", 91, "longitude", 0), Map.<String, Object>of("latitude", 0, "longitude", -181),
                 Map.<String, Object>of("latitude", "47.5", "longitude", 19))) {
-            assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, Map.of("address", address)))
+            Map<String, Object> payload = Map.of("address", address);
+            assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, payload))
                     .as("address %s", address)
                     .isInstanceOf(ValidationException.class)
                     .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message")
