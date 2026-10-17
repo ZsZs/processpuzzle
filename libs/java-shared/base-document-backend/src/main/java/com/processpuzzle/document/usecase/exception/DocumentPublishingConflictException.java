@@ -30,19 +30,19 @@ public class DocumentPublishingConflictException extends RuntimeException {
 
     public static DocumentPublishingConflictException notPublishable(String documentId, String locale, List<?> problems) {
         return new DocumentPublishingConflictException("document.publish.not-publishable",
-                LOCALE + locale + "' of document '" + documentId + "' has validation errors and cannot be"
+                translation(documentId, locale) + " has validation errors and cannot be"
                         + " published: " + problems);
     }
 
     public static DocumentPublishingConflictException nothingToRevertTo(String documentId, String locale) {
         return new DocumentPublishingConflictException("document.draft.nothing-to-revert-to",
-                LOCALE + locale + "' of document '" + documentId + "' has never been published, so there is no"
+                translation(documentId, locale) + " has never been published, so there is no"
                         + " published content to discard the draft in favour of.");
     }
 
     public static DocumentPublishingConflictException notPublished(String documentId, String locale) {
         return new DocumentPublishingConflictException("document.sign.not-published",
-                LOCALE + locale + "' of document '" + documentId + "' has no published content, so there is"
+                translation(documentId, locale) + " has no published content, so there is"
                         + " nothing to sign.");
     }
 
@@ -51,5 +51,10 @@ public class DocumentPublishingConflictException extends RuntimeException {
         return new DocumentPublishingConflictException("document.translation.source-locale-not-removable",
                 LOCALE + locale + "' is the source locale of document '" + documentId + "'. Every other"
                         + " translation is based on it and readers fall back to it, so change sourceLocale first.");
+    }
+
+    /** "Locale 'x' of document 'y'" — how the refusals about one translation begin. */
+    private static String translation(String documentId, String locale) {
+        return LOCALE + locale + "' of document '" + documentId + "'";
     }
 }
