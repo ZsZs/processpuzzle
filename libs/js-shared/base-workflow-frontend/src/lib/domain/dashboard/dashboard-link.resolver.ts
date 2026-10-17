@@ -50,8 +50,10 @@ export class DashboardLinkResolver {
 
   /** The query parameters {@link artifactLink} needs: the run's subject, for a document it links to the Sign tab of. */
   artifactQueryParams(definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined, subject?: RunSubject): Record<string, string> | undefined {
-    if (!this.signLink(definition, instance, subject)) return undefined;
-    return { subjectType: subject!.entityType!, subjectId: subject!.entityId! };
+    const subjectType = subject?.entityType;
+    const subjectId = subject?.entityId;
+    if (!subjectType || !subjectId || !this.signLink(definition, instance, subject)) return undefined;
+    return { subjectType, subjectId };
   }
 
   toolLink(toolDefinitionId: string): string | undefined {

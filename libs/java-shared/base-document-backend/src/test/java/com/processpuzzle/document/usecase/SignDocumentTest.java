@@ -132,7 +132,9 @@ class SignDocumentTest {
     void aDocumentWithNothingPublishedIsNotSignable() {
         stub(document(), null);
 
-        assertThatThrownBy(() -> useCase().execute(ORG, ID, "employee", "e-1", "en"))
+        SignDocument useCase = useCase();
+
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, "employee", "e-1", "en"))
                 .isInstanceOf(DocumentPublishingConflictException.class)
                 .satisfies(error -> assertThat(((DocumentPublishingConflictException) error).getErrorId())
                         .isEqualTo("document.sign.not-published"));
@@ -143,11 +145,12 @@ class SignDocumentTest {
     void withoutAnAuthenticatedPrincipalNobodySigns() {
         stub(document(), snapshot(1L, "intro"));
         when(principal.displayName()).thenReturn(Optional.empty());
+        SignDocument withoutName = useCase();
+        SignDocument withoutPrincipal = useCase(new DocumentAccessPolicy() { }, provider(null));
 
-        assertThatThrownBy(() -> useCase().execute(ORG, ID, "employee", "e-1", null))
+        assertThatThrownBy(() -> withoutName.execute(ORG, ID, "employee", "e-1", null))
                 .isInstanceOf(DocumentAccessDeniedException.class);
-        assertThatThrownBy(() -> useCase(new DocumentAccessPolicy() { }, provider(null))
-                .execute(ORG, ID, "employee", "e-1", null))
+        assertThatThrownBy(() -> withoutPrincipal.execute(ORG, ID, "employee", "e-1", null))
                 .isInstanceOf(DocumentAccessDeniedException.class);
     }
 
@@ -159,8 +162,9 @@ class SignDocumentTest {
                 document.getRoles(), document.getPorts());
         stub(document, snapshot(1L, "intro"));
         when(principal.isMemberOf(ORG)).thenReturn(false);
+        SignDocument useCase = useCase();
 
-        assertThatThrownBy(() -> useCase().execute(ORG, ID, "employee", "e-1", null))
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, "employee", "e-1", null))
                 .isInstanceOf(DocumentAccessDeniedException.class);
         verify(signatureRepository, never()).save(any());
     }
@@ -173,7 +177,9 @@ class SignDocumentTest {
         when(policy.hasAnyRole(any())).thenReturn(true);
         doThrow(new DocumentAccessDeniedException("Not a member")).when(policy).requireAccess(ORG);
 
-        assertThatThrownBy(() -> useCase(policy, provider(principal)).execute(ORG, ID, "employee", "e-1", null))
+        SignDocument useCase = useCase(policy, provider(principal));
+
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, "employee", "e-1", null))
                 .isInstanceOf(DocumentNotFoundException.class);
     }
 
@@ -181,7 +187,9 @@ class SignDocumentTest {
     void anUnknownDocumentIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase().execute(ORG, "missing", "employee", "e-1", null))
+        SignDocument useCase = useCase();
+
+        assertThatThrownBy(() -> useCase.execute(ORG, "missing", "employee", "e-1", null))
                 .isInstanceOf(DocumentNotFoundException.class);
         verify(signatureRepository, never())
                 .findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedBy(

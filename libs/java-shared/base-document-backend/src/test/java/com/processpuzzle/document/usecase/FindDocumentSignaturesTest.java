@@ -63,7 +63,9 @@ class FindDocumentSignaturesTest {
         when(policy.isAuthenticated()).thenReturn(true);
         doThrow(new DocumentAccessDeniedException("Not a member")).when(policy).requireAccess(ORG);
 
-        assertThatThrownBy(() -> useCase(TestGuards.with(policy)).execute(ORG, ID, null, null))
+        FindDocumentSignatures useCase = useCase(TestGuards.with(policy));
+
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, null, null))
                 .isInstanceOf(DocumentNotFoundException.class);
     }
 
@@ -71,7 +73,9 @@ class FindDocumentSignaturesTest {
     void anUnknownDocumentIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> useCase(TestGuards.permitAll()).execute(ORG, "missing", null, null))
+        FindDocumentSignatures useCase = useCase(TestGuards.permitAll());
+
+        assertThatThrownBy(() -> useCase.execute(ORG, "missing", null, null))
                 .isInstanceOf(DocumentNotFoundException.class);
     }
 
