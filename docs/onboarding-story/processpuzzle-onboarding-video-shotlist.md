@@ -11,8 +11,9 @@ Each spot below maps 1:1 to a "Screen capture spot" in `processpuzzle-onboarding
 | --- | --- |
 | `Department` entity | The organizational unit a new hire joins; `Employee.department` references it |
 | `Employee` entity | The person being onboarded; carries the state attribute |
-| 3 rules (context `Employee`) | Start date ahead, company email, contract signed before activation |
-| Employment Contract document | Shows the Employee's data through widget bindings |
+| 3 rules (context `Employee`) | Start date ahead, company email, manager assigned before activation |
+| Employment Contract document | Published once, **signed** per employee on its Sign tab |
+| `ContractSignedEvent` | Catalog event: a document was `SIGNED` for an `employee` — what the workflow waits for |
 | `Employee` state machine | Invited → Documents Pending → Active; the last transition is guarded by a rule |
 | "Onboarding" workflow | HR Coordinator + New Hire; the onboarding to-dos are its **tasks**, not entity records |
 
@@ -39,7 +40,6 @@ dates and overdue escalation.
    - `startDate` (DATE, required)
    - `department` (REFERENCE → `Department`, lookup control) — the beat that shows entities relate to each other
    - `manager` (REFERENCE → `Employee`, lookup control)
-   - `contractSigned` (BOOLEAN, checkbox) — set by the New Hire in Spot #6, checked by Rule 3
    - `state` (ENUM: `INVITED`, `DOCUMENTS_PENDING`, `ACTIVE`; disabled on the form) — the attribute the state machine of Spot #4 owns
 7. Save `Employee`.
 8. *(Off camera, before Spot #6)* Create two or three departments (e.g. "Engineering", "Finance") so the lookup has something to offer.
@@ -60,16 +60,19 @@ the save; WARNING and INFO only give feedback on the form. All three rules use c
    `new Date(entity.startDate) >= new Date(new Date().toDateString())`
 3. Rule 2 — "Company email", severity WARNING:
    `entity.email.endsWith('@acme.example')` *(use the sample company's domain)*
-4. Rule 3 — "Contract signed before activation", severity ERROR:
-   `entity.state !== 'DOCUMENTS_PENDING' || entity.contractSigned === true`
+4. Rule 3 — "Manager before activation", severity ERROR:
+   `entity.state !== 'DOCUMENTS_PENDING' || !!entity.manager`
    — enforced at the `activate` transition in Spot #4. It reads the *current* state (the guard sees the
    object before it moves), which is why it names `DOCUMENTS_PENDING` rather than `ACTIVE`.
+
+The signed contract is *not* a rule: a rule only sees the Employee's own data, and a signature is a record
+of the document. The workflow waits for it instead — Spot #5.
 5. Save each rule; let the rule list populate on screen so the viewer sees three rules stack up.
 
 **Try by hand first:**
 - Open an Employee form and enter a past start date, then a non-company email. You should get an error and a warning.
-- Side effect of Rule 3: while an employee is `DOCUMENTS_PENDING`, the form refuses to save them with
-  `contractSigned` unchecked. That is acceptable for the story, since the New Hire's form edit is exactly what checks it.
+- Side effect of Rule 3: while an employee is `DOCUMENTS_PENDING`, the form refuses to save them without a
+  manager. Set the manager when HR creates the record and it never shows.
 
 **Capture tip:** Show the rules list at the end rather than the expression text for long. Hold the name and severity columns on screen; viewers won't read the expressions.
 
@@ -81,13 +84,18 @@ the save; WARNING and INFO only give feedback on the form. All three rules use c
 
 1. Open the **Document Designer**.
 2. Create the "Employment Contract" document (or open it, if prepared off camera): a few text blocks of contract prose.
-3. Add a widget block that displays the Employee's data — name, start date, department — through the block's **input bindings** to the Employee.
-4. Show the bindings panel briefly: that is the visual proof the document is data-driven, not a static file.
-5. Save.
+3. **Publish** it. Only published content can be signed, and a signature pins the revision it read — a later
+   republish cannot change what an employee signed.
+4. Open its **Sign** tab: the read-only contract, and the list of signatures (empty for now).
+5. *(Off camera)* In the **Event Catalog**, add `ContractSignedEvent`: kind SYSTEM, subject type = the
+   Employee definition's code (e.g. `employee`), action `SIGNED`.
 
-**Try by hand first:** base-document has no `{{placeholder}}` merge fields and no e-signature. "Signing" in
-Spot #6 means the New Hire completes the review task and ticks `contractSigned`. Check which widget renders
-the Employee's attributes best before you record.
+**Try by hand first:**
+- One contract serves every employee, so a signature is given *for* an employee. Opened from the menu, the
+  Sign tab knows no employee and shows no Sign button; the button appears when the tab is opened from a
+  workflow task (Spot #6), or by hand with `?subjectType=employee&subjectId=<employee id>` on its URL.
+- Widget input bindings do not resolve at run time yet, so a widget block cannot show *this* employee's
+  name in the contract. Keep the contract to prose for the recording.
 
 ---
 
@@ -103,8 +111,8 @@ the Employee's attributes best before you record.
 4. Save.
 
 **Try by hand first:**
-- Fire `activate` on an employee whose `contractSigned` is unchecked. It should be rejected, naming Rule 3.
-- Tick the box and fire `activate` again. It should go through.
+- Fire `activate` on an employee with no manager. It should be rejected, naming Rule 3.
+- Set a manager and fire `activate` again. It should go through.
 - The guard evaluates *every* enabled `Employee` rule, so the employee must also satisfy Rules 1–2. Rule 2 is a WARNING, so it doesn't block.
 
 **Capture tip:** This is the most visual/diagram-like spot. It's a good candidate for a slightly longer, satisfying "watch it connect" moment if the tool animates the connector draw. Linger a beat on the guard of the `activate` transition: that is where Spot #2's rule comes back.
@@ -117,19 +125,24 @@ the Employee's attributes best before you record.
 
 1. Open the **Workflow Designer**, new workflow named "Onboarding."
 2. Add Role 1: `HR Coordinator`. Add Role 2: `New Hire`.
-3. Add artifacts: the `Employee` entity and the Employment Contract document.
-4. Add tasks, assigning each to a role and wiring it to an artifact from earlier spots:
-   - `HR Coordinator`: "Create Employee record" (output: `Employee`)
-   - `HR Coordinator`: "Send contract" (input: `Employee`, output: Employment Contract; fires `sendContract` → `DOCUMENTS_PENDING`)
-   - `New Hire`: "Review & sign contract" (input: Employment Contract; ticks `contractSigned`)
+3. Add a **start event** on the catalog's "Employee created" event (SYSTEM, `employee`, `CREATED`), so each run
+   is *about* one employee — that is what lets the contract's signature find the right run.
+4. Add artifacts: the `Employee` entity and the Employment Contract document (object name `contract`).
+5. Add tasks, assigning each to a role and wiring it to an artifact from earlier spots:
+   - `HR Coordinator`: "Send contract" (input: `Employee`, output: Employment Contract; fires `sendContract` → `DOCUMENTS_PENDING`).
+     Completing it with context `contract: <the contract document's id>` binds this run's contract.
+   - `New Hire`: "Review & sign contract" (input: Employment Contract), followed by an **intermediate catch
+     event** waiting for `ContractSignedEvent`
    - `New Hire`: "Set up workstation"
    - `New Hire`: "Complete safety training". Add a **timer boundary event** (e.g. 5 days) that routes to an `HR Coordinator` task, "Follow up overdue training". This is the due date and the overdue escalation, with no extra entity.
-   - `HR Coordinator`: "Activate employee" (depends on all of the above; fires `activate` → the Rule 3 guard)
-5. Save the workflow and show the full diagram zoomed out — this is the "everything connects" beat.
+   - `HR Coordinator`: "Activate employee" (depends on the catch event and the New Hire's tasks; fires `activate` → the Rule 3 guard)
+6. Save the workflow and show the full diagram zoomed out — this is the "everything connects" beat.
 
-**Try by hand first:** check which task kinds in the current build can fire a state transition directly. If
-none can, the HR Coordinator fires `sendContract` / `activate` from the Employee screen during the task, and the
-task is then completed.
+**Try by hand first:**
+- Check which task kinds in the current build can fire a state transition directly. If none can, the HR
+  Coordinator fires `sendContract` / `activate` from the Employee screen during the task, and the task is then completed.
+- With the "Employee created" start, HR creates the record *before* the run, from the Employee screen — so there
+  is no "Create Employee record" task.
 
 **Capture tip:** End on a wide/zoomed-out shot of the whole workflow diagram — this is the visual payoff of Scene 6's line "every artifact you just built, working together."
 
@@ -143,8 +156,10 @@ task is then completed.
 2. Create a new app "Onboarding," and add the built artifacts: the `Employee` and `Department` entities, the 3 rules, the contract document, the `Employee` state machine, and the "Onboarding" workflow.
 3. Click compose/build/deploy (whatever the actual action is called).
 4. Cut to the **running app**:
-   - HR Coordinator view: create a new Employee record. Pick "Engineering" from the department lookup and leave the start date in the future.
-   - New Hire view: open the task dashboard, claim "Review & sign contract", read the contract, tick `contractSigned`, complete the task. Then complete "Set up workstation".
+   - HR Coordinator view: create a new Employee record — "Engineering" from the department lookup, a manager, a start date in the future. The Onboarding run starts on its own.
+   - New Hire view: open the task dashboard, claim "Review & sign contract", and click the contract's chip. It
+     opens the Sign tab for *this* employee: read, tick "I have read this document and accept it", **Sign** —
+     "Signed by … on …" appears. Complete the task; the catch event has already fired. Then complete "Set up workstation".
    - HR Coordinator view: "Activate employee" → state shows `ACTIVE`.
 5. End on a clean shot of the task dashboard showing the completed tasks.
 
@@ -159,4 +174,6 @@ task is then completed.
 - [ ] Record each spot as its own clip (don't record scenes back-to-back) — makes trimming/re-takes easier
 - [ ] Leave 2–3 extra seconds of static screen at the start/end of each clip for clean cut points
 - [ ] Use sample data consistent across all spots (same employee name, same department, same task titles) so the story reads as one continuous example
+- [ ] The contract is published and `ContractSignedEvent` is in the catalog before Spot #6
+- [ ] Sign in as a user of the stack's realm: signing takes the signer from the login and refuses anyone else
 - [ ] Departments exist before Spot #6; the new hire's start date is in the future (Rule 1) and the email is on the company domain (Rule 2)

@@ -30,21 +30,21 @@ For each clip below: **Script text** = paste as the spoken line (drives lip-sync
 
 ### Clip 4 — Scene 4 (Document, 1:15–1:35)
 **Script text:**
-"Onboarding always needs paperwork. Design the document — here, the employment contract — bind it to the employee's data, and ProcessPuzzle carries it through the process."
+"Onboarding always needs paperwork. Write the document once — here, the employment contract — publish it, and every new hire signs it right inside the process."
 **Direction note:** Practical, matter-of-fact tone; small "flipping a page" hand gesture if supported.
 
 ---
 
 ### Clip 5 — Scene 5 (States, 1:35–1:55)
 **Script text:**
-"Every employee moves through stages — invited, pending paperwork, active. ProcessPuzzle lets you draw that directly as a state machine — and nobody becomes active before the contract is signed."
+"Every employee moves through stages — invited, pending paperwork, active. ProcessPuzzle lets you draw that directly as a state machine — with a rule guarding the step to active."
 **Direction note:** Even, guiding tone, as if tracing a path in the air.
 
 ---
 
 ### Clip 6 — Scene 6 (Workflow, 1:55–2:25)
 **Script text:**
-"Now we connect everything into a workflow with real people in real roles. An HR Coordinator creates the record and manages the paperwork. The New Hire signs the contract and works through their own tasks — each with a due date, and a reminder when it slips. One workflow. Two roles. Every artifact you just built, working together."
+"Now we connect everything into a workflow with real people in real roles. An HR Coordinator creates the record and manages the paperwork. The New Hire signs the contract and works through their own tasks — each with a due date, and a reminder when it slips. Nobody is activated before the signature arrives. One workflow. Two roles. Every artifact you just built, working together."
 **Direction note:** Builds in energy toward the end — this is the "it all connects" beat; a slightly bigger, satisfied gesture on the last sentence.
 
 ---
