@@ -60,6 +60,22 @@ describe('descriptorOf', () => {
     expect(attrOf(definition, 'avatar')?.defaultAvatar).toBe('sailing');
   });
 
+  it('carries the map options of an ADDRESS attribute through, and of no other', () => {
+    const definition: EntityDefinition = {
+      code: 'customer',
+      name: 'Customer',
+      attributes: [
+        { code: 'address', formControlType: 'ADDRESS', showMap: true, mapProvider: 'GOOGLE', defaultCountry: 'HU' },
+        { code: 'plain', formControlType: 'ADDRESS' },
+        { code: 'street', formControlType: 'TEXT', showMap: true, defaultCountry: 'HU' },
+      ],
+    };
+
+    expect(attrOf(definition, 'address')).toMatchObject({ showMap: true, mapProvider: 'GOOGLE', defaultCountry: 'HU' });
+    expect(attrOf(definition, 'plain')).toMatchObject({ showMap: false, mapProvider: undefined, defaultCountry: undefined });
+    expect(attrOf(definition, 'street')).toMatchObject({ showMap: undefined, defaultCountry: undefined });
+  });
+
   it('carries autosizeColumn through, so the list hugs the columns the author asked it to', () => {
     const definition = { code: 'x', name: 'X', attributes: [{ code: 'hugging', formControlType: 'TEXT', autosizeColumn: true }, { code: 'filling', formControlType: 'TEXT' }] };
 
@@ -153,6 +169,7 @@ describe('controlTypeOf', () => {
     ['RADIO', FormControlType.RADIO],
     ['TAGS', FormControlType.TAGS],
     ['COMMENTS', FormControlType.COMMENTS],
+    ['ADDRESS', FormControlType.ADDRESS],
     ['ARTIFACT', FormControlType.ARTIFACT],
     ['AVATAR', FormControlType.AVATAR],
     ['FOREIGN_KEY', FormControlType.FOREIGN_KEY],

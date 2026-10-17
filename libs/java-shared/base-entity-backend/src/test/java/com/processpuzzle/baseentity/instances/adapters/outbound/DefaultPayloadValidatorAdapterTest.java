@@ -345,4 +345,55 @@ class DefaultPayloadValidatorAdapterTest {
                         "comment 2 needs an ISO-8601 createdAt",
                         "comment 3 needs rich text content"));
     }
+
+    private static final EntityDefinitionView CUSTOMER_DEF = new EntityDefinitionView("customer", false, List.of(
+            new EntityAttributeView("address", ValueKindView.REFERENCE, false, false, null, false, false, true)));
+
+    @Test
+    void validate_wellFormedAddresses_pass() {
+        validator.validate(ORG, CUSTOMER_DEF, Map.of("address", Map.of("country", "HU", "city", "Budapest", "street", "Fő utca 1.")));
+        validator.validate(ORG, CUSTOMER_DEF, Map.of("address", Map.of("city", "Budapest", "latitude", 47.5, "longitude", 19, "locationSource", "MANUAL")));
+        validator.validate(ORG, CUSTOMER_DEF, Map.of("address", Map.of()));
+    }
+
+    @Test
+    void validate_addressThatIsNotAnObject_throwsValidationException() {
+        Map<String, Object> payload = Map.of("address", "Fő utca 1.");
+
+        assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations())
+                        .containsExactly(new ValidationException.Violation("address", "expected an address object")));
+    }
+
+    @Test
+    void validate_malformedAddressParts_areEachReported() {
+        Map<String, Object> address = new java.util.HashMap<>();
+        address.put("city", 42);
+        address.put("country", "Hungary");
+        address.put("latitude", 47.5);
+        address.put("locationSource", "GUESSED");
+        Map<String, Object> payload = Map.of("address", address);
+
+        assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message").containsExactly(
+                        "address city must be text",
+                        "address country must be an ISO 3166-1 alpha-2 code",
+                        "address latitude and longitude go together",
+                        "address locationSource must be GEOCODED or MANUAL"));
+    }
+
+    @Test
+    void validate_addressCoordinatesOutOfRange_throwValidationException() {
+        for (Map<String, Object> address : List.of(Map.<String, Object>of("latitude", 91, "longitude", 0), Map.<String, Object>of("latitude", 0, "longitude", -181),
+                Map.<String, Object>of("latitude", "47.5", "longitude", 19))) {
+            Map<String, Object> payload = Map.of("address", address);
+            assertThatThrownBy(() -> validator.validate(ORG, CUSTOMER_DEF, payload))
+                    .as("address %s", address)
+                    .isInstanceOf(ValidationException.class)
+                    .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message")
+                            .containsExactly("address latitude must be within 90 and longitude within 180 degrees"));
+        }
+    }
 }

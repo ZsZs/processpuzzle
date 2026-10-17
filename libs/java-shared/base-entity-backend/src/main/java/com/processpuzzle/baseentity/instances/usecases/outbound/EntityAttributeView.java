@@ -13,11 +13,18 @@ public record EntityAttributeView(
     String linkedEntityType,
     boolean required,
     /** A COMMENTS attribute — an append-only list of {@code {author, authorId?, createdAt, content}} entries. */
-    boolean comments
+    boolean comments,
+    /** An ADDRESS attribute — one postal address object, see the ADDRESS form control type. */
+    boolean address
 ) {
     public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
                                String linkedEntityType, boolean required) {
-        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false);
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false, false);
+    }
+
+    public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
+                               String linkedEntityType, boolean required, boolean comments) {
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, false);
     }
 
     public enum ValueKindView {

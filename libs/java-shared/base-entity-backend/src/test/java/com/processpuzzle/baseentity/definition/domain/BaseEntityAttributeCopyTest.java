@@ -41,6 +41,9 @@ class BaseEntityAttributeCopyTest {
             .isLinkToDetails(true)
             .defaultAvatar("person")
             .autosizeColumn(true)
+            .showMap(true)
+            .mapProvider(MapProvider.GOOGLE)
+            .defaultCountry("HU")
             .validationRules(Map.of("min", 0))
             .build();
 

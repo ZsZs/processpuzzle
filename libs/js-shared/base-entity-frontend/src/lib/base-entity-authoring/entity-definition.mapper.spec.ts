@@ -168,6 +168,31 @@ describe('EntityDefinitionMapper', () => {
     });
   });
 
+  describe('ADDRESS map options', () => {
+    const toDtoAttribute = (init: Partial<EntityAttributeDefinition>) =>
+      mapper.toDto(new EntityDefinition({ code: 'customer', attributes: [new EntityAttributeDefinition({ code: 'address', ...init })] })).attributes?.[0];
+
+    it('reads them from the response', () => {
+      const [attribute] = mapper.fromDto({ code: 'customer', attributes: [{ code: 'address', formControlType: 'ADDRESS', showMap: true, mapProvider: 'GOOGLE', defaultCountry: 'HU' }] }).attributes ?? [];
+      expect(attribute).toMatchObject({ showMap: true, mapProvider: 'GOOGLE', defaultCountry: 'HU' });
+    });
+
+    it('writes them for an ADDRESS attribute, the country upper-cased and showMap explicit', () => {
+      expect(toDtoAttribute({ formControlType: 'ADDRESS', showMap: true, mapProvider: 'GOOGLE', defaultCountry: ' hu ' })).toMatchObject({ showMap: true, mapProvider: 'GOOGLE', defaultCountry: 'HU' });
+      expect(toDtoAttribute({ formControlType: 'ADDRESS' })).toMatchObject({ showMap: false });
+    });
+
+    it('drops the provider without a map, a blank country, and every option on another control', () => {
+      const withoutMap = toDtoAttribute({ formControlType: 'ADDRESS', mapProvider: 'GOOGLE', defaultCountry: ' ' });
+      expect(withoutMap).not.toHaveProperty('mapProvider');
+      expect(withoutMap).not.toHaveProperty('defaultCountry');
+      const text = toDtoAttribute({ formControlType: 'TEXT', showMap: true, mapProvider: 'GOOGLE', defaultCountry: 'HU' });
+      expect(text).not.toHaveProperty('showMap');
+      expect(text).not.toHaveProperty('mapProvider');
+      expect(text).not.toHaveProperty('defaultCountry');
+    });
+  });
+
   it('round-trips a definition through both directions', () => {
     const roundTripped = mapper.fromDto({ ...responseDto, ...mapper.toDto(mapper.fromDto(responseDto)) });
 

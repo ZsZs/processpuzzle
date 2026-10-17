@@ -30,6 +30,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
 
+    private static final List<String> ADDRESS_TEXT_PARTS = List.of("street", "addressLine2", "postalCode", "city", "region");
+
     private final EntityDefinitionLookupPort definitionLookupPort;
     private final EntityRulesPort entityRulesPort;
 
@@ -68,6 +70,10 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
         }
         if (value != null && attribute.comments()) {
             validateComments(attribute, value, violations);
+            return;
+        }
+        if (value != null && attribute.address()) {
+            validateAddress(attribute, value, violations);
             return;
         }
         if (value == null || !attribute.embeddedComponent()) {
@@ -135,6 +141,42 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             return "needs rich text content";
         }
         return null;
+    }
+
+    /**
+     * An ADDRESS value is one object: its text parts strings, its country an ISO 3166-1 alpha-2 code, its
+     * coordinates both present or both absent and in range, and {@code locationSource} GEOCODED or MANUAL.
+     */
+    private void validateAddress(EntityAttributeView attribute, Object value, List<Violation> violations) {
+        if (!(value instanceof Map<?, ?> address)) {
+            violations.add(new Violation(attribute.code(), "expected an address object"));
+            return;
+        }
+        for (String part : ADDRESS_TEXT_PARTS) {
+            Object text = address.get(part);
+            if (text != null && !(text instanceof String)) {
+                violations.add(new Violation(attribute.code(), "address %s must be text".formatted(part)));
+            }
+        }
+        Object country = address.get("country");
+        if (country != null && !(country instanceof String code && code.matches("[A-Z]{2}"))) {
+            violations.add(new Violation(attribute.code(), "address country must be an ISO 3166-1 alpha-2 code"));
+        }
+        Object latitude = address.get("latitude");
+        Object longitude = address.get("longitude");
+        if ((latitude == null) != (longitude == null)) {
+            violations.add(new Violation(attribute.code(), "address latitude and longitude go together"));
+        } else if (latitude != null && (!isCoordinate(latitude, 90) || !isCoordinate(longitude, 180))) {
+            violations.add(new Violation(attribute.code(), "address latitude must be within 90 and longitude within 180 degrees"));
+        }
+        Object source = address.get("locationSource");
+        if (source != null && !"GEOCODED".equals(source) && !"MANUAL".equals(source)) {
+            violations.add(new Violation(attribute.code(), "address locationSource must be GEOCODED or MANUAL"));
+        }
+    }
+
+    private boolean isCoordinate(Object value, double bound) {
+        return value instanceof Number number && Double.isFinite(number.doubleValue()) && Math.abs(number.doubleValue()) <= bound;
     }
 
     private boolean isInstant(String value) {

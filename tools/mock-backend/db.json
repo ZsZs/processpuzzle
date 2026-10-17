@@ -85,6 +85,15 @@
           }
         }
       ],
+      "address": {
+        "country": "HU",
+        "city": "Budapest",
+        "postalCode": "1014",
+        "street": "Szentháromság tér 2.",
+        "latitude": 47.5019,
+        "longitude": 19.0346,
+        "locationSource": "GEOCODED"
+      },
       "components": [
         "1",
         "2",

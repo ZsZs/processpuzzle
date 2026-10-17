@@ -13,6 +13,7 @@ import com.processpuzzle.baseentity.model.BaseEntityDefinitionInput;
 import com.processpuzzle.baseentity.model.EntityDefinitionStatus;
 import com.processpuzzle.baseentity.model.FlexDirection;
 import com.processpuzzle.baseentity.model.FormControlType;
+import com.processpuzzle.baseentity.model.MapProvider;
 import com.processpuzzle.baseentity.model.Page;
 import com.processpuzzle.baseentity.model.ValueKind;
 import java.util.List;
@@ -131,6 +132,34 @@ class EntityDefinitionMapperTest {
         com.processpuzzle.baseentity.model.AttributeDescriptor descriptorModel = mapper.toModel(mapper.toAttributeDescriptor(domain));
         assertThat(descriptorModel.getDefaultAvatar()).isEqualTo("sailing");
         assertThat(mapper.toDomain(descriptorModel).getDefaultAvatar()).isEqualTo("sailing");
+    }
+
+    @Test
+    void addressMapOptions_roundTripFromInputToModel() {
+        BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
+        attrInput.setCode("address");
+        attrInput.setValueKind(ValueKind.REFERENCE);
+        attrInput.setFormControlType(FormControlType.ADDRESS);
+        attrInput.setShowMap(true);
+        attrInput.setMapProvider(MapProvider.GOOGLE);
+        attrInput.setDefaultCountry("HU");
+
+        BaseEntityAttribute domain = mapper.toDomain(attrInput);
+        assertThat(domain.isShowMap()).isTrue();
+        assertThat(domain.getMapProvider()).isEqualTo(com.processpuzzle.baseentity.definition.domain.MapProvider.GOOGLE);
+        assertThat(domain.getDefaultCountry()).isEqualTo("HU");
+
+        com.processpuzzle.baseentity.model.BaseEntityAttribute model = mapper.toModel(domain);
+        assertThat(model.getShowMap()).isTrue();
+        assertThat(model.getMapProvider()).isEqualTo(MapProvider.GOOGLE);
+        assertThat(model.getDefaultCountry()).isEqualTo("HU");
+
+        attrInput.setShowMap(null);
+        attrInput.setMapProvider(null);
+        BaseEntityAttribute withoutMap = mapper.toDomain(attrInput);
+        assertThat(withoutMap.isShowMap()).isFalse();
+        assertThat(withoutMap.getMapProvider()).isNull();
+        assertThat(mapper.toModel(withoutMap).getMapProvider()).isNull();
     }
 
     @Test

@@ -119,6 +119,18 @@ public class BaseEntityAttribute {
     @Column(columnDefinition = "boolean not null default false")
     private boolean autosizeColumn = false;
 
+    /** ADDRESS only: show the address on a map. The column default lets {@code ddl-auto: update} add it to rows. */
+    @Builder.Default
+    @Column(columnDefinition = "boolean not null default false")
+    private boolean showMap = false;
+
+    /** ADDRESS only: who draws the map; null means OpenStreetMap. */
+    @Enumerated(EnumType.STRING)
+    private MapProvider mapProvider;
+
+    /** ADDRESS only: the ISO 3166-1 alpha-2 code a new address starts with. */
+    private String defaultCountry;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Object validationRules;
@@ -156,6 +168,9 @@ public class BaseEntityAttribute {
         this.isLinkToDetails = source.isLinkToDetails;
         this.defaultAvatar = source.defaultAvatar;
         this.autosizeColumn = source.autosizeColumn;
+        this.showMap = source.showMap;
+        this.mapProvider = source.mapProvider;
+        this.defaultCountry = source.defaultCountry;
         this.validationRules = source.validationRules;
     }
 }

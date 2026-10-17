@@ -599,11 +599,21 @@ components:
         - ARTIFACT
         - AVATAR
         - COMMENTS
+        - ADDRESS
         - TAGS
         - TITLE
         - LABEL
         - ADDITIONAL_PROPERTIES
         - FLEX_BOX
+
+    MapProvider:
+      type: string
+      description: >-
+        Who draws the map of an ADDRESS attribute with showMap. OPENSTREETMAP is the default; a click on
+        the map opens Google Maps whichever provider draws it.
+      enum:
+        - OPENSTREETMAP
+        - GOOGLE
 
     FlexDirection:
       type: string
@@ -822,6 +832,18 @@ components:
           type: boolean
           default: false
           description: The list column hugs its content (capped at 60% of the table) instead of filling the remaining width.
+        showMap:
+          type: boolean
+          default: false
+          description: >
+            For ADDRESS controls only: show the address on a map, with coordinates derived from the
+            address and editable by the user.
+        mapProvider:
+          $ref: '#/components/schemas/MapProvider'
+        defaultCountry:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: For ADDRESS controls only - the ISO 3166-1 alpha-2 code a new address starts with.
         validationRules: { }
 
     BaseEntityAttribute:

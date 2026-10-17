@@ -51,7 +51,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             attribute.getFormControlType() == FormControlType.EMBEDDED_COMPONENTS,
             attribute.getLinkedEntityType(),
             attribute.isRequired(),
-            attribute.getFormControlType() == FormControlType.COMMENTS
+            attribute.getFormControlType() == FormControlType.COMMENTS,
+            attribute.getFormControlType() == FormControlType.ADDRESS
         );
     }
 }

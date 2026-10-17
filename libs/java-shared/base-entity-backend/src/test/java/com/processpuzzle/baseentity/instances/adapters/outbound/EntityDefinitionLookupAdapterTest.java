@@ -88,6 +88,7 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(viewAttr1.required()).isTrue();
         assertThat(viewAttr1.linkedEntityType()).isNull();
         assertThat(viewAttr1.comments()).isFalse();
+        assertThat(viewAttr1.address()).isFalse();
 
         EntityAttributeView viewAttr2 = view.attributes().get(1);
         assertThat(viewAttr2.code()).isEqualTo("addresses");
@@ -114,5 +115,22 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(view.comments()).isTrue();
         assertThat(view.embeddedComponent()).isFalse();
         assertThat(view.multiValued()).isTrue();
+    }
+
+    @Test
+    void findByCode_flagsAnAddressAttribute() {
+        BaseEntityAttribute addressAttr = BaseEntityAttribute.builder()
+                .code("address")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.ADDRESS)
+                .build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("customer").attributes(List.of(addressAttr)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "customer", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        EntityAttributeView view = adapter.findByCode("acme", "customer").orElseThrow().attributes().get(0);
+
+        assertThat(view.address()).isTrue();
+        assertThat(view.comments()).isFalse();
+        assertThat(view.multiValued()).isFalse();
     }
 }

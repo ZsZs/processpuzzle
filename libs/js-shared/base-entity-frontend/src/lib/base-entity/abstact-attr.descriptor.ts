@@ -1,5 +1,10 @@
 export enum FormControlType {
   ADDITIONAL_PROPERTIES = 'ADDITIONAL_PROPERTIES',
+  /**
+   * A postal address — the value is one `PostalAddress` object. The fields and their order follow the selected
+   * country; with `showMap` the address is also shown on a map, with coordinates derived from it.
+   */
+  ADDRESS = 'ADDRESS',
   ARTIFACT = 'ARTIFACT',
   AVATAR = 'AVATAR',
   CHECKBOX = 'CHECKBOX',

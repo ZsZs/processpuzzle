@@ -284,4 +284,57 @@ class EntityDefinitionValidatorTest {
                     assertThat(ve.getViolations().get(0).message()).contains("declares 2 attributes as embedded 'address' components");
                 });
     }
+
+    @Test
+    void validate_addressAsSingleReferenceWithMapOptions_passes() {
+        BaseEntityAttribute address = addressAttribute(ValueKind.REFERENCE, null, null);
+        address.setShowMap(true);
+        address.setMapProvider(MapProvider.GOOGLE);
+        address.setDefaultCountry("HU");
+        validator.validate(definitionWith(address));
+    }
+
+    @Test
+    void validate_addressOfAnotherShape_throwsValidationException() {
+        String message = "ADDRESS attributes must declare valueKind=REFERENCE, a single value and no linkedEntityType";
+        assertSingleViolation(addressAttribute(ValueKind.TEXT, null, null), message);
+        assertSingleViolation(addressAttribute(ValueKind.REFERENCE, Multiplicity.ZERO_TO_N, null), message);
+        assertSingleViolation(addressAttribute(ValueKind.REFERENCE, null, "location"), message);
+    }
+
+    @Test
+    void validate_addressDefaultCountryThatIsNotAnIsoCode_throwsValidationException() {
+        BaseEntityAttribute address = addressAttribute(ValueKind.REFERENCE, null, null);
+        address.setDefaultCountry("Hungary");
+        assertSingleViolation(address, "defaultCountry must be an ISO 3166-1 alpha-2 code, e.g. HU");
+    }
+
+    @Test
+    void validate_mapOptionsOnAnotherControl_throwValidationException() {
+        String message = "showMap, mapProvider and defaultCountry are only meaningful for ADDRESS attributes";
+        BaseEntityAttribute withMap = textAttribute();
+        withMap.setShowMap(true);
+        assertSingleViolation(withMap, message);
+        BaseEntityAttribute withProvider = textAttribute();
+        withProvider.setMapProvider(MapProvider.OPENSTREETMAP);
+        assertSingleViolation(withProvider, message);
+        BaseEntityAttribute withCountry = textAttribute();
+        withCountry.setDefaultCountry("DE");
+        assertSingleViolation(withCountry, message);
+    }
+
+    private static BaseEntityAttribute addressAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
+        return BaseEntityAttribute.builder()
+                .code("address")
+                .name("Address")
+                .valueKind(valueKind)
+                .formControlType(FormControlType.ADDRESS)
+                .multiplicity(multiplicity)
+                .linkedEntityType(linkedEntityType)
+                .build();
+    }
+
+    private static BaseEntityAttribute textAttribute() {
+        return BaseEntityAttribute.builder().code("street").name("Street").valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT_BOX).build();
+    }
 }

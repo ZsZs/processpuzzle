@@ -18,6 +18,9 @@
     "dateStyle": "Estilo de fecha",
     "timeStyle": "Estilo de hora",
     "defaultAvatar": "Avatar predeterminado",
+    "showMap": "Muestra un mapa",
+    "mapProvider": "Proveedor de mapas",
+    "defaultCountry": "País predeterminado",
     "_tooltips": {
       "code": "Clave con la que se guarda el valor, única dentro del tipo de entidad, p. ej. orderNumber. No la cambie una vez que existan registros.",
       "name": "La etiqueta del campo tal como la ven los usuarios en formularios y columnas de lista, p. ej. Número de pedido.",
@@ -34,6 +37,9 @@
       "linkedEntityType": "Para campos de referencia (FOREIGN_KEY) y filas incrustadas (EMBEDDED_COMPONENTS): el código del tipo de entidad al que apuntan, p. ej. customer.",
       "defaultValue": "Valor que aparece ya rellenado en los registros nuevos, p. ej. NEW o 1. Déjelo vacío si no hay ninguno.",
       "defaultAvatar": "Para controles AVATAR: nombre de icono (p. ej. person, sailing) o URL de imagen que se muestra antes de subir una imagen.",
+      "showMap": "Para controles ADDRESS: mostrar la dirección en un mapa, con coordenadas derivadas de ella.",
+      "mapProvider": "Para controles ADDRESS con mapa: quién lo dibuja. Vacío usa OpenStreetMap; un clic siempre abre Google Maps.",
+      "defaultCountry": "Para controles ADDRESS: el código ISO del país con el que empieza una dirección nueva, p. ej. ES. Vacío usa el país del navegador.",
       "dateStyle": "Para campos DATE y DATE_TIME: cómo se muestra la fecha, de short (31/12/26) a full (jueves, 31 de diciembre de 2026). Vacío usa el valor predeterminado.",
       "timeStyle": "Para campos DATE_TIME: cómo se muestra la hora, de short (14:30) a long (con segundos y zona horaria). Vacío usa el valor predeterminado."
     }
@@ -159,5 +165,28 @@
     "new_placeholder": "Escribe un comentario…",
     "unknown_author": "Desconocido",
     "count": "{{ count }} comentarios"
+  },
+  "address": {
+    "country": "País",
+    "street": "Calle y número",
+    "address_line2": "Línea de dirección 2",
+    "postal_code": "Código postal",
+    "zip_code": "Código ZIP",
+    "postcode": "Código postal",
+    "city": "Ciudad",
+    "town": "Localidad",
+    "region": "Región",
+    "state": "Estado",
+    "province": "Provincia",
+    "county": "Condado",
+    "prefecture": "Prefectura",
+    "canton": "Cantón",
+    "latitude": "Latitud",
+    "longitude": "Longitud",
+    "locate": "Localizar desde la dirección",
+    "not_found": "No se encontró la dirección en el mapa.",
+    "no_location": "Aún sin ubicación — complete la dirección o las coordenadas.",
+    "map": "Mapa de la dirección",
+    "open_in_google_maps": "Abrir en Google Maps"
   }
 }

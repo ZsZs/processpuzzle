@@ -2,6 +2,7 @@ import type { BaseEntity } from '../base-entity/base-entity';
 import type { DateFormat, DateStyle, TimeStyle } from '../base-entity/date-format';
 import type { Multiplicity } from '../base-entity/multiplicity';
 import type { ReleaseState } from '@processpuzzle/util';
+import type { MapProvider } from '../base-form/address/address-map';
 
 /**
  * The knowledge layer of `base-entity-api.yaml` as the frontend reads it: what an entity *type* is,
@@ -67,6 +68,7 @@ export const ENTITY_FORM_CONTROL_TYPES: readonly string[] = [
   'ARTIFACT',
   'AVATAR',
   'COMMENTS',
+  'ADDRESS',
 ];
 
 /**
@@ -128,6 +130,12 @@ export class EntityAttributeDefinition implements BaseEntity {
   autosizeColumn?: boolean;
   /** Predefined avatar icon or image URL fallback for AVATAR form control. */
   defaultAvatar?: string;
+  /** `ADDRESS` only: show the address on a map — the descriptor's `showMap`. */
+  showMap?: boolean;
+  /** `ADDRESS` only: who draws the map; OpenStreetMap when absent. */
+  mapProvider?: MapProvider;
+  /** `ADDRESS` only: the ISO 3166-1 alpha-2 code a new address starts with. */
+  defaultCountry?: string;
 
   constructor(init: Partial<EntityAttributeDefinition> = {}) {
     this.code = init.code ?? '';
@@ -151,6 +159,9 @@ export class EntityAttributeDefinition implements BaseEntity {
     this.isLinkToDetails = init.isLinkToDetails;
     this.autosizeColumn = init.autosizeColumn;
     this.defaultAvatar = init.defaultAvatar;
+    this.showMap = init.showMap;
+    this.mapProvider = init.mapProvider;
+    this.defaultCountry = init.defaultCountry;
   }
 }
 
