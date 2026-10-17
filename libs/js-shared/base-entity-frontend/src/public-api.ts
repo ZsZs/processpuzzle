@@ -38,6 +38,10 @@ export { addressFormatOf, formatAddress, type AddressFormat } from './lib/base-f
 export { AddressPipe } from './lib/base-form/address/address.pipe';
 export { AddressGeocoder } from './lib/base-form/address/address-geocoder';
 export { COUNTRY_CODES, countryName, countryOptions } from './lib/base-form/address/countries';
+export { GeoLocationComponent } from './lib/base-form/geo-location/geo-location.component';
+export { formatGeoLocation, geoLocationOf, type GeoLocation } from './lib/base-form/geo-location/geo-location';
+export { GeoLocationPipe } from './lib/base-form/geo-location/geo-location.pipe';
+export { GeoLocator, GeoLocatorFailure, type GeoLocatorError } from './lib/base-form/geo-location/geo-locator';
 export { DEFAULT_MAP_PROVIDER, MAP_PROVIDERS, googleMapsUrl, mapEmbedUrl, type MapProvider } from './lib/base-form/address/address-map';
 // The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.
 export { EMPTY_RICH_TEXT, isRichTextEmpty, RichTextEditorComponent, type RichTextContent } from './lib/rich-text/rich-text-editor.component';

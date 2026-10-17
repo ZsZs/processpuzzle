@@ -188,5 +188,19 @@
     "no_location": "No location yet — fill in the address or the coordinates.",
     "map": "Map of the address",
     "open_in_google_maps": "Open in Google Maps"
+  },
+  "geo_location": {
+    "capture": "Record my location",
+    "recapture": "Record my location again",
+    "none": "No location recorded yet.",
+    "captured_at": "Recorded {{ time }}",
+    "unavailable": "This browser cannot tell your location, or you have not allowed this site to read it.",
+    "open_in_google_maps": "Open in Google Maps",
+    "error": {
+      "PERMISSION_DENIED": "Location access was refused. Allow it in the browser's site settings to record a location.",
+      "POSITION_UNAVAILABLE": "The device could not determine its location.",
+      "TIMEOUT": "Reading the location took too long. Try again.",
+      "UNAVAILABLE": "This browser cannot tell your location."
+    }
   }
 }

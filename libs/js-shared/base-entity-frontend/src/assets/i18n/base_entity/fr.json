@@ -188,5 +188,19 @@
     "no_location": "Pas encore de position — saisissez l'adresse ou les coordonnées.",
     "map": "Carte de l'adresse",
     "open_in_google_maps": "Ouvrir dans Google Maps"
+  },
+  "geo_location": {
+    "capture": "Enregistrer ma position",
+    "recapture": "Enregistrer à nouveau ma position",
+    "none": "Aucune position enregistrée.",
+    "captured_at": "Enregistrée {{ time }}",
+    "unavailable": "Ce navigateur ne peut pas déterminer votre position, ou vous ne l'avez pas autorisé pour ce site.",
+    "open_in_google_maps": "Ouvrir dans Google Maps",
+    "error": {
+      "PERMISSION_DENIED": "L'accès à la position a été refusé. Autorisez-le dans les paramètres du site du navigateur.",
+      "POSITION_UNAVAILABLE": "L'appareil n'a pas pu déterminer sa position.",
+      "TIMEOUT": "La lecture de la position a pris trop de temps. Réessayez.",
+      "UNAVAILABLE": "Ce navigateur ne peut pas déterminer votre position."
+    }
   }
 }

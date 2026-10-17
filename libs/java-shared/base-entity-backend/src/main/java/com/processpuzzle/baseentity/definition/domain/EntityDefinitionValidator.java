@@ -61,6 +61,19 @@ public class EntityDefinitionValidator {
         validateMultiplicity(attribute, violations);
         validateComments(attribute, violations);
         validateAddress(attribute, violations);
+        validateGeoLocation(attribute, violations);
+    }
+
+    /** A geolocation is one structured value owned by the record, like an address. */
+    private void validateGeoLocation(BaseEntityAttribute attribute, List<Violation> violations) {
+        if (attribute.getFormControlType() != FormControlType.GEO_LOCATION) {
+            return;
+        }
+        if (attribute.getValueKind() != ValueKind.REFERENCE || attribute.isMultiValued()
+            || (attribute.getLinkedEntityType() != null && !attribute.getLinkedEntityType().isBlank())) {
+            violations.add(new Violation(attribute.getCode(),
+                "GEO_LOCATION attributes must declare valueKind=REFERENCE, a single value and no linkedEntityType"));
+        }
     }
 
     /** An address is one structured value owned by the record; the map options mean nothing on any other control. */

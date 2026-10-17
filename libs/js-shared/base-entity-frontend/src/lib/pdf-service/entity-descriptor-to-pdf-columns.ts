@@ -5,6 +5,7 @@ import { commentsOf } from '../base-form/comments/entity-comment';
 import { formatAddress } from '../base-form/address/address-formats';
 import { countryName } from '../base-form/address/countries';
 import { addressOf } from '../base-form/address/postal-address';
+import { formatGeoLocation } from '../base-form/geo-location/geo-location';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import type { PdfColumnDefinition } from './pdf-export.types';
 
@@ -57,6 +58,9 @@ function columnFormatter(descriptor: BaseEntityAttrDescriptor, locale: string | 
 
     case FormControlType.ADDRESS:
       return (value) => formatAddress(addressOf(value), (code) => countryName(code, locale ?? navigator.language));
+
+    case FormControlType.GEO_LOCATION:
+      return (value) => formatGeoLocation(value);
 
     // TEXT_BOX, TEXTAREA, DROPDOWN, FOREIGN_KEY, LOOKUP, etc. → default string coercion in the service
     default:

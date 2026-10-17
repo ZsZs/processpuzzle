@@ -18,6 +18,11 @@ export enum FormControlType {
   CUSTOM = 'CUSTOM',
   DATE = 'DATE',
   DROPDOWN = 'DROPDOWN',
+  /**
+   * Where the device was when the user pressed the control's button — the value is one `GeoLocation` object.
+   * Shown read-only; pressing the button again replaces it. Disabled where the browser offers no location.
+   */
+  GEO_LOCATION = 'GEO_LOCATION',
   EMBEDDED_COMPONENTS = 'EMBEDDED_COMPONENTS',
   EMBEDDED_LIST = 'EMBEDDED_LIST',
   EMBEDDED_OBJECT = 'EMBEDDED_OBJECT',

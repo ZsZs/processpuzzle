@@ -76,6 +76,10 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             validateAddress(attribute, value, violations);
             return;
         }
+        if (value != null && attribute.geoLocation()) {
+            validateGeoLocation(attribute, value, violations);
+            return;
+        }
         if (value == null || !attribute.embeddedComponent()) {
             return;
         }
@@ -172,6 +176,28 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
         Object source = address.get("locationSource");
         if (source != null && !"GEOCODED".equals(source) && !"MANUAL".equals(source)) {
             violations.add(new Violation(attribute.code(), "address locationSource must be GEOCODED or MANUAL"));
+        }
+    }
+
+    /**
+     * A GEO_LOCATION value is one object: both coordinates in range, a non-negative {@code accuracy} in metres and
+     * an ISO 8601 {@code capturedAt} instant, the last two optional.
+     */
+    private void validateGeoLocation(EntityAttributeView attribute, Object value, List<Violation> violations) {
+        if (!(value instanceof Map<?, ?> location)) {
+            violations.add(new Violation(attribute.code(), "expected a geolocation object"));
+            return;
+        }
+        if (!isCoordinate(location.get("latitude"), 90) || !isCoordinate(location.get("longitude"), 180)) {
+            violations.add(new Violation(attribute.code(), "geolocation needs a latitude within 90 and a longitude within 180 degrees"));
+        }
+        Object accuracy = location.get("accuracy");
+        if (accuracy != null && !(accuracy instanceof Number number && Double.isFinite(number.doubleValue()) && number.doubleValue() >= 0)) {
+            violations.add(new Violation(attribute.code(), "geolocation accuracy must be a non-negative number of metres"));
+        }
+        Object capturedAt = location.get("capturedAt");
+        if (capturedAt != null && !(capturedAt instanceof String instant && isInstant(instant))) {
+            violations.add(new Violation(attribute.code(), "geolocation capturedAt must be an ISO 8601 instant"));
         }
     }
 

@@ -52,7 +52,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             attribute.getLinkedEntityType(),
             attribute.isRequired(),
             attribute.getFormControlType() == FormControlType.COMMENTS,
-            attribute.getFormControlType() == FormControlType.ADDRESS
+            attribute.getFormControlType() == FormControlType.ADDRESS,
+            attribute.getFormControlType() == FormControlType.GEO_LOCATION
         );
     }
 }

@@ -8,6 +8,7 @@ const SKIP_CONTROL_TYPES: ReadonlySet<FormControlType> = new Set([
   FormControlType.ARTIFACT,
   FormControlType.AVATAR,
   FormControlType.COMMENTS,
+  FormControlType.GEO_LOCATION,
   FormControlType.COMPONENTS,
   FormControlType.CUSTOM,
   FormControlType.EMBEDDED_COMPONENTS,

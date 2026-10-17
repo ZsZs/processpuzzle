@@ -323,6 +323,30 @@ class EntityDefinitionValidatorTest {
         assertSingleViolation(withCountry, message);
     }
 
+    @Test
+    void validate_geoLocationAsSingleReference_passes() {
+        validator.validate(definitionWith(geoLocationAttribute(ValueKind.REFERENCE, null, null)));
+    }
+
+    @Test
+    void validate_geoLocationOfAnotherShape_throwsValidationException() {
+        String message = "GEO_LOCATION attributes must declare valueKind=REFERENCE, a single value and no linkedEntityType";
+        assertSingleViolation(geoLocationAttribute(ValueKind.TEXT, null, null), message);
+        assertSingleViolation(geoLocationAttribute(ValueKind.REFERENCE, Multiplicity.ZERO_TO_N, null), message);
+        assertSingleViolation(geoLocationAttribute(ValueKind.REFERENCE, null, "place"), message);
+    }
+
+    private static BaseEntityAttribute geoLocationAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
+        return BaseEntityAttribute.builder()
+                .code("location")
+                .name("Location")
+                .valueKind(valueKind)
+                .formControlType(FormControlType.GEO_LOCATION)
+                .multiplicity(multiplicity)
+                .linkedEntityType(linkedEntityType)
+                .build();
+    }
+
     private static BaseEntityAttribute addressAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
         return BaseEntityAttribute.builder()
                 .code("address")
