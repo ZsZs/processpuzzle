@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MatIconButton } from '@angular/material/button';
@@ -7,7 +7,6 @@ import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { MatTooltip } from '@angular/material/tooltip';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { injectActiveLang } from '@processpuzzle/util';
 import { BaseEntity } from '../../base-entity/base-entity';
@@ -99,9 +98,9 @@ type AddressFields = {
           @if (notFound()) {
             <p class="pp-address__hint" data-testid="address-not-found">{{ 'base_entity.address.not_found' | transloco }}</p>
           }
-          @if (mapUrl(); as url) {
+          @if (mapUrl()) {
             <div class="pp-address__map">
-              <iframe [src]="url" [title]="'base_entity.address.map' | transloco" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
+              <iframe #mapFrame [title]="'base_entity.address.map' | transloco" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
               <!-- The map is a third-party page the click would otherwise land in; this link sits over it. -->
               <a
                 class="pp-address__map-link"
@@ -190,7 +189,6 @@ export class AddressComponent<Entity extends BaseEntity> extends BaseFormControl
 
   private readonly activeLang = injectActiveLang();
   private readonly geocoder = inject(AddressGeocoder);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
   private readonly country = signal<string | undefined>(undefined);
   private readonly location = signal<GeoPoint | undefined>(undefined);
@@ -200,15 +198,27 @@ export class AddressComponent<Entity extends BaseEntity> extends BaseFormControl
 
   readonly format = computed(() => addressFormatOf(this.country()));
   readonly countries = computed(() => countryOptions(this.activeLang()));
-  readonly mapUrl = computed<SafeResourceUrl | undefined>(() => {
+  readonly mapUrl = computed<string | undefined>(() => {
     const point = this.location();
-    // Both URLs are built from two numbers and a constant host, never from user text.
-    return point ? this.sanitizer.bypassSecurityTrustResourceUrl(mapEmbedUrl(this.config().mapProvider ?? DEFAULT_MAP_PROVIDER, point)) : undefined;
+    return point ? mapEmbedUrl(this.config().mapProvider ?? DEFAULT_MAP_PROVIDER, point) : undefined;
   });
   readonly openUrl = computed(() => {
     const point = this.location();
     return point ? googleMapsUrl(point) : undefined;
   });
+
+  private readonly mapFrame = viewChild<ElementRef<HTMLIFrameElement>>('mapFrame');
+
+  constructor() {
+    super();
+    // Assigned rather than bound: `[src]` on an iframe demands a SafeResourceUrl, i.e. switching Angular's
+    // sanitization off. The URL needs none — `mapEmbedUrl` builds it from two finite numbers and a constant host.
+    effect(() => {
+      const frame = this.mapFrame()?.nativeElement;
+      const url = this.mapUrl();
+      if (frame && url && frame.src !== url) frame.src = url;
+    });
+  }
 
   // region Angular lifecycle hooks
   ngOnInit(): void {

@@ -47,12 +47,13 @@ describe('address-formats', () => {
 describe('countries', () => {
   it('lists every code once', () => {
     expect(new Set(COUNTRY_CODES).size).toBe(COUNTRY_CODES.length);
-    expect(COUNTRY_CODES.length).toBe(249);
+    expect(COUNTRY_CODES).toHaveLength(249);
   });
 
   it('names and sorts the countries in the given language', () => {
     expect(countryName('DE', 'de')).toBe('Deutschland');
     expect(countryName('DE', 'not a language tag!')).toBe('DE');
+    expect(countryOptions('not a language tag!').find((option) => option.code === 'DE')?.name).toBe('DE');
     const names = countryOptions('en').map((option) => option.name);
     expect(names).toEqual([...names].sort((left, right) => left.localeCompare(right, 'en')));
   });

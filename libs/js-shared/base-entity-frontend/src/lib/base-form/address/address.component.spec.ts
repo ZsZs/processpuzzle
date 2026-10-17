@@ -32,9 +32,11 @@ async function setupAddress(options: SetupOptions = {}) {
   const harness = await setupFormControlTest(AddressComponent, config, entity, [{ provide: AddressGeocoder, useValue: { geocode } }]);
   harness.fixture.detectChanges();
   const component = harness.component as AddressComponent<TestEntity>;
+  const control = component.formGroup.get('address');
+  if (!control) throw new Error('the address control was not registered');
   const element = harness.fixture.nativeElement as HTMLElement;
   const input = (field: string) => element.querySelector<HTMLInputElement>(`[data-testid="address-${field}"]`);
-  return { ...harness, component, geocode, control: component.formGroup.get('address')!, element, input };
+  return { ...harness, component, geocode, control, element, input };
 }
 
 function type(input: HTMLInputElement | null, text: string): void {
@@ -182,6 +184,16 @@ describe('AddressComponent', () => {
       expect(control.value).toMatchObject({ latitude: 47.1, longitude: 19.1, locationSource: 'MANUAL' });
 
       await component.locate();
+      expect(control.value).toMatchObject({ latitude: 47.49, longitude: 19.03, locationSource: 'GEOCODED' });
+    });
+
+    it('derives the coordinates again when Locate is pressed', async () => {
+      const { element, fixture, geocode, control } = await setupAddress({ value: BUDAPEST, showMap: true, found: { latitude: 47.49, longitude: 19.03 } });
+
+      element.querySelector<HTMLButtonElement>('[data-testid="address-locate"]')?.click();
+      await fixture.whenStable();
+
+      expect(geocode).toHaveBeenCalledTimes(1);
       expect(control.value).toMatchObject({ latitude: 47.49, longitude: 19.03, locationSource: 'GEOCODED' });
     });
 

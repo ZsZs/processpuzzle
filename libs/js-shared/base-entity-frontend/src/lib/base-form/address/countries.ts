@@ -271,16 +271,18 @@ export function countryName(code: string, language: string): string {
   }
 }
 
-/** Every country, named in `language` and sorted the way a reader of that language expects. */
+/**
+ * Every country, named in `language` and sorted the way a reader of that language expects. A language the
+ * runtime rejects gets the codes themselves, in code order.
+ */
 export function countryOptions(language: string): CountryOption[] {
-  let names: Intl.DisplayNames | undefined;
   try {
-    names = new Intl.DisplayNames([language, 'en'], { type: 'region' });
+    const names = new Intl.DisplayNames([language, 'en'], { type: 'region' });
+    const collator = new Intl.Collator([language, 'en']);
+    return COUNTRY_CODES.map((code) => ({ code, name: names.of(code) ?? code })).sort((left, right) => collator.compare(left.name, right.name));
   } catch {
-    names = undefined;
+    return COUNTRY_CODES.map((code) => ({ code, name: code }));
   }
-  const collator = new Intl.Collator(language);
-  return COUNTRY_CODES.map((code) => ({ code, name: names?.of(code) ?? code })).sort((left, right) => collator.compare(left.name, right.name));
 }
 
 /** The region of a BCP 47 language tag (`hu-HU` → `HU`), when it names one this list knows. */
