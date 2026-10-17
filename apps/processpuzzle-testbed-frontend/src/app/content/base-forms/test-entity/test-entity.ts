@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { ArtifactAttr, BaseEntity, EntityComment } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntity, EntityComment, PostalAddress } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
 import { EmbeddedComponent } from '../embedded-component/embedded-component';
 import { RelatedEntity } from '../related-entity/related-entity';
@@ -29,6 +29,7 @@ export interface TestEntityOptions {
   relatedEntities?: RelatedEntity[];
   additionalProperties?: Record<string, string>;
   comments?: EntityComment[];
+  address?: PostalAddress;
 }
 
 export class TestEntity implements BaseEntity {
@@ -52,6 +53,7 @@ export class TestEntity implements BaseEntity {
   additionalProperties: Record<string, string> | undefined;
   /** Append-only, oldest first: the form adds one at a time and the history is never rewritten. */
   comments: Array<EntityComment> | undefined;
+  address: PostalAddress | undefined;
 
   constructor(options: TestEntityOptions = {}) {
     this.id = options.id ?? uuidv4();
@@ -70,5 +72,6 @@ export class TestEntity implements BaseEntity {
     this.relatedEntities = options.relatedEntities;
     this.additionalProperties = options.additionalProperties;
     this.comments = options.comments;
+    this.address = options.address;
   }
 }
