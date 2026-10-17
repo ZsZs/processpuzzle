@@ -33,11 +33,15 @@ export function buildCreateData(descriptor: BaseEntityDescriptor, resolvedForeig
 }
 
 export function buildCreateDataForContext(context: ControlDataContext): Record<string, string> {
+  const pinned = fixtureOverrideFor(context)?.create;
   const data: Record<string, string> = {};
   for (const tester of controlTestersFor(context.descriptor)) {
+    // A pinned field is not generated at all: its generator may be the very thing that cannot cope — a
+    // patterned text box throws when its dashed token does not satisfy the pattern.
+    if (pinned && tester.attr.attrName in pinned) continue;
     data[tester.attr.attrName] = tester.createValue(context);
   }
-  return { ...data, ...fixtureOverrideFor(context)?.create };
+  return { ...data, ...pinned };
 }
 
 function fixtureOverrideFor(context: ControlDataContext): FixtureOverride | undefined {
@@ -86,13 +90,15 @@ export function buildUpdateData(descriptor: BaseEntityDescriptor, original: Reco
 }
 
 export function buildUpdateDataForContext(context: ControlDataContext, original: Record<string, string>): Record<string, string> {
+  const pinned = fixtureOverrideFor(context)?.update;
   const updated = { ...original };
   for (const tester of controlTestersFor(context.descriptor)) {
     if (tester.attr.isLinkToDetails) continue;
     if (tester.attr.attrName === IDENTITY_ATTR_NAME) continue;
+    if (pinned && tester.attr.attrName in pinned) continue;
     updated[tester.attr.attrName] = tester.updateValue(context, original);
   }
-  return { ...updated, ...fixtureOverrideFor(context)?.update };
+  return { ...updated, ...pinned };
 }
 
 export { linkedFixtureAttrKey } from '../controls/control-tester';

@@ -89,10 +89,12 @@ defineEntityRelationshipSuite({
       // each is 'none', and the backend rejects a dateFormat whose two halves are both none.
       // Multiplicity likewise: the first option, '0..1', would make the mapper drop the generated Max occurs,
       // which is sent only for the 'x' forms — so both steps pin one.
+      // Default country is an ISO code, which no generated token is; the mapper drops it for any control but
+      // ADDRESS, and it is hidden from the table, so the pinned code only has to get past the form's pattern.
       entityName: 'Entity Attribute',
-      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x' },
-      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x' },
-      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one',
+      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x', defaultCountry: 'HU' },
+      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x', defaultCountry: 'DE' },
+      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one, defaultCountry must be an ISO code',
     },
     {
       // The owner of [Event Definition] parameters, pinned as in entity-crud.spec.ts: the generator takes the
