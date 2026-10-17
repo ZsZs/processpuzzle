@@ -21,6 +21,8 @@ export enum EventAction {
   UPDATED = 'UPDATED',
   DELETED = 'DELETED',
   STATE_CHANGED = 'STATE_CHANGED',
+  /** A document was signed for the subject — base-document's fact, about the object signed for. */
+  SIGNED = 'SIGNED',
 }
 
 /** The type of a value an event carries — the contract's `EventParameterType`. */

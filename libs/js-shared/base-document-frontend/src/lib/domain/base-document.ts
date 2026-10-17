@@ -91,6 +91,28 @@ export interface DocumentBlock extends Partial<WidgetInstance> {
   content?: Record<string, unknown>; // opaque Tiptap/ProseMirror JSON document
 }
 
+/** The object a signature is given for — one employee's contract out of the one contract document. */
+export interface DocumentSignatureSubject {
+  /** The entity definition code, e.g. `employee`. */
+  subjectType: string;
+  subjectId: string;
+}
+
+/**
+ * One person's acceptance of one published revision, as `GET .../signatures` returns it. Every field but the
+ * subject is the server's: who signed comes from the token, and `revision` / `contentHash` pin what was read.
+ */
+export interface DocumentSignature extends DocumentSignatureSubject {
+  id: string;
+  documentId: string;
+  title?: string;
+  locale: string;
+  revision: number;
+  contentHash: string;
+  signedBy: string;
+  signedAt: string;
+}
+
 export enum DocumentStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',

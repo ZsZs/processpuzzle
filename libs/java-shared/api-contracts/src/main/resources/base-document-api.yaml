@@ -634,6 +634,100 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  # ── Signatures ────────────────────────────────────────────────
+
+  /organizations/{orgKey}/documents/{documentId}/signatures:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+    get:
+      operationId: listDocumentSignatures
+      summary: List the signatures given on this document, newest first
+      description: >-
+        Every signature any locale of this document received, optionally narrowed to the object it
+        was given for. Open to anyone who may read the document's published content.
+      tags:
+        - Base Document
+      parameters:
+        - name: subjectType
+          in: query
+          required: false
+          description: Only signatures given for objects of this entity type.
+          schema:
+            type: string
+        - name: subjectId
+          in: query
+          required: false
+          description: Only signatures given for this object.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Signatures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentSignature"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: signDocument
+      summary: Sign this document's published content for an object
+      description: >-
+        A simple electronic signature: the authenticated caller declares acceptance of the
+        published content of one locale, on behalf of the object it is given for — the contract
+        of one employee, say. One document serves many objects, so the signature names its object
+        rather than the document holding a "signed" flag.
+
+        The server records who signed (from the token, never from the request), when, the
+        `publishedRevision` read and a SHA-256 of that revision's block list, so a later
+        republish cannot change what was signed. A draft is never signable. Signing again what
+        the same person already signed for the same object at the same revision answers the
+        existing signature with 200 and publishes nothing.
+
+        A new signature publishes the platform fact `SIGNED` with the *object* as its subject, so
+        a workflow running for that object can wait for it in an intermediate catch event.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentSignatureInput"
+      responses:
+        "200":
+          description: Already signed — the existing signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentSignature"
+        "201":
+          description: Signed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentSignature"
+        "403":
+          description: >-
+            No authenticated principal to sign as.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: >-
+            The locale has no published content, so there is nothing to sign
+            (`document.sign.not-published`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ── Validation, import, export ────────────────────────────────
 
   /organizations/{orgKey}/documents/validate:
@@ -1635,6 +1729,64 @@ components:
       minLength: 2
       maxLength: 6
       example: en
+
+    # ── Signatures ────────────────────────────────────────────
+
+    DocumentSignatureInput:
+      type: object
+      required: [ subjectType, subjectId ]
+      description: >-
+        What the signer asserts beyond themselves: which object the signature is given for and,
+        optionally, which locale they read. Signer, time, revision and hash are the server's.
+      properties:
+        subjectType:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: The entity definition code of the object signed for, e.g. `employee`.
+          example: employee
+        subjectId:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: The id of the object signed for.
+        locale:
+          allOf:
+            - $ref: "#/components/schemas/Locale"
+          description: The locale read and signed. Defaults to the document's `sourceLocale`.
+
+    DocumentSignature:
+      type: object
+      required: [ id, documentId, locale, revision, contentHash, subjectType, subjectId, signedBy, signedAt ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        documentId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          description: The document's title when it was signed.
+        locale:
+          $ref: "#/components/schemas/Locale"
+        revision:
+          type: integer
+          format: int64
+          description: The `publishedRevision` that was read and signed.
+        contentHash:
+          type: string
+          description: Hex SHA-256 of the signed revision's block list, as stored.
+        subjectType:
+          type: string
+        subjectId:
+          type: string
+        signedBy:
+          type: string
+          description: The signer's principal name, taken from the token.
+        signedAt:
+          type: string
+          format: date-time
 
     # Shared shapes — kept as local duplicates because the openapi-generator
     # swagger-parser cannot resolve cross-file $refs on Windows. schemaMappings

@@ -14,7 +14,7 @@
       "description": "Une note sur le moment où l'événement survient et son usage ; les utilisateurs ne la voient pas.",
       "kind": "SYSTEM : émis par la plateforme lorsqu'un enregistrement change. MESSAGE : envoyé à un destinataire via l'API. SIGNAL : diffusé à tous les auditeurs via l'API.",
       "subjectType": "Uniquement pour les événements SYSTEM : le code du type d'entité dont les enregistrements émettent l'événement, p. ex. order.",
-      "action": "Uniquement pour les événements SYSTEM : ce qui arrive à l'enregistrement : CREATED, UPDATED, DELETED ou STATE_CHANGED.",
+      "action": "Uniquement pour les événements SYSTEM : ce qui arrive à l'enregistrement : CREATED, UPDATED, DELETED, STATE_CHANGED ou SIGNED (un document a été signé pour lui).",
       "state": "Uniquement pour STATE_CHANGED : l'état dans lequel entre l'enregistrement, p. ex. CONFIRMED.",
       "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
       "parameters": "Les valeurs que porte chaque occurrence de l'événement, p. ex. une commande et son numéro. Les workflows les lisent par leur nom."

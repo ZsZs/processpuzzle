@@ -14,12 +14,22 @@
     "inputPorts": "Puertos de entrada",
     "outputPorts": "Puertos de salida",
     "tabs": {
-      "content": "{{ entity }} - contenido"
+      "content": "{{ entity }} - contenido",
+      "sign": "{{ entity }} - firmar"
     },
     "content": {
       "loading": "Cargando contenido…",
       "add_text_block": "Añadir bloque de texto",
       "add_widget_block": "Añadir widget"
+    },
+    "sign": {
+      "loading": "Cargando el documento publicado…",
+      "not_published": "Este documento aún no se ha publicado, así que no hay nada que firmar.",
+      "accept": "He leído este documento y lo acepto.",
+      "button": "Firmar",
+      "signed": "Firmado por {{ signer }} el {{ date }}.",
+      "signatures": "Firmas",
+      "none": "Nadie ha firmado este documento todavía."
     },
     "_tooltips": {
       "slug": "La clave del documento en su dirección, única en su organización. Solo minúsculas, dígitos y guiones, p. ej. getting-started.",

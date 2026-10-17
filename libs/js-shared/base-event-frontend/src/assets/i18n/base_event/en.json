@@ -14,7 +14,7 @@
       "description": "A note on when the event happens and what it is used for; users do not see it.",
       "kind": "SYSTEM: raised by the platform when a record changes. MESSAGE: sent to one receiver through the API. SIGNAL: broadcast to every listener through the API.",
       "subjectType": "For SYSTEM events only: the code of the entity type whose records raise the event, e.g. order.",
-      "action": "For SYSTEM events only: what happens to the record: CREATED, UPDATED, DELETED or STATE_CHANGED.",
+      "action": "For SYSTEM events only: what happens to the record: CREATED, UPDATED, DELETED, STATE_CHANGED or SIGNED (a document was signed for it).",
       "state": "For STATE_CHANGED only: the state the record enters, e.g. CONFIRMED.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "parameters": "The values every occurrence of the event carries, e.g. an order and its order number. Workflows read them by name."

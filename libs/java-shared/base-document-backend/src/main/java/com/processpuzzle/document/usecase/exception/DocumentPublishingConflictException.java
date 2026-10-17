@@ -3,12 +3,12 @@ package com.processpuzzle.document.usecase.exception;
 import java.util.List;
 
 /**
- * A publishing operation cannot proceed in the document's current state — 409. Covers the three
+ * A publishing operation cannot proceed in the document's current state — 409. Covers the four
  * refusals that are about state rather than permission: publishing content that does not validate,
- * discarding a draft with nothing published to fall back to, and removing the source locale every
- * other translation is based on.
+ * discarding a draft with nothing published to fall back to, removing the source locale every
+ * other translation is based on, and signing a locale that has nothing published.
  *
- * <p>All three share a status, so each carries its own {@code errorId} for
+ * <p>All four share a status, so each carries its own {@code errorId} for
  * {@code DocumentApiExceptionHandler} to put on the wire. A client that has to tell "fix the content
  * first" from "there is nothing to revert to" can only do so from the id — the status cannot express it
  * and the message is prose.
@@ -36,6 +36,12 @@ public class DocumentPublishingConflictException extends RuntimeException {
         return new DocumentPublishingConflictException("document.draft.nothing-to-revert-to",
                 "Locale '" + locale + "' of document '" + documentId + "' has never been published, so there is no"
                         + " published content to discard the draft in favour of.");
+    }
+
+    public static DocumentPublishingConflictException notPublished(String documentId, String locale) {
+        return new DocumentPublishingConflictException("document.sign.not-published",
+                "Locale '" + locale + "' of document '" + documentId + "' has no published content, so there is"
+                        + " nothing to sign.");
     }
 
     /** Id matches the Cloud Function's, which answers the same refusal — see base-document.handlers.ts. */

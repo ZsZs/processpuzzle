@@ -5,6 +5,7 @@ import { BASE_DOCUMENT_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from './ba
 import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './domain/document-entity-names';
 import { BaseDocumentContainerComponent } from './feature/base-document-container.component';
 import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
+import { DOCUMENT_SIGN_TAB } from './feature/document-sign/document-sign-tab';
 import { DocumentInputPortFacade } from './feature/document-input-port.facade';
 import { DocumentOutputPortFacade } from './feature/document-output-port.facade';
 
@@ -31,7 +32,7 @@ export const BASE_DOCUMENT_ROUTES: Routes = [
     // The content tab's own route, `document/<id>/content`, comes from the second argument — the same
     // constant BaseDocumentContainerComponent puts on the descriptor, so the tab link and the route that
     // answers it are one declaration.
-    children: baseEntityRoutes(embeddedPortRoutes(), [DOCUMENT_CONTENT_TAB]),
+    children: baseEntityRoutes(embeddedPortRoutes(), [DOCUMENT_CONTENT_TAB, DOCUMENT_SIGN_TAB]),
   },
 ];
 
