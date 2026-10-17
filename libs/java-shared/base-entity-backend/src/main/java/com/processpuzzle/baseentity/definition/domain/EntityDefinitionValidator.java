@@ -60,6 +60,25 @@ public class EntityDefinitionValidator {
         validateDateFormat(attribute, violations);
         validateMultiplicity(attribute, violations);
         validateComments(attribute, violations);
+        validateAddress(attribute, violations);
+    }
+
+    /** An address is one structured value owned by the record; the map options mean nothing on any other control. */
+    private void validateAddress(BaseEntityAttribute attribute, List<Violation> violations) {
+        if (attribute.getFormControlType() != FormControlType.ADDRESS) {
+            if (attribute.isShowMap() || attribute.getMapProvider() != null || attribute.getDefaultCountry() != null) {
+                violations.add(new Violation(attribute.getCode(), "showMap, mapProvider and defaultCountry are only meaningful for ADDRESS attributes"));
+            }
+            return;
+        }
+        if (attribute.getValueKind() != ValueKind.REFERENCE || attribute.isMultiValued()
+            || (attribute.getLinkedEntityType() != null && !attribute.getLinkedEntityType().isBlank())) {
+            violations.add(new Violation(attribute.getCode(),
+                "ADDRESS attributes must declare valueKind=REFERENCE, a single value and no linkedEntityType"));
+        }
+        if (attribute.getDefaultCountry() != null && !attribute.getDefaultCountry().matches("[A-Z]{2}")) {
+            violations.add(new Violation(attribute.getCode(), "defaultCountry must be an ISO 3166-1 alpha-2 code, e.g. HU"));
+        }
     }
 
     /** A comment history is a list of structured entries owned by the record — not a reference to another type. */

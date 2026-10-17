@@ -6,6 +6,7 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.DateFormat;
 import com.processpuzzle.baseentity.definition.domain.DateStyle;
+import com.processpuzzle.baseentity.definition.domain.MapProvider;
 import com.processpuzzle.baseentity.definition.domain.TimeStyle;
 import com.processpuzzle.baseentity.model.AttributeDateFormat;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
@@ -63,6 +64,9 @@ public class EntityDefinitionMapper {
             .isLinkToDetails(Boolean.TRUE.equals(input.getIsLinkToDetails()))
             .defaultAvatar(input.getDefaultAvatar())
             .autosizeColumn(Boolean.TRUE.equals(input.getAutosizeColumn()))
+            .showMap(Boolean.TRUE.equals(input.getShowMap()))
+            .mapProvider(input.getMapProvider() == null ? null : MapProvider.valueOf(input.getMapProvider().name()))
+            .defaultCountry(input.getDefaultCountry())
             .validationRules(input.getValidationRules())
             .build();
     }
@@ -113,6 +117,10 @@ public class EntityDefinitionMapper {
         model.setIsLinkToDetails(attribute.isLinkToDetails());
         model.setDefaultAvatar(attribute.getDefaultAvatar());
         model.setAutosizeColumn(attribute.isAutosizeColumn());
+        model.setShowMap(attribute.isShowMap());
+        model.setMapProvider(attribute.getMapProvider() == null ? null
+            : com.processpuzzle.baseentity.model.MapProvider.valueOf(attribute.getMapProvider().name()));
+        model.setDefaultCountry(attribute.getDefaultCountry());
         model.setValidationRules(attribute.getValidationRules());
         return model;
     }

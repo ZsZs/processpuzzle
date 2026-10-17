@@ -28,6 +28,12 @@ public enum FormControlType {
      * Each entry is {@code {author, authorId?, createdAt, content}} with Tiptap JSON content.
      */
     COMMENTS,
+    /**
+     * A postal address: valueKind REFERENCE, single-valued, no linkedEntityType. The value is
+     * {@code {country?, street?, addressLine2?, postalCode?, city?, region?, latitude?, longitude?, locationSource?}}
+     * with an ISO 3166-1 alpha-2 country. Only this control may set showMap, mapProvider and defaultCountry.
+     */
+    ADDRESS,
     TAGS,
     TITLE,
     LABEL,
