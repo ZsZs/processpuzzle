@@ -600,6 +600,7 @@ components:
         - AVATAR
         - COMMENTS
         - ADDRESS
+        - GEO_LOCATION
         - TAGS
         - TITLE
         - LABEL

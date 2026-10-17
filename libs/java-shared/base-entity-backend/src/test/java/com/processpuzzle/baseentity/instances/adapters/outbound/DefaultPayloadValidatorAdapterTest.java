@@ -396,4 +396,35 @@ class DefaultPayloadValidatorAdapterTest {
                             .containsExactly("address latitude must be within 90 and longitude within 180 degrees"));
         }
     }
+
+    private static final EntityDefinitionView VISIT_DEF = new EntityDefinitionView("visit", false, List.of(
+            new EntityAttributeView("location", ValueKindView.REFERENCE, false, false, null, false, false, false, true)));
+
+    @Test
+    void validate_wellFormedGeoLocations_pass() {
+        validator.validate(ORG, VISIT_DEF, Map.of("location", Map.of("latitude", 47.5, "longitude", 19, "accuracy", 12.5, "capturedAt", "2026-10-17T08:00:00Z")));
+        validator.validate(ORG, VISIT_DEF, Map.of("location", Map.of("latitude", -33.9, "longitude", 151.2)));
+    }
+
+    @Test
+    void validate_geoLocationThatIsNotAnObject_throwsValidationException() {
+        Map<String, Object> payload = Map.of("location", "47.5, 19");
+
+        assertThatThrownBy(() -> validator.validate(ORG, VISIT_DEF, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations())
+                        .containsExactly(new ValidationException.Violation("location", "expected a geolocation object")));
+    }
+
+    @Test
+    void validate_malformedGeoLocationParts_areEachReported() {
+        Map<String, Object> payload = Map.of("location", Map.of("latitude", 91, "accuracy", -1, "capturedAt", "yesterday"));
+
+        assertThatThrownBy(() -> validator.validate(ORG, VISIT_DEF, payload))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations()).extracting("message").containsExactly(
+                        "geolocation needs a latitude within 90 and a longitude within 180 degrees",
+                        "geolocation accuracy must be a non-negative number of metres",
+                        "geolocation capturedAt must be an ISO 8601 instant"));
+    }
 }

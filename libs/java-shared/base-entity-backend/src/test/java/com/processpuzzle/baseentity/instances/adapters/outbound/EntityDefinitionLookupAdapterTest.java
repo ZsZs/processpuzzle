@@ -133,4 +133,20 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(view.comments()).isFalse();
         assertThat(view.multiValued()).isFalse();
     }
+
+    @Test
+    void findByCode_flagsAGeoLocationAttribute() {
+        BaseEntityAttribute locationAttr = BaseEntityAttribute.builder()
+                .code("location")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.GEO_LOCATION)
+                .build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("visit").attributes(List.of(locationAttr)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "visit", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        EntityAttributeView view = adapter.findByCode("acme", "visit").orElseThrow().attributes().get(0);
+
+        assertThat(view.geoLocation()).isTrue();
+        assertThat(view.address()).isFalse();
+    }
 }

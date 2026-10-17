@@ -15,16 +15,23 @@ public record EntityAttributeView(
     /** A COMMENTS attribute — an append-only list of {@code {author, authorId?, createdAt, content}} entries. */
     boolean comments,
     /** An ADDRESS attribute — one postal address object, see the ADDRESS form control type. */
-    boolean address
+    boolean address,
+    /** A GEO_LOCATION attribute — one {@code {latitude, longitude, accuracy?, capturedAt?}} object. */
+    boolean geoLocation
 ) {
     public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
                                String linkedEntityType, boolean required) {
-        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false, false);
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false, false, false);
     }
 
     public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
                                String linkedEntityType, boolean required, boolean comments) {
-        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, false);
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, false, false);
+    }
+
+    public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
+                               String linkedEntityType, boolean required, boolean comments, boolean address) {
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, address, false);
     }
 
     public enum ValueKindView {
