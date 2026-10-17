@@ -3,7 +3,7 @@ import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { BaseEntity, BaseFormControlComponent, EntityLabelPipe } from '@processpuzzle/base-entity';
+import { BaseEntity, BaseFormControlComponent, BaseFormNavigatorSingletonStore, EntityLabelPipe } from '@processpuzzle/base-entity';
 import { firstValueFrom } from 'rxjs';
 import { ENTITY_STATE_CONTROL_I18N_SCOPE } from '../../base-state.i18n';
 import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
@@ -23,6 +23,10 @@ import { EntityObjectStateService } from '../../domain/operation/entity-object-s
  *
  * **Guards are the server's.** The offered transitions come from the operation endpoint's dry run; one whose
  * guards fail is listed disabled with the reason, and the server evaluates the guards again when it fires.
+ *
+ * **A way back.** A fired transition leaves Save disabled when nothing else was edited — there is nothing left to
+ * save — so a record opened from another screen, a task board say, offers a Back action on the confirmation that
+ * returns there. Only then: without a recorded `returnTo`, Back would merely land on the entity's own list.
  */
 @Component({
   selector: 'pp-entity-state-control',
@@ -86,6 +90,7 @@ export class EntityStateControlComponent<Entity extends BaseEntity> extends Base
   private readonly objectStates = inject(EntityObjectStateService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly transloco = inject(TranslocoService);
+  private readonly navigator = inject(BaseFormNavigatorSingletonStore);
 
   private readonly machine = signal<StateMachineDefinition | undefined>(undefined);
   protected readonly objectState = signal<EntityObjectState | undefined>(undefined);
@@ -148,10 +153,12 @@ export class EntityStateControlComponent<Entity extends BaseEntity> extends Base
     try {
       const version = Number((this.entity() as { version?: number }).version ?? 0);
       const result = await firstValueFrom(this.objectStates.fireTransition(machine.entityName, objectId, transition.triggerKey, version));
-      const message = result.success
-        ? this.transloco.translate(`${this.scope}.fired`, { state: this.stateLabel(result.newStateKey ?? transition.targetStateKey) })
-        : this.transloco.translate(`${this.scope}.rejected`, { reason: result.rejectionReason ?? '' });
-      this.snackBar.open(message, undefined, { duration: 4000 });
+      if (result.success) {
+        const message = this.transloco.translate(`${this.scope}.fired`, { state: this.stateLabel(result.newStateKey ?? transition.targetStateKey) });
+        this.confirmFired(message);
+      } else {
+        this.snackBar.open(this.transloco.translate(`${this.scope}.rejected`, { reason: result.rejectionReason ?? '' }), undefined, { duration: 4000 });
+      }
     } catch (error) {
       // A 409 or a 5xx has already been reported by the HTTP error interceptor; reloading below is the remedy.
       this.logger.warn('EntityStateControlComponent failed to fire', { trigger: transition.triggerKey, error });
@@ -160,5 +167,18 @@ export class EntityStateControlComponent<Entity extends BaseEntity> extends Base
     }
     // Rebuilds the form — and with it this control, which then reads the new state afresh.
     await this.store.reload(objectId);
+  }
+
+  /** See the class comment on the Back action. The navigator is a root singleton, so it outlives this control's rebuild. */
+  private confirmFired(message: string): void {
+    if (!this.navigator.returnTo()) {
+      this.snackBar.open(message, undefined, { duration: 4000 });
+      return;
+    }
+    const navigator = this.navigator;
+    this.snackBar
+      .open(message, this.transloco.translate(`${this.scope}.back`), { duration: 8000 })
+      .onAction()
+      .subscribe(() => void navigator.navigateBack());
   }
 }

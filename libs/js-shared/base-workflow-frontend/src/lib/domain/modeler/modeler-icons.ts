@@ -48,6 +48,9 @@ const EVENT_ICON_FILE_NAMES: Record<EventDirection, string> = {
  */
 const TIMER_ICON_FILE_NAME = 'EventTimer.svg';
 
+/** Several roles at once — not a diagram element, but drawn in the same hand: the task dashboard's Team queue. */
+export const TEAM_ICON_URL = `${MODELER_ASSET_FOLDER}/Team.svg`;
+
 /**
  * The symbol one kind is drawn with — for an intermediate event, the one its direction picks, or the clock
  * when it waits for a timer.

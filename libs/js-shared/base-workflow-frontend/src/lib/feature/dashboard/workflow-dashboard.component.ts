@@ -3,6 +3,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { INBOX_SCOPES, InboxScope } from '../../domain/dashboard/dashboard-task';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
+import { modelerIconUrl, TEAM_ICON_URL } from '../../domain/modeler/modeler-icons';
 import { ProcessBoardComponent } from './process-board.component';
 import { ProcessDiagramComponent } from './process-diagram.component';
 import { RunContextComponent } from './run-context.component';
@@ -63,6 +64,7 @@ import { TaskListComponent } from './task-list.component';
               [attr.data-testid]="'dashboard-scope-' + scope"
               (click)="store.setScope(scope)"
             >
+              <img class="scope__icon" [src]="scopeIcons[scope]" alt="" aria-hidden="true" />
               {{ scopeKey(scope) | transloco }}
               <span class="scope__count">{{ countOf(scope) }}</span>
             </button>
@@ -136,6 +138,11 @@ import { TaskListComponent } from './task-list.component';
       font-size: 13px;
       cursor: pointer;
     }
+    .scope__icon {
+      width: 14px;
+      height: 16px;
+      object-fit: contain;
+    }
     .scope:last-child {
       border-right: 0;
     }
@@ -192,6 +199,8 @@ export class WorkflowDashboardComponent {
   readonly showTitle = input(true, { transform: (show: boolean | undefined) => show ?? true });
 
   protected readonly scopes = INBOX_SCOPES;
+  /** The modeler's own symbols, so a queue looks like what it holds: my tasks, the team's roles, the whole process. */
+  protected readonly scopeIcons: Record<InboxScope, string> = { mine: modelerIconUrl('task'), team: TEAM_ICON_URL, process: modelerIconUrl('workflow') };
   protected readonly titleKey = `${TASK_DASHBOARD_I18N_SCOPE}.title`;
   protected readonly runKey = `${TASK_DASHBOARD_I18N_SCOPE}.run`;
 

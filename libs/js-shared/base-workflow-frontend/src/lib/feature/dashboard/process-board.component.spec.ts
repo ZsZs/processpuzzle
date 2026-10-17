@@ -68,7 +68,7 @@ describe('ProcessBoardComponent', () => {
     it('shows the assignee on an active card and the completion time on a completed one', () => {
       const host = render();
 
-      expect(host.querySelector(`[data-testid="board-card-${APPROVE_SHIPMENT_TASK_ID}"] .card__detail`)?.textContent?.trim()).toBe('manager-user');
+      expect(host.querySelector(`[data-testid="board-card-${APPROVE_SHIPMENT_TASK_ID}"] .card__detail`)?.textContent?.trim()).toBe('Maria Manager');
       expect(host.querySelector(`[data-testid="board-card-${REVIEW_ORDER_TASK_ID}"] .card__detail`)?.textContent?.trim()).toBeTruthy();
     });
 

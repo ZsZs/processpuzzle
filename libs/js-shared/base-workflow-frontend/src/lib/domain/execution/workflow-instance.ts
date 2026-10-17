@@ -1,4 +1,4 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { BaseEntity, EntityComment } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
 import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
@@ -76,6 +76,8 @@ export class TaskInstance implements BaseEntity {
   status: TaskInstanceStatus | undefined;
   /** User id, from base-entity. */
   assignedTo?: string;
+  /** The assignee as people know them, recorded by the backend at assignment; absent when it knew no name. */
+  assigneeName?: string;
   /** Set while BLOCKED: the detail of the precondition evaluation that prevented activation. */
   blockedReason?: string;
   activatedAt?: string;
@@ -85,6 +87,8 @@ export class TaskInstance implements BaseEntity {
   /** Set while CANCELLED: `interrupted by <eventUseId>`, `unreachable`, or the run's cancel reason. */
   cancelReason?: string;
   stepResults: StepResult[];
+  /** Notes left while the task was ACTIVE, oldest first — in the shape base-entity's COMMENTS control renders. */
+  comments: EntityComment[];
 
   constructor(init: Partial<TaskInstance> = {}) {
     this.id = init.id ?? '';
@@ -92,6 +96,7 @@ export class TaskInstance implements BaseEntity {
     this.name = init.name ?? '';
     this.status = init.status;
     this.assignedTo = init.assignedTo;
+    this.assigneeName = init.assigneeName;
     this.blockedReason = init.blockedReason;
     this.activatedAt = init.activatedAt;
     this.completedAt = init.completedAt;
@@ -99,6 +104,7 @@ export class TaskInstance implements BaseEntity {
     this.cancelledAt = init.cancelledAt;
     this.cancelReason = init.cancelReason;
     this.stepResults = init.stepResults ?? [];
+    this.comments = init.comments ?? [];
   }
 }
 

@@ -1,5 +1,6 @@
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { RichTextContent } from '@processpuzzle/base-entity';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
@@ -530,6 +531,12 @@ export const WorkflowDashboardStore = signalStore(
           return false;
         }
         return true;
+      },
+
+      /** Leaves a note on the task. Answers whether it was saved, so the editor is cleared only then. */
+      comment: async (row: ActionTarget, content: RichTextContent): Promise<boolean> => {
+        const result = await runAction(() => firstValueFrom(actions.addComment(row.instanceId, row.taskDefinitionId, content)));
+        return result !== undefined;
       },
 
       skip: async (row: ActionTarget, reason?: string): Promise<boolean> => {

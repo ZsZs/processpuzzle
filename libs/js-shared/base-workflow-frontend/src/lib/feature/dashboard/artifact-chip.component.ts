@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { ResolvedArtifact } from '../../domain/dashboard/dashboard-task';
 import { modelerIconUrl } from '../../domain/modeler/modeler-icons';
+import { ReturningLinkDirective } from './returning-link.directive';
 
 /**
  * One artifact a task reads or writes, as a chip.
@@ -31,20 +31,21 @@ import { modelerIconUrl } from '../../domain/modeler/modeler-icons';
  * against each other; it says nothing about whether either state is a good one.
  *
  * The name is a link to the artifact — its record when the run has one, its definition otherwise — whenever
- * the host mounts a screen for it; see `DashboardLinkResolver`.
+ * the host mounts a screen for it; see `DashboardLinkResolver`. Cancel on that screen comes back here — see
+ * {@link ReturningLinkDirective}.
  *
  * The symbol is the modeler's own `Artifact.svg`, so an artifact looks the same here as on the diagram.
  */
 @Component({
   selector: 'pp-artifact-chip',
   standalone: true,
-  imports: [TranslocoPipe, RouterLink],
+  imports: [TranslocoPipe, ReturningLinkDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span class="chip" [class.chip--pending]="!artifact().instance" [class.chip--unmet]="!artifact().satisfied" [attr.data-testid]="'artifact-chip-' + artifact().artifactDefinitionId">
       <img class="chip__symbol" [src]="symbol" alt="" aria-hidden="true" />
       @if (artifact().link; as link) {
-        <a class="chip__name chip__name--link" [routerLink]="link" [queryParams]="artifact().linkQueryParams" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ displayName() }}</a>
+        <a class="chip__name chip__name--link" [ppReturningLink]="link" [queryParams]="artifact().linkQueryParams" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ displayName() }}</a>
       } @else {
         <span class="chip__name">{{ displayName() }}</span>
       }

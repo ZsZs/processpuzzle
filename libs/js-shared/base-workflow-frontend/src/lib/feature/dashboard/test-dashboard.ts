@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { EnvironmentProviders, Provider } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO } from '../../domain/definition/test-artifact-definition';
@@ -9,6 +10,7 @@ import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_D
 import { OTHER_TOOL_DEFINITION_DTO, TOOL_DEFINITION_DTO } from '../../domain/definition/test-tool-definition';
 import { pageOfWorkflows, WORKFLOW_DTO } from '../../domain/definition/test-workflow';
 import { OTHER_WORKFLOW_INSTANCE_DTO, pageOfWorkflowInstances, WORKFLOW_INSTANCE_DTO } from '../../domain/execution/test-workflow-instance';
+import { provideLogger } from 'ngx-logging-kit';
 
 /**
  * What the dashboard's component specs need in common.
@@ -54,6 +56,8 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.unstated_refusal': 'Not accepted yet, and the server gave no detail.',
   'base_workflow.task_instance.dashboard.unassigned': 'unassigned',
   'base_workflow.task_instance.dashboard.assigned_to': 'Assigned to',
+  'base_workflow.task_instance.dashboard.comments': 'Comments',
+  'base_workflow.task_instance.dashboard.comment_add': 'Add comment',
   'base_workflow.task_instance.dashboard.context': 'Context variables',
   'base_workflow.task_instance.dashboard.context_none': 'This run holds no context variables.',
 };
@@ -65,6 +69,9 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
     provideHttpClientTesting(),
     { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { WORKFLOW_SERVICE_ROOT: DASHBOARD_SERVICE_ROOT } } },
     provideTranslocoTesting({ translations: { en: DASHBOARD_TRANSLATIONS } }),
+    // The task detail hosts base-entity's COMMENTS control, whose base class logs and navigates.
+    provideLogger({ level: 7 }),
+    provideRouter([]),
   ];
 }
 

@@ -66,13 +66,13 @@ a `note` key nothing references would be a form that appears to work and contrib
 
 ## What the host application still has to provide
 
-A `CurrentUserContext` implementation. The dashboard needs to know which user and which roles, and
+`CurrentUserContext`. The dashboard needs to know which user and which roles, and
 `@processpuzzle/auth` is not a dependency of this library — a task list is not a reason for a feature
-library to depend on the authentication one. The testbed's `SessionUserContext` reads
-`AuthService.currentUser`.
+library to depend on the authentication one. The **user** comes from util's `SessionUser`, which auth fills
+on sign-in, so a host using auth wires nothing; the **roles** are the host's to `set()`.
 
-**Roles are the gap.** `User` carries none, in either the Firebase or the Keycloak implementation, so no
-host can forward them yet. The consequences are deliberate and documented on `CurrentUserContext`: an
+**Roles are the gap.** Keycloak's `User` now carries realm roles, but a realm role is not a workflow's
+`RoleDefinition`, so no host forwards them. The consequences are deliberate and documented on `CurrentUserContext`: an
 unstated role list means *unknown*, so the Team queue offers every claimable task (the backend still
 refuses a claim by a user without the role) while the Skip override stays hidden (an unstated role is not
 a granted one). Wiring real roles starts by surfacing them on `User`.

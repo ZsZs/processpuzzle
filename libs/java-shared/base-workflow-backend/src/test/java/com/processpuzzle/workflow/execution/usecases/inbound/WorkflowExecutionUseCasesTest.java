@@ -328,7 +328,7 @@ class WorkflowExecutionUseCasesTest {
         ObjectProvider<RoleMembershipPort> provider = mock(ObjectProvider.class);
         when(provider.getIfUnique(any())).thenReturn(roleMembershipPort);
 
-        AssignTaskUseCase useCase = new AssignTaskUseCase(procInstRepo, resolveWorkflow, taskInstRepo, provider);
+        AssignTaskUseCase useCase = new AssignTaskUseCase(procInstRepo, resolveWorkflow, taskInstRepo, provider, mock(ObjectProvider.class), mock(ObjectProvider.class));
 
         UUID instanceId = UUID.randomUUID();
         WorkflowInstance pi = WorkflowInstance.builder().id(instanceId).orgKey(ORG).workflowId("proc-1").build();

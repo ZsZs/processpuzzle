@@ -63,6 +63,11 @@ public class CurrentPrincipal {
                 .orElse(token.getSubject()));
     }
 
+    /** The token's subject — for a Keycloak token, the user's id — or empty when unauthenticated. */
+    public Optional<String> subject() {
+        return jwt().map(Jwt::getSubject);
+    }
+
     /** Whether the principal is ProcessPuzzle staff. */
     public boolean isPlatformAdmin() {
         return authorities().contains(properties.getPlatformAdminAuthority());

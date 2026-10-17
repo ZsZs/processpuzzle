@@ -1,10 +1,11 @@
-import { EnvironmentProviders, inject, InjectionToken, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
+import { effect, EnvironmentProviders, inject, InjectionToken, makeEnvironmentProviders, provideAppInitializer, provideEnvironmentInitializer } from '@angular/core';
 import { KeycloakAuthConfig } from './keycloak-auth.config';
 import { AuthService } from './auth.service';
 import { FirebaseAuthConfig } from './firebase-auth.config';
-import { BaseConfiguration, RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { BaseConfiguration, RUNTIME_CONFIGURATION, SessionUser } from '@processpuzzle/util';
 import { KeycloakAuthService } from './keycloak-auth.service';
 import { provideFirebaseAuthService } from './provide-firebase-auth-service';
+import { User } from '../user/user';
 
 export const AUTHENTICATION_CONFIGURATION = new InjectionToken<AuthenticationConfiguration>('AUTHENTICATION_CONFIGURATION');
 export const AUTHENTICATION_SERVICE = new InjectionToken<AuthService>('AUTHENTICATION_SERVICE');
@@ -79,5 +80,22 @@ export function provideAuthenticationService(runtimeConfig: { BASE_CONFIGURATION
         console.error('Authentication initialization failed', e);
       }
     }),
+    // Keeps util's SessionUser — what the feature libraries read — in step with the session. An effect, because the
+    // user arrives after the OIDC redirect is finalized and a token refresh or sign-out replaces it.
+    provideEnvironmentInitializer(() => {
+      if (!canBuildAuthService(runtimeConfig.AUTHENTICATION_CONFIGURATION)) return;
+      const authService = inject(AUTHENTICATION_SERVICE);
+      const sessionUser = inject(SessionUser);
+      effect(() => {
+        const user = authService.currentUser();
+        sessionUser.set({ userId: user?.id ?? '', displayName: displayNameOf(user) });
+      });
+    }),
   ]);
+}
+
+/** The full name, or the email when the identity provider knows no name. */
+export function displayNameOf(user: User | undefined): string {
+  const fullName = [user?.firstName, user?.lastName].filter((part) => !!part?.trim()).join(' ');
+  return fullName || user?.email || '';
 }

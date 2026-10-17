@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { StepTool } from '../../domain/dashboard/dashboard-task';
 import { StepDefinition, TaskStepType } from '../../domain/definition/task-definition';
 import { StepResult } from '../../domain/execution/workflow-instance';
+import { ReturningLinkDirective } from './returning-link.directive';
 
 /**
  * How to carry out the open task: its `TaskDefinition.steps`, joined with the `StepResult`s the run has
@@ -31,7 +31,7 @@ import { StepResult } from '../../domain/execution/workflow-instance';
 @Component({
   selector: 'pp-step-checklist',
   standalone: true,
-  imports: [TranslocoPipe, RouterLink],
+  imports: [TranslocoPipe, ReturningLinkDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (steps().length === 0) {
@@ -60,7 +60,7 @@ import { StepResult } from '../../domain/execution/workflow-instance';
                 <span class="step__type">{{ (isService(step) ? serviceKey : userKey) | transloco }}</span>
                 @if (toolFor(step); as tool) {
                   @if (tool.link) {
-                    <a class="step__tool" [routerLink]="tool.link" [attr.data-testid]="'step-tool-' + step.id">{{ tool.name }}</a>
+                    <a class="step__tool" [ppReturningLink]="tool.link" [attr.data-testid]="'step-tool-' + step.id">{{ tool.name }}</a>
                   } @else {
                     <span class="step__tool" [attr.data-testid]="'step-tool-' + step.id">{{ tool.name }}</span>
                   }
