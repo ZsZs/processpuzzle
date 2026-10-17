@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { SessionUser } from '@processpuzzle/util';
 
 /**
  * The seam between the dashboard and the host application's session.
@@ -9,12 +10,9 @@ import { Injectable, signal } from '@angular/core';
  * dependency graph in the workspace README), and a task list is not a reason to add an edge from a
  * feature library to the authentication one.
  *
- * So the host provides an implementation. The testbed's reads `AuthService.currentUser`; a Keycloak
- * deployment would read the token's claims:
- *
- * ```ts
- * providers: [{ provide: CurrentUserContext, useClass: SessionUserContext }]
- * ```
+ * The **user** comes from util's `SessionUser`, which auth keeps current, so a host using auth wires nothing.
+ * The **roles** are the host's to {@link set}: what an identity provider calls a role is not a workflow's
+ * `RoleDefinition`, and passing one off as the other would change who sees what.
  *
  * The **organization is not here**, unlike in the design proposal: in this workspace the tenant is
  * part of the configured service root (`WORKFLOW_SERVICE_ROOT`, falling back to `BACKEND_SERVICE_ROOT` —
@@ -27,11 +25,15 @@ import { Injectable, signal } from '@angular/core';
  */
 @Injectable({ providedIn: 'root' })
 export class CurrentUserContext {
-  private readonly _userId = signal<string>('');
+  private readonly sessionUser = inject(SessionUser);
+  private readonly _userId = signal<string | undefined>(undefined);
   private readonly _roles = signal<readonly string[]>([]);
 
-  /** Empty when nobody is signed in; the inbox then shows no rows of its own, which is correct. */
-  readonly userId = this._userId.asReadonly();
+  /**
+   * Empty when nobody is signed in; the inbox then shows no rows of its own, which is correct. util's
+   * `SessionUser` — kept current by auth — until the host calls {@link set}.
+   */
+  readonly userId = computed(() => this._userId() ?? this.sessionUser.userId());
 
   /**
    * Whatever the host calls this user's roles — a `RoleDefinition.id`, its `name`, or the

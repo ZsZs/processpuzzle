@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BaseEntityMapper } from '@processpuzzle/base-entity';
+import { BaseEntityMapper, commentsOf, EntityComment } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
 import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
@@ -19,6 +19,7 @@ export interface TaskInstanceDto {
   name?: string;
   status?: TaskInstanceStatus;
   assignedTo?: string;
+  assigneeName?: string | null;
   blockedReason?: string;
   activatedAt?: string;
   completedAt?: string;
@@ -26,6 +27,8 @@ export interface TaskInstanceDto {
   cancelledAt?: string | null;
   cancelReason?: string | null;
   stepResults?: StepResultDto[];
+  /** Read-only on the wire: written by `POST …/comments`, one entry at a time. */
+  comments?: EntityComment[];
 }
 
 interface ArtifactInstanceDto {
@@ -158,6 +161,7 @@ export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
     name: dto.name,
     status: dto.status,
     assignedTo: dto.assignedTo,
+    assigneeName: dto.assigneeName ?? undefined,
     blockedReason: dto.blockedReason,
     activatedAt: dto.activatedAt,
     completedAt: dto.completedAt,
@@ -165,6 +169,7 @@ export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
     cancelledAt: dto.cancelledAt ?? undefined,
     cancelReason: dto.cancelReason ?? undefined,
     stepResults: (dto.stepResults ?? []).map(toStepResult),
+    comments: commentsOf(dto.comments),
   });
 }
 

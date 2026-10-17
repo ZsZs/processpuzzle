@@ -85,7 +85,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                       <span class="card__detail" [attr.data-testid]="'board-cancel-reason-' + row.task.id">{{ row.task.cancelReason || '—' }}</span>
                     }
                     @default {
-                      <span class="card__detail">{{ row.task.assignedTo || (unassignedKey | transloco) }}</span>
+                      <span class="card__detail">{{ row.task.assigneeName || row.task.assignedTo || (unassignedKey | transloco) }}</span>
                     }
                   }
                 </button>

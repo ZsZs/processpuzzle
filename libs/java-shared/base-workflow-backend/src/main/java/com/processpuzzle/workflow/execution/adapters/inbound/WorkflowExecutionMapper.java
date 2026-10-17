@@ -123,6 +123,7 @@ public class WorkflowExecutionMapper {
                 .name(instance.getName())
                 .status(com.processpuzzle.workflow.model.TaskInstanceStatus.fromValue(instance.getStatus().name()))
                 .assignedTo(instance.getAssignedTo())
+                .assigneeName(instance.getAssigneeName())
                 .blockedReason(instance.getBlockedReason())
                 .activatedAt(toOffsetDateTime(instance.getActivatedAt()))
                 .completedAt(toOffsetDateTime(instance.getCompletedAt()))
@@ -134,6 +135,11 @@ public class WorkflowExecutionMapper {
                         .completedAt(toOffsetDateTime(sr.getCompletedAt()))
                         .toolResponse(sr.getToolResponse())
                         .error(sr.getError())).toList())
+                .comments(instance.getComments().stream().map(comment -> new com.processpuzzle.workflow.model.TaskComment()
+                        .author(comment.getAuthor())
+                        .authorId(comment.getAuthorId())
+                        .createdAt(toOffsetDateTime(comment.getCreatedAt()))
+                        .content(comment.getContent())).toList())
                 .contextContribution(instance.getContextContribution());
     }
 

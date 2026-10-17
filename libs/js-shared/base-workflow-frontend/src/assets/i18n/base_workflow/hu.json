@@ -414,6 +414,8 @@
       "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
       "unassigned": "nincs hozzárendelve",
       "assigned_to": "Hozzárendelve",
+      "comments": "Megjegyzések",
+      "comment_add": "Megjegyzés hozzáadása",
       "waiting_for": "Várakozik:",
       "held": "Visszatartva:",
       "context": "Kontextusváltozók",

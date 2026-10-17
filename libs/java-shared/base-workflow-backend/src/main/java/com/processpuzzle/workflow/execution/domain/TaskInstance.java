@@ -67,6 +67,9 @@ public class TaskInstance {
     /** User id (from base-entity) currently assigned, set by AssignTaskUseCase. */
     private String assignedTo;
 
+    /** The assignee as people know them, recorded with {@link #assignedTo}; null when the directory knew no name. */
+    private String assigneeName;
+
     /** Set when status is BLOCKED: the precondition rule's violation detail. */
     private String blockedReason;
 
@@ -98,6 +101,24 @@ public class TaskInstance {
     @Builder.Default
     private Map<String, Object> contextContribution = new HashMap<>();
 
+    /**
+     * Notes left while the task was ACTIVE, oldest first; appended by {@code AddTaskCommentUseCase} and never edited.
+     *
+     * <p>Nullable, unlike the JSONB columns above, because the schema is {@code ddl-auto: update}: a NOT NULL column
+     * added to a table that already has rows fails to be added. {@link #getComments()} reads a null as none.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<TaskComment> comments = new ArrayList<>();
+
     @jakarta.persistence.Version
     private Long version;
+
+    public List<TaskComment> getComments() {
+        if (comments == null) {
+            comments = new ArrayList<>();
+        }
+        return comments;
+    }
 }

@@ -414,6 +414,8 @@
       "unstated_refusal": "Pas encore acceptée, et le serveur n’a donné aucun détail.",
       "unassigned": "non attribuée",
       "assigned_to": "Attribuée à",
+      "comments": "Commentaires",
+      "comment_add": "Ajouter un commentaire",
       "waiting_for": "En attente de",
       "held": "Retenu :",
       "context": "Variables de contexte",

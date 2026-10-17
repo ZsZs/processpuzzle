@@ -10,12 +10,16 @@ import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
+import com.processpuzzle.workflow.execution.usecases.outbound.ActingUserPort;
 import com.processpuzzle.workflow.execution.usecases.outbound.PermitAllRoleMembershipPort;
 import com.processpuzzle.workflow.execution.usecases.outbound.RoleMembershipPort;
+import com.processpuzzle.workflow.execution.usecases.outbound.UserNamePort;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -28,6 +32,10 @@ import java.util.UUID;
  * <p>The port is resolved with {@link ObjectProvider#getIfUnique}, not
  * {@code @ConditionalOnMissingBean} — same reasoning as base-app-backend's
  * {@code OrganizationGuard}, which this class's constructor mirrors exactly.
+ *
+ * <p>The assignee's name is recorded beside the id ({@code assigneeName}), so no screen needs a user directory to
+ * show who holds a task: from {@link UserNamePort} when the host provides one, else — for a user claiming a task
+ * for themselves, the common case — from their own token. Assigning someone else without a port records no name.
  */
 @Component
 @Transactional
@@ -37,15 +45,21 @@ public class AssignTaskUseCase {
     private final ResolveWorkflowUseCase resolveWorkflow;
     private final TaskInstanceRepository taskInstanceRepository;
     private final RoleMembershipPort roleMembershipPort;
+    private final ObjectProvider<UserNamePort> userNames;
+    private final ObjectProvider<ActingUserPort> actingUser;
 
     public AssignTaskUseCase(WorkflowInstanceRepository workflowInstanceRepository,
                               ResolveWorkflowUseCase resolveWorkflow,
                               TaskInstanceRepository taskInstanceRepository,
-                              ObjectProvider<RoleMembershipPort> roleMembershipPortProvider) {
+                              ObjectProvider<RoleMembershipPort> roleMembershipPortProvider,
+                              ObjectProvider<UserNamePort> userNames,
+                              ObjectProvider<ActingUserPort> actingUser) {
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.resolveWorkflow = resolveWorkflow;
         this.taskInstanceRepository = taskInstanceRepository;
         this.roleMembershipPort = roleMembershipPortProvider.getIfUnique(PermitAllRoleMembershipPort::new);
+        this.userNames = userNames;
+        this.actingUser = actingUser;
     }
 
     public TaskInstance assign(String orgKey, UUID workflowInstanceId, String taskDefinitionId, String userId) {
@@ -74,6 +88,16 @@ public class AssignTaskUseCase {
         }
 
         taskInstance.setAssignedTo(userId);
+        taskInstance.setAssigneeName(nameOf(orgKey, userId).orElse(null));
         return taskInstanceRepository.save(taskInstance);
+    }
+
+    /** See the class comment on where the name comes from. */
+    private Optional<String> nameOf(String orgKey, String userId) {
+        UserNamePort port = userNames.getIfUnique();
+        Optional<String> fromDirectory = port == null ? Optional.empty() : port.displayNameOf(orgKey, userId).filter(name -> !name.isBlank());
+        return fromDirectory.or(() -> Optional.ofNullable(actingUser.getIfUnique())
+                .filter(caller -> caller.userId().filter(id -> Objects.equals(id, userId)).isPresent())
+                .flatMap(ActingUserPort::displayName));
     }
 }

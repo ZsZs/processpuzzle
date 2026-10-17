@@ -27,7 +27,6 @@ import {
   BASE_ENTITY_AUTHORING_FACADE_PROVIDERS,
   BASE_ENTITY_FACADE_REGISTRY,
   BASE_ENTITY_TRANSLATION_SOURCE,
-  EntityUserContext,
   provideEntityRouteRegistry,
   provideLocaleDateAdapter,
 } from '@processpuzzle/base-entity';
@@ -40,11 +39,8 @@ import {
   BASE_WORKFLOW_ENTITY_FACADES,
   BASE_WORKFLOW_FACADE_PROVIDERS,
   BASE_WORKFLOW_TRANSLATION_SOURCE,
-  CurrentUserContext,
   WorkflowRoleDescriptionSource,
 } from '@processpuzzle/base-workflow';
-import { SessionUserContext } from './content/base-workflows/session-user.context';
-import { SessionEntityUserContext } from './content/base-forms/session-entity-user.context';
 import { provideBaseRuleEngine } from '@processpuzzle/base-rule';
 import { TestEntityFacade } from './content/base-forms/test-entity/test-entity.facade';
 import { TestEntityComponentFacade } from './content/base-forms/test-entity-component/test-entity-component.facade';
@@ -102,14 +98,6 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-ai: the routable `Recognition Profile`, which says how the subjects of one entity
       // type are recognized.
       ...BASE_AI_FACADE_PROVIDERS,
-      // Closes base-workflow's session seam onto this application's real session, so the task dashboard
-      // knows whose inbox it is showing. Application-wide rather than on the `base-workflow` route, for the
-      // reason `provideBaseRuleEngine()` below spells out at length: who the signed-in user is cannot be a
-      // property of which section of the testbed you happen to be in, and a second mount of the dashboard
-      // would otherwise show an empty inbox for no visible reason.
-      { provide: CurrentUserContext, useClass: SessionUserContext },
-      // The same session for base-entity, whose COMMENTS control stamps each comment with its author.
-      { provide: EntityUserContext, useClass: SessionEntityUserContext },
       // What the header's logo and title widgets name and show; see provideTestbedApplicationContext.
       provideTestbedApplicationContext(),
       // And the other way round: My Profile describes the user's roles from base-workflow's role catalog.

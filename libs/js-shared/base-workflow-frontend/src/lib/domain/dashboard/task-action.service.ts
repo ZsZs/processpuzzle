@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
+import { RichTextContent } from '@processpuzzle/base-entity';
 import { map, Observable } from 'rxjs';
 import { PropertyMap } from '../property-map';
 import { TaskInstance } from '../execution/workflow-instance';
@@ -100,6 +101,16 @@ export class TaskActionService {
         };
       }),
     );
+  }
+
+  /**
+   * `POST …/comments` — leave a note on an ACTIVE task. The content alone: the backend stamps the author and the
+   * time from the caller's token, and appends — there is no call that could rewrite the history.
+   */
+  addComment(instanceId: string, taskDefinitionId: string, content: RichTextContent): Observable<TaskInstance> {
+    return this.httpClient
+      .post(this.taskUrl(instanceId, taskDefinitionId, 'comments'), { content }, { headers: this.headers })
+      .pipe(map((response) => toTaskInstance(response as TaskInstanceDto)));
   }
 
   /** `POST …/skip` — the manager override, with the reason it was overridden. */

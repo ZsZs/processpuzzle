@@ -26,6 +26,7 @@ export { provideLocaleRouting } from './lib/transloco/provide-locale-routing';
 export { provideLoggingService } from './lib/logging/provide-logging.service';
 export { NavigateBackComponent } from './lib/navigate-back/navigate-back.component';
 export { NavigateBackService } from './lib/navigate-back/navigate-back.service';
+export { SessionUser } from './lib/session-user/session-user';
 export { provideTranslocoService } from './lib/transloco/provide-transloco.service';
 export { TranslocoHttpLoader } from './lib/transloco/transloco.loader';
 export { DEFAULT_TRANSLATION_SOURCE, TRANSLATION_SOURCE_REGISTRY, translationSourceOf, type TranslationSource } from './lib/transloco/translation-source';

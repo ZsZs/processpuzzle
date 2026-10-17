@@ -37,6 +37,12 @@ describe('WorkflowDashboardComponent', () => {
     expect(scopes[0].getAttribute('aria-selected')).toBe('true');
   });
 
+  it('marks each queue with the modeler’s symbol for what it holds', () => {
+    const icons = Array.from(render().querySelectorAll<HTMLImageElement>('[data-testid^="dashboard-scope-"] img'));
+
+    expect(icons.map((icon) => icon.getAttribute('src'))).toEqual(['assets/modeler/Task.svg', 'assets/modeler/Team.svg', 'assets/modeler/Workflow.svg']);
+  });
+
   describe('title', () => {
     /** Mounted as a page of its own — where the task dashboard button leads — the screen names itself. */
     it('names the screen by default', () => {

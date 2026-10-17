@@ -1013,6 +1013,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - $ref: "#/components/parameters/TaskIdParam"
+    post:
+      operationId: addTaskComment
+      tags: [ Task Instances ]
+      summary: Leave a comment on an active task
+      description: >-
+        Appends one comment to the task's history. The server stamps the author and the time from
+        the caller's token, so the request carries the content alone, and nothing can edit or remove
+        an entry once it is there. Only an ACTIVE task takes comments: they are notes made while the
+        work is being done, and a finished task's history is its record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddTaskCommentRequest"
+      responses:
+        "200":
+          description: The task, with the comment appended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Task is not in ACTIVE status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/skip:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -2262,6 +2300,13 @@ components:
           type: string
           nullable: true
           description: User id (from base-entity)
+        assigneeName:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The assignee as people know them, recorded when the task was assigned — so a screen shows
+            a name without a user directory of its own. Absent when the directory knew no name.
         blockedReason:
           type: string
           nullable: true
@@ -2294,6 +2339,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StepResult"
+        comments:
+          type: array
+          readOnly: true
+          description: Notes left on the task while it was ACTIVE, oldest first — see addTaskComment.
+          items:
+            $ref: "#/components/schemas/TaskComment"
         contextContribution:
           type: object
           readOnly: true
@@ -2397,6 +2448,36 @@ components:
         error:
           type: string
           nullable: true
+
+    TaskComment:
+      type: object
+      description: >-
+        One entry of a task's comments, in the shape base-entity's COMMENTS attribute stores — so
+        the same control renders both.
+      required: [ author, createdAt, content ]
+      properties:
+        author:
+          type: string
+          description: The author's name as the token gave it, or the user id when it gave none.
+        authorId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        content:
+          type: object
+          description: Rich text, as the editor's JSON document.
+          additionalProperties: true
+
+    AddTaskCommentRequest:
+      type: object
+      required: [ content ]
+      properties:
+        content:
+          type: object
+          description: Rich text, as the editor's JSON document.
+          additionalProperties: true
 
     AssignTaskRequest:
       type: object

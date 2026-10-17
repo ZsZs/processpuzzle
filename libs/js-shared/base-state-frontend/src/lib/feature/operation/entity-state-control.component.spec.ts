@@ -8,7 +8,7 @@ import { BaseEntity, BaseEntityAttrDescriptor, BaseEntityDescriptorRegistry, Bas
 import { TranslocoService } from '@jsverse/transloco';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { NGXLogger } from 'ngx-logging-kit';
-import { firstValueFrom, Observable, of, throwError } from 'rxjs';
+import { firstValueFrom, Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
 import { StateMachineDefinition } from '../../domain/definition/state-machine-definition';
@@ -55,6 +55,7 @@ describe('EntityStateControlComponent', () => {
       'base_state.state_control.blockedNoReason': 'Not allowed by a guard of this transition.',
       'base_state.state_control.rejected': 'The transition was refused: {{reason}}',
       'base_state.state_control.fired': 'State changed to {{state}}.',
+      'base_state.state_control.back': 'Back',
       'base_state.state_control.initialState': 'Starts in {{state}}',
     },
   };
@@ -63,6 +64,7 @@ describe('EntityStateControlComponent', () => {
   let stateService: { findState: ReturnType<typeof vi.fn>; fireTransition: ReturnType<typeof vi.fn> };
   let snackBar: { open: ReturnType<typeof vi.fn> };
   let store: { reload: ReturnType<typeof vi.fn> };
+  let navigator: { returnTo: () => string; navigateBack: ReturnType<typeof vi.fn> };
   let logger: { warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
 
   interface Setup {
@@ -70,6 +72,8 @@ describe('EntityStateControlComponent', () => {
     state?: EntityObjectState;
     entity?: Order;
     fire?: () => Observable<TransitionResult>;
+    /** Where the navigator would return to — set when the record was opened from another screen. */
+    returnTo?: string;
   }
 
   const select = () => fixture.debugElement.query(By.directive(MatSelect));
@@ -87,6 +91,7 @@ describe('EntityStateControlComponent', () => {
     };
     snackBar = { open: vi.fn() };
     store = { reload: vi.fn(async () => undefined) };
+    navigator = { returnTo: () => setup.returnTo ?? '', navigateBack: vi.fn(async () => undefined) };
     logger = { warn: vi.fn(), error: vi.fn() };
 
     TestBed.resetTestingModule();
@@ -96,7 +101,7 @@ describe('EntityStateControlComponent', () => {
         provideTranslocoTesting({ translations }),
         { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: NGXLogger, useValue: logger },
-        { provide: BaseFormNavigatorSingletonStore, useValue: {} },
+        { provide: BaseFormNavigatorSingletonStore, useValue: navigator },
         { provide: BaseEntityDescriptorRegistry, useValue: {} },
         { provide: GovernedEntityRegistry, useValue: { machineFor: vi.fn(async () => governedMachine) } },
         { provide: EntityObjectStateService, useValue: stateService },
@@ -213,6 +218,19 @@ describe('EntityStateControlComponent', () => {
     expect(snackBar.open).toHaveBeenCalledWith('State changed to Delivered.', undefined, { duration: 4000 });
     expect(store.reload).toHaveBeenCalledWith(objectId);
     expect(snackBar.open.mock.invocationCallOrder[0]).toBeLessThan(store.reload.mock.invocationCallOrder[0]);
+  });
+
+  // Save stays disabled after a transition alone, so a record opened from a task board needs another way back.
+  it('offers Back to the screen the record was opened from', async () => {
+    const action$ = new Subject<void>();
+    await render({ returnTo: '/workflow-dashboard?task=t-1' });
+    snackBar.open.mockReturnValue({ onAction: () => action$ });
+
+    await fire(confirm);
+    action$.next();
+
+    expect(snackBar.open).toHaveBeenCalledWith('State changed to Delivered.', 'Back', { duration: 8000 });
+    expect(navigator.navigateBack).toHaveBeenCalled();
   });
 
   it('reports a refusing guard and still reloads', async () => {

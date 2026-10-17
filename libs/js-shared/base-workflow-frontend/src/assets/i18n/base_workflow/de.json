@@ -414,6 +414,8 @@
       "unstated_refusal": "Noch nicht angenommen, und der Server nannte keinen Grund.",
       "unassigned": "nicht zugewiesen",
       "assigned_to": "Zugewiesen an",
+      "comments": "Kommentare",
+      "comment_add": "Kommentar hinzufügen",
       "waiting_for": "Wartet auf",
       "held": "Angehalten:",
       "context": "Kontextvariablen",
