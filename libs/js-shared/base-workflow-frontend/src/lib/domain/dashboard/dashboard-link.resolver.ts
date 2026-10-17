@@ -10,6 +10,15 @@ import { ARTIFACT_DEFINITION_ENTITY_NAME, TOOL_DEFINITION_ENTITY_NAME } from '..
  */
 const DOCUMENT_ENTITY_NAME = 'Document';
 
+/** base-document's Sign tab segment — the same route contract as {@link DOCUMENT_ENTITY_NAME}. */
+const DOCUMENT_SIGN_SEGMENT = 'sign';
+
+/** What a run is about — `WorkflowInstance.entityType` / `entityId` — when it is about anything. */
+export interface RunSubject {
+  readonly entityType?: string;
+  readonly entityId?: string;
+}
+
 /**
  * Turns what the task dashboard shows — an artifact, a tool — into a URL the host actually mounts.
  *
@@ -25,20 +34,35 @@ const DOCUMENT_ENTITY_NAME = 'Document';
  *    `ArtifactDefinition.artifactTypeId`), or a `DOCUMENT` artifact's document;
  * 2. otherwise the **Artifact Definition** in the catalog — which is still the right place for an output
  *    nothing has produced yet, since that is where it says what it will be.
+ *
+ * A bound `DOCUMENT` artifact in a run that has a subject opens the document's **Sign** tab rather than its
+ * details, with the subject as `?subjectType=&subjectId=` — {@link artifactQueryParams}. One document serves
+ * every run, so the run's subject is the only thing that says whose contract the person at the dashboard
+ * is signing.
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardLinkResolver {
   private readonly routes = inject(EntityRouteRegistry);
 
-  artifactLink(artifactDefinitionId: string, definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined): string | undefined {
-    return this.recordLink(definition, instance) ?? this.routes.detailsPath(ARTIFACT_DEFINITION_ENTITY_NAME, artifactDefinitionId);
+  artifactLink(artifactDefinitionId: string, definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined, subject?: RunSubject): string | undefined {
+    return this.recordLink(definition, instance, subject) ?? this.routes.detailsPath(ARTIFACT_DEFINITION_ENTITY_NAME, artifactDefinitionId);
+  }
+
+  /** The query parameters {@link artifactLink} needs: the run's subject, for a document it links to the Sign tab of. */
+  artifactQueryParams(definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined, subject?: RunSubject): Record<string, string> | undefined {
+    const subjectType = subject?.entityType;
+    const subjectId = subject?.entityId;
+    if (!subjectType || !subjectId || !this.signLink(definition, instance, subject)) return undefined;
+    return { subjectType, subjectId };
   }
 
   toolLink(toolDefinitionId: string): string | undefined {
     return this.routes.detailsPath(TOOL_DEFINITION_ENTITY_NAME, toolDefinitionId);
   }
 
-  private recordLink(definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined): string | undefined {
+  private recordLink(definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined, subject?: RunSubject): string | undefined {
+    const signLink = this.signLink(definition, instance, subject);
+    if (signLink) return signLink;
     const entityId = instance?.entityId;
     if (!entityId) return undefined;
     switch (instance.type ?? definition?.artifactType) {
@@ -51,6 +75,13 @@ export class DashboardLinkResolver {
       default:
         return undefined;
     }
+  }
+
+  private signLink(definition: ArtifactDefinition | undefined, instance: ArtifactInstance | undefined, subject?: RunSubject): string | undefined {
+    if (!instance?.entityId || !subject?.entityType || !subject.entityId) return undefined;
+    if ((instance.type ?? definition?.artifactType) !== ArtifactType.DOCUMENT) return undefined;
+    const base = this.routes.basePath(DOCUMENT_ENTITY_NAME);
+    return base ? `${base}/${instance.entityId}/${DOCUMENT_SIGN_SEGMENT}` : undefined;
   }
 
   /**

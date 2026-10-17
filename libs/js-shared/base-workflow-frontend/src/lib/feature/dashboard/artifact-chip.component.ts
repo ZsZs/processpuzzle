@@ -44,7 +44,7 @@ import { modelerIconUrl } from '../../domain/modeler/modeler-icons';
     <span class="chip" [class.chip--pending]="!artifact().instance" [class.chip--unmet]="!artifact().satisfied" [attr.data-testid]="'artifact-chip-' + artifact().artifactDefinitionId">
       <img class="chip__symbol" [src]="symbol" alt="" aria-hidden="true" />
       @if (artifact().link; as link) {
-        <a class="chip__name chip__name--link" [routerLink]="link" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ displayName() }}</a>
+        <a class="chip__name chip__name--link" [routerLink]="link" [queryParams]="artifact().linkQueryParams" [attr.data-testid]="'artifact-link-' + artifact().artifactDefinitionId">{{ displayName() }}</a>
       } @else {
         <span class="chip__name">{{ displayName() }}</span>
       }

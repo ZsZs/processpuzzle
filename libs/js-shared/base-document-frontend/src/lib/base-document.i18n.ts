@@ -30,6 +30,9 @@ export const DOCUMENT_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.document`;
  */
 export const DOCUMENT_CONTENT_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.content`;
 
+/** Label of the Sign tab, resolved like {@link DOCUMENT_CONTENT_I18N_KEY}. */
+export const DOCUMENT_SIGN_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.sign`;
+
 /**
  * Key roots of the two port shapes the `Document` form carries through `EMBEDDED_COMPONENTS` controls.
  * They are children of {@link BASE_DOCUMENT_TRANSLOCO_SCOPE} rather than scopes of their own, because

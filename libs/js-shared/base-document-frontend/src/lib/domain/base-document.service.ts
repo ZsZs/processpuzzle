@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { firstValueFrom, from, Observable } from 'rxjs';
 import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
-import { Document, DocumentBlock, DocumentProperties, DocumentTranslation } from './base-document';
+import { Document, DocumentBlock, DocumentProperties, DocumentSignature, DocumentSignatureSubject, DocumentTranslation } from './base-document';
 import { BaseDocumentMapper } from './base-document.mapper';
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +83,29 @@ export class BaseDocumentService extends BaseEntityRestService<Document> {
     if (!fullUrl) throw new Error('Could not determine the full url');
 
     return firstValueFrom(this.httpClient.post<DocumentTranslation>(fullUrl, { locale, ...(blocks ? { blocks } : {}) }, { headers: this.headers }));
+  }
+
+  /**
+   * `POST .../documents/{id}/signatures` — signs the published content of `locale` (the source locale when
+   * omitted) for `subject`. The server answers an existing signature for a repeat rather than a second one,
+   * so calling this twice is safe.
+   */
+  async sign(documentId: string, subject: DocumentSignatureSubject, locale?: string): Promise<DocumentSignature> {
+    const body = { subjectType: subject.subjectType, subjectId: subject.subjectId, ...(locale ? { locale } : {}) };
+    return firstValueFrom(this.httpClient.post<DocumentSignature>(this.signaturesUrl(documentId), body, { headers: this.headers }));
+  }
+
+  /** `GET .../documents/{id}/signatures`, newest first — narrowed to `subject` when given. */
+  async listSignatures(documentId: string, subject?: DocumentSignatureSubject): Promise<DocumentSignature[]> {
+    const params: Record<string, string> = subject ? { subjectType: subject.subjectType, subjectId: subject.subjectId } : {};
+    return firstValueFrom(this.httpClient.get<DocumentSignature[]>(this.signaturesUrl(documentId), { headers: this.headers, params }));
+  }
+
+  private signaturesUrl(documentId: string): string {
+    const pathParams = new Map<string, string>([['id', documentId]]);
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/signatures', { pathParams });
+    if (!fullUrl) throw new Error('Could not determine the full url');
+    return fullUrl;
   }
 
   private translationUrl(documentId: string, locale: string): string {

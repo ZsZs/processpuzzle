@@ -14,7 +14,7 @@
       "description": "Megjegyzés arról, mikor következik be az esemény és mire szolgál; a felhasználók nem látják.",
       "kind": "SYSTEM: a platform váltja ki, amikor egy rekord megváltozik. MESSAGE: az API-n keresztül egy címzettnek küldik. SIGNAL: az API-n keresztül minden figyelőnek szól.",
       "subjectType": "Csak SYSTEM eseményeknél: annak az entitástípusnak a kódja, amelynek rekordjai kiváltják az eseményt, pl. order.",
-      "action": "Csak SYSTEM eseményeknél: mi történik a rekorddal: CREATED, UPDATED, DELETED vagy STATE_CHANGED.",
+      "action": "Csak SYSTEM eseményeknél: mi történik a rekorddal: CREATED, UPDATED, DELETED, STATE_CHANGED vagy SIGNED (dokumentumot írtak alá hozzá).",
       "state": "Csak STATE_CHANGED esetén: az állapot, amelybe a rekord kerül, pl. CONFIRMED.",
       "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "parameters": "Az esemény minden előfordulásában szereplő értékek, pl. egy megrendelés és annak száma. A munkafolyamatok név szerint olvassák őket."

@@ -83,6 +83,8 @@ export interface ResolvedArtifact {
   readonly satisfied: boolean;
   /** Where the artifact can be opened, when the host mounts a screen for it — see `DashboardLinkResolver`. */
   readonly link: string | undefined;
+  /** The query parameters {@link link} carries — the run's subject, for a document's Sign tab. */
+  readonly linkQueryParams?: Record<string, string>;
 }
 
 /** The tool a service step calls, named and — when the host mounts the tool catalog — linked. */

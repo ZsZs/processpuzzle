@@ -108,6 +108,13 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- CurrentPrincipal, which SignDocument asks who is signing, reads the bearer token; core declares
+         the resource server optional, so a test that mocks it brings the classes itself. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

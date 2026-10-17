@@ -132,6 +132,32 @@ describe('BaseDocumentService', () => {
     expect((await pending).blocks).toHaveLength(1);
   });
 
+  it('signs for a subject, naming the locale only when one is given', async () => {
+    const pending = service.sign('q3-plan', { subjectType: 'employee', subjectId: 'e-1' });
+
+    const request = controller.expectOne(`${serviceRoot}/documents/q3-plan/signatures`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ subjectType: 'employee', subjectId: 'e-1' });
+    request.flush({ id: 's-1', documentId: 'q3-plan', locale: 'en', revision: 2, contentHash: 'h', subjectType: 'employee', subjectId: 'e-1', signedBy: 'Ada', signedAt: '2026-10-17T10:00:00Z' });
+    expect((await pending).signedBy).toBe('Ada');
+
+    void service.sign('q3-plan', { subjectType: 'employee', subjectId: 'e-1' }, 'de');
+    expect(controller.expectOne(`${serviceRoot}/documents/q3-plan/signatures`).request.body).toEqual({ subjectType: 'employee', subjectId: 'e-1', locale: 'de' });
+  });
+
+  it('lists signatures, narrowed to a subject when one is given', async () => {
+    const all = service.listSignatures('q3-plan');
+    const everything = controller.expectOne((candidate) => candidate.url === `${serviceRoot}/documents/q3-plan/signatures`);
+    expect(everything.request.params.keys()).toEqual([]);
+    everything.flush([]);
+    expect(await all).toEqual([]);
+
+    void service.listSignatures('q3-plan', { subjectType: 'employee', subjectId: 'e-1' });
+    const narrowed = controller.expectOne((candidate) => candidate.url === `${serviceRoot}/documents/q3-plan/signatures`);
+    expect(narrowed.request.params.get('subjectType')).toBe('employee');
+    expect(narrowed.request.params.get('subjectId')).toBe('e-1');
+  });
+
   /** An explicit empty array, so a new draft starts blank instead of inheriting the source locale's prose. */
   it('starts a blank draft when asked to add a translation with no blocks', async () => {
     const pending = service.addTranslation('q3-plan', 'fr', []);

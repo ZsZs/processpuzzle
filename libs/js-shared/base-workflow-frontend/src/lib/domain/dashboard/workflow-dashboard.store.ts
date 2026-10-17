@@ -273,6 +273,8 @@ export const WorkflowDashboardStore = signalStore(
       const instancesByDefinitionId = new Map<string, ArtifactInstance>((selectedInstance()?.artifacts ?? []).map((artifact) => [artifact.artifactDefinitionId, artifact]));
       const catalog = artifactCatalog();
       const states = selectedArtifactStates();
+      const run = selectedInstance();
+      const subject = run ? { entityType: run.entityType, entityId: run.entityId } : undefined;
       const declared = direction === 'input' ? definition.inputs : definition.outputs;
       return declared.map((artifactDefinitionId) => {
         const instance = instancesByDefinitionId.get(artifactDefinitionId);
@@ -289,7 +291,8 @@ export const WorkflowDashboardStore = signalStore(
           recordName: recordNameOf(instance),
           requiredState,
           satisfied: !requiredState || sameState(instance?.currentState, requiredState),
-          link: links.artifactLink(artifactDefinitionId, catalogEntry, instance),
+          link: links.artifactLink(artifactDefinitionId, catalogEntry, instance, subject),
+          linkQueryParams: links.artifactQueryParams(catalogEntry, instance, subject),
         };
       });
     };

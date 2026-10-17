@@ -14,12 +14,22 @@
     "inputPorts": "Bemeneti portok",
     "outputPorts": "Kimeneti portok",
     "tabs": {
-      "content": "{{ entity }} - tartalom"
+      "content": "{{ entity }} - tartalom",
+      "sign": "{{ entity }} - aláírás"
     },
     "content": {
       "loading": "Tartalom betöltése…",
       "add_text_block": "Szövegblokk hozzáadása",
       "add_widget_block": "Widget hozzáadása"
+    },
+    "sign": {
+      "loading": "A közzétett dokumentum betöltése…",
+      "not_published": "Ez a dokumentum még nincs közzétéve, így nincs mit aláírni.",
+      "accept": "Elolvastam és elfogadom ezt a dokumentumot.",
+      "button": "Aláírás",
+      "signed": "Aláírta: {{ signer }}, {{ date }}.",
+      "signatures": "Aláírások",
+      "none": "Ezt a dokumentumot még senki nem írta alá."
     },
     "_tooltips": {
       "slug": "A dokumentum kulcsa a címében, a szervezeten belül egyedi. Csak kisbetűk, számjegyek és kötőjelek, pl. getting-started.",

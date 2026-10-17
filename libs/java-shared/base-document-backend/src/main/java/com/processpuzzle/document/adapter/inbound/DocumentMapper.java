@@ -454,6 +454,21 @@ public class DocumentMapper {
         return id == null ? null : UUID.fromString(id);
     }
 
+    public com.processpuzzle.document.model.DocumentSignature toSignatureModel(
+            com.processpuzzle.document.domain.DocumentSignature signature) {
+        return new com.processpuzzle.document.model.DocumentSignature()
+                .id(UUID.fromString(signature.getId()))
+                .documentId(UUID.fromString(signature.getDocumentId()))
+                .title(signature.getTitle())
+                .locale(signature.getLocale())
+                .revision(signature.getRevision())
+                .contentHash(signature.getContentHash())
+                .subjectType(signature.getSubjectType())
+                .subjectId(signature.getSubjectId())
+                .signedBy(signature.getSignedBy())
+                .signedAt(toOffsetDateTime(signature.getSignedAt()));
+    }
+
     private OffsetDateTime toOffsetDateTime(Instant instant) {
         return instant == null ? null : instant.atOffset(ZoneOffset.UTC);
     }

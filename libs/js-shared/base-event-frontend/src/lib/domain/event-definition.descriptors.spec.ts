@@ -59,7 +59,7 @@ describe('createEventDefinitionDescriptor', () => {
     expect(byName('kind')?.required).toBe(true);
     expect(keysOf('kind')).toEqual(['SYSTEM', 'MESSAGE', 'SIGNAL']);
     expect(byName('action')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(keysOf('action')).toEqual(['CREATED', 'UPDATED', 'DELETED', 'STATE_CHANGED']);
+    expect(keysOf('action')).toEqual(['CREATED', 'UPDATED', 'DELETED', 'STATE_CHANGED', 'SIGNED']);
   });
 
   // Required only for a SYSTEM event, which the form cannot express; the backend validates it.

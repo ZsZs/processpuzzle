@@ -3,6 +3,7 @@ import { BaseEntityContainerComponent, BaseEntityDescriptor } from '@processpuzz
 import { createDocumentDescriptor } from '../domain/base-document.descriptors';
 import { BaseDocumentStore } from '../domain/base-document.store';
 import { DOCUMENT_CONTENT_TAB } from './document-content-tab';
+import { DOCUMENT_SIGN_TAB } from './document-sign/document-sign-tab';
 
 /**
  * List and (title/description/ports) Properties come from BaseEntityContainerComponent, exactly as
@@ -37,6 +38,6 @@ export class BaseDocumentContainerComponent {
     this.entityDescriptor = createDocumentDescriptor();
     this.entityDescriptor.store = this.store;
     // The same constant BASE_DOCUMENT_ROUTES mounts, so the link and the route cannot disagree.
-    this.entityDescriptor.extraTabs = [DOCUMENT_CONTENT_TAB];
+    this.entityDescriptor.extraTabs = [DOCUMENT_CONTENT_TAB, DOCUMENT_SIGN_TAB];
   }
 }

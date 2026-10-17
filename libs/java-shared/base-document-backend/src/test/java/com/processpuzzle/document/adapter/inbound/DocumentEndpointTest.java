@@ -5,9 +5,11 @@ import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentBlock;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
+import com.processpuzzle.document.domain.DocumentSignature;
 import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentPropertiesInput;
+import com.processpuzzle.document.model.DocumentSignatureInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.model.ReorderBlocksRequest;
 import com.processpuzzle.document.usecase.AddDocumentTranslation;
@@ -23,6 +25,7 @@ import com.processpuzzle.document.usecase.DocumentValidationProblem;
 import com.processpuzzle.document.usecase.ExportDocument;
 import com.processpuzzle.document.usecase.FindAllDocuments;
 import com.processpuzzle.document.usecase.FindDocument;
+import com.processpuzzle.document.usecase.FindDocumentSignatures;
 import com.processpuzzle.document.usecase.FindDocumentTranslations;
 import com.processpuzzle.document.usecase.FindPublishedContent;
 import com.processpuzzle.document.usecase.ImportDocuments;
@@ -31,6 +34,7 @@ import com.processpuzzle.document.usecase.PublishDocumentTranslation;
 import com.processpuzzle.document.usecase.RemoveDocumentTranslation;
 import com.processpuzzle.document.usecase.ReorderDocumentBlocks;
 import com.processpuzzle.document.usecase.ReplaceDocumentBlock;
+import com.processpuzzle.document.usecase.SignDocument;
 import com.processpuzzle.document.usecase.UnpublishDocumentTranslation;
 import com.processpuzzle.document.usecase.UpdateDocument;
 import com.processpuzzle.document.usecase.UpdateDocumentProperties;
@@ -50,6 +54,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -93,6 +98,8 @@ class DocumentEndpointTest {
     private ValidateDocument validateDocument;
     private ImportDocuments importDocuments;
     private ExportDocument exportDocument;
+    private SignDocument signDocument;
+    private FindDocumentSignatures findDocumentSignatures;
     private DocumentEndpoint endpoint;
 
     @BeforeEach
@@ -117,12 +124,14 @@ class DocumentEndpointTest {
         validateDocument = mock(ValidateDocument.class);
         importDocuments = mock(ImportDocuments.class);
         exportDocument = mock(ExportDocument.class);
+        signDocument = mock(SignDocument.class);
+        findDocumentSignatures = mock(FindDocumentSignatures.class);
         endpoint = new DocumentEndpoint(createDocument, updateDocument, updateDocumentProperties, deleteDocument,
                 findDocument, findAllDocuments, findDocumentTranslations, addDocumentTranslation,
                 removeDocumentTranslation, publishDocumentTranslation, unpublishDocumentTranslation,
                 discardDocumentDraft, findPublishedContent, appendDocumentBlock, replaceDocumentBlock,
                 deleteDocumentBlock, reorderDocumentBlocks, validateDocument, importDocuments, exportDocument,
-                new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
+                signDocument, findDocumentSignatures, new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
     }
 
     // ── Documents ───────────────────────────────────────────────
@@ -356,7 +365,50 @@ class DocumentEndpointTest {
         assertThat(response.getBody().getDescription()).isNotNull();
     }
 
+    // ── Signatures ──────────────────────────────────────────────
+
+    @Test
+    void aNewSignatureAnswers201() {
+        when(signDocument.execute(ORG, ID, "employee", "e-1", null))
+                .thenReturn(new SignDocument.Outcome(signature(), true));
+
+        var response = endpoint.signDocument(ORG, DOCUMENT_ID,
+                new DocumentSignatureInput().subjectType("employee").subjectId("e-1"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().getDocumentId()).isEqualTo(DOCUMENT_ID);
+        assertThat(response.getBody().getSignedBy()).isEqualTo("Ada");
+        assertThat(response.getBody().getRevision()).isEqualTo(3L);
+    }
+
+    @Test
+    void signingAgainAnswers200WithTheExistingSignature() {
+        when(signDocument.execute(ORG, ID, "employee", "e-1", "de"))
+                .thenReturn(new SignDocument.Outcome(signature(), false));
+
+        var response = endpoint.signDocument(ORG, DOCUMENT_ID,
+                new DocumentSignatureInput().subjectType("employee").subjectId("e-1").locale("de"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void listPassesTheSubjectFilterThrough() {
+        when(findDocumentSignatures.execute(ORG, ID, "employee", "e-1")).thenReturn(List.of(signature()));
+
+        var response = endpoint.listDocumentSignatures(ORG, DOCUMENT_ID, "employee", "e-1");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).singleElement()
+                .satisfies(model -> assertThat(model.getSubjectId()).isEqualTo("e-1"));
+    }
+
     // region fixtures
+    private static DocumentSignature signature() {
+        return new DocumentSignature("22222222-2222-2222-2222-222222222222", ORG, ID, "Getting started", "en", 3L,
+                "abc", "employee", "e-1", "Ada", Instant.parse("2026-10-17T10:00:00Z"));
+    }
+
     private static Document document() {
         return new Document(ORG, ID, "getting-started", "Getting started", "en", "ada");
     }

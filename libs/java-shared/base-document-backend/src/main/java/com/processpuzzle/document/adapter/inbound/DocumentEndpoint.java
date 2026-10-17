@@ -7,6 +7,8 @@ import com.processpuzzle.document.model.DocumentBlock;
 import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentPropertiesInput;
+import com.processpuzzle.document.model.DocumentSignature;
+import com.processpuzzle.document.model.DocumentSignatureInput;
 import com.processpuzzle.document.model.DocumentTranslation;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.model.DocumentTranslationSummary;
@@ -24,12 +26,14 @@ import com.processpuzzle.document.usecase.DocumentDetails;
 import com.processpuzzle.document.usecase.ExportDocument;
 import com.processpuzzle.document.usecase.FindAllDocuments;
 import com.processpuzzle.document.usecase.FindDocument;
+import com.processpuzzle.document.usecase.FindDocumentSignatures;
 import com.processpuzzle.document.usecase.FindDocumentTranslations;
 import com.processpuzzle.document.usecase.FindPublishedContent;
 import com.processpuzzle.document.usecase.ImportDocuments;
 import com.processpuzzle.document.usecase.PublishDocumentTranslation;
 import com.processpuzzle.document.usecase.RemoveDocumentTranslation;
 import com.processpuzzle.document.usecase.ReorderDocumentBlocks;
+import com.processpuzzle.document.usecase.SignDocument;
 import com.processpuzzle.document.usecase.ReplaceDocumentBlock;
 import com.processpuzzle.document.usecase.UnpublishDocumentTranslation;
 import com.processpuzzle.document.usecase.UpdateDocument;
@@ -83,6 +87,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
     private final ValidateDocument validateDocument;
     private final ImportDocuments importDocuments;
     private final ExportDocument exportDocument;
+    private final SignDocument signDocument;
+    private final FindDocumentSignatures findDocumentSignatures;
     private final DocumentMapper mapper;
     private final DocumentYamlCodec yaml;
 
@@ -107,6 +113,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
                             ValidateDocument validateDocument,
                             ImportDocuments importDocuments,
                             ExportDocument exportDocument,
+                            SignDocument signDocument,
+                            FindDocumentSignatures findDocumentSignatures,
                             DocumentMapper mapper,
                             DocumentYamlCodec yaml) {
         this.createDocument = createDocument;
@@ -129,6 +137,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
         this.validateDocument = validateDocument;
         this.importDocuments = importDocuments;
         this.exportDocument = exportDocument;
+        this.signDocument = signDocument;
+        this.findDocumentSignatures = findDocumentSignatures;
         this.mapper = mapper;
         this.yaml = yaml;
     }
@@ -258,6 +268,27 @@ public class DocumentEndpoint implements BaseDocumentApi {
         FindPublishedContent.PublishedContentView view = findPublishedContent.execute(orgKey, slug, locale);
         return ResponseEntity.ok(mapper.toPublishedContentModel(
                 view.document(), view.served(), view.isFallback(), view.availableLocales()));
+    }
+
+    // ── Signatures ──────────────────────────────────────────────
+
+    @Override
+    public ResponseEntity<List<DocumentSignature>> listDocumentSignatures(String orgKey, UUID documentId,
+                                                                          String subjectType, String subjectId) {
+        return ResponseEntity.ok(findDocumentSignatures.execute(orgKey, documentId.toString(), subjectType, subjectId)
+                .stream()
+                .map(mapper::toSignatureModel)
+                .toList());
+    }
+
+    @Override
+    public ResponseEntity<DocumentSignature> signDocument(String orgKey, UUID documentId,
+                                                          DocumentSignatureInput documentSignatureInput) {
+        SignDocument.Outcome outcome = signDocument.execute(orgKey, documentId.toString(),
+                documentSignatureInput.getSubjectType(), documentSignatureInput.getSubjectId(),
+                documentSignatureInput.getLocale());
+        return ResponseEntity.status(outcome.created() ? HttpStatus.CREATED : HttpStatus.OK)
+                .body(mapper.toSignatureModel(outcome.signature()));
     }
 
     // ── Validation, import, export ──────────────────────────────

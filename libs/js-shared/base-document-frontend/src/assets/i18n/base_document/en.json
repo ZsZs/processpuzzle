@@ -14,12 +14,22 @@
     "inputPorts": "Input ports",
     "outputPorts": "Output ports",
     "tabs": {
-      "content": "{{ entity }} - content"
+      "content": "{{ entity }} - content",
+      "sign": "{{ entity }} - sign"
     },
     "content": {
       "loading": "Loading content…",
       "add_text_block": "Add text block",
       "add_widget_block": "Add widget"
+    },
+    "sign": {
+      "loading": "Loading the published document…",
+      "not_published": "This document has not been published yet, so there is nothing to sign.",
+      "accept": "I have read this document and accept it.",
+      "button": "Sign",
+      "signed": "Signed by {{ signer }} on {{ date }}.",
+      "signatures": "Signatures",
+      "none": "Nobody has signed this document yet."
     },
     "_tooltips": {
       "slug": "The document's key in its address, unique within your organization. Lower-case letters, digits and hyphens only, e.g. getting-started.",

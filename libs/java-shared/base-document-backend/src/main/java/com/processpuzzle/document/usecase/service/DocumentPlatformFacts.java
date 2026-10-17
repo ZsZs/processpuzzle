@@ -2,6 +2,7 @@ package com.processpuzzle.document.usecase.service;
 
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentDraft;
+import com.processpuzzle.document.domain.DocumentSignature;
 import com.processpuzzle.document.domain.DocumentStatus;
 import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.shared.event.PlatformEvent;
@@ -22,6 +23,9 @@ import java.util.Map;
  * default language. Status is per translation and derived, so there is no stored field to watch: a
  * use case computes the status before and after its write and hands both here, and a fact is
  * published only when the two differ.
+ *
+ * <p>A signature is the exception to "the subject is the document": its fact is about the object the
+ * document was signed <em>for</em>, see {@link #signed}.
  */
 @Component
 public class DocumentPlatformFacts {
@@ -43,6 +47,25 @@ public class DocumentPlatformFacts {
     public void deleted(Document document) {
         events.publishEvent(PlatformEvent.of(document.getOrgKey(), SUBJECT_TYPE, document.getId(),
                 PlatformEventAction.DELETED, null, Instant.now()));
+    }
+
+    /**
+     * Publishes {@code SIGNED} about the object {@code signature} was given for — an employee, say, rather
+     * than the contract. That is what lets a workflow running for the employee catch it: a SYSTEM catch
+     * event is matched by the instance's subject. The payload says which document, revision and signer.
+     */
+    public void signed(Document document, DocumentSignature signature) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("signatureId", signature.getId());
+        payload.put("documentId", document.getId());
+        payload.put("slug", document.getSlug());
+        payload.put("title", document.getTitle());
+        payload.put("locale", signature.getLocale());
+        payload.put("revision", signature.getRevision());
+        payload.put("contentHash", signature.getContentHash());
+        payload.put("signedBy", signature.getSignedBy());
+        events.publishEvent(PlatformEvent.of(signature.getOrgKey(), signature.getSubjectType(),
+                signature.getSubjectId(), PlatformEventAction.SIGNED, payload, signature.getSignedAt()));
     }
 
     /**

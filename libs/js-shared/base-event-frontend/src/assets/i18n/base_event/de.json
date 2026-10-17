@@ -14,7 +14,7 @@
       "description": "Eine Notiz, wann das Ereignis eintritt und wofür es dient; Benutzer sehen sie nicht.",
       "kind": "SYSTEM: von der Plattform ausgelöst, wenn sich ein Datensatz ändert. MESSAGE: über die API an einen Empfänger gesendet. SIGNAL: über die API an alle Zuhörer gesendet.",
       "subjectType": "Nur für SYSTEM-Ereignisse: der Code des Entitätstyps, dessen Datensätze das Ereignis auslösen, z. B. order.",
-      "action": "Nur für SYSTEM-Ereignisse: was mit dem Datensatz geschieht: CREATED, UPDATED, DELETED oder STATE_CHANGED.",
+      "action": "Nur für SYSTEM-Ereignisse: was mit dem Datensatz geschieht: CREATED, UPDATED, DELETED, STATE_CHANGED oder SIGNED (ein Dokument wurde für ihn unterschrieben).",
       "state": "Nur für STATE_CHANGED: der Zustand, den der Datensatz annimmt, z. B. CONFIRMED.",
       "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "parameters": "Die Werte, die jedes Auftreten des Ereignisses mitführt, z. B. eine Bestellung und ihre Bestellnummer. Workflows lesen sie über ihren Namen."

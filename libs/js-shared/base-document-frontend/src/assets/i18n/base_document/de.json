@@ -14,12 +14,22 @@
     "inputPorts": "Eingangsports",
     "outputPorts": "Ausgangsports",
     "tabs": {
-      "content": "{{ entity }} - Inhalt"
+      "content": "{{ entity }} - Inhalt",
+      "sign": "{{ entity }} - unterschreiben"
     },
     "content": {
       "loading": "Inhalt wird geladen…",
       "add_text_block": "Textblock hinzufügen",
       "add_widget_block": "Widget hinzufügen"
+    },
+    "sign": {
+      "loading": "Das veröffentlichte Dokument wird geladen…",
+      "not_published": "Dieses Dokument ist noch nicht veröffentlicht, daher gibt es nichts zu unterschreiben.",
+      "accept": "Ich habe dieses Dokument gelesen und akzeptiere es.",
+      "button": "Unterschreiben",
+      "signed": "Unterschrieben von {{ signer }} am {{ date }}.",
+      "signatures": "Unterschriften",
+      "none": "Dieses Dokument hat noch niemand unterschrieben."
     },
     "_tooltips": {
       "slug": "Der Schlüssel des Dokuments in seiner Adresse, eindeutig in Ihrer Organisation. Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. getting-started.",

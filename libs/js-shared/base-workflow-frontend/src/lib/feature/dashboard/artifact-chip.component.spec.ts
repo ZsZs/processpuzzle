@@ -97,6 +97,12 @@ describe('ArtifactChipComponent', () => {
       expect(link?.getAttribute('href')).toBe('/order/o-1/details');
     });
 
+    it('carries the query parameters the resolver attached — a document Sign tab is told whom it signs for', () => {
+      const host = render(resolved({ instance: instance('DRAFT'), link: '/document/c-1/sign', linkQueryParams: { subjectType: 'employee', subjectId: 'e-1' } }));
+
+      expect(host.querySelector('[data-testid="artifact-link-order-entity"]')?.getAttribute('href')).toBe('/document/c-1/sign?subjectType=employee&subjectId=e-1');
+    });
+
     it('is plain text otherwise', () => {
       const host = render(resolved({ instance: instance('DRAFT') }));
 

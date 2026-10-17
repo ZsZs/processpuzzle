@@ -30,9 +30,9 @@ describe('EventDefinition model', () => {
     expect(definition).toMatchObject({ id: 'OrderConfirmedEvent', name: 'Order Confirmed', description: 'd', subjectType: 'order', action: 'STATE_CHANGED', state: 'CONFIRMED', version: 2 });
   });
 
-  it('offers the three kinds and four actions the contract defines', () => {
+  it('offers the three kinds and five actions the contract defines', () => {
     expect(Object.keys(EventKind)).toEqual(['SYSTEM', 'MESSAGE', 'SIGNAL']);
-    expect(Object.keys(EventAction)).toEqual(['CREATED', 'UPDATED', 'DELETED', 'STATE_CHANGED']);
+    expect(Object.keys(EventAction)).toEqual(['CREATED', 'UPDATED', 'DELETED', 'STATE_CHANGED', 'SIGNED']);
   });
 
   it('keeps the parameters it was created with', () => {

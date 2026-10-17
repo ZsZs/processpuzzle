@@ -2,6 +2,7 @@ import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { BASE_DOCUMENT_ROUTES } from './base-document.routes';
 import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
+import { DOCUMENT_SIGN_TAB } from './feature/document-sign/document-sign-tab';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -41,7 +42,7 @@ describe('BASE_DOCUMENT_ROUTES', () => {
 
   it('nests the generic list and details routes below the container', () => {
     expect(documentRoute.component).toBeDefined();
-    expect(documentRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/content', 'list']);
+    expect(documentRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/content', ':entityId/sign', 'list']);
   });
 
   /**
@@ -55,6 +56,14 @@ describe('BASE_DOCUMENT_ROUTES', () => {
 
     expect(contentRoute?.component).toBe(DOCUMENT_CONTENT_TAB.component);
     expect(DOCUMENT_CONTENT_TAB.segment).toBe('content');
+  });
+
+  /** `sign` is also what base-workflow's task dashboard links a document artifact to — see DashboardLinkResolver. */
+  it('gives the sign tab a route of its own', () => {
+    const signRoute = documentRoute.children?.find((child) => child.path === ':entityId/sign');
+
+    expect(signRoute?.component).toBe(DOCUMENT_SIGN_TAB.component);
+    expect(DOCUMENT_SIGN_TAB.segment).toBe('sign');
   });
 
   it('hangs both port lists below the document being edited', async () => {
