@@ -16,35 +16,35 @@ For each clip below: **Script text** = paste as the spoken line (drives lip-sync
 
 ### Clip 2 — Scene 2 (Model the Data, 0:20–0:50)
 **Script text:**
-"We start with the data. In ProcessPuzzle, you define entities — the things your business cares about. Here, an Employee, and an Onboarding Task. No code. Just describe what you need, and ProcessPuzzle builds the data model for you."
+"We start with the data. In ProcessPuzzle, you define entities — the things your business cares about. Here, an Employee, and the Department they join. No code. Just describe what you need, and ProcessPuzzle builds the data model for you."
 **Direction note:** Light, explanatory tone; small pointing gesture; thumbs-up on the last sentence.
 
 ---
 
 ### Clip 3 — Scene 3 (Business Rules, 0:50–1:15)
 **Script text:**
-"Now the logic. What happens automatically? ProcessPuzzle lets you express that as rules, right next to your data."
+"Now the logic. What must always be true? ProcessPuzzle lets you express that as rules, right next to your data — and checks them everywhere the data changes."
 **Direction note:** Slightly more energetic/curious tone, like introducing something clever.
 
 ---
 
 ### Clip 4 — Scene 4 (Document, 1:15–1:35)
 **Script text:**
-"Onboarding always needs paperwork. Attach a document template — here, the employment contract — and ProcessPuzzle handles generating and tracking it as part of the process."
+"Onboarding always needs paperwork. Design the document — here, the employment contract — bind it to the employee's data, and ProcessPuzzle carries it through the process."
 **Direction note:** Practical, matter-of-fact tone; small "flipping a page" hand gesture if supported.
 
 ---
 
 ### Clip 5 — Scene 5 (States, 1:35–1:55)
 **Script text:**
-"Every employee moves through stages — invited, pending paperwork, active. ProcessPuzzle lets you draw that directly as a state machine."
+"Every employee moves through stages — invited, pending paperwork, active. ProcessPuzzle lets you draw that directly as a state machine — and nobody becomes active before the contract is signed."
 **Direction note:** Even, guiding tone, as if tracing a path in the air.
 
 ---
 
 ### Clip 6 — Scene 6 (Workflow, 1:55–2:25)
 **Script text:**
-"Now we connect everything into a workflow with real people in real roles. An HR Coordinator creates the record and manages the paperwork. The New Hire reviews the contract and completes their own tasks. One workflow. Two roles. Every artifact you just built, working together."
+"Now we connect everything into a workflow with real people in real roles. An HR Coordinator creates the record and manages the paperwork. The New Hire signs the contract and works through their own tasks — each with a due date, and a reminder when it slips. One workflow. Two roles. Every artifact you just built, working together."
 **Direction note:** Builds in energy toward the end — this is the "it all connects" beat; a slightly bigger, satisfied gesture on the last sentence.
 
 ---
