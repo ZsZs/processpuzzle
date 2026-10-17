@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
+import com.processpuzzle.shared.event.EventParameterType;
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.workflow.execution.domain.OccurredEventDocument;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -72,6 +74,26 @@ class TriggeredStartListenerTest {
         verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture(),
                 eq(List.of()));
         assertThat(context.getValue()).containsEntry("orderId", "order-1").containsEntry("customer", "ACME");
+    }
+
+    /** Phase 3: the event's parameters need no mapping of their own; one the mapping names is its override. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void takesTheEventsParametersByName_unlessTheMappingNamesThem() {
+        List<OccurredParameter> parameters = List.of(
+                new OccurredParameter(OccurredParameter.SUBJECT, EventParameterType.ENTITY_REF, "order", "order-1"),
+                new OccurredParameter("orderNumber", EventParameterType.STRING, null, "ORD-1"),
+                new OccurredParameter("customerName", EventParameterType.STRING, null, "ACME"));
+        when(workflowRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).thenReturn(List.of(workflow("fulfillment",
+                triggering("order-created", "OrderCreatedEvent", Map.of("customerName", "$.subjectType")))));
+
+        listener.on(new DefinedEventOccurred(ORG, "OrderCreatedEvent", "order", "order-1", Map.of(),
+                Instant.parse("2026-10-08T10:00:00Z"), parameters));
+
+        ArgumentCaptor<Map<String, Object>> context = ArgumentCaptor.forClass(Map.class);
+        verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture(),
+                eq(parameters));
+        assertThat(context.getValue()).containsExactly(Map.entry("customerName", "order"), Map.entry("orderNumber", "ORD-1"));
     }
 
     @Test

@@ -95,7 +95,7 @@ public class CatchOccurrence {
      *
      * @param occurrenceId the occurrence delivered; a timer passes its own row's id
      * @param payload      what the catch received; null for a timer
-     * @param contribution what the catch's payload mapping took from it into the context
+     * @param contribution what the catch's payload mapping, and the parameters it does not name, took into the context
      * @param parameters   the occurrence's parameters, resolved by base-event; empty for a timer
      */
     public record Occurrence(Instant at, UUID occurrenceId, Map<String, Object> payload,

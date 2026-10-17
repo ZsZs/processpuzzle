@@ -6,6 +6,7 @@ import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
+import com.processpuzzle.workflow.execution.domain.ConventionalMapping;
 import com.processpuzzle.workflow.execution.domain.OccurredEventDocument;
 import com.processpuzzle.workflow.execution.domain.PayloadPath;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartWorkflowInstanceUseCase;
@@ -23,7 +24,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * TRIGGERING_EVENT start event whose {@code eventType} is the occurred event's definition id. The
  * subject of the event becomes the instance's {@code entityId}, and the start event's
  * {@code payloadMapping} — {@link PayloadPath}s into the {@link DefinedEventOccurred}, so
- * {@code $.subjectId} or {@code $.payload.customer} — becomes its initial context.
+ * {@code $.subjectId} or {@code $.payload.customer} — becomes its initial context, together with every parameter
+ * of the event the mapping does not name, under that parameter's name ({@link ConventionalMapping}).
  *
  * <p>The start events are filtered in memory rather than by a JSONB query: an organization has tens of
  * workflows, not thousands, and the library's tests run on H2, which has no JSONB operators.
@@ -62,7 +64,8 @@ public class TriggeredStartListener {
 
     private void start(DefinedEventOccurred event, Workflow workflow, StartEvent startEvent) {
         try {
-            Map<String, Object> context = PayloadPath.map(OccurredEventDocument.of(event), startEvent.getPayloadMapping());
+            Map<String, Object> context = ConventionalMapping.apply(
+                    PayloadPath.map(OccurredEventDocument.of(event), startEvent.getPayloadMapping()), event.parameters());
             startWorkflowInstance.startTriggered(
                             event.orgKey(), workflow.getId(), startEvent.getId(), event.subjectId(),
                             event.subjectType(), context, event.parameters())

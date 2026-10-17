@@ -131,7 +131,8 @@
     "timerType": "Timer",
     "timerExpression": "Timer Expression",
     "authorizedRoles": "Authorized Roles",
-    "payloadMapping": "Payload Mapping",
+    "payloadMapping": "Payload Mapping (overrides)",
+    "eventParameters": "Event Parameters",
     "requiredArtifacts": "Required Artifacts",
     "_tooltips": {
       "id": "Unique within the workflow, also among its task and event ids, e.g. order-created.",
@@ -143,7 +144,8 @@
       "timerExpression": "When the timer fires, in ISO 8601: a date and time such as 2026-12-24T08:00:00Z for DATE, or a repetition such as R/P1D (every day) for CYCLE.",
       "preconditionExpression": "TIME_BASED_PRECONDITION only: a condition that must hold when the milestone arrives, e.g. milestone.status == 'PASSED'. Recorded, not evaluated yet.",
       "authorizedRoles": "ROLE_DEFINITION only: the roles whose members may start the workflow by hand. Empty means anyone may.",
-      "payloadMapping": "TRIGGERING_EVENT and INPUT_ARTIFACT: copies data from the starting event into the new run. Key: the name to store it under, e.g. orderId; value: where to read it, e.g. $.payload.orderId.",
+      "payloadMapping": "The event's parameters land in the run under their own names, e.g. orderNumber — map only what they lack or what you want under another name. TRIGGERING_EVENT and INPUT_ARTIFACT: key the name to store under, e.g. orderId; value where to read it, e.g. $.subjectId. INPUT_ARTIFACT reads a platform fact, which has no parameters, so it maps everything it needs.",
+      "eventParameters": "What the chosen event carries. Each is taken into the run under its own name (by name) unless the payload mapping names it (mapped).",
       "requiredArtifacts": "INPUT_ARTIFACT only: the artifacts, optionally in a given state, that must exist before the workflow starts. Each must be one of the workflow's Artifacts."
     }
   },
@@ -169,7 +171,8 @@
     "timerExpression": "Timer Expression",
     "attachedTo": "Attached To",
     "interrupting": "Interrupting",
-    "payloadMapping": "Payload Mapping",
+    "payloadMapping": "Payload Mapping (overrides)",
+    "eventParameters": "Event Parameters",
     "_tooltips": {
       "id": "Unique within the workflow, also among its task and start event ids, e.g. invoice-issued. Tasks name it in their Depends On.",
       "name": "Optional label shown in the modeler, e.g. Invoice issued. Empty shows the catalog event's name.",
@@ -182,7 +185,15 @@
       "dependsOn": "The ids of the tasks or events that must be finished before this event is reached, e.g. issue-invoice. Empty means it is reached when the workflow starts.",
       "joinType": "ALL waits for every task or event in Depends On (the default); ANY goes on after the first of them. Ignored when Depends On is empty.",
       "correlationKey": "MESSAGE events only, and required there: the run's variable that ties the message to this run, e.g. orderId. A THROW sends its value; a CATCH waits for a message with the same value.",
-      "payloadMapping": "CATCH: copies data from the event into the run — key a variable name, value a path such as $.payload.amount. THROW: fills the sent event — key an attribute name, value a path such as $.orderId."
+      "payloadMapping": "The event's parameters are filled by name, so map only what they lack. CATCH: the parameters land in the run under their own names; key a variable name, value a path such as $.payload.amount. THROW: each parameter is taken from the run's variable of that name; key a parameter or attribute name, value a path such as $.new_order.",
+      "eventParameters": "What the event carries. CATCH: each lands in the run under its own name unless the payload mapping names it. THROW: each is filled from the run's variable of that name unless the mapping names it."
+    },
+    "event_parameters": {
+      "none": "This event declares no parameters.",
+      "required": "required",
+      "by_name": "by name",
+      "mapped": "mapped",
+      "binds": "binds its artifact"
     }
   },
   "workflow_task_artifact_state": {

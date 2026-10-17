@@ -1,6 +1,6 @@
 # Event parameters — what an event carries, declared once
 
-Status: **accepted** (2026-10-16). Phases 1 and 2 are specified in detail; phase 3 in outline.
+Status: **accepted** (2026-10-16). Phases 1–3 are specified in detail.
 
 ## Decisions (2026-10-16)
 
@@ -34,7 +34,7 @@ A workflow run does not know which records it is about. Three symptoms, all visi
 | Piece | Where | Role after this change |
 | --- | --- | --- |
 | Instance `context` | `WorkflowInstance.context`: `initialContext` + every task's and catch's `contextContribution` | Still the one map tasks, steps and rules read. Event parameters land in it. |
-| `payloadMapping` | `StartEvent`, `EventUse` (CATCH: event → context; THROW: context → payload) | Kept as the explicit override; phase 3 makes most of them unnecessary. |
+| `payloadMapping` | `StartEvent`, `EventUse` (CATCH: event → context; THROW: context → payload) | Kept as the explicit override; since phase 3 parameters of the same name need none. |
 | JSONPath | the `payloadMapping` values, evaluated against the whole event (`$.subjectId`, `$.payload.x`) | The expression language for reading an event or the context. |
 | PPCL | base-rule; step `inputMapping` | The expression language where a value has to be *computed*. |
 | `entityLabel` | `WorkflowInstance.entityLabel`, via `EntityLabelPort` | Extended to artifact instances. |
@@ -204,11 +204,41 @@ chip on the run's board, with the reason on hover; the Event Instance form shows
 Phase 2 also wires `EventCatalogPort.releasedParametersOf` in the testbed's `EventCatalogAdapter`: phase 1
 declared it, but the adapter did not implement it, so a deployed throw filled no parameters.
 
-## Phase 3 — mappings by convention (outline)
+## Phase 3 — mappings by convention
 
-- CATCH and TRIGGERING_EVENT start events no longer need a `payloadMapping` for parameters of the same name;
-  the modeler's forms show the event's parameters and the mapping only as overrides.
-- Seed `payloadMapping`s that merely restate parameters are removed.
+**Runtime** (`ConventionalMapping`). A TRIGGERING_EVENT start event and a CATCH take every parameter the
+occurrence carried into the context under the parameter's own name too — as if their `payloadMapping` said
+`orderNumber: $.payload.orderNumber`. So plain names work for every reader that already reads the context by name:
+a MESSAGE's `correlationKey`, a step's `inputMapping`, a timer's `$.variable`, PPCL, the completion form, and a later
+throw. The namespaced copy (decision 1) stays, so two events carrying `order` are still both on record.
+
+- `payloadMapping` is the override: a name it maps is left to it, even when what it reads is nothing.
+- `subject` is not added: every SYSTEM occurrence carries one, so as a plain name it would mean whichever event came
+  last. The subject's plain name is the object name of the artifact it binds.
+- A parameter the occurrence carried without a value is not added.
+- A plain name written twice — a task and a later catch, two catches — is last-writer-wins, exactly as with an
+  explicit mapping. That is why the release still calls a throw parameter with several upstream carriers
+  *ambiguous*: which value the throw sends would depend on which event came last.
+- INPUT_ARTIFACT start events are unchanged: they read a raw platform fact, which has no catalog definition and so
+  no declared parameters.
+
+**Seeds.** The mappings that only restated a parameter are removed: `orderNumber` / `customerName` from both
+TRIGGERING_EVENT starts and from the `request-invoice` throw, and `invoiceNumber` from the `invoice-issued` catch.
+What stays maps something a parameter does not provide — `orderId` (the subject, or the correlation value, under the
+name the `correlationKey` reads), `order: $.new_order` — or makes visible what the release cannot see: the invoicing
+throw's `invoiceNumber: $.invoiceNumber`, which only the completion form writes and would otherwise draw
+`throwParameterFromTaskOnly`.
+
+**Frontend.** The start event and intermediate event forms label `payloadMapping` as overrides and show, beside
+it, the chosen event's parameters (`EventParametersControlComponent`, a read-only CUSTOM control): each with its
+type and whether it is required, marked *by name* or — when the mapping names it — *mapped*; a SYSTEM event's
+implicit `subject` is listed first as binding its artifact. The list follows the event and the mapping as they are
+edited. base-workflow-frontend still does not depend on base-event: the catalog is read by entity name through
+`BaseEntityDescriptorRegistry`, as the event's `FOREIGN_KEY` reads it for its label, so without base-event in the
+application the list is simply not shown.
+
+**Compatibility.** Existing explicit mappings keep working and win over the convention. A context may now hold
+plain keys it did not before; nothing removes or renames an existing one.
 
 ## Open questions
 
