@@ -250,8 +250,9 @@ entityDefinitions:
       - code: shippingAddress
         name: Shipping Address
         displayOrder: 5
-        valueKind: TEXT
-        formControlType: TEXTAREA
+        valueKind: REFERENCE
+        formControlType: ADDRESS
+        showMap: true
       - code: lineItems
         name: Line Items
         displayOrder: 6
@@ -358,8 +359,9 @@ entityDefinitions:
       - code: shippingAddress
         name: Shipping Address
         displayOrder: 5
-        valueKind: TEXT
-        formControlType: TEXTAREA
+        valueKind: REFERENCE
+        formControlType: ADDRESS
+        showMap: true
       - code: justification
         name: Justification
         displayOrder: 6
@@ -725,7 +727,11 @@ entities:
       customerName: Bob Meier
       status: SHIPPED
       total: 85.50
-      shippingAddress: Hauptstraße 12, 80331 München, DE
+      shippingAddress:
+        country: DE
+        street: Hauptstraße 12
+        postalCode: "80331"
+        city: München
       lineItems:
         - productName: Bolt M8
           quantity: 5
@@ -753,7 +759,11 @@ entities:
       customerName: Daniel Novak
       status: DELIVERED
       total: 499
-      shippingAddress: Wenceslas Square 5, 110 00 Praha, CZ
+      shippingAddress:
+        country: CZ
+        street: Wenceslas Square 5
+        postalCode: 110 00
+        city: Praha
       lineItems:
         - productName: Servo Motor
           quantity: 1
@@ -786,7 +796,11 @@ entities:
       customerName: Atelier Lumière SARL
       status: SHIPPED
       total: 840
-      shippingAddress: 14 Rue de la Paix, 75002 Paris, FR
+      shippingAddress:
+        country: FR
+        street: 14 Rue de la Paix
+        postalCode: "75002"
+        city: Paris
       justification: Bespoke finish requested by the customer, outside the standard catalogue.
       lineItems:
         - productName: Brass Fitting (custom)
