@@ -24,6 +24,7 @@ import { DateFormatPipe } from '../i18n/date-format.pipe';
 import { ForeignKeyLabels } from '../base-form/foreign-key/foreign-key-labels';
 import { commentsOf } from '../base-form/comments/entity-comment';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { AddressPipe } from '../base-form/address/address.pipe';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -32,6 +33,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
   standalone: true,
   imports: [
     TranslocoPipe,
+    AddressPipe,
     MatTable,
     MatSort,
     MatHeaderCell,

@@ -106,6 +106,13 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.(null, {})).toBe('');
   });
 
+  it('writes an ADDRESS on one line in its country order, the country named', () => {
+    const [column] = entityDescriptorToPdfColumns([new BaseEntityAttrDescriptor('address', FormControlType.ADDRESS, 'Address')], 'en-US');
+
+    expect(column.formatter?.({ country: 'DE', street: 'Hauptstr. 1', postalCode: '10115', city: 'Berlin' }, {})).toBe('Hauptstr. 1, 10115 Berlin, Germany');
+    expect(column.formatter?.(null, {})).toBe('');
+  });
+
   it('leaves COMMENTS out unless the descriptor asks for them', () => {
     expect(entityDescriptorToPdfColumns([new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS)])).toEqual([]);
   });

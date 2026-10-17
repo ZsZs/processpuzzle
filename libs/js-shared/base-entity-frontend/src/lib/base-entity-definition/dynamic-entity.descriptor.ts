@@ -30,6 +30,7 @@ export type DefinitionLookup = (code: string) => EntityDefinition | undefined;
  */
 const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   ADDITIONAL_PROPERTIES: FormControlType.ADDITIONAL_PROPERTIES,
+  ADDRESS: FormControlType.ADDRESS,
   ARTIFACT: FormControlType.ARTIFACT,
   AVATAR: FormControlType.AVATAR,
   BOOLEAN: FormControlType.CHECKBOX,
@@ -134,6 +135,11 @@ function attrDescriptorOf(attribute: EntityAttributeDefinition, lookup: Definiti
   attrDescriptor.maxOccurs = attribute.maxOccurs;
   attrDescriptor.description = attribute.description;
   if (attribute.defaultAvatar) attrDescriptor.defaultAvatar = attribute.defaultAvatar;
+  if (attrDescriptor.formControlType === FormControlType.ADDRESS) {
+    attrDescriptor.showMap = attribute.showMap === true;
+    if (attribute.mapProvider) attrDescriptor.mapProvider = attribute.mapProvider;
+    if (attribute.defaultCountry) attrDescriptor.defaultCountry = attribute.defaultCountry;
+  }
   // Resolved here because this is the last place that knows the value kind: the descriptor carries none,
   // and a DATE_TIME attribute without a format of its own must still get a time field.
   if (attribute.valueKind === 'DATE' || attribute.valueKind === 'DATE_TIME') attrDescriptor.dateFormat = effectiveDateFormat(attribute, attribute.valueKind);

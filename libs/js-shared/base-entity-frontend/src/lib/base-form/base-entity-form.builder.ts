@@ -19,6 +19,7 @@ import { TextareaComponent } from './textarea/textarea.component';
 import { FlexBoxComponent } from './flex-box/flex-box.component';
 import { TagsComponent } from './tags/tags.component';
 import { CommentsComponent } from './comments/comments.component';
+import { AddressComponent } from './address/address.component';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { ComponentsListComponent } from './components/components-list.component';
@@ -37,6 +38,7 @@ type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
 const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormControlComponent>>> = {
   [FormControlType.ADDITIONAL_PROPERTIES]: AdditionalPropertiesComponent,
+  [FormControlType.ADDRESS]: AddressComponent,
   [FormControlType.ARTIFACT]: ArtifactComponent,
   [FormControlType.AVATAR]: AvatarComponent,
   [FormControlType.CHECKBOX]: CheckboxComponent,

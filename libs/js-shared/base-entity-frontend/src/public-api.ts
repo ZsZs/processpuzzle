@@ -32,6 +32,13 @@ export { RelatedEntitiesListComponent } from './lib/base-form/related-entities/r
 export { CommentsComponent } from './lib/base-form/comments/comments.component';
 export { commentsOf, type EntityComment } from './lib/base-form/comments/entity-comment';
 export { EntityUserContext } from './lib/base-entity-user/entity-user.context';
+export { AddressComponent } from './lib/base-form/address/address.component';
+export { addressOf, geoPointOf, isAddressEmpty, type GeoPoint, type LocationSource, type PostalAddress } from './lib/base-form/address/postal-address';
+export { addressFormatOf, formatAddress, type AddressFormat } from './lib/base-form/address/address-formats';
+export { AddressPipe } from './lib/base-form/address/address.pipe';
+export { AddressGeocoder } from './lib/base-form/address/address-geocoder';
+export { COUNTRY_CODES, countryName, countryOptions } from './lib/base-form/address/countries';
+export { DEFAULT_MAP_PROVIDER, MAP_PROVIDERS, googleMapsUrl, mapEmbedUrl, type MapProvider } from './lib/base-form/address/address-map';
 // The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.
 export { EMPTY_RICH_TEXT, isRichTextEmpty, RichTextEditorComponent, type RichTextContent } from './lib/rich-text/rich-text-editor.component';
 export { RichTextToolbarComponent } from './lib/rich-text/rich-text-toolbar.component';

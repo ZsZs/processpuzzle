@@ -18,6 +18,9 @@
     "dateStyle": "Style de date",
     "timeStyle": "Style d’heure",
     "defaultAvatar": "Avatar par défaut",
+    "showMap": "Affiche une carte",
+    "mapProvider": "Fournisseur de carte",
+    "defaultCountry": "Pays par défaut",
     "_tooltips": {
       "code": "Clé sous laquelle la valeur est stockée, unique dans le type d'entité, p. ex. orderNumber. Ne la modifiez plus une fois des enregistrements créés.",
       "name": "Le libellé du champ tel que les utilisateurs le voient dans les formulaires et les colonnes de liste, p. ex. Numéro de commande.",
@@ -34,6 +37,9 @@
       "linkedEntityType": "Pour les champs de référence (FOREIGN_KEY) et les lignes intégrées (EMBEDDED_COMPONENTS) : le code du type d'entité visé, p. ex. customer.",
       "defaultValue": "Valeur pré-remplie dans les nouveaux enregistrements, p. ex. NEW ou 1. Laissez vide pour aucune.",
       "defaultAvatar": "Pour les contrôles AVATAR : nom d'icône (p. ex. person, sailing) ou URL d'image à afficher avant le téléversement d'une image.",
+      "showMap": "Pour les contrôles ADDRESS : afficher l'adresse sur une carte, avec des coordonnées déduites de celle-ci.",
+      "mapProvider": "Pour les contrôles ADDRESS avec carte : qui la dessine. Vide utilise OpenStreetMap ; un clic ouvre toujours Google Maps.",
+      "defaultCountry": "Pour les contrôles ADDRESS : le code pays ISO d'une nouvelle adresse, p. ex. FR. Vide utilise le pays du navigateur.",
       "dateStyle": "Pour les champs DATE et DATE_TIME : l'affichage de la date, de short (31/12/26) à full (jeudi 31 décembre 2026). Vide utilise la valeur par défaut.",
       "timeStyle": "Pour les champs DATE_TIME : l'affichage de l'heure, de short (14:30) à long (avec secondes et fuseau horaire). Vide utilise la valeur par défaut."
     }
@@ -159,5 +165,28 @@
     "new_placeholder": "Écrire un commentaire…",
     "unknown_author": "Inconnu",
     "count": "{{ count }} commentaires"
+  },
+  "address": {
+    "country": "Pays",
+    "street": "Rue et numéro",
+    "address_line2": "Complément d'adresse",
+    "postal_code": "Code postal",
+    "zip_code": "Code ZIP",
+    "postcode": "Code postal",
+    "city": "Ville",
+    "town": "Localité",
+    "region": "Région",
+    "state": "État",
+    "province": "Province",
+    "county": "Comté",
+    "prefecture": "Préfecture",
+    "canton": "Canton",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "locate": "Localiser à partir de l'adresse",
+    "not_found": "L'adresse est introuvable sur la carte.",
+    "no_location": "Pas encore de position — saisissez l'adresse ou les coordonnées.",
+    "map": "Carte de l'adresse",
+    "open_in_google_maps": "Ouvrir dans Google Maps"
   }
 }

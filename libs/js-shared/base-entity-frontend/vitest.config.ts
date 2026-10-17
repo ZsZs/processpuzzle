@@ -4,6 +4,8 @@ import { join } from 'node:path';
 export default defineConfig({
   root: __dirname,
   test: {
+    // happy-dom loads an iframe's page; the ADDRESS control's map would otherwise reach out to OpenStreetMap and Google.
+    environmentOptions: { happyDOM: { settings: { disableIframePageLoading: true } } },
     coverage: {
       enabled: true,
       reportsDirectory: join(__dirname, 'reports/coverage'),

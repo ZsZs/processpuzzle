@@ -34,6 +34,8 @@
                 }
               } @else if (colDescriptor.formControlType === 'TAGS' && element[colDescriptor.attrName] !== undefined) {
                 {{ (element[colDescriptor.attrName].join(', ') | slice: 0 : 20) + (element[colDescriptor.attrName].join(', ').length > 20 ? '...' : '') }}
+              } @else if (colDescriptor.formControlType === 'ADDRESS') {
+                {{ element[colDescriptor.attrName] | ppAddress }}
               } @else if (colDescriptor.formControlType === 'COMMENTS') {
                 {{ 'base_entity.comments.count' | transloco: { count: commentCount(element[colDescriptor.attrName]) } }}
               } @else if (colDescriptor.formControlType === 'DATE') {

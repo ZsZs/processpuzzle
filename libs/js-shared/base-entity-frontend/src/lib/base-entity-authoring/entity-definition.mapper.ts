@@ -3,6 +3,7 @@ import type { BaseEntityMapper } from '../base-entity.mapper';
 import type { DateFormat } from '../base-entity/date-format';
 import { isBoundedByMaxOccurs, MULTIPLICITIES, type Multiplicity } from '../base-entity/multiplicity';
 import type { ReleaseState } from '@processpuzzle/util';
+import type { MapProvider } from '../base-form/address/address-map';
 import { EntityAttributeDefinition, EntityDefinition, type EntityDefinitionStatus, type EntityValueKind } from '../base-entity-definition/entity-definition';
 
 /** `BaseEntityAttributeInput` of `base-entity-api.yaml`, plus the `id` a response carries. */
@@ -25,6 +26,9 @@ interface EntityAttributeDto {
   isLinkToDetails?: boolean;
   autosizeColumn?: boolean;
   defaultAvatar?: string;
+  showMap?: boolean;
+  mapProvider?: MapProvider;
+  defaultCountry?: string;
 }
 
 /** `BaseEntityDefinition` on the way in, `BaseEntityDefinitionInput` on the way out. */
@@ -125,6 +129,9 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     isLinkToDetails: dto.isLinkToDetails,
     autosizeColumn: dto.autosizeColumn,
     defaultAvatar: dto.defaultAvatar,
+    showMap: dto.showMap,
+    mapProvider: dto.mapProvider,
+    defaultCountry: dto.defaultCountry,
   });
 }
 
@@ -153,6 +160,21 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     isLinkToDetails: attribute.isLinkToDetails ?? false,
     autosizeColumn: attribute.autosizeColumn ?? false,
     defaultAvatar: attribute.defaultAvatar,
+    ...addressOptionsOf(attribute),
+  };
+}
+
+/**
+ * The map options for `ADDRESS` only — the backend rejects them on any other control. `showMap` is written
+ * explicitly for the same full-replacement reason as the flags; a blank country is no default.
+ */
+function addressOptionsOf(attribute: EntityAttributeDefinition): Pick<EntityAttributeDto, 'showMap' | 'mapProvider' | 'defaultCountry'> {
+  if (attribute.formControlType !== 'ADDRESS') return {};
+  const showMap = attribute.showMap ?? false;
+  return {
+    showMap,
+    ...(showMap && attribute.mapProvider ? { mapProvider: attribute.mapProvider } : {}),
+    ...(attribute.defaultCountry?.trim() ? { defaultCountry: attribute.defaultCountry.trim().toUpperCase() } : {}),
   };
 }
 

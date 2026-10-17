@@ -18,6 +18,9 @@
     "dateStyle": "Date Style",
     "timeStyle": "Time Style",
     "defaultAvatar": "Default Avatar",
+    "showMap": "Shows a map",
+    "mapProvider": "Map provider",
+    "defaultCountry": "Default country",
     "_tooltips": {
       "code": "Key the value is stored under, unique within the entity type, e.g. orderNumber. Avoid changing it once records exist.",
       "name": "The field's label as users see it on forms and list columns, e.g. Order number.",
@@ -34,6 +37,9 @@
       "linkedEntityType": "For reference fields (FOREIGN_KEY) and embedded rows (EMBEDDED_COMPONENTS): the code of the entity type they point at, e.g. customer.",
       "defaultValue": "Value pre-filled in new records, e.g. NEW or 1. Leave empty for none.",
       "defaultAvatar": "For AVATAR controls: icon name (e.g. person, sailing) or image URL to show before an image is uploaded.",
+      "showMap": "For ADDRESS controls: show the address on a map, with coordinates derived from it.",
+      "mapProvider": "For ADDRESS controls with a map: who draws it. Empty uses OpenStreetMap; a click always opens Google Maps.",
+      "defaultCountry": "For ADDRESS controls: the ISO country code a new address starts with, e.g. HU. Empty uses the browser's country.",
       "dateStyle": "For DATE and DATE_TIME fields: how the date is shown, from short (12/31/26) to full (Thursday, December 31, 2026). Empty uses the default.",
       "timeStyle": "For DATE_TIME fields: how the time is shown, from short (14:30) to long (with seconds and time zone). Empty uses the default."
     }
@@ -159,5 +165,28 @@
     "new_placeholder": "Write a comment…",
     "unknown_author": "Unknown",
     "count": "{{ count }} comments"
+  },
+  "address": {
+    "country": "Country",
+    "street": "Street and number",
+    "address_line2": "Address line 2",
+    "postal_code": "Postal code",
+    "zip_code": "ZIP code",
+    "postcode": "Postcode",
+    "city": "City",
+    "town": "Town",
+    "region": "Region",
+    "state": "State",
+    "province": "Province",
+    "county": "County",
+    "prefecture": "Prefecture",
+    "canton": "Canton",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "locate": "Locate from the address",
+    "not_found": "The address could not be found on the map.",
+    "no_location": "No location yet — fill in the address or the coordinates.",
+    "map": "Map of the address",
+    "open_in_google_maps": "Open in Google Maps"
   }
 }

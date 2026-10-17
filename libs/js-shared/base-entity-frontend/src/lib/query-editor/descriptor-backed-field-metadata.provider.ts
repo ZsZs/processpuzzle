@@ -4,6 +4,7 @@ import { filterAttributeDescriptors } from '../base-entity/filter-attr-descripto
 import { RsqlFieldMetadata, RsqlFieldMetadataProvider, RsqlFieldType, RSQL_OPERATORS_BY_TYPE } from './rsql-field-metadata.model';
 
 const SKIP_CONTROL_TYPES: ReadonlySet<FormControlType> = new Set([
+  FormControlType.ADDRESS,
   FormControlType.ARTIFACT,
   FormControlType.AVATAR,
   FormControlType.COMMENTS,

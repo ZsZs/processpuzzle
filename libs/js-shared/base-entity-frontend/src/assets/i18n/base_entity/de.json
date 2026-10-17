@@ -18,6 +18,9 @@
     "dateStyle": "Datumsstil",
     "timeStyle": "Zeitstil",
     "defaultAvatar": "Standard-Avatar",
+    "showMap": "Zeigt eine Karte",
+    "mapProvider": "Kartenanbieter",
+    "defaultCountry": "Standardland",
     "_tooltips": {
       "code": "Schlüssel, unter dem der Wert gespeichert wird, eindeutig innerhalb des Entitätstyps, z. B. orderNumber. Nicht mehr ändern, sobald Datensätze existieren.",
       "name": "Die Beschriftung des Feldes, wie Benutzer sie in Formularen und Listenspalten sehen, z. B. Bestellnummer.",
@@ -34,6 +37,9 @@
       "linkedEntityType": "Für Verweisfelder (FOREIGN_KEY) und eingebettete Zeilen (EMBEDDED_COMPONENTS): der Code des Entitätstyps, auf den sie zeigen, z. B. customer.",
       "defaultValue": "Wert, der in neuen Datensätzen vorausgefüllt ist, z. B. NEW oder 1. Leer lassen für keinen.",
       "defaultAvatar": "Für AVATAR-Steuerelemente: Icon-Name (z. B. person, sailing) oder Bild-URL, die vor dem Hochladen eines Bildes angezeigt wird.",
+      "showMap": "Für ADDRESS-Steuerelemente: die Adresse auf einer Karte zeigen, mit daraus ermittelten Koordinaten.",
+      "mapProvider": "Für ADDRESS-Steuerelemente mit Karte: wer sie zeichnet. Leer bedeutet OpenStreetMap; ein Klick öffnet immer Google Maps.",
+      "defaultCountry": "Für ADDRESS-Steuerelemente: der ISO-Ländercode, mit dem eine neue Adresse beginnt, z. B. DE. Leer nimmt das Land des Browsers.",
       "dateStyle": "Für DATE- und DATE_TIME-Felder: wie das Datum angezeigt wird, von short (31.12.26) bis full (Donnerstag, 31. Dezember 2026). Leer bedeutet Standard.",
       "timeStyle": "Für DATE_TIME-Felder: wie die Uhrzeit angezeigt wird, von short (14:30) bis long (mit Sekunden und Zeitzone). Leer bedeutet Standard."
     }
@@ -159,5 +165,28 @@
     "new_placeholder": "Kommentar schreiben…",
     "unknown_author": "Unbekannt",
     "count": "{{ count }} Kommentare"
+  },
+  "address": {
+    "country": "Land",
+    "street": "Straße und Hausnummer",
+    "address_line2": "Adresszusatz",
+    "postal_code": "Postleitzahl",
+    "zip_code": "ZIP-Code",
+    "postcode": "Postcode",
+    "city": "Ort",
+    "town": "Ort",
+    "region": "Region",
+    "state": "Bundesstaat",
+    "province": "Provinz",
+    "county": "County",
+    "prefecture": "Präfektur",
+    "canton": "Kanton",
+    "latitude": "Breitengrad",
+    "longitude": "Längengrad",
+    "locate": "Aus der Adresse ermitteln",
+    "not_found": "Die Adresse wurde auf der Karte nicht gefunden.",
+    "no_location": "Noch kein Standort — Adresse oder Koordinaten eingeben.",
+    "map": "Karte der Adresse",
+    "open_in_google_maps": "In Google Maps öffnen"
   }
 }
