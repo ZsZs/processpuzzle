@@ -188,5 +188,19 @@
     "no_location": "Még nincs hely — adja meg a címet vagy a koordinátákat.",
     "map": "A cím térképe",
     "open_in_google_maps": "Megnyitás a Google Térképen"
+  },
+  "geo_location": {
+    "capture": "Helyzetem rögzítése",
+    "recapture": "Helyzetem újbóli rögzítése",
+    "none": "Még nincs rögzített helyzet.",
+    "captured_at": "Rögzítve: {{ time }}",
+    "unavailable": "A böngésző nem tudja meghatározni a helyzetét, vagy nem engedélyezte az oldalnak.",
+    "open_in_google_maps": "Megnyitás a Google Térképen",
+    "error": {
+      "PERMISSION_DENIED": "A helymeghatározás tiltva van. Engedélyezze a böngésző webhely-beállításaiban.",
+      "POSITION_UNAVAILABLE": "Az eszköz nem tudta meghatározni a helyzetét.",
+      "TIMEOUT": "A helymeghatározás túl sokáig tartott. Próbálja újra.",
+      "UNAVAILABLE": "A böngésző nem tudja meghatározni a helyzetét."
+    }
   }
 }

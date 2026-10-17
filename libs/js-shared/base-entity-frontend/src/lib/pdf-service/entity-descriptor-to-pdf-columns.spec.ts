@@ -113,6 +113,13 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.(null, {})).toBe('');
   });
 
+  it('writes a GEO_LOCATION as its coordinates', () => {
+    const [column] = entityDescriptorToPdfColumns([new BaseEntityAttrDescriptor('location', FormControlType.GEO_LOCATION, 'Location')]);
+
+    expect(column.formatter?.({ latitude: 47.5, longitude: 19.04, accuracy: 10 }, {})).toBe('47.500000, 19.040000 (±10 m)');
+    expect(column.formatter?.(null, {})).toBe('');
+  });
+
   it('leaves COMMENTS out unless the descriptor asks for them', () => {
     expect(entityDescriptorToPdfColumns([new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS)])).toEqual([]);
   });

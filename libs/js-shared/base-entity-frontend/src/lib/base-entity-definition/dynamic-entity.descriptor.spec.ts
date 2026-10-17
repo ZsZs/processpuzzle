@@ -170,6 +170,7 @@ describe('controlTypeOf', () => {
     ['TAGS', FormControlType.TAGS],
     ['COMMENTS', FormControlType.COMMENTS],
     ['ADDRESS', FormControlType.ADDRESS],
+    ['GEO_LOCATION', FormControlType.GEO_LOCATION],
     ['ARTIFACT', FormControlType.ARTIFACT],
     ['AVATAR', FormControlType.AVATAR],
     ['FOREIGN_KEY', FormControlType.FOREIGN_KEY],

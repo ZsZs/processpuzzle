@@ -188,5 +188,19 @@
     "no_location": "Aún sin ubicación — complete la dirección o las coordenadas.",
     "map": "Mapa de la dirección",
     "open_in_google_maps": "Abrir en Google Maps"
+  },
+  "geo_location": {
+    "capture": "Registrar mi ubicación",
+    "recapture": "Registrar de nuevo mi ubicación",
+    "none": "Aún no hay ubicación registrada.",
+    "captured_at": "Registrada {{ time }}",
+    "unavailable": "Este navegador no puede determinar su ubicación, o no lo ha permitido para este sitio.",
+    "open_in_google_maps": "Abrir en Google Maps",
+    "error": {
+      "PERMISSION_DENIED": "Se denegó el acceso a la ubicación. Permítalo en la configuración del sitio del navegador.",
+      "POSITION_UNAVAILABLE": "El dispositivo no pudo determinar su ubicación.",
+      "TIMEOUT": "La lectura de la ubicación tardó demasiado. Inténtelo de nuevo.",
+      "UNAVAILABLE": "Este navegador no puede determinar su ubicación."
+    }
   }
 }

@@ -188,5 +188,19 @@
     "no_location": "Noch kein Standort — Adresse oder Koordinaten eingeben.",
     "map": "Karte der Adresse",
     "open_in_google_maps": "In Google Maps öffnen"
+  },
+  "geo_location": {
+    "capture": "Meinen Standort erfassen",
+    "recapture": "Standort erneut erfassen",
+    "none": "Noch kein Standort erfasst.",
+    "captured_at": "Erfasst {{ time }}",
+    "unavailable": "Dieser Browser kann Ihren Standort nicht ermitteln, oder Sie haben es dieser Website nicht erlaubt.",
+    "open_in_google_maps": "In Google Maps öffnen",
+    "error": {
+      "PERMISSION_DENIED": "Der Standortzugriff wurde verweigert. Erlauben Sie ihn in den Website-Einstellungen des Browsers.",
+      "POSITION_UNAVAILABLE": "Das Gerät konnte seinen Standort nicht bestimmen.",
+      "TIMEOUT": "Die Standortermittlung hat zu lange gedauert. Bitte erneut versuchen.",
+      "UNAVAILABLE": "Dieser Browser kann Ihren Standort nicht ermitteln."
+    }
   }
 }

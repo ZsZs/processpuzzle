@@ -46,6 +46,7 @@ const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   ENUM_SELECT: FormControlType.DROPDOWN,
   FLEX_BOX: FormControlType.FLEX_BOX,
   FOREIGN_KEY: FormControlType.FOREIGN_KEY,
+  GEO_LOCATION: FormControlType.GEO_LOCATION,
   LABEL: FormControlType.LABEL,
   LOOKUP: FormControlType.LOOKUP,
   NUMBER: FormControlType.TEXT_BOX,
