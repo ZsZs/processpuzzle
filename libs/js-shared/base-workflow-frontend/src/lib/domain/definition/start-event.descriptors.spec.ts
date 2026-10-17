@@ -24,7 +24,7 @@ describe('createStartEventDescriptor', () => {
   });
 
   it('describes the identity, the trigger fields and the nested artifacts', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'startType', 'eventType', 'timerType', 'timerExpression', 'milestoneRef', 'preconditionExpression', 'authorizedRoles', 'payloadMapping', 'requiredArtifacts']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'startType', 'eventType', 'timerType', 'timerExpression', 'milestoneRef', 'preconditionExpression', 'authorizedRoles', 'payloadMapping', 'eventParameters', 'requiredArtifacts']);
   });
 
   // Unlike the workflow's other rows, a start event has a key of its own.

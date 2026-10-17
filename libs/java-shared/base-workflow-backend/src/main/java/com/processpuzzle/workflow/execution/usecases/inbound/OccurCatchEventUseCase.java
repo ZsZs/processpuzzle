@@ -4,6 +4,7 @@ import com.processpuzzle.shared.event.DefinedEventOccurred;
 import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
+import com.processpuzzle.workflow.execution.domain.ConventionalMapping;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
@@ -21,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Delivers an occurred event to one waiting catch: records what the catch's payload mapping takes
- * from the event as its context contribution, and hands over to {@link CatchOccurrence}, which marks
+ * from the event, and the parameters it does not name ({@link ConventionalMapping}), as its context contribution, and hands over to {@link CatchOccurrence}, which marks
  * it OCCURRED, interrupts the task of an interrupting boundary event, and moves the instance on — the
  * tasks waiting for the catch become eligible, and the instance is closed if that was the last thing
  * it waited for.
@@ -70,7 +71,9 @@ public class OccurCatchEventUseCase {
                 .orElse(null);
         catchOccurrence.occur(orgKey, definition, instance, event,
                 new CatchOccurrence.Occurrence(Instant.now(), occurred.occurrenceId(),
-                        occurred.payload(), PayloadPath.map(OccurredEventDocument.of(occurred), mapping), occurred.parameters()));
+                        occurred.payload(),
+                        ConventionalMapping.apply(PayloadPath.map(OccurredEventDocument.of(occurred), mapping), occurred.parameters()),
+                        occurred.parameters()));
         return true;
     }
 }

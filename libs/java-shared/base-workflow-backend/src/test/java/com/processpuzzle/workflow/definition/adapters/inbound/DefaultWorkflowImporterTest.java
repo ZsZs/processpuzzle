@@ -46,6 +46,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -188,7 +189,8 @@ class DefaultWorkflowImporterTest {
                 assertThat(startEvent.getName()).isEqualTo("OrderCreatedEvent");
                 assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.TRIGGERING_EVENT);
                 assertThat(startEvent.getEventType()).isEqualTo("OrderCreatedEvent");
-                assertThat(startEvent.getPayloadMapping()).containsEntry("orderId", "$.subjectId");
+                // The event's parameters land by name (docs/event-parameters.md, phase 3); only what they lack is mapped.
+                assertThat(startEvent.getPayloadMapping()).containsOnly(entry("orderId", "$.subjectId"));
                 assertThat(startEvent.getRequiredArtifacts()).isEmpty();
             });
             // The order walks its state machine from task to task.
@@ -214,6 +216,7 @@ class DefaultWorkflowImporterTest {
                 assertThat(reminder.isInterrupting()).isFalse();
                 assertThat(reminder.getTimer()).isEqualTo(new TimerDefinition(TimerType.CYCLE, "R2/PT5M"));
             });
+            assertThat(def.findEventUse("invoice-issued")).hasValueSatisfying(issued -> assertThat(issued.getPayloadMapping()).isNullOrEmpty());
             assertThat(def.findTaskUse("confirm-delivery")).map(TaskUse::getDependsOn).contains(List.of("invoice-issued"));
 
             Workflow invoicing = defCaptor.getAllValues().get(1);

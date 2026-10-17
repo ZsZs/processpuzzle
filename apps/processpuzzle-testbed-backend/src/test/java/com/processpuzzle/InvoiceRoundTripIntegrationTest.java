@@ -54,9 +54,13 @@ class InvoiceRoundTripIntegrationTest {
               - id: InvoiceRequested
                 name: Invoice requested
                 kind: MESSAGE
+                parameters:
+                  - { name: orderNumber, type: STRING, required: true }
               - id: InvoiceIssued
                 name: Invoice issued
                 kind: MESSAGE
+                parameters:
+                  - { name: invoiceNumber, type: STRING, required: true }
             """;
 
     private static final String WORKFLOWS = """
@@ -94,14 +98,13 @@ class InvoiceRoundTripIntegrationTest {
                     direction: CATCH
                     dependsOn: [ request-invoice ]
                     correlationKey: orderId
-                    payloadMapping: { invoiceNumber: $.payload.invoiceNumber }
               - id: invoicing-workflow
                 name: Invoicing
                 startEvents:
                   - id: invoice-requested
                     startType: TRIGGERING_EVENT
                     eventType: InvoiceRequested
-                    payloadMapping: { orderId: $.correlationValue, orderNumber: $.payload.orderNumber }
+                    payloadMapping: { orderId: $.correlationValue }
                 roles: [ { roleDefinitionId: manager } ]
                 tasks:
                   - { taskDefinitionId: issue-invoice, performedBy: manager }

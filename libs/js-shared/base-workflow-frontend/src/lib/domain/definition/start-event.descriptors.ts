@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_START_EVENT_I18N_SCOPE } from '../../base-workflow.i18n';
 import { EVENT_DEFINITION_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_REQUIRED_START_ARTIFACT_ENTITY_NAME, WORKFLOW_ROLE_DEFINITION_ENTITY_NAME, WORKFLOW_START_EVENT_ENTITY_NAME } from '../workflow-entity-names';
+import { EventParametersAttrDescriptor } from './event-parameters-control.component';
 import { WORKFLOW_REQUIRED_START_ARTIFACT_ID_FIELD } from './required-start-artifact.descriptors';
 import { TimerType, WorkflowStartConditionType } from './workflow';
 
@@ -61,9 +62,13 @@ function createStartEventAttrDescriptors(): AbstractAttrDescriptor[] {
   authorizedRolesAttr.hideInTable = true;
 
   // A key/value map of context variable name to JSONPath into the event — the same control an
-  // instance's `context` uses.
-  const payloadMappingAttr = new BaseEntityAttrDescriptor('payloadMapping', FormControlType.ADDITIONAL_PROPERTIES, 'Payload Mapping');
+  // instance's `context` uses. Only overrides: the event's parameters land in the context by their
+  // own names without it (docs/event-parameters.md, phase 3).
+  const payloadMappingAttr = new BaseEntityAttrDescriptor('payloadMapping', FormControlType.ADDITIONAL_PROPERTIES, 'Payload Mapping (overrides)');
   payloadMappingAttr.hideInTable = true;
+
+  // What the chosen catalog event carries, beside the mapping that overrides it — read-only, never saved.
+  const eventParametersAttr = new EventParametersAttrDescriptor('eventType');
 
   // The one part of the event that is a list, so the one part that is an embedded entity — nested one
   // level further down, the way base-app's nav items nest their children.
@@ -76,7 +81,7 @@ function createStartEventAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const triggerRow = new FlexboxDescriptor([eventTypeAttr, timerTypeAttr, timerExpressionAttr, milestoneRefAttr, preconditionExpressionAttr], FlexDirection.ROW);
   triggerRow.style = { 'column-gap': '10px' };
-  const detailRow = new FlexboxDescriptor([authorizedRolesAttr, payloadMappingAttr], FlexDirection.ROW);
+  const detailRow = new FlexboxDescriptor([authorizedRolesAttr, payloadMappingAttr, eventParametersAttr], FlexDirection.ROW);
   detailRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor([identityRow, triggerRow, detailRow, requiredArtifactsAttr], FlexDirection.COLUMN);
