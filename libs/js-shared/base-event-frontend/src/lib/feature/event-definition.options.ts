@@ -54,5 +54,6 @@ export class EventDefinitionOptions {
 
 function options(values: Array<string | undefined>): Selectable[] {
   const unique = [...new Set(values.filter((value): value is string => !!value))];
-  return unique.sort((left, right) => left.localeCompare(right)).map((value) => ({ key: value, value }));
+  unique.sort((left, right) => left.localeCompare(right));
+  return unique.map((value) => ({ key: value, value }));
 }
