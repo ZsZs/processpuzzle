@@ -5,6 +5,7 @@ import { createEventDefinitionDescriptor } from '../domain/event-definition.desc
 import { EventDefinitionMapper } from '../domain/event-definition.mapper';
 import { EventDefinitionService } from '../domain/event-definition.service';
 import { EventDefinitionStore } from '../domain/event-definition.store';
+import { EventDefinitionOptions } from './event-definition.options';
 
 @Injectable()
 export class EventDefinitionFacade extends BaseEntityFacade<EventDefinition> {
@@ -26,6 +27,6 @@ export class EventDefinitionFacade extends BaseEntityFacade<EventDefinition> {
   }
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createEventDefinitionDescriptor();
+    return createEventDefinitionDescriptor(() => this.injector.get(EventDefinitionOptions).entityCodes());
   }
 }

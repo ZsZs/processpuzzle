@@ -26,13 +26,13 @@
     "_self": "Parameter",
     "name": "Name",
     "type": "Typ",
-    "entityType": "Entitätstyp",
+    "entityType": "Referenzierter Entitätstyp",
     "required": "Erforderlich",
     "description": "Beschreibung",
     "_tooltips": {
-      "name": "Eindeutig innerhalb des Ereignisses; Buchstaben, Ziffern und _, z. B. invoiceNumber. Ein SYSTEM-Ereignis füllt ihn aus dem gleichnamigen Attribut des Datensatzes. Der Name subject ist reserviert.",
+      "name": "Eindeutig innerhalb des Ereignisses; Buchstaben, Ziffern und _. Bei einem SYSTEM-Ereignis muss er ein Attribut des Subjekts sein — wählen Sie einen der Vorschläge, z. B. orderNumber —, denn dessen Wert füllt ihn. Der Datensatz selbst wird immer als subject mitgeführt; der Name ist reserviert und braucht keinen Parameter.",
       "type": "Die Art des Werts: STRING, NUMBER, BOOLEAN, DATE oder ENTITY_REF für einen Verweis auf einen Datensatz.",
-      "entityType": "Nur für ENTITY_REF: der Code des Entitätstyps, zu dem der Datensatz gehört, z. B. order oder document.",
+      "entityType": "Nur für ENTITY_REF: der Typ des Datensatzes, auf den der Parameter verweist, z. B. order oder document. Nicht das Attribut, aus dem ein SYSTEM-Parameter gefüllt wird — das ist sein Name.",
       "required": "Ob jedes Auftreten des Ereignisses einen Wert für diesen Parameter mitführen muss.",
       "description": "Eine Notiz dazu, was der Wert bedeutet; Benutzer sehen sie nicht."
     }

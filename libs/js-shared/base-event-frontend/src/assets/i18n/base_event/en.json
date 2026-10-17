@@ -26,13 +26,13 @@
     "_self": "Parameter",
     "name": "Name",
     "type": "Type",
-    "entityType": "Entity Type",
+    "entityType": "Referenced Entity Type",
     "required": "Required",
     "description": "Description",
     "_tooltips": {
-      "name": "Unique within the event; letters, digits and _, e.g. invoiceNumber. A SYSTEM event fills it from the record's attribute of the same name. The name subject is reserved.",
+      "name": "Unique within the event; letters, digits and _. For a SYSTEM event it must be an attribute of the subject — pick one of the suggestions, e.g. orderNumber — because that attribute's value fills it. The record itself is always carried as subject, which is reserved, so it needs no parameter.",
       "type": "The kind of value: STRING, NUMBER, BOOLEAN, DATE, or ENTITY_REF for a reference to a record.",
-      "entityType": "For ENTITY_REF only: the code of the entity type the record belongs to, e.g. order, or document.",
+      "entityType": "For ENTITY_REF only: the type of record the parameter points at, e.g. order, or document. Not the attribute a SYSTEM parameter is filled from — that is its name.",
       "required": "Whether every occurrence of the event has to carry a value for this parameter.",
       "description": "A note on what the value means; users do not see it."
     }
