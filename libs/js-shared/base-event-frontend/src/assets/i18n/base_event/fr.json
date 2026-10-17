@@ -26,13 +26,13 @@
     "_self": "Paramètre",
     "name": "Nom",
     "type": "Type",
-    "entityType": "Type d'entité",
+    "entityType": "Type d'entité référencée",
     "required": "Obligatoire",
     "description": "Description",
     "_tooltips": {
-      "name": "Unique au sein de l'événement ; lettres, chiffres et _, p. ex. invoiceNumber. Un événement SYSTEM le remplit avec l'attribut du même nom de l'enregistrement. Le nom subject est réservé.",
+      "name": "Unique au sein de l'événement ; lettres, chiffres et _. Pour un événement SYSTEM, il doit être un attribut du sujet — choisissez l'une des suggestions, p. ex. orderNumber —, car la valeur de cet attribut le remplit. L'enregistrement lui-même est toujours transmis comme subject, nom réservé, et n'a donc pas besoin de paramètre.",
       "type": "Le genre de valeur : STRING, NUMBER, BOOLEAN, DATE, ou ENTITY_REF pour une référence à un enregistrement.",
-      "entityType": "Pour ENTITY_REF uniquement : le code du type d'entité auquel appartient l'enregistrement, p. ex. order ou document.",
+      "entityType": "Pour ENTITY_REF uniquement : le type d'enregistrement visé par le paramètre, p. ex. order ou document. Ce n'est pas l'attribut qui remplit un paramètre SYSTEM : c'est son nom.",
       "required": "Si chaque occurrence de l'événement doit porter une valeur pour ce paramètre.",
       "description": "Une note sur la signification de la valeur ; les utilisateurs ne la voient pas."
     }

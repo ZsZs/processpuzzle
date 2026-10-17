@@ -26,13 +26,13 @@
     "_self": "Paraméter",
     "name": "Név",
     "type": "Típus",
-    "entityType": "Entitástípus",
+    "entityType": "Hivatkozott entitástípus",
     "required": "Kötelező",
     "description": "Leírás",
     "_tooltips": {
-      "name": "Az eseményen belül egyedi; betűk, számjegyek és _, pl. invoiceNumber. SYSTEM eseménynél a rekord azonos nevű attribútumából töltődik. A subject név foglalt.",
+      "name": "Az eseményen belül egyedi; betűk, számjegyek és _. SYSTEM eseménynél a tárgy egyik attribútuma kell legyen — válasszon a javaslatok közül, pl. orderNumber —, mert annak értéke tölti ki. Maga a rekord mindig subject néven érkezik; ez a név foglalt, nem kell hozzá paraméter.",
       "type": "Az érték fajtája: STRING, NUMBER, BOOLEAN, DATE, vagy ENTITY_REF egy rekordra mutató hivatkozáshoz.",
-      "entityType": "Csak ENTITY_REF esetén: annak az entitástípusnak a kódja, amelyhez a rekord tartozik, pl. order vagy document.",
+      "entityType": "Csak ENTITY_REF esetén: annak a rekordnak a típusa, amelyre a paraméter mutat, pl. order vagy document. Nem az az attribútum, amelyből egy SYSTEM paraméter töltődik — az a neve.",
       "required": "Az esemény minden előfordulásának tartalmaznia kell-e értéket ehhez a paraméterhez.",
       "description": "Megjegyzés arról, mit jelent az érték; a felhasználók nem látják."
     }

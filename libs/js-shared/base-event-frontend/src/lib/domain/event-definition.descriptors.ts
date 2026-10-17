@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, type Selectable, toSelectables } from '@processpuzzle/base-entity';
 import { EVENT_DEFINITION_I18N_SCOPE } from '../base-event.i18n';
 import { EventAction, EventKind } from './event-definition';
 import { EVENT_DEFINITION_ENTITY_NAME, EVENT_PARAMETER_ENTITY_NAME } from './event-entity-names';
@@ -6,7 +6,7 @@ import { EVENT_PARAMETER_ID_FIELD } from './event-parameter.descriptors';
 
 export { EVENT_DEFINITION_ENTITY_NAME };
 
-function createEventDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
+function createEventDefinitionAttrDescriptors(entityCodes?: () => Selectable[]): AbstractAttrDescriptor[] {
   // Author-chosen and the record's identity: other features store it, so it is the link into the form and
   // the heading of the status bar.
   const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
@@ -25,8 +25,11 @@ function createEventDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   kindAttr.required = true;
 
   // The subject fields are shown whatever the kind — base-entity has no conditional visibility — and the
-  // placeholders name the kind they belong to. The mapper drops them for a non-SYSTEM event.
-  const subjectTypeAttr = new BaseEntityAttrDescriptor('subjectType', FormControlType.TEXT_BOX, 'Subject Type');
+  // placeholders name the kind they belong to. The mapper drops them for a non-SYSTEM event. A dropdown of the
+  // organization's entity types where the facade can supply them, a text box otherwise.
+  const subjectTypeAttr = entityCodes
+    ? new BaseEntityAttrDescriptor('subjectType', FormControlType.DROPDOWN, 'Subject Type', entityCodes)
+    : new BaseEntityAttrDescriptor('subjectType', FormControlType.TEXT_BOX, 'Subject Type');
   subjectTypeAttr.placeholder = 'SYSTEM — entity definition code, e.g. order';
 
   const actionAttr = new BaseEntityAttrDescriptor('action', FormControlType.DROPDOWN, 'Action', toSelectables(Object.keys(EventAction)));
@@ -56,10 +59,11 @@ function createEventDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   return [flexBoxContainer];
 }
 
-export function createEventDefinitionDescriptor(): BaseEntityDescriptor {
+/** @param entityCodes the entity types Subject Type offers; see {@link EventDefinitionOptions.entityCodes} */
+export function createEventDefinitionDescriptor(entityCodes?: () => Selectable[]): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: EVENT_DEFINITION_ENTITY_NAME,
-    attrDescriptors: createEventDefinitionAttrDescriptors(),
+    attrDescriptors: createEventDefinitionAttrDescriptors(entityCodes),
     i18nScope: EVENT_DEFINITION_I18N_SCOPE,
   });
 }

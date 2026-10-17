@@ -2,7 +2,20 @@
   <div class="row" [formGroup]="formGroup">
     <mat-form-field>
       <mat-label [attr.for]="config().attrName">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
-      <input matInput [type]="config().options.inputType" [id]="config().attrName" formControlName="{{ config().attrName }}" />
+      <input
+        matInput
+        [type]="config().options.inputType"
+        [id]="config().attrName"
+        formControlName="{{ config().attrName }}"
+        [placeholder]="config().placeholder ?? ''"
+        [matAutocomplete]="suggestionPanel"
+        [matAutocompleteDisabled]="!suggestions().length"
+      />
+      <mat-autocomplete #suggestionPanel="matAutocomplete">
+        @for (option of suggestions(); track option.key) {
+          <mat-option [value]="option.value">{{ option.value }}</mat-option>
+        }
+      </mat-autocomplete>
     </mat-form-field>
   </div>
 }
