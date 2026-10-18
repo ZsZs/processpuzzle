@@ -59,6 +59,14 @@ export class DesignContentComponent {
       translocoPrefix: 'design',
     },
     {
+      icon: 'calculate',
+      title: 'base-calculation_card_title',
+      subtitle: 'base-calculation_card_subtitle',
+      content: ['base-calculation_card_content', 'base-calculation_card_content_1', 'base-calculation_card_content_2', 'base-calculation_card_content_3'],
+      actions: [{ link: `${this.prefix}/design/calculations`, caption: 'base-calculation_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
+    {
       icon: 'schema',
       title: 'base-workflow_card_title',
       subtitle: 'base-workflow_card_subtitle',
