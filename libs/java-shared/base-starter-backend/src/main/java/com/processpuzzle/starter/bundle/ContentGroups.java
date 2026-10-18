@@ -11,6 +11,7 @@ public final class ContentGroups {
             "entities", DefinitionKinds.ENTITY,
             "states", DefinitionKinds.STATE,
             "rules", DefinitionKinds.RULE,
+            "calculations", DefinitionKinds.CALCULATION,
             "widgets", DefinitionKinds.WIDGET,
             "documents", DefinitionKinds.DOCUMENT,
             "workflows", DefinitionKinds.WORKFLOW,
