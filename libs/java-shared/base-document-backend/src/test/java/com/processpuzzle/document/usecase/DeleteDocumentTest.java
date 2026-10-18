@@ -1,5 +1,9 @@
 package com.processpuzzle.document.usecase;
 
+import com.processpuzzle.document.domain.ContentBook;
+import com.processpuzzle.document.domain.ContentBookNode;
+import com.processpuzzle.document.domain.ContentBookNodes;
+import com.processpuzzle.document.domain.ContentBookRepository;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentKey;
@@ -37,6 +41,7 @@ class DeleteDocumentTest {
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
+    private ContentBookRepository contentBookRepository;
     private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
@@ -44,6 +49,8 @@ class DeleteDocumentTest {
         repository = mock(DocumentRepository.class);
         draftRepository = mock(DocumentDraftRepository.class);
         publishedRepository = mock(PublishedDocumentRepository.class);
+        contentBookRepository = mock(ContentBookRepository.class);
+        when(contentBookRepository.findByOrgKeyReferencing(any(), any())).thenReturn(List.of());
     }
 
     @Test
@@ -76,6 +83,25 @@ class DeleteDocumentTest {
     }
 
     @Test
+    void detachesTheDocumentFromEveryBookThatShowsIt() {
+        // The pages filed under the deleted one move up into its place instead of vanishing with it.
+        when(repository.findByOrgKeyAndId(ORG, ID)).thenReturn(Optional.of(document(DocumentRoles.unrestricted())));
+        ContentBook book = new ContentBook(ORG, "book-1", "handbook", "Handbook", "ada");
+        book.replaceNodes(new ContentBookNodes(List.of(
+                new ContentBookNode("root", ID, null, 0),
+                new ContentBookNode("child", "22222222-2222-2222-2222-222222222222", "root", 0))));
+        when(contentBookRepository.findByOrgKeyReferencing(ORG, ID)).thenReturn(List.of(book));
+
+        deleteDocument(TestPolicies.permitAll()).execute(ORG, ID);
+
+        assertThat(book.getNodes().nodes()).singleElement().satisfies(node -> {
+            assertThat(node.id()).isEqualTo("child");
+            assertThat(node.parentId()).isNull();
+        });
+        verify(contentBookRepository).save(book);
+    }
+
+    @Test
     void unknownDocumentIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
 
@@ -99,7 +125,8 @@ class DeleteDocumentTest {
 
     // region fixtures
     private DeleteDocument deleteDocument(DocumentAccessPolicy policy) {
-        return new DeleteDocument(repository, draftRepository, publishedRepository, TestGuards.with(policy),
+        return new DeleteDocument(repository, draftRepository, publishedRepository, contentBookRepository,
+                TestGuards.with(policy),
                 TestFacts.recordingInto(facts));
     }
 

@@ -236,7 +236,14 @@ export const appRoutes: Route[] = [
         // and the two embedded port lists below it — and declares its own transloco scopes, so nothing is
         // added here. Static children rather than `loadChildren`: see the note on SamplesComponent for why
         // the generated e2e suites cannot address an entity mounted behind a lazy branch.
-        children: BASE_DOCUMENT_ROUTES,
+        children: [
+          ...BASE_DOCUMENT_ROUTES,
+          // The `content-book` widget as the subject of a route: one component, pointed at the seeded book.
+          {
+            path: 'handbook',
+            loadComponent: () => import('./content/base-documents/handbook.component').then((comp) => comp.HandbookComponent),
+          },
+        ],
       },
     ],
   },

@@ -14,7 +14,8 @@
 # Keys are lowercase-hyphen, as the contract's WidgetKey pattern requires.
 #
 # Every entry below is a copy of a `WidgetRegistration.definition` in base-widget-frontend — each widget's
-# `<name>.widget.ts`, beside its component — and the catalogue holds nothing else. That is the whole point
+# `<name>.widget.ts`, beside its component — or, for `content-book`, in base-document-frontend, and the
+# catalogue holds nothing else. That is the whole point
 # of the file: a palette entry a designer can place is a promise that something will render it, and a key
 # with no component behind it is a promise the shell cannot keep — it surfaces only when the app is
 # previewed, long after the choice. base-widget-frontend's `widget-contract.spec.ts` compares the two field
@@ -507,3 +508,45 @@ widgetDefinitions:
       type: STRING
       required: true
       description: The notice after the © sign.
+  # Registered by base-document-frontend rather than base-widget-frontend — a widget that reads documents
+  # would close a dependency cycle there. content-book-widget.contract.spec.ts holds this copy to it.
+  - key: content-book
+    name: Content book
+    translocoId: base_document.content_book._self
+    description: >-
+      A book of documents: its table of contents as a tree, in the sidenav when there is one, and the
+      selected page beside it. Editors arrange the pages in place.
+    category: Content
+    icon: menu_book
+    propsSchema:
+      type: object
+      properties:
+        bookSlug:
+          type: string
+          title: Book
+          description: Slug of the content book to show.
+        locale:
+          type: string
+          title: Language
+          description: Language the pages are read in; the active language when left empty.
+        sidenav:
+          type: boolean
+          title: Contents in the sidenav
+          description: Show the table of contents in the application sidenav instead of beside the page.
+          default: true
+        startDocumentSlug:
+          type: string
+          title: First page
+          description: Slug of the document opened first; the first page of the book when left empty.
+      required:
+      - bookSlug
+      additionalProperties: false
+    inputPorts:
+    - name: bookSlug
+      type: STRING
+      required: true
+      description: Slug of the content book to show.
+    outputPorts:
+    - name: documentSelected
+      type: STRING
+      description: Slug of the document the reader opens.

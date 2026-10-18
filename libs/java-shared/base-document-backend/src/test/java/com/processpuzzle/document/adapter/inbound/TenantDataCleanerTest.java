@@ -1,5 +1,7 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.domain.ContentBook;
+import com.processpuzzle.document.domain.ContentBookRepository;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
@@ -82,6 +84,9 @@ class TenantDataCleanerTest {
     private DocumentSignatureRepository signatures;
 
     @Autowired
+    private ContentBookRepository contentBooks;
+
+    @Autowired
     private ApplicationEventPublisher events;
 
     @Autowired
@@ -101,6 +106,7 @@ class TenantDataCleanerTest {
                 .containsOnly(KEPT);
         assertThat(signatures.findAll()).extracting(DocumentSignature::getOrgKey).containsOnly(KEPT).hasSize(2);
 
+        assertThat(contentBooks.findAll()).extracting(ContentBook::getOrgKey).containsOnly(KEPT).hasSize(1);
         assertThat(documents.findByOrgKey(KEPT)).hasSize(2);
     }
 
@@ -118,6 +124,7 @@ class TenantDataCleanerTest {
         assertThat(published.count()).isEqualTo(2);
         assertThat(translations.count()).isEqualTo(1);
         assertThat(signatures.count()).isEqualTo(2);
+        assertThat(contentBooks.count()).isEqualTo(1);
     }
 
     /** A tenant with nothing here — or erased twice — is not an error. */
@@ -145,12 +152,15 @@ class TenantDataCleanerTest {
             signatures.saveAndFlush(new DocumentSignature(UUID.randomUUID().toString(), orgKey, id, slug, "en", 1L,
                     "hash", "employee", "e-1", "ada", Instant.now()));
         }
+        contentBooks.saveAndFlush(new ContentBook(orgKey, UUID.nameUUIDFromBytes(orgKey.getBytes()).toString(),
+                "handbook", "Handbook", "ada"));
         translations.saveAndFlush(new DocumentUiTranslationBundle(orgKey, "document", "en",
                 Map.of("title", "Documents")));
     }
 
     @AfterEach
     void cleanUp() {
+        contentBooks.deleteAll();
         signatures.deleteAll();
         published.deleteAll();
         drafts.deleteAll();

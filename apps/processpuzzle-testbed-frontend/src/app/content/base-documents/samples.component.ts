@@ -12,6 +12,9 @@ import { SampleHostComponent, SampleTab } from '../common/sample-host.component'
  * `/base-entity/samples/document`. Mounting the same routes under a statically declared branch reports the
  * path, so `[Document] CRUD` / `LIST` / `RELATIONSHIP` address the screen the application actually has.
  *
+ * `Handbook` is the `content-book` widget as the whole of a route — the seeded `testbed-handbook`, its
+ * contents in the application sidenav.
+ *
  * `/design/document` stays exactly as it was — the design section is where a user reaches documents; this is
  * the testbed's own copy of the screen, next to every other feature's sample.
  */
@@ -23,6 +26,10 @@ import { SampleHostComponent, SampleTab } from '../common/sample-host.component'
 })
 export class SamplesComponent {
   private readonly host = viewChild(SampleHostComponent);
-  readonly tabs: SampleTab[] = [{ route: 'document', label: 'Document' }];
+  readonly tabs: SampleTab[] = [
+    { route: 'document', label: 'Document' },
+    { route: 'content_book', label: 'Content book' },
+    { route: 'handbook', label: 'Handbook' },
+  ];
   readonly selectedButton = computed(() => this.host()?.selectedButton() ?? '');
 }
