@@ -34,7 +34,7 @@ describe('ContentBookContentTabComponent', () => {
     const fixture = render();
 
     expect(setCurrentEntity).toHaveBeenCalledWith('b-1');
-    expect(fixture.debugElement.children.length).toBe(0);
+    expect(fixture.debugElement.children).toHaveLength(0);
   });
 
   it('shows the book inline, without a sidenav, once it is loaded', () => {
