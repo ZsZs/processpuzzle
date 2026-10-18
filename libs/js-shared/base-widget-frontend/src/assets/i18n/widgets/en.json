@@ -25,5 +25,9 @@
     "dark": "Dark",
     "auto": "Follow system",
     "reset": "Reset to default"
+  },
+  "sidenav_content": {
+    "show_menu": "Show the menu",
+    "show_content": "Show the contents"
   }
 }
