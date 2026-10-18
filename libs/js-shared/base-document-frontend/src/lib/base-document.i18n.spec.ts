@@ -7,6 +7,7 @@ import fr from '../assets/i18n/base_document/fr.json';
 import hu from '../assets/i18n/base_document/hu.json';
 import { BASE_DOCUMENT_TRANSLOCO_SCOPE, DOCUMENT_I18N_SCOPE, DOCUMENT_INPUT_PORT_I18N_SCOPE, DOCUMENT_OUTPUT_PORT_I18N_SCOPE } from './base-document.i18n';
 import { createDocumentDescriptor } from './domain/base-document.descriptors';
+import { createContentBookDescriptor } from './domain/content-book.descriptors';
 import { createDocumentInputPortDescriptor, createDocumentOutputPortDescriptor } from './domain/document-port.descriptors';
 
 /** Dotted key paths of a transloco translation file, as transloco flattens them under the scope alias. */
@@ -47,6 +48,7 @@ describe('base_document translations', () => {
     ['document', createDocumentDescriptor()],
     ['input port', createDocumentInputPortDescriptor()],
     ['output port', createDocumentOutputPortDescriptor()],
+    ['content book', createContentBookDescriptor()],
   ])('labels the entity name and every attribute of the %s form', (_name, descriptor: BaseEntityDescriptor) => {
     const scopedKeys = [descriptor.i18nKey(), ...flattenAttrs(descriptor.attrDescriptors).map((attr) => attr.i18nKey())];
 

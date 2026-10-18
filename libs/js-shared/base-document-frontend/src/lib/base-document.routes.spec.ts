@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { BASE_DOCUMENT_ROUTES } from './base-document.routes';
 import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
 import { DOCUMENT_SIGN_TAB } from './feature/document-sign/document-sign-tab';
+import { CONTENT_BOOK_CONTENT_TAB } from './feature/content-book/content-book-content-tab';
+import { ContentBookContainerComponent } from './feature/content-book-container.component';
 
 /** The branches an embedded level mounts, expanded one navigation at a time by `loadChildren`. */
 async function embeddedBranchesOf(route: Route | undefined): Promise<Routes> {
@@ -91,5 +93,24 @@ describe('BASE_DOCUMENT_ROUTES', () => {
     // The rows are already listed on the owner's form, which is also the only place they are reachable
     // from, so a list route here would be a second door to the same room.
     expect((await embeddedBranchesOf(inputPortBranch)).map((route) => route.path)).toEqual([':entityId/details']);
+  });
+
+  describe('content_book', () => {
+    const bookRoute = BASE_DOCUMENT_ROUTES.find((route) => route.path === 'content_book');
+
+    it('is mounted at the snake-cased entity name, with its own scopes and menu entry', () => {
+      expect(bookRoute?.component).toBe(ContentBookContainerComponent);
+      expect(bookRoute?.data).toEqual({ icon: 'menu_book', menuTitle: 'design.content_books', entityName: 'ContentBook' });
+      expect(((bookRoute?.providers?.flat() ?? []) as Array<{ useValue: unknown }>).map((provider) => provider.useValue)).toEqual([
+        { scope: 'base_entity', alias: 'base_entity' },
+        { scope: 'base_document', alias: 'base_document' },
+      ]);
+    });
+
+    it('gives the book its Content tab', () => {
+      const contentRoute = bookRoute?.children?.find((child) => child.path === ':entityId/content');
+
+      expect(contentRoute?.component).toBe(CONTENT_BOOK_CONTENT_TAB.component);
+    });
   });
 });

@@ -6,6 +6,7 @@ import es from '../../assets/i18n/base_document/es.json';
 import fr from '../../assets/i18n/base_document/fr.json';
 import hu from '../../assets/i18n/base_document/hu.json';
 import { createDocumentDescriptor } from './base-document.descriptors';
+import { createContentBookDescriptor } from './content-book.descriptors';
 import { createDocumentInputPortDescriptor, createDocumentOutputPortDescriptor } from './document-port.descriptors';
 
 /**
@@ -13,7 +14,7 @@ import { createDocumentInputPortDescriptor, createDocumentOutputPortDescriptor }
  * the library ships.
  */
 describe('base-document form tooltips', () => {
-  const descriptors: BaseEntityDescriptor[] = [createDocumentDescriptor(), createDocumentInputPortDescriptor(), createDocumentOutputPortDescriptor()];
+  const descriptors: BaseEntityDescriptor[] = [createDocumentDescriptor(), createDocumentInputPortDescriptor(), createDocumentOutputPortDescriptor(), createContentBookDescriptor()];
   const keys = descriptors.flatMap((descriptor) => attributesOf(descriptor.attrDescriptors).map((attr) => attr.tooltipI18nKey()));
 
   it.each(Object.entries({ en, de, es, fr, hu }))('has a tooltip for every form field in %s', (_lang, translation) => {

@@ -104,5 +104,65 @@
       "entityType": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok entitástípusa, pl. Order.",
       "attributeVisibility": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok mely attribútumai látszanak. A mode értéke ALL, INCLUDE vagy EXCLUDE; az attributes az érintett attribútumneveket sorolja fel."
     }
+  },
+  "content_book": {
+    "_self": "Tartalomkönyv",
+    "slug": "Slug",
+    "title": "Cím",
+    "description": "Leírás",
+    "isPublic": "Nyilvános",
+    "readerRoles": "Olvasói szerepkörök",
+    "editorRoles": "Szerkesztői szerepkörök",
+    "tabs": {
+      "content": "{{ entity }} - tartalom"
+    },
+    "_tooltips": {
+      "slug": "A könyv kulcsa, egyedi a szervezet könyvei között. Csak kisbetűk, számjegyek és kötőjelek, pl. kezikonyv.",
+      "title": "A könyv címe, a tartalomjegyzéke fölött jelenik meg, pl. Munkavállalói kézikönyv.",
+      "description": "Rövid összefoglaló arról, mit gyűjt a könyv.",
+      "isPublic": "Jelölje be, hogy bárki bejelentkezés nélkül megnyithassa a könyvet; ekkor az olvasói szerepkörök nem számítanak. Minden oldal megtartja a saját hozzáférését.",
+      "readerRoles": "A könyvet megnyitni jogosult szerepkörök, egy-egy címke. Hagyja üresen, hogy minden bejelentkezett tag megnyithassa.",
+      "editorRoles": "A könyv oldalait hozzáadni, rendezni és eltávolítani jogosult szerepkörök, egy-egy címke. Hagyja üresen, hogy minden bejelentkezett tag megtehesse."
+    },
+    "widget": {
+      "loading": "A könyv betöltése…",
+      "not_found": "Nincs „{{ slug }}” nevű könyv, vagy nem nyithatja meg.",
+      "load_error": "A könyvet nem sikerült betölteni: {{ message }}",
+      "empty": "Ennek a könyvnek még nincsenek oldalai.",
+      "contents": "Tartalom",
+      "restricted": "Korlátozott oldal",
+      "restricted_text": "Ezt az oldalt nem olvashatja.",
+      "page_loading": "Az oldal betöltése…",
+      "not_published": "Ezt az oldalt még nem tették közzé.",
+      "draft_banner": "Közzé nem tett vázlat – az olvasók még nem látják. Tegye közzé a Dokumentumoknál.",
+      "edit": "Szerkesztés",
+      "read": "Szerkesztés befejezése",
+      "edit_note": "A módosítások a vázlatba kerülnek. Tegye közzé őket a Dokumentumoknál, hogy az olvasók is lássák.",
+      "actions": "Oldalműveletek",
+      "add_document": "Oldal hozzáadása",
+      "add_child": "Aloldal hozzáadása",
+      "move_up": "Feljebb",
+      "move_down": "Lejjebb",
+      "indent": "Behúzás",
+      "outdent": "Kihúzás",
+      "remove": "Eltávolítás a könyvből",
+      "delete_document": "Dokumentum törlése",
+      "confirm_delete_title": "Törli a dokumentumot?",
+      "confirm_delete_text": "A(z) „{{ title }}” véglegesen törlődik, ebből és minden más könyvből. Az alá sorolt oldalak a könyvben maradnak.",
+      "cancel": "Mégse",
+      "delete": "Törlés",
+      "save_error": "A módosítást nem sikerült menteni: {{ message }}",
+      "dialog": {
+        "title": "Oldal hozzáadása",
+        "new": "Új dokumentum",
+        "existing": "Meglévő dokumentum",
+        "document_title": "Cím",
+        "document_slug": "Slug",
+        "document": "Dokumentum",
+        "none_left": "A szervezet minden dokumentuma már szerepel ebben a könyvben.",
+        "add": "Hozzáadás",
+        "cancel": "Mégse"
+      }
+    }
   }
 }
