@@ -1,5 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it } from 'vitest';
+import { snakeCaseName } from '@processpuzzle/base-entity';
 import { BASE_DOCUMENT_ROUTES } from './base-document.routes';
 import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
 import { DOCUMENT_SIGN_TAB } from './feature/document-sign/document-sign-tab';
@@ -95,10 +96,12 @@ describe('BASE_DOCUMENT_ROUTES', () => {
     expect((await embeddedBranchesOf(inputPortBranch)).map((route) => route.path)).toEqual([':entityId/details']);
   });
 
-  describe('content_book', () => {
-    const bookRoute = BASE_DOCUMENT_ROUTES.find((route) => route.path === 'content_book');
+  describe('content-book', () => {
+    const bookRoute = BASE_DOCUMENT_ROUTES.find((route) => route.path === 'content-book');
 
     it('is mounted at the snake-cased entity name, with its own scopes and menu entry', () => {
+      // The navigator rebuilds list and details URLs from the entity name, so any other segment renders the list and dead-ends on New.
+      expect(bookRoute?.path).toBe(snakeCaseName('ContentBook'));
       expect(bookRoute?.component).toBe(ContentBookContainerComponent);
       expect(bookRoute?.data).toEqual({ icon: 'menu_book', menuTitle: 'design.content_books', entityName: 'ContentBook' });
       expect(((bookRoute?.providers?.flat() ?? []) as Array<{ useValue: unknown }>).map((provider) => provider.useValue)).toEqual([

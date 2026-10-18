@@ -28,7 +28,7 @@ export class SamplesComponent {
   private readonly host = viewChild(SampleHostComponent);
   readonly tabs: SampleTab[] = [
     { route: 'document', label: 'Document' },
-    { route: 'content_book', label: 'Content book' },
+    { route: 'content-book', label: 'Content book' },
     { route: 'handbook', label: 'Handbook' },
   ];
   readonly selectedButton = computed(() => this.host()?.selectedButton() ?? '');

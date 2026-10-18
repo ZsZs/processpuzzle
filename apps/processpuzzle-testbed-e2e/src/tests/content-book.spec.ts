@@ -21,7 +21,8 @@ test.describe('[ContentBook] HANDBOOK', () => {
     const tree = page.getByTestId('sidenav-content-body');
     await expect(tree.locator('[data-testid^="tree-nav-node-"]').first()).toBeVisible();
 
-    await tree.getByRole('button', { name: OVERVIEW_TITLE, exact: true }).click();
+    // Each node has two buttons named after the page: the expander and the label that selects it.
+    await tree.locator('button.pp-tree-nav__label').filter({ hasText: OVERVIEW_TITLE }).click();
 
     // The slug in the URL is what makes a page shareable; the view below it is what the reader came for.
     await expect(page).toHaveURL(new RegExp(`[?&]doc=${OVERVIEW_SLUG}(&|$)`));

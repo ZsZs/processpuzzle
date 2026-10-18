@@ -39,7 +39,7 @@ export const BASE_DOCUMENT_ROUTES: Routes = [
   },
   {
     // `snakeCaseName('ContentBook')`, for the reason given above.
-    path: 'content_book',
+    path: 'content-book',
     title: 'ProcessPuzzle Design - Content books',
     data: { icon: 'menu_book', menuTitle: 'design.content_books', entityName: CONTENT_BOOK_ENTITY_NAME },
     component: ContentBookContainerComponent,
