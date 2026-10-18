@@ -4,6 +4,7 @@ import { AppComponent } from './app.component';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { LayoutService } from '@processpuzzle/util';
+import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { ANIMATION_MODULE_TYPE, Component } from '@angular/core';
 import { HeaderComponent } from './navigation/header/header.component';
 import { SidenavComponent } from './navigation/sidenav/sidenav.component';
@@ -29,7 +30,7 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [LayoutService, provideRouter([]), { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }],
+      providers: [LayoutService, provideRouter([]), provideTranslocoTesting({ translations: { en: {} } }), { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' }],
     })
       .overrideComponent(AppComponent, {
         remove: { imports: [HeaderComponent, SidenavComponent, DesignSidenavComponent, FooterComponent] },
