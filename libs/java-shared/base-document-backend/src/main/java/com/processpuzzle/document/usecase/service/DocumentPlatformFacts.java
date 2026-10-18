@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Publishes base-document's {@link PlatformEvent}s — the raw facts base-event matches against the
@@ -32,6 +33,8 @@ public class DocumentPlatformFacts {
 
     /** The {@code subjectType} of every fact published here. */
     public static final String SUBJECT_TYPE = "document";
+    /** The payload attributes of the facts about a document — created and state changed. */
+    public static final Set<String> FACT_ATTRIBUTES = Set.of("slug", "title", "sourceLocale");
 
     private final ApplicationEventPublisher events;
 

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.PlatformSubject;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.usecase.ImportEventDefinitions;
 import com.processpuzzle.event.usecase.ImportOutcome;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -29,13 +31,14 @@ class DefaultEventDefinitionImporterTest {
         when(repository.findByOrgKeyAndIdAndChannel(any(), any(), eq(Channel.DRAFT))).thenReturn(Optional.empty());
         DefaultEventDefinitionImporter importer = new DefaultEventDefinitionImporter(
                 new ImportEventDefinitions(repository), new PathMatchingResourcePatternResolver(),
-                new EventDefinitionReleaseParticipant(repository));
+                new EventDefinitionReleaseParticipant(repository, new StaticListableBeanFactory().getBeanProvider(PlatformSubject.class)));
 
         importer.loadDefaults();
 
         verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "OrderCreatedEvent", Channel.DRAFT);
         verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "OrderConfirmedEvent", Channel.DRAFT);
         verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "OrderDeliveredEvent", Channel.DRAFT);
+        verify(repository).findByOrgKeyAndIdAndChannel("processpuzzle-testbed", "CalculationFrozenEvent", Channel.DRAFT);
     }
 
     @Test
