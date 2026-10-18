@@ -18,6 +18,7 @@
     "base-starter-backend",
     "base-release-backend",
     "base-event-backend",
+    "base-calculation-backend",
     "org-admin-backend"
   ],
   "targets": {
