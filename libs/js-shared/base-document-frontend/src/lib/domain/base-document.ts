@@ -28,6 +28,16 @@ export interface AttributeVisibility {
   attributes: string[];
 }
 
+/**
+ * What a document's entity ports mean: bound once, when it is authored or by the page hosting it (`DOCUMENT`),
+ * or supplied anew each time it is rendered (`REPORT_TEMPLATE` — one invoice layout, one invoice per order).
+ * Content, editor and publication are the same for both; see docs/document-vs-report-template.md.
+ */
+export enum DocumentKind {
+  DOCUMENT = 'DOCUMENT',
+  REPORT_TEMPLATE = 'REPORT_TEMPLATE',
+}
+
 export enum BlockKind {
   TEXT = 'TEXT',
   WIDGET = 'WIDGET',
@@ -205,6 +215,8 @@ export class Document implements BaseEntity {
     public version?: number,
     public createdAt?: string,
     public updatedAt?: string,
+    /** Last rather than beside the other properties, so the positional call sites before it stay as they are. */
+    public kind: DocumentKind = DocumentKind.DOCUMENT,
   ) {}
 }
 
@@ -217,5 +229,5 @@ export class Document implements BaseEntity {
  */
 export type DocumentProperties = Pick<
   Document,
-  'slug' | 'title' | 'subject' | 'description' | 'author' | 'sourceLocale' | 'isPublic' | 'readerRoles' | 'editorRoles' | 'publisherRoles' | 'inputPorts' | 'outputPorts'
+  'slug' | 'title' | 'subject' | 'description' | 'author' | 'sourceLocale' | 'isPublic' | 'readerRoles' | 'editorRoles' | 'publisherRoles' | 'inputPorts' | 'outputPorts' | 'kind'
 >;

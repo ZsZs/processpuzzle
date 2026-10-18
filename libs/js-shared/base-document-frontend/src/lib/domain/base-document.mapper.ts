@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
-import { Document, DocumentInputPort, DocumentOutputPort } from './base-document';
+import { Document, DocumentInputPort, DocumentKind, DocumentOutputPort } from './base-document';
 
 @Injectable({ providedIn: 'root' })
 export class BaseDocumentMapper implements BaseEntityMapper<Document> {
@@ -33,6 +33,7 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
       dto.version,
       dto.createdAt,
       dto.updatedAt,
+      dto.kind ?? DocumentKind.DOCUMENT,
     );
   }
 

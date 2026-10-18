@@ -30,6 +30,7 @@ describe('createDocumentDescriptor', () => {
       'slug',
       'title',
       'sourceLocale',
+      'kind',
       'subject',
       'author',
       'description',

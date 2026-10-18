@@ -31,7 +31,7 @@ import {
   provideLocaleDateAdapter,
 } from '@processpuzzle/base-entity';
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
-import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE } from '@processpuzzle/base-document';
+import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE, provideEntityReportsTab } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
 import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
@@ -112,6 +112,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // The same arrangement for base-ai: the Enrollment tab, offered to every entity type that has a
       // recognition profile — `Boat` in this tenant, a metadata-defined entity that names base-ai nowhere.
       ...provideEntityEnrollmentTab(),
+      // And for base-document: the Reports tab, offered to every entity a report template reports on —
+      // `Order` in this tenant, through the `order-invoice` sample.
+      ...provideEntityReportsTab(),
       // Fills WIDGET_REGISTRY with the components behind the catalogue's keys. base-app's shell renders a
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.

@@ -1,8 +1,9 @@
-import { computed, Injectable, Signal, signal, WritableSignal } from '@angular/core';
+import { computed, inject, Injectable, Signal, signal, WritableSignal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
-import { BlockKind, DocumentBlock, WidgetPlacement } from '../../domain/base-document';
+import { BlockKind, DocumentBlock, DocumentInputPort, WidgetPlacement } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
+import { DocumentDataContext } from '../report/document-data-context';
 import { DocumentContentService } from './document-content.service';
 
 const TEXT_AUTOSAVE_DEBOUNCE_MS = 800;
@@ -31,6 +32,11 @@ export class DocumentContentStore {
   private translationExists = false;
 
   private readonly textSaveSubjects = new Map<string, Subject<Record<string, unknown>>>();
+  /** Present only where a document is rendered with data — a report's Preview or Reports tab, not the editor. */
+  private readonly dataContext = inject(DocumentDataContext, { optional: true });
+
+  /** The document's input ports — what the Insert field and table settings dialogs offer paths of. */
+  readonly inputPorts = signal<readonly DocumentInputPort[]>([]);
 
   constructor(
     private readonly contentService: DocumentContentService,
@@ -38,6 +44,11 @@ export class DocumentContentStore {
   ) {}
 
   readonly blocks: Signal<DocumentBlock[]> = this.blocksSignal.asReadonly();
+
+  /** The locale this session renders or edits — what a data field formats its value for. */
+  currentLocale(): string | null {
+    return this.locale;
+  }
 
   readonly blocksById: Signal<ReadonlyMap<string, DocumentBlock>> = computed(() => {
     const map = new Map<string, DocumentBlock>();
@@ -63,15 +74,13 @@ export class DocumentContentStore {
   }
 
   /**
-   * Host-context port resolution is deliberately out of scope here — base-document-api.yaml is
-   * explicit that resolving a bound value is entirely a frontend runtime concern, and for an
-   * document specifically that means whatever embeds it (an app-shell page, another document's
-   * widget block) is responsible for supplying it. This placeholder returns undefined for every
-   * port until that host-context wiring exists; it's the one seam DocumentEditorComponent's
-   * caller is expected to override once base-app's embedding story is designed.
+   * The value at a port path — `order`, `order.lineItems` — as the {@link DocumentDataContext} of whoever
+   * renders the document holds it. Resolving is a frontend runtime concern by contract: base-document-api.yaml
+   * only records the wiring. Without a context — the editor — every path is `undefined`, and a `dataField`
+   * shows the path it names instead of a value.
    */
-  resolveBinding(portName: string): unknown {
-    return undefined;
+  resolveBinding(path: string): unknown {
+    return this.dataContext?.resolve(path);
   }
 
   /**
@@ -110,8 +119,13 @@ export class DocumentContentStore {
 
   /** Widget prop edits save immediately — there's no keystroke-rate concern the way there is for Tiptap content. */
   async saveWidgetBlockProps(blockId: string, props: Record<string, unknown>) {
-    this.patchLocalBlock(blockId, { props });
-    await this.persistBlock(blockId, { props });
+    await this.saveWidgetBlock(blockId, { props });
+  }
+
+  /** Props and bindings together, as the table settings dialog edits them: which rows, and how to show them. */
+  async saveWidgetBlock(blockId: string, patch: Pick<DocumentBlock, 'props' | 'inputBindings'>) {
+    this.patchLocalBlock(blockId, patch);
+    await this.persistBlock(blockId, patch);
   }
 
   /**

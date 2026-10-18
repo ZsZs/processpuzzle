@@ -130,17 +130,21 @@ version — the path stops at the stored value (the id). Following them is a res
    `format`: `text` (default), `number`, `currency:<ISO code>`, `date`, `datetime` — rendered with the document's
    locale. An unresolved path renders as an empty, outlined placeholder in the editor and as nothing in the reader.
 2. **Table — the `entity-table` widget.** A regular widget (registry, props schema, contract spec):
-   - `source` — a path: a collection port (`openOrders`) or a collection inside an object (`invoice.lineItems`);
+   - `rows` — bound through `inputBindings` to a path: a collection port (`openOrders`) or a collection inside an
+     object (`order.lineItems`);
    - `columns` — ordered `{ path, header, format, align }`, `path` relative to one row;
-   - `totals` — optional `{ path, aggregate: sum | count }` per column, rendered as a footer row.
+   - `totals` — optional `{ path, aggregate: sum | count }` per column, rendered as a footer row;
+   - `caption` — optional.
 
    Columns are widget props rather than the port's `attributeVisibility`: they need an order, labels and
    formats. `attributeVisibility` stays what it is — a projection of what the port exposes, which the column
    picker offers.
 
-   Its `source` is a prop (a path string), not an `inputBinding`: the widget receives the *resolved rows* through
-   its `rows` input, which the document's resolver fills. That keeps the widget usable outside documents
-   (bind `rows` directly) and keeps paths a document concern.
+   The widget receives *resolved rows*; the path lives in the block's `inputBindings`, so paths stay a document
+   concern and the widget is usable anywhere `rows` can be supplied. This is why an `inputBindings` value is a
+   **port path**, not only a port name — the backend validates its first segment against the declared ports.
+   The document editor configures the block through a *Table settings* dialog (source, columns with header,
+   format and order, totals), since the generic props form cannot edit arrays of objects yet.
 
 ### Resolution
 
@@ -156,14 +160,18 @@ Missing required ports are reported once (a banner in the reader) instead of per
 
 ### Running a report
 
-- **Route:** the reader view takes port values as query parameters — `?invoice=<id>` — the same pattern the
-  signing tab uses for `subjectType` / `subjectId`.
-- **Editor preview:** a `REPORT_TEMPLATE` editor shows a parameter bar (one object picker per `ENTITY_REF` port)
-  so the author designs against real data.
-- **PDF:** the reader's *Print / Save as PDF* action calls `window.print()`; a print stylesheet hides the
-  application chrome and applies page margins. No new PDF dependency.
-- **Entry from the entity:** an `ENTITY_REF`-parameterized template whose `entityType` matches is offered from
-  that entity's screens (e.g. *Print invoice* on an Invoice) — via the existing entity tab contributors.
+Implemented 2026-10-18; `order-invoice` in the testbed's sample documents exercises every part.
+
+- **Preview tab** (`document/<id>/preview`): the *draft* rendered against data. Port values are query
+  parameters — `?order=<id>` — the same pattern the signing tab uses for `subjectType` / `subjectId`; a parameter
+  bar (one object picker per `ENTITY_REF` port) writes them back, so the author designs against real data and a
+  preview of one invoice is a link. The editor itself resolves nothing: an unresolved field shows its path.
+- **PDF:** *Print / Save as PDF* prints a copy of the rendered page in a hidden iframe, with the page's style
+  sheets and `@page` margins — the application shell around the report is not base-document's to hide. No new
+  PDF dependency.
+- **Reports tab** (`<entity>/<id>/reports`): `provideEntityReportsTab()` offers it, through the entity tab
+  contributors, to every entity some `REPORT_TEMPLATE` has an `ENTITY_REF` port of; it renders the *published*
+  template with the current object bound (*Print invoice* on an Order).
 
 ### Not in the first version
 

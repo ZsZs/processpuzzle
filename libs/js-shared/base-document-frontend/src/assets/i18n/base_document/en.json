@@ -13,9 +13,12 @@
     "publisherRoles": "Publisher roles",
     "inputPorts": "Input ports",
     "outputPorts": "Output ports",
+    "kind": "Kind",
     "tabs": {
       "content": "{{ entity }} - content",
-      "sign": "{{ entity }} - sign"
+      "preview": "{{ entity }} - preview",
+      "sign": "{{ entity }} - sign",
+      "reports": "Reports"
     },
     "content": {
       "loading": "Loading content…",
@@ -31,6 +34,25 @@
       "signatures": "Signatures",
       "none": "Nobody has signed this document yet."
     },
+    "report": {
+      "insert_field": "Insert data field",
+      "field": "Field",
+      "format": "Format",
+      "insert": "Insert",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "table_settings": "Table settings",
+      "rows": "Rows",
+      "caption": "Caption",
+      "header": "Header",
+      "total": "Total",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "print": "Print / Save as PDF",
+      "missing_parameters": "Choose a value for: {{ ports }}",
+      "template": "Report",
+      "not_published": "This report has not been published yet."
+    },
     "_tooltips": {
       "slug": "The document's key in its address, unique within your organization. Lower-case letters, digits and hyphens only, e.g. getting-started.",
       "title": "The document's title as readers see it, e.g. Getting started.",
@@ -43,7 +65,8 @@
       "editorRoles": "Roles allowed to change the document's content and properties, one chip each, e.g. editor.",
       "publisherRoles": "Roles allowed to publish the document, one chip each. Leave empty to let the editor roles publish too.",
       "inputPorts": "Values the page embedding the document hands in, e.g. the customer being viewed, so widgets in the document can use them.",
-      "outputPorts": "Values the document hands back to the page embedding it, e.g. a record the reader selected."
+      "outputPorts": "Values the document hands back to the page embedding it, e.g. a record the reader selected.",
+      "kind": "DOCUMENT is one fixed page; REPORT_TEMPLATE is a layout rendered once per object, e.g. one invoice per order, with its entity ports filled in each time."
     }
   },
   "document_input_port": {

@@ -42,7 +42,7 @@ describe('BASE_DOCUMENT_ROUTES', () => {
 
   it('nests the generic list and details routes below the container', () => {
     expect(documentRoute.component).toBeDefined();
-    expect(documentRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/content', ':entityId/sign', 'list']);
+    expect(documentRoute.children?.map((child) => child.path)).toEqual(['', ':entityId/details', ':entityId/content', ':entityId/preview', ':entityId/sign', 'list']);
   });
 
   /**

@@ -13,9 +13,12 @@
     "publisherRoles": "Veröffentlicherrollen",
     "inputPorts": "Eingangsports",
     "outputPorts": "Ausgangsports",
+    "kind": "Art",
     "tabs": {
       "content": "{{ entity }} - Inhalt",
-      "sign": "{{ entity }} - unterschreiben"
+      "preview": "{{ entity }} - Vorschau",
+      "sign": "{{ entity }} - unterschreiben",
+      "reports": "Berichte"
     },
     "content": {
       "loading": "Inhalt wird geladen…",
@@ -31,6 +34,25 @@
       "signatures": "Unterschriften",
       "none": "Dieses Dokument hat noch niemand unterschrieben."
     },
+    "report": {
+      "insert_field": "Datenfeld einfügen",
+      "field": "Feld",
+      "format": "Format",
+      "insert": "Einfügen",
+      "cancel": "Abbrechen",
+      "apply": "Übernehmen",
+      "table_settings": "Tabelleneinstellungen",
+      "rows": "Zeilen",
+      "caption": "Beschriftung",
+      "header": "Überschrift",
+      "total": "Summe",
+      "move_up": "Nach oben",
+      "move_down": "Nach unten",
+      "print": "Drucken / Als PDF speichern",
+      "missing_parameters": "Wählen Sie einen Wert für: {{ ports }}",
+      "template": "Bericht",
+      "not_published": "Dieser Bericht ist noch nicht veröffentlicht."
+    },
     "_tooltips": {
       "slug": "Der Schlüssel des Dokuments in seiner Adresse, eindeutig in Ihrer Organisation. Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. getting-started.",
       "title": "Der Titel des Dokuments, wie Leser ihn sehen, z. B. Erste Schritte.",
@@ -43,7 +65,8 @@
       "editorRoles": "Rollen, die Inhalt und Eigenschaften des Dokuments ändern dürfen, je ein Chip, z. B. editor.",
       "publisherRoles": "Rollen, die das Dokument veröffentlichen dürfen, je ein Chip. Leer lassen, damit auch die Bearbeiterrollen veröffentlichen können.",
       "inputPorts": "Werte, die die Seite, in die das Dokument eingebettet ist, übergibt, z. B. der angezeigte Kunde, damit Widgets im Dokument sie nutzen können.",
-      "outputPorts": "Werte, die das Dokument an die einbettende Seite zurückgibt, z. B. ein vom Leser ausgewählter Datensatz."
+      "outputPorts": "Werte, die das Dokument an die einbettende Seite zurückgibt, z. B. ein vom Leser ausgewählter Datensatz.",
+      "kind": "DOCUMENT ist eine feste Seite; REPORT_TEMPLATE ist ein Layout, das je Objekt erzeugt wird, z. B. eine Rechnung je Bestellung, wobei die Entitäts-Ports jedes Mal neu befüllt werden."
     }
   },
   "document_input_port": {

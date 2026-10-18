@@ -13,9 +13,12 @@
     "publisherRoles": "Roles de publicación",
     "inputPorts": "Puertos de entrada",
     "outputPorts": "Puertos de salida",
+    "kind": "Tipo",
     "tabs": {
       "content": "{{ entity }} - contenido",
-      "sign": "{{ entity }} - firmar"
+      "preview": "{{ entity }} - vista previa",
+      "sign": "{{ entity }} - firmar",
+      "reports": "Informes"
     },
     "content": {
       "loading": "Cargando contenido…",
@@ -31,6 +34,25 @@
       "signatures": "Firmas",
       "none": "Nadie ha firmado este documento todavía."
     },
+    "report": {
+      "insert_field": "Insertar campo de datos",
+      "field": "Campo",
+      "format": "Formato",
+      "insert": "Insertar",
+      "cancel": "Cancelar",
+      "apply": "Aplicar",
+      "table_settings": "Ajustes de la tabla",
+      "rows": "Filas",
+      "caption": "Título",
+      "header": "Encabezado",
+      "total": "Total",
+      "move_up": "Subir",
+      "move_down": "Bajar",
+      "print": "Imprimir / Guardar como PDF",
+      "missing_parameters": "Elija un valor para: {{ ports }}",
+      "template": "Informe",
+      "not_published": "Este informe aún no se ha publicado."
+    },
     "_tooltips": {
       "slug": "La clave del documento en su dirección, única en su organización. Solo minúsculas, dígitos y guiones, p. ej. getting-started.",
       "title": "El título del documento tal como lo ven los lectores, p. ej. Primeros pasos.",
@@ -43,7 +65,8 @@
       "editorRoles": "Roles que pueden cambiar el contenido y las propiedades del documento, uno por chip, p. ej. editor.",
       "publisherRoles": "Roles que pueden publicar el documento, uno por chip. Déjelo vacío para que también publiquen los roles de edición.",
       "inputPorts": "Valores que entrega la página que incrusta el documento, p. ej. el cliente que se está viendo, para que los widgets del documento los usen.",
-      "outputPorts": "Valores que el documento devuelve a la página que lo incrusta, p. ej. un registro seleccionado por el lector."
+      "outputPorts": "Valores que el documento devuelve a la página que lo incrusta, p. ej. un registro seleccionado por el lector.",
+      "kind": "DOCUMENT es una página fija; REPORT_TEMPLATE es un diseño que se genera para cada objeto, p. ej. una factura por pedido, rellenando sus puertos de entidad cada vez."
     }
   },
   "document_input_port": {
