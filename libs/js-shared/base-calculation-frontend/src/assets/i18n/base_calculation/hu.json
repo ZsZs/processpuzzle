@@ -1,0 +1,78 @@
+{
+  "calculation_definition": {
+    "_self": "Számítás definíció",
+    "id": "Azonosító",
+    "name": "Név",
+    "description": "Leírás",
+    "source": "Forrás",
+    "definitionVersion": "Verzió",
+    "outputEntity": "Kimenet",
+    "releaseState": "Kiadás",
+    "_tooltips": {
+      "id": "A forrás calculation kulcsa, pl. order-total. A forrásban módosítható.",
+      "name": "A forrás name kulcsa, ahogy a listákban látszik.",
+      "description": "A forrás description kulcsa.",
+      "source": "A számítás YAML-ként: paraméterek, bemenetek, döntési táblák, függvények, döntések, kimenet és indító. A Forrás fülön szerkesztő és Ellenőrzés található.",
+      "definitionVersion": "Minden olyan mentéssel nő, amely megváltoztatja a forrást. Minden futás rögzíti, melyik verzióval számolt. A rendszer állítja be.",
+      "outputEntity": "Az entitástípus, amelybe a számítás az eredményeit írja. A rendszer állítja be a forrásból.",
+      "releaseState": "A futó alkalmazás így használja-e a számítást: NEW még nem lett kiadva, CHANGED eltér a kiadottól, RELEASED az, amit az indítók futtatnak. A rendszer állítja be."
+    }
+  },
+  "source": {
+    "tab": "Forrás",
+    "validate": "Ellenőrzés",
+    "save": "Mentés",
+    "unsaved": "Nem mentett módosítások",
+    "valid": "A számítás érvényes.",
+    "decision": "Döntés",
+    "kind": "Fajta",
+    "scope": "Hatókör",
+    "requires": "Igényli"
+  },
+  "tables": {
+    "tab": "Döntési táblák",
+    "add": "Tábla hozzáadása",
+    "remove": "Tábla törlése",
+    "save": "Mentés",
+    "name": "Név",
+    "hitPolicy": "Találati szabály",
+    "output": "Kimenet",
+    "then": "Akkor",
+    "removeInput": "Bemenet törlése",
+    "moveUp": "Fel",
+    "moveDown": "Le",
+    "removeRule": "Szabály törlése",
+    "addRule": "Szabály hozzáadása",
+    "none": "A számításnak nincs döntési táblája.",
+    "unreadable": "A forrás nem érvényes YAML; előbb javítsd a Forrás fülön:"
+  },
+  "evaluate": {
+    "tab": "Kiértékelés",
+    "parameters": "Paraméterek",
+    "noParameters": "A számítás nem deklarál paramétert.",
+    "entityHint": "{{entity}} azonosítója",
+    "evaluate": "Vázlat kiértékelése",
+    "run": "Kiadott futtatása",
+    "runResult": "Futás {{status}}: {{written}} objektum írva · {{id}}",
+    "values": "Értékek",
+    "trace": "Nyomkövetés",
+    "decision": "Döntés",
+    "kind": "Fajta",
+    "scope": "Hatókör",
+    "value": "Érték"
+  },
+  "runs": {
+    "calculation": "Számítás",
+    "subject": "Tárgy",
+    "refresh": "Frissítés",
+    "none": "Még nincs futás.",
+    "startedAt": "Indult",
+    "version": "Verzió",
+    "triggeredBy": "Indította",
+    "status": "Állapot",
+    "frozen": "Befagyasztva",
+    "freeze": "Befagyasztás",
+    "frozenAt": "Befagyasztva: {{at}}",
+    "source": "A definíció a futáskor"
+  }
+}

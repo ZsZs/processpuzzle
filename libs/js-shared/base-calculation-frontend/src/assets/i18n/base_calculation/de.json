@@ -1,0 +1,78 @@
+{
+  "calculation_definition": {
+    "_self": "Berechnungsdefinition",
+    "id": "Id",
+    "name": "Name",
+    "description": "Beschreibung",
+    "source": "Quelle",
+    "definitionVersion": "Version",
+    "outputEntity": "Ausgabe",
+    "releaseState": "Freigabe",
+    "_tooltips": {
+      "id": "Der calculation-Schlüssel der Quelle, z. B. order-total. In der Quelle ändern.",
+      "name": "Der name-Schlüssel der Quelle, wie er in Listen erscheint.",
+      "description": "Der description-Schlüssel der Quelle.",
+      "source": "Die Berechnung als YAML: Parameter, Eingaben, Entscheidungstabellen, Funktionen, Entscheidungen, Ausgabe und Auslöser. Der Reiter Quelle bietet einen Editor und Prüfen.",
+      "definitionVersion": "Steigt mit jedem Speichern einer geänderten Quelle. Jeder Lauf hält die Version fest, mit der er gerechnet hat. Vom System gesetzt.",
+      "outputEntity": "Der Entitätstyp, in den die Berechnung ihre Ergebnisse schreibt. Vom System aus der Quelle gesetzt.",
+      "releaseState": "Ob die laufende Anwendung diese Berechnung so verwendet: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist, was Auslöser ausführen. Vom System gesetzt."
+    }
+  },
+  "source": {
+    "tab": "Quelle",
+    "validate": "Prüfen",
+    "save": "Speichern",
+    "unsaved": "Ungespeicherte Änderungen",
+    "valid": "Die Berechnung ist gültig.",
+    "decision": "Entscheidung",
+    "kind": "Art",
+    "scope": "Bereich",
+    "requires": "Benötigt"
+  },
+  "tables": {
+    "tab": "Entscheidungstabellen",
+    "add": "Tabelle hinzufügen",
+    "remove": "Tabelle entfernen",
+    "save": "Speichern",
+    "name": "Name",
+    "hitPolicy": "Trefferregel",
+    "output": "Ausgabe",
+    "then": "Dann",
+    "removeInput": "Eingabe entfernen",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "removeRule": "Regel entfernen",
+    "addRule": "Regel hinzufügen",
+    "none": "Die Berechnung hat keine Entscheidungstabellen.",
+    "unreadable": "Die Quelle ist kein gültiges YAML; zuerst im Reiter Quelle korrigieren:"
+  },
+  "evaluate": {
+    "tab": "Auswerten",
+    "parameters": "Parameter",
+    "noParameters": "Die Berechnung deklariert keine Parameter.",
+    "entityHint": "Id von {{entity}}",
+    "evaluate": "Entwurf auswerten",
+    "run": "Freigabe ausführen",
+    "runResult": "Lauf {{status}}: {{written}} Objekt(e) geschrieben · {{id}}",
+    "values": "Werte",
+    "trace": "Ablauf",
+    "decision": "Entscheidung",
+    "kind": "Art",
+    "scope": "Bereich",
+    "value": "Wert"
+  },
+  "runs": {
+    "calculation": "Berechnung",
+    "subject": "Gegenstand",
+    "refresh": "Aktualisieren",
+    "none": "Noch keine Läufe.",
+    "startedAt": "Gestartet",
+    "version": "Version",
+    "triggeredBy": "Ausgelöst durch",
+    "status": "Status",
+    "frozen": "Eingefroren",
+    "freeze": "Einfrieren",
+    "frozenAt": "Eingefroren am {{at}}",
+    "source": "Definition beim Lauf"
+  }
+}

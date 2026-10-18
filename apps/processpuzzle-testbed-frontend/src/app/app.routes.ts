@@ -15,6 +15,7 @@ import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
+import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
@@ -282,6 +283,24 @@ export const appRoutes: Route[] = [
         // TRIGGERING_EVENT start event picks from — and declares its own transloco scopes. Static children,
         // for the same reason as the base-state branch above.
         children: BASE_EVENT_ROUTES,
+      },
+    ],
+  },
+  {
+    path: 'base-calculation',
+    title: 'ProcessPuzzle Testbed - Base Calculation',
+    data: { icon: 'calculate', menuTitle: 'base-calculation' },
+    loadComponent: () => import('./content/base-calculation/base-calculation.component').then((comp) => comp.BaseCalculationComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-calculation/overview.component').then((comp) => comp.OverviewComponent) },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-calculation/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_CALCULATION_ROUTES` brings the `calculation-definition` branch with its Source, Decision tables
+        // and Evaluate tabs, `CALCULATION_RUNS_ROUTES` the runs screen; both declare their transloco scopes.
+        children: [...BASE_CALCULATION_ROUTES, ...CALCULATION_RUNS_ROUTES],
       },
     ],
   },

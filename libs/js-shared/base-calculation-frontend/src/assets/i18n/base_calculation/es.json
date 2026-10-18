@@ -1,0 +1,78 @@
+{
+  "calculation_definition": {
+    "_self": "Definición de cálculo",
+    "id": "Id",
+    "name": "Nombre",
+    "description": "Descripción",
+    "source": "Fuente",
+    "definitionVersion": "Versión",
+    "outputEntity": "Salida",
+    "releaseState": "Publicación",
+    "_tooltips": {
+      "id": "La clave calculation de la fuente, p. ej. order-total. Se cambia en la fuente.",
+      "name": "La clave name de la fuente, tal como aparece en las listas.",
+      "description": "La clave description de la fuente.",
+      "source": "El cálculo en YAML: parámetros, entradas, tablas de decisión, funciones, decisiones, salida y disparador. La pestaña Fuente ofrece un editor y Validar.",
+      "definitionVersion": "Aumenta con cada guardado que cambia la fuente. Cada ejecución registra la versión con la que calculó. La establece el sistema.",
+      "outputEntity": "El tipo de entidad en el que el cálculo escribe sus resultados. Lo establece el sistema a partir de la fuente.",
+      "releaseState": "Si la aplicación en ejecución usa este cálculo tal como está: NEW nunca se publicó, CHANGED difiere de lo publicado, RELEASED es lo que ejecutan los disparadores. Lo establece el sistema."
+    }
+  },
+  "source": {
+    "tab": "Fuente",
+    "validate": "Validar",
+    "save": "Guardar",
+    "unsaved": "Cambios sin guardar",
+    "valid": "El cálculo es válido.",
+    "decision": "Decisión",
+    "kind": "Tipo",
+    "scope": "Ámbito",
+    "requires": "Requiere"
+  },
+  "tables": {
+    "tab": "Tablas de decisión",
+    "add": "Añadir tabla",
+    "remove": "Eliminar tabla",
+    "save": "Guardar",
+    "name": "Nombre",
+    "hitPolicy": "Política de coincidencia",
+    "output": "Salida",
+    "then": "Entonces",
+    "removeInput": "Eliminar entrada",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "removeRule": "Eliminar regla",
+    "addRule": "Añadir regla",
+    "none": "El cálculo no tiene tablas de decisión.",
+    "unreadable": "La fuente no es YAML válido; corríjala primero en la pestaña Fuente:"
+  },
+  "evaluate": {
+    "tab": "Evaluar",
+    "parameters": "Parámetros",
+    "noParameters": "El cálculo no declara parámetros.",
+    "entityHint": "Id de {{entity}}",
+    "evaluate": "Evaluar borrador",
+    "run": "Ejecutar publicado",
+    "runResult": "Ejecución {{status}}: {{written}} objeto(s) escrito(s) · {{id}}",
+    "values": "Valores",
+    "trace": "Traza",
+    "decision": "Decisión",
+    "kind": "Tipo",
+    "scope": "Ámbito",
+    "value": "Valor"
+  },
+  "runs": {
+    "calculation": "Cálculo",
+    "subject": "Sujeto",
+    "refresh": "Actualizar",
+    "none": "Aún no hay ejecuciones.",
+    "startedAt": "Iniciado",
+    "version": "Versión",
+    "triggeredBy": "Disparado por",
+    "status": "Estado",
+    "frozen": "Congelado",
+    "freeze": "Congelar",
+    "frozenAt": "Congelado el {{at}}",
+    "source": "Definición al ejecutarse"
+  }
+}
