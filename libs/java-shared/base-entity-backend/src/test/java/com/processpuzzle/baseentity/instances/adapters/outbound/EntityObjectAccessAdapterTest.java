@@ -235,7 +235,7 @@ class EntityObjectAccessAdapterTest {
     }
 
     @Test
-    void upsertByKey_updatesTheMatchingObjectOrCreatesOne() {
+    void upsertAllByKey_updatesTheMatchingObjectsAndCreatesTheRestReadingTheTypeOnce() {
         when(lookupPort.findByCode(ORG, "series-result"))
             .thenReturn(Optional.of(new EntityDefinitionView("series-result", false, List.of(), null, "Series Result")));
         EntityObject existing = EntityObject.builder().id(id).orgKey(ORG).entityDefinitionCode("series-result").version(0L)
@@ -243,18 +243,22 @@ class EntityObjectAccessAdapterTest {
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "series-result")).thenReturn(List.of(existing));
         when(repository.replacePayloadKeepingVersion(any(), any(), any(), any())).thenReturn(1);
 
-        assertThat(adapter.upsertByKey(ORG, "series-result", Map.of("boat", "Alpha", "round", new BigDecimal("1.0")),
-            Map.of("rank", 2))).isFalse();
-        assertThat(adapter.upsertByKey(ORG, "series-result", Map.of("boat", "Bravo"), Map.of("boat", "Bravo", "rank", 1))).isTrue();
+        int created = adapter.upsertAllByKey(ORG, "series-result", List.of("boat", "round"), List.of(
+            Map.of("boat", "Alpha", "round", new BigDecimal("1.0"), "rank", 2),
+            Map.of("boat", "Bravo", "round", 1, "rank", 1)));
 
-        verify(repository).save(org.mockito.ArgumentMatchers.argThat(created -> "Bravo".equals(created.getPayload().get("boat"))
-            && ORG.equals(created.getOrgKey())));
+        assertThat(created).isEqualTo(1);
+        verify(repository).findAllByOrgKeyAndEntityDefinitionCode(ORG, "series-result");
+        verify(repository).replacePayloadKeepingVersion(org.mockito.ArgumentMatchers.eq(id), any(), any(),
+            org.mockito.ArgumentMatchers.argThat(payload -> Integer.valueOf(2).equals(payload.get("rank"))));
+        verify(repository).save(org.mockito.ArgumentMatchers.argThat(saved -> "Bravo".equals(saved.getPayload().get("boat"))
+            && ORG.equals(saved.getOrgKey())));
     }
 
     @Test
-    void upsertByKey_unknownTypeIsRefused() {
+    void upsertAllByKey_unknownTypeIsRefused() {
         when(lookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> adapter.upsertByKey(ORG, "nope", Map.of(), Map.of()))
+        assertThatThrownBy(() -> adapter.upsertAllByKey(ORG, "nope", List.of(), List.of()))
             .isInstanceOf(EntityObjectAccessException.UnknownType.class);
     }
 }

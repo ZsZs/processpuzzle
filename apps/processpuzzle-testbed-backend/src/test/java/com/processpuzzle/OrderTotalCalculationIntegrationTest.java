@@ -152,6 +152,25 @@ class OrderTotalCalculationIntegrationTest {
         assertThat(runs.findAll(ORG, "order-total", orderId.toString())).hasSize(afterConfirm.size());
     }
 
+    @Test
+    void releasingFreezesAnOrderThatIsAlreadyConfirmed() {
+        UUID orderId = createEntity.create(ORG, "order", Map.of("orderNumber", "ORD-9002",
+                "lineItems", List.of(line("Widget A", 3, 10)))).getId();
+        // Confirmed without a transition, the way a seed loads it.
+        EntityObjectView draft = entities.find(ORG, "order", orderId);
+        entities.updateAttribute(ORG, "order", orderId, "status", "CONFIRMED", draft.version());
+
+        calculationRelease.release(ORG);
+
+        assertThat(runs.findAll(ORG, "order-total", orderId.toString())).first().satisfies(run -> {
+            assertThat(run.getTriggeredBy()).isEqualTo(RunTrigger.FREEZE_STATE);
+            assertThat(run.isFrozen()).isTrue();
+        });
+        int runCount = runs.findAll(ORG, "order-total", orderId.toString()).size();
+        calculationRelease.release(ORG);
+        assertThat(runs.findAll(ORG, "order-total", orderId.toString())).as("caught up once").hasSize(runCount);
+    }
+
     private static BigDecimal total(EntityObjectView order) {
         return new BigDecimal(String.valueOf(order.payload().get("total")));
     }

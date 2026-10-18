@@ -87,17 +87,27 @@ public class InMemoryEntities implements EntityQueryPort, EntityWritePort, Entit
     }
 
     @Override
-    public boolean upsertByKey(String orgKey, String entity, Map<String, Object> key, Map<String, Object> values) {
+    public int upsertAllByKey(String orgKey, String entity, List<String> keyAttributes, List<Map<String, Object>> rows) {
+        int created = 0;
+        for (Map<String, Object> values : rows) {
+            if (!upsert(entity, keyAttributes, values)) {
+                add(entity, values);
+                created++;
+            }
+        }
+        return created;
+    }
+
+    private boolean upsert(String entity, List<String> keyAttributes, Map<String, Object> values) {
         for (EntityRecord stored : all(entity)) {
-            if (key.entrySet().stream().allMatch(entry -> Objects.equals(stored.payload().get(entry.getKey()), entry.getValue()))) {
+            if (keyAttributes.stream().allMatch(name -> Objects.equals(stored.payload().get(name), values.get(name)))) {
                 Map<String, Object> payload = new LinkedHashMap<>(stored.payload());
                 payload.putAll(values);
                 objects.get(entity).put(stored.id(), new EntityRecord(stored.id(), stored.version(), payload));
-                return false;
+                return true;
             }
         }
-        add(entity, values);
-        return true;
+        return false;
     }
 
     @Override

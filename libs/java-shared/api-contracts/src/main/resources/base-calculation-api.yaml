@@ -347,8 +347,62 @@ paths:
         "409":
           $ref: "#/components/responses/Conflict"
 
+  # ── Translations ──
+  # The UI message bundles this feature owns, in the shape the frontend asset files have — the same two
+  # templates every feature serves under its own service root (see base-workflow-api.yaml).
+  /organizations/{orgKey}/calculation/translations/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/TranslationLocaleParam"
+    get:
+      tags: [ Base Calculation Translations ]
+      summary: Root translation bundle of this feature for one language
+      operationId: getCalculationTranslations
+      description: >-
+        The bundle that has no transloco scope. Answers 200 with an empty object when nothing has been seeded.
+      responses:
+        "200":
+          description: The bundle, empty when nothing has been seeded for this locale.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationBundle"
+
+  /organizations/{orgKey}/calculation/translations/{scope}/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/TranslationScopeParam"
+      - $ref: "#/components/parameters/TranslationLocaleParam"
+    get:
+      tags: [ Base Calculation Translations ]
+      summary: One scoped translation bundle of this feature
+      operationId: getCalculationScopedTranslations
+      description: >-
+        The equivalent of assets/i18n/<scope>/<lang>.json. Keys are relative to the scope.
+      responses:
+        "200":
+          description: The bundle, empty when nothing has been seeded for this scope and locale.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationBundle"
+
 components:
   parameters:
+    TranslationLocaleParam:
+      name: locale
+      in: path
+      required: true
+      description: BCP-47 language tag of the bundle to read.
+      schema:
+        $ref: "#/components/schemas/Locale"
+    TranslationScopeParam:
+      name: scope
+      in: path
+      required: true
+      description: Transloco scope of the bundle to read.
+      schema:
+        $ref: "#/components/schemas/TranslationScope"
     OrgKeyParam:
       name: orgKey
       in: path
@@ -402,6 +456,27 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
+    Locale:
+      type: string
+      description: Repeat of shared-api.yaml's canonical Locale.
+      pattern: "^[a-z]{2,3}(-[A-Z]{2})?$"
+      minLength: 2
+      maxLength: 6
+      example: en
+    TranslationScope:
+      type: string
+      description: Repeat of shared-api.yaml's canonical TranslationScope.
+      pattern: "^[a-z0-9]+(_[a-z0-9]+)*$"
+      minLength: 1
+      maxLength: 64
+      example: base_calculation
+    TranslationBundle:
+      type: object
+      description: >-
+        Repeat of shared-api.yaml's canonical TranslationBundle: the whole message map of an
+        (organization, scope, locale) triple, in the shape the frontend asset file has.
+      additionalProperties: true
+      nullable: true
     CalculationSource:
       type: object
       required: [ source ]

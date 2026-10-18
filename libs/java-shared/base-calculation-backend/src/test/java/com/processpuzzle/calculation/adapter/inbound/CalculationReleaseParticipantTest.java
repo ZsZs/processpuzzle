@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.calculation.adapter.outbound.CamundaFeelExpressionEngine;
@@ -13,23 +14,29 @@ import com.processpuzzle.calculation.domain.CalculationDefinitionRepository;
 import com.processpuzzle.calculation.domain.definition.CalculationParser;
 import com.processpuzzle.calculation.engine.Calculations;
 import com.processpuzzle.calculation.usecase.CalculationValidator;
+import com.processpuzzle.calculation.usecase.CalculationsReleased;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.PendingChange;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
 class CalculationReleaseParticipantTest {
 
     private CalculationDefinitionRepository repository;
+    private ApplicationEventPublisher publisher;
     private CalculationReleaseParticipant participant;
 
     @BeforeEach
     void setUp() {
         repository = mock(CalculationDefinitionRepository.class);
-        participant = new CalculationReleaseParticipant(repository, new CalculationValidator(new CamundaFeelExpressionEngine()));
+        publisher = mock(ApplicationEventPublisher.class);
+        participant = new CalculationReleaseParticipant(repository, new CalculationValidator(new CamundaFeelExpressionEngine()),
+                publisher);
     }
 
     private static CalculationDefinition definition(String id, String source, Channel channel) {
@@ -59,6 +66,7 @@ class CalculationReleaseParticipantTest {
         assertThat(saved.getValue().getChannel()).isEqualTo(Channel.RELEASED);
         assertThat(saved.getValue().getSource()).isEqualTo(draft.getSource());
         verify(repository).deleteAll(List.of(gone));
+        verify(publisher).publishEvent(new CalculationsReleased("org", Set.of("order-total")));
     }
 
     @Test
@@ -76,5 +84,12 @@ class CalculationReleaseParticipantTest {
         verify(repository).save(released);
         assertThat(released.getSource()).isEqualTo("calculation: order-total\n");
         verify(repository, never()).deleteAll(any());
+        verify(publisher).publishEvent(new CalculationsReleased("org", Set.of("order-total")));
+    }
+
+    @Test
+    void announcesNothingWhenNothingWasReleased() {
+        participant.release("org", List.of("unknown"));
+        verifyNoInteractions(publisher);
     }
 }

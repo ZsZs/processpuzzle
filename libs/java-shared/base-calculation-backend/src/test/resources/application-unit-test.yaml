@@ -14,3 +14,4 @@ logging:
 
 base-calculation:
   loadDefaultCalculations: no
+  loadDefaultTranslations: no
