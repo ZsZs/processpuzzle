@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.api;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -13,6 +14,10 @@ import java.util.UUID;
  * <p>base-state is the caller, through its {@code EntityObjectGateway} adapter: it is the only
  * legitimate writer of the attribute a state machine's {@code stateAttributeKey} names, and this is
  * the channel it writes through.
+ *
+ * <p>base-calculation is the other, through the host application's adapters: it reads a calculation's inputs
+ * with {@link #findWhere} and writes the derived values it owns with {@link #updateAttributes} and
+ * {@link #upsertByKey}.
  */
 public interface EntityObjectAccess {
 
@@ -58,4 +63,39 @@ public interface EntityObjectAccess {
      */
     long updateAttribute(String orgKey, String entityDefinitionCode, UUID objectId, String attributeCode,
                          String value, long expectedVersion);
+
+    /**
+     * The objects of one type an RSQL filter selects — every object of it for a blank filter. Unpaged, like
+     * {@link #findAll}: the caller reads its whole input.
+     *
+     * @throws IllegalArgumentException if the filter is not valid RSQL, or names an attribute the type lacks
+     */
+    List<EntityObjectView> findWhere(String orgKey, String entityDefinitionCode, String rsql);
+
+    /**
+     * Writes {@code values} — typed: numbers stay numbers — and leaves every other key of the payload as it was,
+     * provided the object is still at {@code expectedVersion}.
+     *
+     * <p>Unlike {@link #updateAttribute} the version does <em>not</em> move. These are derived values of attributes
+     * the caller owns, which an ordinary update keeps as stored ({@code ManagedAttributesPort}); a moved version would
+     * only make the user who just saved the object fail their next save with a conflict. No payload validation and no
+     * event, for the reasons {@link #updateAttribute} gives — and an event would trigger the calculation that wrote.
+     *
+     * @throws EntityObjectAccessException.NotFound        if no such object exists
+     * @throws EntityObjectAccessException.VersionConflict  if the object is no longer at {@code expectedVersion}
+     */
+    void updateAttributes(String orgKey, String entityDefinitionCode, UUID objectId, Map<String, Object> values,
+                          long expectedVersion);
+
+    /**
+     * Writes {@code values} onto the object of {@code entityDefinitionCode} whose attributes equal {@code key} — the
+     * first, should there be several — or creates one with {@code values} as its payload. Neither validates nor
+     * publishes an event; an existing object keeps its version, as with {@link #updateAttributes}.
+     *
+     * <p>The match reads every object of the type: fine for a result table of one calculation, not a request path.
+     *
+     * @return whether an object was created
+     * @throws EntityObjectAccessException.NotFound if {@code entityDefinitionCode} is no entity type of the organization
+     */
+    boolean upsertByKey(String orgKey, String entityDefinitionCode, Map<String, Object> key, Map<String, Object> values);
 }

@@ -1,0 +1,51 @@
+# Default calculations of the 'processpuzzle-testbed' organization, one per YAML document.
+#
+# DefaultCalculationImporter imports this file on startup when `base-calculation.loadDefaultCalculations` is
+# true, and releases what it wrote. The import upserts: editing a calculation here reaches a stack that has
+# already been seeded.
+
+# The proposal's sales example on the testbed's own `order`: its lines are embedded in `lineItems`, and
+# there is no Customer entity, so the customer tier is a parameter with a default.
+calculation: order-total
+name: Order total
+description: >-
+  Sums the order's lines and applies the volume discount its subtotal reaches. Recomputed whenever the
+  order changes, and frozen once it is confirmed.
+parameters:
+  order: { entity: order }
+  customerTier: { type: string, default: STANDARD }
+inputs:
+  lines: { from: order, path: lineItems, entity: order-line }
+
+tables:
+  volume-discount:
+    hitPolicy: FIRST
+    inputs: [subtotal, customerTier]
+    output: discountRate
+    rules:
+      - { when: ['>= 10000', '"GOLD"'], then: 0.10 }
+      - { when: ['>= 10000', '-'],       then: 0.07 }
+      - { when: ['>= 1000',  '-'],       then: 0.03 }
+      - { when: ['-', '-'],              then: 0 }
+
+decisions:
+  lineTotal:
+    for: lines
+    expr: "quantity * unitPrice"
+  subtotal:
+    requires: [lineTotal]
+    aggregate: { sum: lineTotal }
+  discountRate:
+    requires: [subtotal, customerTier]
+    table: volume-discount
+  total:
+    requires: [subtotal, discountRate]
+    expr: "round half up(subtotal * (1 - discountRate), 2)"
+
+output:
+  entity: order
+  mapping: { total: total }
+  materialization: stored
+trigger:
+  onChange: { entity: order }                         # recompute while the order is open
+  freeze: { state: { entity: order, to: CONFIRMED } }  # and keep the confirmed total

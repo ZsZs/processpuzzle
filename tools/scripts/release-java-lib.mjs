@@ -80,6 +80,7 @@ const PROJECTS = new Map([
     'base-ai-backend',
     'api-contracts',
     'base-app-backend',
+    'base-calculation-backend',
     'base-document-backend',
     'base-entity-backend',
     'base-event-backend',

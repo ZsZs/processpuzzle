@@ -4,6 +4,8 @@ The capabilities of the ProcessPuzzle Plattform are based on a couple of stand-a
 It can help to compile CRUD applications much faster than building it from scratch.
 - [Util](/libs/js-shared/util/README.md) - generic purpose functions, useful at building Angular applications
 - [Base Entity](/libs/js-shared/base-entity-frontend/README.md) - Angular Material Table and Reactive Form generator based on Entity Definition.
+- [Base Calculation](/libs/js-shared/base-calculation-frontend/README.md) - Declarative calculations over entity data: YAML with DMN semantics, evaluated with FEEL.
+  Server-side half: [base-calculation-backend](/libs/java-shared/base-calculation-backend/README.md).
 - [Widgets](/libs/js-shared/base-widget-frontend/README.md) - General purpose UI widgets, useful for application development.
 - [Auth](/libs/js-shared/auth/README.md) - Authentication and Authorization.
 - [Org Admin](/libs/js-shared/org-admin-frontend/README.md) - User and role management inside one organization, for a customer's own administrator.

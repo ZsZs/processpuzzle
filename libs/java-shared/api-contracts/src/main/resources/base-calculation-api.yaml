@@ -1,0 +1,686 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Calculation API (base-calculation)
+  description: >-
+    Declarative calculations over entity data: row derivations, aggregates, rankings and decision
+    tables, defined in YAML with DMN semantics and evaluated with FEEL expressions.
+
+    ## Definitions
+
+    A CalculationDefinition is authored as a YAML document, its `source`, which stays the canonical
+    form so its comments survive. Every successful save parses and validates the source and moves
+    `definitionVersion` on, which is the version a run records. Writes go to the draft; the running
+    application — triggers included — uses the row the organization last released
+    (base-release-api.yaml).
+
+    ## Evaluating and running
+
+    `evaluate` computes and stores nothing: it is what a designer's preview calls. A `run` computes,
+    writes the declared output into its entity and keeps the run — results, the trace of every
+    decision, and a snapshot of the definition source — so a frozen result stays explainable after the
+    definition has changed.
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as base-entity-api.yaml and base-rule-api.yaml establish. A
+    calculation's `id` is unique within its organization.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  /organizations/{orgKey}/calculation-definitions:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listCalculationDefinitions
+      tags: [ Calculation Definitions ]
+      summary: List all calculation definitions of an organization
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: Calculation definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalculationDefinition"
+
+    post:
+      operationId: createCalculationDefinition
+      tags: [ Calculation Definitions ]
+      summary: Create a calculation definition
+      description: The id is the source's `calculation` key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculationDefinitionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/calculation-definitions/import:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: importCalculationDefinitions
+      tags: [ Calculation Definitions ]
+      summary: Bulk-import calculation definitions from a YAML file
+      description: >-
+        The file holds one calculation per YAML document, documents separated by `---`. Existing
+        definitions are replaced rather than rejected. All-or-nothing: if any document is invalid,
+        nothing in the file is persisted.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import outcome
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /organizations/{orgKey}/calculation-definitions/validate:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: validateCalculationDefinition
+      tags: [ Calculation Definitions ]
+      summary: Statically check a calculation source
+      description: >-
+        Parses the source and checks references, the one-logic-type rule, table arity, FEEL syntax and
+        cycles. Stores nothing; a source with errors is answered 200 with `valid: false`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculationSource"
+      responses:
+        "200":
+          description: Validation report with the dependency graph
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationReport"
+
+  /organizations/{orgKey}/calculation-definitions/{calculationId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalculationIdParam"
+    get:
+      operationId: getCalculationDefinition
+      tags: [ Calculation Definitions ]
+      summary: Get a single calculation definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: Calculation definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      operationId: updateCalculationDefinition
+      tags: [ Calculation Definitions ]
+      summary: Replace a calculation definition's source
+      description: >-
+        The source's `calculation` key must be the path's id. Supply the `version` you last read to be
+        refused with 409 rather than silently overwriting a concurrent edit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculationDefinitionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+    delete:
+      operationId: deleteCalculationDefinition
+      tags: [ Calculation Definitions ]
+      summary: Delete a calculation definition
+      description: Its runs are kept; a frozen result stays explainable from the run's own snapshot.
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calculations/{calculationId}/evaluate:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalculationIdParam"
+    post:
+      operationId: evaluateCalculation
+      tags: [ Calculations ]
+      summary: Compute a calculation for given parameters; nothing is stored
+      description: >-
+        A decision that fails is answered 200 with `error` and the trace up to it, which is what a preview
+        shows; a source that does not validate, or a parameter that cannot be resolved, is a 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EvaluationRequest"
+      responses:
+        "200":
+          description: Results and trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvaluationResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calculations/{calculationId}/runs:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalculationIdParam"
+    get:
+      operationId: listCalculationRunsOfCalculation
+      tags: [ Calculations ]
+      summary: The runs of one calculation, newest first
+      responses:
+        "200":
+          description: Runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalculationRun"
+    post:
+      operationId: runCalculation
+      tags: [ Calculations ]
+      summary: Compute a calculation and persist its results into the output entity
+      description: >-
+        A failed evaluation is still a run, answered 201 with status FAILED. A subject whose latest
+        run is frozen is refused with 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunRequest"
+      responses:
+        "201":
+          description: The run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationRun"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/calculation-runs:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listCalculationRuns
+      tags: [ Calculation Runs ]
+      summary: The runs of an organization, newest first
+      parameters:
+        - name: calculationId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: subjectId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalculationRun"
+
+  /organizations/{orgKey}/calculation-runs/{runId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/RunIdParam"
+    get:
+      operationId: getCalculationRun
+      tags: [ Calculation Runs ]
+      summary: Status, results and definition version of a run
+      responses:
+        "200":
+          description: The run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationRun"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calculation-runs/{runId}/trace:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/RunIdParam"
+    get:
+      operationId: getCalculationRunTrace
+      tags: [ Calculation Runs ]
+      summary: The value of every decision of a run, in evaluation order
+      responses:
+        "200":
+          description: Trace
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TraceEntry"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calculation-runs/{runId}/freeze:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/RunIdParam"
+    post:
+      operationId: freezeCalculationRun
+      tags: [ Calculation Runs ]
+      summary: Make a run's results immutable
+      description: >-
+        A frozen run's subject is no longer recalculated. Only a COMPLETED run can be frozen; freezing a
+        frozen run is a no-op.
+      responses:
+        "200":
+          description: The frozen run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculationRun"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+components:
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Organisation key used to scope all base-calculation resources for multi-tenancy.
+    CalculationIdParam:
+      name: calculationId
+      in: path
+      required: true
+      schema:
+        type: string
+    RunIdParam:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of a definition to read: the `draft` the designer edits, or the one the organization
+        last released, which is what triggers run. Writes always go to the draft.
+
+  responses:
+    BadRequest:
+      description: Validation error — the request payload or parameters are invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    CalculationSource:
+      type: object
+      required: [ source ]
+      properties:
+        source:
+          type: string
+          description: The calculation as a YAML document.
+
+    CalculationDefinitionInput:
+      type: object
+      required: [ source ]
+      properties:
+        source:
+          type: string
+          description: The calculation as a YAML document; its `calculation` key is the id.
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one. Omit it to overwrite unconditionally.
+
+    CalculationParameter:
+      type: object
+      required: [ name ]
+      properties:
+        name:
+          type: string
+        entity:
+          type: string
+          nullable: true
+          description: An entity parameter's entity definition code; its value is an object id.
+        type:
+          type: string
+          nullable: true
+          description: A plain parameter's type — string, number, boolean, date or date-time.
+
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released. Present on drafts only.
+
+    CalculationDefinition:
+      type: object
+      required: [ id, source ]
+      properties:
+        id:
+          type: string
+          example: order-total
+        name:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        source:
+          type: string
+        definitionVersion:
+          type: integer
+          description: Moves on with every successful save; what a run records.
+        parameters:
+          type: array
+          readOnly: true
+          description: The parameters the source declares, for a caller building an evaluate form.
+          items:
+            $ref: "#/components/schemas/CalculationParameter"
+        outputEntity:
+          type: string
+          nullable: true
+          readOnly: true
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        releaseState:
+          allOf:
+            - $ref: "#/components/schemas/ReleaseState"
+          readOnly: true
+
+    ValidationReport:
+      type: object
+      required: [ valid, errors ]
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+        order:
+          type: array
+          description: The decisions in evaluation order — empty when the graph has a cycle.
+          items:
+            type: string
+        decisions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionNode"
+        dependencies:
+          type: array
+          items:
+            $ref: "#/components/schemas/DecisionDependency"
+
+    DecisionNode:
+      type: object
+      required: [ name, kind, scope ]
+      properties:
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [ EXPR, TABLE, AGGREGATE, RANK ]
+        scope:
+          type: string
+          description: "`scalar`, `row:<input>` or `group:<attribute>`."
+
+    DecisionDependency:
+      type: object
+      required: [ from, to ]
+      description: "`to` requires `from`."
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+
+    EvaluationRequest:
+      type: object
+      properties:
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Parameter values by name; an entity parameter takes the object's id.
+        revision:
+          type: string
+          enum: [ draft, released ]
+          default: draft
+        source:
+          type: string
+          nullable: true
+          description: An unsaved source to evaluate instead of the stored one — a designer's preview.
+
+    RunRequest:
+      type: object
+      properties:
+        parameters:
+          type: object
+          additionalProperties: true
+        revision:
+          type: string
+          enum: [ draft, released ]
+          default: released
+
+    TraceEntry:
+      type: object
+      required: [ decision, kind, scope ]
+      properties:
+        decision:
+          type: string
+        kind:
+          type: string
+        scope:
+          type: string
+        value:
+          description: The scalar value, or the list of per-row or per-group values.
+        error:
+          type: string
+          nullable: true
+
+    EvaluationResult:
+      type: object
+      properties:
+        values:
+          type: object
+          additionalProperties: true
+          description: Every scalar decision's value.
+        rows:
+          type: object
+          additionalProperties: true
+          description: Per input, its rows with the row decisions added as columns.
+        groups:
+          type: object
+          additionalProperties: true
+          description: Per grouping attribute, one row per group with the group decisions.
+        order:
+          type: array
+          items:
+            type: string
+        trace:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceEntry"
+        error:
+          type: string
+          nullable: true
+          description: >-
+            Why the evaluation stopped; the trace then ends with the failing decision. Absent on success.
+
+    RunStatus:
+      type: string
+      enum: [ COMPLETED, FAILED ]
+
+    CalculationRun:
+      type: object
+      required: [ id, calculationId, status ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        calculationId:
+          type: string
+        definitionVersion:
+          type: integer
+        channel:
+          type: string
+          enum: [ DRAFT, RELEASED ]
+        triggeredBy:
+          type: string
+          enum: [ MANUAL, ON_CHANGE, STATE, FREEZE_STATE ]
+        subjectType:
+          type: string
+          nullable: true
+        subjectId:
+          type: string
+          nullable: true
+        parameters:
+          type: object
+          additionalProperties: true
+        status:
+          $ref: "#/components/schemas/RunStatus"
+        error:
+          type: string
+          nullable: true
+        result:
+          $ref: "#/components/schemas/EvaluationResult"
+        written:
+          type: integer
+          description: How many output objects the run wrote.
+        frozen:
+          type: boolean
+        frozenAt:
+          type: string
+          format: date-time
+          nullable: true
+        definitionSource:
+          type: string
+          description: The definition as it was when the run computed — what explains a frozen result.
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+        errorText:
+          type: string
+
+    ImportResult:
+      type: object
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string

@@ -38,7 +38,7 @@ public class UpdateEntityInstanceUseCase {
                                        EntityDefinitionLookupPort definitionLookupPort, PayloadValidatorPort payloadValidatorPort,
                                        ApplicationEventPublisher eventPublisher, ObjectProvider<ManagedAttributesPort> managedAttributesProvider) {
         this(repository, scope, definitionLookupPort, payloadValidatorPort, eventPublisher,
-            managedAttributesProvider.getIfUnique(() -> ManagedAttributesPort.NONE));
+            ManagedAttributesPort.unionOf(managedAttributesProvider.orderedStream().toList()));
     }
 
     public UpdateEntityInstanceUseCase(EntityObjectRepository repository, EntityObjectScope scope,

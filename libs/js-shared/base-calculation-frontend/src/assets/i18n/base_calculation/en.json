@@ -1,0 +1,78 @@
+{
+  "calculation_definition": {
+    "_self": "Calculation Definition",
+    "id": "Id",
+    "name": "Name",
+    "description": "Description",
+    "source": "Source",
+    "definitionVersion": "Version",
+    "outputEntity": "Output",
+    "releaseState": "Release",
+    "_tooltips": {
+      "id": "The calculation key of the source, e.g. order-total. Change it in the source.",
+      "name": "The name key of the source, as people see it in lists.",
+      "description": "The description key of the source.",
+      "source": "The calculation as YAML: parameters, inputs, decision tables, functions, decisions, output and trigger. The Source tab has an editor and Validate.",
+      "definitionVersion": "Moves on with every save that changes the source. Each run records the version it computed with. Set by the system.",
+      "outputEntity": "The entity type the calculation writes its results into. Set by the system from the source.",
+      "releaseState": "Whether the running application uses this calculation as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what triggers run. Set by the system."
+    }
+  },
+  "source": {
+    "tab": "Source",
+    "validate": "Validate",
+    "save": "Save",
+    "unsaved": "Unsaved changes",
+    "valid": "The calculation is valid.",
+    "decision": "Decision",
+    "kind": "Kind",
+    "scope": "Scope",
+    "requires": "Requires"
+  },
+  "tables": {
+    "tab": "Decision tables",
+    "add": "Add table",
+    "remove": "Remove table",
+    "save": "Save",
+    "name": "Name",
+    "hitPolicy": "Hit policy",
+    "output": "Output",
+    "then": "Then",
+    "removeInput": "Remove input",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "removeRule": "Remove rule",
+    "addRule": "Add rule",
+    "none": "The calculation has no decision tables.",
+    "unreadable": "The source is not valid YAML; fix it on the Source tab first:"
+  },
+  "evaluate": {
+    "tab": "Evaluate",
+    "parameters": "Parameters",
+    "noParameters": "The calculation declares no parameters.",
+    "entityHint": "Id of the {{entity}}",
+    "evaluate": "Evaluate draft",
+    "run": "Run released",
+    "runResult": "Run {{status}}: {{written}} object(s) written · {{id}}",
+    "values": "Values",
+    "trace": "Trace",
+    "decision": "Decision",
+    "kind": "Kind",
+    "scope": "Scope",
+    "value": "Value"
+  },
+  "runs": {
+    "calculation": "Calculation",
+    "subject": "Subject",
+    "refresh": "Refresh",
+    "none": "No runs yet.",
+    "startedAt": "Started",
+    "version": "Version",
+    "triggeredBy": "Triggered by",
+    "status": "Status",
+    "frozen": "Frozen",
+    "freeze": "Freeze",
+    "frozenAt": "Frozen at {{at}}",
+    "source": "Definition as it ran"
+  }
+}

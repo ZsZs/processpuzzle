@@ -410,6 +410,29 @@
               </configOptions>
             </configuration>
           </execution>
+          <execution>
+            <id>generate-calculation-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-calculation-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.calculation.api</apiPackage>
+              <modelPackage>com.processpuzzle.calculation.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse,ImportResult=com.processpuzzle.shared.model.ImportResult
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
           <!-- The vision server is called, not served: base-ai-backend is its client. spring-http-interface
                generates @HttpExchange interfaces, which a RestClient-backed HttpServiceProxyFactory
                implements — no generated ApiClient or other supporting files. -->

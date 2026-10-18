@@ -34,6 +34,7 @@ import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATIO
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE, provideEntityReportsTab } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
+import { BASE_CALCULATION_ENTITY_FACADES, BASE_CALCULATION_FACADE_PROVIDERS, BASE_CALCULATION_TRANSLATION_SOURCE } from '@processpuzzle/base-calculation';
 import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
 import {
   BASE_WORKFLOW_ENTITY_FACADES,
@@ -90,6 +91,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-event: the routable `Event Definition` catalog. base-workflow's start event names it in
       // a FOREIGN_KEY without importing base-event, so this registration is also what fills that picker.
       ...BASE_EVENT_FACADE_PROVIDERS,
+      // And for base-calculation: the routable `Calculation Definition`, whose extra tabs edit its source.
+      ...BASE_CALCULATION_FACADE_PROVIDERS,
       // And for base-workflow: three routable aggregates — the `Workflow` a tenant authors, the
       // `Tool Definition`s its steps call and the `Workflow Instance`s it produces — plus the ten embedded
       // levels below them. All thirteen or none: a task's `performedBy` resolves through the role facade
@@ -156,6 +159,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           ...BASE_WIDGET_ENTITY_FACADES,
           ...BASE_STATE_ENTITY_FACADES,
           ...BASE_EVENT_ENTITY_FACADES,
+          ...BASE_CALCULATION_ENTITY_FACADES,
           ...BASE_WORKFLOW_ENTITY_FACADES,
           ...BASE_AI_ENTITY_FACADES,
           'Embedded Component': EmbeddedComponentFacade,
@@ -173,6 +177,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
         BASE_DOCUMENT_TRANSLATION_SOURCE,
         BASE_STATE_TRANSLATION_SOURCE,
         BASE_EVENT_TRANSLATION_SOURCE,
+        BASE_CALCULATION_TRANSLATION_SOURCE,
         BASE_WORKFLOW_TRANSLATION_SOURCE,
         BASE_AI_TRANSLATION_SOURCE,
       ].map((source) => ({
