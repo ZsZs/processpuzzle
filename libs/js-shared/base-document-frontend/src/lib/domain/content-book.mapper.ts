@@ -2,9 +2,41 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { ContentBook, ContentBookNode } from './content-book';
 
+interface ContentBookNodeDto {
+  id: string;
+  documentId: string;
+  parentId?: string | null;
+  orderIndex?: number;
+}
+
+export interface ContentBookDto {
+  id?: string;
+  orgKey?: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  isPublic?: boolean;
+  readerRoles?: string[];
+  editorRoles?: string[];
+  nodes?: ContentBookNodeDto[];
+  lockVersion?: number;
+  version?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface ContentBookInputDto {
+  slug: string;
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  readerRoles: string[];
+  editorRoles: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ContentBookMapper implements BaseEntityMapper<ContentBook> {
-  fromDto(dto: any): ContentBook {
+  fromDto(dto: ContentBookDto): ContentBook {
     return new ContentBook(
       dto.id,
       dto.orgKey,
@@ -14,7 +46,7 @@ export class ContentBookMapper implements BaseEntityMapper<ContentBook> {
       dto.isPublic ?? false,
       dto.readerRoles ?? [],
       dto.editorRoles ?? [],
-      (dto.nodes ?? []).map((node: any): ContentBookNode => ({ id: node.id, documentId: node.documentId, parentId: node.parentId ?? null, orderIndex: node.orderIndex ?? 0 })),
+      (dto.nodes ?? []).map((node): ContentBookNode => ({ id: node.id, documentId: node.documentId, parentId: node.parentId ?? null, orderIndex: node.orderIndex ?? 0 })),
       dto.lockVersion ?? dto.version,
       dto.createdAt,
       dto.updatedAt,
@@ -26,7 +58,7 @@ export class ContentBookMapper implements BaseEntityMapper<ContentBook> {
    * save that sent the tree it loaded would revert a reorder made in the meantime. Absent `nodes` is what the
    * contract reads as "leave the tree alone".
    */
-  toDto(entity: ContentBook): any {
+  toDto(entity: ContentBook): ContentBookInputDto {
     return {
       slug: entity.slug,
       title: entity.title,

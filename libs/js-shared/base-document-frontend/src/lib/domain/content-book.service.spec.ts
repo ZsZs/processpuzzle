@@ -88,6 +88,24 @@ describe('ContentBookMapper', () => {
     expect(book.nodes).toEqual([]);
     expect(book.version).toBe(2);
   });
+
+  it('keeps what a full payload carries', () => {
+    const book = new ContentBookMapper().fromDto({
+      id: 'b',
+      slug: 'x',
+      title: 'X',
+      description: 'Why',
+      isPublic: true,
+      nodes: [{ id: 'n', documentId: 'd', parentId: 'p', orderIndex: 3 }],
+      lockVersion: 5,
+      version: 2,
+    });
+
+    expect(book.description).toBe('Why');
+    expect(book.isPublic).toBe(true);
+    expect(book.nodes).toEqual([{ id: 'n', documentId: 'd', parentId: 'p', orderIndex: 3 }]);
+    expect(book.version).toBe(5);
+  });
 });
 
 describe('contentOf', () => {

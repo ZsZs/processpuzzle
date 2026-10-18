@@ -92,7 +92,12 @@ export function move(nodes: readonly ContentBookNode[], nodeId: string, directio
   const { siblings, index } = placeOf(nodes, nodeId);
   const other = siblings[direction === 'up' ? index - 1 : index + 1];
   const node = siblings[index];
-  return normalize(nodes.map((each) => (each.id === node.id ? { ...each, orderIndex: other.orderIndex } : each.id === other.id ? { ...each, orderIndex: node.orderIndex } : each)));
+  const swapped = (each: ContentBookNode): ContentBookNode => {
+    if (each.id === node.id) return { ...each, orderIndex: other.orderIndex };
+    if (each.id === other.id) return { ...each, orderIndex: node.orderIndex };
+    return each;
+  };
+  return normalize(nodes.map(swapped));
 }
 
 export function canIndent(nodes: readonly ContentBookNode[], nodeId: string): boolean {
@@ -135,6 +140,9 @@ function placeOf(nodes: readonly ContentBookNode[], nodeId: string): { siblings:
   return { siblings, index: siblings.findIndex((each) => each.id === nodeId) };
 }
 
+let nodeCounter = 0;
+
 function newNodeId(): string {
-  return globalThis.crypto?.randomUUID?.() ?? `node-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  nodeCounter += 1;
+  return globalThis.crypto?.randomUUID?.() ?? `node-${Date.now().toString(36)}-${nodeCounter.toString(36)}`;
 }

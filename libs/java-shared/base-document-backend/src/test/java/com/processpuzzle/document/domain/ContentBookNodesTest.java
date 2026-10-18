@@ -33,39 +33,46 @@ class ContentBookNodesTest {
 
     @Test
     void anUnknownParentIsRefused() {
-        assertThatThrownBy(() -> new ContentBookNodes(List.of(node("a", "doc-a", "ghost", 0))))
+        List<ContentBookNode> given = List.of(node("a", "doc-a", "ghost", 0));
+        assertThatThrownBy(() -> new ContentBookNodes(given))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("unknown parent 'ghost'");
     }
 
     @Test
     void aCycleIsRefused() {
-        assertThatThrownBy(() -> new ContentBookNodes(List.of(node("a", "doc-a", "b", 0), node("b", "doc-b", "a", 0))))
+        List<ContentBookNode> given = List.of(node("a", "doc-a", "b", 0), node("b", "doc-b", "a", 0));
+        assertThatThrownBy(() -> new ContentBookNodes(given))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("cycle");
     }
 
     @Test
     void aDocumentAppearsAtMostOnce() {
-        assertThatThrownBy(() -> new ContentBookNodes(List.of(node("a", "doc", null, 0), node("b", "doc", null, 1))))
+        List<ContentBookNode> given = List.of(node("a", "doc", null, 0), node("b", "doc", null, 1));
+        assertThatThrownBy(() -> new ContentBookNodes(given))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Document 'doc' appears more than once");
     }
 
     @Test
     void aNodeIdAppearsAtMostOnce() {
-        assertThatThrownBy(() -> new ContentBookNodes(List.of(node("a", "doc-1", null, 0), node("a", "doc-2", null, 1))))
+        List<ContentBookNode> given = List.of(node("a", "doc-1", null, 0), node("a", "doc-2", null, 1));
+        assertThatThrownBy(() -> new ContentBookNodes(given))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Node id 'a'");
     }
 
     @Test
     void everyNodeNeedsAnIdAndADocument() {
-        assertThatThrownBy(() -> new ContentBookNodes(List.of(node(" ", "doc", null, 0))))
+        List<ContentBookNode> given = List.of(node(" ", "doc", null, 0));
+        assertThatThrownBy(() -> new ContentBookNodes(given))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new ContentBookNodes(List.of(node("a", null, null, 0))))
+        List<ContentBookNode> given2 = List.of(node("a", null, null, 0));
+        assertThatThrownBy(() -> new ContentBookNodes(given2))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new ContentBookNodes(Arrays.asList((ContentBookNode) null)))
+        List<ContentBookNode> given3 = Arrays.asList((ContentBookNode) null);
+        assertThatThrownBy(() -> new ContentBookNodes(given3))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

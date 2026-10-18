@@ -69,7 +69,8 @@ class ContentBookUseCasesTest {
     void aBookThePrincipalMayNotReadIsNotFound() {
         givenBook(book(false, EDITORS_ONLY));
 
-        assertThatThrownBy(() -> new FindContentBook(repository, guard(TestPolicies.holding("other"))).execute(ORG, BOOK_ID))
+        var useCase = new FindContentBook(repository, guard(TestPolicies.holding("other")));
+        assertThatThrownBy(() -> useCase.execute(ORG, BOOK_ID))
                 .isInstanceOf(ContentBookNotFoundException.class);
     }
 
@@ -84,7 +85,8 @@ class ContentBookUseCasesTest {
     void anUnknownBookIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, "missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> new FindContentBook(repository, guard(TestPolicies.permitAll())).execute(ORG, "missing"))
+        var useCase = new FindContentBook(repository, guard(TestPolicies.permitAll()));
+        assertThatThrownBy(() -> useCase.execute(ORG, "missing"))
                 .isInstanceOf(ContentBookNotFoundException.class);
     }
 
@@ -129,14 +131,18 @@ class ContentBookUseCasesTest {
     void createRefusesATakenSlug() {
         when(repository.existsByOrgKeyAndSlug(ORG, "handbook")).thenReturn(true);
 
-        assertThatThrownBy(() -> create(TestPolicies.permitAll(), command("handbook", null)))
+        var policy = TestPolicies.permitAll();
+        var command = command("handbook", null);
+        assertThatThrownBy(() -> create(policy, command))
                 .isInstanceOf(ContentBookSlugAlreadyExistsException.class);
         verify(repository, never()).save(any());
     }
 
     @Test
     void createRequiresMembership() {
-        assertThatThrownBy(() -> create(TestPolicies.outsider(), command("handbook", null)))
+        var policy = TestPolicies.outsider();
+        var command = command("handbook", null);
+        assertThatThrownBy(() -> create(policy, command))
                 .isInstanceOf(IllegalStateException.class);
     }
     // endregion
@@ -173,8 +179,10 @@ class ContentBookUseCasesTest {
         givenBook(book(false, EDITORS_ONLY));
         when(repository.existsByOrgKeyAndSlug(ORG, "taken")).thenReturn(true);
 
-        assertThatThrownBy(() -> new UpdateContentBook(repository, new ContentBookTreeChecker(documents),
-                guard(TestPolicies.permitAll())).execute(ORG, BOOK_ID, command("taken", null)))
+        var useCase = new UpdateContentBook(repository, new ContentBookTreeChecker(documents),
+                guard(TestPolicies.permitAll()));
+        var command = command("taken", null);
+        assertThatThrownBy(() -> useCase.execute(ORG, BOOK_ID, command))
                 .isInstanceOf(ContentBookSlugAlreadyExistsException.class);
     }
 
@@ -182,8 +190,10 @@ class ContentBookUseCasesTest {
     void updateRequiresAnEditorOfTheBook() {
         givenBook(book(false, EDITORS_ONLY));
 
-        assertThatThrownBy(() -> new UpdateContentBook(repository, new ContentBookTreeChecker(documents),
-                guard(TestPolicies.holding("reader"))).execute(ORG, BOOK_ID, command("handbook", null)))
+        var useCase = new UpdateContentBook(repository, new ContentBookTreeChecker(documents),
+                guard(TestPolicies.holding("reader")));
+        var command = command("handbook", null);
+        assertThatThrownBy(() -> useCase.execute(ORG, BOOK_ID, command))
                 .isInstanceOf(DocumentAccessDeniedException.class)
                 .hasMessageContaining("content book 'book-1'");
     }
@@ -192,8 +202,10 @@ class ContentBookUseCasesTest {
     void updateOfAnUnknownBookIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, BOOK_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> new UpdateContentBook(repository, new ContentBookTreeChecker(documents),
-                guard(TestPolicies.permitAll())).execute(ORG, BOOK_ID, command("handbook", null)))
+        var useCase = new UpdateContentBook(repository, new ContentBookTreeChecker(documents),
+                guard(TestPolicies.permitAll()));
+        var command = command("handbook", null);
+        assertThatThrownBy(() -> useCase.execute(ORG, BOOK_ID, command))
                 .isInstanceOf(ContentBookNotFoundException.class);
     }
     // endregion
@@ -214,8 +226,9 @@ class ContentBookUseCasesTest {
     void replaceNodesRefusesAnInvalidTree() {
         givenBook(book(false, EDITORS_ONLY));
 
-        assertThatThrownBy(() -> replaceNodes(TestPolicies.permitAll(),
-                List.of(new ContentBookNode("a", DOC_A, "a", 0))))
+        var policy = TestPolicies.permitAll();
+        List<ContentBookNode> tree = List.of(new ContentBookNode("a", DOC_A, "a", 0));
+        assertThatThrownBy(() -> replaceNodes(policy, tree))
                 .isInstanceOf(ContentBookInvalidTreeException.class);
     }
 
@@ -224,8 +237,9 @@ class ContentBookUseCasesTest {
         givenBook(book(false, EDITORS_ONLY));
         when(documents.findAllById(anyIterable())).thenReturn(List.of(document(DOC_A, DocumentKind.DOCUMENT)));
 
-        assertThatThrownBy(() -> replaceNodes(TestPolicies.permitAll(),
-                List.of(new ContentBookNode("a", DOC_A, null, 0), new ContentBookNode("b", DOC_B, null, 1))))
+        var policy = TestPolicies.permitAll();
+        List<ContentBookNode> tree = List.of(new ContentBookNode("a", DOC_A, null, 0), new ContentBookNode("b", DOC_B, null, 1));
+        assertThatThrownBy(() -> replaceNodes(policy, tree))
                 .isInstanceOf(DocumentNotFoundException.class)
                 .hasMessageContaining(DOC_B);
     }
@@ -235,7 +249,9 @@ class ContentBookUseCasesTest {
         givenBook(book(false, EDITORS_ONLY));
         when(documents.findAllById(anyIterable())).thenReturn(List.of(document(DOC_A, DocumentKind.REPORT_TEMPLATE)));
 
-        assertThatThrownBy(() -> replaceNodes(TestPolicies.permitAll(), List.of(new ContentBookNode("a", DOC_A, null, 0))))
+        var policy = TestPolicies.permitAll();
+        List<ContentBookNode> tree = List.of(new ContentBookNode("a", DOC_A, null, 0));
+        assertThatThrownBy(() -> replaceNodes(policy, tree))
                 .isInstanceOf(ContentBookInvalidTreeException.class)
                 .hasMessageContaining("REPORT_TEMPLATE");
     }
@@ -244,7 +260,9 @@ class ContentBookUseCasesTest {
     void replaceNodesRequiresAnEditorOfTheBook() {
         givenBook(book(false, EDITORS_ONLY));
 
-        assertThatThrownBy(() -> replaceNodes(TestPolicies.holding("reader"), List.of()))
+        var policy = TestPolicies.holding("reader");
+        List<ContentBookNode> tree = List.of();
+        assertThatThrownBy(() -> replaceNodes(policy, tree))
                 .isInstanceOf(DocumentAccessDeniedException.class);
         verify(repository, never()).save(any());
     }
@@ -253,7 +271,9 @@ class ContentBookUseCasesTest {
     void replaceNodesOfAnUnknownBookIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, BOOK_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> replaceNodes(TestPolicies.permitAll(), List.of()))
+        var policy = TestPolicies.permitAll();
+        List<ContentBookNode> tree = List.of();
+        assertThatThrownBy(() -> replaceNodes(policy, tree))
                 .isInstanceOf(ContentBookNotFoundException.class);
     }
     // endregion
@@ -272,7 +292,8 @@ class ContentBookUseCasesTest {
     void deleteRequiresAnEditorOfTheBook() {
         givenBook(book(false, EDITORS_ONLY));
 
-        assertThatThrownBy(() -> new DeleteContentBook(repository, guard(TestPolicies.holding("reader"))).execute(ORG, BOOK_ID))
+        var useCase = new DeleteContentBook(repository, guard(TestPolicies.holding("reader")));
+        assertThatThrownBy(() -> useCase.execute(ORG, BOOK_ID))
                 .isInstanceOf(DocumentAccessDeniedException.class);
         verify(repository, never()).deleteById(any());
     }
@@ -281,7 +302,8 @@ class ContentBookUseCasesTest {
     void deleteOfAnUnknownBookIsNotFound() {
         when(repository.findByOrgKeyAndId(ORG, BOOK_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> new DeleteContentBook(repository, guard(TestPolicies.permitAll())).execute(ORG, BOOK_ID))
+        var useCase = new DeleteContentBook(repository, guard(TestPolicies.permitAll()));
+        assertThatThrownBy(() -> useCase.execute(ORG, BOOK_ID))
                 .isInstanceOf(ContentBookNotFoundException.class);
     }
     // endregion

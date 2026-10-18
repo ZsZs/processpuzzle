@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
@@ -22,7 +23,7 @@ describe('AddDocumentDialog', () => {
   const data: AddDocumentDialogData = { locale: 'hu', isPublic: true, readerRoles: ['reader'], editorRoles: ['editor'], excludeDocumentIds: ['d-in-book'] };
 
   const byTestId = (id: string): HTMLElement | null => document.querySelector(`[data-testid="${id}"]`);
-  const dialog = (): any => fixture.componentInstance;
+  const dialog = (): any => fixture.componentInstance; // eslint-disable-line @typescript-eslint/no-explicit-any -- reaches the protected members
 
   beforeEach(async () => {
     close = vi.fn();
@@ -112,5 +113,33 @@ describe('AddDocumentDialog', () => {
     fixture.detectChanges();
 
     expect(byTestId('add-document-none-left')).not.toBeNull();
+  });
+
+  it('shows the errorText an HTTP refusal carries, or the transport message without one', async () => {
+    documentService.add.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { errorText: 'Slug already used' } })));
+    dialog().title.setValue('Taken');
+    await dialog().submit();
+    expect(dialog().error()).toBe('Slug already used');
+
+    documentService.add.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500, error: null })));
+    await dialog().submit();
+    expect(dialog().error()).toContain('500');
+  });
+
+  it('narrows the candidates by title or slug', () => {
+    dialog().search.setValue('FREE');
+    expect(dialog().matches().map((candidate: Document) => candidate.id)).toEqual(['d-free']);
+    dialog().search.setValue('nothing');
+    expect(dialog().matches()).toEqual([]);
+  });
+
+  it('offers no candidates when the listing fails', async () => {
+    documentService.findByQuery.mockReturnValue(throwError(() => new Error('down')));
+    const failing = TestBed.createComponent(AddDocumentDialog);
+    failing.detectChanges();
+    await failing.whenStable();
+
+    expect((failing.componentInstance as any).candidates()).toEqual([]); // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect((failing.componentInstance as any).loaded()).toBe(true); // eslint-disable-line @typescript-eslint/no-explicit-any
   });
 });

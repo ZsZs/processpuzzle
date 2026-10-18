@@ -75,4 +75,12 @@ describe('appRoutes — entity screen mount points', () => {
 
     expect(authenticate).toHaveBeenCalledOnce();
   });
+
+  it('serves the handbook as a route of the document samples', async () => {
+    const handbook = childrenOf('base-document', 'samples').find((route) => route.path === 'handbook');
+
+    const component = await handbook?.loadComponent?.();
+
+    expect((component as { name: string }).name).toMatch(/HandbookComponent$/);
+  });
 });

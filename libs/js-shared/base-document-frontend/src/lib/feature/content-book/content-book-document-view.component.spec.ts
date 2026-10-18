@@ -131,4 +131,103 @@ describe('ContentBookDocumentViewComponent', () => {
     expect(byTestId('content-book-page-restricted')).not.toBeNull();
     expect(getTranslation).not.toHaveBeenCalled();
   });
+
+  it('asks only once when the reader’s language is the source language', async () => {
+    answer({ en: 1 });
+    await render('en');
+
+    expect(getTranslation).toHaveBeenCalledTimes(1);
+    expect(byTestId('reader')?.textContent).toBe('en:1');
+  });
+
+  it('reads a published translation without blocks as an empty page', async () => {
+    getTranslation.mockResolvedValue({ locale: 'en', status: DocumentStatus.PUBLISHED });
+    await render('en');
+
+    expect(byTestId('reader')?.textContent).toBe('en:0');
+  });
+
+  it('tells an editor a page with neither published nor draft content is not published', async () => {
+    roles.set(['editor']);
+    answer({}, {});
+    await render('de');
+
+    expect(byTestId('content-book-page-unpublished')).not.toBeNull();
+  });
+
+  it('falls back to a draft with no blocks', async () => {
+    roles.set(['editor']);
+    getTranslation.mockImplementation((_id: string, locale: string, draft: boolean) => (draft ? Promise.resolve({ locale }) : Promise.reject(NOT_FOUND)));
+    await render('en');
+
+    expect(byTestId('content-book-page-draft')).not.toBeNull();
+    expect(byTestId('reader')?.textContent).toBe('en:0');
+  });
+
+  it('opens the editor on an existing draft, and says loading until it arrives', async () => {
+    roles.set(['editor']);
+    answer({ de: 1 }, { de: 2 });
+    await render('de');
+    let release: (value: unknown) => void = () => undefined;
+    getTranslation.mockReturnValue(new Promise((resolve) => (release = resolve)));
+
+    byTestId('content-book-page-edit')?.click();
+    fixture.detectChanges();
+    expect(byTestId('editor')).toBeNull();
+
+    release(translation('de', 2));
+    await settle();
+    expect(byTestId('editor')?.textContent).toBe('de:true');
+  });
+
+  it('leaves editing and shows the error when the draft cannot be read', async () => {
+    roles.set(['editor']);
+    answer({ de: 1 });
+    await render('de');
+    getTranslation.mockRejectedValue(new Error('draft broke'));
+
+    byTestId('content-book-page-edit')?.click();
+    await settle();
+
+    expect(byTestId('editor')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('draft broke');
+  });
+
+  it('describes failures by their message, or as text', async () => {
+    getTranslation.mockRejectedValue('plain failure');
+    await render('en');
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('plain failure');
+
+    getTranslation.mockRejectedValue(new HttpErrorResponse({ status: 500 }));
+    fixture.componentRef.setInput('locale', 'fr');
+    await settle();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('500');
+  });
+
+  it('lets only the latest load settle when the reader moves on mid-read', async () => {
+    let releaseFirst: (value: unknown) => void = () => undefined;
+    getTranslation.mockReturnValueOnce(new Promise((resolve) => (releaseFirst = resolve)));
+    await render('en');
+    getTranslation.mockResolvedValue(translation('fr', 5));
+    fixture.componentRef.setInput('locale', 'fr');
+    await settle();
+
+    releaseFirst(translation('en', 1));
+    await settle();
+
+    expect(byTestId('reader')?.textContent).toBe('fr:5');
+  });
+
+  it('turns into the restricted notice when the document disappears while editing', async () => {
+    roles.set(['editor']);
+    answer({ en: 1 });
+    await render('en');
+    byTestId('content-book-page-edit')?.click();
+    await settle();
+    expect(byTestId('editor')).not.toBeNull();
+
+    fixture.componentRef.setInput('document', undefined);
+    await settle();
+    expect(byTestId('content-book-page-restricted')).not.toBeNull();
+  });
 });

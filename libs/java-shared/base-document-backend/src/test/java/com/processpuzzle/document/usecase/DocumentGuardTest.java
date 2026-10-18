@@ -155,7 +155,8 @@ class DocumentGuardTest {
         assertThat(TestGuards.with(holding("reader")).canRead(ORG, false, roles)).isTrue();
         assertThatCode(() -> TestGuards.with(holding("editor")).requireEditor(ORG, roles, "content book", "b-1"))
                 .doesNotThrowAnyException();
-        assertThatThrownBy(() -> TestGuards.with(holding("reader")).requireEditor(ORG, roles, "content book", "b-1"))
+        var readerGuard = TestGuards.with(holding("reader"));
+        assertThatThrownBy(() -> readerGuard.requireEditor(ORG, roles, "content book", "b-1"))
                 .isInstanceOf(DocumentAccessDeniedException.class)
                 .hasMessage("The current principal may not edit content book 'b-1'");
     }

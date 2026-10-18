@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ContentBookNode } from '../../domain/content-book';
 import { addNode, canIndent, canMove, canOutdent, detachDocument, indent, move, normalize, outdent, removeSubtree, siblingsOf, toTreeNav } from './content-book-tree';
 
@@ -44,6 +44,18 @@ describe('content book tree', () => {
 
     expect(added[0].id).toBeTruthy();
     expect(added[0].documentId).toBe('doc-new');
+  });
+
+  it('mints distinct ids without crypto.randomUUID', () => {
+    vi.stubGlobal('crypto', undefined);
+    try {
+      const first = addNode([], 'd1')[0].id;
+      const second = addNode([], 'd2')[0].id;
+      expect(first).toMatch(/^node-/);
+      expect(first).not.toBe(second);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('removes a page with everything filed under it', () => {

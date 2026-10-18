@@ -86,7 +86,8 @@ class ContentBookPersistenceTest {
         repository.saveAndFlush(new ContentBook("other-org", "book-2", "handbook", "Handbook", "ada"));
         assertThat(repository.existsByOrgKeyAndSlug("demo", "handbook")).isTrue();
 
-        assertThatThrownBy(() -> repository.saveAndFlush(new ContentBook("demo", "book-3", "handbook", "Copy", "ada")))
+        ContentBook copy = new ContentBook("demo", "book-3", "handbook", "Copy", "ada");
+        assertThatThrownBy(() -> repository.saveAndFlush(copy))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 

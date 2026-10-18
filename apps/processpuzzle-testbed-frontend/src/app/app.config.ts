@@ -36,6 +36,7 @@ import {
   BASE_DOCUMENT_FACADE_PROVIDERS,
   BASE_DOCUMENT_TRANSLATION_SOURCE,
   DOCUMENT_ACCESS_CONTEXT,
+  type DocumentAccessContext,
   provideContentBookWidget,
   provideEntityReportsTab,
 } from '@processpuzzle/base-document';
@@ -56,6 +57,12 @@ import { EmbeddedComponentFacade } from './content/base-forms/embedded-component
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { provideTestbedApplicationContext } from './testbed-application-context';
+
+/** The signed-in user's roles, for the documents' edit affordances; the backend still decides. */
+export function createDocumentAccessContext(): DocumentAccessContext {
+  const auth = inject(AUTHENTICATION_SERVICE);
+  return { roles: computed(() => auth.currentUser()?.roles ?? []), authenticated: computed(() => auth.currentUser() !== undefined) };
+}
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -132,10 +139,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // know the auth library, so the application bridges the two; the backend still decides.
       {
         provide: DOCUMENT_ACCESS_CONTEXT,
-        useFactory: () => {
-          const auth = inject(AUTHENTICATION_SERVICE);
-          return { roles: computed(() => auth.currentUser()?.roles ?? []), authenticated: computed(() => auth.currentUser() !== undefined) };
-        },
+        useFactory: createDocumentAccessContext,
       },
       // Binds base-entity's `RULE_ENGINE` seam to base-rule's evaluator, for the **whole application**.
       //

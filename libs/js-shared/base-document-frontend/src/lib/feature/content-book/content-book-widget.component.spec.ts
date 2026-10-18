@@ -1,11 +1,13 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { LayoutService } from '@processpuzzle/util';
 import { SidenavContentService } from '@processpuzzle/widgets';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Document } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
@@ -20,6 +22,23 @@ class PageStubComponent {
   readonly documentId = input.required<string>();
   readonly locale = input.required<string>();
   readonly document = input<Document | undefined>(undefined);
+}
+
+/** The protected surface of the widget the specs drive directly. */
+interface WidgetInternals {
+  can(action: string, nodeId: string): boolean;
+  select(nodeId: string): void;
+  moveNode(nodeId: string, direction: 'up' | 'down'): Promise<void>;
+  indentNode(nodeId: string): Promise<void>;
+  outdentNode(nodeId: string): Promise<void>;
+  removeNode(nodeId: string): Promise<void>;
+  addDocument(parentId: string | null): Promise<void>;
+  deleteDocument(nodeId: string): Promise<void>;
+  book: { (): ContentBook | undefined; set(value: ContentBook | undefined): void };
+  actionError(): string | undefined;
+  selectedNode(): ContentBookNode | undefined;
+  selectedNodeId(): string | undefined;
+  effectiveLocale(): string;
 }
 
 const NODES: ContentBookNode[] = [
@@ -40,9 +59,22 @@ describe('ContentBookWidgetComponent', () => {
   let roles: ReturnType<typeof signal<readonly string[]>>;
   let sidenavContent: SidenavContentService;
   let queryParams: Record<string, string>;
+  let withoutRouter: boolean;
+  let small: ReturnType<typeof signal<boolean>>;
 
   const byTestId = (id: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${id}"]`);
-  const component = (): any => fixture.componentInstance;
+  const component = (): WidgetInternals => fixture.componentInstance as unknown as WidgetInternals;
+  const flush = async (): Promise<void> => {
+    await fixture.whenStable();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+  };
+  const clickMenuItem = async (nodeId: string, testId: string): Promise<void> => {
+    byTestId(`content-book-node-actions-${nodeId}`)?.click();
+    fixture.detectChanges();
+    (globalThis.document.querySelector(`[data-testid="${testId}"]`) as HTMLButtonElement).click();
+    await flush();
+  };
 
   async function render(inputs: Record<string, unknown> = {}): Promise<void> {
     fixture = TestBed.createComponent(ContentBookWidgetComponent);
@@ -56,6 +88,8 @@ describe('ContentBookWidgetComponent', () => {
 
   beforeEach(() => {
     queryParams = {};
+    small = signal(false);
+    withoutRouter = false;
     roles = signal<readonly string[]>(['editor']);
     bookService = { findBySlug: vi.fn().mockResolvedValue(book()), replaceNodes: vi.fn((_id: string, nodes: ContentBookNode[]) => Promise.resolve(book(nodes))) };
     documentService = {
@@ -71,9 +105,9 @@ describe('ContentBookWidgetComponent', () => {
         { provide: ContentBookService, useValue: bookService },
         { provide: BaseDocumentService, useValue: documentService },
         { provide: MatDialog, useValue: dialog },
-        { provide: Router, useValue: router },
-        { provide: ActivatedRoute, useFactory: () => ({ snapshot: { queryParamMap: convertToParamMap(queryParams) } }) },
-        { provide: LayoutService, useValue: { isSmallDevice: signal(false) } },
+        { provide: Router, useFactory: () => (withoutRouter ? null : router) },
+        { provide: ActivatedRoute, useFactory: () => (withoutRouter ? null : { snapshot: { queryParamMap: convertToParamMap(queryParams) } }) },
+        { provide: LayoutService, useValue: { isSmallDevice: small } },
         { provide: DOCUMENT_ACCESS_CONTEXT, useFactory: () => ({ roles }) },
       ],
     }).overrideComponent(ContentBookWidgetComponent, { remove: { imports: [ContentBookDocumentViewComponent] }, add: { imports: [PageStubComponent] } });
@@ -186,7 +220,7 @@ describe('ContentBookWidgetComponent', () => {
     await component().outdentNode('n-details');
     await component().removeNode('n-notes');
     expect(bookService.replaceNodes).toHaveBeenCalledTimes(4);
-    expect(component().book().nodes.map((node: ContentBookNode) => node.id)).not.toContain('n-notes');
+    expect(component().book()?.nodes.map((node: ContentBookNode) => node.id)).not.toContain('n-notes');
   });
 
   it('shows a refused save without losing the tree', async () => {
@@ -197,7 +231,7 @@ describe('ContentBookWidgetComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.pp-content-book__error')).not.toBeNull();
-    expect(component().book().nodes).toEqual(NODES);
+    expect(component().book()?.nodes).toEqual(NODES);
   });
 
   it('files the document the dialog picked, and opens it', async () => {
@@ -230,7 +264,7 @@ describe('ContentBookWidgetComponent', () => {
     await component().deleteDocument('n-overview');
 
     expect(documentService.delete).toHaveBeenCalledWith('d-overview');
-    expect(component().book().nodes.map((node: ContentBookNode) => `${node.parentId ?? '-'}/${node.id}`)).toEqual(['-/n-details', '-/n-notes']);
+    expect(component().book()?.nodes.map((node: ContentBookNode) => `${node.parentId ?? '-'}/${node.id}`)).toEqual(['-/n-details', '-/n-notes']);
     expect(component().selectedNodeId()).toBe('n-details');
   });
 
@@ -256,5 +290,186 @@ describe('ContentBookWidgetComponent', () => {
     await fixture.whenStable();
 
     expect(bookService.replaceNodes).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the contents beside the page on a small device, and hands them to the sidenav again on a large one', async () => {
+    sidenavContent.registerOutlet();
+    small.set(true);
+    await render();
+    expect(sidenavContent.portal()).toBeUndefined();
+    expect(byTestId('content-book-toc')).not.toBeNull();
+
+    small.set(false);
+    await flush();
+    expect(sidenavContent.portal()).toBeDefined();
+  });
+
+  it('reads in the given locale, else the active language', async () => {
+    await render({ locale: 'de' });
+    expect(component().effectiveLocale()).toBe('de');
+
+    await render();
+    expect(component().effectiveLocale()).toBe('en');
+  });
+
+  it('opens the first page when the address names an unknown one', async () => {
+    queryParams = { doc: 'nowhere' };
+    await render();
+    expect(component().selectedNodeId()).toBe('n-overview');
+  });
+
+  it('hints at an empty book, and loads no documents', async () => {
+    bookService.findBySlug.mockResolvedValue(book([]));
+    await render();
+
+    expect(documentService.findByQuery).not.toHaveBeenCalled();
+    expect(byTestId('content-book-toc')?.querySelector('.pp-content-book__hint')).not.toBeNull();
+    expect(component().selectedNode()).toBeUndefined();
+  });
+
+  it('selects a restricted page without reporting or navigating', async () => {
+    documentService.findByQuery.mockReturnValue(of({ content: [doc('d-overview', 'overview')], number: 0, size: 3, totalElements: 1, totalPages: 1 }));
+    await render();
+    const selected: string[] = [];
+    fixture.componentInstance.documentSelected.subscribe((slug) => selected.push(slug));
+
+    component().select('n-notes');
+
+    expect(selected).toEqual([]);
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(component().selectedNodeId()).toBe('n-notes');
+  });
+
+  it('works without a router', async () => {
+    withoutRouter = true;
+    await render();
+
+    component().select('n-notes');
+
+    expect(component().selectedNodeId()).toBe('n-notes');
+  });
+
+  it('runs every arranging verb from the node menu', async () => {
+    await render();
+
+    await clickMenuItem('n-notes', 'content-book-move-up');
+    await clickMenuItem('n-notes', 'content-book-move-down');
+    await clickMenuItem('n-notes', 'content-book-indent');
+    await clickMenuItem('n-details', 'content-book-outdent');
+    await clickMenuItem('n-notes', 'content-book-remove');
+
+    expect(bookService.replaceNodes).toHaveBeenCalledTimes(5);
+  });
+
+  it('adds a child from the node menu and a page from the toolbar', async () => {
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(doc('d-new', 'new-page')) });
+
+    await clickMenuItem('n-overview', 'content-book-add-child');
+    expect((bookService.replaceNodes.mock.calls[0][1] as ContentBookNode[]).find((node) => node.documentId === 'd-new')?.parentId).toBe('n-overview');
+
+    byTestId('content-book-add-document')?.click();
+    await flush();
+    expect(dialog.open).toHaveBeenCalledTimes(2);
+  });
+
+  it('deletes a document from the node menu', async () => {
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+
+    await clickMenuItem('n-notes', 'content-book-delete-document');
+
+    expect(documentService.delete).toHaveBeenCalledWith('d-notes');
+  });
+
+  it('does nothing without a loaded book', async () => {
+    bookService.findBySlug.mockResolvedValue(undefined);
+    await render();
+
+    await component().addDocument(null);
+    await component().moveNode('n-overview', 'down');
+    await component().deleteDocument('n-overview');
+
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(bookService.replaceNodes).not.toHaveBeenCalled();
+  });
+
+  it('does not save a book that has no id yet', async () => {
+    await render();
+    component().book.set({ ...book(), id: undefined } as unknown as ContentBook);
+
+    await component().moveNode('n-overview', 'down');
+
+    expect(bookService.replaceNodes).not.toHaveBeenCalled();
+  });
+
+  it('files nothing when the dialog returns a document without an id', async () => {
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(new Document(undefined, 'org', 'x', 'X')) });
+
+    await component().addDocument(null);
+
+    expect(bookService.replaceNodes).not.toHaveBeenCalled();
+  });
+
+  it('does not select a page whose save failed', async () => {
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(doc('d-new', 'new-page')) });
+    bookService.replaceNodes.mockRejectedValue(new Error('nope'));
+
+    await component().addDocument(null);
+
+    expect(component().actionError()).toBeDefined();
+    expect(component().selectedNodeId()).toBe('n-overview');
+  });
+
+  it('explains a refused save from the server’s error text, and from a bare string', async () => {
+    await render();
+    const translate = vi.spyOn(TestBed.inject(TranslocoService), 'translate');
+    const sentMessages = (): string[] => translate.mock.calls.filter(([key]) => String(key).endsWith('save_error')).map(([, params]) => (params as { message: string }).message);
+    bookService.replaceNodes.mockRejectedValueOnce(new HttpErrorResponse({ status: 403, error: { errorText: 'Forbidden here' } }));
+    await component().moveNode('n-overview', 'down');
+    bookService.replaceNodes.mockRejectedValueOnce(new HttpErrorResponse({ status: 500 }));
+    await component().moveNode('n-overview', 'down');
+    bookService.replaceNodes.mockRejectedValueOnce('plain');
+    await component().moveNode('n-overview', 'down');
+
+    expect(sentMessages()).toEqual(['Forbidden here', expect.stringContaining('500'), 'plain']);
+  });
+
+  it('keeps the tree and says so when deleting a document fails', async () => {
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+    const translate = vi.spyOn(TestBed.inject(TranslocoService), 'translate');
+    documentService.delete.mockReturnValue(throwError(() => new Error('in use')));
+
+    await component().deleteDocument('n-notes');
+
+    expect(translate).toHaveBeenCalledWith(expect.stringContaining('save_error'), { message: 'in use' });
+    expect(component().book()?.nodes).toEqual(NODES);
+  });
+
+  it('keeps the open page when another document is deleted, and ignores an unknown node', async () => {
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+
+    await component().deleteDocument('n-notes');
+    expect(component().selectedNodeId()).toBe('n-overview');
+
+    dialog.open.mockClear();
+    await component().deleteDocument('n-missing');
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('names a deleted document by id when the reader never saw its title, and clears the selection of an emptied book', async () => {
+    documentService.findByQuery.mockReturnValue(of({ content: [], number: 0, size: 1, totalElements: 0, totalPages: 0 }));
+    bookService.findBySlug.mockResolvedValue(book([NODES[0]]));
+    await render();
+    dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+
+    await component().deleteDocument('n-overview');
+
+    expect(dialog.open.mock.calls[0][1].data).toEqual({ title: 'd-overview' });
+    expect(component().selectedNodeId()).toBeUndefined();
   });
 });

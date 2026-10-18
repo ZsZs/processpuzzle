@@ -34,7 +34,9 @@ export function slugify(title: string): string {
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .split('-')
+    .filter((part) => part.length > 0)
+    .join('-')
     .slice(0, 100);
 }
 

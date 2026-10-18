@@ -70,12 +70,10 @@ public record ContentBookNodes(List<ContentBookNode> nodes) {
                 result.add(sibling.withPlace(sibling.parentId(), position++));
             }
         }
-        for (ContentBookNode node : nodes) {
-            if (node != removed && !Objects.equals(node.parentId(), removed.parentId())
-                    && !Objects.equals(node.parentId(), removed.id())) {
-                result.add(node);
-            }
-        }
+        nodes.stream()
+                .filter(node -> node != removed && !Objects.equals(node.parentId(), removed.parentId())
+                        && !Objects.equals(node.parentId(), removed.id()))
+                .forEach(result::add);
         return new ContentBookNodes(result);
     }
 

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseEntity, BaseEntityLoadResponse, BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
 import { firstValueFrom } from 'rxjs';
 import { ContentBook, ContentBookNode } from './content-book';
-import { ContentBookMapper } from './content-book.mapper';
+import { ContentBookDto, ContentBookMapper } from './content-book.mapper';
 
 @Injectable({ providedIn: 'root' })
 export class ContentBookService extends BaseEntityRestService<ContentBook> {
@@ -23,7 +23,7 @@ export class ContentBookService extends BaseEntityRestService<ContentBook> {
     if (!fullUrl) throw new Error('Could not determine the full url');
 
     const body = { nodes: nodes.map(({ id: nodeId, documentId, parentId, orderIndex }) => ({ id: nodeId, documentId, parentId: parentId ?? null, orderIndex })) };
-    const dto = await firstValueFrom(this.httpClient.put(fullUrl, body, { headers: this.headers }));
+    const dto = await firstValueFrom(this.httpClient.put<ContentBookDto>(fullUrl, body, { headers: this.headers }));
     return this.entityMapper.fromDto(dto) as PersistedEntity<ContentBook>;
   }
 }
