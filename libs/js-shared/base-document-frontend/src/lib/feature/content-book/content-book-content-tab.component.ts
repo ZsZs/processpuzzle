@@ -4,7 +4,7 @@ import { ContentBook } from '../../domain/content-book';
 import { ContentBookWidgetComponent } from './content-book-widget.component';
 
 /**
- * A content book's Content tab, `content_book/<id>/content`: the book itself, inline. Inline rather than in the
+ * A content book's Content tab, `content-book/<id>/content`: the book itself, inline. Inline rather than in the
  * sidenav, because on this screen the sidenav is the designer's navigation and the tab bar is already the way
  * between the book's screens.
  */
