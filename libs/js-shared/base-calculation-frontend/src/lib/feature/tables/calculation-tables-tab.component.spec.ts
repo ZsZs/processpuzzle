@@ -42,18 +42,18 @@ describe('CalculationTablesTabComponent', () => {
     expect(byTestId(root(), 'calculation-table-volume-discount')).not.toBeNull();
     expect((byTestId(root(), 'calculation-table-hit-policy') as HTMLSelectElement).value).toBe('FIRST');
     expect((byTestId(root(), 'calculation-table-cell-0-1') as HTMLInputElement).value).toBe('"GOLD"');
-    expect((byTestId(root(), 'calculation-table-then-0') as HTMLInputElement).value).toBe('0.1');
+    expect((byTestId(root(), 'calculation-table-result-0') as HTMLInputElement).value).toBe('0.1');
   });
 
   it('rewrites the source on every edit, keeping its comments', () => {
     change('calculation-table-hit-policy', 'UNIQUE');
     change('calculation-table-output', 'rate');
     change('calculation-table-cell-1-0', '');
-    change('calculation-table-then-1', '0.01');
+    change('calculation-table-result-1', '0.01');
     change('calculation-table-input-1', 'tier');
 
     expect(tableOf()).toMatchObject({ hitPolicy: 'UNIQUE', output: 'rate', inputs: ['subtotal', 'tier'] });
-    expect(tableOf().rules[1]).toEqual({ when: ['-', '-'], then: '0.01' });
+    expect(tableOf().rules[1]).toEqual({ when: ['-', '-'], result: '0.01' });
     expect(working()).toContain('# Discount tiers');
   });
 
@@ -62,7 +62,7 @@ describe('CalculationTablesTabComponent', () => {
     expect(tableOf().rules).toHaveLength(3);
     (byTestId(root(), 'calculation-table-rule-2')?.querySelector('button') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(tableOf().rules[1].then).toBe('0');
+    expect(tableOf().rules[1].result).toBe('0');
     click('calculation-table-remove-rule-0');
     expect(tableOf().rules).toHaveLength(2);
 

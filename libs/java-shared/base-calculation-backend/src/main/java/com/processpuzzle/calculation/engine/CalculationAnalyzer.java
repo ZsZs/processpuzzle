@@ -36,9 +36,10 @@ import java.util.regex.Pattern;
 public class CalculationAnalyzer {
 
     private static final Pattern ID = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9_-]*$");
+    private static final String DECISION = "decision '%s'";
     private static final Pattern NAME = Pattern.compile("^[A-Za-z_]\\w*$");
     private static final Pattern IDENTIFIER = Pattern.compile("(?<![\\w.$])[A-Za-z_]\\w*");
-    private static final Pattern QUOTED = Pattern.compile("\"(?:[^\"\\\\]|\\\\.)*\"");
+    private static final Pattern QUOTED = Pattern.compile("\"(?:[^\"\\\\]++|\\\\.)*+\"");
     /** {@code ${parameter}} and {@code ${parameter.attribute}} in an input's filter. */
     public static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
 
@@ -128,26 +129,34 @@ public class CalculationAnalyzer {
                 if (input == null) {
                     errors.add("input '%s' needs an 'entity' or a 'from'".formatted(name));
                 } else if (input.isEmbedded()) {
-                    ParameterSpec parameter = model.parameters().get(input.from());
-                    if (parameter == null || !parameter.isEntity()) {
-                        errors.add("input '%s' reads from '%s', which is no entity parameter".formatted(name, input.from()));
-                    }
-                    if (isBlank(input.path())) {
-                        errors.add("input '%s' needs the 'path' of the rows inside '%s'".formatted(name, input.from()));
-                    }
-                    if (!isBlank(input.where())) {
-                        errors.add("input '%s' takes no 'where' — it reads embedded rows".formatted(name));
-                    }
+                    checkEmbeddedInput(name, input);
                 } else {
-                    if (isBlank(input.entity())) {
-                        errors.add("input '%s' needs an 'entity' or a 'from'".formatted(name));
-                    }
-                    if (!isBlank(input.path())) {
-                        errors.add("input '%s' has a 'path' but no 'from'".formatted(name));
-                    }
-                    checkPlaceholders(name, input);
+                    checkQueriedInput(name, input);
                 }
             });
+        }
+
+        private void checkEmbeddedInput(String name, InputSpec input) {
+            ParameterSpec parameter = model.parameters().get(input.from());
+            if (parameter == null || !parameter.isEntity()) {
+                errors.add("input '%s' reads from '%s', which is no entity parameter".formatted(name, input.from()));
+            }
+            if (isBlank(input.path())) {
+                errors.add("input '%s' needs the 'path' of the rows inside '%s'".formatted(name, input.from()));
+            }
+            if (!isBlank(input.where())) {
+                errors.add("input '%s' takes no 'where' — it reads embedded rows".formatted(name));
+            }
+        }
+
+        private void checkQueriedInput(String name, InputSpec input) {
+            if (isBlank(input.entity())) {
+                errors.add("input '%s' needs an 'entity' or a 'from'".formatted(name));
+            }
+            if (!isBlank(input.path())) {
+                errors.add("input '%s' has a 'path' but no 'from'".formatted(name));
+            }
+            checkPlaceholders(name, input);
         }
 
         private void checkPlaceholders(String name, InputSpec input) {
@@ -273,7 +282,7 @@ public class CalculationAnalyzer {
             if (model.inputs().containsKey(scope)) {
                 return Scope.row(scope);
             }
-            return groupScope("decision '%s'".formatted(name), scope, dependencies.getOrDefault(name, Set.of()));
+            return groupScope(DECISION.formatted(name), scope, dependencies.getOrDefault(name, Set.of()));
         }
 
         /** {@code input.attribute}, or an attribute whose input the dependencies — or a single input — tell. */
@@ -312,7 +321,7 @@ public class CalculationAnalyzer {
 
         /** The rows a single-valued aggregate runs over. */
         private Scope sourceOf(String name, AggregateSpec aggregate) {
-            String owner = "decision '%s'".formatted(name);
+            String owner = DECISION.formatted(name);
             Set<String> needed = dependencies.getOrDefault(name, Set.of());
             if (!isBlank(aggregate.of())) {
                 return model.inputs().containsKey(aggregate.of()) ? Scope.row(aggregate.of())
@@ -343,7 +352,7 @@ public class CalculationAnalyzer {
 
         private void checkDecision(PlannedDecision decision) {
             String name = decision.name();
-            String owner = "decision '%s'".formatted(name);
+            String owner = DECISION.formatted(name);
             DecisionSpec spec = decision.spec();
             if (model.parameters().containsKey(name) || model.inputs().containsKey(name) || model.functions().containsKey(name)) {
                 errors.add("%s has the name of a parameter, input or function".formatted(owner));

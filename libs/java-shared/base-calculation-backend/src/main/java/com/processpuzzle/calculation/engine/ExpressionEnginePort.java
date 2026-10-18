@@ -31,12 +31,4 @@ public interface ExpressionEnginePort {
 
     /** The syntax error of unary tests, empty when they parse. */
     Optional<String> checkUnaryTests(String unaryTests);
-
-    /** A FEEL expression that failed — to parse or to evaluate. */
-    class ExpressionException extends RuntimeException {
-
-        public ExpressionException(String expression, String message) {
-            super("'%s': %s".formatted(expression, message));
-        }
-    }
 }

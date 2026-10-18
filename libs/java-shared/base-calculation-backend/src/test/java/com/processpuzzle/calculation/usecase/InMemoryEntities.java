@@ -4,6 +4,7 @@ import com.processpuzzle.calculation.port.AttributeType;
 import com.processpuzzle.calculation.port.EntityAttributeTypePort;
 import com.processpuzzle.calculation.port.EntityQueryPort;
 import com.processpuzzle.calculation.port.EntityRecord;
+import com.processpuzzle.calculation.port.EntityWriteConflict;
 import com.processpuzzle.calculation.port.EntityWritePort;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -36,8 +37,8 @@ public class InMemoryEntities implements EntityQueryPort, EntityWritePort, Entit
     }
 
     public void bumpVersion(String entity, String id) {
-        EntityRecord record = objects.get(entity).get(id);
-        objects.get(entity).put(id, new EntityRecord(id, record.version() + 1, record.payload()));
+        EntityRecord stored = objects.get(entity).get(id);
+        objects.get(entity).put(id, new EntityRecord(id, stored.version() + 1, stored.payload()));
     }
 
     public Map<String, Object> payload(String entity, String id) {
@@ -62,12 +63,12 @@ public class InMemoryEntities implements EntityQueryPort, EntityWritePort, Entit
     @Override
     public List<EntityRecord> findWhere(String orgKey, String entity, String rsql) {
         queries.add(entity + "?" + rsql);
-        return all(entity).stream().filter(record -> {
+        return all(entity).stream().filter(stored -> {
             if (rsql == null) {
                 return true;
             }
             String[] comparison = rsql.split("==", 2);
-            return Objects.equals(String.valueOf(record.payload().get(comparison[0])), comparison[1].replace("\"", ""));
+            return Objects.equals(String.valueOf(stored.payload().get(comparison[0])), comparison[1].replace("\"", ""));
         }).toList();
     }
 
@@ -76,22 +77,22 @@ public class InMemoryEntities implements EntityQueryPort, EntityWritePort, Entit
         if (moveBeforeWrite) {
             bumpVersion(entity, id);
         }
-        EntityRecord record = find(orgKey, entity, id).orElseThrow(() -> new Conflict("gone"));
-        if (record.version() != expectedVersion) {
-            throw new Conflict("'%s' is at version %d, not %d".formatted(id, record.version(), expectedVersion));
+        EntityRecord stored = find(orgKey, entity, id).orElseThrow(() -> new EntityWriteConflict("gone"));
+        if (stored.version() != expectedVersion) {
+            throw new EntityWriteConflict("'%s' is at version %d, not %d".formatted(id, stored.version(), expectedVersion));
         }
-        Map<String, Object> payload = new LinkedHashMap<>(record.payload());
+        Map<String, Object> payload = new LinkedHashMap<>(stored.payload());
         payload.putAll(values);
-        objects.get(entity).put(id, new EntityRecord(id, record.version(), payload));
+        objects.get(entity).put(id, new EntityRecord(id, stored.version(), payload));
     }
 
     @Override
     public boolean upsertByKey(String orgKey, String entity, Map<String, Object> key, Map<String, Object> values) {
-        for (EntityRecord record : all(entity)) {
-            if (key.entrySet().stream().allMatch(entry -> Objects.equals(record.payload().get(entry.getKey()), entry.getValue()))) {
-                Map<String, Object> payload = new LinkedHashMap<>(record.payload());
+        for (EntityRecord stored : all(entity)) {
+            if (key.entrySet().stream().allMatch(entry -> Objects.equals(stored.payload().get(entry.getKey()), entry.getValue()))) {
+                Map<String, Object> payload = new LinkedHashMap<>(stored.payload());
                 payload.putAll(values);
-                objects.get(entity).put(record.id(), new EntityRecord(record.id(), record.version(), payload));
+                objects.get(entity).put(stored.id(), new EntityRecord(stored.id(), stored.version(), payload));
                 return false;
             }
         }

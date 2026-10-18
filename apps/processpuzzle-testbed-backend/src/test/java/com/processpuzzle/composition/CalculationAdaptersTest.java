@@ -16,7 +16,7 @@ import com.processpuzzle.baseentity.api.EntityObjectAccess;
 import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.calculation.port.AttributeType;
-import com.processpuzzle.calculation.port.EntityWritePort;
+import com.processpuzzle.calculation.port.EntityWriteConflict;
 import com.processpuzzle.calculation.usecase.FindCalculationDefinition;
 import java.util.List;
 import java.util.Map;
@@ -59,13 +59,13 @@ class CalculationAdaptersTest {
         doThrow(new EntityObjectAccessException.VersionConflict(id, 3, 4)).when(access)
                 .updateAttributes(eq("org"), eq("order"), eq(id), any(), anyLong());
         assertThatThrownBy(() -> adapter.updateAttributes("org", "order", id.toString(), Map.of(), 3))
-                .isInstanceOf(EntityWritePort.Conflict.class);
-        assertThatThrownBy(() -> adapter.updateAttributes("org", "order", "x", Map.of(), 3)).isInstanceOf(EntityWritePort.Conflict.class);
+                .isInstanceOf(EntityWriteConflict.class);
+        assertThatThrownBy(() -> adapter.updateAttributes("org", "order", "x", Map.of(), 3)).isInstanceOf(EntityWriteConflict.class);
 
         when(access.upsertByKey("org", "result", Map.of("boat", "A"), Map.of("rank", 1))).thenReturn(true);
         assertThat(adapter.upsertByKey("org", "result", Map.of("boat", "A"), Map.of("rank", 1))).isTrue();
         when(access.upsertByKey(eq("org"), eq("nope"), any(), any())).thenThrow(new EntityObjectAccessException.UnknownType("nope"));
-        assertThatThrownBy(() -> adapter.upsertByKey("org", "nope", Map.of(), Map.of())).isInstanceOf(EntityWritePort.Conflict.class);
+        assertThatThrownBy(() -> adapter.upsertByKey("org", "nope", Map.of(), Map.of())).isInstanceOf(EntityWriteConflict.class);
     }
 
     @Test

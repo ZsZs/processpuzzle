@@ -1,6 +1,7 @@
 package com.processpuzzle.calculation.adapter.outbound;
 
 import com.processpuzzle.calculation.engine.ExpressionEnginePort;
+import com.processpuzzle.calculation.engine.ExpressionException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

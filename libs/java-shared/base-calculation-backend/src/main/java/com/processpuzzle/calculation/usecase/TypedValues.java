@@ -84,7 +84,7 @@ public class TypedValues {
         try {
             return switch (type) {
                 case NUMBER -> new BigDecimal(text.trim());
-                case BOOLEAN -> "true".equalsIgnoreCase(text) ? Boolean.TRUE : "false".equalsIgnoreCase(text) ? Boolean.FALSE : text;
+                case BOOLEAN -> bool(text);
                 case DATE -> LocalDate.parse(text.length() > 10 ? text.substring(0, 10) : text);
                 case DATE_TIME -> dateTime(text);
                 default -> text;
@@ -92,6 +92,13 @@ public class TypedValues {
         } catch (NumberFormatException | DateTimeParseException e) {
             return text;
         }
+    }
+
+    private static Object bool(String text) {
+        if ("true".equalsIgnoreCase(text)) {
+            return Boolean.TRUE;
+        }
+        return "false".equalsIgnoreCase(text) ? Boolean.FALSE : text;
     }
 
     private static Object dateTime(String text) {

@@ -12,8 +12,8 @@ describe('calculation-source', () => {
       inputs: ['subtotal', 'customerTier'],
       output: 'discountRate',
       rules: [
-        { when: ['>= 10000', '"GOLD"'], then: '0.1' },
-        { when: ['-', '-'], then: '0' },
+        { when: ['>= 10000', '"GOLD"'], result: '0.1' },
+        { when: ['-', '-'], result: '0' },
       ],
     });
   });
@@ -25,22 +25,28 @@ describe('calculation-source', () => {
     expect(yamlErrorsOf(ORDER_TOTAL_SOURCE)).toEqual([]);
   });
 
+  it('reads cells YAML typed as booleans or structures as text', () => {
+    const [table] = readTables("tables:\n  t:\n    inputs: [flag]\n    rules: [ { when: [true], then: { a: 1 } } ]\n");
+
+    expect(table.rules[0]).toEqual({ when: ['true'], result: '{"a":1}' });
+  });
+
   it('defaults what a hand-written table leaves out', () => {
     const [table] = readTables('tables:\n  t:\n    hitPolicy: sideways\n    rules: [ { when: [~] } ]\n');
 
-    expect(table).toEqual({ name: 't', hitPolicy: 'FIRST', inputs: [], output: '', rules: [{ when: ['-'], then: '' }] });
+    expect(table).toEqual({ name: 't', hitPolicy: 'FIRST', inputs: [], output: '', rules: [{ when: ['-'], result: '' }] });
   });
 
   it('rewrites one table and keeps the comments of the rest', () => {
     const [table] = readTables(ORDER_TOTAL_SOURCE);
-    const written = writeTable(ORDER_TOTAL_SOURCE, { ...table, hitPolicy: 'UNIQUE', rules: [...table.rules, { when: ['>= 1000', '-'], then: 'rate * 2' }] });
+    const written = writeTable(ORDER_TOTAL_SOURCE, { ...table, hitPolicy: 'UNIQUE', rules: [...table.rules, { when: ['>= 1000', '-'], result: 'rate * 2' }] });
 
     expect(written).toContain('# The order total');
     expect(written).toContain('# Discount tiers');
     expect(written).toContain('hitPolicy: UNIQUE');
     expect(written).toContain('inputs: [ subtotal, customerTier ]');
-    expect(readTables(written)[0].rules[2]).toEqual({ when: ['>= 1000', '-'], then: 'rate * 2' });
-    expect(readTables(written)[0].rules[0].then).toBe('0.1');
+    expect(readTables(written)[0].rules[2]).toEqual({ when: ['>= 1000', '-'], result: 'rate * 2' });
+    expect(readTables(written)[0].rules[0].result).toBe('0.1');
   });
 
   it('renames a table in place and adds a new one at the end', () => {

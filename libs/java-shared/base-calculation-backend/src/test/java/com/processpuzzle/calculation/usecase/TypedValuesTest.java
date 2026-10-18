@@ -2,8 +2,6 @@ package com.processpuzzle.calculation.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.processpuzzle.calculation.domain.definition.CalculationModel;
-import com.processpuzzle.calculation.domain.definition.CalculationParser;
 import com.processpuzzle.calculation.port.AttributeType;
 import com.processpuzzle.calculation.port.EntityRecord;
 import java.math.BigDecimal;
@@ -49,15 +47,10 @@ class TypedValuesTest {
 
     @Test
     void substitutesPlaceholdersQuotingWhereRsqlNeedsIt() {
-        CalculationModel model = CalculationParser.parse("""
-                calculation: c
-                parameters: { series: { entity: series }, label: { type: string } }
-                decisions: { x: { expr: "1" } }
-                """).model();
         Map<String, EntityRecord> objects = Map.of("series", new EntityRecord("s-1", 0, Map.of("venue", "Lake \"Garda\"")));
 
-        assertThat(InputResolver.substitute("series==${series};venue==${series.venue};label==${label}", model,
+        assertThat(InputResolver.substitute("series==${series};venue==${series.venue};label==${label}",
                 Map.of("label", "a b"), objects)).isEqualTo("series==s-1;venue==\"Lake \\\"Garda\\\"\";label==\"a b\"");
-        assertThat(InputResolver.substitute(" ", model, Map.of(), objects)).isNull();
+        assertThat(InputResolver.substitute(" ", Map.of(), objects)).isNull();
     }
 }

@@ -89,5 +89,7 @@ export class CalculationTraceComponent {
 /** A value as it reads best: text and numbers as they are, anything structured as indented JSON. */
 export function format(value: unknown): string {
   if (value === null || value === undefined) return '—';
-  return typeof value === 'object' ? JSON.stringify(value, null, 1) : String(value);
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return value.toString();
+  return JSON.stringify(value, null, 1);
 }

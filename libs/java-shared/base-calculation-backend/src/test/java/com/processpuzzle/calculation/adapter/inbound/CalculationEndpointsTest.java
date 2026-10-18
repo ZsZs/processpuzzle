@@ -163,7 +163,7 @@ class CalculationEndpointsTest {
 
     @Test
     void importsAFile() throws Exception {
-        when(importer.execute(eq("org"), any(java.io.InputStream.class))).thenReturn(new ImportOutcome(1, 0, List.of(), List.of("a")));
+        when(importer.execute("org", "x")).thenReturn(new ImportOutcome(1, 0, List.of(), List.of("a")));
 
         mvc.perform(multipart(DEFINITIONS + "/import").file(new MockMultipartFile("file", "x.yaml", "text/yaml", "x".getBytes())))
                 .andExpect(status().isOk())
@@ -221,13 +221,13 @@ class CalculationEndpointsTest {
         when(run.run(any(), any(), any(), any(), any()))
                 .thenThrow(new SubjectFrozenException("x", "order", "o"))
                 .thenThrow(new InvalidParametersException("missing"));
-        String runs = "/organizations/org/calculations/x/runs";
-        mvc.perform(post(runs).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        String runsPath = "/organizations/org/calculations/x/runs";
+        mvc.perform(post(runsPath).contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.errorId").value("calculation.subject-frozen"));
-        mvc.perform(post(runs).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
+        mvc.perform(post(runsPath).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
 
         UUID runId = UUID.randomUUID();
-        when(this.runs.find("org", runId)).thenThrow(new RunNotFoundException("org", runId));
+        when(runs.find("org", runId)).thenThrow(new RunNotFoundException("org", runId));
         mvc.perform(get("/organizations/org/calculation-runs/" + runId))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.errorId").value("calculation-run.not-found"));
         when(freeze.freeze("org", runId)).thenThrow(new RunNotFreezableException("failed"));

@@ -17,6 +17,7 @@ import com.processpuzzle.shared.model.ImportResult;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -99,7 +100,7 @@ public class CalculationDefinitionsEndpoint implements CalculationDefinitionsApi
     @Override
     public ResponseEntity<ImportResult> importCalculationDefinitions(String orgKey, MultipartFile file) {
         try (InputStream input = file.getInputStream()) {
-            return ResponseEntity.ok(mapper.toImportResult(importer.execute(orgKey, input)));
+            return ResponseEntity.ok(mapper.toImportResult(importer.execute(orgKey, new String(input.readAllBytes(), StandardCharsets.UTF_8))));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

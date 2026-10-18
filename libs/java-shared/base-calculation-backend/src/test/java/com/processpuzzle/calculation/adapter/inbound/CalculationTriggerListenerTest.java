@@ -3,8 +3,10 @@ package com.processpuzzle.calculation.adapter.inbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -63,7 +65,7 @@ class CalculationTriggerListenerTest {
         listener.on(changed(PlatformEventAction.UPDATED));
         listener.on(changed(PlatformEventAction.CREATED));
 
-        verify(runCalculation, org.mockito.Mockito.times(2))
+        verify(runCalculation, times(2))
                 .run("org", "order-total", Channel.RELEASED, Map.of("order", "o-1"), RunTrigger.ON_CHANGE);
         verifyNoInteractions(freezeRun);
     }
@@ -95,7 +97,7 @@ class CalculationTriggerListenerTest {
         listener.on(PlatformEvent.stateChanged("org", "calculation-run", "r-1", "COMPLETED", Map.of(), Instant.now()));
         verifyNoInteractions(runCalculation);
 
-        org.mockito.Mockito.doThrow(new SubjectFrozenException("order-total", "order", "o-1"))
+        doThrow(new SubjectFrozenException("order-total", "order", "o-1"))
                 .doThrow(new IllegalStateException("boom")).when(runCalculation).run(any(), any(), any(), any(), any());
         listener.on(changed(PlatformEventAction.UPDATED));
         listener.on(changed(PlatformEventAction.UPDATED));

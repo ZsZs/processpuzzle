@@ -58,7 +58,7 @@ class CalculationEngineTest {
         assertThat(result.values()).containsEntry("best", 30).containsEntry("distinct", BigDecimal.valueOf(3))
                 .containsEntry("withoutExtremes", new BigDecimal("40")).containsEntry("higherIsBetter", new BigDecimal("70"));
         assertThat((BigDecimal) result.values().get("average")).isEqualByComparingTo("18.75");
-        assertThat(result.rows().get("players")).allMatch(row -> new BigDecimal("75").equals(row.get("share")));
+        assertThat(result.rows().get("players")).allMatch(row -> new BigDecimal("75").compareTo((BigDecimal) row.get("share")) == 0);
     }
 
     @Test
@@ -92,14 +92,17 @@ class CalculationEngineTest {
     void collectsEveryMatchingOutput() {
         EvaluationResult result = evaluate(HIT_POLICY.formatted("COLLECT", "large"), Map.of("x", 20), Map.of());
 
-        assertThat(result.values().get("verdict")).isEqualTo(List.of("positive", "large"));
+        assertThat(result.values()).containsEntry("verdict", List.of("positive", "large"));
     }
 
     @Test
     void anyAcceptsAgreeingRulesOnly() {
         assertThat(evaluate(HIT_POLICY.formatted("ANY", "positive"), Map.of("x", 20), Map.of()).values())
                 .containsEntry("verdict", "positive");
-        assertThatThrownBy(() -> evaluate(HIT_POLICY.formatted("ANY", "large"), Map.of("x", 20), Map.of()))
+        String disagreeing = HIT_POLICY.formatted("ANY", "large");
+        Map<String, Object> twenty = Map.of("x", 20);
+        Map<String, List<Map<String, Object>>> noInputs = Map.of();
+        assertThatThrownBy(() -> evaluate(disagreeing, twenty, noInputs))
                 .isInstanceOf(CalculationException.class).hasMessageContaining("disagree");
     }
 
@@ -107,7 +110,10 @@ class CalculationEngineTest {
     void uniqueRefusesTwoMatches() {
         assertThat(evaluate(HIT_POLICY.formatted("UNIQUE", "large"), Map.of("x", 5), Map.of()).values())
                 .containsEntry("verdict", "positive");
-        assertThatThrownBy(() -> evaluate(HIT_POLICY.formatted("UNIQUE", "large"), Map.of("x", 20), Map.of()))
+        String unique = HIT_POLICY.formatted("UNIQUE", "large");
+        Map<String, Object> twenty = Map.of("x", 20);
+        Map<String, List<Map<String, Object>>> noInputs = Map.of();
+        assertThatThrownBy(() -> evaluate(unique, twenty, noInputs))
                 .isInstanceOf(CalculationException.class)
                 .satisfies(e -> assertThat(((CalculationException) e).trace()).singleElement()
                         .satisfies(entry -> assertThat(entry.error()).contains("rules [1, 2]")));
@@ -150,7 +156,7 @@ class CalculationEngineTest {
 
     @Test
     void stopsAtTheFailingDecisionWithTheTraceSoFar() {
-        assertThatThrownBy(() -> evaluate("""
+        String failing = """
                 calculation: failing
                 parameters: { x: { type: number } }
                 tables:
@@ -164,7 +170,10 @@ class CalculationEngineTest {
                   first: { expr: "x * 2" }
                   second: { table: t, requires: [first] }
                   third: { expr: "second + 1" }
-                """, Map.of("x", 5), Map.of()))
+                """;
+        Map<String, Object> five = Map.of("x", 5);
+        Map<String, List<Map<String, Object>>> noInputs = Map.of();
+        assertThatThrownBy(() -> evaluate(failing, five, noInputs))
                 .isInstanceOf(CalculationException.class)
                 .hasMessageStartingWith("decision 'second': table 't' is UNIQUE")
                 .satisfies(e -> assertThat(((CalculationException) e).trace())

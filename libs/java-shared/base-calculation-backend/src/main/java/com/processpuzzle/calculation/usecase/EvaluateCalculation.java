@@ -44,9 +44,8 @@ public class EvaluateCalculation {
      */
     public Evaluation evaluate(String orgKey, String calculationId, Channel channel, Map<String, Object> parameters,
                                String source) {
-        CalculationValidator.Validation validation = source == null
-                ? validator.validate(definitions.find(orgKey, calculationId, channel).parsedModel())
-                : validator.validate(source);
+        CalculationValidator.Validation validation = source != null ? validator.validate(source)
+                : validator.validate(definitions.find(orgKey, calculationId, channel).parsedModel());
         if (!validation.isValid()) {
             throw new InvalidCalculationException(calculationId, validation.errors());
         }

@@ -21,6 +21,8 @@ import org.springframework.stereotype.Component;
 public class RunEvents {
 
     public static final String SUBJECT_TYPE = "calculation-run";
+    /** The key of the single values in a run's result, and in the facts a run publishes. */
+    public static final String VALUES = "values";
 
     private final ApplicationEventPublisher publisher;
 
@@ -32,7 +34,7 @@ public class RunEvents {
     public void ran(CalculationRun run) {
         Instant at = run.getCompletedAt();
         if (run.getStatus() == RunStatus.COMPLETED) {
-            Map<String, Object> values = (Map<String, Object>) run.getResult().getOrDefault("values", Map.of());
+            Map<String, Object> values = (Map<String, Object>) run.getResult().getOrDefault(VALUES, Map.of());
             publisher.publishEvent(new CalculationCompleted(run.getOrgKey(), run.getCalculationId(), run.getId(),
                     run.getSubjectType(), run.getSubjectId(), values, at));
         } else {
@@ -54,7 +56,7 @@ public class RunEvents {
         payload.put("definitionVersion", run.getDefinitionVersion());
         payload.put("subjectType", run.getSubjectType());
         payload.put("subjectId", run.getSubjectId());
-        payload.put("values", run.getResult().get("values"));
+        payload.put(VALUES, run.getResult().get(VALUES));
         publisher.publishEvent(PlatformEvent.stateChanged(run.getOrgKey(), SUBJECT_TYPE, run.getId().toString(), state,
                 payload, at));
     }

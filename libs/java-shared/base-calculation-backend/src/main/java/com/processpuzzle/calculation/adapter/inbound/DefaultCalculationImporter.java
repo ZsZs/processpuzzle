@@ -4,6 +4,7 @@ import com.processpuzzle.calculation.usecase.ImportCalculationDefinitions;
 import com.processpuzzle.calculation.usecase.ImportOutcome;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -69,7 +70,7 @@ public class DefaultCalculationImporter {
             return;
         }
         try (InputStream input = resource.getInputStream()) {
-            ImportOutcome outcome = importer.execute(orgKey, input);
+            ImportOutcome outcome = importer.execute(orgKey, new String(input.readAllBytes(), StandardCharsets.UTF_8));
             releaseParticipant.release(orgKey, outcome.written());
             LOG.info("Imported default calculations from {} into organization '{}': created={}, updated={}, errors={}",
                     fileName, orgKey, outcome.created(), outcome.updated(), outcome.errors().size());

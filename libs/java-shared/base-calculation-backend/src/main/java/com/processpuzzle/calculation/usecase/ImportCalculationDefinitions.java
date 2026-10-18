@@ -4,9 +4,6 @@ import com.processpuzzle.calculation.domain.CalculationDefinition;
 import com.processpuzzle.calculation.domain.CalculationDefinitionRepository;
 import com.processpuzzle.calculation.domain.definition.CalculationParser;
 import com.processpuzzle.core.definition.Channel;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,11 +27,6 @@ public class ImportCalculationDefinitions {
     public ImportCalculationDefinitions(CalculationDefinitionRepository repository, CalculationValidator validator) {
         this.repository = repository;
         this.validator = validator;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public ImportOutcome execute(String orgKey, InputStream input) throws IOException {
-        return execute(orgKey, new String(input.readAllBytes(), StandardCharsets.UTF_8));
     }
 
     @Transactional(rollbackFor = Exception.class)

@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.calculation.port.EntityQueryPort;
 import com.processpuzzle.calculation.port.EntityRecord;
+import com.processpuzzle.calculation.port.EntityWriteConflict;
 import com.processpuzzle.calculation.port.EntityWritePort;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Component;
 /**
  * Reads base-calculation's inputs from base-entity and writes its outputs back, through base-entity's
  * {@code EntityObjectAccess}. base-entity's failures are translated into the port's: an object that is not there
- * is not found, one that moved on or a type that does not exist is a {@link EntityWritePort.Conflict}.
+ * is not found, one that moved on or a type that does not exist is an {@link EntityWriteConflict}.
  */
 @Component
 public class CalculationEntityAdapter implements EntityQueryPort, EntityWritePort {
@@ -47,10 +48,10 @@ public class CalculationEntityAdapter implements EntityQueryPort, EntityWritePor
     @Override
     public void updateAttributes(String orgKey, String entity, String id, Map<String, Object> values, long expectedVersion) {
         try {
-            entities.updateAttributes(orgKey, entity, uuidOf(id).orElseThrow(() -> new Conflict("'%s' is no object id".formatted(id))),
+            entities.updateAttributes(orgKey, entity, uuidOf(id).orElseThrow(() -> new EntityWriteConflict("'%s' is no object id".formatted(id))),
                     values, expectedVersion);
         } catch (EntityObjectAccessException e) {
-            throw new Conflict(e.getMessage());
+            throw new EntityWriteConflict(e.getMessage());
         }
     }
 
@@ -59,7 +60,7 @@ public class CalculationEntityAdapter implements EntityQueryPort, EntityWritePor
         try {
             return entities.upsertByKey(orgKey, entity, key, values);
         } catch (EntityObjectAccessException e) {
-            throw new Conflict(e.getMessage());
+            throw new EntityWriteConflict(e.getMessage());
         }
     }
 

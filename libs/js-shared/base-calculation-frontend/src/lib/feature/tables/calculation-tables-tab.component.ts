@@ -79,7 +79,7 @@ import { messageOf } from '../message-of';
                     <td><input [value]="cell" [attr.data-testid]="'calculation-table-cell-' + r + '-' + c" (change)="setCell(r, c, $any($event.target).value)" /></td>
                   }
                   <td></td>
-                  <td><input [value]="rule.then" [attr.data-testid]="'calculation-table-then-' + r" (change)="setThen(r, $any($event.target).value)" /></td>
+                  <td><input [value]="rule.result" [attr.data-testid]="'calculation-table-result-' + r" (change)="setResult(r, $any($event.target).value)" /></td>
                   <td>
                     <button type="button" class="secondary" [disabled]="first" [attr.aria-label]="scope + '.moveUp' | transloco" (click)="move(r, -1)">↑</button>
                     <button type="button" class="secondary" [disabled]="last" [attr.aria-label]="scope + '.moveDown' | transloco" (click)="move(r, 1)">↓</button>
@@ -134,8 +134,9 @@ export class CalculationTablesTabComponent {
 
   protected addTable(): void {
     const names = new Set(this.tables().map((table) => table.name));
+    let index = 1;
     let name = 'new-table';
-    for (let index = 2; names.has(name); index++) name = `new-table-${index}`;
+    while (names.has(name)) name = `new-table-${++index}`;
     this.write(newTable(name));
     this.selectedName.set(name);
   }
@@ -178,12 +179,12 @@ export class CalculationTablesTabComponent {
     this.editRule(row, (rule) => ({ ...rule, when: rule.when.map((cell, index) => (index === column ? value.trim() || '-' : cell)) }));
   }
 
-  protected setThen(row: number, value: string): void {
-    this.editRule(row, (rule) => ({ ...rule, then: value }));
+  protected setResult(row: number, value: string): void {
+    this.editRule(row, (rule) => ({ ...rule, result: value }));
   }
 
   protected addRule(): void {
-    this.edit((table) => ({ ...table, rules: [...table.rules, { when: table.inputs.map(() => '-'), then: '0' }] }));
+    this.edit((table) => ({ ...table, rules: [...table.rules, { when: table.inputs.map(() => '-'), result: '0' }] }));
   }
 
   protected removeRule(row: number): void {

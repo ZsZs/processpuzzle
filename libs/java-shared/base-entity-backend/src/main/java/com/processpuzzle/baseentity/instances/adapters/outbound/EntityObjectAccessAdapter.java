@@ -79,7 +79,7 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
     @Transactional(readOnly = true)
     public List<EntityObjectView> findWhere(String orgKey, String entityDefinitionCode, String rsql) {
         if (rsql == null || rsql.isBlank()) {
-            return findAll(orgKey, entityDefinitionCode);
+            return scope.findAll(orgKey, entityDefinitionCode).stream().map(this::view).toList();
         }
         String storageOrgKey = scope.storageOrgKey(orgKey, entityDefinitionCode);
         Specification<EntityObject> specification;

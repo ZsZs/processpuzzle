@@ -3,7 +3,7 @@ package com.processpuzzle.calculation.adapter.outbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.processpuzzle.calculation.engine.ExpressionEnginePort;
+import com.processpuzzle.calculation.engine.ExpressionException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -43,9 +43,9 @@ class CamundaFeelExpressionEngineTest {
         assertThat(feel.checkExpression("1 + 2")).isEmpty();
         assertThat(feel.checkUnaryTests(">>> 1")).isPresent();
         assertThat(feel.checkUnaryTests("> 1, < 0")).isEmpty();
-        assertThatThrownBy(() -> feel.evaluate("1 +", Map.of())).isInstanceOf(ExpressionEnginePort.ExpressionException.class)
+        assertThatThrownBy(() -> feel.evaluate("1 +", Map.of())).isInstanceOf(ExpressionException.class)
                 .hasMessageStartingWith("'1 +': ");
-        assertThatThrownBy(() -> feel.test(">>> 1", 1, Map.of())).isInstanceOf(ExpressionEnginePort.ExpressionException.class);
+        assertThatThrownBy(() -> feel.test(">>> 1", 1, Map.of())).isInstanceOf(ExpressionException.class);
     }
 
     @Test

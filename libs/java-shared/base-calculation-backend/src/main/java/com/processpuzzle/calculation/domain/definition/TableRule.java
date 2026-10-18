@@ -13,7 +13,11 @@ public record TableRule(List<Object> when, Object then) {
 
     /** The unary tests, one per table input; {@code -} for a blank cell. */
     public List<String> cells() {
-        return when == null ? List.of() : when.stream().map(cell -> cell == null ? ANY : cell.toString().trim()).toList();
+        return when == null ? List.of() : when.stream().map(TableRule::cell).toList();
+    }
+
+    private static String cell(Object cell) {
+        return cell == null ? ANY : cell.toString().trim();
     }
 
     /** The FEEL expression of the rule's output, or null when the rule has none. */

@@ -25,8 +25,11 @@ public final class Values {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static int compare(Object left, Object right) {
-        if (left == null || right == null) {
-            return left == null ? (right == null ? 0 : 1) : -1;
+        if (left == null) {
+            return right == null ? 0 : 1;
+        }
+        if (right == null) {
+            return -1;
         }
         BigDecimal leftNumber = number(left);
         BigDecimal rightNumber = number(right);

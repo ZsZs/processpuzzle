@@ -3,6 +3,7 @@ package com.processpuzzle.calculation.adapter.inbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,6 +75,6 @@ class CalculationReleaseParticipantTest {
         participant.release("org", List.of("order-total", "unknown"));
         verify(repository).save(released);
         assertThat(released.getSource()).isEqualTo("calculation: order-total\n");
-        verify(repository, org.mockito.Mockito.never()).deleteAll(any());
+        verify(repository, never()).deleteAll(any());
     }
 }

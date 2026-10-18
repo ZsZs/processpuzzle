@@ -135,7 +135,8 @@ class CalculationRunsIntegrationTest {
 
         assertThatThrownBy(() -> replace.replace(ORG, "order-total", source, 99L))
                 .isInstanceOf(com.processpuzzle.calculation.usecase.exception.StaleCalculationException.class);
-        assertThatThrownBy(() -> replace.replace(ORG, "order-total", source.replace("order-total", "other"), null))
+        String renamed = source.replace("order-total", "other");
+        assertThatThrownBy(() -> replace.replace(ORG, "order-total", renamed, null))
                 .isInstanceOf(InvalidCalculationException.class).hasMessageContaining("the id cannot change");
     }
 
@@ -172,7 +173,8 @@ class CalculationRunsIntegrationTest {
         assertThat(freeze.freeze(ORG, first.getId()).isFrozen()).isTrue();
         assertThat(events.stream(CalculationFrozen.class)).hasSize(1);
 
-        assertThatThrownBy(() -> run.run(ORG, "order-total", Channel.RELEASED, Map.of("order", orderId), RunTrigger.ON_CHANGE))
+        Map<String, Object> theOrder = Map.of("order", orderId);
+        assertThatThrownBy(() -> run.run(ORG, "order-total", Channel.RELEASED, theOrder, RunTrigger.ON_CHANGE))
                 .isInstanceOf(SubjectFrozenException.class);
         assertThat(runs.findAll(ORG, "order-total", orderId)).hasSize(1);
     }
@@ -192,8 +194,10 @@ class CalculationRunsIntegrationTest {
         assertThat(failed.getStatus()).isEqualTo(RunStatus.FAILED);
         assertThat(failed.getError()).contains("there is no order 'missing'");
         assertThat(events.stream(CalculationFailed.class)).hasSize(2);
-        assertThatThrownBy(() -> freeze.freeze(ORG, failed.getId())).isInstanceOf(RunNotFreezableException.class);
-        assertThatThrownBy(() -> run.run(ORG, "order-total", Channel.RELEASED, Map.of("order", "missing"), RunTrigger.MANUAL))
+        java.util.UUID failedId = failed.getId();
+        assertThatThrownBy(() -> freeze.freeze(ORG, failedId)).isInstanceOf(RunNotFreezableException.class);
+        Map<String, Object> missing = Map.of("order", "missing");
+        assertThatThrownBy(() -> run.run(ORG, "order-total", Channel.RELEASED, missing, RunTrigger.MANUAL))
                 .isInstanceOf(InvalidParametersException.class);
     }
 
@@ -257,7 +261,8 @@ class CalculationRunsIntegrationTest {
         assertThat(entities.all("series-result")).extracting(result -> result.payload().get("boat") + "=" + result.payload().get("rank"))
                 .containsExactlyInAnyOrder("Alpha=1", "Bravo=2");
 
-        assertThatThrownBy(() -> run.run(ORG, "sail-series-ranking", Channel.DRAFT, Map.of("series", series), RunTrigger.MANUAL))
+        Map<String, Object> theSeries = Map.of("series", series);
+        assertThatThrownBy(() -> run.run(ORG, "sail-series-ranking", Channel.DRAFT, theSeries, RunTrigger.MANUAL))
                 .isInstanceOf(SubjectFrozenException.class);
     }
 

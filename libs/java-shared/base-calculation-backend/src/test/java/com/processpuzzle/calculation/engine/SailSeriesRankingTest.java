@@ -52,13 +52,12 @@ class SailSeriesRankingTest {
     void ranksEachRoundAndLeavesTheDnfUnranked() {
         assertThat(rowsOf("Alpha")).extracting(row -> row.get("position")).containsExactly(number(1), number(3), number(3), number(4));
         assertThat(rowOf("Bravo", 3).get("position")).isNull();
-        assertThat(rowOf("Charlie", 3).get("position")).isEqualTo(number(1));
+        assertThat(rowOf("Charlie", 3)).containsEntry("position", number(1));
     }
 
     @Test
     void scoresTheDnfAsStartersPlusOne() {
-        assertThat(rowOf("Bravo", 3).get("starters")).isEqualTo(number(4));
-        assertThat(rowOf("Bravo", 3).get("roundPoints")).isEqualTo(number(5));
+        assertThat(rowOf("Bravo", 3)).containsEntry("starters", number(4)).containsEntry("roundPoints", number(5));
         assertThat(rowsOf("Delta")).extracting(row -> row.get("roundPoints")).containsExactly(number(4), number(4), number(2), number(2));
     }
 

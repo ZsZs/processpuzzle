@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 /**
@@ -159,14 +160,14 @@ public class CalculationEngine {
                 rank(decision.name(), decision.spec().rank(), groupRows,
                         groupRow -> within(group, groupRow, membersOf.getOrDefault(groupRow, List.of())));
             }
-            List<Map<String, Object>> values = new ArrayList<>();
+            List<Map<String, Object>> perGroup = new ArrayList<>();
             groupRows.forEach(groupRow -> {
                 Map<String, Object> entry = new LinkedHashMap<>();
                 entry.put(group.attribute(), groupRow.get(group.attribute()));
                 entry.put("value", groupRow.get(decision.name()));
-                values.add(entry);
+                perGroup.add(entry);
             });
-            return values;
+            return perGroup;
         }
 
         private List<Map<String, Object>> sourceRows(Scope source) {
@@ -210,15 +211,14 @@ public class CalculationEngine {
 
         private Object decide(String tableName, Map<String, Object> variables) {
             DecisionTable table = model.tables().get(tableName);
-            List<Object> inputs = new ArrayList<>();
-            for (String input : table.inputs()) {
-                inputs.add(evaluate("table '%s' input".formatted(tableName), input, variables));
-            }
+            List<Object> inputs = table.inputs().stream()
+                    .map(input -> evaluate("table '%s' input".formatted(tableName), input, variables))
+                    .toList();
             List<Integer> matched = new ArrayList<>();
             List<Object> outputs = new ArrayList<>();
             for (int index = 0; index < table.rules().size(); index++) {
                 TableRule rule = table.rules().get(index);
-                if (matches(tableName, rule, inputs, variables)) {
+                if (matches(rule, inputs, variables)) {
                     matched.add(index + 1);
                     outputs.add(evaluate("table '%s' rule %d".formatted(tableName, index + 1), rule.outputExpression(), variables));
                     if (table.hitPolicy() == HitPolicy.FIRST) {
@@ -246,7 +246,7 @@ public class CalculationEngine {
             };
         }
 
-        private boolean matches(String tableName, TableRule rule, List<Object> inputs, Map<String, Object> variables) {
+        private boolean matches(TableRule rule, List<Object> inputs, Map<String, Object> variables) {
             List<String> cells = rule.cells();
             for (int index = 0; index < cells.size(); index++) {
                 String cell = cells.get(index);
@@ -310,7 +310,7 @@ public class CalculationEngine {
          * rank skips as many. A row the filter refuses, or without a {@code by} value, gets none.
          */
         private void rank(String name, RankSpec rank, List<Map<String, Object>> table,
-                          java.util.function.Function<Map<String, Object>, Map<String, Object>> variablesOf) {
+                          UnaryOperator<Map<String, Object>> variablesOf) {
             List<Map<String, Object>> ranked = new ArrayList<>();
             for (Map<String, Object> row : table) {
                 boolean eligible = row.get(rank.by()) != null && (rank.filter() == null
@@ -343,7 +343,7 @@ public class CalculationEngine {
         private Object evaluate(String owner, String expression, Map<String, Object> variables) {
             try {
                 return feel.evaluate(expression, variables);
-            } catch (ExpressionEnginePort.ExpressionException e) {
+            } catch (ExpressionException e) {
                 // A decision's own expression needs no owner: the failure is reported as the decision's.
                 throw new IllegalStateException(model.decisions().containsKey(owner) ? e.getMessage() : owner + " " + e.getMessage(), e);
             }

@@ -43,6 +43,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class RunCalculation {
 
     private static final Logger LOG = LoggerFactory.getLogger(RunCalculation.class);
+    /** The width of the run's error column. */
+    private static final int MAX_ERROR = 4000;
 
     private final FindCalculationDefinition definitions;
     private final CalculationValidator validator;
@@ -165,14 +167,14 @@ public class RunCalculation {
 
     private static void failed(CalculationRun run, String error, List<TraceEntry> trace) {
         run.setStatus(RunStatus.FAILED);
-        run.setError(error == null ? null : error.length() > 4000 ? error.substring(0, 4000) : error);
+        run.setError(error == null || error.length() <= MAX_ERROR ? error : error.substring(0, MAX_ERROR));
         run.setTrace(traceOf(trace.stream().map(entry -> new TraceEntry(entry.decision(), entry.kind(), entry.scope(),
                 Values.plain(entry.value()), entry.error())).toList()));
     }
 
     static Map<String, Object> resultOf(EvaluationResult plain) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("values", plain.values());
+        result.put(RunEvents.VALUES, plain.values());
         result.put("rows", plain.rows());
         result.put("groups", plain.groups());
         result.put("order", plain.order());

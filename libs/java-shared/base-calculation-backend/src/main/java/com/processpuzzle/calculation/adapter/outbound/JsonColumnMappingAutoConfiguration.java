@@ -3,7 +3,7 @@ package com.processpuzzle.calculation.adapter.outbound;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
-import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.MappingSettings;
 import org.hibernate.type.format.jackson.JacksonJsonFormatMapper;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -27,7 +27,7 @@ public class JsonColumnMappingAutoConfiguration {
 
     @Bean
     HibernatePropertiesCustomizer scalaFreeJsonFormatMapper() {
-        return properties -> properties.putIfAbsent(AvailableSettings.JSON_FORMAT_MAPPER,
+        return properties -> properties.putIfAbsent(MappingSettings.JSON_FORMAT_MAPPER,
                 new JacksonJsonFormatMapper(objectMapper()));
     }
 

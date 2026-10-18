@@ -64,7 +64,7 @@ public class InputResolver {
         Map<String, List<Map<String, Object>>> inputs = new LinkedHashMap<>();
         model.inputs().forEach((name, input) -> inputs.put(name, input.isEmbedded()
                 ? embedded(typer, input, objects.get(input.from()))
-                : queried(orgKey, typer, input, model, supplied, objects)));
+                : queried(orgKey, typer, input, supplied, objects)));
         return new ResolvedInputs(parameters, inputs, objects, supplied);
     }
 
@@ -92,20 +92,19 @@ public class InputResolver {
         return rows;
     }
 
-    private List<Map<String, Object>> queried(String orgKey, TypedValues.Typer typer, InputSpec input, CalculationModel model,
+    private List<Map<String, Object>> queried(String orgKey, TypedValues.Typer typer, InputSpec input,
                                               Map<String, Object> supplied, Map<String, EntityRecord> objects) {
-        String rsql = substitute(input.where(), model, supplied, objects);
+        String rsql = substitute(input.where(), supplied, objects);
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (EntityRecord record : query.findWhere(orgKey, input.entity(), rsql)) {
-            Map<String, Object> row = typer.payload(input.entity(), record.payload());
-            row.put("id", record.id());
+        for (EntityRecord object : query.findWhere(orgKey, input.entity(), rsql)) {
+            Map<String, Object> row = typer.payload(input.entity(), object.payload());
+            row.put("id", object.id());
             rows.add(row);
         }
         return rows;
     }
 
-    static String substitute(String where, CalculationModel model, Map<String, Object> supplied,
-                             Map<String, EntityRecord> objects) {
+    static String substitute(String where, Map<String, Object> supplied, Map<String, EntityRecord> objects) {
         if (where == null || where.isBlank()) {
             return null;
         }

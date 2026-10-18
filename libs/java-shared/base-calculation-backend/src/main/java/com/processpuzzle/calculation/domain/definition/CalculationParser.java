@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -64,13 +63,10 @@ public final class CalculationParser {
 
     /** A file of several calculations, one per YAML document, split into each document's own source text. */
     public static List<String> documents(String file) {
-        List<String> documents = new ArrayList<>();
-        for (String document : DOCUMENT_SEPARATOR.split(file == null ? "" : file)) {
-            if (hasContent(document)) {
-                documents.add(document.strip() + System.lineSeparator());
-            }
-        }
-        return documents;
+        return DOCUMENT_SEPARATOR.splitAsStream(file == null ? "" : file)
+                .filter(CalculationParser::hasContent)
+                .map(document -> document.strip() + System.lineSeparator())
+                .toList();
     }
 
     private static boolean hasContent(String text) {

@@ -18,25 +18,25 @@ class OrderTotalTest {
 
         assertThat(result.rows().get("lines")).extracting(row -> row.get("lineTotal"))
                 .containsExactly(new BigDecimal("39.98"), new BigDecimal("49.90"));
-        assertThat(result.values().get("subtotal")).isEqualTo(new BigDecimal("89.88"));
+        assertThat(result.values()).containsEntry("subtotal", new BigDecimal("89.88"));
         assertThat((BigDecimal) result.values().get("discountRate")).isEqualByComparingTo("0");
-        assertThat(result.values().get("total")).isEqualTo(new BigDecimal("89.88"));
+        assertThat(result.values()).containsEntry("total", new BigDecimal("89.88"));
     }
 
     @Test
     void appliesTheTierTheSubtotalReaches() {
         EvaluationResult result = evaluate(Map.of(), lines(line(3, "333.33"), line(1, "100.01")));
 
-        assertThat(result.values().get("subtotal")).isEqualTo(new BigDecimal("1100.00"));
+        assertThat(result.values()).containsEntry("subtotal", new BigDecimal("1100.00"));
         assertThat((BigDecimal) result.values().get("discountRate")).isEqualByComparingTo("0.03");
-        assertThat(result.values().get("total")).isEqualTo(new BigDecimal("1067.00"));
+        assertThat(result.values()).containsEntry("total", new BigDecimal("1067.00"));
     }
 
     @Test
     void givesGoldCustomersTheTopTier() {
-        assertThat(evaluate(Map.of("customerTier", "GOLD"), lines(line(10, "1000"))).values().get("total"))
-                .isEqualTo(new BigDecimal("9000.00"));
-        assertThat(evaluate(Map.of(), lines(line(10, "1000"))).values().get("total")).isEqualTo(new BigDecimal("9300.00"));
+        assertThat(evaluate(Map.of("customerTier", "GOLD"), lines(line(10, "1000"))).values())
+                .containsEntry("total", new BigDecimal("9000.00"));
+        assertThat(evaluate(Map.of(), lines(line(10, "1000"))).values()).containsEntry("total", new BigDecimal("9300.00"));
     }
 
     @Test
