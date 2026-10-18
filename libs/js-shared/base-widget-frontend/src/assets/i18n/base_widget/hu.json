@@ -74,6 +74,9 @@
   "copyright": {
     "name": "Szerzői jog"
   },
+  "entity_table": {
+    "name": "Entitástáblázat"
+  },
   "design_button": {
     "name": "Tervező gomb"
   },

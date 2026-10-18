@@ -74,6 +74,9 @@
   "copyright": {
     "name": "Derechos de autor"
   },
+  "entity_table": {
+    "name": "Tabla de entidades"
+  },
   "design_button": {
     "name": "Botón de diseño"
   },
