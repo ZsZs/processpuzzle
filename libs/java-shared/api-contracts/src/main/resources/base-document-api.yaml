@@ -835,6 +835,164 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Content books ─────────────────────────────────────────────
+  # A content book groups existing documents into a navigable tree with its own access rights —
+  # a Confluence space rather than a folder. The book owns the tree; the documents are untouched by
+  # being placed in one, and a document may appear in several books.
+
+  /organizations/{orgKey}/content-books:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listContentBooks
+      summary: List the organization's content books the principal may read
+      description: >-
+        Returns the full book, tree included — the generic list feeds the edit form from the
+        listed object, so a narrower projection would write omitted fields back as null.
+      tags:
+        - Content Book
+      parameters:
+        - $ref: "#/components/parameters/WhereParam"
+        - $ref: "#/components/parameters/OrderParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of content books
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_ContentBook"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createContentBook
+      summary: Create a content book
+      tags:
+        - Content Book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentBookInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBook"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: The slug is already taken by another content book of this organization.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/content-books/{contentBookId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ContentBookIdParam"
+    get:
+      operationId: getContentBook
+      summary: Get a content book with its tree
+      description: 404 rather than 403 when the principal may not read the book.
+      tags:
+        - Content Book
+      responses:
+        "200":
+          description: The content book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBook"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateContentBook
+      summary: Replace a content book's properties, and its tree when one is sent
+      description: >-
+        `nodes` absent leaves the tree as it is, so the generic properties form cannot wipe it.
+        Requires an editor role of the book.
+      tags:
+        - Content Book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentBookInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBook"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteContentBook
+      summary: Delete a content book. Its documents are kept.
+      tags:
+        - Content Book
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/content-books/{contentBookId}/nodes:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ContentBookIdParam"
+    put:
+      operationId: replaceContentBookNodes
+      summary: Replace the whole tree of a content book
+      description: >-
+        One call persists any reorder, indent or removal. The tree is rejected with 400 when a
+        parent is missing, the parent links form a cycle, a document appears twice or a node
+        names a REPORT_TEMPLATE; with 404 when a node names a document that does not exist in the
+        organization. Sibling `orderIndex` values are normalized to 0..n-1 in the order given.
+      tags:
+        - Content Book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentBookNodesInput"
+      responses:
+        "200":
+          description: The content book with its new tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBook"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
   # ── Translations ──
   # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
   # templates rather than one with an optional segment: 4 vs 5 segments is what makes them
@@ -926,6 +1084,14 @@ components:
       description: >-
         Server-assigned document id, unique within the organization. A UUID rather than a
         readable key so it is stable across a rename — the readable key is `slug`.
+      schema:
+        type: string
+        format: uuid
+    ContentBookIdParam:
+      name: contentBookId
+      in: path
+      required: true
+      description: Server-assigned content book id, unique within the organization.
       schema:
         type: string
         format: uuid
@@ -1746,6 +1912,114 @@ components:
       minLength: 2
       maxLength: 6
       example: en
+
+    # ── Content books ─────────────────────────────────────────
+
+    ContentBookInput:
+      type: object
+      required: [ slug, title ]
+      description: >-
+        A content book's editable fields. Access follows the document convention: `isPublic`
+        opens reading to anyone, an empty role list means any authenticated member.
+      properties:
+        slug:
+          $ref: "#/components/schemas/DocumentSlug"
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+        isPublic:
+          type: boolean
+          default: false
+        readerRoles:
+          type: array
+          items:
+            type: string
+        editorRoles:
+          type: array
+          items:
+            type: string
+        nodes:
+          type: array
+          nullable: true
+          description: >-
+            The tree. Absent or null on updateContentBook leaves the persisted tree unchanged;
+            replaceContentBookNodes is the dedicated way to change it.
+          items:
+            $ref: "#/components/schemas/ContentBookNode"
+
+    ContentBook:
+      allOf:
+        - $ref: "#/components/schemas/ContentBookInput"
+        - type: object
+          required: [ id, orgKey ]
+          properties:
+            id:
+              type: string
+              format: uuid
+            orgKey:
+              $ref: "#/components/schemas/OrganizationKey"
+            lockVersion:
+              type: integer
+              format: int64
+            createdBy:
+              type: string
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    ContentBookNode:
+      type: object
+      required: [ id, documentId ]
+      description: One place of a document in a book's tree.
+      properties:
+        id:
+          type: string
+          description: Client-assigned, unique within the book; what children name as `parentId`.
+        documentId:
+          type: string
+          format: uuid
+        parentId:
+          type: string
+          nullable: true
+          description: The parent node's `id`; null for a top-level node.
+        orderIndex:
+          type: integer
+          default: 0
+          description: Position among siblings.
+
+    ContentBookNodesInput:
+      type: object
+      required: [ nodes ]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentBookNode"
+
+    PageOf_ContentBook:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentBook"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
 
     # ── Signatures ────────────────────────────────────────────
 

@@ -145,4 +145,18 @@ class DocumentGuardTest {
         };
     }
     // endregion
+
+    @Test
+    void theLadderAppliesToAnythingCarryingTheAccessFields() {
+        DocumentRoles roles = new DocumentRoles(List.of("reader"), List.of("editor"), List.of());
+
+        assertThat(TestGuards.with(anonymous()).canRead(ORG, true, roles)).isTrue();
+        assertThat(TestGuards.with(anonymous()).canRead(ORG, false, roles)).isFalse();
+        assertThat(TestGuards.with(holding("reader")).canRead(ORG, false, roles)).isTrue();
+        assertThatCode(() -> TestGuards.with(holding("editor")).requireEditor(ORG, roles, "content book", "b-1"))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> TestGuards.with(holding("reader")).requireEditor(ORG, roles, "content book", "b-1"))
+                .isInstanceOf(DocumentAccessDeniedException.class)
+                .hasMessage("The current principal may not edit content book 'b-1'");
+    }
 }
