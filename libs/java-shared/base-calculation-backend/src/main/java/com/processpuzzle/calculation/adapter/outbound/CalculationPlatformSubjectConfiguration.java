@@ -2,7 +2,6 @@ package com.processpuzzle.calculation.adapter.outbound;
 
 import com.processpuzzle.calculation.usecase.RunEvents;
 import com.processpuzzle.core.definition.PlatformSubject;
-import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

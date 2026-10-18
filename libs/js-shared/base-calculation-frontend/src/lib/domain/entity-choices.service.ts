@@ -56,5 +56,6 @@ export class EntityChoicesService {
 
 function choiceOf(object: EntityObjectDto, titleAttribute: string | undefined): EntityChoice {
   const title = titleAttribute ? object.payload?.[titleAttribute] : undefined;
-  return { id: object.id, label: title === undefined || title === null || title === '' ? object.id : `${String(title)}` };
+  const isTitle = typeof title === 'string' || typeof title === 'number' || typeof title === 'boolean';
+  return { id: object.id, label: isTitle && title !== '' ? String(title) : object.id };
 }

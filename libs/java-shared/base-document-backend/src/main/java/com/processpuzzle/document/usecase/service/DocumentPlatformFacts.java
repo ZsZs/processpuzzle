@@ -34,7 +34,8 @@ public class DocumentPlatformFacts {
     /** The {@code subjectType} of every fact published here. */
     public static final String SUBJECT_TYPE = "document";
     /** The payload attributes of the facts about a document — created and state changed. */
-    public static final Set<String> FACT_ATTRIBUTES = Set.of("slug", "title", "sourceLocale");
+    private static final String TITLE = "title";
+    public static final Set<String> FACT_ATTRIBUTES = Set.of("slug", TITLE, "sourceLocale");
 
     private final ApplicationEventPublisher events;
 
@@ -62,7 +63,7 @@ public class DocumentPlatformFacts {
         payload.put("signatureId", signature.getId());
         payload.put("documentId", document.getId());
         payload.put("slug", document.getSlug());
-        payload.put("title", document.getTitle());
+        payload.put(TITLE, document.getTitle());
         payload.put("locale", signature.getLocale());
         payload.put("revision", signature.getRevision());
         payload.put("contentHash", signature.getContentHash());
@@ -103,7 +104,7 @@ public class DocumentPlatformFacts {
     private static Map<String, Object> payloadOf(Document document) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("slug", document.getSlug());
-        payload.put("title", document.getTitle());
+        payload.put(TITLE, document.getTitle());
         payload.put("sourceLocale", document.getSourceLocale());
         return payload;
     }
