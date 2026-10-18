@@ -29,8 +29,11 @@ export function valueAtPath(root: unknown, path: string | undefined): unknown {
  * `value` as text in `format` for `locale`. `null` and `undefined` are the empty string; a value the format
  * cannot read — a word given `number`, an unparsable date — falls back to its plain text rather than `NaN`.
  * An object (an ADDRESS, an embedded component) is the join of its non-empty scalar values.
+ *
+ * `format` is a {@link ValueFormat}, typed as a plain string because it arrives from stored JSON; an unknown
+ * one reads as `text`.
  */
-export function formatValue(value: unknown, format: ValueFormat | string | undefined, locale: string | undefined): string {
+export function formatValue(value: unknown, format: string | undefined, locale: string | undefined): string {
   if (value === null || value === undefined) return '';
   const effective = format ?? 'text';
   if (effective === 'number' || effective.startsWith('currency:')) return formatNumber(value, effective, locale);
@@ -51,7 +54,9 @@ function formatNumber(value: unknown, format: string, locale: string | undefined
 }
 
 function formatDate(value: unknown, format: 'date' | 'datetime', locale: string | undefined): string {
-  const date = value instanceof Date ? value : typeof value === 'string' || typeof value === 'number' ? new Date(value) : undefined;
+  let date: Date | undefined;
+  if (value instanceof Date) date = value;
+  else if (typeof value === 'string' || typeof value === 'number') date = new Date(value);
   if (!date || Number.isNaN(date.getTime())) return asText(value);
   const options: Intl.DateTimeFormatOptions = format === 'date' ? { dateStyle: 'medium' } : { dateStyle: 'medium', timeStyle: 'short' };
   return new Intl.DateTimeFormat(locale, options).format(date);

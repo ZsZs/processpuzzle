@@ -49,6 +49,7 @@ public class DocumentReferentialIntegrityChecker {
     private static final String WIDGET_EMBED_NODE_TYPE = "widgetEmbed";
     private static final String CHILD_IDS_PROP = "childIds";
     private static final String DATA_FIELD_NODE_TYPE = "dataField";
+    private static final String ATTRS = "attrs";
 
     public List<DocumentValidationProblem> check(DocumentPorts ports, DocumentContent content) {
         List<DocumentValidationProblem> problems = new ArrayList<>();
@@ -223,7 +224,7 @@ public class DocumentReferentialIntegrityChecker {
             return;
         }
         if (node.isObject() && WIDGET_EMBED_NODE_TYPE.equals(textOrNull(node.get("type")))) {
-            JsonNode attrs = node.get("attrs");
+            JsonNode attrs = node.get(ATTRS);
             String blockId = attrs == null ? null : textOrNull(attrs.get("blockId"));
             if (blockId == null) {
                 problems.add(new DocumentValidationProblem(
@@ -264,7 +265,7 @@ public class DocumentReferentialIntegrityChecker {
             return;
         }
         if (node.isObject() && DATA_FIELD_NODE_TYPE.equals(textOrNull(node.get("type")))) {
-            JsonNode attrs = node.get("attrs");
+            JsonNode attrs = node.get(ATTRS);
             String fieldPath = attrs == null ? null : textOrNull(attrs.get("path"));
             if (fieldPath == null || fieldPath.isBlank()) {
                 problems.add(new DocumentValidationProblem(
@@ -299,7 +300,7 @@ public class DocumentReferentialIntegrityChecker {
             return false;
         }
         if (node.isObject() && WIDGET_EMBED_NODE_TYPE.equals(textOrNull(node.get("type")))) {
-            JsonNode attrs = node.get("attrs");
+            JsonNode attrs = node.get(ATTRS);
             if (attrs != null && blockId.equals(textOrNull(attrs.get("blockId")))) {
                 return true;
             }

@@ -43,7 +43,7 @@ export function createDataFieldExtension(deps: DataFieldNodeDeps) {
       return [
         {
           tag: 'span[data-field-path]',
-          getAttrs: (el) => ({ path: (el as HTMLElement).getAttribute('data-field-path'), format: (el as HTMLElement).getAttribute('data-field-format') ?? 'text' }),
+          getAttrs: (el) => ({ path: (el as HTMLElement).dataset['fieldPath'] ?? null, format: (el as HTMLElement).dataset['fieldFormat'] ?? 'text' }),
         },
       ];
     },
@@ -70,8 +70,8 @@ export class DataFieldNodeView implements NodeView {
     const format = String(node.attrs['format'] ?? 'text');
     this.dom = document.createElement('span');
     this.dom.classList.add('pp-data-field');
-    this.dom.setAttribute('data-field-path', path);
-    this.dom.setAttribute('data-testid', `data-field-${path}`);
+    this.dom.dataset['fieldPath'] = path;
+    this.dom.dataset['testid'] = `data-field-${path}`;
     this.effectRef = runInInjectionContext(deps.environmentInjector, () =>
       effect(() => {
         const text = formatValue(deps.resolveBinding(path), format, deps.locale());

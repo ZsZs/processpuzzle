@@ -163,7 +163,7 @@ function substitute(filter: string | undefined, resolved: Record<string, unknown
       unresolved = true;
       return '';
     }
-    return String(value);
+    return String(value as string | number | boolean);
   });
   return unresolved ? null : query;
 }

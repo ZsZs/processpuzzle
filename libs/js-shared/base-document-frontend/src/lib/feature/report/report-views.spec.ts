@@ -276,7 +276,7 @@ describe('EntityReportRegistry', () => {
   });
 
   it('reads a paged answer, and a failure as no templates', async () => {
-    expect((await create(() => of({ content: [template('invoice', DocumentKind.REPORT_TEMPLATE)] })).templatesFor('Order')).length).toBe(1);
+    expect(await create(() => of({ content: [template('invoice', DocumentKind.REPORT_TEMPLATE)] })).templatesFor('Order')).toHaveLength(1);
     TestBed.resetTestingModule();
     expect(await create(() => of(undefined)).templatesFor('Order')).toEqual([]);
     TestBed.resetTestingModule();

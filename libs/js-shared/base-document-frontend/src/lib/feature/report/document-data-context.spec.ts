@@ -72,7 +72,7 @@ describe('DocumentDataContext', () => {
     query.flush({ content: [envelope('o-1', { customer: 'c-9' }), envelope('o-2', { customer: 'c-9' })], number: 0, size: 2, totalElements: 2, totalPages: 1 });
     await bound;
 
-    expect((context.resolve('siblings') as unknown[]).length).toBe(2);
+    expect(context.resolve('siblings') as unknown[]).toHaveLength(2);
   });
 
   it('leaves a collection empty instead of running its query without an unresolved reference', async () => {
