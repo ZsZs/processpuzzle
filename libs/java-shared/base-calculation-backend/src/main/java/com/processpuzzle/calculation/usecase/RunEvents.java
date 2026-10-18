@@ -9,6 +9,7 @@ import com.processpuzzle.shared.event.PlatformEvent;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,8 @@ public class RunEvents {
     public static final String SUBJECT_TYPE = "calculation-run";
     /** The key of the single values in a run's result, and in the facts a run publishes. */
     public static final String VALUES = "values";
+    /** The payload attributes of every fact a run publishes. */
+    public static final Set<String> FACT_ATTRIBUTES = Set.of("calculationId", "definitionVersion", "subjectType", "subjectId", VALUES);
 
     private final ApplicationEventPublisher publisher;
 

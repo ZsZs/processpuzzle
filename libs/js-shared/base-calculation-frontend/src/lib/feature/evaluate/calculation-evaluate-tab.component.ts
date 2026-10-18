@@ -1,16 +1,18 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 import { CALCULATION_EVALUATE_I18N_SCOPE } from '../../base-calculation.i18n';
 import type { CalculationRun, EvaluationResult } from '../../domain/calculation-api';
 import { CalculationApiService } from '../../domain/calculation-api.service';
+import { EntityChoice, EntityChoicesService } from '../../domain/entity-choices.service';
 import { CALCULATION_TAB_STYLES } from '../calculation-tab.styles';
 import { currentCalculation } from '../current-calculation';
 import { messageOf } from '../message-of';
 import { CalculationTraceComponent } from '../runs/calculation-trace.component';
 
 /**
- * The Evaluate tab: a value per parameter — an entity parameter takes the object's id — then Evaluate, which
+ * The Evaluate tab: a value per parameter — an entity parameter is picked from its objects, or takes the object's
+ * id when there are too many to list — then Evaluate, which
  * computes the stored draft and stores nothing, or Run, which computes the released definition, writes its
  * output and keeps the run. Both show the values and the trace of every decision.
  */
@@ -28,12 +30,21 @@ import { CalculationTraceComponent } from '../runs/calculation-trace.component';
         @for (parameter of parameters(); track parameter.name) {
           <label>
             {{ parameter.name }}
-            <input
-              [attr.data-testid]="'calculation-parameter-' + parameter.name"
-              [placeholder]="parameter.entity ? (scope + '.entityHint' | transloco: { entity: parameter.entity }) : (parameter.type ?? '')"
-              [value]="values()[parameter.name] ?? ''"
-              (input)="setValue(parameter.name, $any($event.target).value)"
-            />
+            @if (parameter.entity && choices()[parameter.entity]?.length) {
+              <select [attr.data-testid]="'calculation-parameter-' + parameter.name" [value]="values()[parameter.name] ?? ''" (change)="setValue(parameter.name, $any($event.target).value)">
+                <option value="">{{ scope + '.pick' | transloco: { entity: parameter.entity } }}</option>
+                @for (choice of choices()[parameter.entity]; track choice.id) {
+                  <option [value]="choice.id" [selected]="values()[parameter.name] === choice.id">{{ choice.label }}</option>
+                }
+              </select>
+            } @else {
+              <input
+                [attr.data-testid]="'calculation-parameter-' + parameter.name"
+                [placeholder]="parameter.entity ? (scope + '.entityHint' | transloco: { entity: parameter.entity }) : (parameter.type ?? '')"
+                [value]="values()[parameter.name] ?? ''"
+                (input)="setValue(parameter.name, $any($event.target).value)"
+              />
+            }
           </label>
         }
       </div>
@@ -65,6 +76,7 @@ export class CalculationEvaluateTabComponent {
 
   protected readonly scope = CALCULATION_EVALUATE_I18N_SCOPE;
   private readonly api = inject(CalculationApiService);
+  private readonly entityChoices = inject(EntityChoicesService);
   private readonly calculation = currentCalculation(this.entityId);
 
   protected readonly definition = this.calculation.definition;
@@ -74,6 +86,20 @@ export class CalculationEvaluateTabComponent {
   protected readonly lastRun = signal<CalculationRun | undefined>(undefined);
   protected readonly failure = signal<string | undefined>(undefined);
   protected readonly busy = signal(false);
+  /** The objects each entity parameter's type offers, by entity; absent while loading, empty when not listable. */
+  protected readonly choices = signal<Record<string, EntityChoice[]>>({});
+
+  constructor() {
+    effect(() => {
+      const known = untracked(this.choices);
+      const entities = new Set(this.parameters().flatMap((parameter) => (parameter.entity ? [parameter.entity] : [])));
+      entities.forEach((entity) => {
+        if (entity in known) return;
+        this.choices.update((choices) => ({ ...choices, [entity]: [] }));
+        this.entityChoices.choicesOf(entity).subscribe((offered) => this.choices.update((choices) => ({ ...choices, [entity]: offered })));
+      });
+    });
+  }
 
   protected setValue(name: string, value: string): void {
     this.values.update((values) => ({ ...values, [name]: value }));

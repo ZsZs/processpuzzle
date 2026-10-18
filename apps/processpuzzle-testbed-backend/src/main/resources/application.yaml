@@ -152,6 +152,7 @@ base-workflow:
 base-calculation:
   # The calculations the testbed ships — today the order total. The import upserts and releases what it wrote.
   loadDefaultCalculations: yes
+  loadDefaultTranslations: yes
 
 base-event:
   # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an

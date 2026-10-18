@@ -56,9 +56,9 @@ public class CalculationEntityAdapter implements EntityQueryPort, EntityWritePor
     }
 
     @Override
-    public boolean upsertByKey(String orgKey, String entity, Map<String, Object> key, Map<String, Object> values) {
+    public int upsertAllByKey(String orgKey, String entity, List<String> keyAttributes, List<Map<String, Object>> rows) {
         try {
-            return entities.upsertByKey(orgKey, entity, key, values);
+            return entities.upsertAllByKey(orgKey, entity, keyAttributes, rows);
         } catch (EntityObjectAccessException e) {
             throw new EntityWriteConflict(e.getMessage());
         }

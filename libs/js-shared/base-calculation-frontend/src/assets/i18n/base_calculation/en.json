@@ -51,6 +51,7 @@
     "parameters": "Parameters",
     "noParameters": "The calculation declares no parameters.",
     "entityHint": "Id of the {{entity}}",
+    "pick": "Pick the {{entity}}",
     "evaluate": "Evaluate draft",
     "run": "Run released",
     "runResult": "Run {{status}}: {{written}} object(s) written · {{id}}",

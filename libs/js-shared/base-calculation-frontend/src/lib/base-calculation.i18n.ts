@@ -24,8 +24,9 @@ export const CALCULATION_EVALUATE_I18N_SCOPE = `${BASE_CALCULATION_TRANSLOCO_SCO
 export const CALCULATION_RUNS_I18N_SCOPE = `${BASE_CALCULATION_TRANSLOCO_SCOPE}.runs`;
 
 /**
- * Where this library's transloco bundles come from when the application ships without its assets. base-calculation
- * does not serve a translations resource yet, so a host that skips the asset copy step gets no translations.
+ * Where this library's transloco bundles come from when the application ships without its assets: base-calculation
+ * serves `/organizations/{orgKey}/calculation/translations/{scope}/{locale}`. It seeds the names of the tenant's
+ * calculations there, not this library's UI text, which arrives as the asset files.
  */
 export const BASE_CALCULATION_TRANSLATION_SOURCE: TranslationSource = {
   scopes: [BASE_CALCULATION_TRANSLOCO_SCOPE],

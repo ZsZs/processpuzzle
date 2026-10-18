@@ -20,7 +20,7 @@ from a run.
 | List / Details | the generic CRUD of a `Calculation Definition`; the form edits the source, everything else is read from it |
 | **Source** tab | a CodeMirror editor for the YAML; Validate lists the errors, or the decisions in evaluation order with what each requires |
 | **Decision tables** tab | a grid per table — hit policy, input columns, output, rules added, removed and reordered; every edit rewrites that table in the YAML document and keeps the rest, comments included (`yaml`, ISC) |
-| **Evaluate** tab | a field per parameter; *Evaluate draft* computes and stores nothing, *Run released* writes the output and keeps the run; both show values and the trace |
+| **Evaluate** tab | a field per parameter — an entity parameter picks from its type's objects, titled by the attribute that titles them (a plain id field beyond 100 objects); *Evaluate draft* computes and stores nothing, *Run released* writes the output and keeps the run; both show values and the trace |
 | Calculation runs | every run, filterable by calculation and subject, with values, trace, the source snapshot it ran, and Freeze |
 
 ## Using it

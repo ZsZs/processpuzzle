@@ -2,6 +2,7 @@ package com.processpuzzle.baseentity.instances.adapters.inbound;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.processpuzzle.baseentity.common.BaseEntityApiExceptionHandler;
+import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
@@ -108,6 +109,7 @@ class EntityObjectEndpointTest {
                 .payload(Map.of("name", "ACME"))
                 .build();
         when(createUseCase.create(eq(ORG), eq("partner"), any())).thenReturn(entity);
+        when(findByIdUseCase.findById(ORG, "partner", id)).thenThrow(new NotFoundException("deleted meanwhile"));
 
         EntityObjectInput input = new EntityObjectInput();
         input.setEntityDefinitionCode("partner");
@@ -131,6 +133,14 @@ class EntityObjectEndpointTest {
                 .payload(Map.of("name", "ACME Updated"))
                 .build();
         when(updateUseCase.update(eq(ORG), eq("partner"), eq(id), eq(1L), any())).thenReturn(entity);
+        // What an after-commit listener wrote onto it — a calculated total — keeping the version.
+        EntityObject committed = EntityObject.builder()
+                .id(id)
+                .entityDefinitionCode("partner")
+                .version(2L)
+                .payload(Map.of("name", "ACME Updated", "total", 42))
+                .build();
+        when(findByIdUseCase.findById(ORG, "partner", id)).thenReturn(committed);
 
         EntityObjectUpdate updateRequest = new EntityObjectUpdate();
         updateRequest.setVersion(1);
@@ -141,7 +151,8 @@ class EntityObjectEndpointTest {
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.version").value(2))
-                .andExpect(jsonPath("$.payload.name").value("ACME Updated"));
+                .andExpect(jsonPath("$.payload.name").value("ACME Updated"))
+                .andExpect(jsonPath("$.payload.total").value(42));
     }
 
     @Test

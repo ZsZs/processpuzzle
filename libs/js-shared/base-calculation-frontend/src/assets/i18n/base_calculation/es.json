@@ -51,6 +51,7 @@
     "parameters": "Parámetros",
     "noParameters": "El cálculo no declara parámetros.",
     "entityHint": "Id de {{entity}}",
+    "pick": "Elegir: {{entity}}",
     "evaluate": "Evaluar borrador",
     "run": "Ejecutar publicado",
     "runResult": "Ejecución {{status}}: {{written}} objeto(s) escrito(s) · {{id}}",

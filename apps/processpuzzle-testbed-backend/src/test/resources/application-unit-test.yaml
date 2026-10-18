@@ -67,6 +67,7 @@ base-event:
 
 base-calculation:
   loadDefaultCalculations: no
+  loadDefaultTranslations: no
 
 org-admin:
   loadDefaults: no

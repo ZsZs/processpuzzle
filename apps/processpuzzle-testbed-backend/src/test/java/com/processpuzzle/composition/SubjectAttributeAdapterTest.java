@@ -7,13 +7,17 @@ import static org.mockito.Mockito.when;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.PlatformSubject;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class SubjectAttributeAdapterTest {
 
     private final EntityAttributeQuery query = mock(EntityAttributeQuery.class);
-    private final SubjectAttributeAdapter adapter = new SubjectAttributeAdapter(query);
+    private final SubjectAttributeAdapter adapter = new SubjectAttributeAdapter(query,
+            List.of(new PlatformSubject("calculation-run", Set.of("calculationId", "subjectId"))));
 
     @Test
     void answersFromTheEntityTypesDraft() {
@@ -28,5 +32,11 @@ class SubjectAttributeAdapterTest {
     @Test
     void cannotTellForAnUnknownEntityType() {
         assertThat(adapter.hasAttribute("org-1", "invoice", "number")).isEmpty();
+    }
+
+    @Test
+    void answersADeclaredPlatformSubjectFromItsDeclaration() {
+        assertThat(adapter.hasAttribute("org-1", "calculation-run", "calculationId")).contains(true);
+        assertThat(adapter.hasAttribute("org-1", "calculation-run", "total")).contains(false);
     }
 }

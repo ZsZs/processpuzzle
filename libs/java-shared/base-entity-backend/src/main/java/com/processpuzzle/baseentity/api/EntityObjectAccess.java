@@ -17,7 +17,7 @@ import java.util.UUID;
  *
  * <p>base-calculation is the other, through the host application's adapters: it reads a calculation's inputs
  * with {@link #findWhere} and writes the derived values it owns with {@link #updateAttributes} and
- * {@link #upsertByKey}.
+ * {@link #upsertAllByKey}.
  */
 public interface EntityObjectAccess {
 
@@ -88,14 +88,16 @@ public interface EntityObjectAccess {
                           long expectedVersion);
 
     /**
-     * Writes {@code values} onto the object of {@code entityDefinitionCode} whose attributes equal {@code key} — the
-     * first, should there be several — or creates one with {@code values} as its payload. Neither validates nor
-     * publishes an event; an existing object keeps its version, as with {@link #updateAttributes}.
+     * Writes each row onto the object of {@code entityDefinitionCode} whose {@code keyAttributes} equal the row's — the
+     * first, should there be several — or creates one with the row as its payload. Numbers match by value, so a
+     * stored {@code 1} and a written {@code 1.0} are one key. Neither validates nor publishes an event; an existing
+     * object keeps its version, as with {@link #updateAttributes}.
      *
-     * <p>The match reads every object of the type: fine for a result table of one calculation, not a request path.
+     * <p>One read of the type for the whole batch, not one per row: a calculation writes its result table at once.
      *
-     * @return whether an object was created
-     * @throws EntityObjectAccessException.NotFound if {@code entityDefinitionCode} is no entity type of the organization
+     * @return how many objects were created
+     * @throws EntityObjectAccessException.UnknownType     if {@code entityDefinitionCode} is no entity type of the organization
+     * @throws EntityObjectAccessException.VersionConflict if a matched object changed while the batch was written
      */
-    boolean upsertByKey(String orgKey, String entityDefinitionCode, Map<String, Object> key, Map<String, Object> values);
+    int upsertAllByKey(String orgKey, String entityDefinitionCode, List<String> keyAttributes, List<Map<String, Object>> rows);
 }
