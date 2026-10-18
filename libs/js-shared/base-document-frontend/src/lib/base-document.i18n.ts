@@ -33,6 +33,15 @@ export const DOCUMENT_CONTENT_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.content`;
 /** Label of the Sign tab, resolved like {@link DOCUMENT_CONTENT_I18N_KEY}. */
 export const DOCUMENT_SIGN_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.sign`;
 
+/** Label of the Preview tab, resolved like {@link DOCUMENT_CONTENT_I18N_KEY}. */
+export const DOCUMENT_PREVIEW_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.preview`;
+
+/**
+ * Label of the Reports tab an entity's screens get from base-document. It renders on the entity's own route,
+ * which does not register this library's scope; `provideEntityReportsTab()` does.
+ */
+export const ENTITY_REPORTS_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.reports`;
+
 /**
  * Key roots of the two port shapes the `Document` form carries through `EMBEDDED_COMPONENTS` controls.
  * They are children of {@link BASE_DOCUMENT_TRANSLOCO_SCOPE} rather than scopes of their own, because

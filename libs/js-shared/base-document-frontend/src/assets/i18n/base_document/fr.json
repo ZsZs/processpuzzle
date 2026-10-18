@@ -13,9 +13,12 @@
     "publisherRoles": "Rôles de publication",
     "inputPorts": "Ports d'entrée",
     "outputPorts": "Ports de sortie",
+    "kind": "Type",
     "tabs": {
       "content": "{{ entity }} - contenu",
-      "sign": "{{ entity }} - signer"
+      "preview": "{{ entity }} - aperçu",
+      "sign": "{{ entity }} - signer",
+      "reports": "Rapports"
     },
     "content": {
       "loading": "Chargement du contenu…",
@@ -31,6 +34,25 @@
       "signatures": "Signatures",
       "none": "Personne n'a encore signé ce document."
     },
+    "report": {
+      "insert_field": "Insérer un champ de données",
+      "field": "Champ",
+      "format": "Format",
+      "insert": "Insérer",
+      "cancel": "Annuler",
+      "apply": "Appliquer",
+      "table_settings": "Paramètres du tableau",
+      "rows": "Lignes",
+      "caption": "Légende",
+      "header": "En-tête",
+      "total": "Total",
+      "move_up": "Monter",
+      "move_down": "Descendre",
+      "print": "Imprimer / Enregistrer en PDF",
+      "missing_parameters": "Choisissez une valeur pour : {{ ports }}",
+      "template": "Rapport",
+      "not_published": "Ce rapport n'est pas encore publié."
+    },
     "_tooltips": {
       "slug": "La clé du document dans son adresse, unique dans votre organisation. Uniquement minuscules, chiffres et tirets, p. ex. getting-started.",
       "title": "Le titre du document tel que les lecteurs le voient, p. ex. Premiers pas.",
@@ -43,7 +65,8 @@
       "editorRoles": "Rôles autorisés à modifier le contenu et les propriétés du document, un par puce, p. ex. editor.",
       "publisherRoles": "Rôles autorisés à publier le document, un par puce. Laissez vide pour que les rôles d'édition puissent aussi publier.",
       "inputPorts": "Valeurs transmises par la page qui intègre le document, p. ex. le client consulté, afin que les widgets du document puissent les utiliser.",
-      "outputPorts": "Valeurs que le document renvoie à la page qui l'intègre, p. ex. un enregistrement choisi par le lecteur."
+      "outputPorts": "Valeurs que le document renvoie à la page qui l'intègre, p. ex. un enregistrement choisi par le lecteur.",
+      "kind": "DOCUMENT est une page fixe ; REPORT_TEMPLATE est une mise en page produite pour chaque objet, p. ex. une facture par commande, ses ports d'entité étant remplis à chaque fois."
     }
   },
   "document_input_port": {

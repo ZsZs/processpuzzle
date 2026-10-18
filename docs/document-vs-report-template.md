@@ -71,3 +71,110 @@ Whichever you choose, make sure **templates are immutable once used**: publishin
 ### Open question
 
 For your sail race use case, are the results reports something people will later cite or contest (final standings after a regatta)? If yes, that is a clear case for the snapshot flag, since later rule corrections shouldn't silently rewrite a published result.
+
+---
+
+## Decisions (2026-10-18)
+
+The trigger is the invoice: its data lives in an `Invoice` entity, the paper/PDF invoice is generated from it,
+and authoring the layout needs exactly the Document tooling.
+
+1. **A Report Template is a kind of Document**, not a separate aggregate. `Document` gains
+   `kind: DOCUMENT | REPORT_TEMPLATE`. Ports, locales, draft/publish and revisions are reused unchanged; the UI
+   and API present the two kinds separately where that helps (list filter, editor affordances).
+2. **The difference between the kinds is *when* entity input ports are bound.** A `DOCUMENT` binds them at
+   authoring time (the port's `defaultValue` is a fixed object id, or the hosting page supplies it). A
+   `REPORT_TEMPLATE` declares them as **parameters**, supplied per run.
+3. **First version renders in the browser**, PDF through the browser's print-to-PDF of a print-styled report
+   view. Server-side rendering, batch runs and stored snapshots (`ReportRun`, `retention`) stay as designed
+   above but are a later phase.
+4. **Electronic invoices are out of scope for base-document.** UBL, ZUGFeRD or NAV Online Számla XML are
+   mappings onto a fixed data schema, not layouts — an export format of the entity, not a template.
+
+## Entity binding
+
+The binding model already exists in base-document and base-widget; what was missing is resolution.
+
+### Data sources are ports, declared once
+
+A document's `inputPorts` are its data sources. Fields and tables never carry their own entity type or query —
+they point at a port and a path. One invoice has ~20 fields; per-field sources would mean 20 fetches with no
+guarantee they show the same invoice.
+
+| Binding case | Port type | Example |
+| --- | --- | --- |
+| a) one object | `ENTITY_REF` (`entityType` + object id) | `invoice` |
+| b) query of objects | `ENTITY_COLLECTION` (`entityType` + `defaultRsqlFilter`) | `openOrders`, `status!=CANCELLED` |
+| c) a collection inside an object | *no port* — a path below an `ENTITY_REF` | `invoice.lineItems` |
+
+Case c) is the invoice's line items: an `EMBEDDED_COMPONENTS` attribute of the root object, not a separate query.
+
+`entityType` is the entity **name** (`Order`), as everywhere else in ports; the resolver maps it to the definition
+`code` through `EntityDefinitionRegistry` and fetches via `/organizations/{orgKey}/entities/{code}`.
+
+**Parameterized filters.** An `ENTITY_COLLECTION` filter may reference another port: `customerId==${customer.id}`.
+`${port.path}` is substituted before the query runs; a reference to an unresolved port leaves the collection empty
+rather than running an unfiltered query.
+
+### Paths
+
+A path is `port` or `port.attr.attr…`, walking embedded objects and arrays by attribute name
+(`invoice.customer.address.city`). Relationship (foreign-key) attributes are **not** followed in the first
+version — the path stops at the stored value (the id). Following them is a resolver extension, not a model change.
+
+### Placing data in a document
+
+1. **Individual value — the `dataField` inline node.** A Tiptap inline atom node with attributes
+   `{ path, format }`, so a value can sit inside a sentence ("Dear {invoice.customer.name},"). It is text-level,
+   not a WIDGET block: it has no props schema, ports or registry entry, and it inherits the paragraph's styling.
+   `format`: `text` (default), `number`, `currency:<ISO code>`, `date`, `datetime` — rendered with the document's
+   locale. An unresolved path renders as an empty, outlined placeholder in the editor and as nothing in the reader.
+2. **Table — the `entity-table` widget.** A regular widget (registry, props schema, contract spec):
+   - `rows` — bound through `inputBindings` to a path: a collection port (`openOrders`) or a collection inside an
+     object (`order.lineItems`);
+   - `columns` — ordered `{ path, header, format, align }`, `path` relative to one row;
+   - `totals` — optional `{ path, aggregate: sum | count }` per column, rendered as a footer row;
+   - `caption` — optional.
+
+   Columns are widget props rather than the port's `attributeVisibility`: they need an order, labels and
+   formats. `attributeVisibility` stays what it is — a projection of what the port exposes, which the column
+   picker offers.
+
+   The widget receives *resolved rows*; the path lives in the block's `inputBindings`, so paths stay a document
+   concern and the widget is usable anywhere `rows` can be supplied. This is why an `inputBindings` value is a
+   **port path**, not only a port name — the backend validates its first segment against the declared ports.
+   The document editor configures the block through a *Table settings* dialog (source, columns with header,
+   format and order, totals), since the generic props form cannot edit arrays of objects yet.
+
+### Resolution
+
+`DocumentDataContext` (frontend, base-document) replaces `DocumentContentStore.resolveBinding()`'s placeholder:
+
+1. receives the **port values** from the host: `{ portName: objectId | rsqlOverride }`;
+2. for each `ENTITY_REF` port: fetches the object; for each `ENTITY_COLLECTION` port: substitutes `${…}`
+   references, then queries (`defaultRsqlFilter` unless the host supplied a filter);
+3. exposes `resolve(path)` as a signal-backed lookup that `dataField` nodes, `entity-table` and the existing
+   widget `inputBindings` all use — one resolution rule, as for widgets today.
+
+Missing required ports are reported once (a banner in the reader) instead of per field.
+
+### Running a report
+
+Implemented 2026-10-18; `order-invoice` in the testbed's sample documents exercises every part.
+
+- **Preview tab** (`document/<id>/preview`): the *draft* rendered against data. Port values are query
+  parameters — `?order=<id>` — the same pattern the signing tab uses for `subjectType` / `subjectId`; a parameter
+  bar (one object picker per `ENTITY_REF` port) writes them back, so the author designs against real data and a
+  preview of one invoice is a link. The editor itself resolves nothing: an unresolved field shows its path.
+- **PDF:** *Print / Save as PDF* prints a copy of the rendered page in a hidden iframe, with the page's style
+  sheets and `@page` margins — the application shell around the report is not base-document's to hide. No new
+  PDF dependency.
+- **Reports tab** (`<entity>/<id>/reports`): `provideEntityReportsTab()` offers it, through the entity tab
+  contributors, to every entity some `REPORT_TEMPLATE` has an `ENTITY_REF` port of; it renders the *published*
+  template with the current object bound (*Print invoice* on an Order).
+
+### Not in the first version
+
+Server-side rendering, batch runs ("1000 invoices" = case a) run N times), `ReportRun` and snapshot retention,
+conditional sections, repeating sections other than tables, following relationships in paths, page headers/footers
+and page breaks beyond what CSS print rules give.

@@ -74,6 +74,9 @@
   "copyright": {
     "name": "Urheberrecht"
   },
+  "entity_table": {
+    "name": "Entitätstabelle"
+  },
   "design_button": {
     "name": "Design-Schaltfläche"
   },

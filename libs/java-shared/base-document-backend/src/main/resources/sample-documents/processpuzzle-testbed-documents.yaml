@@ -416,3 +416,84 @@ documents:
                       text: >-
                         Please quote the order number with your payment. Late payments may incur
                         interest at the statutory rate.
+
+  # ── 4. The order invoice report template ──────────────────────────────────────────────────
+  # A REPORT_TEMPLATE: one layout, one invoice per order. Its `order` port is a parameter supplied per
+  # run (the Preview tab's picker, or the Order screen's Reports tab); dataField nodes place single values
+  # inside the prose, and the entity-table lists the order's own line items through a path below the port.
+  - slug: order-invoice
+    kind: REPORT_TEMPLATE
+    title: Order Invoice
+    subject: Order fulfillment
+    description: >-
+      The printable invoice of one order — header fields from the order, its line items as a table, and
+      the amount due.
+    author: ProcessPuzzle Team
+    sourceLocale: en
+    isPublic: true
+    editorRoles:
+      - documentation-editor
+
+    inputPorts:
+      - name: order
+        type: ENTITY_REF
+        entityType: Order
+        required: true
+        description: The order being invoiced.
+
+    translations:
+      - locale: en
+        blocks:
+          - id: header
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: heading
+                  attrs: { level: 1 }
+                  content:
+                    - type: text
+                      text: 'Invoice '
+                    - type: dataField
+                      attrs: { path: order.orderNumber, format: text }
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: 'Customer: '
+                    - type: dataField
+                      attrs: { path: order.customerName, format: text }
+
+          - id: line-items
+            kind: WIDGET
+            placement: STANDALONE
+            type: entity-table
+            props:
+              caption: Line items
+              columns:
+                - { path: productName, header: Product, format: text, align: start }
+                - { path: quantity, header: Quantity, format: number, align: end }
+                - { path: unitPrice, header: Unit price, format: 'currency:EUR', align: end }
+              totals:
+                - { path: quantity, aggregate: sum }
+            inputBindings:
+              rows: order.lineItems
+
+          - id: amount-due
+            kind: TEXT
+            editable: true
+            content:
+              type: doc
+              content:
+                - type: paragraph
+                  content:
+                    - type: text
+                      marks: [ { type: bold } ]
+                      text: 'Amount due: '
+                    - type: dataField
+                      attrs: { path: order.total, format: 'currency:EUR' }
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: >-
+                        Payment is due within 30 days. Please quote the invoice number with your payment.

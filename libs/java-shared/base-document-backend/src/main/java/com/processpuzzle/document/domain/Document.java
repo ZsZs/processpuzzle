@@ -3,6 +3,8 @@ package com.processpuzzle.document.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.PrePersist;
@@ -99,6 +101,15 @@ public class Document {
     @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     @Convert(converter = DocumentPortsConverter.class)
     private DocumentPorts ports = DocumentPorts.empty();
+
+    /**
+     * Nullable on purpose: a schema that already holds documents gains the column empty, and a
+     * {@code NOT NULL} column cannot be added to it. {@link #getKind()} reads {@code null} as
+     * {@link DocumentKind#DOCUMENT}, which is what every document before the column was.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private DocumentKind kind = DocumentKind.DOCUMENT;
 
     @Version
     @Column(name = "lock_version")
@@ -215,6 +226,15 @@ public class Document {
 
     public DocumentPorts getPorts() {
         return ports == null ? DocumentPorts.empty() : ports;
+    }
+
+    public DocumentKind getKind() {
+        return kind == null ? DocumentKind.DOCUMENT : kind;
+    }
+
+    /** Kept apart from {@link #replaceProperties} so that its many positional call sites stay as they are. */
+    public void changeKind(DocumentKind newKind) {
+        this.kind = newKind == null ? DocumentKind.DOCUMENT : newKind;
     }
 
     public Long getLockVersion() {

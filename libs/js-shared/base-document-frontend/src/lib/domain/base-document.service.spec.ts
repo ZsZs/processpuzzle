@@ -5,7 +5,7 @@ import { PersistedEntity } from '@processpuzzle/base-entity';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Document, DocumentInputPort, DocumentStatus, PortType } from './base-document';
+import { Document, DocumentInputPort, DocumentKind, DocumentStatus, PortType } from './base-document';
 import { BaseDocumentMapper } from './base-document.mapper';
 import { BaseDocumentService } from './base-document.service';
 
@@ -94,6 +94,7 @@ describe('BaseDocumentService', () => {
       publisherRoles: ['publisher'],
       inputPorts: [new DocumentInputPort('customer', PortType.ENTITY_REF, true)],
       outputPorts: [],
+      kind: DocumentKind.DOCUMENT,
     });
     request.flush({ id: 'q3-plan', title: 'Q3 plan' });
   });

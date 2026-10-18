@@ -65,14 +65,14 @@ public class DocumentMapper {
         return new DocumentCommand(
                 new DocumentProperties(input.getSlug(), input.getTitle(), input.getSubject(), input.getDescription(),
                         input.getAuthor(), input.getSourceLocale(), Boolean.TRUE.equals(input.getIsPublic()),
-                        toRoles(input), toPorts(input)),
+                        toRoles(input), toPorts(input), toDomain(input.getKind())),
                 input.getTranslations() == null ? null : input.getTranslations().stream().map(this::toCommand).toList());
     }
 
     public DocumentProperties toCommand(DocumentPropertiesInput input) {
         return new DocumentProperties(input.getSlug(), input.getTitle(), input.getSubject(), input.getDescription(),
                 input.getAuthor(), input.getSourceLocale(), Boolean.TRUE.equals(input.getIsPublic()),
-                toRoles(input), toPorts(input));
+                toRoles(input), toPorts(input), toDomain(input.getKind()));
     }
 
     public DocumentTranslationCommand toCommand(DocumentTranslationInput input) {
@@ -175,6 +175,7 @@ public class DocumentMapper {
                 model::setAuthor, model::setSourceLocale, model::setIsPublic, model::setReaderRoles,
                 model::setEditorRoles, model::setPublisherRoles, model::setInputPorts, model::setOutputPorts);
         model.setId(toUuid(document.getId()));
+        model.setKind(toModel(document.getKind()));
         model.setOrgKey(document.getOrgKey());
         model.setTranslation(selected == null ? null : toTranslationModel(selected));
         model.setTranslations(states.stream().map(this::toTranslationSummaryModel).toList());
@@ -193,6 +194,7 @@ public class DocumentMapper {
                 model::setAuthor, model::setSourceLocale, model::setIsPublic, model::setReaderRoles,
                 model::setEditorRoles, model::setPublisherRoles, model::setInputPorts, model::setOutputPorts);
         model.setId(toUuid(document.getId()));
+        model.setKind(toModel(document.getKind()));
         model.setOrgKey(document.getOrgKey());
         model.setTranslations(states.stream().map(this::toTranslationSummaryModel).toList());
         model.setLockVersion(document.getLockVersion());
@@ -282,6 +284,7 @@ public class DocumentMapper {
                 input::setAuthor, input::setSourceLocale, input::setIsPublic, input::setReaderRoles,
                 input::setEditorRoles, input::setPublisherRoles, input::setInputPorts, input::setOutputPorts);
         input.setId(toUuid(document.getId()));
+        input.setKind(toModel(document.getKind()));
         input.setTranslations(drafts.stream().map(this::toTranslationInput).toList());
         return input;
     }
@@ -377,6 +380,17 @@ public class DocumentMapper {
     }
 
     // Shared field assignment for the invariant properties, which appear on Document,
+    // Both enums are named DocumentKind, hence the qualified names. The two lists are the same, so by name.
+    private static com.processpuzzle.document.domain.DocumentKind toDomain(
+            com.processpuzzle.document.model.DocumentKind kind) {
+        return kind == null ? null : com.processpuzzle.document.domain.DocumentKind.valueOf(kind.name());
+    }
+
+    private static com.processpuzzle.document.model.DocumentKind toModel(
+            com.processpuzzle.document.domain.DocumentKind kind) {
+        return com.processpuzzle.document.model.DocumentKind.valueOf(kind.name());
+    }
+
     // DocumentSummary and DocumentInput alike — openapi-generator flattens the shared allOf
     // branch into each class instead of giving them a common supertype.
     private void applyProperties(com.processpuzzle.document.domain.Document document,

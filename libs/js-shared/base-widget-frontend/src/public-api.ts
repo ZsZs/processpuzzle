@@ -12,6 +12,7 @@ export {
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
+  ENTITY_TABLE_WIDGET,
   IMAGE_ZOOM_WIDGET,
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
@@ -31,6 +32,7 @@ export {
   provideCardsGridWidget,
   provideCopyrightWidget,
   provideDesignButtonWidget,
+  provideEntityTableWidget,
   provideImageZoomWidget,
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
@@ -47,6 +49,10 @@ export {
 } from './base-widget.providers';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
 export { CopyrightComponent } from './copyright/copyright.component';
+export { EntityTableComponent } from './entity-table/entity-table.component';
+export type { EntityTableColumn, EntityTableTotal } from './entity-table/entity-table.component';
+export { formatValue, VALUE_FORMATS, valueAtPath } from './value-format/value-format';
+export type { ValueFormat } from './value-format/value-format';
 export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';

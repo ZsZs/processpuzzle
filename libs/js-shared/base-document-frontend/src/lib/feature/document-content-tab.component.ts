@@ -28,7 +28,7 @@ import { DocumentEditorComponent } from './document-editor/document-editor.compo
         <p role="alert">{{ error }}</p>
       } @else {
         <h2 class="pp-document-content__title">{{ title() }}</h2>
-        <pp-document-editor [documentId]="entityId()" [locale]="locale()" [blocks]="blocks()" [translationExists]="translationExists()" />
+        <pp-document-editor [documentId]="entityId()" [locale]="locale()" [blocks]="blocks()" [translationExists]="translationExists()" [inputPorts]="inputPorts()" />
       }
     </div>
   `,
@@ -76,6 +76,7 @@ export class DocumentContentTabComponent implements OnInit {
   protected readonly translationExists = signal(true);
 
   protected readonly title = computed(() => (this.store.currentEntity() as Document | undefined)?.title ?? '');
+  protected readonly inputPorts = computed(() => (this.store.currentEntity() as Document | undefined)?.inputPorts ?? []);
 
   ngOnInit(): void {
     // Also sets the current entity, so the tab bar's Details link stays enabled and the status bar keeps

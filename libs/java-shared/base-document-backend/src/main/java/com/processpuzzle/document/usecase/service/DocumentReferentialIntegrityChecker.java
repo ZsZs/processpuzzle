@@ -23,8 +23,9 @@ import java.util.Set;
  * Checks referential integrity of one locale's {@link DocumentContent} against the document's
  * language-invariant {@link DocumentPorts}: unique block ids; every {@code widgetEmbed} node's
  * {@code blockId}, and every WIDGET block's {@code props.childIds} entry, resolving to a declared
- * WIDGET block with placement REFERENCED (error); every {@code inputBindings}/{@code outputBindings}
- * value naming a declared port (error); and a REFERENCED widget block pointed at by nothing at all
+ * WIDGET block with placement REFERENCED (error); every {@code outputBindings} value naming a
+ * declared output port, and every {@code inputBindings} value and {@code dataField} node path naming
+ * a declared input port in its first segment (error); and a REFERENCED widget block pointed at by nothing at all
  * (warning — a widget can legitimately be declared before it's placed).
  *
  * <p>Ports and content arrive as separate arguments because they live in separate places: ports are
@@ -47,6 +48,8 @@ public class DocumentReferentialIntegrityChecker {
 
     private static final String WIDGET_EMBED_NODE_TYPE = "widgetEmbed";
     private static final String CHILD_IDS_PROP = "childIds";
+    private static final String DATA_FIELD_NODE_TYPE = "dataField";
+    private static final String ATTRS = "attrs";
 
     public List<DocumentValidationProblem> check(DocumentPorts ports, DocumentContent content) {
         List<DocumentValidationProblem> problems = new ArrayList<>();
@@ -68,6 +71,7 @@ public class DocumentReferentialIntegrityChecker {
             }
             if (block.content() != null) {
                 scanForWidgetEmbeds(block.content(), basePath + "/content", byId, referencedFrom, problems);
+                scanForDataFields(block.content(), basePath + "/content", declaredInputPorts, problems);
             }
         }
 
@@ -169,13 +173,15 @@ public class DocumentReferentialIntegrityChecker {
                                 Set<String> declaredPortNames, List<DocumentValidationProblem> problems) {
         Map<String, String> bindings = "inputBindings".equals(bindingKind)
                 ? block.inputBindings() : block.outputBindings();
+        boolean input = "inputBindings".equals(bindingKind);
         bindings.forEach((propOrEvent, portName) -> {
-            if (!declaredPortNames.contains(portName)) {
+            // An input binding names a port path — `order.lineItems` — of which only the port is ours to check.
+            if (!declaredPortNames.contains(input ? portOf(portName) : portName)) {
                 problems.add(new DocumentValidationProblem(
                         basePath + "/" + bindingKind + "/" + propOrEvent,
                         "document.validation.unknown-port",
                         "'" + portName + "' is not a declared " +
-                                ("inputBindings".equals(bindingKind) ? "input" : "output") + " port."));
+                                (input ? "input" : "output") + " port."));
             }
         });
     }
@@ -218,7 +224,7 @@ public class DocumentReferentialIntegrityChecker {
             return;
         }
         if (node.isObject() && WIDGET_EMBED_NODE_TYPE.equals(textOrNull(node.get("type")))) {
-            JsonNode attrs = node.get("attrs");
+            JsonNode attrs = node.get(ATTRS);
             String blockId = attrs == null ? null : textOrNull(attrs.get("blockId"));
             if (blockId == null) {
                 problems.add(new DocumentValidationProblem(
@@ -249,12 +255,52 @@ public class DocumentReferentialIntegrityChecker {
         }
     }
 
+    /**
+     * A {@code dataField} node places one value of an input port inside the prose; its {@code attrs.path}
+     * must start with a declared input port. What follows the port is the entity's schema, unknown here.
+     */
+    private void scanForDataFields(JsonNode node, String path, Set<String> declaredInputPorts,
+                                   List<DocumentValidationProblem> problems) {
+        if (node == null || node.isMissingNode()) {
+            return;
+        }
+        if (node.isObject() && DATA_FIELD_NODE_TYPE.equals(textOrNull(node.get("type")))) {
+            JsonNode attrs = node.get(ATTRS);
+            String fieldPath = attrs == null ? null : textOrNull(attrs.get("path"));
+            if (fieldPath == null || fieldPath.isBlank()) {
+                problems.add(new DocumentValidationProblem(
+                        path, "document.validation.malformed-data-field", "dataField node has no attrs.path."));
+            } else if (!declaredInputPorts.contains(portOf(fieldPath))) {
+                problems.add(new DocumentValidationProblem(
+                        path, "document.validation.unknown-port",
+                        "'" + portOf(fieldPath) + "' is not a declared input port."));
+            }
+        }
+        int i = 0;
+        var fields = node.fields();
+        while (fields.hasNext()) {
+            var entry = fields.next();
+            scanForDataFields(entry.getValue(), path + "/" + entry.getKey(), declaredInputPorts, problems);
+        }
+        if (node.isArray()) {
+            for (JsonNode child : node) {
+                scanForDataFields(child, path + "/" + i++, declaredInputPorts, problems);
+            }
+        }
+    }
+
+    /** The port a port path starts with: {@code order} of {@code order.customer.name}. */
+    private static String portOf(String portPath) {
+        int dot = portPath.indexOf('.');
+        return dot < 0 ? portPath : portPath.substring(0, dot);
+    }
+
     private boolean containsWidgetEmbed(JsonNode node, String blockId) {
         if (node == null || node.isMissingNode()) {
             return false;
         }
         if (node.isObject() && WIDGET_EMBED_NODE_TYPE.equals(textOrNull(node.get("type")))) {
-            JsonNode attrs = node.get("attrs");
+            JsonNode attrs = node.get(ATTRS);
             if (attrs != null && blockId.equals(textOrNull(attrs.get("blockId")))) {
                 return true;
             }

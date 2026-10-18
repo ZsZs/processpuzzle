@@ -8,6 +8,7 @@ export {
   DocumentOutputPort,
   AttributeVisibilityMode,
   BlockKind,
+  DocumentKind,
   DocumentStatus,
   DOCUMENT_SLUG_PATTERN,
   DOCUMENT_SOURCE_LOCALES,
@@ -33,6 +34,15 @@ export { DocumentEditorComponent } from './lib/feature/document-editor/document-
 export { DocumentTextBlockComponent } from './lib/feature/document-editor/document-text-block.component';
 export { DocumentContentService } from './lib/feature/document-editor/document-content.service';
 export { DocumentContentStore } from './lib/feature/document-editor/document-content.store';
+export { DocumentDataContext } from './lib/feature/report/document-data-context';
+export type { DocumentObjectOption, DocumentPortValues } from './lib/feature/report/document-data-context';
+export { DocumentPathCatalog } from './lib/feature/report/document-path-catalog';
+export type { DocumentCollectionPath, DocumentFieldPath, DocumentPaths } from './lib/feature/report/document-path-catalog';
+export { DocumentReportViewComponent } from './lib/feature/report/document-report-view.component';
+export { DOCUMENT_PREVIEW_TAB } from './lib/feature/report/document-preview-tab';
+export { EntityReportRegistry } from './lib/feature/report/entity-report.registry';
+export type { EntityReportTemplate } from './lib/feature/report/entity-report.registry';
+export { ENTITY_REPORTS_TAB, ENTITY_REPORTS_TAB_SEGMENT, EntityReportsTabContributor, provideEntityReportsTab } from './lib/feature/report/entity-reports-tab.contributor';
 export {
   BASE_DOCUMENT_TRANSLOCO_SCOPE,
   DOCUMENT_CONTENT_I18N_KEY,

@@ -8,6 +8,7 @@ import { NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back
 import { CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
 import { COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
 import { DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
+import { ENTITY_TABLE_WIDGET_REGISTRATION } from './entity-table/entity-table.widget';
 import { IMAGE_ZOOM_WIDGET_REGISTRATION } from './image-zoom/image-zoom.widget';
 import { LANGUAGE_SELECTOR_WIDGET_REGISTRATION } from './language-selector/language-selector.widget';
 import { LIKE_BUTTON_WIDGET_REGISTRATION } from './like-button/like-button.widget';
@@ -29,6 +30,7 @@ export { APP_TITLE_WIDGET } from './app-title/app-title.widget';
 export { CARDS_GRID_WIDGET } from './mat-cards-grid/cards-grid.widget';
 export { COPYRIGHT_WIDGET } from './copyright/copyright.widget';
 export { DESIGN_BUTTON_WIDGET } from './design-button/design-button.widget';
+export { ENTITY_TABLE_WIDGET } from './entity-table/entity-table.widget';
 export { IMAGE_ZOOM_WIDGET } from './image-zoom/image-zoom.widget';
 export { LANGUAGE_SELECTOR_WIDGET } from './language-selector/language-selector.widget';
 export { LIKE_BUTTON_WIDGET } from './like-button/like-button.widget';
@@ -96,6 +98,10 @@ export function provideDesignButtonWidget(): Provider[] {
   return provideWidget(DESIGN_BUTTON_WIDGET_REGISTRATION);
 }
 
+export function provideEntityTableWidget(): Provider[] {
+  return provideWidget(ENTITY_TABLE_WIDGET_REGISTRATION);
+}
+
 export function provideImageZoomWidget(): Provider[] {
   return provideWidget(IMAGE_ZOOM_WIDGET_REGISTRATION);
 }
@@ -143,6 +149,7 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   CARDS_GRID_WIDGET_REGISTRATION,
   COPYRIGHT_WIDGET_REGISTRATION,
   DESIGN_BUTTON_WIDGET_REGISTRATION,
+  ENTITY_TABLE_WIDGET_REGISTRATION,
   IMAGE_ZOOM_WIDGET_REGISTRATION,
   LANGUAGE_SELECTOR_WIDGET_REGISTRATION,
   LIKE_BUTTON_WIDGET_REGISTRATION,

@@ -55,6 +55,7 @@ export class BaseDocumentService extends BaseEntityRestService<Document> {
       publisherRoles: properties.publisherRoles,
       inputPorts: properties.inputPorts,
       outputPorts: properties.outputPorts,
+      kind: properties.kind,
     };
     const dto = await firstValueFrom(this.httpClient.put(fullUrl, body, { headers: this.headers }));
     return this.entityMapper.fromDto(dto) as PersistedEntity<Document>;

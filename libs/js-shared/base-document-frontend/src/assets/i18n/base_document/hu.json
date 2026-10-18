@@ -13,9 +13,12 @@
     "publisherRoles": "Közzétevő szerepkörök",
     "inputPorts": "Bemeneti portok",
     "outputPorts": "Kimeneti portok",
+    "kind": "Fajta",
     "tabs": {
       "content": "{{ entity }} - tartalom",
-      "sign": "{{ entity }} - aláírás"
+      "preview": "{{ entity }} - előnézet",
+      "sign": "{{ entity }} - aláírás",
+      "reports": "Jelentések"
     },
     "content": {
       "loading": "Tartalom betöltése…",
@@ -31,6 +34,25 @@
       "signatures": "Aláírások",
       "none": "Ezt a dokumentumot még senki nem írta alá."
     },
+    "report": {
+      "insert_field": "Adatmező beszúrása",
+      "field": "Mező",
+      "format": "Formátum",
+      "insert": "Beszúrás",
+      "cancel": "Mégse",
+      "apply": "Alkalmaz",
+      "table_settings": "Táblázat beállításai",
+      "rows": "Sorok",
+      "caption": "Felirat",
+      "header": "Fejléc",
+      "total": "Összesen",
+      "move_up": "Feljebb",
+      "move_down": "Lejjebb",
+      "print": "Nyomtatás / Mentés PDF-ként",
+      "missing_parameters": "Válasszon értéket ehhez: {{ ports }}",
+      "template": "Jelentés",
+      "not_published": "Ez a jelentés még nincs közzétéve."
+    },
     "_tooltips": {
       "slug": "A dokumentum kulcsa a címében, a szervezeten belül egyedi. Csak kisbetűk, számjegyek és kötőjelek, pl. getting-started.",
       "title": "A dokumentum címe, ahogy az olvasók látják, pl. Első lépések.",
@@ -43,7 +65,8 @@
       "editorRoles": "A dokumentum tartalmát és tulajdonságait módosítható szerepkörök, mindegyik egy címke, pl. editor.",
       "publisherRoles": "A dokumentumot közzétehető szerepkörök, mindegyik egy címke. Üresen a szerkesztő szerepkörök is közzétehetik.",
       "inputPorts": "Értékek, amelyeket a dokumentumot beágyazó oldal átad, pl. a megtekintett ügyfél, hogy a dokumentum widgetjei használhassák őket.",
-      "outputPorts": "Értékek, amelyeket a dokumentum visszaad az őt beágyazó oldalnak, pl. az olvasó által kiválasztott rekord."
+      "outputPorts": "Értékek, amelyeket a dokumentum visszaad az őt beágyazó oldalnak, pl. az olvasó által kiválasztott rekord.",
+      "kind": "A DOCUMENT egy rögzített oldal; a REPORT_TEMPLATE objektumonként előállított elrendezés, pl. rendelésenként egy számla, amelynek entitás-portjai minden alkalommal újra kitöltődnek."
     }
   },
   "document_input_port": {
