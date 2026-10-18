@@ -51,6 +51,7 @@
     "parameters": "Parameter",
     "noParameters": "Die Berechnung deklariert keine Parameter.",
     "entityHint": "Id von {{entity}}",
+    "pick": "{{entity}} wählen",
     "evaluate": "Entwurf auswerten",
     "run": "Freigabe ausführen",
     "runResult": "Lauf {{status}}: {{written}} Objekt(e) geschrieben · {{id}}",

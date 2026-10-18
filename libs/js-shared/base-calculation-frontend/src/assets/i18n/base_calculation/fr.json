@@ -51,6 +51,7 @@
     "parameters": "Paramètres",
     "noParameters": "Le calcul ne déclare aucun paramètre.",
     "entityHint": "Id de {{entity}}",
+    "pick": "Choisir : {{entity}}",
     "evaluate": "Évaluer le brouillon",
     "run": "Exécuter la publication",
     "runResult": "Exécution {{status}} : {{written}} objet(s) écrit(s) · {{id}}",
