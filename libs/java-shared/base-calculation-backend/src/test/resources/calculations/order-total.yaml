@@ -1,0 +1,42 @@
+# The proposal's sales example on the platform's own entities: an order carries its lines in `lineItems`.
+calculation: order-total
+name: Order total
+version: 1
+parameters:
+  order: { entity: order }
+  customerTier: { type: string, default: STANDARD }
+inputs:
+  lines: { from: order, path: lineItems, entity: order-line }
+
+tables:
+  volume-discount:
+    hitPolicy: FIRST
+    inputs: [subtotal, customerTier]
+    output: discountRate
+    rules:
+      - { when: ['>= 10000', '"GOLD"'], then: 0.10 }
+      - { when: ['>= 10000', '-'],       then: 0.07 }
+      - { when: ['>= 1000',  '-'],       then: 0.03 }
+      - { when: ['-', '-'],              then: 0 }
+
+decisions:
+  lineTotal:
+    for: lines
+    expr: "quantity * unitPrice"
+  subtotal:
+    requires: [lineTotal]
+    aggregate: { sum: lineTotal }
+  discountRate:
+    requires: [subtotal, customerTier]
+    table: volume-discount
+  total:
+    requires: [subtotal, discountRate]
+    expr: "round half up(subtotal * (1 - discountRate), 2)"
+
+output:
+  entity: order
+  mapping: { total: total }
+  materialization: stored
+trigger:
+  onChange: { entity: order }     # recompute while the order is open
+  freeze: { state: { entity: order, to: CONFIRMED } }

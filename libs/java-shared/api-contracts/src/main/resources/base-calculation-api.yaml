@@ -193,6 +193,9 @@ paths:
       operationId: evaluateCalculation
       tags: [ Calculations ]
       summary: Compute a calculation for given parameters; nothing is stored
+      description: >-
+        A decision that fails is answered 200 with `error` and the trace up to it, which is what a preview
+        shows; a source that does not validate, or a parameter that cannot be resolved, is a 400.
       requestBody:
         required: true
         content:
@@ -598,6 +601,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TraceEntry"
+        error:
+          type: string
+          nullable: true
+          description: >-
+            Why the evaluation stopped; the trace then ends with the failing decision. Absent on success.
 
     RunStatus:
       type: string
