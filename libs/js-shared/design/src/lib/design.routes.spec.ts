@@ -4,6 +4,8 @@ import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer
 import { WORKFLOW_DESIGNER_TABS } from './workflow-designer/workflow-designer.tabs';
 import { APPLICATION_DESIGNER_TABS } from './application-designer/application-designer.tabs';
 import { DESIGN_ROUTES } from './design.routes';
+import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
+import { CALCULATION_DESIGNER_TABS } from './calculation-designer/calculation-designer.tabs';
 import { ReleasePanelComponent } from '@processpuzzle/base-release';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
@@ -14,6 +16,7 @@ describe('DESIGN_ROUTES', () => {
   const workflowsRoute = DESIGN_ROUTES.find((route) => route.path === 'workflows');
   const statesRoute = DESIGN_ROUTES.find((route) => route.path === 'states');
   const entitiesRoute = DESIGN_ROUTES.find((route) => route.path === 'entities');
+  const calculationsRoute = DESIGN_ROUTES.find((route) => route.path === 'calculations');
 
   it('hosts the application section on the tabbed designer page', () => {
     expect(applicationRoute?.component).toBe(ApplicationDesignerComponent);
@@ -125,6 +128,48 @@ describe('DESIGN_ROUTES', () => {
 
     it('does not expose the entity definition as a section of its own', () => {
       expect(DESIGN_ROUTES.map((route) => route.path)).not.toContain('entity-definition');
+    });
+  });
+
+  describe('the Calculations section', () => {
+    it('hosts the base-calculation branches on the tabbed designer page', () => {
+      expect(calculationsRoute?.component).toBe(CalculationDesignerComponent);
+      expect(calculationsRoute?.data).toEqual({ icon: 'calculate', menuTitle: 'design.calculations' });
+      expect(calculationsRoute?.title).toBeDefined();
+    });
+
+    /** The tab bar carries its own scope, so the section adds nothing to what its tabs' screens resolve through. */
+    it('registers no providers of its own', () => {
+      expect(calculationsRoute?.providers).toBeUndefined();
+    });
+
+    it('opens the calculation definition when the section itself is addressed', () => {
+      expect(calculationsRoute?.children?.[0]).toEqual({ path: '', pathMatch: 'full', redirectTo: 'calculation-definition' });
+    });
+
+    /** A tab whose route is not mounted here would render a link the router answers with NG04002. */
+    it('mounts a child route for every tab', () => {
+      const childPaths = (calculationsRoute?.children ?? []).map((child) => child.path);
+
+      expect(childPaths).toEqual(expect.arrayContaining(CALCULATION_DESIGNER_TABS.map((tab) => tab.path)));
+    });
+
+    it('shows the definitions and then their runs', () => {
+      expect(CALCULATION_DESIGNER_TABS.map((tab) => tab.path)).toEqual(['calculation-definition', 'calculation-runs']);
+    });
+
+    it('sits between the States and the Workflows sections', () => {
+      const sectionPaths = DESIGN_ROUTES.map((route) => route.path);
+
+      expect(sectionPaths.indexOf('calculations')).toBe(sectionPaths.indexOf('states') + 1);
+      expect(sectionPaths.indexOf('workflows')).toBe(sectionPaths.indexOf('calculations') + 1);
+    });
+
+    it('does not expose the calculation entities as sections of their own', () => {
+      const sectionPaths = DESIGN_ROUTES.map((route) => route.path);
+
+      expect(sectionPaths).not.toContain('calculation-definition');
+      expect(sectionPaths).not.toContain('calculation-runs');
     });
   });
 
