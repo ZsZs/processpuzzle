@@ -87,6 +87,48 @@ class DocumentReferentialIntegrityCheckerTest {
     }
 
     @Test
+    void anInputBindingMayNameAPathBelowADeclaredPort() {
+        DocumentBlock table = new DocumentBlock("lines", BlockKind.WIDGET, null, null,
+                WidgetPlacement.STANDALONE, "entity-table", Map.of(), Map.of("rows", "order.lineItems"), Map.of());
+
+        assertThat(checker.check(orderPort(), DocumentContent.of(List.of(table)))).isEmpty();
+    }
+
+    @Test
+    void aPathBelowAnUndeclaredPortIsStillAnUnknownPort() {
+        DocumentBlock table = new DocumentBlock("lines", BlockKind.WIDGET, null, null,
+                WidgetPlacement.STANDALONE, "entity-table", Map.of(), Map.of("rows", "invoice.lineItems"), Map.of());
+
+        assertThat(checker.check(orderPort(), DocumentContent.of(List.of(table))))
+                .extracting(DocumentValidationProblem::errorId)
+                .containsExactly("document.validation.unknown-port");
+    }
+
+    @Test
+    void aDataFieldMustStartWithADeclaredInputPort() {
+        DocumentBlock known = text("a", docContaining(dataField("order.customer.name")));
+        DocumentBlock unknown = text("b", docContaining(dataField("invoice.number")));
+
+        assertThat(checker.check(orderPort(), DocumentContent.of(List.of(known)))).isEmpty();
+        assertThat(checker.check(orderPort(), DocumentContent.of(List.of(unknown)))).singleElement()
+                .satisfies(problem -> {
+                    assertThat(problem.errorId()).isEqualTo("document.validation.unknown-port");
+                    assertThat(problem.errorText()).contains("'invoice'").contains("input port");
+                    assertThat(problem.path()).isEqualTo("/blocks/0/content/content/0");
+                });
+    }
+
+    @Test
+    void aDataFieldWithoutAPathIsMalformed() {
+        JsonNode noAttrs = docContaining(json.createObjectNode().put("type", "dataField"));
+        JsonNode blankPath = docContaining(dataField(" "));
+
+        assertThat(checker.check(orderPort(), DocumentContent.of(List.of(text("a", noAttrs), text("b", blankPath)))))
+                .extracting(DocumentValidationProblem::errorId)
+                .containsExactly("document.validation.malformed-data-field", "document.validation.malformed-data-field");
+    }
+
+    @Test
     void duplicateBlockIdIsAnError() {
         DocumentBlock a = widget("dup", WidgetPlacement.STANDALONE, Map.of());
         DocumentBlock b = widget("dup", WidgetPlacement.STANDALONE, Map.of());
@@ -199,6 +241,16 @@ class DocumentReferentialIntegrityCheckerTest {
                     assertThat(problem.errorText()).contains("grid-1").contains("'en'");
                     assertThat(problem.severity()).isEqualTo(Severity.WARNING);
                 });
+    }
+
+    private DocumentPorts orderPort() {
+        return new DocumentPorts(List.of(new DocumentInputPort("order", PortType.ENTITY_REF, true, null, null,
+                "Order", null, null)), List.of());
+    }
+
+    private JsonNode dataField(String path) {
+        return json.createObjectNode().put("type", "dataField")
+                .set("attrs", json.createObjectNode().put("path", path).put("format", "text"));
     }
 
     private JsonNode docContaining(JsonNode node) {

@@ -740,8 +740,8 @@ paths:
         Checks referential integrity within each translation: unique block ids; every
         widgetEmbed node's blockId, and every WIDGET block's props.childIds entries,
         resolving to a declared WIDGET block with placement REFERENCED (ERROR if not);
-        every inputBindings/outputBindings value naming a declared port (ERROR if not);
-        and a REFERENCED widget block pointed at by nothing at all (WARNING, not ERROR — a
+        every inputBindings/outputBindings value, and every dataField node's path, naming a
+        declared port in its first segment (ERROR if not); and a REFERENCED widget block pointed at by nothing at all (WARNING, not ERROR — a
         widget can be declared before it's placed in the text or wired into a container).
 
         Across translations it also reports a WIDGET block present in the source locale but
@@ -1118,6 +1118,19 @@ components:
           description: Data this document can emit to its hosting context.
           items:
             $ref: "#/components/schemas/DocumentOutputPort"
+        kind:
+          $ref: "#/components/schemas/DocumentKind"
+
+    DocumentKind:
+      type: string
+      enum: [ DOCUMENT, REPORT_TEMPLATE ]
+      default: DOCUMENT
+      description: >-
+        What the input ports mean. A DOCUMENT is one output: its entity ports are bound
+        when it is authored or by the page that hosts it. A REPORT_TEMPLATE is one output
+        per run: its entity ports are parameters, supplied each time it is rendered (the
+        invoice template, rendered once per invoice). Both share the content model, the
+        editor and the publication lifecycle; see docs/document-vs-report-template.md.
 
     DocumentInput:
       description: >-
@@ -1565,6 +1578,10 @@ components:
         filter), e.g. for a table/grid widget bound to "all open claims." Neither
         variant requires base-document to know the entity's schema. entityType values
         resolve within the enclosing organization, same as base-app's WidgetInstance props.
+        A widget's inputBindings value and a TEXT block's `dataField` node name a port
+        path rather than a bare port: `order` or `order.customer.address.city`. Only the
+        first segment is validated against the declared ports — what lies below it is the
+        entity's schema, which base-document does not know.
 
     AttributeVisibility:
       type: object
