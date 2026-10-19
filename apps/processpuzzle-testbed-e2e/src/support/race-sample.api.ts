@@ -74,6 +74,19 @@ export class EntityApi {
     return created;
   }
 
+  async get<P>(code: string, id: string): Promise<EntityObject<P>> {
+    const response = await this.request.get(this.url(code, id));
+    expect(response.ok(), `reading ${code}/${id}: ${response.status()}`).toBe(true);
+    return (await response.json()) as EntityObject<P>;
+  }
+
+  /** Replaces the payload of an object; `version` is the one the caller last read. */
+  async update<P extends object>(code: string, id: string, version: number, payload: P): Promise<EntityObject<P>> {
+    const response = await this.request.put(this.url(code, id), { data: { entityDefinitionCode: code, version, payload } });
+    expect(response.status(), `updating ${code}/${id}: ${await response.text()}`).toBe(200);
+    return (await response.json()) as EntityObject<P>;
+  }
+
   async remove(code: string, id: string): Promise<void> {
     const response = await this.request.delete(this.url(code, id));
     expect([204, 404], `deleting ${code}/${id}`).toContain(response.status());
