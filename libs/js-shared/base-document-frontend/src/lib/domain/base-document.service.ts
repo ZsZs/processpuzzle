@@ -102,6 +102,17 @@ export class BaseDocumentService extends BaseEntityRestService<Document> {
     return firstValueFrom(this.httpClient.get<DocumentSignature[]>(this.signaturesUrl(documentId), { headers: this.headers, params }));
   }
 
+  /**
+   * `PUT .../signatures/{id}/pdf` — the second phase of signing: uploads the rendered report. Allowed once, and
+   * only to the signer; the answer is the signature with its `pdf`. No `headers`: the JSON content type of the
+   * base class would replace the multipart boundary the browser sets.
+   */
+  async attachPdf(documentId: string, signatureId: string, pdf: Blob, fileName: string): Promise<DocumentSignature> {
+    const body = new FormData();
+    body.append('file', pdf, fileName);
+    return firstValueFrom(this.httpClient.put<DocumentSignature>(`${this.signaturesUrl(documentId)}/${encodeURIComponent(signatureId)}/pdf`, body));
+  }
+
   private signaturesUrl(documentId: string): string {
     const pathParams = new Map<string, string>([['id', documentId]]);
     const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/signatures', { pathParams });

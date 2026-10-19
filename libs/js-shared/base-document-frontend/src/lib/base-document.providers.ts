@@ -1,5 +1,7 @@
 import type { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
+import { ISSUED_DOCUMENT_ENTITY_NAME } from './domain/issued-document/issued-document';
+import { IssuedDocumentFacade } from './feature/issued-document.facade';
 import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './domain/document-entity-names';
 import { DocumentFacade } from './feature/document.facade';
 import { DocumentInputPortFacade } from './feature/document-input-port.facade';
@@ -12,7 +14,7 @@ import { DocumentOutputPortFacade } from './feature/document-output-port.facade'
  * like any other — that is what gives it a store — and only its repository differs, reading and writing the
  * `Document` payload rather than an endpoint of its own.
  */
-export const BASE_DOCUMENT_FACADE_PROVIDERS: Provider[] = [DocumentFacade, DocumentInputPortFacade, DocumentOutputPortFacade];
+export const BASE_DOCUMENT_FACADE_PROVIDERS: Provider[] = [DocumentFacade, DocumentInputPortFacade, DocumentOutputPortFacade, IssuedDocumentFacade];
 
 /**
  * The same facades keyed by entity name, to be spread into the application's `BASE_ENTITY_FACADE_REGISTRY`
@@ -28,4 +30,5 @@ export const BASE_DOCUMENT_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [DOCUMENT_ENTITY_NAME]: DocumentFacade,
   [DOCUMENT_INPUT_PORT_ENTITY_NAME]: DocumentInputPortFacade,
   [DOCUMENT_OUTPUT_PORT_ENTITY_NAME]: DocumentOutputPortFacade,
+  [ISSUED_DOCUMENT_ENTITY_NAME]: IssuedDocumentFacade,
 };

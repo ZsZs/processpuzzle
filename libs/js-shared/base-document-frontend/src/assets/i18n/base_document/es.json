@@ -104,5 +104,25 @@
       "entityType": "Solo para ENTITY_REF y ENTITY_COLLECTION: el tipo de entidad de los registros, p. ej. Order.",
       "attributeVisibility": "Solo para ENTITY_REF y ENTITY_COLLECTION: qué atributos de los registros se muestran. mode es ALL, INCLUDE o EXCLUDE; attributes enumera los nombres de atributo afectados."
     }
+  },
+  "signature": {
+    "name": "Firma",
+    "for_role": "como {{ role }}",
+    "saving_pdf": "Guardando el PDF…",
+    "pdf_missing": "Falta el PDF — reintentar",
+    "placeholder": "se puede firmar cuando el informe se abre para un objeto."
+  },
+  "issued_document": {
+    "_self": "Documento emitido",
+    "name": "Nombre",
+    "title": "Documento",
+    "subjectType": "Tipo de objeto",
+    "subjectId": "Objeto",
+    "signedBy": "Firmado por",
+    "signedAt": "Firmado el",
+    "pdf": "PDF",
+    "locale": "Idioma",
+    "revision": "Revisión",
+    "documentId": "ID del documento"
   }
 }

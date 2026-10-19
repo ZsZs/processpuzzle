@@ -83,7 +83,7 @@ public class SignDocument {
             throw new DocumentNotFoundException(orgKey, documentId);
         }
         guard.requireOrganizationAccess(orgKey);
-        String signer = signer(orgKey)
+        String signer = signerOf(guard, currentPrincipal, orgKey)
                 .orElseThrow(() -> new DocumentAccessDeniedException(
                         "There is no authenticated member of '" + orgKey + "' to sign document '" + documentId
                                 + "' as"));
@@ -106,7 +106,9 @@ public class SignDocument {
         return new Outcome(signature, true);
     }
 
-    private Optional<String> signer(String orgKey) {
+    /** Who is acting as a member of {@code orgKey}; shared with {@link AttachSignedPdf}, which must agree. */
+    static Optional<String> signerOf(DocumentGuard guard, ObjectProvider<CurrentPrincipal> currentPrincipal,
+                                     String orgKey) {
         String fromPolicy = guard.currentPrincipal();
         if (fromPolicy != null && !fromPolicy.isBlank()) {
             return Optional.of(fromPolicy);

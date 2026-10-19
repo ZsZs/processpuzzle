@@ -728,6 +728,106 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /organizations/{orgKey}/documents/{documentId}/signatures/{signatureId}/pdf:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+      - name: signatureId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: attachSignedPdf
+      summary: Attach the PDF of the signed report to its signature
+      description: >-
+        The second phase of signing: the browser renders the report with the signature stamp the
+        server returned, and uploads it here. Only the signer may attach it, only once, only
+        `application/pdf` (checked by content as well as declared type), at most 20 MB. The file is
+        stored through the deploying application's file store and its location, name and SHA-256
+        are recorded on the signature. A failed upload leaves the signature without a PDF, so the
+        attempt can be repeated.
+      tags:
+        - Base Document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: The signature, now with its `pdf`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentSignature"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The signature already has its PDF (`document.sign.pdf-already-attached`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: No file store is configured (`document.file-store.unavailable`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/issued-documents:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listIssuedDocuments
+      summary: List the organization's issued documents — its signatures — newest first
+      description: >-
+        A signature is the issued document: it names the document, the object it was given for, the
+        signer and, once attached, the PDF of the signed report. Read-only. Signatures of documents the
+        caller may not read are left out, which can shorten a page.
+      tags:
+        - Base Document
+      parameters:
+        - name: documentId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: subjectType
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: subjectId
+          in: query
+          required: false
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Paged list of issued documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageOf_DocumentSignature"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   # ── Validation, import, export ────────────────────────────────
 
   /organizations/{orgKey}/documents/validate:
@@ -1804,6 +1904,42 @@ components:
         signedAt:
           type: string
           format: date-time
+        pdf:
+          allOf:
+            - $ref: "#/components/schemas/SignedPdf"
+          nullable: true
+          description: The signed report as a PDF; absent until the signer has attached it.
+
+    SignedPdf:
+      type: object
+      description: An ARTIFACT value — the shape base-entity attributes of that kind hold.
+      required: [ bucket, objectId, name, mimeType ]
+      properties:
+        bucket:
+          type: string
+        objectId:
+          type: string
+        name:
+          type: string
+        mimeType:
+          type: string
+
+    PageOf_DocumentSignature:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentSignature"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+        size:
+          type: integer
 
     # Shared shapes — kept as local duplicates because the openapi-generator
     # swagger-parser cannot resolve cross-file $refs on Windows. schemaMappings

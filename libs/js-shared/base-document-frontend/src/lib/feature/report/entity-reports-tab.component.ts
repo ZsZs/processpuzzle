@@ -5,10 +5,11 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { ROUTER_OUTLET_DATA } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
-import { DocumentBlock } from '../../domain/base-document';
+import { DocumentBlock, DocumentSignatureSubject } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { DocumentPortValues } from './document-data-context';
 import { DocumentReportViewComponent } from './document-report-view.component';
+import { reportFileName } from './report-pdf';
 import { EntityReportRegistry, EntityReportTemplate } from './entity-report.registry';
 
 /**
@@ -46,6 +47,8 @@ import { EntityReportRegistry, EntityReportTemplate } from './entity-report.regi
           [inputPorts]="template.document.inputPorts"
           [portValues]="portValues()"
           [title]="template.document.title"
+          [subject]="subject()"
+          [pdfFileName]="pdfFileName()"
         />
       }
     </div>
@@ -76,6 +79,12 @@ export class EntityReportsTabComponent {
   protected readonly isLoading = signal(true);
   protected readonly notPublished = signal(false);
   protected readonly loadError = signal<string | undefined>(undefined);
+  /** The object the open report is run for — what a `signature` widget in it signs for. */
+  protected readonly subject = computed<DocumentSignatureSubject | undefined>(() => {
+    const entityName = this.outletData?.()?.entityName;
+    return entityName ? { subjectType: entityName, subjectId: this.entityId() } : undefined;
+  });
+  protected readonly pdfFileName = computed(() => reportFileName(this.selected()?.document.slug ?? 'report', this.entityId()));
   protected readonly portValues = computed<DocumentPortValues>(() => {
     const template = this.selected();
     return template ? { [template.port.name]: this.entityId() } : {};

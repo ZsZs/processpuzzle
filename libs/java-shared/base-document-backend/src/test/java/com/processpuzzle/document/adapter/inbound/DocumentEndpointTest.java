@@ -13,6 +13,8 @@ import com.processpuzzle.document.model.DocumentSignatureInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.model.ReorderBlocksRequest;
 import com.processpuzzle.document.usecase.AddDocumentTranslation;
+import com.processpuzzle.document.usecase.AttachSignedPdf;
+import com.processpuzzle.document.usecase.FindIssuedDocuments;
 import com.processpuzzle.document.usecase.AppendDocumentBlock;
 import com.processpuzzle.document.usecase.CreateDocument;
 import com.processpuzzle.document.usecase.DeleteDocument;
@@ -100,6 +102,8 @@ class DocumentEndpointTest {
     private ExportDocument exportDocument;
     private SignDocument signDocument;
     private FindDocumentSignatures findDocumentSignatures;
+    private AttachSignedPdf attachSignedPdf;
+    private FindIssuedDocuments findIssuedDocuments;
     private DocumentEndpoint endpoint;
 
     @BeforeEach
@@ -126,12 +130,14 @@ class DocumentEndpointTest {
         exportDocument = mock(ExportDocument.class);
         signDocument = mock(SignDocument.class);
         findDocumentSignatures = mock(FindDocumentSignatures.class);
+        attachSignedPdf = mock(AttachSignedPdf.class);
+        findIssuedDocuments = mock(FindIssuedDocuments.class);
         endpoint = new DocumentEndpoint(createDocument, updateDocument, updateDocumentProperties, deleteDocument,
                 findDocument, findAllDocuments, findDocumentTranslations, addDocumentTranslation,
                 removeDocumentTranslation, publishDocumentTranslation, unpublishDocumentTranslation,
                 discardDocumentDraft, findPublishedContent, appendDocumentBlock, replaceDocumentBlock,
                 deleteDocumentBlock, reorderDocumentBlocks, validateDocument, importDocuments, exportDocument,
-                signDocument, findDocumentSignatures, new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
+                signDocument, findDocumentSignatures, attachSignedPdf, findIssuedDocuments, new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
     }
 
     // ── Documents ───────────────────────────────────────────────
@@ -401,6 +407,33 @@ class DocumentEndpointTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).singleElement()
                 .satisfies(model -> assertThat(model.getSubjectId()).isEqualTo("e-1"));
+    }
+
+    @Test
+    void attachingAPdfPassesTheUploadOnAndAnswersTheSignatureWithItsPdf() {
+        DocumentSignature signed = signature();
+        signed.attachPdf("demo-documents", "obj-1", "invoice.pdf", "sha", Instant.parse("2026-10-17T10:01:00Z"));
+        byte[] bytes = "%PDF-1.7".getBytes();
+        when(attachSignedPdf.execute(ORG, ID, signed.getId(), bytes, "invoice.pdf", "application/pdf")).thenReturn(signed);
+
+        var response = endpoint.attachSignedPdf(ORG, DOCUMENT_ID, UUID.fromString(signed.getId()),
+                new org.springframework.mock.web.MockMultipartFile("file", "invoice.pdf", "application/pdf", bytes));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getPdf().getObjectId()).isEqualTo("obj-1");
+        assertThat(response.getBody().getPdf().getBucket()).isEqualTo("demo-documents");
+    }
+
+    @Test
+    void issuedDocumentsArePagedAndFiltered() {
+        when(findIssuedDocuments.execute(ORG, null, "order", "o-1", 0, 10))
+                .thenReturn(new PageImpl<>(List.of(signature()), PageRequest.of(0, 10), 1));
+
+        var response = endpoint.listIssuedDocuments(ORG, null, "order", "o-1", 0, 10);
+
+        assertThat(response.getBody().getTotalElements()).isEqualTo(1L);
+        assertThat(response.getBody().getContent()).singleElement()
+                .satisfies(model -> assertThat(model.getPdf()).isNull());
     }
 
     // region fixtures

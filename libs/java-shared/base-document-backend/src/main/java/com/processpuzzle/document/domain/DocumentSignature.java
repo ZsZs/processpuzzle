@@ -10,7 +10,7 @@ import java.time.Instant;
 
 /**
  * One person's acceptance of one published revision of a document, given for one object — a simple
- * electronic signature. Written only by {@code SignDocument} and never edited: a signature that could
+ * electronic signature. Written by {@code SignDocument}, and edited only by {@code AttachSignedPdf} adding the PDF once: a signature that could
  * change after the fact would prove nothing.
  *
  * <h2>Why the signature names an object</h2>
@@ -67,6 +67,21 @@ public class DocumentSignature {
 
     @Column(name = "signed_at", nullable = false)
     private Instant signedAt;
+
+    @Column(name = "pdf_bucket", length = 100)
+    private String pdfBucket;
+
+    @Column(name = "pdf_object_id", length = 100)
+    private String pdfObjectId;
+
+    @Column(name = "pdf_file_name", length = 255)
+    private String pdfFileName;
+
+    @Column(name = "pdf_sha256", length = 64)
+    private String pdfSha256;
+
+    @Column(name = "pdf_attached_at")
+    private Instant pdfAttachedAt;
 
     protected DocumentSignature() {
         // required by JPA
@@ -131,5 +146,44 @@ public class DocumentSignature {
 
     public Instant getSignedAt() {
         return signedAt;
+    }
+
+    /**
+     * Records the stored PDF of the signed report. The only mutation a signature ever gets, and only once:
+     * a second PDF would replace what the signer saw.
+     */
+    public void attachPdf(String bucket, String objectId, String fileName, String sha256, Instant attachedAt) {
+        if (hasPdf()) {
+            throw new IllegalStateException("Signature '" + id + "' already has its PDF attached");
+        }
+        this.pdfBucket = bucket;
+        this.pdfObjectId = objectId;
+        this.pdfFileName = fileName;
+        this.pdfSha256 = sha256;
+        this.pdfAttachedAt = attachedAt;
+    }
+
+    public boolean hasPdf() {
+        return pdfObjectId != null;
+    }
+
+    public String getPdfBucket() {
+        return pdfBucket;
+    }
+
+    public String getPdfObjectId() {
+        return pdfObjectId;
+    }
+
+    public String getPdfFileName() {
+        return pdfFileName;
+    }
+
+    public String getPdfSha256() {
+        return pdfSha256;
+    }
+
+    public Instant getPdfAttachedAt() {
+        return pdfAttachedAt;
     }
 }

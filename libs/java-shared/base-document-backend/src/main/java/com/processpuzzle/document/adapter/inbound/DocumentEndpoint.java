@@ -10,6 +10,7 @@ import com.processpuzzle.document.model.DocumentPropertiesInput;
 import com.processpuzzle.document.model.DocumentSignature;
 import com.processpuzzle.document.model.DocumentSignatureInput;
 import com.processpuzzle.document.model.DocumentTranslation;
+import com.processpuzzle.document.model.PageOfDocumentSignature;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.model.DocumentTranslationSummary;
 import com.processpuzzle.document.model.PageOfDocumentSummary;
@@ -17,6 +18,8 @@ import com.processpuzzle.document.model.PublishedContent;
 import com.processpuzzle.document.model.ReorderBlocksRequest;
 import com.processpuzzle.document.model.ValidationResult;
 import com.processpuzzle.document.usecase.AddDocumentTranslation;
+import com.processpuzzle.document.usecase.AttachSignedPdf;
+import com.processpuzzle.document.usecase.FindIssuedDocuments;
 import com.processpuzzle.document.usecase.AppendDocumentBlock;
 import com.processpuzzle.document.usecase.CreateDocument;
 import com.processpuzzle.document.usecase.DeleteDocument;
@@ -89,6 +92,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
     private final ExportDocument exportDocument;
     private final SignDocument signDocument;
     private final FindDocumentSignatures findDocumentSignatures;
+    private final AttachSignedPdf attachSignedPdf;
+    private final FindIssuedDocuments findIssuedDocuments;
     private final DocumentMapper mapper;
     private final DocumentYamlCodec yaml;
 
@@ -115,6 +120,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
                             ExportDocument exportDocument,
                             SignDocument signDocument,
                             FindDocumentSignatures findDocumentSignatures,
+                            AttachSignedPdf attachSignedPdf,
+                            FindIssuedDocuments findIssuedDocuments,
                             DocumentMapper mapper,
                             DocumentYamlCodec yaml) {
         this.createDocument = createDocument;
@@ -139,6 +146,8 @@ public class DocumentEndpoint implements BaseDocumentApi {
         this.exportDocument = exportDocument;
         this.signDocument = signDocument;
         this.findDocumentSignatures = findDocumentSignatures;
+        this.attachSignedPdf = attachSignedPdf;
+        this.findIssuedDocuments = findIssuedDocuments;
         this.mapper = mapper;
         this.yaml = yaml;
     }
@@ -289,6 +298,31 @@ public class DocumentEndpoint implements BaseDocumentApi {
                 documentSignatureInput.getLocale());
         return ResponseEntity.status(outcome.created() ? HttpStatus.CREATED : HttpStatus.OK)
                 .body(mapper.toSignatureModel(outcome.signature()));
+    }
+
+    @Override
+    public ResponseEntity<DocumentSignature> attachSignedPdf(String orgKey, UUID documentId, UUID signatureId,
+                                                             MultipartFile file) {
+        try {
+            return ResponseEntity.ok(mapper.toSignatureModel(attachSignedPdf.execute(orgKey, documentId.toString(),
+                    signatureId.toString(), file.getBytes(), file.getOriginalFilename(), file.getContentType())));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Cannot read the uploaded PDF", e);
+        }
+    }
+
+    @Override
+    public ResponseEntity<PageOfDocumentSignature> listIssuedDocuments(String orgKey, UUID documentId,
+                                                                       String subjectType, String subjectId,
+                                                                       Integer page, Integer size) {
+        var found = findIssuedDocuments.execute(orgKey, documentId == null ? null : documentId.toString(),
+                subjectType, subjectId, page, size);
+        return ResponseEntity.ok(new PageOfDocumentSignature()
+                .content(found.getContent().stream().map(mapper::toSignatureModel).toList())
+                .totalElements(found.getTotalElements())
+                .totalPages(found.getTotalPages())
+                .number(found.getNumber())
+                .size(found.getSize()));
     }
 
     // ── Validation, import, export ──────────────────────────────

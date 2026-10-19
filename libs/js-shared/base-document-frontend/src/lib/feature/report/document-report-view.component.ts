@@ -4,8 +4,10 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { DocumentBlock, DocumentInputPort, PortType } from '../../domain/base-document';
+import { DocumentBlock, DocumentInputPort, DocumentSignatureSubject, PortType } from '../../domain/base-document';
 import { DocumentReaderComponent } from '../document-sign/document-reader.component';
+import { ReportSigningContext } from '../signature/report-signing-context';
+import { SIGNING_CONTEXT } from '../signature/signing-context';
 import { DocumentDataContext, DocumentObjectOption, DocumentPortValues } from './document-data-context';
 import { printElement } from './print-element';
 
@@ -22,7 +24,7 @@ import { printElement } from './print-element';
   selector: 'pp-document-report-view',
   standalone: true,
   imports: [DocumentReaderComponent, MatButton, MatFormField, MatIcon, MatLabel, MatOption, MatSelect, TranslocoPipe],
-  providers: [DocumentDataContext],
+  providers: [DocumentDataContext, ReportSigningContext, { provide: SIGNING_CONTEXT, useExisting: ReportSigningContext }],
   template: `
     <div class="pp-report-view">
       <div class="pp-report-view__bar">
@@ -90,9 +92,14 @@ export class DocumentReportViewComponent {
   readonly showParameters = input(false);
   /** The title the printed page carries — the browser offers it as the PDF's file name. */
   readonly title = input('');
+  /** The object the report is run for; without it a `signature` widget in the report cannot sign. */
+  readonly subject = input<DocumentSignatureSubject | undefined>(undefined);
+  /** The file name of the signed PDF, e.g. `order-invoice-1001.pdf`. */
+  readonly pdfFileName = input('report.pdf');
   readonly portValuesChange = output<DocumentPortValues>();
 
   protected readonly data = inject(DocumentDataContext);
+  private readonly signing = inject(ReportSigningContext);
   protected readonly options = signal<Readonly<Record<string, DocumentObjectOption[]>>>({});
   protected readonly entityRefPorts = signal<DocumentInputPort[]>([]);
   private readonly page = viewChild.required<ElementRef<HTMLElement>>('page');
@@ -103,6 +110,13 @@ export class DocumentReportViewComponent {
       const ports = this.inputPorts();
       const values = this.portValues();
       untracked(() => void this.data.bind(ports, values));
+    });
+    effect(() => {
+      const documentId = this.documentId();
+      const locale = this.locale();
+      const subject = this.subject();
+      const fileName = this.pdfFileName();
+      untracked(() => void this.signing.bind({ documentId, locale, subject, fileName, page: () => this.page().nativeElement }));
     });
     effect(() => {
       const ports = this.inputPorts().filter((port) => port.type === PortType.ENTITY_REF);

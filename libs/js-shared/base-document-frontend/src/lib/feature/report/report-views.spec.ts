@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BlockKind, Document, DocumentInputPort, DocumentKind, PortType } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { BaseDocumentStore } from '../../domain/base-document.store';
+import { ReportSigningContext } from '../signature/report-signing-context';
 import { DocumentDataContext } from './document-data-context';
 import { DocumentPreviewTabComponent } from './document-preview-tab.component';
 import { DocumentReportViewComponent } from './document-report-view.component';
@@ -55,7 +56,7 @@ describe('DocumentReportViewComponent', () => {
   beforeEach(() => {
     context = fakeContext();
     TestBed.configureTestingModule({ providers: baseProviders() });
-    TestBed.overrideComponent(DocumentReportViewComponent, { set: { providers: [{ provide: DocumentDataContext, useValue: context }] } });
+    TestBed.overrideComponent(DocumentReportViewComponent, { set: { providers: [{ provide: DocumentDataContext, useValue: context }, ReportSigningContext] } });
     fixture = TestBed.createComponent(DocumentReportViewComponent);
     fixture.componentRef.setInput('documentId', 'invoice');
     fixture.componentRef.setInput('locale', 'en');
@@ -146,7 +147,7 @@ describe('DocumentPreviewTabComponent', () => {
         { provide: Router, useValue: router },
       ],
     });
-    TestBed.overrideComponent(DocumentReportViewComponent, { set: { providers: [{ provide: DocumentDataContext, useValue: fakeContext() }] } });
+    TestBed.overrideComponent(DocumentReportViewComponent, { set: { providers: [{ provide: DocumentDataContext, useValue: fakeContext() }, ReportSigningContext] } });
     const fixture = TestBed.createComponent(DocumentPreviewTabComponent);
     fixture.componentRef.setInput('entityId', 'invoice');
     return fixture;
@@ -202,7 +203,7 @@ describe('EntityReportsTabComponent', () => {
         { provide: ROUTER_OUTLET_DATA, useValue: signal({ entityName: 'Order' }) },
       ],
     });
-    TestBed.overrideComponent(DocumentReportViewComponent, { set: { providers: [{ provide: DocumentDataContext, useValue: fakeContext() }] } });
+    TestBed.overrideComponent(DocumentReportViewComponent, { set: { providers: [{ provide: DocumentDataContext, useValue: fakeContext() }, ReportSigningContext] } });
     const fixture = TestBed.createComponent(EntityReportsTabComponent);
     fixture.componentRef.setInput('entityId', 'o-7');
     return fixture;
