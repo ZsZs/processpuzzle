@@ -396,5 +396,7 @@
       "description": "Supervisor Rolle",
       "value": "Wert 4"
     }
-  ]
+  ],
+  "inventory-checks": [],
+  "documents": []
 }
