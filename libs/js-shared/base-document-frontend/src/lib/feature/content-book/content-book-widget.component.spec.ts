@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
+import { BaseFormNavigatorSingletonStore } from '@processpuzzle/base-entity';
 import { LayoutService } from '@processpuzzle/util';
 import { SidenavContentService } from '@processpuzzle/widgets';
 import { of, throwError } from 'rxjs';
@@ -69,6 +70,8 @@ describe('ContentBookWidgetComponent', () => {
   let sidenavContent: SidenavContentService;
   let queryParams: Record<string, string>;
   let withoutRouter: boolean;
+  let routeOverride: unknown;
+  let navigateToUrl: ReturnType<typeof vi.fn>;
   let small: ReturnType<typeof signal<boolean>>;
 
   const byTestId = (id: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${id}"]`);
@@ -99,6 +102,8 @@ describe('ContentBookWidgetComponent', () => {
     queryParams = {};
     small = signal(false);
     withoutRouter = false;
+    routeOverride = undefined;
+    navigateToUrl = vi.fn();
     roles = signal<readonly string[]>(['editor']);
     bookService = { findBySlug: vi.fn().mockResolvedValue(book()), replaceNodes: vi.fn((_id: string, nodes: ContentBookNode[]) => Promise.resolve(book(nodes))) };
     documentService = {
@@ -117,7 +122,8 @@ describe('ContentBookWidgetComponent', () => {
         { provide: BaseDocumentService, useValue: documentService },
         { provide: MatDialog, useValue: dialog },
         { provide: Router, useFactory: () => (withoutRouter ? null : router) },
-        { provide: ActivatedRoute, useFactory: () => (withoutRouter ? null : { snapshot: { queryParamMap: convertToParamMap(queryParams) } }) },
+        { provide: ActivatedRoute, useFactory: () => (withoutRouter ? null : (routeOverride ?? { snapshot: { queryParamMap: convertToParamMap(queryParams) } })) },
+        { provide: BaseFormNavigatorSingletonStore, useFactory: () => ({ navigateToUrl }) },
         { provide: LayoutService, useValue: { isSmallDevice: small } },
         { provide: DOCUMENT_ACCESS_CONTEXT, useFactory: () => ({ roles }) },
       ],
@@ -592,6 +598,29 @@ describe('ContentBookWidgetComponent', () => {
       expect(component().treeNodes().map((node) => node.id)).toEqual(['n-details', 'n-notes']);
       fixture.detectChanges();
       expect(byTestId('content-book-show-unpublished')).toBeNull();
+    });
+
+    it('opens the page’s details through the navigator, so Cancel and Save come back to the book', async () => {
+      const base = { routeConfig: { children: [{ data: { entityName: 'Document' } }] }, parent: null, snapshot: { url: [{ path: 'samples' }], queryParamMap: convertToParamMap({}) } };
+      Object.assign(base, { pathFromRoot: [base] });
+      routeOverride = base;
+      navigateToUrl = vi.fn().mockResolvedValue(undefined);
+      await render();
+
+      expect(component().propertiesUrl()).toBe('/samples/document/d-overview/details');
+      component().openProperties();
+
+      expect(navigateToUrl).toHaveBeenCalledWith('/samples/document/d-overview/details');
+    });
+
+    it('keeps the old state when the reloaded listing no longer has the published page', async () => {
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.DRAFT)));
+      await render({ locale: 'en' });
+      documentService.findByQuery.mockReturnValue(listing());
+
+      await component().publishPage();
+
+      expect(component().pageState()?.kind).toBe('draft');
     });
 
     it('offers no Properties where the application mounts no Documents screens', async () => {

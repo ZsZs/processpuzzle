@@ -215,7 +215,8 @@ class PublishDocumentTranslationTest {
         document.archive(java.time.Instant.now(), "ada", "documents", "obj-1", "getting-started-archive.json");
         stub(document, draftAtRevision(1L, List.of()), null);
 
-        assertThatThrownBy(() -> publisher(permitAll()).execute(ORG, ID, "en"))
+        PublishDocumentTranslation publisher = publisher(permitAll());
+        assertThatThrownBy(() -> publisher.execute(ORG, ID, "en"))
                 .isInstanceOf(DocumentPublishingConflictException.class)
                 .hasMessageContaining("archived");
         assertThat(publishedEvents).isEmpty();
