@@ -46,6 +46,25 @@ export function addNode(nodes: readonly ContentBookNode[], documentId: string, p
   return normalize([...nodes, { id, documentId, parentId, orderIndex: siblingsOf(nodes, parentId).length }]);
 }
 
+/** Files `documentId` right before or right after `siblingId`, under the same parent. */
+export function insertBeside(
+  nodes: readonly ContentBookNode[],
+  documentId: string,
+  siblingId: string,
+  side: 'before' | 'after',
+  id: string = newNodeId(),
+): ContentBookNode[] {
+  const sibling = nodes.find((node) => node.id === siblingId);
+  if (!sibling) return addNode(nodes, documentId, null, id);
+
+  const parentId = sibling.parentId ?? null;
+  const ordered = siblingsOf(nodes, parentId);
+  const at = ordered.findIndex((node) => node.id === siblingId) + (side === 'after' ? 1 : 0);
+  ordered.splice(at, 0, { id, documentId, parentId, orderIndex: 0 });
+  const indexOf = new Map(ordered.map((node, index) => [node.id, index]));
+  return normalize([...nodes.map((node) => (indexOf.has(node.id) ? { ...node, orderIndex: indexOf.get(node.id) as number } : node)), { id, documentId, parentId, orderIndex: indexOf.get(id) as number }]);
+}
+
 /** Takes a node and everything filed under it out of the book. The documents themselves are untouched. */
 export function removeSubtree(nodes: readonly ContentBookNode[], nodeId: string): ContentBookNode[] {
   const removed = new Set([nodeId]);

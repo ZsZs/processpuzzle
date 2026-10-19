@@ -169,6 +169,22 @@
         "none_left": "Every document of the organization is already in this book.",
         "add": "Add",
         "cancel": "Cancel"
+      },
+      "add": "Add",
+      "add_before": "Above the selected page",
+      "add_after": "Below the selected page",
+      "add_root": "At the top level",
+      "publish": "Publish",
+      "archive": "Archive",
+      "properties": "Properties",
+      "show_unpublished": "Unpublished",
+      "confirm_archive_title": "Archive document?",
+      "confirm_archive_text": "\"{{title}}\" is stored as a snapshot and can no longer be edited.",
+      "status": {
+        "draft": "Draft · r{{revision}}",
+        "published": "Published · r{{published}}",
+        "changed": "Published r{{published}} · draft r{{revision}}",
+        "archived": "Archived"
       }
     }
   },

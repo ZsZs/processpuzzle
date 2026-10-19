@@ -50,6 +50,7 @@ public class AddDocumentTranslation {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
+        guard.requireWritable(document);
 
         String locale = input.locale();
         if (draftRepository.existsByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)) {

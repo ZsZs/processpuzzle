@@ -92,6 +92,7 @@ public class DocumentDraftEditor {
         Document document = documentRepository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
+        guard.requireWritable(document);
         return document;
     }
 

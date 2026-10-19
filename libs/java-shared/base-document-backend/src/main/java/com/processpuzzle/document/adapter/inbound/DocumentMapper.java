@@ -11,6 +11,7 @@ import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.domain.PortType;
 import com.processpuzzle.document.domain.WidgetPlacement;
+import com.processpuzzle.document.model.DocumentArchive;
 import com.processpuzzle.document.model.DocumentBlockInput;
 import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.model.DocumentPropertiesInput;
@@ -19,6 +20,7 @@ import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.model.DocumentTranslationSummary;
 import com.processpuzzle.document.model.PageOfDocumentSummary;
 import com.processpuzzle.document.model.PublishedContent;
+import com.processpuzzle.document.usecase.ArchiveDocument;
 import com.processpuzzle.document.usecase.DocumentTranslationView;
 import com.processpuzzle.document.usecase.DocumentCommand;
 import com.processpuzzle.document.usecase.DocumentProperties;
@@ -184,6 +186,7 @@ public class DocumentMapper {
         model.setCreatedAt(toOffsetDateTime(document.getCreatedAt()));
         model.setPublishedAt(toOffsetDateTime(document.getPublishedAt()));
         model.setUpdatedAt(toOffsetDateTime(document.getUpdatedAt()));
+        model.setArchive(toArchiveModel(document));
         return model;
     }
 
@@ -202,7 +205,21 @@ public class DocumentMapper {
         model.setCreatedAt(toOffsetDateTime(document.getCreatedAt()));
         model.setPublishedAt(toOffsetDateTime(document.getPublishedAt()));
         model.setUpdatedAt(toOffsetDateTime(document.getUpdatedAt()));
+        model.setArchive(toArchiveModel(document));
         return model;
+    }
+
+    private DocumentArchive toArchiveModel(com.processpuzzle.document.domain.Document document) {
+        if (!document.isArchived()) {
+            return null;
+        }
+        return new DocumentArchive()
+                .archivedAt(toOffsetDateTime(document.getArchivedAt()))
+                .archivedBy(document.getArchivedBy())
+                .bucket(document.getArchiveBucket())
+                .objectId(document.getArchiveObjectId())
+                .name(document.getArchiveName())
+                .mimeType(ArchiveDocument.JSON);
     }
 
     public PageOfDocumentSummary toModel(Page<com.processpuzzle.document.domain.Document> page,

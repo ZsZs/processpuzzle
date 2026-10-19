@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ContentBookNode } from '../../domain/content-book';
-import { addNode, canIndent, canMove, canOutdent, detachDocument, indent, move, normalize, outdent, removeSubtree, siblingsOf, toTreeNav } from './content-book-tree';
+import { addNode, canIndent, insertBeside, canMove, canOutdent, detachDocument, indent, move, normalize, outdent, removeSubtree, siblingsOf, toTreeNav } from './content-book-tree';
 
 const node = (id: string, parentId: string | null, orderIndex: number): ContentBookNode => ({ id, documentId: `doc-${id}`, parentId, orderIndex });
 
@@ -37,6 +37,15 @@ describe('content book tree', () => {
   it('adds a page last among its siblings, at the top level by default', () => {
     expect(shape(addNode(BOOK, 'doc-new', null, 'new')).at(-1)).toBe('-/new@2');
     expect(shape(addNode(BOOK, 'doc-new', 'a', 'new'))).toContain('a/new@2');
+  });
+
+  it('files a page right before or after a sibling, under the same parent', () => {
+    expect(shape(insertBeside(BOOK, 'doc-new', 'a2', 'before', 'new'))).toEqual(['-/a@0', 'a/a1@0', 'a1/a1x@0', 'a/new@1', 'a/a2@2', '-/b@1']);
+    expect(shape(insertBeside(BOOK, 'doc-new', 'a', 'after', 'new'))).toEqual(['-/a@0', 'a/a1@0', 'a1/a1x@0', 'a/a2@1', '-/new@1', '-/b@2']);
+  });
+
+  it('files a page last at the top level when the sibling is not in the book', () => {
+    expect(shape(insertBeside(BOOK, 'doc-new', 'missing', 'before', 'new')).at(-1)).toBe('-/new@2');
   });
 
   it('mints a node id when none is given', () => {

@@ -86,6 +86,24 @@ export class BaseDocumentService extends BaseEntityRestService<Document> {
     return firstValueFrom(this.httpClient.post<DocumentTranslation>(fullUrl, { locale, ...(blocks ? { blocks } : {}) }, { headers: this.headers }));
   }
 
+  /** `POST .../translations/{locale}/publish` — makes the locale's current draft what readers see. Publisher role. */
+  async publishTranslation(documentId: string, locale: string): Promise<DocumentTranslation> {
+    return firstValueFrom(this.httpClient.post<DocumentTranslation>(`${this.translationUrl(documentId, locale)}/publish`, null, { headers: this.headers }));
+  }
+
+  /**
+   * `POST .../documents/{id}/archive` — stores a snapshot of the document and locks it from further edits.
+   * Answers the document with its `archive`. Publisher role.
+   */
+  async archive(documentId: string): Promise<PersistedEntity<Document>> {
+    const pathParams = new Map<string, string>([['id', documentId]]);
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/archive', { pathParams });
+    if (!fullUrl) throw new Error('Could not determine the full url');
+
+    const dto = await firstValueFrom(this.httpClient.post(fullUrl, null, { headers: this.headers }));
+    return this.entityMapper.fromDto(dto) as PersistedEntity<Document>;
+  }
+
   /**
    * `POST .../documents/{id}/signatures` — signs the published content of `locale` (the source locale when
    * omitted) for `subject`. The server answers an existing signature for a repeat rather than a second one,
