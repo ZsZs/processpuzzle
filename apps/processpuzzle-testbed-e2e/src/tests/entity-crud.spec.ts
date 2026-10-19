@@ -57,6 +57,14 @@ defineEntityCrudSuite({
       // disables New, Edit, Delete and Save, so there is nothing here for a CRUD suite to drive.
       reason: 'workflow instances are read-only by contract; the descriptor is isAbstract, so New/Edit/Delete/Save are all disabled',
     },
+    {
+      entityName: 'IssuedDocument',
+      // Every field is the server's: a signature is recorded by POST .../signatures, which needs a published
+      // report and a signer, and the descriptor is `isReadOnly` with no identification attribute to build a
+      // fixture around. The generator fails with "no identification attr" before anything is sent. The
+      // screen is covered by base-document-frontend's own tests and FindIssuedDocumentsTest.
+      reason: 'issued documents are recorded by signing a report, never created or edited through a form',
+    },
   ],
   fixtureOverrides: [
     {

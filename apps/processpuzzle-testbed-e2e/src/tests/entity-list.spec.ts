@@ -15,5 +15,11 @@ defineEntityListSuite({
       // tests. Drop this entry once something seeds or starts an instance for the testbed tenant.
       reason: 'nothing starts a workflow instance, so the list is legitimately empty',
     },
+    {
+      entityName: 'IssuedDocument',
+      // The list is the signatures of the organization, and nothing in the testbed seed signs a report: one
+      // exists only after a user signs. Drop this entry once something seeds a signature for the testbed tenant.
+      reason: 'nothing signs a report in the seed, so the list is legitimately empty',
+    },
   ],
 });
