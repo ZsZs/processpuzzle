@@ -43,6 +43,7 @@ public class RemoveDocumentTranslation {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
+        guard.requireWritable(document);
 
         if (document.getSourceLocale().equals(locale)) {
             throw DocumentPublishingConflictException.sourceLocaleNotRemovable(documentId, locale);

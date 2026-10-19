@@ -64,6 +64,7 @@ public class UpdateDocumentProperties {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
+        guard.requireWritable(document);
 
         if (!document.getSlug().equals(input.slug()) && repository.existsByOrgKeyAndSlug(orgKey, input.slug())) {
             throw new DocumentSlugAlreadyExistsException(orgKey, input.slug());

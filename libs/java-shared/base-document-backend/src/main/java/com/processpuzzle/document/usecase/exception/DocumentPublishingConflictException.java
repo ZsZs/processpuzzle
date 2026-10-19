@@ -58,6 +58,11 @@ public class DocumentPublishingConflictException extends RuntimeException {
                         + " translation is based on it and readers fall back to it, so change sourceLocale first.");
     }
 
+    public static DocumentPublishingConflictException archived(String documentId) {
+        return new DocumentPublishingConflictException("document.archived",
+                "Document '" + documentId + "' is archived and can no longer be changed.");
+    }
+
     /** "Locale 'x' of document 'y'" — how the refusals about one translation begin. */
     private static String translation(String documentId, String locale) {
         return LOCALE + locale + "' of document '" + documentId + "'";

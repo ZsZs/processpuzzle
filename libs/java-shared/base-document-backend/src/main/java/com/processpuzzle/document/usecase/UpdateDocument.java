@@ -64,6 +64,7 @@ public class UpdateDocument {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requireEditor(document);
+        guard.requireWritable(document);
 
         DocumentProperties properties = input.properties();
         if (!document.getSlug().equals(properties.slug()) && repository.existsByOrgKeyAndSlug(orgKey, properties.slug())) {

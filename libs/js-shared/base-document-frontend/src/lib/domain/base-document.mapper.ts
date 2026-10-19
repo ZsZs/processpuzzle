@@ -34,6 +34,7 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
       dto.createdAt,
       dto.updatedAt,
       dto.kind ?? DocumentKind.DOCUMENT,
+      dto.archive ?? undefined,
     );
   }
 

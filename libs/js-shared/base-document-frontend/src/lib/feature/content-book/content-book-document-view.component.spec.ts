@@ -3,11 +3,12 @@ import { Component, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Document, DocumentBlock, DocumentStatus } from '../../domain/base-document';
+import { Document, DocumentBlock, DocumentInputPort, DocumentStatus, PortType } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { DOCUMENT_ACCESS_CONTEXT } from '../../domain/document-access-context';
 import { DocumentEditorComponent } from '../document-editor/document-editor.component';
 import { DocumentReaderComponent } from '../document-sign/document-reader.component';
+import { DocumentDataContext } from '../report/document-data-context';
 import { ContentBookDocumentViewComponent } from './content-book-document-view.component';
 
 @Component({ selector: 'pp-document-reader', template: '<p data-testid="reader">{{ locale() }}:{{ blocks().length }}</p>' })
@@ -92,7 +93,7 @@ describe('ContentBookDocumentViewComponent', () => {
 
     expect(byTestId('content-book-page-unpublished')).not.toBeNull();
     expect(getTranslation).not.toHaveBeenCalledWith('d-1', 'de', true);
-    expect(byTestId('content-book-page-edit')).toBeNull();
+    expect(fixture.componentInstance.canEdit()).toBe(false);
   });
 
   it('shows an editor the draft of an unpublished page, under a banner', async () => {
@@ -109,11 +110,11 @@ describe('ContentBookDocumentViewComponent', () => {
     answer({ de: 1 }, {});
     await render('de');
 
-    byTestId('content-book-page-edit')?.click();
+    fixture.componentInstance.toggleEditing();
     await settle();
     expect(byTestId('editor')?.textContent).toBe('de:false');
 
-    byTestId('content-book-page-edit')?.click();
+    fixture.componentInstance.toggleEditing();
     await settle();
     expect(byTestId('reader')?.textContent).toBe('de:1');
   });
@@ -171,7 +172,7 @@ describe('ContentBookDocumentViewComponent', () => {
     let release: (value: unknown) => void = () => undefined;
     getTranslation.mockReturnValue(new Promise((resolve) => (release = resolve)));
 
-    byTestId('content-book-page-edit')?.click();
+    fixture.componentInstance.toggleEditing();
     fixture.detectChanges();
     expect(byTestId('editor')).toBeNull();
 
@@ -186,7 +187,7 @@ describe('ContentBookDocumentViewComponent', () => {
     await render('de');
     getTranslation.mockRejectedValue(new Error('draft broke'));
 
-    byTestId('content-book-page-edit')?.click();
+    fixture.componentInstance.toggleEditing();
     await settle();
 
     expect(byTestId('editor')).toBeNull();
@@ -218,11 +219,38 @@ describe('ContentBookDocumentViewComponent', () => {
     expect(byTestId('reader')?.textContent).toBe('fr:5');
   });
 
+  it('never edits an archived page, not even for an editor', async () => {
+    roles.set(['editor']);
+    answer({ en: 1 });
+    const archived = page();
+    archived.archive = { archivedAt: '2026-10-19T10:00:00Z', bucket: 'documents', objectId: 'obj-1', name: 'overview-archive.json', mimeType: 'application/json' };
+    await render('en', archived);
+
+    fixture.componentInstance.toggleEditing();
+    await settle();
+
+    expect(fixture.componentInstance.canEdit()).toBe(false);
+    expect(fixture.componentInstance.editing()).toBe(false);
+    expect(byTestId('reader')?.textContent).toBe('en:1');
+  });
+
+  it('binds the page’s ports to their defaults, so its widgets have data to show', async () => {
+    answer({ en: 1 });
+    const bind = vi.spyOn(DocumentDataContext.prototype, 'bind').mockResolvedValue();
+    const ported = page();
+    ported.inputPorts = [new DocumentInputPort('openOrders', PortType.ENTITY_COLLECTION, false, undefined, undefined, 'Order', undefined, 'status!=CANCELLED')];
+
+    await render('en', ported);
+
+    expect(bind).toHaveBeenCalledWith(ported.inputPorts, {});
+    bind.mockRestore();
+  });
+
   it('turns into the restricted notice when the document disappears while editing', async () => {
     roles.set(['editor']);
     answer({ en: 1 });
     await render('en');
-    byTestId('content-book-page-edit')?.click();
+    fixture.componentInstance.toggleEditing();
     await settle();
     expect(byTestId('editor')).not.toBeNull();
 

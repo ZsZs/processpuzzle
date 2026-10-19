@@ -216,6 +216,45 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /organizations/{orgKey}/documents/{documentId}/archive:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DocumentIdParam"
+    post:
+      operationId: archiveDocument
+      summary: Archive a document for record retention and lock it from further edits
+      description: >-
+        Writes a JSON snapshot of the document — its properties and every translation, draft and
+        published — through the deploying application's file store, and records where it went on
+        `archive`. From then on the document is read-only: its published content is still served,
+        but every write to it but a delete is refused with `document.archived`. Requires a
+        publisher role.
+      tags:
+        - Base Document
+      responses:
+        "200":
+          description: The document, now with its `archive`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The document is archived already (`document.archived`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: No file store is configured (`document.file-store.unavailable`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /organizations/{orgKey}/documents/{documentId}/properties:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -1477,6 +1516,11 @@ components:
             updatedAt:
               type: string
               format: date-time
+            archive:
+              allOf:
+                - $ref: "#/components/schemas/DocumentArchive"
+              nullable: true
+              description: Where the document was archived; absent while it is not, and editable.
 
     DocumentSummary:
       description: >-
@@ -1513,6 +1557,11 @@ components:
             updatedAt:
               type: string
               format: date-time
+            archive:
+              allOf:
+                - $ref: "#/components/schemas/DocumentArchive"
+              nullable: true
+              description: Where the document was archived; absent while it is not, and editable.
 
     # ── Translations ──────────────────────────────────────────
 
@@ -2183,6 +2232,28 @@ components:
             - $ref: "#/components/schemas/SignedPdf"
           nullable: true
           description: The signed report as a PDF; absent until the signer has attached it.
+
+    DocumentArchive:
+      type: object
+      description: >-
+        The snapshot an archived document left in the file store. `bucket`, `objectId`, `name` and
+        `mimeType` are an ARTIFACT value, as SignedPdf is.
+      required: [ archivedAt, bucket, objectId, name, mimeType ]
+      properties:
+        archivedAt:
+          type: string
+          format: date-time
+        archivedBy:
+          type: string
+          nullable: true
+        bucket:
+          type: string
+        objectId:
+          type: string
+        name:
+          type: string
+        mimeType:
+          type: string
 
     SignedPdf:
       type: object

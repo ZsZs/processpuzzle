@@ -209,6 +209,19 @@ class PublishDocumentTranslationTest {
                 .isEqualTo(DocumentStatus.PUBLISHED);
     }
 
+    @Test
+    void anArchivedDocumentCannotBePublished() {
+        Document document = document();
+        document.archive(java.time.Instant.now(), "ada", "documents", "obj-1", "getting-started-archive.json");
+        stub(document, draftAtRevision(1L, List.of()), null);
+
+        PublishDocumentTranslation publisher = publisher(permitAll());
+        assertThatThrownBy(() -> publisher.execute(ORG, ID, "en"))
+                .isInstanceOf(DocumentPublishingConflictException.class)
+                .hasMessageContaining("archived");
+        assertThat(publishedEvents).isEmpty();
+    }
+
     // region fixtures
     private PublishDocumentTranslation publisher(DocumentAccessPolicy policy) {
         ApplicationEventPublisher events = event -> publishedEvents.add(event);

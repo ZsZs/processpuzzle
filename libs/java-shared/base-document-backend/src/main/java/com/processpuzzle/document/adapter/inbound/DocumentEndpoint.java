@@ -18,6 +18,7 @@ import com.processpuzzle.document.model.PublishedContent;
 import com.processpuzzle.document.model.ReorderBlocksRequest;
 import com.processpuzzle.document.model.ValidationResult;
 import com.processpuzzle.document.usecase.AddDocumentTranslation;
+import com.processpuzzle.document.usecase.ArchiveDocument;
 import com.processpuzzle.document.usecase.AttachSignedPdf;
 import com.processpuzzle.document.usecase.FindIssuedDocuments;
 import com.processpuzzle.document.usecase.AppendDocumentBlock;
@@ -94,6 +95,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
     private final FindDocumentSignatures findDocumentSignatures;
     private final AttachSignedPdf attachSignedPdf;
     private final FindIssuedDocuments findIssuedDocuments;
+    private final ArchiveDocument archiveDocument;
     private final DocumentMapper mapper;
     private final DocumentYamlCodec yaml;
 
@@ -122,6 +124,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
                             FindDocumentSignatures findDocumentSignatures,
                             AttachSignedPdf attachSignedPdf,
                             FindIssuedDocuments findIssuedDocuments,
+                            ArchiveDocument archiveDocument,
                             DocumentMapper mapper,
                             DocumentYamlCodec yaml) {
         this.createDocument = createDocument;
@@ -148,6 +151,7 @@ public class DocumentEndpoint implements BaseDocumentApi {
         this.findDocumentSignatures = findDocumentSignatures;
         this.attachSignedPdf = attachSignedPdf;
         this.findIssuedDocuments = findIssuedDocuments;
+        this.archiveDocument = archiveDocument;
         this.mapper = mapper;
         this.yaml = yaml;
     }
@@ -188,6 +192,11 @@ public class DocumentEndpoint implements BaseDocumentApi {
     public ResponseEntity<Void> deleteDocument(String orgKey, UUID documentId) {
         deleteDocument.execute(orgKey, documentId.toString());
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Document> archiveDocument(String orgKey, UUID documentId) {
+        return ResponseEntity.ok(toModel(archiveDocument.execute(orgKey, documentId.toString())));
     }
 
     // ── Translations ────────────────────────────────────────────

@@ -13,6 +13,7 @@ import com.processpuzzle.document.model.DocumentSignatureInput;
 import com.processpuzzle.document.model.DocumentTranslationInput;
 import com.processpuzzle.document.model.ReorderBlocksRequest;
 import com.processpuzzle.document.usecase.AddDocumentTranslation;
+import com.processpuzzle.document.usecase.ArchiveDocument;
 import com.processpuzzle.document.usecase.AttachSignedPdf;
 import com.processpuzzle.document.usecase.FindIssuedDocuments;
 import com.processpuzzle.document.usecase.AppendDocumentBlock;
@@ -104,6 +105,7 @@ class DocumentEndpointTest {
     private FindDocumentSignatures findDocumentSignatures;
     private AttachSignedPdf attachSignedPdf;
     private FindIssuedDocuments findIssuedDocuments;
+    private ArchiveDocument archiveDocument;
     private DocumentEndpoint endpoint;
 
     @BeforeEach
@@ -132,12 +134,13 @@ class DocumentEndpointTest {
         findDocumentSignatures = mock(FindDocumentSignatures.class);
         attachSignedPdf = mock(AttachSignedPdf.class);
         findIssuedDocuments = mock(FindIssuedDocuments.class);
+        archiveDocument = mock(ArchiveDocument.class);
         endpoint = new DocumentEndpoint(createDocument, updateDocument, updateDocumentProperties, deleteDocument,
                 findDocument, findAllDocuments, findDocumentTranslations, addDocumentTranslation,
                 removeDocumentTranslation, publishDocumentTranslation, unpublishDocumentTranslation,
                 discardDocumentDraft, findPublishedContent, appendDocumentBlock, replaceDocumentBlock,
                 deleteDocumentBlock, reorderDocumentBlocks, validateDocument, importDocuments, exportDocument,
-                signDocument, findDocumentSignatures, attachSignedPdf, findIssuedDocuments, new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
+                signDocument, findDocumentSignatures, attachSignedPdf, findIssuedDocuments, archiveDocument, new DocumentMapper(), new DocumentYamlCodec(new DocumentMapper()));
     }
 
     // ── Documents ───────────────────────────────────────────────
@@ -199,6 +202,20 @@ class DocumentEndpointTest {
     void deleteAnswers204() {
         assertThat(endpoint.deleteDocument(ORG, DOCUMENT_ID).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(deleteDocument).execute(ORG, ID);
+    }
+
+    @Test
+    void archiveAnswersWithTheDocumentAndWhereItsSnapshotWent() {
+        Document archived = document();
+        archived.archive(java.time.Instant.parse("2026-10-19T10:00:00Z"), "ada", "documents", "obj-1", "getting-started-archive.json");
+        when(archiveDocument.execute(ORG, ID)).thenReturn(new DocumentDetails(archived, null, List.of(view())));
+
+        var archive = endpoint.archiveDocument(ORG, DOCUMENT_ID).getBody().getArchive();
+
+        assertThat(archive.getBucket()).isEqualTo("documents");
+        assertThat(archive.getObjectId()).isEqualTo("obj-1");
+        assertThat(archive.getMimeType()).isEqualTo(ArchiveDocument.JSON);
+        assertThat(archive.getArchivedBy()).isEqualTo("ada");
     }
 
     // ── Translations ────────────────────────────────────────────

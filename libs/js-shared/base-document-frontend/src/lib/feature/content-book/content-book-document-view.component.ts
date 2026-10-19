@@ -1,13 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Document, DocumentBlock } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { DOCUMENT_ACCESS_CONTEXT, mayEdit } from '../../domain/document-access-context';
 import { DocumentEditorComponent } from '../document-editor/document-editor.component';
 import { DocumentReaderComponent } from '../document-sign/document-reader.component';
+import { DocumentDataContext } from '../report/document-data-context';
 
 type PageState =
   | { kind: 'loading' }
@@ -18,28 +17,26 @@ type PageState =
 
 /**
  * One page of a content book: the document's published content in the reader's language, falling back to the
- * document's source language — and, for an editor, an Edit toggle that swaps in the content editor on the draft.
+ * document's source language — and, when the book's toolbar asks for it ({@link toggleEditing}), the content
+ * editor on the draft. Editing a published page edits its draft: readers keep the published revision until the
+ * next publish.
  *
  * Reading never shows a draft to someone who may not edit it: a page with nothing published reads "not published
  * yet". An editor is shown the draft instead, under a banner, because a book is where they assemble pages before
- * publishing them. Publishing itself stays on the Documents screen, where a document's locales and their states
- * are in view.
+ * publishing them. An archived page is never edited.
+ *
+ * Provides the {@link DocumentDataContext} its widgets resolve their port bindings through, bound to the ports'
+ * defaults: a book hands a page no values of its own, so a collection port lists what its `defaultRsqlFilter`
+ * selects.
  */
 @Component({
   selector: 'pp-content-book-document-view',
-  imports: [DocumentReaderComponent, DocumentEditorComponent, MatButton, MatIcon, TranslocoPipe],
+  imports: [DocumentReaderComponent, DocumentEditorComponent, TranslocoPipe],
+  providers: [DocumentDataContext],
   template: `
     @if (!document()) {
       <p class="pp-content-book-page__message" data-testid="content-book-page-restricted">{{ 'base_document.content_book.widget.restricted_text' | transloco }}</p>
     } @else {
-      @if (canEdit()) {
-        <div class="pp-content-book-page__toolbar">
-          <button mat-stroked-button type="button" data-testid="content-book-page-edit" (click)="toggleEditing()">
-            <mat-icon>{{ editing() ? 'visibility' : 'edit' }}</mat-icon>
-            {{ (editing() ? 'base_document.content_book.widget.read' : 'base_document.content_book.widget.edit') | transloco }}
-          </button>
-        </div>
-      }
       @if (editing()) {
         @if (draft(); as draft) {
           <p class="pp-content-book-page__note">{{ 'base_document.content_book.widget.edit_note' | transloco }}</p>
@@ -72,11 +69,6 @@ type PageState =
     :host {
       display: block;
     }
-    .pp-content-book-page__toolbar {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 8px;
-    }
     .pp-content-book-page__banner {
       background: color-mix(in srgb, var(--mat-sys-tertiary, #b58100) 15%, transparent);
       border-radius: 4px;
@@ -99,11 +91,15 @@ export class ContentBookDocumentViewComponent {
   private readonly documentService = inject(BaseDocumentService);
   private readonly accessContext = inject(DOCUMENT_ACCESS_CONTEXT, { optional: true });
 
-  protected readonly canEdit = computed(() => {
+  private readonly data = inject(DocumentDataContext);
+
+  /** Whether the reader may edit this page: an editor of the document, and the document not archived. */
+  readonly canEdit = computed(() => {
     const document = this.document();
-    return document !== undefined && mayEdit(this.accessContext, document.editorRoles);
+    return document !== undefined && !document.archive && mayEdit(this.accessContext, document.editorRoles);
   });
-  protected readonly editing = signal(false);
+  private readonly editingState = signal(false);
+  readonly editing = this.editingState.asReadonly();
   protected readonly page = signal<PageState>({ kind: 'loading' });
   protected readonly draft = signal<{ locale: string; blocks: DocumentBlock[]; exists: boolean } | undefined>(undefined);
 
@@ -127,22 +123,27 @@ export class ContentBookDocumentViewComponent {
       const locale = this.locale();
       const document = this.document();
       untracked(() => {
-        this.editing.set(false);
+        this.editingState.set(false);
         this.draft.set(undefined);
         if (document) void this.loadPage(documentId, locale, document);
       });
     });
+    effect(() => {
+      const ports = this.document()?.inputPorts ?? [];
+      untracked(() => void this.data.bind(ports, {}));
+    });
   }
 
-  protected toggleEditing(): void {
+  /** Swaps between the published reader and the draft editor; a page that may not be edited stays as it is. */
+  toggleEditing(): void {
     const document = this.document();
     if (!document) return;
 
     if (this.editing()) {
-      this.editing.set(false);
+      this.editingState.set(false);
       void this.loadPage(this.documentId(), this.locale(), document);
-    } else {
-      this.editing.set(true);
+    } else if (this.canEdit()) {
+      this.editingState.set(true);
       void this.loadDraft(this.documentId(), this.locale());
     }
   }
@@ -179,7 +180,7 @@ export class ContentBookDocumentViewComponent {
       const draft = await this.translationOrUndefined(documentId, locale, true);
       this.draft.set({ locale, blocks: draft?.blocks ?? [], exists: draft !== undefined });
     } catch (error) {
-      this.editing.set(false);
+      this.editingState.set(false);
       this.page.set({ kind: 'error', message: messageOf(error) });
     }
   }

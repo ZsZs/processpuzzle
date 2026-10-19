@@ -125,6 +125,19 @@ export interface DocumentSignature extends DocumentSignatureSubject {
   pdf?: ArtifactAttr | null;
 }
 
+/**
+ * Where an archived document's JSON snapshot was stored — an ARTIFACT value, plus when and by whom. A document
+ * that carries one is read-only: the server refuses every write to it but a delete.
+ */
+export interface DocumentArchive {
+  archivedAt: string;
+  archivedBy?: string | null;
+  bucket: string;
+  objectId: string;
+  name: string;
+  mimeType: string;
+}
+
 export enum DocumentStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
@@ -219,6 +232,8 @@ export class Document implements BaseEntity {
     public updatedAt?: string,
     /** Last rather than beside the other properties, so the positional call sites before it stay as they are. */
     public kind: DocumentKind = DocumentKind.DOCUMENT,
+    /** Set once the document is archived; server-owned, so not part of {@link DocumentProperties}. */
+    public archive?: DocumentArchive,
   ) {}
 }
 
