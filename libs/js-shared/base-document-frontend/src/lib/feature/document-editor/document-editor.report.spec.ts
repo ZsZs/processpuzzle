@@ -115,6 +115,41 @@ describe('DocumentEditorComponent, authoring a report', () => {
     expect(save).toHaveBeenCalledWith('lines', { props: { columns: [], totals: [], caption: 'New' }, inputBindings: { rows: 'order.lineItems' } });
   });
 
+  it('offers settings on any other widget block, from the widget schema and the document paths', async () => {
+    const note: DocumentBlock = { id: 'note', kind: BlockKind.WIDGET, placement: WidgetPlacement.STANDALONE, type: 'unregistered-widget', props: { color: 'red' }, inputBindings: { value: 'order.total' } };
+    fixture.componentRef.setInput('blocks', [note]);
+    fixture.componentRef.setInput('inputPorts', [ORDER_PORT]);
+    fixture.detectChanges();
+    const save = vi.spyOn(store(), 'saveWidgetBlock').mockResolvedValue();
+    dialogResult = { props: { color: 'blue' }, inputBindings: { value: 'order.lineItems' } };
+
+    fixture.debugElement.query(By.css('[data-testid="document-widget-settings-note"]')).nativeElement.click();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(open.mock.calls[0][1].data).toEqual({
+      name: 'unregistered-widget',
+      schema: undefined,
+      inputPorts: [],
+      props: { color: 'red' },
+      inputBindings: { value: 'order.total' },
+      paths: ['order.lineItems', 'order.total'],
+    });
+    expect(save).toHaveBeenCalledWith('note', { props: { color: 'blue' }, inputBindings: { value: 'order.lineItems' } });
+  });
+
+  it('saves nothing when the widget settings are dismissed', async () => {
+    const bare: DocumentBlock = { id: 'bare', kind: BlockKind.WIDGET, placement: WidgetPlacement.STANDALONE };
+    fixture.componentRef.setInput('blocks', [bare]);
+    fixture.detectChanges();
+    const save = vi.spyOn(store(), 'saveWidgetBlock').mockResolvedValue();
+
+    await editor().onConfigureWidget(store().blocks()[0]);
+
+    expect(open.mock.calls[0][1].data).toMatchObject({ name: '', props: {}, inputBindings: {} });
+    expect(save).not.toHaveBeenCalled();
+  });
+
   it('inserts a data field at the caret of a text block', async () => {
     fixture.componentRef.setInput('blocks', [TEXT]);
     fixture.componentRef.setInput('inputPorts', [ORDER_PORT]);

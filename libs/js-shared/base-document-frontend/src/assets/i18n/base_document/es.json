@@ -34,6 +34,13 @@
       "signatures": "Firmas",
       "none": "Nadie ha firmado este documento todavía."
     },
+    "widget_settings": {
+      "title": "Ajustes del widget",
+      "props": "Propiedades",
+      "bindings": "Datos",
+      "no_props": "Este widget no tiene propiedades.",
+      "invalid_json": "JSON no válido."
+    },
     "report": {
       "insert_field": "Insertar campo de datos",
       "field": "Campo",

@@ -34,6 +34,13 @@
       "signatures": "Aláírások",
       "none": "Ezt a dokumentumot még senki nem írta alá."
     },
+    "widget_settings": {
+      "title": "Widget beállításai",
+      "props": "Tulajdonságok",
+      "bindings": "Adatok",
+      "no_props": "Ennek a widgetnek nincsenek tulajdonságai.",
+      "invalid_json": "Érvénytelen JSON."
+    },
     "report": {
       "insert_field": "Adatmező beszúrása",
       "field": "Mező",
