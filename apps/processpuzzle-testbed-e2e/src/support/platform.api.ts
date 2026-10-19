@@ -27,6 +27,8 @@ export interface CalculationRunSummary {
   calculationId: string;
   subjectId: string;
   status: string;
+  frozen?: boolean;
+  triggeredBy?: string;
   [key: string]: unknown;
 }
 
@@ -68,5 +70,23 @@ export class PlatformApi {
     expect(response.ok(), `listing calculation runs: ${response.status()}`).toBe(true);
     const body = await response.json();
     return Array.isArray(body) ? body : (body.content ?? []);
+  }
+
+  /** Creates a calculation definition from its YAML source; its `calculation` key is the id. Remove it with {@link deleteCalculation}. */
+  async createCalculation(source: string): Promise<string> {
+    const response = await this.request.post(`${this.roots.backend}/calculation-definitions`, { data: { source } });
+    expect(response.status(), `creating a calculation: ${await response.text()}`).toBe(201);
+    return (await response.json()).id as string;
+  }
+
+  async calculationSource(id: string): Promise<string> {
+    const response = await this.request.get(`${this.roots.backend}/calculation-definitions/${encodeURIComponent(id)}`);
+    expect(response.ok(), `reading calculation ${id}: ${response.status()}`).toBe(true);
+    return (await response.json()).source as string;
+  }
+
+  async deleteCalculation(id: string): Promise<void> {
+    const response = await this.request.delete(`${this.roots.backend}/calculation-definitions/${encodeURIComponent(id)}`);
+    expect([204, 404], `deleting calculation ${id}`).toContain(response.status());
   }
 }
