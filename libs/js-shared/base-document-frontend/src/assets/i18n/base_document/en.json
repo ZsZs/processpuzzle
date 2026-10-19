@@ -34,6 +34,13 @@
       "signatures": "Signatures",
       "none": "Nobody has signed this document yet."
     },
+    "widget_settings": {
+      "title": "Widget settings",
+      "props": "Properties",
+      "bindings": "Data",
+      "no_props": "This widget has no properties.",
+      "invalid_json": "Not valid JSON."
+    },
     "report": {
       "insert_field": "Insert data field",
       "field": "Field",

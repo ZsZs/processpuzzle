@@ -34,6 +34,13 @@
       "signatures": "Unterschriften",
       "none": "Dieses Dokument hat noch niemand unterschrieben."
     },
+    "widget_settings": {
+      "title": "Widget-Einstellungen",
+      "props": "Eigenschaften",
+      "bindings": "Daten",
+      "no_props": "Dieses Widget hat keine Eigenschaften.",
+      "invalid_json": "Kein gültiges JSON."
+    },
     "report": {
       "insert_field": "Datenfeld einfügen",
       "field": "Feld",
