@@ -12,6 +12,10 @@ The library provides the descriptors, mapper, service, store and container compo
 
 Unrelated to `base-entity`'s `FormControlType.ARTIFACT` control, which handles file and blob attachments through the object store.
 
+## Content books
+
+A content book files existing documents into a navigable tree with its own reader and editor roles. The `content-book` widget (`pp-content-book`, registered with `provideContentBookWidget()`) takes a book by slug and, by default, puts its tree in the host's sidenav through `SidenavContentService` from `@processpuzzle/widgets`, with a toggle back to the menu. See [Content Book](../../../docs/content-book.md).
+
 ## Tiptap dependencies
 
 Keep `@tiptap/core`, `@tiptap/pm` and `@tiptap/starter-kit` on the same exact version in the workspace's

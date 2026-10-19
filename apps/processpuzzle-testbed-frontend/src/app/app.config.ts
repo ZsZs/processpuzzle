@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZonelessChangeDetection } from '@angular/core';
+import { ApplicationConfig, computed, inject, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
@@ -17,7 +17,7 @@ import { RuntimeConfiguration } from './runtime-configuration';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
-import { AUTHENTICATION_CONFIGURATION, provideAuthenticationService, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, provideAuthenticationService, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
@@ -31,7 +31,16 @@ import {
   provideLocaleDateAdapter,
 } from '@processpuzzle/base-entity';
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS, BASE_APP_TRANSLATION_SOURCE } from '@processpuzzle/base-app';
-import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS, BASE_DOCUMENT_TRANSLATION_SOURCE, provideEntityReportsTab, provideSignatureWidget } from '@processpuzzle/base-document';
+import {
+  BASE_DOCUMENT_ENTITY_FACADES,
+  BASE_DOCUMENT_FACADE_PROVIDERS,
+  BASE_DOCUMENT_TRANSLATION_SOURCE,
+  DOCUMENT_ACCESS_CONTEXT,
+  type DocumentAccessContext,
+  provideContentBookWidget,
+  provideEntityReportsTab,
+  provideSignatureWidget,
+} from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
 import { BASE_CALCULATION_ENTITY_FACADES, BASE_CALCULATION_FACADE_PROVIDERS, BASE_CALCULATION_TRANSLATION_SOURCE } from '@processpuzzle/base-calculation';
@@ -50,6 +59,12 @@ import { EmbeddedComponentFacade } from './content/base-forms/embedded-component
 import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embedded-detail.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { provideTestbedApplicationContext } from './testbed-application-context';
+
+/** The signed-in user's roles, for the documents' edit affordances; the backend still decides. */
+export function createDocumentAccessContext(): DocumentAccessContext {
+  const auth = inject(AUTHENTICATION_SERVICE);
+  return { roles: computed(() => auth.currentUser()?.roles ?? []), authenticated: computed(() => auth.currentUser() !== undefined) };
+}
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
@@ -125,6 +140,14 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.
       provideBaseWidgets(),
+      // base-document's one widget, registered by base-document because it reads documents.
+      provideContentBookWidget(),
+      // Which document and book actions to offer, from the signed-in user's roles. base-document does not
+      // know the auth library, so the application bridges the two; the backend still decides.
+      {
+        provide: DOCUMENT_ACCESS_CONTEXT,
+        useFactory: createDocumentAccessContext,
+      },
       // Binds base-entity's `RULE_ENGINE` seam to base-rule's evaluator, for the **whole application**.
       //
       // `BaseEntityFormComponent` injects `RULE_ENGINE` optionally and, when it finds one, loads the rules

@@ -10,6 +10,7 @@ import { ENTITY_TABLE_WIDGET, EntityTableColumn, EntityTableTotal, WIDGET_REGIST
 import { firstValueFrom } from 'rxjs';
 import { DocumentBlock, BlockKind, DocumentInputPort, WidgetPlacement } from '../../domain/base-document';
 import { DocumentPathCatalog } from '../report/document-path-catalog';
+import { WidgetBlockSettings, WidgetBlockSettingsData, WidgetBlockSettingsDialogComponent } from './widget-block-settings-dialog.component';
 import { EntityTableSettings, EntityTableSettingsData, EntityTableSettingsDialogComponent } from './entity-table-settings-dialog.component';
 import { DocumentContentStore } from './document-content.store';
 import { DocumentTextBlockComponent } from './document-text-block.component';
@@ -36,9 +37,9 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
             <pp-document-text-block [block]="block" />
           }
           @case (blockKindWidget) {
-            @if (block.type === entityTableType) {
-              <div class="pp-document-editor__configurable">
-                <pp-widget-host [widget]="block" [bindingResolver]="resolveBinding" (portEmit)="onPortEmit($event)" />
+            <div class="pp-document-editor__configurable">
+              <pp-widget-host [widget]="block" [bindingResolver]="resolveBinding" (portEmit)="onPortEmit($event)" />
+              @if (block.type === entityTableType) {
                 <button
                   mat-icon-button
                   type="button"
@@ -49,10 +50,19 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
                 >
                   <mat-icon>tune</mat-icon>
                 </button>
-              </div>
-            } @else {
-              <pp-widget-host [widget]="block" [bindingResolver]="resolveBinding" (portEmit)="onPortEmit($event)" />
-            }
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="pp-document-editor__settings"
+                  [attr.data-testid]="'document-widget-settings-' + block.id"
+                  [matTooltip]="'base_document.document.widget_settings.title' | transloco"
+                  (click)="onConfigureWidget(block)"
+                >
+                  <mat-icon>tune</mat-icon>
+                </button>
+              }
+            </div>
           }
         }
       }
@@ -203,6 +213,27 @@ export class DocumentEditorComponent implements OnChanges {
       props: { ...props, columns, totals, ...(caption ? { caption } : {}) },
       inputBindings: { ...block.inputBindings, rows: settings.source },
     });
+  }
+
+  /**
+   * Opens the settings of any other widget block: its props, from the widget's schema, and which document path
+   * feeds each of its input ports. A block whose widget is not registered is edited as the raw props it carries.
+   */
+  async onConfigureWidget(block: DocumentBlock): Promise<void> {
+    const { collections, fields } = await this.pathCatalog.describe(this.contentStore.inputPorts());
+    const definition = this.widgetRegistry.get(block.type ?? '')?.definition;
+    const data: WidgetBlockSettingsData = {
+      name: definition?.name ?? block.type ?? '',
+      schema: definition?.propsSchema,
+      inputPorts: definition?.inputPorts ?? [],
+      props: block.props ?? {},
+      inputBindings: block.inputBindings ?? {},
+      paths: [...new Set([...collections.map((each) => each.path), ...fields.map((each) => each.path)])],
+    };
+    const dialogRef = this.dialog.open<WidgetBlockSettingsDialogComponent, WidgetBlockSettingsData, WidgetBlockSettings>(WidgetBlockSettingsDialogComponent, { data });
+    const settings = await firstValueFrom(dialogRef.afterClosed());
+    if (!settings) return;
+    await this.contentStore.saveWidgetBlock(block.id, { props: settings.props, inputBindings: settings.inputBindings });
   }
 
   /** Called by a toolbar action to embed a new widget at the given text block's cursor. */

@@ -16,3 +16,7 @@ translations:
         _self: Document
         title: Title
         slug: Slug
+      content_book:
+        _self: Content book
+        title: Title
+        slug: Slug

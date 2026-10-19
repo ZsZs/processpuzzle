@@ -1,0 +1,46 @@
+# Default translation bundles of the 'processpuzzle-testbed' organization, owned by base-calculation.
+#
+# CalculationTranslationLoader imports this file on startup when `base-calculation.loadDefaultTranslations` is
+# true. See base-app's file of the same name for the conventions.
+#
+# The `base_calculation` scope is the one base-calculation-frontend registers on its routes. The frontend ships its
+# own UI bundles as assets and reaches this endpoint only through BASE_CALCULATION_TRANSLATION_SOURCE when a host
+# skips the asset copy step. The keys here name *tenant data* — the sample calculation in
+# default-calculations/base-calculation/processpuzzle-testbed-calculations.yaml — which no static bundle can carry.
+
+translations:
+  - scope: base_calculation
+    locale: en
+    messages:
+      calculation:
+        order-total:
+          name: Order total
+          description: Sums the order's lines and applies the volume discount its subtotal reaches.
+  - scope: base_calculation
+    locale: de
+    messages:
+      calculation:
+        order-total:
+          name: Auftragssumme
+          description: Summiert die Auftragspositionen und gewährt den Mengenrabatt, den die Zwischensumme erreicht.
+  - scope: base_calculation
+    locale: fr
+    messages:
+      calculation:
+        order-total:
+          name: Total de la commande
+          description: Additionne les lignes de la commande et applique la remise de volume atteinte par le sous-total.
+  - scope: base_calculation
+    locale: hu
+    messages:
+      calculation:
+        order-total:
+          name: Rendelés végösszege
+          description: Összeadja a rendelés tételeit, és alkalmazza a részösszeg által elért mennyiségi kedvezményt.
+  - scope: base_calculation
+    locale: es
+    messages:
+      calculation:
+        order-total:
+          name: Total del pedido
+          description: Suma las líneas del pedido y aplica el descuento por volumen que alcanza el subtotal.

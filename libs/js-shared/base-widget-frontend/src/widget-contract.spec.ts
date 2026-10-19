@@ -24,6 +24,12 @@ function seededDefinitions(): SeededDefinition[] {
   return (parse(readFileSync(resolve(process.cwd(), SEED_CATALOGUE), 'utf-8')) as { widgetDefinitions: SeededDefinition[] }).widgetDefinitions;
 }
 
+/**
+ * Widgets the seed catalogue carries but another library registers — a widget aware of documents cannot live
+ * here without closing a dependency cycle. Each is held to the same contract by a spec in its own library.
+ */
+const WIDGETS_REGISTERED_ELSEWHERE = ['content-book'];
+
 const cases = BASE_WIDGET_REGISTRATIONS.map((registration) => [registration.type, registration] as const);
 
 describe('widget contract', () => {
@@ -53,6 +59,7 @@ describe('widget contract', () => {
     expect(
       seededDefinitions()
         .map((definition) => definition.key)
+        .filter((key) => !WIDGETS_REGISTERED_ELSEWHERE.includes(key))
         .sort(),
     ).toEqual(BASE_WIDGET_REGISTRATIONS.map((registration) => registration.type).sort());
   });

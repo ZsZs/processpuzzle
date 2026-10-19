@@ -18,6 +18,7 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.calculation.port.AttributeType;
 import com.processpuzzle.calculation.port.EntityWriteConflict;
 import com.processpuzzle.calculation.usecase.FindCalculationDefinition;
+import com.processpuzzle.state.api.StateOperationApi;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,10 +63,10 @@ class CalculationAdaptersTest {
                 .isInstanceOf(EntityWriteConflict.class);
         assertThatThrownBy(() -> adapter.updateAttributes("org", "order", "x", Map.of(), 3)).isInstanceOf(EntityWriteConflict.class);
 
-        when(access.upsertByKey("org", "result", Map.of("boat", "A"), Map.of("rank", 1))).thenReturn(true);
-        assertThat(adapter.upsertByKey("org", "result", Map.of("boat", "A"), Map.of("rank", 1))).isTrue();
-        when(access.upsertByKey(eq("org"), eq("nope"), any(), any())).thenThrow(new EntityObjectAccessException.UnknownType("nope"));
-        assertThatThrownBy(() -> adapter.upsertByKey("org", "nope", Map.of(), Map.of())).isInstanceOf(EntityWriteConflict.class);
+        when(access.upsertAllByKey("org", "result", List.of("boat"), List.of(Map.of("boat", "A", "rank", 1)))).thenReturn(1);
+        assertThat(adapter.upsertAllByKey("org", "result", List.of("boat"), List.of(Map.of("boat", "A", "rank", 1)))).isEqualTo(1);
+        when(access.upsertAllByKey(eq("org"), eq("nope"), any(), any())).thenThrow(new EntityObjectAccessException.UnknownType("nope"));
+        assertThatThrownBy(() -> adapter.upsertAllByKey("org", "nope", List.of(), List.of())).isInstanceOf(EntityWriteConflict.class);
     }
 
     @Test
@@ -89,5 +90,19 @@ class CalculationAdaptersTest {
         when(calculations.storedAttributesOf("org", "order")).thenReturn(Set.of("total"));
 
         assertThat(new CalculationManagedAttributesAdapter(calculations).managedAttributesOf("org", "order")).containsExactly("total");
+    }
+
+    @Test
+    void selectsTheObjectsInAStateThroughTheMachinesStateAttribute() {
+        StateOperationApi states = mock(StateOperationApi.class);
+        CalculationSubjectStateAdapter subjects = new CalculationSubjectStateAdapter(states, access);
+        when(states.stateAttributeKey("org", "order")).thenReturn(Optional.of("status"));
+        when(access.findAll("org", "order")).thenReturn(List.of(new EntityObjectView(id, 0, Map.of("status", "CONFIRMED")),
+                new EntityObjectView(UUID.randomUUID(), 0, Map.of("status", "DRAFT"))));
+
+        assertThat(subjects.objectsInState("org", "order", "CONFIRMED")).containsExactly(id.toString());
+
+        when(states.stateAttributeKey("org", "boat")).thenReturn(Optional.empty());
+        assertThat(subjects.objectsInState("org", "boat", "SAILING")).isEmpty();
     }
 }

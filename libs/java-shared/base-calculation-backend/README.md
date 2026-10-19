@@ -86,6 +86,11 @@ only — open results are not recomputed on their own.
   changed or was deleted. A failed run is kept too.
 - A frozen run freezes its subject (the output's target object, else the first entity parameter's): no later run
   of that calculation recomputes it, and a manual one is refused with 409.
+- **Catch-up on release.** An object already in a calculation's freeze state will not enter it again, so the state
+  trigger would never freeze it — an order seeded as confirmed, or confirmed before its calculation was released.
+  After every release (`CalculationsReleased`), `CatchUpFreezes` computes and freezes each object in the freeze state
+  that has no frozen result. Which objects are in a state comes from the optional `SubjectStatePort`; without one
+  nothing is caught up, and nothing here can fail the release.
 
 Reading, computing and writing run in a transaction of their own, so a group output is written all or nothing and
 a failure in the entity layer cannot roll back the run's record.
@@ -99,15 +104,19 @@ more, then freezes). The output write publishes no event, so a calculation canno
 
 A run publishes `CalculationCompleted` / `CalculationFailed`, a freeze `CalculationFrozen` (`calculation :: event`),
 each also as a `PlatformEvent` of subject type `calculation-run` entering `COMPLETED`, `FAILED` or `FROZEN` — so
-base-event's catalog can name it and a workflow start on it.
+base-event's catalog can name it and a workflow start on it. `calculation-run` is no entity type; the module declares
+it as a `PlatformSubject` (processpuzzle-core) with the facts' payload attributes, which is what lets base-event release
+a SYSTEM event about it. The testbed catalog ships `CalculationCompletedEvent`, `CalculationFailedEvent` and
+`CalculationFrozenEvent`.
 
 ## Host application
 
 | Port | What the host answers | Testbed adapter |
 | --- | --- | --- |
 | `EntityQueryPort` | an object by id, the objects an RSQL filter selects | `CalculationEntityAdapter` |
-| `EntityWritePort` | write mapped values (version kept, no event), upsert a result per group key | `CalculationEntityAdapter` |
+| `EntityWritePort` | write mapped values (version kept, no event), upsert a result table by its key — one call, one read | `CalculationEntityAdapter` |
 | `EntityAttributeTypePort` | an attribute's type; optional | `CalculationAttributeTypeAdapter` |
+| `SubjectStatePort` | the objects of an entity in a state, for the freeze catch-up; optional | `CalculationSubjectStateAdapter` |
 
 `FindCalculationDefinition.storedAttributesOf` (`calculation :: usecase`) tells the host which attributes a released
 calculation stores; the testbed's `CalculationManagedAttributesAdapter` hands them to base-entity's
@@ -121,14 +130,19 @@ maps.
 
 [`base-calculation-api.yaml`](../api-contracts/src/main/resources/base-calculation-api.yaml):
 `/organizations/{orgKey}/calculation-definitions` (CRUD, `revision`, `/validate`, `/import`),
-`/calculations/{id}/evaluate`, `/calculations/{id}/runs`, `/calculation-runs[/{runId}[/trace|/freeze]]`.
+`/calculations/{id}/evaluate`, `/calculations/{id}/runs`, `/calculation-runs[/{runId}[/trace|/freeze]]`, and the
+feature's translation bundles under `/calculation/translations[/{scope}]/{locale}`.
 
 With `base-calculation.loadDefaultCalculations=true` the module imports
 `classpath*:default-calculations/base-calculation/<orgKey>-calculations.yaml` — one calculation per YAML document —
 at startup, upserting and releasing what it wrote. Business Starters carry calculations in a `calculations` group.
+With `base-calculation.loadDefaultTranslations=true` it seeds `default-translations/base-calculation/<orgKey>-translations.yaml`
+— the names of the tenant's calculations; the UI's own text ships with the frontend.
 
 ## Limits of v1
 
-- `upsertByKey` reads every object of the result entity to find the key; fine for a result table, not for millions.
-- A calculation's write does not refresh a form that is open on the object; it shows the new value on reload.
+- A result table is matched by reading every object of its entity once per run; fine for a result table, not for
+  millions. (base-entity's RSQL filter is PostgreSQL jsonpath, so narrowing the read would leave the H2 tests behind.)
+- A calculated value reaches the caller that saved the object — base-entity answers a create or update with the
+  object as committed, after the calculation wrote — but not another user who has the object open.
 - No DMN XML import/export, no browser-side evaluation (the designer previews through `evaluate`).

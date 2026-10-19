@@ -15,7 +15,11 @@ public class DocumentAccessDeniedException extends RuntimeException {
     }
 
     public static DocumentAccessDeniedException lacksRole(String action, String documentId) {
+        return lacksRole(action, "document", documentId);
+    }
+
+    public static DocumentAccessDeniedException lacksRole(String action, String subjectKind, String subjectId) {
         return new DocumentAccessDeniedException(
-                "The current principal may not " + action + " document '" + documentId + "'");
+                "The current principal may not " + action + " " + subjectKind + " '" + subjectId + "'");
     }
 }

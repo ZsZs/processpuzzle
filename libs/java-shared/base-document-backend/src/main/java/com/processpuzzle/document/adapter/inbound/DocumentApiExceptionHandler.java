@@ -1,5 +1,8 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.usecase.exception.ContentBookInvalidTreeException;
+import com.processpuzzle.document.usecase.exception.ContentBookNotFoundException;
+import com.processpuzzle.document.usecase.exception.ContentBookSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
@@ -96,6 +99,21 @@ public class DocumentApiExceptionHandler {
     @ExceptionHandler(DocumentBlockReferencedException.class)
     public ResponseEntity<ErrorResponse> handleBlockReferenced(DocumentBlockReferencedException ex) {
         return error(HttpStatus.CONFLICT, "document.block.referenced", ex.getMessage());
+    }
+
+    @ExceptionHandler(ContentBookNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleContentBookNotFound(ContentBookNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "content-book.not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(ContentBookSlugAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleContentBookSlugConflict(ContentBookSlugAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "content-book.slug.already-exists", ex.getMessage());
+    }
+
+    @ExceptionHandler(ContentBookInvalidTreeException.class)
+    public ResponseEntity<ErrorResponse> handleContentBookInvalidTree(ContentBookInvalidTreeException ex) {
+        return error(HttpStatus.BAD_REQUEST, "content-book.invalid-tree", ex.getMessage());
     }
 
     /**

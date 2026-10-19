@@ -1,5 +1,6 @@
 package com.processpuzzle.calculation.port;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,10 +18,12 @@ public interface EntityWritePort {
     void updateAttributes(String orgKey, String entity, String id, Map<String, Object> values, long expectedVersion);
 
     /**
-     * Writes {@code values} onto the object of {@code entity} whose attributes equal {@code key}, creating it when
-     * there is none — a series result per boat.
+     * Writes each row onto the object of {@code entity} whose {@code keyAttributes} equal the row's, creating it when
+     * there is none — a series result per boat. The whole result table in one call, so the adapter can match it in
+     * one read.
      *
-     * @return whether an object was created
+     * @return how many objects were created
+     * @throws EntityWriteConflict when the entity is unknown, or a matched object changed meanwhile
      */
-    boolean upsertByKey(String orgKey, String entity, Map<String, Object> key, Map<String, Object> values);
+    int upsertAllByKey(String orgKey, String entity, List<String> keyAttributes, List<Map<String, Object>> rows);
 }

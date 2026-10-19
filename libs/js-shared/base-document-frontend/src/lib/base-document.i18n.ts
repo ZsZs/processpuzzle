@@ -45,6 +45,12 @@ export const DOCUMENT_PREVIEW_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.preview`;
  */
 export const ENTITY_REPORTS_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.reports`;
 
+/** Key root of the `ContentBook` entity name, its attribute labels and the `content-book` widget's strings. */
+export const CONTENT_BOOK_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.content_book`;
+
+/** Label of a content book's Content tab — the book's tree and pages, inline. */
+export const CONTENT_BOOK_CONTENT_I18N_KEY = `${CONTENT_BOOK_I18N_SCOPE}.tabs.content`;
+
 /**
  * Key roots of the two port shapes the `Document` form carries through `EMBEDDED_COMPONENTS` controls.
  * They are children of {@link BASE_DOCUMENT_TRANSLOCO_SCOPE} rather than scopes of their own, because

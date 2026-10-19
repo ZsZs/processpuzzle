@@ -68,6 +68,11 @@ export { provideAppPropertyStore } from './app-property/app-property-store.provi
 export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { SidenavAutosizeDirective } from './sidenav-autosize/sidenav-autosize.directive';
+export { SidenavContentService } from './sidenav-content/sidenav-content.service';
+export type { SidenavContentMode } from './sidenav-content/sidenav-content.service';
+export { SidenavContentOutletComponent } from './sidenav-content/sidenav-content-outlet.component';
+export { TreeNavComponent, TreeNavNodeActionsDirective } from './tree-nav/tree-nav.component';
+export type { TreeNavNode } from './tree-nav/tree-nav.component';
 export {
   DEFAULT_THEME_COLOR_SCHEME,
   DEFAULT_THEME_PRESET,

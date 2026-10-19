@@ -10,10 +10,11 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinition
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
 import cz.jirutka.rsql.parser.RSQLParserException;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.HashMap;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
@@ -107,22 +108,41 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
 
     @Override
     @Transactional
-    public boolean upsertByKey(String orgKey, String entityDefinitionCode, Map<String, Object> key, Map<String, Object> values) {
+    public int upsertAllByKey(String orgKey, String entityDefinitionCode, List<String> keyAttributes,
+                              List<Map<String, Object>> rows) {
         if (definitionLookupPort.findByCode(orgKey, entityDefinitionCode).isEmpty()) {
             throw new EntityObjectAccessException.UnknownType(entityDefinitionCode);
         }
+        Map<List<Object>, EntityObject> byKey = new HashMap<>();
         for (EntityObject entityObject : scope.findAll(orgKey, entityDefinitionCode)) {
-            if (key.entrySet().stream().allMatch(entry -> sameValue(entityObject.getPayload().get(entry.getKey()), entry.getValue()))) {
-                writeKeepingVersion(entityObject, values);
-                return false;
+            byKey.putIfAbsent(keyOf(entityObject.getPayload(), keyAttributes), entityObject);
+        }
+        int created = 0;
+        for (Map<String, Object> row : rows) {
+            List<Object> key = keyOf(row, keyAttributes);
+            EntityObject existing = byKey.get(key);
+            if (existing != null) {
+                writeKeepingVersion(existing, row);
+            } else {
+                byKey.put(key, repository.save(EntityObject.builder()
+                    .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
+                    .entityDefinitionCode(entityDefinitionCode)
+                    .payload(new LinkedHashMap<>(row))
+                    .build()));
+                created++;
             }
         }
-        repository.save(EntityObject.builder()
-            .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
-            .entityDefinitionCode(entityDefinitionCode)
-            .payload(new LinkedHashMap<>(values))
-            .build());
-        return true;
+        return created;
+    }
+
+    /** The values of {@code attributes}, numbers by value — a stored {@code 1} and a written {@code 1.0} are one key. */
+    private static List<Object> keyOf(Map<String, Object> payload, List<String> attributes) {
+        List<Object> key = new ArrayList<>(attributes.size());
+        for (String attribute : attributes) {
+            Object value = payload.get(attribute);
+            key.add(value instanceof Number number ? new BigDecimal(number.toString()).stripTrailingZeros() : value);
+        }
+        return key;
     }
 
     private void writeKeepingVersion(EntityObject entityObject, Map<String, Object> values) {
@@ -134,14 +154,6 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
             // Moved on between the read above and this write.
             throw new EntityObjectAccessException.VersionConflict(entityObject.getId(), version(entityObject), version(entityObject) + 1);
         }
-    }
-
-    /** Numbers by value — a stored {@code 1} and a written {@code 1.0} are one key — anything else by equality. */
-    private static boolean sameValue(Object stored, Object wanted) {
-        if (stored instanceof Number left && wanted instanceof Number right) {
-            return new BigDecimal(left.toString()).compareTo(new BigDecimal(right.toString())) == 0;
-        }
-        return Objects.equals(stored, wanted);
     }
 
     private EntityObjectView view(EntityObject entityObject) {

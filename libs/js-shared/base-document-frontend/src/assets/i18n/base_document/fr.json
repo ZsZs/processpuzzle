@@ -34,6 +34,13 @@
       "signatures": "Signatures",
       "none": "Personne n'a encore signé ce document."
     },
+    "widget_settings": {
+      "title": "Paramètres du widget",
+      "props": "Propriétés",
+      "bindings": "Données",
+      "no_props": "Ce widget n'a pas de propriétés.",
+      "invalid_json": "JSON non valide."
+    },
     "report": {
       "insert_field": "Insérer un champ de données",
       "field": "Champ",
@@ -103,6 +110,66 @@
       "description": "La signification de la valeur, pour qui intègre le document.",
       "entityType": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : le type d'entité des enregistrements, p. ex. Order.",
       "attributeVisibility": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : les attributs des enregistrements affichés. mode vaut ALL, INCLUDE ou EXCLUDE ; attributes liste les noms d'attributs concernés."
+    }
+  },
+  "content_book": {
+    "_self": "Livre de contenu",
+    "slug": "Slug",
+    "title": "Titre",
+    "description": "Description",
+    "isPublic": "Public",
+    "readerRoles": "Rôles de lecture",
+    "editorRoles": "Rôles d'édition",
+    "tabs": {
+      "content": "{{ entity }} - contenu"
+    },
+    "_tooltips": {
+      "slug": "La clé du livre, unique parmi les livres de votre organisation. Minuscules, chiffres et tirets uniquement, p. ex. manuel.",
+      "title": "Le titre du livre, affiché au-dessus de son sommaire, p. ex. Manuel du personnel.",
+      "description": "Un bref résumé de ce que le livre rassemble.",
+      "isPublic": "Cochez pour que tout le monde puisse ouvrir le livre sans se connecter ; les rôles de lecture sont alors ignorés. Chaque page garde ses propres droits d'accès.",
+      "readerRoles": "Rôles autorisés à ouvrir le livre, une puce par rôle. Laissez vide pour que tout membre connecté puisse l’ouvrir.",
+      "editorRoles": "Rôles autorisés à ajouter, ordonner et retirer les pages du livre, une puce par rôle. Laissez vide pour que tout membre connecté le puisse."
+    },
+    "widget": {
+      "loading": "Chargement du livre…",
+      "not_found": "Aucun livre ne s’appelle « {{ slug }} », ou vous ne pouvez pas l’ouvrir.",
+      "load_error": "Le livre n’a pas pu être chargé : {{ message }}",
+      "empty": "Ce livre n’a pas encore de pages.",
+      "contents": "Sommaire",
+      "restricted": "Page restreinte",
+      "restricted_text": "Vous ne pouvez pas lire cette page.",
+      "page_loading": "Chargement de la page…",
+      "not_published": "Cette page n’a pas encore été publiée.",
+      "draft_banner": "Brouillon non publié — les lecteurs ne le voient pas encore. Publiez-le dans Documents.",
+      "edit": "Modifier",
+      "read": "Terminer la modification",
+      "edit_note": "Les modifications sont enregistrées dans le brouillon. Publiez-les dans Documents pour les montrer aux lecteurs.",
+      "actions": "Actions de la page",
+      "add_document": "Ajouter une page",
+      "add_child": "Ajouter une sous-page",
+      "move_up": "Monter",
+      "move_down": "Descendre",
+      "indent": "Augmenter le retrait",
+      "outdent": "Diminuer le retrait",
+      "remove": "Retirer du livre",
+      "delete_document": "Supprimer le document",
+      "confirm_delete_title": "Supprimer le document ?",
+      "confirm_delete_text": "« {{ title }} » sera supprimé définitivement, de ce livre et de tous les autres. Les pages rangées en dessous restent dans le livre.",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "save_error": "La modification n’a pas pu être enregistrée : {{ message }}",
+      "dialog": {
+        "title": "Ajouter une page",
+        "new": "Nouveau document",
+        "existing": "Document existant",
+        "document_title": "Titre",
+        "document_slug": "Slug",
+        "document": "Document",
+        "none_left": "Tous les documents de l’organisation sont déjà dans ce livre.",
+        "add": "Ajouter",
+        "cancel": "Annuler"
+      }
     }
   },
   "signature": {

@@ -1,6 +1,7 @@
 package com.processpuzzle.document.usecase.service;
 
 import com.processpuzzle.document.domain.Document;
+import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.port.PermitAllDocumentAccessPolicy;
@@ -55,25 +56,42 @@ public class DocumentGuard {
      * exactly what a private document is for.
      */
     public boolean canRead(Document document) {
-        if (document.isPublic()) {
+        return canRead(document.getOrgKey(), document.isPublic(), document.getRoles());
+    }
+
+    /**
+     * The same ladder for anything that carries the document access fields — a {@code ContentBook}
+     * guards its tree with them. One ladder rather than a second copy, so the two cannot drift.
+     */
+    public boolean canRead(String orgKey, boolean isPublic, DocumentRoles roles) {
+        if (isPublic) {
             return true;
         }
         if (!policy.isAuthenticated()) {
             return false;
         }
         try {
-            requireOrganizationAccess(document.getOrgKey());
+            requireOrganizationAccess(orgKey);
         } catch (DocumentAccessDeniedException denied) {
             return false;
         }
-        return holdsAnyOf(document.getRoles().readerRoles());
+        return holdsAnyOf(roles.readerRoles());
     }
 
     /** Rejects with 403 unless the principal may edit this document's metadata or draft content. */
     public void requireEditor(Document document) {
-        requireOrganizationAccess(document.getOrgKey());
-        if (!holdsAnyOf(document.getRoles().editorRoles())) {
-            throw DocumentAccessDeniedException.lacksRole("edit", document.getId());
+        requireEditor(document.getOrgKey(), document.getRoles(), "document", document.getId());
+    }
+
+    /**
+     * {@link #requireEditor(Document)} for anything that carries the document access fields.
+     *
+     * @param subjectKind what is being edited, for the refusal's message — {@code "content book"}
+     */
+    public void requireEditor(String orgKey, DocumentRoles roles, String subjectKind, String subjectId) {
+        requireOrganizationAccess(orgKey);
+        if (!holdsAnyOf(roles.editorRoles())) {
+            throw DocumentAccessDeniedException.lacksRole("edit", subjectKind, subjectId);
         }
     }
 

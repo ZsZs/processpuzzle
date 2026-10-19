@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Component;
@@ -58,6 +59,9 @@ import java.util.Set;
 @ConditionalOnProperty(prefix = "base-document", name = "loadSamples", havingValue = "true")
 public class SampleDocumentLoader {
 
+    /** Explicit so that {@code SampleContentBookLoader}, which needs the documents, can run after it. */
+    public static final int ORDER = 0;
+
     private static final Logger LOG = LoggerFactory.getLogger(SampleDocumentLoader.class);
     private static final String DOCUMENTS_FILE_SUFFIX = "-documents.yaml";
     private static final String SAMPLE_DOCUMENTS_LOCATION = "classpath*:sample-documents/*" + DOCUMENTS_FILE_SUFFIX;
@@ -81,6 +85,7 @@ public class SampleDocumentLoader {
     }
 
     @EventListener(ApplicationReadyEvent.class)
+    @Order(ORDER)
     public void loadSamples() {
         Resource[] resources;
         try {

@@ -4,6 +4,7 @@ import com.processpuzzle.calculation.domain.CalculationDefinition;
 import com.processpuzzle.calculation.domain.CalculationDefinitionRepository;
 import com.processpuzzle.calculation.domain.definition.CalculationModel;
 import com.processpuzzle.calculation.usecase.CalculationValidator;
+import com.processpuzzle.calculation.usecase.CalculationsReleased;
 import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,16 +34,22 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>A calculation refers to every entity type it reads or writes: its entity parameters', its query inputs', its
  * output's and its triggers'. A draft that no longer validates — an expression an engine upgrade rejects — is
  * refused.
+ *
+ * <p>Announces what it released as {@link CalculationsReleased}, after which {@link CalculationsReleasedListener}
+ * catches up the freezes the released calculations would have made.
  */
 @Component
 public class CalculationReleaseParticipant implements ReleaseParticipant {
 
     private final CalculationDefinitionRepository repository;
     private final CalculationValidator validator;
+    private final ApplicationEventPublisher publisher;
 
-    public CalculationReleaseParticipant(CalculationDefinitionRepository repository, CalculationValidator validator) {
+    public CalculationReleaseParticipant(CalculationDefinitionRepository repository, CalculationValidator validator,
+                                         ApplicationEventPublisher publisher) {
         this.repository = repository;
         this.validator = validator;
+        this.publisher = publisher;
     }
 
     @Override
@@ -110,6 +118,7 @@ public class CalculationReleaseParticipant implements ReleaseParticipant {
     private void release(String orgKey, Collection<String> ids, boolean removeTheRest) {
         Map<String, CalculationDefinition> drafts = byId(orgKey, Channel.DRAFT);
         Map<String, CalculationDefinition> released = byId(orgKey, Channel.RELEASED);
+        Set<String> releasedIds = new LinkedHashSet<>();
         for (String id : ids) {
             CalculationDefinition draft = drafts.get(id);
             if (draft == null) {
@@ -122,9 +131,13 @@ public class CalculationReleaseParticipant implements ReleaseParticipant {
                 current.replaceWith(draft);
                 repository.save(current);
             }
+            releasedIds.add(id);
         }
         if (removeTheRest) {
             repository.deleteAll(released.values().stream().filter(row -> !drafts.containsKey(row.getId())).toList());
+        }
+        if (!releasedIds.isEmpty()) {
+            publisher.publishEvent(new CalculationsReleased(orgKey, releasedIds));
         }
     }
 

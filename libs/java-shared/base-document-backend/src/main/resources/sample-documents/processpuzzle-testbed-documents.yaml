@@ -164,14 +164,16 @@ documents:
           - id: open-orders
             kind: WIDGET
             placement: STANDALONE
-            type: entity-grid
+            type: entity-table
             props:
-              entityName: Order
-              columns: [orderNumber, customerName, status, total]
+              caption: Open orders
+              columns:
+                - { path: orderNumber, header: Order, format: text, align: start }
+                - { path: customerName, header: Customer, format: text, align: start }
+                - { path: status, header: Status, format: text, align: start }
+                - { path: total, header: Total, format: number, align: end }
             inputBindings:
               rows: openOrders
-            outputBindings:
-              rowSelected: selectedOrder
 
           - id: colophon
             kind: TEXT
@@ -252,14 +254,16 @@ documents:
           - id: open-orders
             kind: WIDGET
             placement: STANDALONE
-            type: entity-grid
+            type: entity-table
             props:
-              entityName: Order
-              columns: [orderNumber, customerName, status, total]
+              caption: Open orders
+              columns:
+                - { path: orderNumber, header: Order, format: text, align: start }
+                - { path: customerName, header: Customer, format: text, align: start }
+                - { path: status, header: Status, format: text, align: start }
+                - { path: total, header: Total, format: number, align: end }
             inputBindings:
               rows: openOrders
-            outputBindings:
-              rowSelected: selectedOrder
 
           - id: colophon
             kind: TEXT

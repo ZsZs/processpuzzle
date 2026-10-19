@@ -51,6 +51,7 @@
     "parameters": "Paraméterek",
     "noParameters": "A számítás nem deklarál paramétert.",
     "entityHint": "{{entity}} azonosítója",
+    "pick": "Válasszon: {{entity}}",
     "evaluate": "Vázlat kiértékelése",
     "run": "Kiadott futtatása",
     "runResult": "Futás {{status}}: {{written}} objektum írva · {{id}}",

@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { EntityChoicesService } from '../../domain/entity-choices.service';
 import { CALCULATION_RUN, SERVICE_ROOT, TRACE } from '../../domain/test-calculation-definition';
 import { byTestId, configureCalculationTabTest, flushDefinitions, settle as settleFixture } from '../calculation-tab.testing';
 import { CalculationEvaluateTabComponent } from './calculation-evaluate-tab.component';
@@ -67,5 +69,30 @@ describe('CalculationEvaluateTabComponent', () => {
     await settle();
 
     expect(byTestId(root(), 'calculation-evaluate-failure')?.textContent).toContain('parameter order needs a value');
+  });
+});
+
+describe('CalculationEvaluateTabComponent with listable objects', () => {
+  it("offers an entity parameter's objects to pick, by their title, and evaluates with the picked id", async () => {
+    configureCalculationTabTest();
+    TestBed.overrideProvider(EntityChoicesService, {
+      useValue: { choicesOf: (entity: string) => of(entity === 'order' ? [{ id: 'o-1', label: 'ORD-1001' }, { id: 'o-2', label: 'ORD-1002' }] : []) },
+    });
+    const fixture = TestBed.createComponent(CalculationEvaluateTabComponent);
+    fixture.componentRef.setInput('entityId', 'order-total');
+    fixture.detectChanges();
+    const controller = flushDefinitions();
+    await settleFixture(fixture);
+    const root = fixture.nativeElement as HTMLElement;
+
+    const picker = byTestId(root, 'calculation-parameter-order') as HTMLSelectElement;
+    expect(picker.tagName).toBe('SELECT');
+    expect(Array.from(picker.options).map((option) => option.textContent?.trim())).toEqual([expect.stringContaining('pick'), 'ORD-1001', 'ORD-1002']);
+    expect(byTestId(root, 'calculation-parameter-customerTier')?.tagName).toBe('INPUT');
+
+    picker.value = 'o-2';
+    picker.dispatchEvent(new Event('change'));
+    byTestId(root, 'calculation-evaluate')?.click();
+    expect(controller.expectOne(`${SERVICE_ROOT}/calculations/order-total/evaluate`).request.body.parameters).toEqual({ order: 'o-2' });
   });
 });

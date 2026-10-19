@@ -63,3 +63,39 @@ event-definitions:
       - { name: order,         type: ENTITY_REF, entityType: order,    required: true }
       - { name: invoice,       type: ENTITY_REF, entityType: document }
       - { name: invoiceNumber, type: STRING,                           required: true }
+
+  # Facts about calculation runs — base-calculation's platform subject `calculation-run`, declared by
+  # base-calculation-backend since no entity type carries the name. A run's state is COMPLETED or FAILED once it ran,
+  # and FROZEN once its result is kept; `subjectId` is the object it calculated, an order for the order total.
+  - id: CalculationCompletedEvent
+    name: Calculation completed
+    description: A calculation ran and wrote its result.
+    kind: SYSTEM
+    subjectType: calculation-run
+    action: STATE_CHANGED
+    state: COMPLETED
+    parameters:
+      - { name: calculationId, type: STRING, required: true }
+      - { name: subjectId,     type: STRING }
+
+  - id: CalculationFailedEvent
+    name: Calculation failed
+    description: A calculation could not compute or write its result.
+    kind: SYSTEM
+    subjectType: calculation-run
+    action: STATE_CHANGED
+    state: FAILED
+    parameters:
+      - { name: calculationId, type: STRING, required: true }
+      - { name: subjectId,     type: STRING }
+
+  - id: CalculationFrozenEvent
+    name: Calculation frozen
+    description: The result of a calculation was frozen — the confirmed total of an order.
+    kind: SYSTEM
+    subjectType: calculation-run
+    action: STATE_CHANGED
+    state: FROZEN
+    parameters:
+      - { name: calculationId, type: STRING, required: true }
+      - { name: subjectId,     type: STRING }

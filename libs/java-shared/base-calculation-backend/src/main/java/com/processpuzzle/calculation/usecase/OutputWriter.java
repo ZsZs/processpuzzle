@@ -6,6 +6,7 @@ import com.processpuzzle.calculation.engine.EvaluationResult;
 import com.processpuzzle.calculation.engine.Values;
 import com.processpuzzle.calculation.port.EntityRecord;
 import com.processpuzzle.calculation.port.EntityWritePort;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,14 +41,16 @@ public class OutputWriter {
         }
         String attribute = groupAttributeOf(output);
         List<Map<String, Object>> groups = result.groups().getOrDefault(attribute, List.of());
+        List<Map<String, Object>> rows = new ArrayList<>(groups.size());
         for (Map<String, Object> group : groups) {
             Map<String, Object> values = new LinkedHashMap<>();
             output.mapping().forEach((target, source) -> values.put(target, valueOf(source, group, result, inputs)));
-            Map<String, Object> key = new LinkedHashMap<>();
-            output.key().forEach(name -> key.put(name, values.get(name)));
-            write.upsertByKey(orgKey, output.entity(), key, values);
+            rows.add(values);
         }
-        return groups.size();
+        if (!rows.isEmpty()) {
+            write.upsertAllByKey(orgKey, output.entity(), output.key(), rows);
+        }
+        return rows.size();
     }
 
     /** The entity parameter a single-object output writes — {@code target}, or the one parameter of its entity. */

@@ -25,5 +25,9 @@
     "dark": "Sombre",
     "auto": "Suivre le système",
     "reset": "Rétablir par défaut"
+  },
+  "sidenav_content": {
+    "show_menu": "Afficher le menu",
+    "show_content": "Afficher le sommaire"
   }
 }

@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.instances.adapters.inbound;
 
 import com.processpuzzle.baseentity.api.BaseEntitiesApi;
+import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
@@ -64,7 +65,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
             .path("/{id}")
             .buildAndExpand(created.getId())
             .toUri();
-        return ResponseEntity.created(location).body(mapper.toModel(created));
+        return ResponseEntity.created(location).body(mapper.toModel(afterCommit(orgKey, entityDefinitionCode, created)));
     }
 
     @Override
@@ -77,7 +78,24 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) request.getPayload();
         Long version = request.getVersion() != null ? request.getVersion().longValue() : null;
-        return ResponseEntity.ok(mapper.toModel(updateUseCase.update(orgKey, entityDefinitionCode, id, version, payload)));
+        EntityObject updated = updateUseCase.update(orgKey, entityDefinitionCode, id, version, payload);
+        return ResponseEntity.ok(mapper.toModel(afterCommit(orgKey, entityDefinitionCode, updated)));
+    }
+
+    /**
+     * The object as it stands once the write has committed, rather than as the use case saved it. A listener running
+     * after that commit may have written derived attributes onto it — base-calculation's order total — and the
+     * caller should see them without a reload. Those writes keep the version, so the re-read answers the version
+     * the caller saved. This endpoint opens no transaction of its own, which is what makes the use case's commit,
+     * and its after-commit listeners, precede the re-read.
+     */
+    private EntityObject afterCommit(String orgKey, String entityDefinitionCode, EntityObject written) {
+        try {
+            return findByIdUseCase.findById(orgKey, entityDefinitionCode, written.getId());
+        } catch (NotFoundException e) {
+            // Deleted in between: what was written is still the honest answer to this request.
+            return written;
+        }
     }
 
     @Override

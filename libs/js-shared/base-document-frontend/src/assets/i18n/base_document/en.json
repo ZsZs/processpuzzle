@@ -34,6 +34,13 @@
       "signatures": "Signatures",
       "none": "Nobody has signed this document yet."
     },
+    "widget_settings": {
+      "title": "Widget settings",
+      "props": "Properties",
+      "bindings": "Data",
+      "no_props": "This widget has no properties.",
+      "invalid_json": "Not valid JSON."
+    },
     "report": {
       "insert_field": "Insert data field",
       "field": "Field",
@@ -103,6 +110,66 @@
       "description": "What the value means, for whoever embeds the document.",
       "entityType": "For ENTITY_REF and ENTITY_COLLECTION only: the entity type of the record(s), e.g. Order.",
       "attributeVisibility": "For ENTITY_REF and ENTITY_COLLECTION only: which attributes of the records are shown. mode is ALL, INCLUDE or EXCLUDE; attributes lists the attribute names it applies to."
+    }
+  },
+  "content_book": {
+    "_self": "Content book",
+    "slug": "Slug",
+    "title": "Title",
+    "description": "Description",
+    "isPublic": "Public",
+    "readerRoles": "Reader roles",
+    "editorRoles": "Editor roles",
+    "tabs": {
+      "content": "{{ entity }} - content"
+    },
+    "_tooltips": {
+      "slug": "The book's key, unique among your organization's books. Lower-case letters, digits and hyphens only, e.g. handbook.",
+      "title": "The book's title, shown above its table of contents, e.g. Employee handbook.",
+      "description": "A short summary of what the book collects.",
+      "isPublic": "Tick to let anyone open the book without signing in; Reader roles are then ignored. Each page still follows its own access.",
+      "readerRoles": "Roles allowed to open the book, one chip each. Leave empty to let every signed-in member open it.",
+      "editorRoles": "Roles allowed to add, arrange and remove the pages of the book, one chip each. Leave empty to let every signed-in member do so."
+    },
+    "widget": {
+      "loading": "Loading the book…",
+      "not_found": "There is no book called “{{ slug }}”, or you may not open it.",
+      "load_error": "The book could not be loaded: {{ message }}",
+      "empty": "This book has no pages yet.",
+      "contents": "Contents",
+      "restricted": "Restricted page",
+      "restricted_text": "You may not read this page.",
+      "page_loading": "Loading the page…",
+      "not_published": "This page has not been published yet.",
+      "draft_banner": "Unpublished draft — readers cannot see it yet. Publish it in Documents.",
+      "edit": "Edit",
+      "read": "Done editing",
+      "edit_note": "Edits are saved to the draft. Publish them in Documents to show them to readers.",
+      "actions": "Page actions",
+      "add_document": "Add page",
+      "add_child": "Add subpage",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "indent": "Indent",
+      "outdent": "Outdent",
+      "remove": "Remove from book",
+      "delete_document": "Delete document",
+      "confirm_delete_title": "Delete the document?",
+      "confirm_delete_text": "“{{ title }}” will be deleted for good, from this book and from every other. Pages filed under it stay in the book.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "save_error": "The change could not be saved: {{ message }}",
+      "dialog": {
+        "title": "Add a page",
+        "new": "New document",
+        "existing": "Existing document",
+        "document_title": "Title",
+        "document_slug": "Slug",
+        "document": "Document",
+        "none_left": "Every document of the organization is already in this book.",
+        "add": "Add",
+        "cancel": "Cancel"
+      }
     }
   },
   "signature": {

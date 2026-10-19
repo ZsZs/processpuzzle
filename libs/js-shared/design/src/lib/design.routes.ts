@@ -9,7 +9,9 @@ import { BASE_WIDGET_ROUTES } from '@processpuzzle/widgets';
 import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
+import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
+import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
 
@@ -80,6 +82,22 @@ export const DESIGN_ROUTES: Routes = [
     title: 'ProcessPuzzle Design - States',
     data: { icon: 'flag_circle', menuTitle: 'design.states' },
     children: [{ path: '', pathMatch: 'full', redirectTo: 'state-machine-definition' }, ...BASE_STATE_ROUTES],
+  },
+  // One section, two tabs — see CalculationDesignerComponent: the Calculation Definition branch, whose form
+  // carries its own Source, Decision tables and Evaluate tabs, and the runs screen. Both spreads are
+  // unchanged, so they keep their own transloco scopes and stay mountable elsewhere (the testbed mounts them
+  // a second time under `/base-calculation/samples`). After States because a run is triggered by entity
+  // changes and state transitions; before Workflows, which do not depend on it.
+  //
+  // As for every other feature mounted here, the hosting application has to spread
+  // BASE_CALCULATION_FACADE_PROVIDERS and BASE_CALCULATION_ENTITY_FACADES into its own providers, because
+  // the definition list resolves its store and descriptor through BASE_ENTITY_FACADE_REGISTRY.
+  {
+    path: 'calculations',
+    title: 'ProcessPuzzle Design - Calculations',
+    data: { icon: 'calculate', menuTitle: 'design.calculations' },
+    component: CalculationDesignerComponent,
+    children: [{ path: '', pathMatch: 'full', redirectTo: 'calculation-definition' }, ...BASE_CALCULATION_ROUTES, ...CALCULATION_RUNS_ROUTES],
   },
   // One section, seven tabs — see WorkflowDesignerComponent. `BASE_WORKFLOW_ROUTES` is spread unchanged, so
   // its branches keep their own transloco scopes and stay mountable elsewhere (the testbed mounts them a
