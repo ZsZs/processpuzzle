@@ -89,4 +89,18 @@ export class PlatformApi {
     const response = await this.request.delete(`${this.roots.backend}/calculation-definitions/${encodeURIComponent(id)}`);
     expect([204, 404], `deleting calculation ${id}`).toContain(response.status());
   }
+
+  /** Creates an empty report template with one required `ENTITY_REF` input port; remove it with {@link deleteDocument}. */
+  async createReportTemplate(slug: string, title: string, port: { name: string; entityType: string }): Promise<string> {
+    const response = await this.request.post(`${this.roots.backend}/documents`, {
+      data: { slug, title, sourceLocale: 'en', kind: 'REPORT_TEMPLATE', inputPorts: [{ ...port, type: 'ENTITY_REF', required: true }], outputPorts: [] },
+    });
+    expect(response.status(), `creating report template ${slug}: ${await response.text()}`).toBe(201);
+    return (await response.json()).id as string;
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    const response = await this.request.delete(`${this.roots.backend}/documents/${encodeURIComponent(id)}`);
+    expect([204, 404], `deleting document ${id}`).toContain(response.status());
+  }
 }
