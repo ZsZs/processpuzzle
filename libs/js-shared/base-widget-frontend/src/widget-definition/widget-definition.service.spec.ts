@@ -46,10 +46,14 @@ describe('WidgetDefinitionService', () => {
 
   it('asks for the whole catalogue unless the caller names a page size', () => {
     void firstValueFrom(service.findByQuery({ page: 1, pageSize: 5 }));
-    controller.expectOne(`${serviceRoot}/widget-definitions?page=1&size=5`).flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
+    const named = controller.expectOne(`${serviceRoot}/widget-definitions?page=1&size=5`);
+    named.flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
 
     void firstValueFrom(service.findByQuery({ page: 1 }));
-    controller.expectOne(`${serviceRoot}/widget-definitions?page=1&size=200`).flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
+    const whole = controller.expectOne(`${serviceRoot}/widget-definitions?page=1&size=200`);
+    whole.flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
+
+    expect([named.request.method, whole.request.method]).toEqual(['GET', 'GET']);
   });
 
   it('still reads the bare array the json-server mock returns', async () => {
