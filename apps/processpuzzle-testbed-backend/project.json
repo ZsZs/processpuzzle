@@ -29,6 +29,12 @@
         "command": "mvn clean package -pl apps/processpuzzle-testbed-backend -am"
       }
     },
+    "package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "mvn clean package -DskipTests -pl apps/processpuzzle-testbed-backend -am"
+      }
+    },
     "serve": {
       "executor": "nx:run-commands",
       "options": {
