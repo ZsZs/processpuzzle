@@ -127,6 +127,25 @@ public class Document {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    /**
+     * Set once, by {@link #archive}: an archived document is read-only. The snapshot's location is kept as
+     * an ARTIFACT value is — bucket, object id, file name — so the object store's endpoints serve it.
+     */
+    @Column(name = "archived_at")
+    private Instant archivedAt;
+
+    @Column(name = "archived_by", length = 200)
+    private String archivedBy;
+
+    @Column(name = "archive_bucket", length = 100)
+    private String archiveBucket;
+
+    @Column(name = "archive_object_id", length = 100)
+    private String archiveObjectId;
+
+    @Column(name = "archive_name", length = 200)
+    private String archiveName;
+
     protected Document() {
         // required by JPA
     }
@@ -255,5 +274,37 @@ public class Document {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+    /** Records where the document's snapshot was stored, which locks it from further edits. */
+    public void archive(Instant when, String by, String bucket, String objectId, String name) {
+        this.archivedAt = when;
+        this.archivedBy = by;
+        this.archiveBucket = bucket;
+        this.archiveObjectId = objectId;
+        this.archiveName = name;
+    }
+
+    public boolean isArchived() {
+        return archivedAt != null;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
+    }
+
+    public String getArchivedBy() {
+        return archivedBy;
+    }
+
+    public String getArchiveBucket() {
+        return archiveBucket;
+    }
+
+    public String getArchiveObjectId() {
+        return archiveObjectId;
+    }
+
+    public String getArchiveName() {
+        return archiveName;
     }
 }

@@ -9,13 +9,13 @@ import { LayoutService } from '@processpuzzle/util';
 import { SidenavContentService } from '@processpuzzle/widgets';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Document } from '../../domain/base-document';
+import { Document, DocumentStatus } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { ContentBook, ContentBookNode } from '../../domain/content-book';
 import { ContentBookService } from '../../domain/content-book.service';
 import { DOCUMENT_ACCESS_CONTEXT } from '../../domain/document-access-context';
 import { ContentBookDocumentViewComponent } from './content-book-document-view.component';
-import { ContentBookWidgetComponent } from './content-book-widget.component';
+import { ContentBookWidgetComponent, documentScreensUrl } from './content-book-widget.component';
 
 @Component({ selector: 'pp-content-book-document-view', template: '<p data-testid="page-of">{{ documentId() }}</p>' })
 class PageStubComponent {
@@ -32,13 +32,22 @@ interface WidgetInternals {
   indentNode(nodeId: string): Promise<void>;
   outdentNode(nodeId: string): Promise<void>;
   removeNode(nodeId: string): Promise<void>;
-  addDocument(parentId: string | null): Promise<void>;
+  addDocument(position: 'before' | 'after' | 'child' | 'root', nodeId?: string): Promise<void>;
   deleteDocument(nodeId: string): Promise<void>;
   book: { (): ContentBook | undefined; set(value: ContentBook | undefined): void };
   actionError(): string | undefined;
   selectedNode(): ContentBookNode | undefined;
   selectedNodeId(): string | undefined;
   effectiveLocale(): string;
+  publishPage(): Promise<void>;
+  archivePage(): Promise<void>;
+  openProperties(): void;
+  showUnpublished: { (): boolean; set(value: boolean): void };
+  treeNodes(): { id: string; icon?: string }[];
+  pageState(): { kind: string; label: string } | undefined;
+  canPublishPage(): boolean;
+  canArchivePage(): boolean;
+  propertiesUrl(): string | undefined;
 }
 
 const NODES: ContentBookNode[] = [
@@ -53,7 +62,7 @@ const doc = (id: string, slug: string): Document => new Document(id, 'org', slug
 describe('ContentBookWidgetComponent', () => {
   let fixture: ComponentFixture<ContentBookWidgetComponent>;
   let bookService: { findBySlug: ReturnType<typeof vi.fn>; replaceNodes: ReturnType<typeof vi.fn> };
-  let documentService: { findByQuery: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
+  let documentService: { findByQuery: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn>; publishTranslation: ReturnType<typeof vi.fn>; archive: ReturnType<typeof vi.fn> };
   let dialog: { open: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
   let roles: ReturnType<typeof signal<readonly string[]>>;
@@ -95,6 +104,8 @@ describe('ContentBookWidgetComponent', () => {
     documentService = {
       findByQuery: vi.fn(() => of({ content: [doc('d-overview', 'overview'), doc('d-details', 'details'), doc('d-notes', 'notes')], number: 0, size: 3, totalElements: 3, totalPages: 1 })),
       delete: vi.fn(() => of(undefined)),
+      publishTranslation: vi.fn().mockResolvedValue({}),
+      archive: vi.fn(),
     };
     dialog = { open: vi.fn() };
     router = { navigate: vi.fn().mockResolvedValue(true) };
@@ -239,7 +250,7 @@ describe('ContentBookWidgetComponent', () => {
     const added = doc('d-new', 'new-page');
     dialog.open.mockReturnValue({ afterClosed: () => of(added) });
 
-    await component().addDocument('n-overview');
+    await component().addDocument('child', 'n-overview');
 
     expect(dialog.open.mock.calls[0][1].data).toEqual(expect.objectContaining({ isPublic: true, editorRoles: ['editor'], excludeDocumentIds: ['d-overview', 'd-details', 'd-notes'] }));
     const saved = bookService.replaceNodes.mock.calls[0][1] as ContentBookNode[];
@@ -251,7 +262,7 @@ describe('ContentBookWidgetComponent', () => {
     await render();
     dialog.open.mockReturnValue({ afterClosed: () => of(undefined) });
 
-    await component().addDocument(null);
+    await component().addDocument('root');
 
     expect(bookService.replaceNodes).not.toHaveBeenCalled();
   });
@@ -369,6 +380,8 @@ describe('ContentBookWidgetComponent', () => {
     expect((bookService.replaceNodes.mock.calls[0][1] as ContentBookNode[]).find((node) => node.documentId === 'd-new')?.parentId).toBe('n-overview');
 
     byTestId('content-book-add-document')?.click();
+    fixture.detectChanges();
+    (globalThis.document.querySelector('[data-testid="content-book-add-after"]') as HTMLButtonElement).click();
     await flush();
     expect(dialog.open).toHaveBeenCalledTimes(2);
   });
@@ -386,7 +399,7 @@ describe('ContentBookWidgetComponent', () => {
     bookService.findBySlug.mockResolvedValue(undefined);
     await render();
 
-    await component().addDocument(null);
+    await component().addDocument('root');
     await component().moveNode('n-overview', 'down');
     await component().deleteDocument('n-overview');
 
@@ -407,7 +420,7 @@ describe('ContentBookWidgetComponent', () => {
     await render();
     dialog.open.mockReturnValue({ afterClosed: () => of(new Document(undefined, 'org', 'x', 'X')) });
 
-    await component().addDocument(null);
+    await component().addDocument('root');
 
     expect(bookService.replaceNodes).not.toHaveBeenCalled();
   });
@@ -417,7 +430,7 @@ describe('ContentBookWidgetComponent', () => {
     dialog.open.mockReturnValue({ afterClosed: () => of(doc('d-new', 'new-page')) });
     bookService.replaceNodes.mockRejectedValue(new Error('nope'));
 
-    await component().addDocument(null);
+    await component().addDocument('root');
 
     expect(component().actionError()).toBeDefined();
     expect(component().selectedNodeId()).toBe('n-overview');
@@ -471,5 +484,135 @@ describe('ContentBookWidgetComponent', () => {
 
     expect(dialog.open.mock.calls[0][1].data).toEqual({ title: 'd-overview' });
     expect(component().selectedNodeId()).toBeUndefined();
+  });
+  describe('toolbar', () => {
+    const translated = (document: Document, status: DocumentStatus, revision = 2, publishedRevision: number | null = 1): Document => {
+      document.translations = [{ locale: 'en', status, revision, publishedRevision }];
+      return document;
+    };
+    const archivedOne = (document: Document): Document => {
+      document.archive = { archivedAt: '2026-10-19T10:00:00Z', bucket: 'b', objectId: 'o', name: 'n', mimeType: 'application/json' };
+      return document;
+    };
+    const listing = (...content: Document[]) => of({ content, number: 0, size: content.length, totalElements: content.length, totalPages: 1 });
+
+    it('shows the page’s publication state and revisions', async () => {
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.PUBLISHED_WITH_DRAFT_CHANGES, 4, 3)));
+      await render({ locale: 'en' });
+
+      expect(component().pageState()).toEqual({ kind: 'changed', label: expect.any(String) });
+      expect(byTestId('content-book-status')).not.toBeNull();
+      expect(component().canPublishPage()).toBe(true);
+    });
+
+    it('tells a draft, a published and an archived page apart', async () => {
+      documentService.findByQuery.mockReturnValue(
+        listing(
+          translated(doc('d-overview', 'overview'), DocumentStatus.DRAFT),
+          translated(doc('d-details', 'details'), DocumentStatus.PUBLISHED),
+          archivedOne(translated(doc('d-notes', 'notes'), DocumentStatus.PUBLISHED)),
+        ),
+      );
+      await render({ locale: 'en' });
+
+      expect(component().pageState()?.kind).toBe('draft');
+      component().select('n-details');
+      expect(component().pageState()?.kind).toBe('published');
+      expect(component().canPublishPage()).toBe(false);
+      component().select('n-notes');
+      expect(component().pageState()?.kind).toBe('archived');
+      expect(component().canArchivePage()).toBe(false);
+      expect(component().treeNodes().find((node) => node.id === 'n-notes')?.icon).toBe('inventory_2');
+    });
+
+    it('shows no state for a page without a translation, and falls back to the source language', async () => {
+      await render({ locale: 'en' });
+      expect(component().pageState()).toBeUndefined();
+
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.DRAFT)));
+      await render({ locale: 'de' });
+      expect(component().pageState()?.kind).toBe('draft');
+    });
+
+    it('publishes the translation the page shows, and reloads its state', async () => {
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.DRAFT)));
+      await render({ locale: 'en' });
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.PUBLISHED, 2, 2)));
+
+      await component().publishPage();
+
+      expect(documentService.publishTranslation).toHaveBeenCalledWith('d-overview', 'en');
+      expect(component().pageState()?.kind).toBe('published');
+    });
+
+    it('publishes nothing for a page without a translation, and says so when publishing fails', async () => {
+      await render({ locale: 'en' });
+      await component().publishPage();
+      expect(documentService.publishTranslation).not.toHaveBeenCalled();
+
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.DRAFT)));
+      await render({ locale: 'en' });
+      documentService.publishTranslation.mockRejectedValue(new Error('not publishable'));
+      await component().publishPage();
+      expect(component().actionError()).toBeDefined();
+    });
+
+    it('archives the page after asking, and not when the reader thinks better of it', async () => {
+      documentService.findByQuery.mockReturnValue(listing(translated(doc('d-overview', 'overview'), DocumentStatus.PUBLISHED)));
+      await render({ locale: 'en' });
+      dialog.open.mockReturnValue({ afterClosed: () => of(false) });
+      await component().archivePage();
+      expect(documentService.archive).not.toHaveBeenCalled();
+
+      documentService.archive.mockResolvedValue(archivedOne(translated(doc('d-overview', 'overview'), DocumentStatus.PUBLISHED)));
+      dialog.open.mockReturnValue({ afterClosed: () => of(true) });
+      await component().archivePage();
+
+      expect(documentService.archive).toHaveBeenCalledWith('d-overview');
+      expect(component().pageState()?.kind).toBe('archived');
+    });
+
+    it('folds unpublished and archived pages away when switched off, and always for readers', async () => {
+      documentService.findByQuery.mockReturnValue(
+        listing(
+          translated(doc('d-overview', 'overview'), DocumentStatus.DRAFT),
+          translated(doc('d-details', 'details'), DocumentStatus.PUBLISHED),
+          translated(doc('d-notes', 'notes'), DocumentStatus.PUBLISHED),
+        ),
+      );
+      await render({ locale: 'en' });
+      expect(component().treeNodes().map((node) => node.id)).toEqual(['n-overview', 'n-notes']);
+
+      component().showUnpublished.set(false);
+      // The draft overview folds away, and its published child moves up into its place.
+      expect(component().treeNodes().map((node) => node.id)).toEqual(['n-details', 'n-notes']);
+
+      component().showUnpublished.set(true);
+      roles.set(['reader']);
+      expect(component().treeNodes().map((node) => node.id)).toEqual(['n-details', 'n-notes']);
+      fixture.detectChanges();
+      expect(byTestId('content-book-show-unpublished')).toBeNull();
+    });
+
+    it('offers no Properties where the application mounts no Documents screens', async () => {
+      await render();
+      expect(component().propertiesUrl()).toBeUndefined();
+      expect(() => component().openProperties()).not.toThrow();
+    });
+  });
+
+  it('finds the Documents screens on the nearest ancestor route that mounts them', () => {
+    const route = (path: string, children: { data?: Record<string, unknown> }[] | undefined, parent: ActivatedRoute | null) =>
+      ({ routeConfig: children ? { children } : null, parent, snapshot: { url: path ? [{ path }] : [] } }) as unknown as ActivatedRoute;
+    const root = route('', undefined, null);
+    const samples = route('samples', [{ data: { entityName: 'Document' } }], root);
+    const handbook = route('handbook', [], samples);
+    Object.assign(root, { pathFromRoot: [root] });
+    Object.assign(samples, { pathFromRoot: [root, samples] });
+    Object.assign(handbook, { pathFromRoot: [root, samples, handbook] });
+
+    expect(documentScreensUrl(handbook)).toBe('/samples');
+    expect(documentScreensUrl(root)).toBeUndefined();
+    expect(documentScreensUrl(null)).toBeUndefined();
   });
 });

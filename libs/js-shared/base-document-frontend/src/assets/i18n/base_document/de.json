@@ -169,6 +169,22 @@
         "none_left": "Alle Dokumente der Organisation sind bereits in diesem Buch.",
         "add": "Hinzufügen",
         "cancel": "Abbrechen"
+      },
+      "add": "Hinzufügen",
+      "add_before": "Über der ausgewählten Seite",
+      "add_after": "Unter der ausgewählten Seite",
+      "add_root": "Auf oberster Ebene",
+      "publish": "Veröffentlichen",
+      "archive": "Archivieren",
+      "properties": "Eigenschaften",
+      "show_unpublished": "Unveröffentlichte",
+      "confirm_archive_title": "Dokument archivieren?",
+      "confirm_archive_text": "„{{title}}“ wird als Schnappschuss gespeichert und kann nicht mehr bearbeitet werden.",
+      "status": {
+        "draft": "Entwurf · r{{revision}}",
+        "published": "Veröffentlicht · r{{published}}",
+        "changed": "Veröffentlicht r{{published}} · Entwurf r{{revision}}",
+        "archived": "Archiviert"
       }
     }
   },

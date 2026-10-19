@@ -169,6 +169,22 @@
         "none_left": "Tous les documents de l’organisation sont déjà dans ce livre.",
         "add": "Ajouter",
         "cancel": "Annuler"
+      },
+      "add": "Ajouter",
+      "add_before": "Au-dessus de la page sélectionnée",
+      "add_after": "Au-dessous de la page sélectionnée",
+      "add_root": "Au premier niveau",
+      "publish": "Publier",
+      "archive": "Archiver",
+      "properties": "Propriétés",
+      "show_unpublished": "Non publiées",
+      "confirm_archive_title": "Archiver le document ?",
+      "confirm_archive_text": "« {{title}} » est enregistré sous forme d’instantané et ne pourra plus être modifié.",
+      "status": {
+        "draft": "Brouillon · r{{revision}}",
+        "published": "Publié · r{{published}}",
+        "changed": "Publié r{{published}} · brouillon r{{revision}}",
+        "archived": "Archivé"
       }
     }
   },

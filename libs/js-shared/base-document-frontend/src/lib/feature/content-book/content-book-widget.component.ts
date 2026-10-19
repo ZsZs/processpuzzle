@@ -1,33 +1,55 @@
 import { TemplatePortal } from '@angular/cdk/portal';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, DestroyRef, effect, inject, input, output, signal, TemplateRef, untracked, viewChild, ViewContainerRef } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, Injector, input, output, signal, TemplateRef, untracked, viewChild, ViewContainerRef } from '@angular/core';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDivider } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuContent, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatTooltip } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
 import { provideTranslocoScope, TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { BaseFormNavigatorSingletonStore } from '@processpuzzle/base-entity';
 import { LayoutService } from '@processpuzzle/util';
 import { SidenavContentService, TreeNavComponent, TreeNavNode, TreeNavNodeActionsDirective } from '@processpuzzle/widgets';
 import { firstValueFrom } from 'rxjs';
 import { BASE_DOCUMENT_TRANSLOCO_SCOPE } from '../../base-document.i18n';
-import { Document } from '../../domain/base-document';
+import { Document, DocumentStatus, DocumentTranslationSummary } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { ContentBook, ContentBookNode } from '../../domain/content-book';
 import { contentOf, ContentBookService } from '../../domain/content-book.service';
 import { DOCUMENT_ACCESS_CONTEXT, mayEdit } from '../../domain/document-access-context';
+import { DOCUMENT_ENTITY_NAME } from '../../domain/document-entity-names';
 import { AddDocumentDialog, AddDocumentDialogData } from './add-document.dialog';
+import { ConfirmArchiveDocumentDialog } from './confirm-archive-document.dialog';
 import { ConfirmDeleteDocumentDialog } from './confirm-delete-document.dialog';
 import { ContentBookDocumentViewComponent } from './content-book-document-view.component';
-import { addNode, canIndent, canMove, canOutdent, detachDocument, indent, move, MoveDirection, outdent, removeSubtree, toTreeNav } from './content-book-tree';
+import {
+  addNode,
+  canIndent,
+  canMove,
+  canOutdent,
+  detachDocument,
+  indent,
+  insertBeside,
+  move,
+  MoveDirection,
+  outdent,
+  removeSubtree,
+  toTreeNav,
+} from './content-book-tree';
 
 /** The query parameter that names the open page, by document slug — so a link to a page of a book can be shared. */
 export const CONTENT_BOOK_PAGE_PARAM = 'doc';
 
+/** Where the toolbar's Add files the new document: beside the selected page, below it, or at the top level. */
+export type ContentBookAddPosition = 'before' | 'after' | 'child' | 'root';
+
 /**
- * A content book, read and arranged in place: its table of contents as a tree, and the selected page beside it.
+ * A content book, read and arranged in place: its table of contents as a tree, the selected page beside it, and a
+ * toolbar over both that acts on the selected page.
  *
  * **The tree takes the sidenav over** when there is one — the book's contents are the navigation a reader of a
  * book wants — and the sidenav's own toggle brings the menu back. Without a sidenav (an application whose layout
@@ -36,8 +58,11 @@ export const CONTENT_BOOK_PAGE_PARAM = 'doc';
  * **Addressed by slug**, so a seeded book is addressable before anyone knows its generated id; the open page is
  * the `doc` query parameter, a document slug for the same reason.
  *
- * Editors of the book get the arranging verbs on every row; whether to *offer* them is decided from
- * {@link DOCUMENT_ACCESS_CONTEXT}, whether they are *allowed* by the backend.
+ * **The toolbar** — Add, Edit, Publish, Archive, Properties — is offered to editors of the book; whether a verb
+ * is *allowed* on a page is the page's own roles' business, and finally the backend's. Editing a published page
+ * edits its draft, so readers keep the published revision until the next Publish. An archived page is
+ * read-only. Readers see only published, unarchived pages; editors see every page unless they switch the
+ * unpublished ones off.
  */
 @Component({
   selector: 'pp-content-book',
@@ -54,20 +79,14 @@ export const CONTENT_BOOK_PAGE_PARAM = 'doc';
     MatMenuItem,
     MatMenuTrigger,
     MatDivider,
+    MatSlideToggle,
+    MatTooltip,
     TranslocoPipe,
   ],
   providers: [provideTranslocoScope({ scope: BASE_DOCUMENT_TRANSLOCO_SCOPE, alias: BASE_DOCUMENT_TRANSLOCO_SCOPE })],
   template: `
     <ng-template #contents>
       <div class="pp-content-book__toc" data-testid="content-book-toc">
-        @if (canEdit()) {
-          <div class="pp-content-book__toc-actions">
-            <button mat-button type="button" data-testid="content-book-add-document" (click)="addDocument(null)">
-              <mat-icon>add</mat-icon>
-              {{ 'base_document.content_book.widget.add_document' | transloco }}
-            </button>
-          </div>
-        }
         @if (treeNodes().length === 0) {
           <p class="pp-content-book__hint">{{ 'base_document.content_book.widget.empty' | transloco }}</p>
         }
@@ -88,15 +107,12 @@ export const CONTENT_BOOK_PAGE_PARAM = 'doc';
             </ng-template>
           }
         </pp-tree-nav>
-        @if (actionError(); as error) {
-          <p role="alert" class="pp-content-book__error">{{ error }}</p>
-        }
       </div>
     </ng-template>
 
     <mat-menu #nodeMenu>
       <ng-template matMenuContent let-node="node">
-        <button mat-menu-item type="button" data-testid="content-book-add-child" (click)="addDocument(node.id)">
+        <button mat-menu-item type="button" data-testid="content-book-add-child" (click)="addDocument('child', node.id)">
           <mat-icon>subdirectory_arrow_right</mat-icon>{{ 'base_document.content_book.widget.add_child' | transloco }}
         </button>
         <mat-divider />
@@ -122,15 +138,73 @@ export const CONTENT_BOOK_PAGE_PARAM = 'doc';
       </ng-template>
     </mat-menu>
 
+    <mat-menu #addMenu>
+      <button mat-menu-item type="button" data-testid="content-book-add-before" [disabled]="!selectedNode()" (click)="addDocument('before')">
+        <mat-icon>vertical_align_top</mat-icon>{{ 'base_document.content_book.widget.add_before' | transloco }}
+      </button>
+      <button mat-menu-item type="button" data-testid="content-book-add-after" [disabled]="!selectedNode()" (click)="addDocument('after')">
+        <mat-icon>vertical_align_bottom</mat-icon>{{ 'base_document.content_book.widget.add_after' | transloco }}
+      </button>
+      <button mat-menu-item type="button" data-testid="content-book-add-below" [disabled]="!selectedNode()" (click)="addDocument('child')">
+        <mat-icon>subdirectory_arrow_right</mat-icon>{{ 'base_document.content_book.widget.add_child' | transloco }}
+      </button>
+      <mat-divider />
+      <button mat-menu-item type="button" data-testid="content-book-add-root" (click)="addDocument('root')">
+        <mat-icon>add</mat-icon>{{ 'base_document.content_book.widget.add_root' | transloco }}
+      </button>
+    </mat-menu>
+
     @if (loading()) {
       <p class="pp-content-book__hint">{{ 'base_document.content_book.widget.loading' | transloco }}</p>
     } @else if (loadError(); as error) {
       <p role="alert" class="pp-content-book__error" data-testid="content-book-error">{{ error }}</p>
     } @else if (book()) {
+      @if (!inSidenav() || canEdit()) {
+        <div class="pp-content-book__toolbar" role="toolbar" data-testid="content-book-toolbar">
+          @if (!inSidenav()) {
+            <h3 class="pp-content-book__title">{{ book()?.title }}</h3>
+          }
+          <span class="pp-content-book__spacer"></span>
+          @if (canEdit()) {
+            @if (pageState(); as state) {
+              <span class="pp-content-book__status" [class]="'pp-content-book__status--' + state.kind" data-testid="content-book-status">{{ state.label }}</span>
+            }
+            <mat-slide-toggle data-testid="content-book-show-unpublished" [checked]="showUnpublished()" (change)="showUnpublished.set($event.checked)">
+              {{ 'base_document.content_book.widget.show_unpublished' | transloco }}
+            </mat-slide-toggle>
+            <button mat-button type="button" data-testid="content-book-add-document" [matMenuTriggerFor]="addMenu">
+              <mat-icon>add</mat-icon>{{ 'base_document.content_book.widget.add' | transloco }}
+            </button>
+            <button mat-button type="button" data-testid="content-book-page-edit" [disabled]="!pageView()?.canEdit()" (click)="pageView()?.toggleEditing()">
+              <mat-icon>{{ pageView()?.editing() ? 'visibility' : 'edit' }}</mat-icon>
+              {{ (pageView()?.editing() ? 'base_document.content_book.widget.read' : 'base_document.content_book.widget.edit') | transloco }}
+            </button>
+            <button mat-button type="button" data-testid="content-book-publish" [disabled]="!canPublishPage() || busy()" (click)="publishPage()">
+              <mat-icon>publish</mat-icon>{{ 'base_document.content_book.widget.publish' | transloco }}
+            </button>
+            <button mat-button type="button" data-testid="content-book-archive" [disabled]="!canArchivePage() || busy()" (click)="archivePage()">
+              <mat-icon>archive</mat-icon>{{ 'base_document.content_book.widget.archive' | transloco }}
+            </button>
+            <button
+              mat-icon-button
+              type="button"
+              data-testid="content-book-properties"
+              [disabled]="!propertiesUrl()"
+              [matTooltip]="'base_document.content_book.widget.properties' | transloco"
+              [attr.aria-label]="'base_document.content_book.widget.properties' | transloco"
+              (click)="openProperties()"
+            >
+              <mat-icon>tune</mat-icon>
+            </button>
+          }
+        </div>
+      }
+      @if (actionError(); as error) {
+        <p role="alert" class="pp-content-book__error" data-testid="content-book-action-error">{{ error }}</p>
+      }
       <div class="pp-content-book" [class.pp-content-book--inline]="!inSidenav()">
         @if (!inSidenav()) {
           <aside class="pp-content-book__aside">
-            <h3 class="pp-content-book__title">{{ book()?.title }}</h3>
             <ng-container *ngTemplateOutlet="contents" />
           </aside>
         }
@@ -151,18 +225,40 @@ export const CONTENT_BOOK_PAGE_PARAM = 'doc';
       gap: 16px;
       grid-template-columns: minmax(200px, 280px) 1fr;
     }
+    .pp-content-book__toolbar {
+      align-items: center;
+      border-bottom: 1px solid var(--mat-sys-outline-variant, #c4c7c5);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+      margin-bottom: 12px;
+      padding-bottom: 4px;
+    }
     .pp-content-book__title {
-      margin: 0 0 8px;
+      margin: 0;
+    }
+    .pp-content-book__spacer {
+      flex: 1 1 auto;
+    }
+    .pp-content-book__status {
+      border-radius: 12px;
+      font-size: 0.8125rem;
+      padding: 2px 10px;
+      white-space: nowrap;
+      background: color-mix(in srgb, var(--mat-sys-primary, #186fce) 15%, transparent);
+    }
+    .pp-content-book__status--draft,
+    .pp-content-book__status--changed {
+      background: color-mix(in srgb, var(--mat-sys-tertiary, #b58100) 20%, transparent);
+    }
+    .pp-content-book__status--archived {
+      background: color-mix(in srgb, var(--mat-sys-outline, #747775) 25%, transparent);
     }
     .pp-content-book__page {
       background-color: var(--pp-surface-base, #ffffff);
       border-radius: 6px;
       min-width: 0;
       padding: 16px 20px 24px;
-    }
-    .pp-content-book__toc-actions {
-      display: flex;
-      justify-content: flex-end;
     }
     .pp-content-book__node-menu {
       --mat-icon-button-state-layer-size: 32px;
@@ -201,9 +297,11 @@ export class ContentBookWidgetComponent {
   private readonly accessContext = inject(DOCUMENT_ACCESS_CONTEXT, { optional: true });
   private readonly router = inject(Router, { optional: true });
   private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly injector = inject(Injector);
   private readonly viewContainerRef = inject(ViewContainerRef);
 
   private readonly contentsTemplate = viewChild.required<TemplateRef<unknown>>('contents');
+  protected readonly pageView = viewChild(ContentBookDocumentViewComponent);
 
   protected readonly book = signal<ContentBook | undefined>(undefined);
   protected readonly documents = signal(new Map<string, Document>());
@@ -211,6 +309,8 @@ export class ContentBookWidgetComponent {
   protected readonly loadError = signal<string | undefined>(undefined);
   protected readonly actionError = signal<string | undefined>(undefined);
   protected readonly selectedNodeId = signal<string | undefined>(undefined);
+  protected readonly showUnpublished = signal(true);
+  protected readonly busy = signal(false);
 
   protected readonly canEdit = computed(() => {
     const book = this.book();
@@ -218,15 +318,74 @@ export class ContentBookWidgetComponent {
   });
   protected readonly effectiveLocale = computed(() => this.locale() || this.transloco.getActiveLang());
   protected readonly inSidenav = computed(() => this.sidenav() && this.sidenavContent.hasOutlet() && !this.layout.isSmallDevice());
+
+  /** The book's nodes as shown: pages not yet published, or archived, folded away unless an editor asks for them. */
+  private readonly visibleNodes = computed(() => {
+    const nodes = this.book()?.nodes ?? [];
+    if (this.canEdit() && this.showUnpublished()) return nodes;
+    const documents = this.documents();
+    return nodes
+      .map((node) => documents.get(node.documentId))
+      .filter((document): document is Document => document !== undefined && !isReadable(document))
+      .reduce((shown, document) => detachDocument(shown, document.id as string), nodes);
+  });
   protected readonly treeNodes = computed<TreeNavNode[]>(() => {
     const restricted = this.transloco.translate('base_document.content_book.widget.restricted');
     const documents = this.documents();
-    return toTreeNav(this.book()?.nodes ?? [], (documentId) => {
+    return toTreeNav(this.visibleNodes(), (documentId) => {
       const document = documents.get(documentId);
-      return document ? { label: document.title, icon: 'description' } : { label: restricted, icon: 'lock' };
+      if (!document) return { label: restricted, icon: 'lock' };
+      if (document.archive) return { label: document.title, icon: 'inventory_2' };
+      return { label: document.title, icon: isPublished(document) ? 'description' : 'edit_note' };
     });
   });
   protected readonly selectedNode = computed(() => this.book()?.nodes.find((node) => node.id === this.selectedNodeId()));
+  private readonly selectedDocument = computed(() => {
+    const node = this.selectedNode();
+    return node ? this.documents().get(node.documentId) : undefined;
+  });
+
+  /** The translation the page shows: the reader's language, or the document's source language without one. */
+  private readonly pageTranslation = computed<DocumentTranslationSummary | undefined>(() => {
+    const document = this.selectedDocument();
+    if (!document) return undefined;
+    const translations = document.translations ?? [];
+    return translations.find((each) => each.locale === this.effectiveLocale()) ?? translations.find((each) => each.locale === document.sourceLocale);
+  });
+
+  /** The status chip: publication state and revisions of the page's translation, or that the page is archived. */
+  protected readonly pageState = computed<{ kind: 'archived' | 'draft' | 'changed' | 'published'; label: string } | undefined>(() => {
+    const document = this.selectedDocument();
+    const translation = this.pageTranslation();
+    if (!document) return undefined;
+    const key = 'base_document.content_book.widget.status.';
+    if (document.archive) return { kind: 'archived', label: this.transloco.translate(key + 'archived') };
+    if (!translation) return undefined;
+    const params = { revision: translation.revision ?? 0, published: translation.publishedRevision ?? 0 };
+    switch (translation.status) {
+      case DocumentStatus.PUBLISHED:
+        return { kind: 'published', label: this.transloco.translate(key + 'published', params) };
+      case DocumentStatus.PUBLISHED_WITH_DRAFT_CHANGES:
+        return { kind: 'changed', label: this.transloco.translate(key + 'changed', params) };
+      default:
+        return { kind: 'draft', label: this.transloco.translate(key + 'draft', params) };
+    }
+  });
+
+  private readonly mayPublishPage = computed(() => {
+    const document = this.selectedDocument();
+    if (!document || document.archive) return false;
+    return mayEdit(this.accessContext, document.publisherRoles.length > 0 ? document.publisherRoles : document.editorRoles);
+  });
+  protected readonly canPublishPage = computed(() => this.mayPublishPage() && this.pageTranslation() !== undefined && this.pageTranslation()?.status !== DocumentStatus.PUBLISHED);
+  protected readonly canArchivePage = computed(() => this.mayPublishPage());
+
+  /** The selected page's details form, where this application mounts the Documents screens; none where it does not. */
+  protected readonly propertiesUrl = computed(() => {
+    const id = this.selectedDocument()?.id;
+    const base = id ? documentScreensUrl(this.route) : undefined;
+    return base === undefined ? undefined : `${base}/document/${id}/details`;
+  });
 
   constructor() {
     effect(() => {
@@ -280,7 +439,8 @@ export class ContentBookWidgetComponent {
     return this.saveTree((nodes) => removeSubtree(nodes, nodeId));
   }
 
-  protected async addDocument(parentId: string | null): Promise<void> {
+  /** Files a new or existing document relative to `nodeId` — the selected page when left out. */
+  protected async addDocument(position: ContentBookAddPosition, nodeId: string | undefined = this.selectedNodeId()): Promise<void> {
     const book = this.book();
     if (!book) return;
 
@@ -296,9 +456,48 @@ export class ContentBookWidgetComponent {
 
     const documentId = document.id;
     this.documents.update((documents) => new Map(documents).set(documentId, document));
-    await this.saveTree((nodes) => addNode(nodes, documentId, parentId));
+    await this.saveTree((nodes) => {
+      if (!nodeId || position === 'root') return addNode(nodes, documentId, null);
+      if (position === 'child') return addNode(nodes, documentId, nodeId);
+      return insertBeside(nodes, documentId, nodeId, position);
+    });
     const added = this.book()?.nodes.find((node) => node.documentId === documentId);
     if (added) this.select(added.id);
+  }
+
+  /** Publishes the translation the page shows; readers see its current draft from now on. */
+  protected publishPage(): Promise<void> {
+    const document = this.selectedDocument();
+    const locale = this.pageTranslation()?.locale;
+    if (!document?.id || !locale) return Promise.resolve();
+    const documentId = document.id;
+    return this.act(async () => {
+      await this.documentService.publishTranslation(documentId, locale);
+      await this.refreshDocument(documentId);
+    });
+  }
+
+  /** Archives the selected page, after asking: its snapshot is stored and it can no longer be edited. */
+  protected async archivePage(): Promise<void> {
+    const document = this.selectedDocument();
+    if (!document?.id) return;
+    const documentId = document.id;
+    const confirmed = await firstValueFrom(this.dialog.open(ConfirmArchiveDocumentDialog, { data: { title: document.title } }).afterClosed());
+    if (!confirmed) return;
+
+    await this.act(async () => {
+      const archived = await this.documentService.archive(documentId);
+      this.documents.update((documents) => new Map(documents).set(documentId, archived));
+    });
+  }
+
+  /** The page's details form; its Cancel and Save come back here, through the navigator's `returnTo`. */
+  protected openProperties(): void {
+    const url = this.propertiesUrl();
+    if (!url) return;
+    // Resolved on use rather than injected: the navigator reads the router as it is created, and a book hosted
+    // without the Documents screens — or without a router — never needs it.
+    void this.injector.get(BaseFormNavigatorSingletonStore).navigateToUrl(url);
   }
 
   /** Deletes the document itself, after asking; the server takes it out of every book, and this tree follows. */
@@ -310,26 +509,38 @@ export class ContentBookWidgetComponent {
     const confirmed = await firstValueFrom(this.dialog.open(ConfirmDeleteDocumentDialog, { data: { title } }).afterClosed());
     if (!confirmed) return;
 
-    this.actionError.set(undefined);
-    try {
+    await this.act(async () => {
       await firstValueFrom(this.documentService.delete(node.documentId));
       this.book.update((book) => (book ? { ...book, nodes: detachDocument(book.nodes, node.documentId) } : book));
       if (this.selectedNodeId() === nodeId) this.selectedNodeId.set(this.book()?.nodes[0]?.id);
+    });
+  }
+
+  private saveTree(edit: (nodes: ContentBookNode[]) => ContentBookNode[]): Promise<void> {
+    const book = this.book();
+    if (!book?.id) return Promise.resolve();
+    const bookId = book.id;
+    return this.act(async () => this.book.set(await this.bookService.replaceNodes(bookId, edit(book.nodes))));
+  }
+
+  /** Runs one toolbar or tree action, turning its failure into the message under the toolbar. */
+  private async act(action: () => Promise<void>): Promise<void> {
+    this.actionError.set(undefined);
+    this.busy.set(true);
+    try {
+      await action();
     } catch (error) {
       this.actionError.set(this.transloco.translate('base_document.content_book.widget.save_error', { message: messageOf(error) }));
+    } finally {
+      this.busy.set(false);
     }
   }
 
-  private async saveTree(edit: (nodes: ContentBookNode[]) => ContentBookNode[]): Promise<void> {
-    const book = this.book();
-    if (!book?.id) return;
-
-    this.actionError.set(undefined);
-    try {
-      this.book.set(await this.bookService.replaceNodes(book.id, edit(book.nodes)));
-    } catch (error) {
-      this.actionError.set(this.transloco.translate('base_document.content_book.widget.save_error', { message: messageOf(error) }));
-    }
+  /** Reloads one document's listing entry — its translation states — after something changed them. */
+  private async refreshDocument(documentId: string): Promise<void> {
+    const refreshed = await this.loadDocuments([documentId]);
+    const document = refreshed.get(documentId);
+    if (document) this.documents.update((documents) => new Map(documents).set(documentId, document));
   }
 
   private async load(slug: string): Promise<void> {
@@ -362,13 +573,37 @@ export class ContentBookWidgetComponent {
   private initialNodeId(book: ContentBook): string | undefined {
     const wanted = this.route?.snapshot.queryParamMap.get(CONTENT_BOOK_PAGE_PARAM) ?? this.startDocumentSlug();
     const bySlug = wanted ? book.nodes.find((node) => this.documents().get(node.documentId)?.slug === wanted) : undefined;
-    return (bySlug ?? book.nodes[0])?.id;
+    const visible = this.visibleNodes();
+    return (bySlug ?? visible[0] ?? book.nodes[0])?.id;
   }
 
   private slugOfNode(nodeId: string): string | undefined {
     const node = this.book()?.nodes.find((each) => each.id === nodeId);
     return node ? this.documents().get(node.documentId)?.slug : undefined;
   }
+}
+
+function isPublished(document: Document): boolean {
+  return (document.translations ?? []).some((translation) => translation.status !== DocumentStatus.DRAFT);
+}
+
+/** What a reader of the book is shown: a published page that is not archived. */
+function isReadable(document: Document): boolean {
+  return !document.archive && isPublished(document);
+}
+
+/**
+ * The URL of the route that mounts the Documents screens — the nearest ancestor of `route` with a child route
+ * declaring `entityName: 'Document'`, which is what `BASE_DOCUMENT_ROUTES` puts beside a content book's own route.
+ * `undefined` where the application mounts none, and the Properties button is then disabled.
+ */
+export function documentScreensUrl(route: ActivatedRoute | null | undefined): string | undefined {
+  for (let current = route ?? null; current; current = current.parent) {
+    if (current.routeConfig?.children?.some((child) => child.data?.['entityName'] === DOCUMENT_ENTITY_NAME)) {
+      return '/' + current.pathFromRoot.flatMap((each) => each.snapshot.url.map((segment) => segment.path)).join('/');
+    }
+  }
+  return undefined;
 }
 
 function messageOf(error: unknown): string {

@@ -3,6 +3,7 @@ package com.processpuzzle.document.usecase.service;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentRoles;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
+import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.port.PermitAllDocumentAccessPolicy;
 import org.springframework.beans.factory.ObjectProvider;
@@ -105,6 +106,16 @@ public class DocumentGuard {
         requireOrganizationAccess(document.getOrgKey());
         if (!holdsAnyOf(document.getRoles().effectivePublisherRoles())) {
             throw DocumentAccessDeniedException.lacksRole("publish", document.getId());
+        }
+    }
+
+    /**
+     * Rejects with 409 once the document is archived: archiving is what locks it, so every write to it
+     * but a delete calls this after its permission check.
+     */
+    public void requireWritable(Document document) {
+        if (document.isArchived()) {
+            throw DocumentPublishingConflictException.archived(document.getId());
         }
     }
 

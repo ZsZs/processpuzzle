@@ -52,6 +52,7 @@ public class DiscardDocumentDraft {
         Document document = repository.findByOrgKeyAndId(orgKey, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
         guard.requirePublisher(document);
+        guard.requireWritable(document);
 
         DocumentDraft draft = draftRepository.findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
                 .orElseThrow(() -> new DocumentTranslationNotFoundException(orgKey, documentId, locale));

@@ -169,6 +169,22 @@
         "none_left": "A szervezet minden dokumentuma már szerepel ebben a könyvben.",
         "add": "Hozzáadás",
         "cancel": "Mégse"
+      },
+      "add": "Hozzáadás",
+      "add_before": "A kijelölt oldal fölé",
+      "add_after": "A kijelölt oldal alá",
+      "add_root": "Legfelső szintre",
+      "publish": "Közzététel",
+      "archive": "Archiválás",
+      "properties": "Tulajdonságok",
+      "show_unpublished": "Nem közzétettek",
+      "confirm_archive_title": "Archiválja a dokumentumot?",
+      "confirm_archive_text": "A(z) „{{title}}” pillanatképként mentésre kerül, és többé nem szerkeszthető.",
+      "status": {
+        "draft": "Piszkozat · r{{revision}}",
+        "published": "Közzétéve · r{{published}}",
+        "changed": "Közzétéve r{{published}} · piszkozat r{{revision}}",
+        "archived": "Archiválva"
       }
     }
   },

@@ -169,6 +169,22 @@
         "none_left": "Todos los documentos de la organización ya están en este libro.",
         "add": "Añadir",
         "cancel": "Cancelar"
+      },
+      "add": "Añadir",
+      "add_before": "Encima de la página seleccionada",
+      "add_after": "Debajo de la página seleccionada",
+      "add_root": "En el nivel superior",
+      "publish": "Publicar",
+      "archive": "Archivar",
+      "properties": "Propiedades",
+      "show_unpublished": "No publicadas",
+      "confirm_archive_title": "¿Archivar el documento?",
+      "confirm_archive_text": "«{{title}}» se guarda como instantánea y ya no se podrá editar.",
+      "status": {
+        "draft": "Borrador · r{{revision}}",
+        "published": "Publicado · r{{published}}",
+        "changed": "Publicado r{{published}} · borrador r{{revision}}",
+        "archived": "Archivado"
       }
     }
   },

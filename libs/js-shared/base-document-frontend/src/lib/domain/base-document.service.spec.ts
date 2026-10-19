@@ -133,6 +133,27 @@ describe('BaseDocumentService', () => {
     expect((await pending).blocks).toHaveLength(1);
   });
 
+  it('publishes one locale of a document', async () => {
+    const pending = service.publishTranslation('q3-plan', 'hu');
+
+    const request = controller.expectOne(`${serviceRoot}/documents/q3-plan/translations/hu/publish`);
+    expect(request.request.method).toBe('POST');
+    request.flush({ locale: 'hu', status: 'PUBLISHED', blocks: [] });
+
+    expect((await pending).status).toBe('PUBLISHED');
+  });
+
+  it('archives a document and maps the answer, archive included', async () => {
+    const pending = service.archive('q3-plan');
+
+    const request = controller.expectOne(`${serviceRoot}/documents/q3-plan/archive`);
+    expect(request.request.method).toBe('POST');
+    const archive = { archivedAt: '2026-10-19T10:00:00Z', bucket: 'documents', objectId: 'obj-1', name: 'q3-plan-archive.json', mimeType: 'application/json' };
+    request.flush({ id: 'q3-plan', orgKey: 'org', slug: 'q3-plan', title: 'Q3 plan', sourceLocale: 'en', archive });
+
+    expect((await pending).archive).toEqual(archive);
+  });
+
   it('signs for a subject, naming the locale only when one is given', async () => {
     const pending = service.sign('q3-plan', { subjectType: 'employee', subjectId: 'e-1' });
 
