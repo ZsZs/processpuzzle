@@ -18,7 +18,7 @@ describe('WidgetDefinitionStore', () => {
     store = TestBed.inject(WidgetDefinitionStore);
     controller = TestBed.inject(HttpTestingController);
     // The store loads its list on init; answering it here gives the publish tests an entity to work with.
-    controller.expectOne(`${serviceRoot}/widget-definitions`).flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO, OTHER_WIDGET_DEFINITION_DTO));
+    controller.expectOne(`${serviceRoot}/widget-definitions?size=200`).flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO, OTHER_WIDGET_DEFINITION_DTO));
     store.setCurrentEntity('cards-grid');
   });
 

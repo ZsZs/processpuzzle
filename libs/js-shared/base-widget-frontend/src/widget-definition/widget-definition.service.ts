@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
+import { BaseEntityLoadResponse, BaseEntityQueryCondition, BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
 import { map, Observable } from 'rxjs';
 import { WidgetDefinition } from './widget-definition';
 import { WidgetDefinitionMapper } from './widget-definition.mapper';
@@ -13,10 +13,22 @@ import { WidgetDefinitionMapper } from './widget-definition.mapper';
  * The URL variable is the widget key, which {@link WidgetDefinitionMapper} maps onto `id`, so the inherited
  * `findById` / `update` / `delete` address `.../widget-definitions/{key}`.
  */
+/**
+ * How many widget types one call asks for when the caller names no size. The backend answers 20 without one,
+ * and the catalogue is that long already — so the 21st type, whichever it is, would fall onto a second page the
+ * Details screen never loads, and open as an empty form: it finds its record among the entities the list call
+ * brought, not by key.
+ */
+export const WIDGET_DEFINITION_PAGE_SIZE = 200;
+
 @Injectable({ providedIn: 'root' })
 export class WidgetDefinitionService extends BaseEntityRestService<WidgetDefinition> {
   constructor() {
     super(inject(WidgetDefinitionMapper), 'APP_SERVICE_ROOT', 'widget-definitions');
+  }
+
+  override findByQuery(queryCondition: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<PersistedEntity<WidgetDefinition>> | PersistedEntity<WidgetDefinition>[] | PersistedEntity<WidgetDefinition>> {
+    return super.findByQuery({ ...queryCondition, pageSize: queryCondition.pageSize ?? WIDGET_DEFINITION_PAGE_SIZE });
   }
 
   /**

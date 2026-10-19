@@ -34,7 +34,7 @@ describe('WidgetDefinitionService', () => {
   it('lists the widget definitions of the configured organization', async () => {
     const pending = firstValueFrom(service.findAll());
 
-    const request = controller.expectOne(`${serviceRoot}/widget-definitions`);
+    const request = controller.expectOne(`${serviceRoot}/widget-definitions?size=200`);
     expect(request.request.method).toBe('GET');
     request.flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
 
@@ -44,10 +44,18 @@ describe('WidgetDefinitionService', () => {
     expect(result.content[0].inputPorts?.[0].name).toBe('items');
   });
 
+  it('asks for the whole catalogue unless the caller names a page size', () => {
+    void firstValueFrom(service.findByQuery({ page: 1, pageSize: 5 }));
+    controller.expectOne(`${serviceRoot}/widget-definitions?page=1&size=5`).flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
+
+    void firstValueFrom(service.findByQuery({ page: 1 }));
+    controller.expectOne(`${serviceRoot}/widget-definitions?page=1&size=200`).flush(pageOfWidgetDefinitions(WIDGET_DEFINITION_DTO));
+  });
+
   it('still reads the bare array the json-server mock returns', async () => {
     const pending = firstValueFrom(service.findAll());
 
-    controller.expectOne(`${serviceRoot}/widget-definitions`).flush([WIDGET_DEFINITION_DTO]);
+    controller.expectOne(`${serviceRoot}/widget-definitions?size=200`).flush([WIDGET_DEFINITION_DTO]);
 
     expect(((await pending) as WidgetDefinition[])[0].category).toBe('Content');
   });

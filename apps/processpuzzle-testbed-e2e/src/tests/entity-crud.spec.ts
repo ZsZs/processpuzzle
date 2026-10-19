@@ -58,6 +58,16 @@ defineEntityCrudSuite({
       reason: 'workflow instances are read-only by contract; the descriptor is isAbstract, so New/Edit/Delete/Save are all disabled',
     },
     {
+      entityName: 'Calculation Definition',
+      // A definition *is* its YAML `source`: the id, name, version and output entity are read back out of it,
+      // so the form shows them disabled and has no identification attribute to build a fixture around — the
+      // generator stops with "no identification attr" before anything is sent. And generated prose is not a
+      // valid calculation, which the backend rejects with its static validation. Authoring is covered by
+      // base-calculation-frontend's own tests and the seeded definitions in the calculation seed files. Drop this
+      // entry if the fixture factory ever learns to take a whole payload from the application.
+      reason: 'a definition is created from YAML whose keys name it, which generated fixture data cannot produce',
+    },
+    {
       entityName: 'IssuedDocument',
       // Every field is the server's: a signature is recorded by POST .../signatures, which needs a published
       // report and a signer, and the descriptor is `isReadOnly` with no identification attribute to build a
