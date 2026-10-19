@@ -35,7 +35,7 @@ describe('base-workflows SamplesComponent', () => {
     const harness = await RouterTestingHarness.create();
     const component = await harness.navigateByUrl(`/base-workflows/samples/${WORKFLOW_DASHBOARD_PATH}`, SamplesComponent);
 
-    expect(component.tabs.map((tab) => tab.route)).toEqual([WORKFLOW_DASHBOARD_PATH, 'order', 'workflow-instance', 'document', 'workflow', 'tool-definition']);
+    expect(component.tabs.map((tab) => tab.route)).toEqual([WORKFLOW_DASHBOARD_PATH, 'order', 'workflow-instance', 'document', 'issued-document', 'workflow', 'tool-definition']);
   });
 
   it('highlights nothing for a sample it does not know', async () => {

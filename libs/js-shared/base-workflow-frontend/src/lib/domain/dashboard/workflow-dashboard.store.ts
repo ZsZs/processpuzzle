@@ -1,18 +1,22 @@
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { RichTextContent } from '@processpuzzle/base-entity';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { ArtifactDefinitionStore } from '../definition/artifact-definition.store';
 import { RoleDefinitionStore } from '../definition/role-definition.store';
-import { TaskDefinition } from '../definition/task-definition';
+import { TaskDefinition, TaskStepType } from '../definition/task-definition';
 import { TaskDefinitionStore } from '../definition/task-definition.store';
+import { ToolDefinitionStore } from '../definition/tool-definition.store';
+import { TaskArtifactState } from '../definition/workflow';
 import { WorkflowStore } from '../definition/workflow.store';
 import { ArtifactInstance, TaskInstance, TaskInstanceStatus, WorkflowInstance } from '../execution/workflow-instance';
 import { WorkflowInstanceStore } from '../execution/workflow-instance.store';
 import { PropertyMap } from '../property-map';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from './current-user.context';
-import { DashboardTask, InboxScope, ResolvedArtifact } from './dashboard-task';
+import { DashboardLinkResolver } from './dashboard-link.resolver';
+import { ContextVariable, DashboardTask, InboxScope, ResolvedArtifact, StepTool } from './dashboard-task';
 import { TaskActionService } from './task-action.service';
 
 /**
@@ -74,6 +78,12 @@ type DashboardState = {
    * inline beside the fields the user has to change.
    */
   postconditionDetail: string | undefined;
+  /**
+   * The user steps of the open task the user has ticked. Client-side only — the contract has no endpoint to
+   * record a step — and cleared whenever a different task is opened. Held here rather than in the checklist
+   * because it is also what gates Complete.
+   */
+  checkedStepIds: string[];
 };
 
 const initialState: DashboardState = {
@@ -83,6 +93,7 @@ const initialState: DashboardState = {
   isActing: false,
   actionError: undefined,
   postconditionDetail: undefined,
+  checkedStepIds: [],
 };
 
 /**
@@ -96,7 +107,7 @@ const initialState: DashboardState = {
  * own copy would be a second cache of the instance list, disagreeing with the Workflow Instance screens
  * the moment either one reloaded.
  *
- * Five catalogs, each earning its place:
+ * Six catalogs, each earning its place:
  *
  * | Store | Answers |
  * | --- | --- |
@@ -105,9 +116,10 @@ const initialState: DashboardState = {
  * | `ArtifactDefinitionStore` | what to call an output nothing has produced yet |
  * | `WorkflowStore` | which role performs a task *in this workflow* (`performedBy`) |
  * | `RoleDefinitionStore` | that role's name and its base-entity `entityRoleId`, for role matching |
+ * | `ToolDefinitionStore` | what to call the tool a service step calls |
  *
  * Root-scoped rather than provided per route, so that arriving back at the dashboard shows the task that
- * was open — and so the five catalogs are shared with every other screen reading them rather than loaded
+ * was open — and so the six catalogs are shared with every other screen reading them rather than loaded
  * again per visit.
  */
 export const WorkflowDashboardStore = signalStore(
@@ -120,9 +132,30 @@ export const WorkflowDashboardStore = signalStore(
     const artifactDefinitionStore = inject(ArtifactDefinitionStore);
     const workflowStore = inject(WorkflowStore);
     const roleStore = inject(RoleDefinitionStore);
+    const toolStore = inject(ToolDefinitionStore);
+    const links = inject(DashboardLinkResolver);
     const session = inject(CurrentUserContext);
 
     const instances = computed<WorkflowInstance[]>(() => instanceStore.entities());
+
+    const artifactCatalog = computed(() => new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact])));
+
+    /**
+     * The name of the record an artifact instance is bound to: the label the backend resolved for it, or the
+     * bare id when it answered none. `undefined` while the run has not bound the artifact yet — the caller then
+     * keeps the artifact's own name.
+     */
+    const recordNameOf = (artifact: ArtifactInstance | undefined): string | undefined => (artifact?.entityId ? artifact.entityLabel || artifact.entityId : undefined);
+
+    /**
+     * The name of the record a run is about — the run's own `entityLabel`, else the label of the artifact bound
+     * to the run's `entityId`, else that id itself — and `undefined` for a run started for nothing in particular.
+     */
+    const subjectNameOf = (instance: WorkflowInstance): string | undefined => {
+      if (!instance.entityId) return undefined;
+      const subject = (instance.artifacts ?? []).find((artifact) => artifact.entityId === instance.entityId);
+      return instance.entityLabel || recordNameOf(subject) || instance.entityId;
+    };
 
     /**
      * Workflow id → (task definition id → the role that performs it).
@@ -219,6 +252,18 @@ export const WorkflowDashboardStore = signalStore(
     });
 
     /**
+     * The states the selected task's workflow assignment names for its artifacts, by artifact definition id.
+     * Workflow-scoped, like `performedBy`: the same task may move an order from DRAFT to CONFIRMED in one
+     * workflow and do something else in another.
+     */
+    const selectedArtifactStates = computed(() => {
+      const row = selectedRow();
+      const workflow = row ? workflowStore.entities().find((candidate) => candidate.id === row.workflowId) : undefined;
+      const assignment = workflow?.tasks?.find((task) => task.taskDefinitionId === row?.taskDefinitionId);
+      return new Map<string, TaskArtifactState>((assignment?.artifactStates ?? []).map((state) => [state.artifactDefinitionId, state]));
+    });
+
+    /**
      * The selected task's declared inputs or outputs, each resolved against this run's artifact instances
      * by `artifactDefinitionId` — and kept in the list when nothing matches, which is the "not created
      * yet" case screen 3 is about.
@@ -227,11 +272,16 @@ export const WorkflowDashboardStore = signalStore(
       const definition = selectedDefinition();
       if (!definition) return [];
       const instancesByDefinitionId = new Map<string, ArtifactInstance>((selectedInstance()?.artifacts ?? []).map((artifact) => [artifact.artifactDefinitionId, artifact]));
-      const catalog = new Map(artifactDefinitionStore.entities().map((artifact) => [artifact.id, artifact]));
+      const catalog = artifactCatalog();
+      const states = selectedArtifactStates();
+      const run = selectedInstance();
+      const subject = run ? { entityType: run.entityType, entityId: run.entityId } : undefined;
       const declared = direction === 'input' ? definition.inputs : definition.outputs;
       return declared.map((artifactDefinitionId) => {
         const instance = instancesByDefinitionId.get(artifactDefinitionId);
         const catalogEntry = catalog.get(artifactDefinitionId);
+        const state = states.get(artifactDefinitionId);
+        const requiredState = (direction === 'input' ? state?.inputState : state?.outputState) || undefined;
         return {
           artifactDefinitionId,
           direction,
@@ -239,9 +289,26 @@ export const WorkflowDashboardStore = signalStore(
           name: instance?.name ?? catalogEntry?.name ?? artifactDefinitionId,
           type: instance?.type ?? catalogEntry?.artifactType,
           instance,
+          recordName: recordNameOf(instance),
+          requiredState,
+          satisfied: !requiredState || sameState(instance?.currentState, requiredState),
+          link: links.artifactLink(artifactDefinitionId, catalogEntry, instance, subject),
+          linkQueryParams: links.artifactQueryParams(catalogEntry, instance, subject),
         };
       });
     };
+
+    const selectedInputs = computed<ResolvedArtifact[]>(() => resolveArtifacts('input'));
+    const selectedOutputs = computed<ResolvedArtifact[]>(() => resolveArtifacts('output'));
+
+    /** The user steps of the open task that are not ticked yet — every one of them has to be, to complete. */
+    const pendingSteps = computed(() => {
+      const checked = new Set(store.checkedStepIds());
+      return (selectedDefinition()?.steps ?? []).filter((step) => step.stepType !== TaskStepType.SERVICE_STEP && !checked.has(step.id));
+    });
+
+    /** The outputs that are not yet in the state this workflow says the task leaves them in. */
+    const unmetOutputs = computed(() => selectedOutputs().filter((artifact) => !artifact.satisfied));
 
     return {
       instances,
@@ -264,10 +331,73 @@ export const WorkflowDashboardStore = signalStore(
 
       selectedRow,
       selectedInstance,
+
+      /** The name of the record the open run is about — see {@link subjectNameOf}. */
+      selectedSubjectName: computed<string | undefined>(() => {
+        const instance = selectedInstance();
+        return instance ? subjectNameOf(instance) : undefined;
+      }),
+
+      /**
+       * Artifact definition id → the name of the record the open run holds for it, for the Process view's
+       * diagram. Only the artifacts the run has bound; the rest keep the workflow's object name.
+       */
+      selectedObjectNames: computed<ReadonlyMap<string, string>>(() => {
+        const names = new Map<string, string>();
+        (selectedInstance()?.artifacts ?? []).forEach((artifact) => {
+          const name = recordNameOf(artifact);
+          if (name) names.set(artifact.artifactDefinitionId, name);
+        });
+        return names;
+      }),
+
+      /**
+       * Run id → how the run picker names it: its workflow, and the record it is about when it is about one —
+       * the run's own id only for a run started for nothing in particular.
+       */
+      instanceLabels: computed<ReadonlyMap<string, string>>(
+        () =>
+          new Map(
+            instances().map((instance) => {
+              const workflow = instance.workflowName || instance.workflowId;
+              return [instance.id, `${workflow} · ${subjectNameOf(instance) ?? instance.id}`];
+            }),
+          ),
+      ),
+      /**
+       * The open run's context variables, flattened to dotted keys — an event's namespaced parameters read as
+       * `order-created.orderNumber` — in the order the backend keeps them. See {@link flattenContext}.
+       */
+      selectedContext: computed<ContextVariable[]>(() => flattenContext(selectedInstance()?.context)),
       selectedDefinition,
       selectedTask: computed<TaskInstance | undefined>(() => selectedRow()?.task),
-      selectedInputs: computed<ResolvedArtifact[]>(() => resolveArtifacts('input')),
-      selectedOutputs: computed<ResolvedArtifact[]>(() => resolveArtifacts('output')),
+      selectedInputs,
+      selectedOutputs,
+      pendingSteps,
+      unmetOutputs,
+
+      /**
+       * Whether Complete may be pressed: every user step ticked and every output in its required state.
+       *
+       * A client-side gate in front of the server's own, not a replacement for it — the postcondition rule
+       * still runs on submit and may still refuse. What this adds is that the button does not invite a
+       * submission the task's own definition already says is premature.
+       */
+      isReadyToComplete: computed<boolean>(() => pendingSteps().length === 0 && unmetOutputs().length === 0),
+
+      checkedStepIdSet: computed<ReadonlySet<string>>(() => new Set(store.checkedStepIds())),
+
+      /** Tool definition id → the tool, for every service step of the open task. */
+      selectedTools: computed<ReadonlyMap<string, StepTool>>(() => {
+        const catalog = new Map(toolStore.entities().map((tool) => [tool.id, tool]));
+        const tools = new Map<string, StepTool>();
+        (selectedDefinition()?.steps ?? []).forEach((step) => {
+          const toolDefinitionId = step.toolDefinitionId;
+          if (!toolDefinitionId || tools.has(toolDefinitionId)) return;
+          tools.set(toolDefinitionId, { toolDefinitionId, name: catalog.get(toolDefinitionId)?.name || toolDefinitionId, link: links.toolLink(toolDefinitionId) });
+        });
+        return tools;
+      }),
 
       /** Whether the open task is the session's to work on — what unlocks the steps and the completion form. */
       isMine: computed<boolean>(() => {
@@ -332,16 +462,43 @@ export const WorkflowDashboardStore = signalStore(
     return {
       setScope: (scope: InboxScope): void => patchState(store, { scope }),
 
-      select: (instanceId: string, taskId: string): void =>
-        patchState(store, { selectedInstanceId: instanceId, selectedTaskId: taskId, postconditionDetail: undefined, actionError: undefined }),
+      select: (instanceId: string, taskId: string): void => {
+        const sameTask = store.selectedInstanceId() === instanceId && store.selectedTaskId() === taskId;
+        patchState(store, {
+          selectedInstanceId: instanceId,
+          selectedTaskId: taskId,
+          postconditionDetail: undefined,
+          actionError: undefined,
+          checkedStepIds: sameTask ? store.checkedStepIds() : [],
+        });
+      },
+
+      toggleStep: (stepId: string): void => {
+        const checked = store.checkedStepIds();
+        patchState(store, { checkedStepIds: checked.includes(stepId) ? checked.filter((id) => id !== stepId) : [...checked, stepId] });
+      },
+
+      /**
+       * Re-reads the runs when the dashboard is entered again. The store is root-scoped and outlives the
+       * screen, so without this a user who followed an artifact link, moved the order on, and came back would
+       * find Complete still waiting for a state the order has already reached. Skipped while a read is in
+       * flight — which is the first visit, whose read the instance store's own construction started.
+       */
+      refresh: (): void => {
+        if (!instanceStore.isLoading()) reload();
+      },
 
       /** Points the Process scope at one run, dropping a selection that belonged to a different one. */
       selectInstance: (instanceId: string | undefined): void => {
         const keepTask = store.selectedInstanceId() === instanceId;
-        patchState(store, { selectedInstanceId: instanceId, selectedTaskId: keepTask ? store.selectedTaskId() : undefined });
+        patchState(store, {
+          selectedInstanceId: instanceId,
+          selectedTaskId: keepTask ? store.selectedTaskId() : undefined,
+          checkedStepIds: keepTask ? store.checkedStepIds() : [],
+        });
       },
 
-      clearSelection: (): void => patchState(store, { selectedInstanceId: undefined, selectedTaskId: undefined, postconditionDetail: undefined }),
+      clearSelection: (): void => patchState(store, { selectedInstanceId: undefined, selectedTaskId: undefined, postconditionDetail: undefined, checkedStepIds: [] }),
 
       reload,
 
@@ -376,6 +533,12 @@ export const WorkflowDashboardStore = signalStore(
         return true;
       },
 
+      /** Leaves a note on the task. Answers whether it was saved, so the editor is cleared only then. */
+      comment: async (row: ActionTarget, content: RichTextContent): Promise<boolean> => {
+        const result = await runAction(() => firstValueFrom(actions.addComment(row.instanceId, row.taskDefinitionId, content)));
+        return result !== undefined;
+      },
+
       skip: async (row: ActionTarget, reason?: string): Promise<boolean> => {
         const result = await runAction(() => firstValueFrom(actions.skip(row.instanceId, row.taskDefinitionId, reason)));
         return result !== undefined;
@@ -385,3 +548,31 @@ export const WorkflowDashboardStore = signalStore(
 
   withDevtools('WorkflowDashboard'),
 );
+
+function sameState(actual: string | undefined, required: string): boolean {
+  return !!actual && actual.trim().toLowerCase() === required.trim().toLowerCase();
+}
+
+/**
+ * A context map as rows: a nested map — the parameters an event carried, namespaced under its id — opens into
+ * one row per leaf, keyed by the dotted path; anything else is one row. A list or an empty map stays whole,
+ * as JSON, since a key per element would read as structure the author never declared.
+ */
+export function flattenContext(context: Readonly<Record<string, unknown>> | undefined, prefix = ''): ContextVariable[] {
+  return Object.entries(context ?? {}).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (isNestedMap(value)) return flattenContext(value as Record<string, unknown>, path);
+    return [{ key: path, value: displayValueOf(value) }];
+  });
+}
+
+function isNestedMap(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+function displayValueOf(value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return value.toString();
+  return JSON.stringify(value) ?? '—';
+}

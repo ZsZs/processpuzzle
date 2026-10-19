@@ -58,7 +58,14 @@ public class ArtifactInstance {
     @Column(nullable = false)
     private ArtifactType type;
 
+    /**
+     * The record this artifact is in the run — bound once, from an event's ENTITY_REF parameter or a task naming the
+     * artifact's object, and never re-bound (docs/event-parameters.md). Null until then.
+     */
     private String entityId;
+
+    /** The bound record's type — a base-entity definition code, or {@code document}. */
+    private String entityType;
 
     private String stateMachineInstanceId;
 

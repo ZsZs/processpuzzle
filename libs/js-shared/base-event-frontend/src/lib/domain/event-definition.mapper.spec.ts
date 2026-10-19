@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EventAction, EventDefinition, EventKind } from './event-definition';
+import { EventAction, EventDefinition, EventKind, EventParameter, EventParameterType } from './event-definition';
 import { EventDefinitionMapper } from './event-definition.mapper';
-import { ORDER_CONFIRMED_EVENT_DTO, ORDER_CREATED_EVENT_DTO } from './test-event-definition';
+import { INVOICE_ISSUED_EVENT_DTO, ORDER_CONFIRMED_EVENT_DTO, ORDER_CREATED_EVENT_DTO } from './test-event-definition';
 
 describe('EventDefinitionMapper', () => {
   const mapper = new EventDefinitionMapper();
@@ -31,12 +31,62 @@ describe('EventDefinitionMapper', () => {
     it('defaults an absent kind to SYSTEM', () => {
       expect(mapper.fromDto({ id: 'x', name: 'X' }).kind).toBe(EventKind.SYSTEM);
     });
+
+    it('reads the parameters as embedded entities', () => {
+      const [order, invoice, invoiceNumber] = mapper.fromDto(INVOICE_ISSUED_EVENT_DTO).parameters;
+
+      expect(order).toBeInstanceOf(EventParameter);
+      expect(order).toMatchObject({ name: 'order', type: EventParameterType.ENTITY_REF, entityType: 'order', required: true });
+      expect(invoice.entityType).toBe('document');
+      expect(invoiceNumber).toMatchObject({ name: 'invoiceNumber', type: EventParameterType.STRING, required: true });
+      expect(invoiceNumber.entityType).toBeUndefined();
+    });
+
+    it('reads a definition without parameters as an empty list, and the nulls of a parameter as absent', () => {
+      expect(mapper.fromDto(ORDER_CONFIRMED_EVENT_DTO).parameters).toEqual([]);
+
+      const [parameter] = mapper.fromDto({ id: 'x', name: 'X', parameters: [{ name: 'n', type: 'NUMBER', entityType: null, description: null }] }).parameters;
+
+      expect(parameter.entityType).toBeUndefined();
+      expect(parameter.description).toBeUndefined();
+      expect(parameter.required).toBe(false);
+    });
   });
 
   describe('toDto', () => {
     it('round-trips a seeded definition unchanged', () => {
-      expect(mapper.toDto(mapper.fromDto(ORDER_CONFIRMED_EVENT_DTO))).toEqual({ ...ORDER_CONFIRMED_EVENT_DTO, description: undefined });
+      expect(mapper.toDto(mapper.fromDto(ORDER_CONFIRMED_EVENT_DTO))).toEqual({ ...ORDER_CONFIRMED_EVENT_DTO, description: undefined, parameters: [] });
       expect(mapper.toDto(mapper.fromDto(ORDER_CREATED_EVENT_DTO))).toEqual({ ...ORDER_CREATED_EVENT_DTO, state: undefined });
+      expect(mapper.toDto(mapper.fromDto(INVOICE_ISSUED_EVENT_DTO))).toEqual({ ...INVOICE_ISSUED_EVENT_DTO, description: undefined });
+    });
+
+    // A full replacement: removing the last row has to reach the backend as an empty list.
+    it('always sends the parameters, an empty list included', () => {
+      expect(mapper.toDto(new EventDefinition({ id: 'e', name: 'n' })).parameters).toEqual([]);
+    });
+
+    // The form shows the entity type whatever the parameter's type, so a switched type may leave it filled in.
+    it("drops a parameter's entity type unless it is an ENTITY_REF", () => {
+      const entity = new EventDefinition({
+        id: 'e',
+        name: 'n',
+        parameters: [
+          new EventParameter({ name: 'orderNumber', type: EventParameterType.STRING, entityType: 'order' }),
+          new EventParameter({ name: 'order', type: EventParameterType.ENTITY_REF, entityType: 'order' }),
+          new EventParameter({ name: 'other', type: EventParameterType.ENTITY_REF, entityType: ' ' }),
+        ],
+      });
+
+      expect(mapper.toDto(entity).parameters?.map((parameter) => parameter.entityType)).toEqual([undefined, 'order', undefined]);
+    });
+
+    it('sends an untouched checkbox as not required, and a cleared description as absent', () => {
+      const parameter = new EventParameter({ name: 'n', description: '' });
+      (parameter as unknown as { required: null }).required = null;
+
+      const [dto] = mapper.toDto(new EventDefinition({ id: 'e', name: 'n', parameters: [parameter] })).parameters ?? [];
+
+      expect(dto).toEqual({ name: 'n', type: 'STRING', entityType: undefined, required: false, description: undefined });
     });
 
     // The form shows the subject fields whatever the kind, so a switched kind may leave them filled in.

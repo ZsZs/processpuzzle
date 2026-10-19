@@ -2,6 +2,7 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,6 +14,8 @@ import static org.mockito.Mockito.when;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
+import com.processpuzzle.shared.event.EventParameterType;
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.workflow.execution.domain.OccurredEventDocument;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
 import com.processpuzzle.workflow.definition.domain.Workflow;
@@ -45,7 +48,7 @@ class TriggeredStartListenerTest {
         workflowRepository = mock(WorkflowRepository.class);
         startUseCase = mock(StartWorkflowInstanceUseCase.class);
         listener = new TriggeredStartListener(workflowRepository, startUseCase);
-        when(startUseCase.startTriggered(anyString(), anyString(), anyString(), anyString(), anyString(), anyMap()))
+        when(startUseCase.startTriggered(anyString(), anyString(), anyString(), anyString(), anyString(), anyMap(), anyList()))
                 .thenReturn(Optional.of(WorkflowInstance.builder().id(UUID.randomUUID()).build()));
     }
 
@@ -68,8 +71,29 @@ class TriggeredStartListenerTest {
         listener.on(ORDER_CREATED);
 
         ArgumentCaptor<Map<String, Object>> context = ArgumentCaptor.forClass(Map.class);
-        verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture());
+        verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture(),
+                eq(List.of()));
         assertThat(context.getValue()).containsEntry("orderId", "order-1").containsEntry("customer", "ACME");
+    }
+
+    /** Phase 3: the event's parameters need no mapping of their own; one the mapping names is its override. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void takesTheEventsParametersByName_unlessTheMappingNamesThem() {
+        List<OccurredParameter> parameters = List.of(
+                new OccurredParameter(OccurredParameter.SUBJECT, EventParameterType.ENTITY_REF, "order", "order-1"),
+                new OccurredParameter("orderNumber", EventParameterType.STRING, null, "ORD-1"),
+                new OccurredParameter("customerName", EventParameterType.STRING, null, "ACME"));
+        when(workflowRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).thenReturn(List.of(workflow("fulfillment",
+                triggering("order-created", "OrderCreatedEvent", Map.of("customerName", "$.subjectType")))));
+
+        listener.on(new DefinedEventOccurred(ORG, "OrderCreatedEvent", "order", "order-1", Map.of(),
+                Instant.parse("2026-10-08T10:00:00Z"), parameters));
+
+        ArgumentCaptor<Map<String, Object>> context = ArgumentCaptor.forClass(Map.class);
+        verify(startUseCase).startTriggered(eq(ORG), eq("fulfillment"), eq("order-created"), eq("order-1"), eq("order"), context.capture(),
+                eq(parameters));
+        assertThat(context.getValue()).containsExactly(Map.entry("customerName", "order"), Map.entry("orderNumber", "ORD-1"));
     }
 
     @Test
@@ -91,13 +115,13 @@ class TriggeredStartListenerTest {
                 workflow("broken", triggering("start", "OrderCreatedEvent", Map.of("x", "not-a-path"))),
                 workflow("failing", triggering("start", "OrderCreatedEvent", null)),
                 workflow("healthy", triggering("start", "OrderCreatedEvent", null))));
-        when(startUseCase.startTriggered(eq(ORG), eq("failing"), any(), any(), any(), any()))
+        when(startUseCase.startTriggered(eq(ORG), eq("failing"), any(), any(), any(), any(), any()))
                 .thenThrow(new IllegalStateException("boom"));
-        when(startUseCase.startTriggered(eq(ORG), eq("healthy"), any(), any(), any(), any())).thenReturn(Optional.empty());
+        when(startUseCase.startTriggered(eq(ORG), eq("healthy"), any(), any(), any(), any(), any())).thenReturn(Optional.empty());
 
         listener.on(ORDER_CREATED);
 
-        verify(startUseCase).startTriggered(eq(ORG), eq("healthy"), eq("start"), eq("order-1"), eq("order"), anyMap());
+        verify(startUseCase).startTriggered(eq(ORG), eq("healthy"), eq("start"), eq("order-1"), eq("order"), anyMap(), anyList());
     }
 
     @Test

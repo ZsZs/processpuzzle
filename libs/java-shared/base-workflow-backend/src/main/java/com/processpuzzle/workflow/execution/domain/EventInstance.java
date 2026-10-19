@@ -111,6 +111,21 @@ public class EventInstance {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> contextContribution;
 
+    /**
+     * The parameters the occurrence carried, by name — THROW: sent, CATCH: received (docs/event-parameters.md). Also in
+     * the context, under this event's {@link #eventUseId}.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> parameters;
+
+    /**
+     * THROW — set while the throw is held: it is due, but a required parameter of its event resolves to nothing, so it
+     * stays PENDING rather than send an incomplete message, and is tried again as the run advances. Null otherwise.
+     */
+    @Column(name = "blocked_reason", length = 1000)
+    private String blockedReason;
+
     /** Timer catches — when the timer fires next; null when it will not fire (again). */
     @Column(name = "due_at")
     private Instant dueAt;

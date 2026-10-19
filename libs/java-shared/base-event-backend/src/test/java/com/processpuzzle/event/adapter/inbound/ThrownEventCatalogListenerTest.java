@@ -8,11 +8,15 @@ import static org.mockito.Mockito.when;
 
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventKind;
+import com.processpuzzle.event.domain.EventParameter;
 import com.processpuzzle.event.usecase.FindEventDefinition;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
+import com.processpuzzle.shared.event.EventParameterType;
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.shared.event.EventThrown;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -88,5 +92,23 @@ class ThrownEventCatalogListenerTest {
         listener.on(thrown("OrderCreatedEvent"));
 
         verifyNoInteractions(publisher);
+    }
+
+    // What the thrower sent, read as the definition's declared parameters.
+    @Test
+    void carriesTheDeclaredParametersAsTheThrowerSentThem() {
+        when(find.released(ORG, "InvoiceIssued")).thenReturn(Optional.of(EventDefinition.builder().orgKey(ORG).id("InvoiceIssued")
+                .name("InvoiceIssued").kind(EventKind.MESSAGE).parameters(List.of(
+                        EventParameter.builder().name("invoiceNumber").type(EventParameterType.STRING).build(),
+                        EventParameter.builder().name("invoice").type(EventParameterType.ENTITY_REF).entityType("document").build()))
+                .build()));
+
+        listener.on(thrown("InvoiceIssued"));
+
+        ArgumentCaptor<DefinedEventOccurred> captor = ArgumentCaptor.forClass(DefinedEventOccurred.class);
+        verify(publisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().parameters()).containsExactly(
+                new OccurredParameter("invoiceNumber", EventParameterType.STRING, null, "I-1"),
+                new OccurredParameter("invoice", EventParameterType.ENTITY_REF, "document", null));
     }
 }

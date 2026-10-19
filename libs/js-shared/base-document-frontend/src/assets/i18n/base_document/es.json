@@ -13,29 +13,52 @@
     "publisherRoles": "Roles de publicación",
     "inputPorts": "Puertos de entrada",
     "outputPorts": "Puertos de salida",
+    "kind": "Tipo",
     "tabs": {
-      "content": "{{ entity }} - contenido"
+      "content": "{{ entity }} - contenido",
+      "preview": "{{ entity }} - vista previa",
+      "sign": "{{ entity }} - firmar",
+      "reports": "Informes"
     },
     "content": {
       "loading": "Cargando contenido…",
       "add_text_block": "Añadir bloque de texto",
-      "add_widget_block": "Añadir widget",
-      "toolbar": {
-        "label": "Formato de texto",
-        "bold": "Negrita",
-        "italic": "Cursiva",
-        "strike": "Tachado",
-        "code": "Código en línea",
-        "heading_1": "Encabezado 1",
-        "heading_2": "Encabezado 2",
-        "heading_3": "Encabezado 3",
-        "bullet_list": "Lista con viñetas",
-        "ordered_list": "Lista numerada",
-        "blockquote": "Cita",
-        "horizontal_rule": "Separador",
-        "undo": "Deshacer",
-        "redo": "Rehacer"
-      }
+      "add_widget_block": "Añadir widget"
+    },
+    "sign": {
+      "loading": "Cargando el documento publicado…",
+      "not_published": "Este documento aún no se ha publicado, así que no hay nada que firmar.",
+      "accept": "He leído este documento y lo acepto.",
+      "button": "Firmar",
+      "signed": "Firmado por {{ signer }} el {{ date }}.",
+      "signatures": "Firmas",
+      "none": "Nadie ha firmado este documento todavía."
+    },
+    "widget_settings": {
+      "title": "Ajustes del widget",
+      "props": "Propiedades",
+      "bindings": "Datos",
+      "no_props": "Este widget no tiene propiedades.",
+      "invalid_json": "JSON no válido."
+    },
+    "report": {
+      "insert_field": "Insertar campo de datos",
+      "field": "Campo",
+      "format": "Formato",
+      "insert": "Insertar",
+      "cancel": "Cancelar",
+      "apply": "Aplicar",
+      "table_settings": "Ajustes de la tabla",
+      "rows": "Filas",
+      "caption": "Título",
+      "header": "Encabezado",
+      "total": "Total",
+      "move_up": "Subir",
+      "move_down": "Bajar",
+      "print": "Imprimir / Guardar como PDF",
+      "missing_parameters": "Elija un valor para: {{ ports }}",
+      "template": "Informe",
+      "not_published": "Este informe aún no se ha publicado."
     },
     "_tooltips": {
       "slug": "La clave del documento en su dirección, única en su organización. Solo minúsculas, dígitos y guiones, p. ej. getting-started.",
@@ -49,7 +72,8 @@
       "editorRoles": "Roles que pueden cambiar el contenido y las propiedades del documento, uno por chip, p. ej. editor.",
       "publisherRoles": "Roles que pueden publicar el documento, uno por chip. Déjelo vacío para que también publiquen los roles de edición.",
       "inputPorts": "Valores que entrega la página que incrusta el documento, p. ej. el cliente que se está viendo, para que los widgets del documento los usen.",
-      "outputPorts": "Valores que el documento devuelve a la página que lo incrusta, p. ej. un registro seleccionado por el lector."
+      "outputPorts": "Valores que el documento devuelve a la página que lo incrusta, p. ej. un registro seleccionado por el lector.",
+      "kind": "DOCUMENT es una página fija; REPORT_TEMPLATE es un diseño que se genera para cada objeto, p. ej. una factura por pedido, rellenando sus puertos de entidad cada vez."
     }
   },
   "document_input_port": {
@@ -87,5 +111,85 @@
       "entityType": "Solo para ENTITY_REF y ENTITY_COLLECTION: el tipo de entidad de los registros, p. ej. Order.",
       "attributeVisibility": "Solo para ENTITY_REF y ENTITY_COLLECTION: qué atributos de los registros se muestran. mode es ALL, INCLUDE o EXCLUDE; attributes enumera los nombres de atributo afectados."
     }
+  },
+  "content_book": {
+    "_self": "Libro de contenidos",
+    "slug": "Slug",
+    "title": "Título",
+    "description": "Descripción",
+    "isPublic": "Público",
+    "readerRoles": "Roles de lectura",
+    "editorRoles": "Roles de edición",
+    "tabs": {
+      "content": "{{ entity }} - contenido"
+    },
+    "_tooltips": {
+      "slug": "La clave del libro, única entre los libros de su organización. Solo minúsculas, dígitos y guiones, p. ej. manual.",
+      "title": "El título del libro, mostrado sobre su índice, p. ej. Manual del empleado.",
+      "description": "Un breve resumen de lo que reúne el libro.",
+      "isPublic": "Márquelo para que cualquiera pueda abrir el libro sin iniciar sesión; los roles de lectura se ignoran entonces. Cada página conserva su propio acceso.",
+      "readerRoles": "Roles que pueden abrir el libro, un chip por rol. Déjelo vacío para que cualquier miembro con sesión iniciada pueda abrirlo.",
+      "editorRoles": "Roles que pueden añadir, ordenar y quitar páginas del libro, un chip por rol. Déjelo vacío para que cualquier miembro con sesión iniciada pueda hacerlo."
+    },
+    "widget": {
+      "loading": "Cargando el libro…",
+      "not_found": "No existe ningún libro llamado «{{ slug }}», o no puede abrirlo.",
+      "load_error": "No se pudo cargar el libro: {{ message }}",
+      "empty": "Este libro aún no tiene páginas.",
+      "contents": "Contenido",
+      "restricted": "Página restringida",
+      "restricted_text": "No puede leer esta página.",
+      "page_loading": "Cargando la página…",
+      "not_published": "Esta página aún no se ha publicado.",
+      "draft_banner": "Borrador sin publicar: los lectores aún no lo ven. Publíquelo en Documentos.",
+      "edit": "Editar",
+      "read": "Terminar de editar",
+      "edit_note": "Los cambios se guardan en el borrador. Publíquelos en Documentos para que los lectores los vean.",
+      "actions": "Acciones de la página",
+      "add_document": "Añadir página",
+      "add_child": "Añadir subpágina",
+      "move_up": "Subir",
+      "move_down": "Bajar",
+      "indent": "Aumentar sangría",
+      "outdent": "Reducir sangría",
+      "remove": "Quitar del libro",
+      "delete_document": "Eliminar documento",
+      "confirm_delete_title": "¿Eliminar el documento?",
+      "confirm_delete_text": "«{{ title }}» se eliminará definitivamente, de este libro y de todos los demás. Las páginas archivadas bajo él permanecen en el libro.",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "save_error": "No se pudo guardar el cambio: {{ message }}",
+      "dialog": {
+        "title": "Añadir una página",
+        "new": "Documento nuevo",
+        "existing": "Documento existente",
+        "document_title": "Título",
+        "document_slug": "Slug",
+        "document": "Documento",
+        "none_left": "Todos los documentos de la organización ya están en este libro.",
+        "add": "Añadir",
+        "cancel": "Cancelar"
+      }
+    }
+  },
+  "signature": {
+    "name": "Firma",
+    "for_role": "como {{ role }}",
+    "saving_pdf": "Guardando el PDF…",
+    "pdf_missing": "Falta el PDF — reintentar",
+    "placeholder": "se puede firmar cuando el informe se abre para un objeto."
+  },
+  "issued_document": {
+    "_self": "Documento emitido",
+    "name": "Nombre",
+    "title": "Documento",
+    "subjectType": "Tipo de objeto",
+    "subjectId": "Objeto",
+    "signedBy": "Firmado por",
+    "signedAt": "Firmado el",
+    "pdf": "PDF",
+    "locale": "Idioma",
+    "revision": "Revisión",
+    "documentId": "ID del documento"
   }
 }

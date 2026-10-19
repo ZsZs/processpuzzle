@@ -12,9 +12,10 @@ import { ORDER_NAME, ORDER_PATH, orderScreenRoutes, SPECIAL_ORDER_NAME, SPECIAL_
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
-import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
+import { BASE_DOCUMENT_ROUTES, ISSUED_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
+import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
 import { BASE_WORKFLOW_ROUTES, WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from '@processpuzzle/base-workflow';
 import { BASE_AI_ROUTES } from '@processpuzzle/base-ai';
@@ -235,7 +236,14 @@ export const appRoutes: Route[] = [
         // and the two embedded port lists below it — and declares its own transloco scopes, so nothing is
         // added here. Static children rather than `loadChildren`: see the note on SamplesComponent for why
         // the generated e2e suites cannot address an entity mounted behind a lazy branch.
-        children: BASE_DOCUMENT_ROUTES,
+        children: [
+          ...BASE_DOCUMENT_ROUTES,
+          // The `content-book` widget as the subject of a route: one component, pointed at the seeded book.
+          {
+            path: 'handbook',
+            loadComponent: () => import('./content/base-documents/handbook.component').then((comp) => comp.HandbookComponent),
+          },
+        ],
       },
     ],
   },
@@ -282,6 +290,24 @@ export const appRoutes: Route[] = [
         // TRIGGERING_EVENT start event picks from — and declares its own transloco scopes. Static children,
         // for the same reason as the base-state branch above.
         children: BASE_EVENT_ROUTES,
+      },
+    ],
+  },
+  {
+    path: 'base-calculation',
+    title: 'ProcessPuzzle Testbed - Base Calculation',
+    data: { icon: 'calculate', menuTitle: 'base-calculation' },
+    loadComponent: () => import('./content/base-calculation/base-calculation.component').then((comp) => comp.BaseCalculationComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-calculation/overview.component').then((comp) => comp.OverviewComponent) },
+      {
+        path: 'samples',
+        loadComponent: () => import('./content/base-calculation/samples.component').then((comp) => comp.SamplesComponent),
+        // `BASE_CALCULATION_ROUTES` brings the `calculation-definition` branch with its Source, Decision tables
+        // and Evaluate tabs, `CALCULATION_RUNS_ROUTES` the runs screen; both declare their transloco scopes.
+        children: [...BASE_CALCULATION_ROUTES, ...CALCULATION_RUNS_ROUTES],
       },
     ],
   },
@@ -342,7 +368,8 @@ export const appRoutes: Route[] = [
         // `document` branch, which brings its own scopes.
         children: [
           { path: '', pathMatch: 'full', redirectTo: WORKFLOW_DASHBOARD_PATH },
-          ...WORKFLOW_DASHBOARD_ROUTES,
+          // The samples' tab bar names this screen already, so the dashboard does not title itself here.
+          ...WORKFLOW_DASHBOARD_ROUTES.map((route) => ({ ...route, data: { ...route.data, showTitle: false } })),
           ...BASE_WORKFLOW_ROUTES,
           {
             path: ORDER_PATH,
@@ -351,6 +378,8 @@ export const appRoutes: Route[] = [
             loadChildren: orderScreenRoutes,
           },
           ...BASE_DOCUMENT_ROUTES,
+          // The signed reports — what the Reports tab's `signature` widget issues — as a read-only list.
+          ...ISSUED_DOCUMENT_ROUTES,
         ],
       },
     ],
@@ -446,6 +475,14 @@ export const appRoutes: Route[] = [
     path: 'design',
     loadChildren: () => import('@processpuzzle/design').then((m) => m.DESIGN_ROUTES),
     providers: [provideTranslocoScope({ scope: 'design', alias: 'design' })],
+  },
+  // The plain task board, where the header's task dashboard button leads: the dashboard as a page of its own,
+  // titled, at `/workflow-dashboard` — `TASK_DASHBOARD_ROUTE`'s default. Its mount among the base-workflow
+  // samples above is a sample of the screen, not the user's inbox. The wrapper carries no `title`, which is
+  // what keeps the sidenav, listing every titled top-level route, from offering it a second time.
+  {
+    path: '',
+    children: [...WORKFLOW_DASHBOARD_ROUTES],
   },
   {
     path: 'entity-registry',

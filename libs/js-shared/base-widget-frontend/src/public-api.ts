@@ -12,6 +12,7 @@ export {
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
+  ENTITY_TABLE_WIDGET,
   IMAGE_ZOOM_WIDGET,
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
@@ -22,6 +23,7 @@ export {
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
   SPACER_WIDGET,
+  TASK_DASHBOARD_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
   provideAppLogoWidget,
@@ -30,6 +32,7 @@ export {
   provideCardsGridWidget,
   provideCopyrightWidget,
   provideDesignButtonWidget,
+  provideEntityTableWidget,
   provideImageZoomWidget,
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
@@ -40,14 +43,20 @@ export {
   providePhotoAlbumWidget,
   provideShareButtonWidget,
   provideSpacerWidget,
+  provideTaskDashboardButtonWidget,
   provideThemesButtonWidget,
   provideVersionButtonWidget,
 } from './base-widget.providers';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
 export { CopyrightComponent } from './copyright/copyright.component';
+export { EntityTableComponent } from './entity-table/entity-table.component';
+export type { EntityTableColumn, EntityTableTotal } from './entity-table/entity-table.component';
+export { formatValue, VALUE_FORMATS, valueAtPath } from './value-format/value-format';
+export type { ValueFormat } from './value-format/value-format';
 export type { CardsGridSpec } from './mat-cards-grid/cards-spec';
 export type { MenuItemSpec } from './mat-cards-grid/menu-item-spec';
 export { DesignButtonComponent } from './design-button/design-button.component';
+export { TaskDashboardButtonComponent } from './task-dashboard-button/task-dashboard-button.component';
 export { ImageZoomComponent } from './image-zoom/image-zoom.component';
 export { PhotoAlbumComponent } from './photo-album/photo-album.component';
 export type { PhotoAlbumImage } from './photo-album/photo-album.component';
@@ -59,6 +68,11 @@ export { provideAppPropertyStore } from './app-property/app-property-store.provi
 export { ShareButtonComponent } from './share-button/share-button.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { SidenavAutosizeDirective } from './sidenav-autosize/sidenav-autosize.directive';
+export { SidenavContentService } from './sidenav-content/sidenav-content.service';
+export type { SidenavContentMode } from './sidenav-content/sidenav-content.service';
+export { SidenavContentOutletComponent } from './sidenav-content/sidenav-content-outlet.component';
+export { TreeNavComponent, TreeNavNodeActionsDirective } from './tree-nav/tree-nav.component';
+export type { TreeNavNode } from './tree-nav/tree-nav.component';
 export {
   DEFAULT_THEME_COLOR_SCHEME,
   DEFAULT_THEME_PRESET,

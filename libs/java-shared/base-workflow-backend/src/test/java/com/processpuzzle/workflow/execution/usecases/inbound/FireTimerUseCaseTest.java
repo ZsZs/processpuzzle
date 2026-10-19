@@ -18,7 +18,9 @@ import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
@@ -68,7 +70,9 @@ class FireTimerUseCaseTest {
                 .status(WorkflowInstanceStatus.ACTIVE).build();
         when(instances.findByOrgKeyAndId(ORG, INSTANCE_ID)).thenReturn(Optional.of(instance));
         useCase = new FireTimerUseCase(events, instances, tasks, resolve,
-                new CatchOccurrence(events, tasks, progression, publisher), publisher, Clock.fixed(NOW, ZoneOffset.UTC));
+                new CatchOccurrence(events, tasks, progression, publisher,
+                        new ArtifactBinder(mock(ArtifactInstanceRepository.class),
+                                mock(EntityStateGateway.class))), publisher, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test

@@ -1,0 +1,79 @@
+{
+  "calculation_definition": {
+    "_self": "Définition de calcul",
+    "id": "Id",
+    "name": "Nom",
+    "description": "Description",
+    "source": "Source",
+    "definitionVersion": "Version",
+    "outputEntity": "Sortie",
+    "releaseState": "Publication",
+    "_tooltips": {
+      "id": "La clé calculation de la source, p. ex. order-total. À modifier dans la source.",
+      "name": "La clé name de la source, telle qu’elle apparaît dans les listes.",
+      "description": "La clé description de la source.",
+      "source": "Le calcul en YAML : paramètres, entrées, tables de décision, fonctions, décisions, sortie et déclencheur. L’onglet Source offre un éditeur et Valider.",
+      "definitionVersion": "Augmente à chaque enregistrement qui modifie la source. Chaque exécution retient la version utilisée. Défini par le système.",
+      "outputEntity": "Le type d’entité dans lequel le calcul écrit ses résultats. Défini par le système à partir de la source.",
+      "releaseState": "Si l’application en cours utilise ce calcul tel quel : NEW n’a jamais été publié, CHANGED diffère de la publication, RELEASED est ce que les déclencheurs exécutent. Défini par le système."
+    }
+  },
+  "source": {
+    "tab": "Source",
+    "validate": "Valider",
+    "save": "Enregistrer",
+    "unsaved": "Modifications non enregistrées",
+    "valid": "Le calcul est valide.",
+    "decision": "Décision",
+    "kind": "Type",
+    "scope": "Portée",
+    "requires": "Requiert"
+  },
+  "tables": {
+    "tab": "Tables de décision",
+    "add": "Ajouter une table",
+    "remove": "Supprimer la table",
+    "save": "Enregistrer",
+    "name": "Nom",
+    "hitPolicy": "Politique de résultat",
+    "output": "Sortie",
+    "then": "Alors",
+    "removeInput": "Supprimer l’entrée",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "removeRule": "Supprimer la règle",
+    "addRule": "Ajouter une règle",
+    "none": "Le calcul n’a pas de table de décision.",
+    "unreadable": "La source n’est pas un YAML valide ; corrigez-la d’abord dans l’onglet Source :"
+  },
+  "evaluate": {
+    "tab": "Évaluer",
+    "parameters": "Paramètres",
+    "noParameters": "Le calcul ne déclare aucun paramètre.",
+    "entityHint": "Id de {{entity}}",
+    "pick": "Choisir : {{entity}}",
+    "evaluate": "Évaluer le brouillon",
+    "run": "Exécuter la publication",
+    "runResult": "Exécution {{status}} : {{written}} objet(s) écrit(s) · {{id}}",
+    "values": "Valeurs",
+    "trace": "Trace",
+    "decision": "Décision",
+    "kind": "Type",
+    "scope": "Portée",
+    "value": "Valeur"
+  },
+  "runs": {
+    "calculation": "Calcul",
+    "subject": "Sujet",
+    "refresh": "Actualiser",
+    "none": "Aucune exécution.",
+    "startedAt": "Démarré",
+    "version": "Version",
+    "triggeredBy": "Déclenché par",
+    "status": "Statut",
+    "frozen": "Figé",
+    "freeze": "Figer",
+    "frozenAt": "Figé le {{at}}",
+    "source": "Définition lors de l’exécution"
+  }
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { BaseEntityAttrDescriptor, BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import {
   ArtifactControlTester,
+  CommentsControlTester,
   ControlTester,
   RelationshipControlTester,
   artifactTestersFor,
@@ -37,6 +38,7 @@ describe('createControlTester', () => {
     ['DATE', true],
     ['DROPDOWN', true],
     ['TAGS', true],
+    ['COMMENTS', true],
     ['FOREIGN_KEY', true],
     ['LOOKUP', true],
   ])('treats %s as a form value', (formControlType, isInput) => {
@@ -168,6 +170,22 @@ describe('TAGS fixture values', () => {
 
     expect(tester.createValue(noContext)).toBe('200,201');
     expect(tester.updateValue(noContext, { expectedStatusCodes: '200,201' })).toBe('200,201,204');
+  });
+});
+
+describe('COMMENTS fixture values', () => {
+  it('writes a new comment on create and another one on update, never an edit of the first', () => {
+    const tester = createControlTester(attr({ attrName: 'comments', formControlType: 'COMMENTS' }));
+
+    expect(tester).toBeInstanceOf(CommentsControlTester);
+    expect(tester.createValue({ uniqueSuffix: 'e2e-1' } as never)).toBe('Test comment e2e-1');
+    expect(tester.createValue({} as never)).toBe('Test comment');
+    expect(tester.updateValue({} as never, { comments: 'Test comment e2e-1' })).toBe('Updated Test comment e2e-1');
+    expect(tester.updateValue({} as never, {})).toBe('Updated comment');
+  });
+
+  it('types into the new-comment editor, not into the history', () => {
+    expect(createControlTester(attr({ attrName: 'comments', formControlType: 'COMMENTS' })).innerLocator()).toBe('[data-testid="new-comment-content"] [contenteditable="true"]');
   });
 });
 

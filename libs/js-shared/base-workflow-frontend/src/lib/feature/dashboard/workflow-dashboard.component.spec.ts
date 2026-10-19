@@ -37,6 +37,32 @@ describe('WorkflowDashboardComponent', () => {
     expect(scopes[0].getAttribute('aria-selected')).toBe('true');
   });
 
+  it('marks each queue with the modeler’s symbol for what it holds', () => {
+    const icons = Array.from(render().querySelectorAll<HTMLImageElement>('[data-testid^="dashboard-scope-"] img'));
+
+    expect(icons.map((icon) => icon.getAttribute('src'))).toEqual(['assets/modeler/Task.svg', 'assets/modeler/Team.svg', 'assets/modeler/Workflow.svg']);
+  });
+
+  describe('title', () => {
+    /** Mounted as a page of its own — where the task dashboard button leads — the screen names itself. */
+    it('names the screen by default', () => {
+      expect(render().querySelector('[data-testid="dashboard-title"]')).toBeTruthy();
+    });
+
+    /** `withComponentInputBinding` sets an input the route data does not mention to `undefined`. */
+    it('names the screen when the route says nothing about it', () => {
+      fixture.componentRef.setInput('showTitle', undefined);
+
+      expect(render().querySelector('[data-testid="dashboard-title"]')).toBeTruthy();
+    });
+
+    it('leaves the naming to a host that shows it as one of its tabs', () => {
+      fixture.componentRef.setInput('showTitle', false);
+
+      expect(render().querySelector('[data-testid="dashboard-title"]')).toBeNull();
+    });
+  });
+
   it('switches the queue', () => {
     click('dashboard-scope-team');
 

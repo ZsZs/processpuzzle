@@ -31,6 +31,14 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   // Association: the rows point at entities that live on their own, so adding picks an existing one and
   // deleting a row only detaches the reference. Containment is what the two attributes above demonstrate.
   const relatedEntitiesAttr = new BaseEntityAttrDescriptor('relatedEntities', FormControlType.RELATED_ENTITIES, 'Related Entities');
+  // Hidden from the table by default; the form shows the history and an editor for the next comment.
+  const commentsAttr = new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS, 'Comments');
+  // A postal address laid out the way its country writes it, shown on an OpenStreetMap map below the fields.
+  const addressAttr = new BaseEntityAttrDescriptor('address', FormControlType.ADDRESS, 'Address');
+  addressAttr.showMap = true;
+  // The device's location, recorded by a button and shown read-only; the button is disabled without a GPS.
+  const locationAttr = new BaseEntityAttrDescriptor('location', FormControlType.GEO_LOCATION, 'Location');
+  locationAttr.hideInTable = true;
   const additionalPropertiesAttr = new BaseEntityAttrDescriptor('additionalProperties', FormControlType.ADDITIONAL_PROPERTIES, 'Additional Properties');
   lookupAttr.linkedEntityType = 'Trunk Data';
   componentsAttr.linkedEntityType = 'Test Entity Component';
@@ -43,8 +51,8 @@ function createTestEntityAttrDescriptors(): AbstractAttrDescriptor[] {
   // Short values hug their columns, leaving the width to the name and the description.
   [booleanAttr, numberAttr, dateAttr, enumAttr].forEach((attr) => (attr.autosizeColumn = true));
 
-  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, attachmentsAttr, additionalPropertiesAttr, relatedEntitiesAttr], FlexDirection.COLUMN);
-  const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, componentsAttr, embeddedComponentsAttr], FlexDirection.COLUMN);
+  const column_1 = new FlexboxDescriptor([nameAttr, descriptionAttr, booleanAttr, artifactAttr, attachmentsAttr, additionalPropertiesAttr, relatedEntitiesAttr, commentsAttr], FlexDirection.COLUMN);
+  const column_2 = new FlexboxDescriptor([numberAttr, dateAttr, lookupAttr, enumAttr, tagsAttr, addressAttr, locationAttr, componentsAttr, embeddedComponentsAttr], FlexDirection.COLUMN);
   const flexBoxContainer = new FlexboxDescriptor([column_1, column_2], FlexDirection.CONTAINER);
   flexBoxContainer.style = { 'column-gap': '20px' };
   return [flexBoxContainer];

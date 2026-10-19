@@ -38,7 +38,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
                 .filter(BaseEntityAttribute::isLinkToDetails)
                 .map(BaseEntityAttribute::getCode)
                 .findFirst()
-                .orElse(null)
+                .orElse(null),
+            definition.getName()
         );
     }
 
@@ -49,7 +50,10 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             attribute.isMultiValued(),
             attribute.getFormControlType() == FormControlType.EMBEDDED_COMPONENTS,
             attribute.getLinkedEntityType(),
-            attribute.isRequired()
+            attribute.isRequired(),
+            attribute.getFormControlType() == FormControlType.COMMENTS,
+            attribute.getFormControlType() == FormControlType.ADDRESS,
+            attribute.getFormControlType() == FormControlType.GEO_LOCATION
         );
     }
 }

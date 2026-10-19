@@ -89,10 +89,36 @@ defineEntityRelationshipSuite({
       // each is 'none', and the backend rejects a dateFormat whose two halves are both none.
       // Multiplicity likewise: the first option, '0..1', would make the mapper drop the generated Max occurs,
       // which is sent only for the 'x' forms — so both steps pin one.
+      // Shows a map, Map provider and Default country are kept only on an ADDRESS control, which needs a
+      // REFERENCE value kind and so cannot share a fixture with the date styles above. The mapper drops them on
+      // this one, so they are pinned to what the read-back then finds: unticked and empty. An empty Map
+      // provider still opens the select and takes its first option, which the mapper drops the same way.
       entityName: 'Entity Attribute',
-      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x' },
-      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x' },
-      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one',
+      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x', showMap: 'false', mapProvider: '', defaultCountry: '' },
+      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x', showMap: 'false', mapProvider: '', defaultCountry: '' },
+      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one, the map options only on an ADDRESS one',
+    },
+    {
+      // The owner of [Event Definition] parameters, pinned as in entity-crud.spec.ts: the generator takes the
+      // first Action, CREATED, while filling State, which EventDefinition.validate allows only with
+      // STATE_CHANGED — the read-back found State empty. Subject Type is a dropdown of the organization's
+      // entity codes, and the backend checks every SYSTEM parameter against the subject's attributes: the
+      // first code, 'boat', has no 'orderNumber', so the save came back 400 event-definition.invalid. Pinned
+      // to 'order', whose attribute the parameter below names.
+      entityName: 'Event Definition',
+      create: { kind: 'SYSTEM', subjectType: 'order', action: 'STATE_CHANGED' },
+      update: { kind: 'SYSTEM', subjectType: 'order', action: 'STATE_CHANGED' },
+      reason: "'state' is only meaningful with action STATE_CHANGED, and a SYSTEM parameter must name an attribute of the subject",
+    },
+    {
+      // A parameter's name is an identifier — `<event>.<name>` in a context — and generated prose is not one,
+      // so it is pinned, the same on both steps since it is what the row is addressed by. It is an attribute of
+      // the 'order' subject pinned above. Type is pinned to
+      // ENTITY_REF because the mapper sends Entity Type for that type only.
+      entityName: 'Event Parameter',
+      create: { name: 'orderNumber', type: 'ENTITY_REF' },
+      update: { name: 'orderNumber', type: 'ENTITY_REF' },
+      reason: 'name must be an identifier, and entityType is kept only on an ENTITY_REF parameter',
     },
   ],
 });

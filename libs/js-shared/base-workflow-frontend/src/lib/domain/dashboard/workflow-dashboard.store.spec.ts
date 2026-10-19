@@ -6,15 +6,17 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO } from '../definition/test-artifact-definition';
 import { OTHER_ROLE_DEFINITION_DTO, ROLE_DEFINITION_DTO } from '../definition/test-role-definition';
 import { OTHER_TASK_DEFINITION_DTO, TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO } from '../definition/test-task-definition';
+import { OTHER_TOOL_DEFINITION_DTO, TOOL_DEFINITION_DTO } from '../definition/test-tool-definition';
 import { pageOfWorkflows, WORKFLOW_DTO } from '../definition/test-workflow';
+import { TaskDefinitionStore } from '../definition/task-definition.store';
 import { TaskInstanceStatus } from '../execution/workflow-instance';
 import { OTHER_WORKFLOW_INSTANCE_DTO, pageOfWorkflowInstances, WORKFLOW_INSTANCE_DTO } from '../execution/test-workflow-instance';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from './current-user.context';
-import { WorkflowDashboardStore } from './workflow-dashboard.store';
+import { flattenContext, WorkflowDashboardStore } from './workflow-dashboard.store';
 
 /**
- * The dashboard reads five root stores and each one loads on init, so creating the store is what issues
- * five collection GETs. They are answered by URL rather than in order: which store is constructed first is
+ * The dashboard reads six root stores and each one loads on init, so creating the store is what issues
+ * six collection GETs. They are answered by URL rather than in order: which store is constructed first is
  * an implementation detail of `withComputed`, and a spec that depended on it would break on a reorder that
  * changed nothing.
  */
@@ -35,6 +37,7 @@ describe('WorkflowDashboardStore', () => {
     controller.expectOne(`${serviceRoot}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
     controller.expectOne(`${serviceRoot}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));
     controller.expectOne(`${serviceRoot}/roles`).flush([ROLE_DEFINITION_DTO, OTHER_ROLE_DEFINITION_DTO]);
+    controller.expectOne(`${serviceRoot}/tools`).flush([TOOL_DEFINITION_DTO, OTHER_TOOL_DEFINITION_DTO]);
   };
 
   /**
@@ -92,11 +95,7 @@ describe('WorkflowDashboardStore', () => {
 
       reloadWith({
         ...WORKFLOW_INSTANCE_DTO,
-        tasks: [
-          { ...WORKFLOW_INSTANCE_DTO.tasks[1], assignedTo: undefined },
-          WORKFLOW_INSTANCE_DTO.tasks[2],
-          { ...WORKFLOW_INSTANCE_DTO.tasks[2], id: 'blocked-1', status: 'BLOCKED' },
-        ],
+        tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[1], assignedTo: undefined }, WORKFLOW_INSTANCE_DTO.tasks[2], { ...WORKFLOW_INSTANCE_DTO.tasks[2], id: 'blocked-1', status: 'BLOCKED' }],
       });
 
       expect(store.teamTasks().map((row) => row.task.id)).toEqual([approveShipmentTaskId]);
@@ -177,6 +176,22 @@ describe('WorkflowDashboardStore', () => {
 
       expect(store.selectedOutputs()).toEqual([expect.objectContaining({ artifactDefinitionId: 'order-entity', direction: 'output', instance: undefined })]);
       expect(store.selectedOutputs()[0].name).toBe(ARTIFACT_DEFINITION_DTO.name);
+    });
+
+    // The seeded assignment of review-order: the order is read in DRAFT and left CONFIRMED.
+    it('names the states this workflow requires of the task’s artifacts', () => {
+      expect(store.selectedInputs()[0]).toMatchObject({ requiredState: 'DRAFT', satisfied: false });
+      expect(store.selectedOutputs()[0]).toMatchObject({ requiredState: 'CONFIRMED', satisfied: true });
+    });
+
+    it('names the tool a service step calls', () => {
+      expect(store.selectedTools().get('automated-check-tool')).toMatchObject({ name: TOOL_DEFINITION_DTO.name });
+    });
+
+    // No route in this TestBed mounts an artifact or a tool screen, so nothing is linked.
+    it('links nothing the host does not mount', () => {
+      expect(store.selectedInputs()[0].link).toBeUndefined();
+      expect(store.selectedTools().get('automated-check-tool')?.link).toBeUndefined();
     });
 
     it('holds nothing when the selection is cleared', () => {
@@ -373,5 +388,154 @@ describe('WorkflowDashboardStore', () => {
 
     controller.expectOne(`${serviceRoot}/instances`).flush({ errorId: 'oops' }, { status: 500, statusText: 'Server Error' });
     expect(store.loadError()).toBeTruthy();
+  });
+
+  /**
+   * Complete waits for every user step to be ticked and every output to be in its required state. Seeded
+   * review-order has one service step and leaves the order CONFIRMED, which the run already is.
+   */
+  describe('readiness to complete', () => {
+    const userStep = { id: 'read-note', name: 'Read the customer’s note', stepType: 'USER_STEP' };
+
+    const withUserStep = (): void => {
+      TestBed.inject(TaskDefinitionStore).load({});
+      controller.expectOne(`${serviceRoot}/tasks`).flush([{ ...TASK_DEFINITION_DTO, steps: [...TASK_DEFINITION_DTO.steps, userStep] }, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
+    };
+
+    beforeEach(() => store.select(runId, reviewOrderTaskId));
+
+    it('is ready when nothing is left to tick and every output is where it should be', () => {
+      expect(store.isReadyToComplete()).toBe(true);
+    });
+
+    it('waits for an output to reach its required state', () => {
+      reloadWith({ ...WORKFLOW_INSTANCE_DTO, artifacts: WORKFLOW_INSTANCE_DTO.artifacts.map((artifact) => ({ ...artifact, currentState: 'DRAFT' })) });
+
+      expect(store.unmetOutputs().map((artifact) => artifact.artifactDefinitionId)).toEqual(['order-entity']);
+      expect(store.isReadyToComplete()).toBe(false);
+    });
+
+    it('waits for an output nothing has produced yet', () => {
+      reloadWith({ ...WORKFLOW_INSTANCE_DTO, artifacts: [] });
+
+      expect(store.isReadyToComplete()).toBe(false);
+    });
+
+    it('waits for every user step to be ticked', () => {
+      withUserStep();
+      expect(store.pendingSteps().map((step) => step.id)).toEqual(['read-note']);
+      expect(store.isReadyToComplete()).toBe(false);
+
+      store.toggleStep('read-note');
+
+      expect(store.isReadyToComplete()).toBe(true);
+    });
+
+    it('unticks on a second toggle', () => {
+      store.toggleStep('read-note');
+      store.toggleStep('read-note');
+
+      expect(store.checkedStepIdSet().size).toBe(0);
+    });
+
+    // The ticks belong to one task: carried onto the next, they would show progress on work not done.
+    it('forgets the ticks when another task is opened, not when the same one is', () => {
+      store.toggleStep('read-note');
+
+      store.select(runId, reviewOrderTaskId);
+      expect(store.checkedStepIdSet().has('read-note')).toBe(true);
+
+      store.select(runId, approveShipmentTaskId);
+      expect(store.checkedStepIdSet().size).toBe(0);
+    });
+  });
+
+  describe('refresh', () => {
+    const instanceReads = () => controller.match(`${serviceRoot}/instances`);
+
+    it('re-reads the runs when the dashboard is entered again', () => {
+      store.refresh();
+
+      const reads = instanceReads();
+      expect(reads).toHaveLength(1);
+      reads[0].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      expect(store.instances().map((instance) => instance.id)).toEqual([runId]);
+    });
+
+    it('does not double a read already in flight', () => {
+      store.reload();
+      store.refresh();
+
+      const reads = instanceReads();
+      expect(reads).toHaveLength(1);
+      reads[0].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+    });
+  });
+
+  /** The records a run is bound to, named by the backend's `entityLabel` — no client-side lookup. */
+  describe('the records behind a run', () => {
+    const unlabelled = {
+      ...WORKFLOW_INSTANCE_DTO,
+      entityLabel: undefined,
+      artifacts: WORKFLOW_INSTANCE_DTO.artifacts.map((artifact) => ({ ...artifact, entityLabel: undefined })),
+    };
+
+    it('names the open run and its bound artifacts by their labels', () => {
+      store.select(runId, reviewOrderTaskId);
+
+      expect(store.selectedSubjectName()).toBe('ORD-1001');
+      expect(store.selectedObjectNames().get('order-entity')).toBe('ORD-1001');
+      expect(store.selectedInputs()[0].recordName).toBe('ORD-1001');
+    });
+
+    it('leaves an unbound artifact unnamed, so it keeps its own name', () => {
+      store.select(runId, reviewOrderTaskId);
+
+      expect(store.selectedObjectNames().has('fulfillment-invoice')).toBe(false);
+    });
+
+    it('falls back to the record’s id when the backend answered no label', () => {
+      reloadWith(unlabelled);
+      store.select(runId, reviewOrderTaskId);
+
+      expect(store.selectedSubjectName()).toBe('1');
+      expect(store.selectedObjectNames().get('order-entity')).toBe('1');
+    });
+
+    it('labels every run in the picker by its workflow and its record', () => {
+      expect(store.instanceLabels().get(runId)).toBe('Order Fulfillment Workflow · ORD-1001');
+      expect(store.instanceLabels().get(OTHER_WORKFLOW_INSTANCE_DTO.id)).toBe('Order Fulfillment Workflow · 2');
+    });
+  });
+
+  describe('the run’s context', () => {
+    it('lists the open run’s variables, an event’s parameters under dotted keys', () => {
+      store.selectInstance(runId);
+
+      expect(store.selectedContext()).toEqual([
+        { key: 'channel', value: 'web' },
+        { key: 'priority', value: 'normal' },
+        { key: 'order-created.subject', value: '1' },
+        { key: 'order-created.orderNumber', value: 'ORD-1001' },
+        { key: 'new_order', value: '1' },
+      ]);
+    });
+
+    it('is empty without an open run, or for a run with no context', () => {
+      expect(store.selectedContext()).toEqual([]);
+
+      store.selectInstance(OTHER_WORKFLOW_INSTANCE_DTO.id);
+      expect(store.selectedContext()).toEqual([]);
+    });
+
+    it('keeps lists, empty maps and absent values whole rather than inventing structure', () => {
+      expect(flattenContext({ lines: [1, 2], empty: {}, missing: null, deep: { a: { b: true, n: 3 } } })).toEqual([
+        { key: 'lines', value: '[1,2]' },
+        { key: 'empty', value: '{}' },
+        { key: 'missing', value: '—' },
+        { key: 'deep.a.b', value: 'true' },
+        { key: 'deep.a.n', value: '3' },
+      ]);
+    });
   });
 });

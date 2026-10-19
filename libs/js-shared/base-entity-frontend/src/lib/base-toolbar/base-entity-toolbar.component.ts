@@ -45,6 +45,35 @@ import type { PdfExportResult } from '../pdf-service/pdf-export.types';
         font-size: 14px;
         white-space: nowrap;
       }
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        flex: none;
+      }
+      /*
+       * Medium and small screens: the labels are placeholders, the fields share whatever width the actions
+       * leave, and the fields and their suffix buttons are lower. The tokens cascade into the form fields
+       * and icon buttons, which are other components' internals.
+       */
+      .compact .toolbar-inputs {
+        flex: 1 1 auto;
+        min-width: 0;
+        gap: 12px;
+        --mat-form-field-container-height: 36px;
+        --mat-form-field-container-vertical-padding: 6px;
+        --mat-icon-button-state-layer-size: 32px;
+      }
+      .compact .filter-wrapper,
+      .compact .filter-field {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      .compact .filter-field {
+        width: 100%;
+      }
+      .compact .toolbar-spacer {
+        flex: 0 0 8px;
+      }
     `,
   ],
   providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
@@ -60,11 +89,16 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   private readonly previewMode = inject(EntityPreviewMode);
   store!: BaseEntityStoreApi<Entity>;
   /** A preview of draft definitions over live objects: they may be opened, not created or deleted. */
-  isReadOnly = computed(() => this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  isReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
   isDeleteEnabled = computed(() => this.store?.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract && !this.isReadOnly());
   isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
   isNewEnabled = computed(() => !this.entityDescriptor().isAbstract && !this.isReadOnly());
   isPdfExportEnabled = computed(() => (this.store?.entities().length ?? 0) > 0);
+  /**
+   * A medium or small screen: the query and filter labels move inside their fields, the controls get lower,
+   * and export becomes a menu — still the last action — so the toolbar fits on one row.
+   */
+  compact = computed(() => !this.layoutService.isLargeDevice());
   /**
    * The toolbar acts on the *list* — filter, new, edit, delete, export — so it belongs to the list screen, and
    * only to the list screen of **this** entity. The second half is what `activeRouteSegment` alone cannot say:

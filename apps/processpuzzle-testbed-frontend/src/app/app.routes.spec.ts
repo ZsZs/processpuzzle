@@ -62,7 +62,7 @@ describe('appRoutes — entity screen mount points', () => {
 
   it('exposes every primary feature as a titled navigation route', () => {
     expect(appRoutes.filter((route) => route.title).map((route) => route.path)).toEqual([
-      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-event', 'base-release', 'base-workflow', 'base-ai', 'base-starter', 'base-app', 'ci-cd',
+      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-event', 'base-calculation', 'base-release', 'base-workflow', 'base-ai', 'base-starter', 'base-app', 'ci-cd',
     ]);
   });
 
@@ -74,5 +74,13 @@ describe('appRoutes — entity screen mount points', () => {
     await TestBed.runInInjectionContext(() => home?.resolve?.['auth']?.());
 
     expect(authenticate).toHaveBeenCalledOnce();
+  });
+
+  it('serves the handbook as a route of the document samples', async () => {
+    const handbook = childrenOf('base-document', 'samples').find((route) => route.path === 'handbook');
+
+    const component = await handbook?.loadComponent?.();
+
+    expect((component as { name: string }).name).toMatch(/HandbookComponent$/);
   });
 });

@@ -131,7 +131,8 @@
     "timerType": "Timer",
     "timerExpression": "Timer-Ausdruck",
     "authorizedRoles": "Berechtigte Rollen",
-    "payloadMapping": "Nutzdatenzuordnung",
+    "payloadMapping": "Nutzdatenzuordnung (Abweichungen)",
+    "eventParameters": "Ereignisparameter",
     "requiredArtifacts": "Erforderliche Artefakte",
     "_tooltips": {
       "id": "Eindeutig innerhalb des Workflows, auch gegenüber den Ids seiner Aufgaben und Ereignisse, z. B. order-created.",
@@ -143,7 +144,8 @@
       "timerExpression": "Wann der Timer auslöst, im ISO-8601-Format: ein Zeitpunkt wie 2026-12-24T08:00:00Z für DATE oder eine Wiederholung wie R/P1D (täglich) für CYCLE.",
       "preconditionExpression": "Nur TIME_BASED_PRECONDITION: eine Bedingung, die beim Erreichen des Meilensteins gelten muss, z. B. milestone.status == 'PASSED'. Wird gespeichert, aber noch nicht ausgewertet.",
       "authorizedRoles": "Nur ROLE_DEFINITION: die Rollen, deren Mitglieder den Workflow von Hand starten dürfen. Leer bedeutet: jeder.",
-      "payloadMapping": "TRIGGERING_EVENT und INPUT_ARTIFACT: übernimmt Daten aus dem auslösenden Ereignis in den neuen Durchlauf. Schlüssel: der Name, unter dem sie gespeichert werden, z. B. orderId; Wert: woher sie stammen, z. B. $.payload.orderId.",
+      "payloadMapping": "Die Parameter des Ereignisses landen unter ihrem eigenen Namen im Durchlauf, z. B. orderNumber – ordnen Sie nur zu, was sie nicht liefern oder was einen anderen Namen bekommen soll. TRIGGERING_EVENT und INPUT_ARTIFACT: Schlüssel der Name, unter dem gespeichert wird, z. B. orderId; Wert woher er stammt, z. B. $.subjectId. INPUT_ARTIFACT liest ein Plattformereignis ohne Parameter und ordnet daher alles selbst zu.",
+      "eventParameters": "Was das gewählte Ereignis mitbringt. Jeder Parameter landet unter seinem eigenen Namen im Durchlauf (nach Name), außer die Nutzdatenzuordnung nennt ihn (zugeordnet).",
       "requiredArtifacts": "Nur INPUT_ARTIFACT: die Artefakte, optional in einem bestimmten Zustand, die vorliegen müssen, bevor der Workflow startet. Jedes muss zu den Artefakten des Workflows gehören."
     }
   },
@@ -169,7 +171,8 @@
     "timerExpression": "Timer-Ausdruck",
     "attachedTo": "Angeheftet an",
     "interrupting": "Unterbrechend",
-    "payloadMapping": "Nutzdatenzuordnung",
+    "payloadMapping": "Nutzdatenzuordnung (Abweichungen)",
+    "eventParameters": "Ereignisparameter",
     "_tooltips": {
       "id": "Eindeutig innerhalb des Workflows, auch gegenüber den Ids seiner Aufgaben und Startereignisse, z. B. invoice-issued. Aufgaben nennen sie unter „Abhängig von“.",
       "name": "Optionale Beschriftung im Modeler, z. B. Rechnung gestellt. Leer wird der Name des Katalogereignisses angezeigt.",
@@ -182,7 +185,15 @@
       "dependsOn": "Die Ids der Aufgaben oder Ereignisse, die abgeschlossen sein müssen, bevor dieses Ereignis erreicht wird, z. B. issue-invoice. Leer bedeutet: Es wird beim Start des Workflows erreicht.",
       "joinType": "ALL wartet auf alle Aufgaben oder Ereignisse unter „Abhängig von“ (Standard); ANY geht nach der ersten davon weiter. Ohne Einträge unter „Abhängig von“ ohne Wirkung.",
       "correlationKey": "Nur bei MESSAGE-Ereignissen, dort Pflicht: die Variable des Durchlaufs, die die Nachricht diesem Durchlauf zuordnet, z. B. orderId. Ein THROW sendet ihren Wert; ein CATCH wartet auf eine Nachricht mit demselben Wert.",
-      "payloadMapping": "CATCH: übernimmt Daten aus dem Ereignis in den Durchlauf – Schlüssel ein Variablenname, Wert ein Pfad wie $.payload.amount. THROW: befüllt das gesendete Ereignis – Schlüssel ein Attributname, Wert ein Pfad wie $.orderId."
+      "payloadMapping": "Die Parameter des Ereignisses werden nach Namen befüllt; ordnen Sie nur zu, was fehlt. CATCH: die Parameter landen unter ihrem eigenen Namen im Durchlauf; Schlüssel ein Variablenname, Wert ein Pfad wie $.payload.amount. THROW: jeder Parameter wird aus der gleichnamigen Variablen des Durchlaufs genommen; Schlüssel ein Parameter- oder Attributname, Wert ein Pfad wie $.new_order.",
+      "eventParameters": "Was das Ereignis mitbringt. CATCH: jeder Parameter landet unter seinem eigenen Namen im Durchlauf, außer die Zuordnung nennt ihn. THROW: jeder wird aus der gleichnamigen Variablen des Durchlaufs befüllt, außer die Zuordnung nennt ihn."
+    },
+    "event_parameters": {
+      "none": "Dieses Ereignis deklariert keine Parameter.",
+      "required": "erforderlich",
+      "by_name": "nach Name",
+      "mapped": "zugeordnet",
+      "binds": "bindet sein Artefakt"
     }
   },
   "workflow_task_artifact_state": {
@@ -394,14 +405,21 @@
       "artifacts_out": "Schreibt",
       "artifacts_none": "Diese Aufgabe deklariert keine Artefakte.",
       "not_created": "noch nicht erstellt",
+      "required_state": "erforderlich: {{state}}",
       "note": "Notizen (werden dem Workflow-Kontext hinzugefügt)",
       "complete": "Aufgabe abschließen",
+      "complete_blocked": "Haken Sie jeden Schritt ab und bringen Sie jedes Ergebnis in den erforderlichen Zustand, um die Aufgabe abzuschließen.",
       "skip": "Überspringen",
       "skip_reason": "Grund für das Überspringen",
       "unstated_refusal": "Noch nicht angenommen, und der Server nannte keinen Grund.",
       "unassigned": "nicht zugewiesen",
       "assigned_to": "Zugewiesen an",
-      "waiting_for": "Wartet auf"
+      "comments": "Kommentare",
+      "comment_add": "Kommentar hinzufügen",
+      "waiting_for": "Wartet auf",
+      "held": "Angehalten:",
+      "context": "Kontextvariablen",
+      "context_none": "Diese Ausführung enthält keine Kontextvariablen."
     }
   },
   "artifact_instance": {
@@ -426,7 +444,9 @@
     "occurredAt": "Eingetreten am",
     "dueAt": "Fällig am",
     "fireCount": "Auslösungen",
+    "blockedReason": "Blockierungsgrund",
     "payload": "Nutzdaten",
+    "parameters": "Parameter",
     "contextContribution": "Kontextbeitrag"
   },
   "task_step_result": {

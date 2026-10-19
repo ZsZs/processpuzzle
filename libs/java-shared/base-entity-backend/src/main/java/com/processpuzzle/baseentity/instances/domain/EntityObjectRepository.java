@@ -43,6 +43,18 @@ public interface EntityObjectRepository
     List<PayloadView> findPayloadsByOrgKeyAndEntityDefinitionCodeIn(
         @Param("orgKey") String orgKey, @Param("entityDefinitionCodes") Collection<String> entityDefinitionCodes);
 
+    /**
+     * Replaces an object's payload <em>without</em> moving its version, provided it is still at {@code version}:
+     * derived values written through {@code EntityObjectAccess.updateAttributes}. A bulk update, so neither the
+     * optimistic lock nor auditing applies; the persistence context is cleared so no stale copy is read afterwards.
+     *
+     * @return 1 when written, 0 when the object is gone or at another version
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update EntityObject o set o.payload = :payload where o.id = :id and o.orgKey = :orgKey and o.version = :version")
+    int replacePayloadKeepingVersion(@Param("id") UUID id, @Param("orgKey") String orgKey, @Param("version") Long version,
+                                     @Param("payload") Map<String, Object> payload);
+
     /** Every object of a tenant in one statement, for erasing the tenant. */
     @Modifying(flushAutomatically = true)
     @Query("delete from EntityObject o where o.orgKey = :orgKey")

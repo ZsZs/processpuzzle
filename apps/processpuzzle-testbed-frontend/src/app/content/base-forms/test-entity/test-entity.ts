@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntity, EntityComment, GeoLocation, PostalAddress } from '@processpuzzle/base-entity';
 import { v4 as uuidv4 } from 'uuid';
 import { EmbeddedComponent } from '../embedded-component/embedded-component';
 import { RelatedEntity } from '../related-entity/related-entity';
@@ -28,6 +28,9 @@ export interface TestEntityOptions {
   embeddedComponents?: EmbeddedComponent[];
   relatedEntities?: RelatedEntity[];
   additionalProperties?: Record<string, string>;
+  comments?: EntityComment[];
+  address?: PostalAddress;
+  location?: GeoLocation;
 }
 
 export class TestEntity implements BaseEntity {
@@ -49,6 +52,11 @@ export class TestEntity implements BaseEntity {
   embeddedComponents: Array<EmbeddedComponent> | undefined;
   relatedEntities: Array<RelatedEntity> | undefined;
   additionalProperties: Record<string, string> | undefined;
+  /** Append-only, oldest first: the form adds one at a time and the history is never rewritten. */
+  comments: Array<EntityComment> | undefined;
+  address: PostalAddress | undefined;
+  /** Where the device was when the user last pressed the location button — never typed. */
+  location: GeoLocation | undefined;
 
   constructor(options: TestEntityOptions = {}) {
     this.id = options.id ?? uuidv4();
@@ -66,5 +74,8 @@ export class TestEntity implements BaseEntity {
     this.embeddedComponents = options.embeddedComponents;
     this.relatedEntities = options.relatedEntities;
     this.additionalProperties = options.additionalProperties;
+    this.comments = options.comments;
+    this.address = options.address;
+    this.location = options.location;
   }
 }

@@ -27,7 +27,7 @@ import { EmbeddedComponentRefComponent } from './embedded-component-ref.componen
  * The rows come from the child's own store, which reads them out of this entity's payload
  * (`EmbeddedEntityService`), so adding, editing and deleting a child all go through the same
  * List → Store → Service path as any other entity. What differs is only where that service writes: the
- * containing document, saved as a whole. For a part that is persisted through an endpoint of its own, see
+ * containing document, staged in its store and saved as a whole by this entity's own Save. For a part that is persisted through an endpoint of its own, see
  * `COMPONENTS`; for one that merely points at an independent entity, `RELATED_ENTITIES`.
  */
 @Component({
@@ -182,9 +182,9 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
   }
 
   /**
-   * Repositions a row. Unlike adding, editing or deleting a child, which each persist the containing document
-   * at once, this is an edit *of the owner* — the order is one of its attributes — so it only dirties the
-   * owner's form, and the owner's Save carries it.
+   * Repositions a row. Like adding, editing or deleting a child, it is persisted by the owner's Save; unlike
+   * them it does not go through the child's store at all — the order is an attribute *of the owner* — so it
+   * is kept as a pending arrangement and only dirties the owner's form.
    */
   moveComponent(row: EmbeddedRow, toIndex: number): void {
     if (!this.reorderable() || toIndex < 0 || toIndex >= this.rows().length) return;
@@ -239,9 +239,13 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
   }
 
   /**
-   * Mirrors the rows into this attribute's control. A child's save writes the containing document itself, so
-   * the control would otherwise still hold the array as it looked when the form was built — and the owner's
-   * own save, which merges `form.value` over the entity, would write that stale array back.
+   * Mirrors the rows into this attribute's control. A child's save stages the containing document in its
+   * store, so the control would otherwise still hold the array as it looked when the form was built — and the
+   * owner's own save, which merges `form.value` over the entity, would write that stale array back.
+   *
+   * While the document holds staged child changes the control is also dirtied: they are edits the owner's
+   * Save still has to carry, and the Save button is what tells the user so. Rows merely loaded from the
+   * server leave it pristine.
    */
   private registerFormControlSync(): void {
     effect(() => {
@@ -249,10 +253,17 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
       const control = this.formGroup?.get(this.config().attrName);
       if (!control) return;
 
-      // Not `markAsDirty`: the aggregate on the server already has these rows, so this is not an edit the
-      // owner's Save still has to carry — unless they are rearranged, which `moveComponent` marks itself.
       control.setValue(rows, { emitEvent: false });
+      untracked(() => {
+        if (this.documentHasStagedChanges()) control.markAsDirty();
+      });
     });
+  }
+
+  /** Whether the document these rows live in holds child changes its Save has not persisted yet. */
+  private documentHasStagedChanges(): boolean {
+    const resolved = this.aggregateAccessor.resolve(this.linkedEntityName());
+    return resolved !== undefined && resolved.rootStore.hasStagedChanges(resolved.context.rootId);
   }
   // endregion
 }

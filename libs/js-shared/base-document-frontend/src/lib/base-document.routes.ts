@@ -1,10 +1,16 @@
 import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
-import { baseEntityRoutes, type EmbeddedChildRoute } from '@processpuzzle/base-entity';
+import { ACTIVE_ENTITY_FACADE, BaseEntityContainerComponent, baseEntityRoutes, type EmbeddedChildRoute } from '@processpuzzle/base-entity';
 import { BASE_DOCUMENT_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from './base-document.i18n';
-import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './domain/document-entity-names';
+import { ISSUED_DOCUMENT_ENTITY_NAME } from './domain/issued-document/issued-document';
+import { CONTENT_BOOK_ENTITY_NAME, DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './domain/document-entity-names';
+import { ContentBookContainerComponent } from './feature/content-book-container.component';
+import { CONTENT_BOOK_CONTENT_TAB } from './feature/content-book/content-book-content-tab';
 import { BaseDocumentContainerComponent } from './feature/base-document-container.component';
 import { DOCUMENT_CONTENT_TAB } from './feature/document-content-tab';
+import { DOCUMENT_SIGN_TAB } from './feature/document-sign/document-sign-tab';
+import { DOCUMENT_PREVIEW_TAB } from './feature/report/document-preview-tab';
+import { IssuedDocumentFacade } from './feature/issued-document.facade';
 import { DocumentInputPortFacade } from './feature/document-input-port.facade';
 import { DocumentOutputPortFacade } from './feature/document-output-port.facade';
 
@@ -31,7 +37,16 @@ export const BASE_DOCUMENT_ROUTES: Routes = [
     // The content tab's own route, `document/<id>/content`, comes from the second argument — the same
     // constant BaseDocumentContainerComponent puts on the descriptor, so the tab link and the route that
     // answers it are one declaration.
-    children: baseEntityRoutes(embeddedPortRoutes(), [DOCUMENT_CONTENT_TAB]),
+    children: baseEntityRoutes(embeddedPortRoutes(), [DOCUMENT_CONTENT_TAB, DOCUMENT_PREVIEW_TAB, DOCUMENT_SIGN_TAB]),
+  },
+  {
+    // `snakeCaseName('ContentBook')`, for the reason given above.
+    path: 'content-book',
+    title: 'ProcessPuzzle Design - Content books',
+    data: { icon: 'menu_book', menuTitle: 'design.content_books', entityName: CONTENT_BOOK_ENTITY_NAME },
+    component: ContentBookContainerComponent,
+    providers: [provideTranslocoScope({ scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE }, { scope: BASE_DOCUMENT_TRANSLOCO_SCOPE, alias: BASE_DOCUMENT_TRANSLOCO_SCOPE })],
+    children: baseEntityRoutes([], [CONTENT_BOOK_CONTENT_TAB]),
   },
 ];
 
@@ -49,3 +64,21 @@ function embeddedPortRoutes(): EmbeddedChildRoute[] {
     { entityName: DOCUMENT_OUTPUT_PORT_ENTITY_NAME, facade: DocumentOutputPortFacade },
   ];
 }
+
+/**
+ * The organization's issued documents — its signed reports — as a read-only list. Mounted next to
+ * {@link BASE_DOCUMENT_ROUTES}; the path is `snakeCaseName('IssuedDocument')`, for the reason given there.
+ */
+export const ISSUED_DOCUMENT_ROUTES: Routes = [
+  {
+    path: 'issued-document',
+    title: 'ProcessPuzzle - Issued documents',
+    data: { icon: 'verified', menuTitle: 'design.issued_documents', entityName: ISSUED_DOCUMENT_ENTITY_NAME },
+    component: BaseEntityContainerComponent,
+    providers: [
+      { provide: ACTIVE_ENTITY_FACADE, useExisting: IssuedDocumentFacade },
+      provideTranslocoScope({ scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE }, { scope: BASE_DOCUMENT_TRANSLOCO_SCOPE, alias: BASE_DOCUMENT_TRANSLOCO_SCOPE }),
+    ],
+    children: baseEntityRoutes(),
+  },
+];

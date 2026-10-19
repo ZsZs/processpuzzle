@@ -23,7 +23,7 @@ locales: [en, de, hu]               # languages the starter ships labels for
 
 # --- Contents (paths relative to the manifest) --------------------------
 # The importer always processes groups in this order:
-# entities -> states -> rules -> widgets -> documents -> workflows -> apps
+# entities -> states -> rules -> calculations -> widgets -> documents -> workflows -> apps
 contents:
   entities:
     - entities/regatta.yaml
@@ -36,6 +36,8 @@ contents:
   rules:
     - rules/entry-validation.yaml
     - rules/scoring.yaml
+  calculations:
+    - calculations/series-ranking.yaml   # one calculation per YAML document
   documents:
     - documents/notice-of-race.yaml
     - documents/results-sheet.yaml

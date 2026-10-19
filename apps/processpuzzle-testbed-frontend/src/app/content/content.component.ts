@@ -96,6 +96,15 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'calculate',
+      title: 'base-calculation_card_title',
+      subtitle: 'base-calculation_card_subtitle',
+      content: ['base-calculation_card_content', 'base-calculation_card_content_1', 'base-calculation_card_content_2', 'base-calculation_card_content_3'],
+      actions: [{ link: '/base-calculation', caption: 'base-calculation_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-calculation_card_button', link: '/base-calculation' }],
+      translocoPrefix: 'home',
+    },
+    {
       icon: 'rocket_launch',
       title: 'base-release_card_title',
       subtitle: 'base-release_card_subtitle',

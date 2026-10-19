@@ -117,6 +117,7 @@
     "blockedNoReason": "Von einer Bedingung dieses Übergangs nicht erlaubt.",
     "rejected": "Der Übergang wurde abgelehnt: {{reason}}",
     "fired": "Status geändert auf {{state}}.",
+    "back": "Zurück",
     "initialState": "Beginnt in {{state}}"
   }
 }

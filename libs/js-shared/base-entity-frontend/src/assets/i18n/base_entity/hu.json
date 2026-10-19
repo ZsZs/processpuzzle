@@ -18,6 +18,9 @@
     "dateStyle": "Dátum stílusa",
     "timeStyle": "Idő stílusa",
     "defaultAvatar": "Alapértelmezett avatár",
+    "showMap": "Térképet mutat",
+    "mapProvider": "Térképszolgáltató",
+    "defaultCountry": "Alapértelmezett ország",
     "_tooltips": {
       "code": "A kulcs, amely alatt az érték tárolódik, az entitástípuson belül egyedi, pl. orderNumber. Ha már vannak rekordok, ne módosítsa.",
       "name": "A mező felirata, ahogy a felhasználók az űrlapokon és a lista oszlopaiban látják, pl. Rendelésszám.",
@@ -34,6 +37,9 @@
       "linkedEntityType": "Hivatkozó mezőknél (FOREIGN_KEY) és beágyazott soroknál (EMBEDDED_COMPONENTS): annak az entitástípusnak a kódja, amelyre mutatnak, pl. customer.",
       "defaultValue": "Az új rekordokban előre kitöltött érték, pl. NEW vagy 1. Ha nincs ilyen, hagyja üresen.",
       "defaultAvatar": "AVATAR vezérlőknél: ikonnév (pl. person, sailing) vagy kép URL, amely kép feltöltése előtt jelenik meg.",
+      "showMap": "ADDRESS vezérlőknél: a cím megjelenítése térképen, a címből származtatott koordinátákkal.",
+      "mapProvider": "Térképes ADDRESS vezérlőknél: ki rajzolja a térképet. Üresen OpenStreetMap; kattintásra mindig a Google Térkép nyílik meg.",
+      "defaultCountry": "ADDRESS vezérlőknél: az ISO országkód, amellyel egy új cím indul, pl. HU. Üresen a böngésző országa.",
       "dateStyle": "DATE és DATE_TIME mezőknél: a dátum megjelenítése a short (26. 12. 31.) formától a full (2026. december 31., csütörtök) formáig. Üresen az alapértelmezés érvényes.",
       "timeStyle": "DATE_TIME mezőknél: az idő megjelenítése a short (14:30) formától a long (másodperccel és időzónával) formáig. Üresen az alapértelmezés érvényes."
     }
@@ -107,7 +113,9 @@
     "filter_tooltip": "Betöltött sorok szűrése szöveg alapján",
     "edit_tooltip": "Kijelölt rekord szerkesztése",
     "new_tooltip": "Új rekord létrehozása",
-    "delete_tooltip": "Kijelölt rekordok törlése"
+    "delete_tooltip": "Kijelölt rekordok törlése",
+    "export_menu": "Exportálás",
+    "actions_menu": "Művelet választása"
   },
   "pdf_export": {
     "button": "PDF",
@@ -133,5 +141,66 @@
     "save_owner_first": "Mentse ezt a rekordot, mielőtt {{ entity }} elemet ad hozzá — a beágyazott komponens ebben tárolódik.",
     "move_up": "Feljebb",
     "move_down": "Lejjebb"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Szövegformázás",
+      "bold": "Félkövér",
+      "italic": "Dőlt",
+      "strike": "Áthúzott",
+      "code": "Beágyazott kód",
+      "heading_1": "Címsor 1",
+      "heading_2": "Címsor 2",
+      "heading_3": "Címsor 3",
+      "bullet_list": "Felsorolás",
+      "ordered_list": "Számozott lista",
+      "blockquote": "Idézet",
+      "horizontal_rule": "Elválasztó",
+      "undo": "Visszavonás",
+      "redo": "Újra"
+    }
+  },
+  "comments": {
+    "title": "Megjegyzések",
+    "new_placeholder": "Írjon megjegyzést…",
+    "unknown_author": "Ismeretlen",
+    "count": "{{ count }} megjegyzés"
+  },
+  "address": {
+    "country": "Ország",
+    "street": "Utca, házszám",
+    "address_line2": "Kiegészítő cím",
+    "postal_code": "Irányítószám",
+    "zip_code": "ZIP kód",
+    "postcode": "Irányítószám",
+    "city": "Település",
+    "town": "Település",
+    "region": "Régió",
+    "state": "Állam",
+    "province": "Tartomány",
+    "county": "Megye",
+    "prefecture": "Prefektúra",
+    "canton": "Kanton",
+    "latitude": "Szélesség",
+    "longitude": "Hosszúság",
+    "locate": "Helymeghatározás a címből",
+    "not_found": "A cím nem található a térképen.",
+    "no_location": "Még nincs hely — adja meg a címet vagy a koordinátákat.",
+    "map": "A cím térképe",
+    "open_in_google_maps": "Megnyitás a Google Térképen"
+  },
+  "geo_location": {
+    "capture": "Helyzetem rögzítése",
+    "recapture": "Helyzetem újbóli rögzítése",
+    "none": "Még nincs rögzített helyzet.",
+    "captured_at": "Rögzítve: {{ time }}",
+    "unavailable": "A böngésző nem tudja meghatározni a helyzetét, vagy nem engedélyezte az oldalnak.",
+    "open_in_google_maps": "Megnyitás a Google Térképen",
+    "error": {
+      "PERMISSION_DENIED": "A helymeghatározás tiltva van. Engedélyezze a böngésző webhely-beállításaiban.",
+      "POSITION_UNAVAILABLE": "Az eszköz nem tudta meghatározni a helyzetét.",
+      "TIMEOUT": "A helymeghatározás túl sokáig tartott. Próbálja újra.",
+      "UNAVAILABLE": "A böngésző nem tudja meghatározni a helyzetét."
+    }
   }
 }

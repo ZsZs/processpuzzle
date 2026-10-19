@@ -33,6 +33,21 @@
     "kind_task": "Feladatok",
     "kind_workflow": "Munkafolyamatok",
     "kind_module": "Modulok",
-    "kind_app": "Alkalmazás"
+    "kind_app": "Alkalmazás",
+    "steps": "Migrációs lépések",
+    "steps-intro": "A kiadás ezeket futtatja le először, sorrendben, hogy a meglévő objektumok illeszkedjenek a vázlataihoz. A fenti problémákat a lépések utáni adatokon ellenőrzi.",
+    "steps-run": "{{count}} migrációs lépés",
+    "step_renameAttribute": "{{key}}.{{subject}} átnevezése",
+    "step_fillAttribute": "{{key}}.{{subject}} kitöltése",
+    "step_mapValues": "{{key}}.{{subject}} értékeinek leképezése",
+    "step_remove": "Eltávolítás",
+    "outcome_applied": "{{count}} objektum változna",
+    "outcome_skipped": "Kihagyva:",
+    "outcome_failed": "Sikertelen:",
+    "resolve_renameAttribute": "Az új neve",
+    "resolve_fillAttribute": "Az érték nélküli objektumok kitöltése ezzel:",
+    "resolve_mapValues": "Ezek az objektumok ide kerülnek:",
+    "resolve_choose": "Válasszon…",
+    "resolve_apply": "Alkalmaz"
   }
 }

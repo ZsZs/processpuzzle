@@ -9,12 +9,16 @@ package com.processpuzzle.core.definition;
  * workflow catalogue — {@link #ARTIFACT}, {@link #ROLE}, {@link #TOOL}, {@link #TASK} — imported on their own: a
  * workflow bundle carries its catalogue. They are released before the workflows that use them, a task after the roles,
  * artifacts and tools it names.
+ *
+ * <p>A {@link #CALCULATION} reads and writes entity attributes, so it comes after the entities; it is released
+ * after the rules, which it does not name, and before the workflows, whose states may trigger it.
  */
 public final class DefinitionKinds {
 
     public static final String ENTITY = "entity";
     public static final String STATE = "state";
     public static final String RULE = "rule";
+    public static final String CALCULATION = "calculation";
     public static final String WIDGET = "widget";
     public static final String DOCUMENT = "document";
     public static final String EVENT = "event";
@@ -29,6 +33,7 @@ public final class DefinitionKinds {
     public static final int ENTITY_ORDER = 10;
     public static final int STATE_ORDER = 20;
     public static final int RULE_ORDER = 30;
+    public static final int CALCULATION_ORDER = 35;
     public static final int WIDGET_ORDER = 40;
     public static final int DOCUMENT_ORDER = 50;
     public static final int EVENT_ORDER = 52;

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BaseEntityMapper } from '@processpuzzle/base-entity';
+import { BaseEntityMapper, commentsOf, EntityComment } from '@processpuzzle/base-entity';
 import { ArtifactType } from '../definition/artifact-definition';
 import { EventDirection } from '../definition/workflow';
 import { PropertyMap } from '../property-map';
@@ -19,6 +19,7 @@ export interface TaskInstanceDto {
   name?: string;
   status?: TaskInstanceStatus;
   assignedTo?: string;
+  assigneeName?: string | null;
   blockedReason?: string;
   activatedAt?: string;
   completedAt?: string;
@@ -26,6 +27,8 @@ export interface TaskInstanceDto {
   cancelledAt?: string | null;
   cancelReason?: string | null;
   stepResults?: StepResultDto[];
+  /** Read-only on the wire: written by `POST …/comments`, one entry at a time. */
+  comments?: EntityComment[];
 }
 
 interface ArtifactInstanceDto {
@@ -33,7 +36,9 @@ interface ArtifactInstanceDto {
   artifactDefinitionId?: string;
   name?: string;
   type?: ArtifactType;
-  entityId?: string;
+  entityId?: string | null;
+  entityType?: string | null;
+  entityLabel?: string | null;
   stateMachineInstanceId?: string;
   currentState?: string;
   updatedAt?: string;
@@ -51,6 +56,8 @@ interface EventInstanceDto {
   occurredAt?: string | null;
   payload?: PropertyMap | null;
   contextContribution?: PropertyMap | null;
+  parameters?: PropertyMap | null;
+  blockedReason?: string | null;
   dueAt?: string | null;
   fireCount?: number;
 }
@@ -154,6 +161,7 @@ export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
     name: dto.name,
     status: dto.status,
     assignedTo: dto.assignedTo,
+    assigneeName: dto.assigneeName ?? undefined,
     blockedReason: dto.blockedReason,
     activatedAt: dto.activatedAt,
     completedAt: dto.completedAt,
@@ -161,6 +169,7 @@ export function toTaskInstance(dto: TaskInstanceDto): TaskInstance {
     cancelledAt: dto.cancelledAt ?? undefined,
     cancelReason: dto.cancelReason ?? undefined,
     stepResults: (dto.stepResults ?? []).map(toStepResult),
+    comments: commentsOf(dto.comments),
   });
 }
 
@@ -187,7 +196,9 @@ function toArtifactInstance(dto: ArtifactInstanceDto): ArtifactInstance {
     artifactDefinitionId: dto.artifactDefinitionId,
     name: dto.name,
     type: dto.type,
-    entityId: dto.entityId,
+    entityId: dto.entityId ?? undefined,
+    entityType: dto.entityType ?? undefined,
+    entityLabel: dto.entityLabel ?? undefined,
     stateMachineInstanceId: dto.stateMachineInstanceId,
     currentState: dto.currentState,
     updatedAt: dto.updatedAt,
@@ -201,6 +212,8 @@ function fromArtifactInstance(artifact: ArtifactInstance): ArtifactInstanceDto {
     name: artifact.name,
     type: artifact.type,
     entityId: artifact.entityId,
+    entityType: artifact.entityType,
+    entityLabel: artifact.entityLabel,
     stateMachineInstanceId: artifact.stateMachineInstanceId,
     currentState: artifact.currentState,
     updatedAt: artifact.updatedAt,
@@ -219,6 +232,8 @@ function toEventInstance(dto: EventInstanceDto): EventInstance {
     occurredAt: dto.occurredAt ?? undefined,
     payload: dto.payload ?? undefined,
     contextContribution: dto.contextContribution ?? undefined,
+    parameters: dto.parameters ?? undefined,
+    blockedReason: dto.blockedReason ?? undefined,
     dueAt: dto.dueAt ?? undefined,
     fireCount: dto.fireCount,
   });
@@ -237,6 +252,8 @@ function fromEventInstance(event: EventInstance): EventInstanceDto {
     occurredAt: event.occurredAt,
     payload: event.payload,
     contextContribution: event.contextContribution,
+    parameters: event.parameters,
+    blockedReason: event.blockedReason,
     dueAt: event.dueAt,
     fireCount: event.fireCount,
   };

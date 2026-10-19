@@ -18,6 +18,9 @@
     "dateStyle": "Style de date",
     "timeStyle": "Style d’heure",
     "defaultAvatar": "Avatar par défaut",
+    "showMap": "Affiche une carte",
+    "mapProvider": "Fournisseur de carte",
+    "defaultCountry": "Pays par défaut",
     "_tooltips": {
       "code": "Clé sous laquelle la valeur est stockée, unique dans le type d'entité, p. ex. orderNumber. Ne la modifiez plus une fois des enregistrements créés.",
       "name": "Le libellé du champ tel que les utilisateurs le voient dans les formulaires et les colonnes de liste, p. ex. Numéro de commande.",
@@ -34,6 +37,9 @@
       "linkedEntityType": "Pour les champs de référence (FOREIGN_KEY) et les lignes intégrées (EMBEDDED_COMPONENTS) : le code du type d'entité visé, p. ex. customer.",
       "defaultValue": "Valeur pré-remplie dans les nouveaux enregistrements, p. ex. NEW ou 1. Laissez vide pour aucune.",
       "defaultAvatar": "Pour les contrôles AVATAR : nom d'icône (p. ex. person, sailing) ou URL d'image à afficher avant le téléversement d'une image.",
+      "showMap": "Pour les contrôles ADDRESS : afficher l'adresse sur une carte, avec des coordonnées déduites de celle-ci.",
+      "mapProvider": "Pour les contrôles ADDRESS avec carte : qui la dessine. Vide utilise OpenStreetMap ; un clic ouvre toujours Google Maps.",
+      "defaultCountry": "Pour les contrôles ADDRESS : le code pays ISO d'une nouvelle adresse, p. ex. FR. Vide utilise le pays du navigateur.",
       "dateStyle": "Pour les champs DATE et DATE_TIME : l'affichage de la date, de short (31/12/26) à full (jeudi 31 décembre 2026). Vide utilise la valeur par défaut.",
       "timeStyle": "Pour les champs DATE_TIME : l'affichage de l'heure, de short (14:30) à long (avec secondes et fuseau horaire). Vide utilise la valeur par défaut."
     }
@@ -107,7 +113,9 @@
     "filter_tooltip": "Filtrer les lignes chargées par texte",
     "edit_tooltip": "Modifier l'enregistrement sélectionné",
     "new_tooltip": "Créer un nouvel enregistrement",
-    "delete_tooltip": "Supprimer les enregistrements sélectionnés"
+    "delete_tooltip": "Supprimer les enregistrements sélectionnés",
+    "export_menu": "Exporter",
+    "actions_menu": "Choisir une action"
   },
   "pdf_export": {
     "button": "PDF",
@@ -133,5 +141,66 @@
     "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké.",
     "move_up": "Monter",
     "move_down": "Descendre"
+  },
+  "rich_text": {
+    "toolbar": {
+      "label": "Mise en forme du texte",
+      "bold": "Gras",
+      "italic": "Italique",
+      "strike": "Barré",
+      "code": "Code en ligne",
+      "heading_1": "Titre 1",
+      "heading_2": "Titre 2",
+      "heading_3": "Titre 3",
+      "bullet_list": "Liste à puces",
+      "ordered_list": "Liste numérotée",
+      "blockquote": "Citation",
+      "horizontal_rule": "Séparateur",
+      "undo": "Annuler",
+      "redo": "Rétablir"
+    }
+  },
+  "comments": {
+    "title": "Commentaires",
+    "new_placeholder": "Écrire un commentaire…",
+    "unknown_author": "Inconnu",
+    "count": "{{ count }} commentaires"
+  },
+  "address": {
+    "country": "Pays",
+    "street": "Rue et numéro",
+    "address_line2": "Complément d'adresse",
+    "postal_code": "Code postal",
+    "zip_code": "Code ZIP",
+    "postcode": "Code postal",
+    "city": "Ville",
+    "town": "Localité",
+    "region": "Région",
+    "state": "État",
+    "province": "Province",
+    "county": "Comté",
+    "prefecture": "Préfecture",
+    "canton": "Canton",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "locate": "Localiser à partir de l'adresse",
+    "not_found": "L'adresse est introuvable sur la carte.",
+    "no_location": "Pas encore de position — saisissez l'adresse ou les coordonnées.",
+    "map": "Carte de l'adresse",
+    "open_in_google_maps": "Ouvrir dans Google Maps"
+  },
+  "geo_location": {
+    "capture": "Enregistrer ma position",
+    "recapture": "Enregistrer à nouveau ma position",
+    "none": "Aucune position enregistrée.",
+    "captured_at": "Enregistrée {{ time }}",
+    "unavailable": "Ce navigateur ne peut pas déterminer votre position, ou vous ne l'avez pas autorisé pour ce site.",
+    "open_in_google_maps": "Ouvrir dans Google Maps",
+    "error": {
+      "PERMISSION_DENIED": "L'accès à la position a été refusé. Autorisez-le dans les paramètres du site du navigateur.",
+      "POSITION_UNAVAILABLE": "L'appareil n'a pas pu déterminer sa position.",
+      "TIMEOUT": "La lecture de la position a pris trop de temps. Réessayez.",
+      "UNAVAILABLE": "Ce navigateur ne peut pas déterminer votre position."
+    }
   }
 }

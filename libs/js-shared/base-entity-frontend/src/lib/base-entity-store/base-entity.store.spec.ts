@@ -184,6 +184,73 @@ describe('BaseEntityStore', () => {
     });
   });
 
+  /** What an embedded child's Save does to its owner's document — see `EmbeddedAggregateAccessor.stageRoot`. */
+  describe('stage()', () => {
+    const staged = (): TestEntity => new TestEntity('1', 'staged', 'unsaved', true, 7, new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_ONE);
+
+    it('replaces the row without calling the repository, and marks it unsaved', () => {
+      const { store, mockService } = setup();
+      const entity = staged();
+
+      store.stage(entity);
+
+      expect(store.loadById('1')).toBe(entity);
+      expect(store.hasStagedChanges('1')).toBe(true);
+      expect(store.hasStagedChanges('2')).toBe(false);
+      expect(mockService.update).not.toHaveBeenCalled();
+    });
+
+    it('marks a row once, however often it is staged', () => {
+      const { store } = setup();
+
+      store.stage(staged());
+      store.stage(staged());
+
+      expect(store.stagedIds()).toEqual(['1']);
+    });
+
+    it('ignores a row the store does not hold', () => {
+      const { store } = setup();
+
+      store.stage(new TestEntity('9', 'unknown', '', true, 0, new Date(), TestEnum.VALUE_ONE));
+
+      expect(store.entities()).toStrictEqual(MOCK_API_RESPONSE);
+      expect(store.stagedIds()).toEqual([]);
+    });
+
+    it('update() persists the staged row and clears the mark', async () => {
+      const { store, mockService } = setup();
+      const entity = staged();
+      store.stage(entity);
+
+      await store.update(entity);
+
+      expect(mockService.update).toHaveBeenCalledWith(entity);
+      expect(store.hasStagedChanges('1')).toBe(false);
+    });
+
+    it('keeps the mark when update() is refused, so the edits are not mistaken for saved ones', async () => {
+      const { store, mockService } = setup();
+      store.stage(staged());
+      mockService.update.mockReturnValue(throwError(() => ({ message: 'Order total does not match the sum of line item subtotals.' })));
+
+      await store.update(staged());
+
+      expect(store.hasStagedChanges('1')).toBe(true);
+    });
+
+    it('reload() discards the staged row', async () => {
+      const { store, mockService } = setup();
+      store.stage(staged());
+      mockService.findById.mockReturnValue(of(testEntity_1));
+
+      await store.reload('1');
+
+      expect(store.loadById('1')).toBe(testEntity_1);
+      expect(store.hasStagedChanges('1')).toBe(false);
+    });
+  });
+
   describe('select(), deselect(), currentEntity()', () => {
     it('selectEntity(), deselectEntity() handles the selectedEntities array.', () => {
       const { store } = setup();

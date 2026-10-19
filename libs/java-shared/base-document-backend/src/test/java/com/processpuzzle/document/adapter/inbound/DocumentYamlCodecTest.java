@@ -10,6 +10,7 @@ import com.processpuzzle.document.model.DocumentInput;
 import com.processpuzzle.document.usecase.DocumentCommand;
 import com.processpuzzle.document.usecase.ExportDocument;
 import com.processpuzzle.document.usecase.ImportDocuments;
+import com.processpuzzle.document.usecase.TestFacts;
 import com.processpuzzle.document.usecase.TestGuards;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import org.junit.jupiter.api.Test;
@@ -92,7 +93,7 @@ class DocumentYamlCodecTest {
             var targetDrafts = mock(DocumentDraftRepository.class);
             var targetPublications = mock(PublishedDocumentRepository.class);
             var outcome = new ImportDocuments(targetDocuments, targetDrafts, targetPublications,
-                    new DocumentReferentialIntegrityChecker(), TestGuards.permitAll())
+                    new DocumentReferentialIntegrityChecker(), TestGuards.permitAll(), TestFacts.ignored())
                     .execute("target", codec.read(bytes(exported)));
 
             assertThat(outcome.errors()).isEmpty();

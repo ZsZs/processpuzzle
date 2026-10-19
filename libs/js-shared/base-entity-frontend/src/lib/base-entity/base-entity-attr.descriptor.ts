@@ -2,6 +2,7 @@ import type { Type } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
 import type { DateFormat } from './date-format';
 import type { Multiplicity } from './multiplicity';
+import type { MapProvider } from '../base-form/address/address-map';
 
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
@@ -26,6 +27,18 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
    * If omitted, defaults to `'person'`.
    */
   defaultAvatar?: string;
+  /**
+   * `ADDRESS` only: show the address on a map, with editable coordinates derived from the address. Off by
+   * default — geocoding asks a third-party service, which an attribute has to opt into.
+   */
+  showMap?: boolean;
+  /** `ADDRESS` only: who draws the map when {@link showMap} is set; OpenStreetMap when absent. */
+  mapProvider?: MapProvider;
+  /**
+   * `ADDRESS` only: the ISO 3166-1 alpha-2 code a new address starts with. When absent, the country of the
+   * browser's locale, if it names one.
+   */
+  defaultCountry?: string;
   hideInTable?: boolean = false;
   /**
    * The list column hugs its content instead of sharing the space left over. Meant for short values — an id,
@@ -82,6 +95,8 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
     this.selectables = selectables;
     this.isLinkToDetails = isLinkToDetails;
     this.options = { inputType: 'text', ...options };
+    // A comment history is not a table cell; a descriptor that wants the count in its list says so.
+    if (formControlType === FormControlType.COMMENTS) this.hideInTable = true;
     if (options && 'defaultAvatar' in options && typeof options.defaultAvatar === 'string') {
       this.defaultAvatar = options.defaultAvatar;
     }

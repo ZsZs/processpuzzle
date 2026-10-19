@@ -219,11 +219,25 @@ The two examples differ in trigger and freezing (a one-time result when a series
 5. Run persistence, triggers from state and workflow, freezing and trace.
 6. Frontend designer, starting with the decision table editor.
 
-**Open questions:**
+**Open questions** — decided for v1 (Oct 18, 2026); see base-calculation-backend's README for the details:
 
-- [ ] Which FEEL engine for the JVM, and which for the browser? Evaluate maturity, licence and custom-function support in a short spike.
-- [ ] Should the browser evaluate calculations (live previews in the designer) or only call the backend?
-- [ ] Is one engine on both sides required, so results can never differ between preview and run?
-- [ ] How are definition changes handled for open (not yet frozen) results: recompute automatically, or on request?
-- [ ] Which entities and attributes of the EAV/JSONB layer need to be exposed to queries, and how are they typed for FEEL (decimal, duration, date-time)?
-- [ ] Does base-calculation eventually absorb the existing rules feature, or stay separate?
+- [x] Which FEEL engine for the JVM, and which for the browser? **Camunda feel-scala** (Apache 2.0) on the JVM, behind
+  `ExpressionEnginePort`, with the platform functions registered through its function provider. No browser engine.
+- [x] Should the browser evaluate calculations (live previews in the designer) or only call the backend? **Only the
+  backend**: the designer's Evaluate tab calls `POST /calculations/{id}/evaluate`, which also accepts an unsaved source.
+- [x] Is one engine on both sides required, so results can never differ between preview and run? **Moot**: there is
+  one engine, on the server, so a preview and a run cannot differ.
+- [x] How are definition changes handled for open (not yet frozen) results: recompute automatically, or on request?
+  **On request**: a changed definition applies to the next run — a trigger or a manual run. Every save moves the
+  definition version on, and a run keeps a snapshot of the source it ran.
+- [x] Which entities and attributes of the EAV/JSONB layer need to be exposed to queries, and how are they typed for
+  FEEL? Any entity, through outbound ports the host implements over base-entity: inputs are RSQL queries
+  (`{ entity, where }`) or rows embedded in a parameter's object (`{ from, path }`). Numbers become decimals,
+  `DATE` / `DATE_TIME` attributes `java.time` values; durations come out of FEEL arithmetic.
+- [x] Does base-calculation eventually absorb the existing rules feature, or stay separate? **Separate** for now; the
+  module shares no code or storage with base-rule.
+
+**What v1 changed against the examples above:** entity names are entity definition codes (`order`, not `Order`);
+order lines are embedded in the order, so the sales example reads them with `from: order, path: lineItems`, and the
+testbed has no Customer entity, so the tier is a parameter with a default; a grouped output names its `key`
+attributes (`for: boat, key: [series, boat]`); `dropWorst` drops the highest values unless `better: higher`.

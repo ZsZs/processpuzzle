@@ -65,6 +65,10 @@ base-workflow:
 base-event:
   loadDefaultEventDefinitions: no
 
+base-calculation:
+  loadDefaultCalculations: no
+  loadDefaultTranslations: no
+
 org-admin:
   loadDefaults: no
 

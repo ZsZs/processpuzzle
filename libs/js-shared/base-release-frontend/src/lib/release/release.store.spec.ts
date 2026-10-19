@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PendingRelease, Release } from './release';
+import { MigrationStep, PendingRelease, ProblemResolution, Release } from './release';
 import { ReleaseService } from './release.service';
 import { ReleaseStore } from './release.store';
 
@@ -22,7 +22,7 @@ const warning = { severity: 'warning' as const, kind: 'app', key: 'app', errorId
 const error = { ...warning, severity: 'error' as const };
 
 describe('ReleaseStore', () => {
-  const service = { pending: vi.fn(), publish: vi.fn(), history: vi.fn() };
+  const service = { pending: vi.fn(), publish: vi.fn(), history: vi.fn(), pendingSteps: vi.fn(), replacePendingSteps: vi.fn() };
 
   function store(): InstanceType<typeof ReleaseStore> {
     TestBed.configureTestingModule({ providers: [ReleaseStore, { provide: ReleaseService, useValue: service }] });
@@ -34,6 +34,7 @@ describe('ReleaseStore', () => {
     vi.resetAllMocks();
     service.pending.mockReturnValue(of(pending()));
     service.history.mockReturnValue(of([]));
+    service.pendingSteps.mockReturnValue(of([]));
   });
 
   it('groups the pending changes by kind, in release order', async () => {
@@ -100,6 +101,55 @@ describe('ReleaseStore', () => {
 
     expect(releaseStore.errors()).toEqual([error]);
     expect(releaseStore.released()).toBeUndefined();
+  });
+
+  it('applies a resolution by adding its step after the pending ones, and reloads the dry run', async () => {
+    const stored: MigrationStep = { id: 's-1', kind: 'entity', key: 'invoice', operation: 'fillAttribute', subject: 'currency', parameters: { value: 'EUR' } };
+    const resolution: ProblemResolution = {
+      step: { kind: 'entity', key: 'customer', operation: 'renameAttribute', subject: 'customerName', parameters: {} },
+      input: 'to',
+      inputKind: 'text',
+      choices: ['name'],
+    };
+    service.pendingSteps.mockReturnValue(of([stored]));
+    service.replacePendingSteps.mockReturnValue(of([]));
+    const releaseStore = store();
+    await releaseStore.load();
+
+    await releaseStore.applyResolution(resolution, 'name');
+
+    expect(service.replacePendingSteps).toHaveBeenCalledWith([
+      { ...stored, id: undefined },
+      { ...resolution.step, id: undefined, parameters: { to: 'name' } },
+    ]);
+    expect(service.pending).toHaveBeenCalledTimes(2);
+  });
+
+  it('removes a pending step', async () => {
+    const steps: MigrationStep[] = [
+      { id: 's-1', kind: 'entity', key: 'invoice', operation: 'fillAttribute', subject: 'currency' },
+      { id: 's-2', kind: 'entity', key: 'invoice', operation: 'fillAttribute', subject: 'total' },
+    ];
+    service.pendingSteps.mockReturnValue(of(steps));
+    service.replacePendingSteps.mockReturnValue(of([]));
+    const releaseStore = store();
+    await releaseStore.load();
+
+    await releaseStore.removeStep(0);
+
+    expect(service.replacePendingSteps).toHaveBeenCalledWith([{ ...steps[1], id: undefined }]);
+  });
+
+  it('reports a step the server refuses, and keeps what it showed', async () => {
+    service.replacePendingSteps.mockReturnValue(throwError(() => new Error('400')));
+    const releaseStore = store();
+    await releaseStore.load();
+
+    await releaseStore.removeStep(0);
+
+    expect(releaseStore.error()).toBeDefined();
+    expect(releaseStore.isBusy()).toBe(false);
+    expect(service.pending).toHaveBeenCalledTimes(1);
   });
 
   it('reports a failure without a pending state as an error', async () => {

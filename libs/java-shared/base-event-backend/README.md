@@ -16,7 +16,8 @@ An `EventDefinition` gives a fact a name the rest of the platform can refer to:
 | `OrderConfirmedEvent` | SYSTEM | `order`, STATE_CHANGED, `CONFIRMED` |
 | `InvoiceRequested` | MESSAGE | — |
 
-SYSTEM definitions are bound to a fact: `subjectType` (an entity definition code), `action`
+SYSTEM definitions are bound to a fact: `subjectType` (an entity definition code, or a `PlatformSubject` a feature
+declares — `document`, `calculation-run`), `action`
 (CREATED / UPDATED / DELETED / STATE_CHANGED) and, for STATE_CHANGED only, an optional `state`. MESSAGE and
 SIGNAL definitions carry no binding: workflows throw them from intermediate throw events.
 

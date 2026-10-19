@@ -131,7 +131,8 @@
     "timerType": "Időzítő",
     "timerExpression": "Időzítő kifejezés",
     "authorizedRoles": "Jogosult szerepkörök",
-    "payloadMapping": "Adattartalom-hozzárendelés",
+    "payloadMapping": "Adattartalom-hozzárendelés (eltérések)",
+    "eventParameters": "Esemény paraméterei",
     "requiredArtifacts": "Szükséges artefaktumok",
     "_tooltips": {
       "id": "Egyedi a munkafolyamaton belül, a tevékenységek és események azonosítói között is, pl. order-created.",
@@ -143,7 +144,8 @@
       "timerExpression": "Mikor jár le az időzítő, ISO 8601 formában: DATE esetén egy időpont, pl. 2026-12-24T08:00:00Z, CYCLE esetén egy ismétlés, pl. R/P1D (naponta).",
       "preconditionExpression": "Csak TIME_BASED_PRECONDITION: feltétel, amelynek a mérföldkő elérésekor teljesülnie kell, pl. milestone.status == 'PASSED'. Elmentjük, de még nem értékeljük ki.",
       "authorizedRoles": "Csak ROLE_DEFINITION: azok a szerepkörök, amelyek tagjai kézzel indíthatják a munkafolyamatot. Üresen bárki.",
-      "payloadMapping": "TRIGGERING_EVENT és INPUT_ARTIFACT: adatokat másol az indító eseményből az új futásba. Kulcs: a név, amely alatt tároljuk, pl. orderId; érték: honnan olvassuk, pl. $.payload.orderId.",
+      "payloadMapping": "Az esemény paraméterei a saját nevükön kerülnek a futásba, pl. orderNumber – csak azt rendelje hozzá, amit nem adnak, vagy amit más néven szeretne. TRIGGERING_EVENT és INPUT_ARTIFACT: kulcs a név, amely alatt tároljuk, pl. orderId; érték honnan olvassuk, pl. $.subjectId. Az INPUT_ARTIFACT paraméter nélküli platformeseményt olvas, ezért mindent maga rendel hozzá.",
+      "eventParameters": "Amit a kiválasztott esemény hordoz. Mindegyik a saját nevén kerül a futásba (név szerint), hacsak a hozzárendelés meg nem nevezi (hozzárendelt).",
       "requiredArtifacts": "Csak INPUT_ARTIFACT: azok az artefaktumok – opcionálisan adott állapotban –, amelyeknek létezniük kell a munkafolyamat indulása előtt. Mindegyiknek a munkafolyamat artefaktumai között kell lennie."
     }
   },
@@ -169,7 +171,8 @@
     "timerExpression": "Időzítő kifejezés",
     "attachedTo": "Csatolva ehhez",
     "interrupting": "Megszakító",
-    "payloadMapping": "Adatleképezés",
+    "payloadMapping": "Adatleképezés (eltérések)",
+    "eventParameters": "Esemény paraméterei",
     "_tooltips": {
       "id": "Egyedi a munkafolyamaton belül, a tevékenységek és indító események azonosítói között is, pl. invoice-issued. A tevékenységek az Előfeltételei mezőben hivatkoznak rá.",
       "name": "Opcionális felirat a modellezőben, pl. Számla kiállítva. Üresen a katalógusesemény neve látszik.",
@@ -182,7 +185,15 @@
       "dependsOn": "Azoknak a tevékenységeknek vagy eseményeknek az azonosítói, amelyeknek be kell fejeződniük, mielőtt a folyamat ehhez az eseményhez ér, pl. issue-invoice. Üresen a munkafolyamat indulásakor elérhető.",
       "joinType": "ALL a Függ ettől mező minden tevékenységére vagy eseményére vár (alapértelmezés); ANY az elsőjük után továbblép. Üres Függ ettől esetén nincs hatása.",
       "correlationKey": "Csak MESSAGE eseményeknél, ott kötelező: a futás változója, amely az üzenetet ehhez a futáshoz köti, pl. orderId. A THROW elküldi az értékét; a CATCH azonos értékű üzenetre vár.",
-      "payloadMapping": "CATCH: adatokat másol az eseményből a futásba – kulcs egy változónév, érték egy útvonal, pl. $.payload.amount. THROW: kitölti a küldött eseményt – kulcs egy attribútumnév, érték egy útvonal, pl. $.orderId."
+      "payloadMapping": "Az esemény paraméterei név szerint töltődnek ki; csak a hiányzót rendelje hozzá. CATCH: a paraméterek a saját nevükön kerülnek a futásba; kulcs egy változónév, érték egy útvonal, pl. $.payload.amount. THROW: minden paraméter a futás azonos nevű változójából jön; kulcs egy paraméter- vagy attribútumnév, érték egy útvonal, pl. $.new_order.",
+      "eventParameters": "Amit az esemény hordoz. CATCH: mindegyik a saját nevén kerül a futásba, hacsak a hozzárendelés meg nem nevezi. THROW: mindegyik a futás azonos nevű változójából töltődik ki, hacsak a hozzárendelés meg nem nevezi."
+    },
+    "event_parameters": {
+      "none": "Ez az esemény nem deklarál paramétereket.",
+      "required": "kötelező",
+      "by_name": "név szerint",
+      "mapped": "hozzárendelt",
+      "binds": "köti a műterméket"
     }
   },
   "workflow_task_artifact_state": {
@@ -394,14 +405,21 @@
       "artifacts_out": "Írja",
       "artifacts_none": "Ez a feladat nem határoz meg terméket.",
       "not_created": "még nem jött létre",
+      "required_state": "elvárt: {{state}}",
       "note": "Megjegyzések (a munkafolyamat kontextusához adva)",
       "complete": "Feladat befejezése",
+      "complete_blocked": "A feladat befejezéséhez pipáljon ki minden lépést, és hozza minden kimenetet az elvárt állapotba.",
       "skip": "Kihagyás",
       "skip_reason": "A kihagyás oka",
       "unstated_refusal": "Még nem fogadta el, és a kiszolgáló nem adott részletet.",
       "unassigned": "nincs hozzárendelve",
       "assigned_to": "Hozzárendelve",
-      "waiting_for": "Várakozik:"
+      "comments": "Megjegyzések",
+      "comment_add": "Megjegyzés hozzáadása",
+      "waiting_for": "Várakozik:",
+      "held": "Visszatartva:",
+      "context": "Kontextusváltozók",
+      "context_none": "Ennek a futásnak nincsenek kontextusváltozói."
     }
   },
   "artifact_instance": {
@@ -426,7 +444,9 @@
     "occurredAt": "Bekövetkezett",
     "dueAt": "Esedékes",
     "fireCount": "Kiváltások száma",
+    "blockedReason": "Blokkolás oka",
     "payload": "Adatok",
+    "parameters": "Paraméterek",
     "contextContribution": "Kontextushoz adott"
   },
   "task_step_result": {

@@ -8,13 +8,17 @@ import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseProblem;
+import com.processpuzzle.shared.event.EventParameterType;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.domain.DiagramViewport;
+import com.processpuzzle.workflow.definition.domain.EventDirection;
+import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.RoleDefinition;
 import com.processpuzzle.workflow.definition.domain.RoleDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.RoleUse;
+import com.processpuzzle.workflow.definition.domain.TaskArtifactState;
 import com.processpuzzle.workflow.definition.domain.TaskDefinition;
 import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
@@ -28,6 +32,10 @@ import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionChangedE
 import com.processpuzzle.workflow.definition.domain.event.RoleDefinitionDeletedEvent;
 import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
 import com.processpuzzle.workflow.definition.usecases.inbound.ImportOutcome;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogParameter;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogStateChange;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.StateMachineCatalogPort;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
@@ -37,6 +45,9 @@ import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,6 +95,42 @@ class WorkflowReleaseParticipantsTest {
         @Bean
         TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
             return new TransactionTemplate(transactionManager);
+        }
+
+        /** base-state's order machine, as far as the release reads it: it confirms or cancels a draft. */
+        @Bean
+        StateMachineCatalogPort stateMachineCatalog() {
+            StateMachineCatalogPort.Machine order = new StateMachineCatalogPort.Machine("order", List.of("DRAFT", "CONFIRMED", "CANCELLED"),
+                    List.of(new StateMachineCatalogPort.Transition("confirm", "Confirm", "DRAFT", "CONFIRMED"),
+                            new StateMachineCatalogPort.Transition("cancel-draft", "Cancel (from Draft)", "DRAFT", "CANCELLED")));
+            return (orgKey, stateMachineId) -> "order".equals(stateMachineId) ? Optional.of(order) : Optional.empty();
+        }
+
+        /**
+         * base-event's catalog, as far as the release reads it: OrderCancelledEvent is the order entering CANCELLED, and
+         * InvoiceIssued requires an invoiceNumber.
+         */
+        @Bean
+        EventCatalogPort eventCatalog() {
+            return new EventCatalogPort() {
+                @Override
+                public boolean exists(String orgKey, String eventDefinitionId) {
+                    return true;
+                }
+
+                @Override
+                public Optional<CatalogStateChange> stateChangeOf(String orgKey, String eventDefinitionId) {
+                    return "OrderCancelledEvent".equals(eventDefinitionId) ? Optional.of(new CatalogStateChange("order", "CANCELLED"))
+                            : Optional.empty();
+                }
+
+                @Override
+                public List<CatalogParameter> draftParametersOf(String orgKey, String eventDefinitionId) {
+                    return "InvoiceIssued".equals(eventDefinitionId)
+                            ? List.of(new CatalogParameter("invoiceNumber", EventParameterType.STRING, null, true))
+                            : List.of();
+                }
+            };
         }
     }
 
@@ -231,6 +278,78 @@ class WorkflowReleaseParticipantsTest {
                 .containsExactly(tuple("approval", "workflow.release.workflowRemovedWhileRunning"));
         assertThat(tasks.check(ORG, null)).extracting(ReleaseProblem::key, ReleaseProblem::errorId)
                 .containsExactly(tuple("review", "workflow.release.taskRemovedWhileOpen"));
+    }
+
+    /**
+     * The order's machine can cancel it from DRAFT, where the review task waits on it: a workflow that does not say
+     * what happens then is refused, and one that catches the cancellation on the task is not.
+     */
+    @Test
+    void refusesAWorkflowLeavingATransitionOfItsArtifactUnhandled_untilItCatchesIt() {
+        save(artifactRepository, ArtifactDefinition.builder().orgKey(ORG).id("order").name("Order")
+                .artifactType(ArtifactType.ENTITY).artifactTypeId("order").stateMachineId("order").build());
+        save(taskRepository, TaskDefinition.builder().orgKey(ORG).id("review").name("Review").inputs(List.of("order"))
+                .outputs(List.of("order")).build());
+        Workflow fulfillment = workflow("fulfillment");
+        fulfillment.setTasks(List.of(TaskUse.builder().taskDefinitionId("review").artifactStates(List.of(TaskArtifactState.builder()
+                .artifactDefinitionId("order").inputState("DRAFT").outputState("CONFIRMED").build())).build()));
+        save(workflowRepository, fulfillment);
+
+        assertThat(workflows.check(ORG, null)).singleElement().satisfies(problem -> {
+            assertThat(problem.severity()).isEqualTo(ReleaseProblem.Severity.ERROR);
+            assertThat(problem.key()).isEqualTo("fulfillment");
+            assertThat(problem.errorId()).isEqualTo("workflow.release.unhandledStateTransition");
+            assertThat(problem.message()).contains("'Review'", "'Order' in DRAFT", "'Cancel (from Draft)'", "CANCELLED");
+        });
+
+        transaction.executeWithoutResult(status -> {
+            Workflow draft = workflowRepository.findByOrgKeyAndIdAndChannel(ORG, "fulfillment", Channel.DRAFT).orElseThrow();
+            draft.setEvents(List.of(EventUse.builder().id("order-cancelled").eventDefinitionId("OrderCancelledEvent")
+                    .direction(EventDirection.CATCH).attachedTo("review").interrupting(true).build()));
+            workflowRepository.save(draft);
+        });
+
+        assertThat(workflows.check(ORG, null)).isEmpty();
+    }
+
+    /**
+     * A throw of InvoiceIssued needs its invoiceNumber: with nothing before it producing one it is refused, with only a
+     * task before it — whose completion might — it is a warning, and naming it in the throw's mapping settles it.
+     */
+    @Test
+    void checksThatAThrowCanFillItsEventsRequiredParameters() {
+        save(taskRepository, TaskDefinition.builder().orgKey(ORG).id("issue").name("Issue").build());
+        Workflow invoicing = workflow("invoicing");
+        invoicing.setEvents(List.of(EventUse.builder().id("invoice-issued").eventDefinitionId("InvoiceIssued")
+                .direction(EventDirection.THROW).build()));
+        save(workflowRepository, invoicing);
+
+        assertThat(workflows.check(ORG, null)).singleElement().satisfies(problem -> {
+            assertThat(problem.severity()).isEqualTo(ReleaseProblem.Severity.ERROR);
+            assertThat(problem.errorId()).isEqualTo("workflow.release.unfilledThrowParameter");
+            assertThat(problem.subject()).isEqualTo("invoice-issued");
+            assertThat(problem.message()).contains("'invoice-issued'", "'InvoiceIssued'", "'invoiceNumber'");
+        });
+
+        editDraft("invoicing", draft -> {
+            draft.setTasks(List.of(TaskUse.builder().taskDefinitionId("issue").build()));
+            draft.getEvents().getFirst().setDependsOn(List.of("issue"));
+        });
+        assertThat(workflows.check(ORG, null)).singleElement().satisfies(problem -> {
+            assertThat(problem.severity()).isEqualTo(ReleaseProblem.Severity.WARNING);
+            assertThat(problem.errorId()).isEqualTo("workflow.release.throwParameterFromTaskOnly");
+        });
+
+        editDraft("invoicing", draft -> draft.getEvents().getFirst().setPayloadMapping(Map.of("invoiceNumber", "$.number")));
+        assertThat(workflows.check(ORG, null)).isEmpty();
+    }
+
+    private void editDraft(String workflowId, Consumer<Workflow> edit) {
+        transaction.executeWithoutResult(status -> {
+            Workflow draft = workflowRepository.findByOrgKeyAndIdAndChannel(ORG, workflowId, Channel.DRAFT).orElseThrow();
+            edit.accept(draft);
+            workflowRepository.save(draft);
+        });
     }
 
     @Test

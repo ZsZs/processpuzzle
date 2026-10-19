@@ -13,29 +13,52 @@
     "publisherRoles": "Veröffentlicherrollen",
     "inputPorts": "Eingangsports",
     "outputPorts": "Ausgangsports",
+    "kind": "Art",
     "tabs": {
-      "content": "{{ entity }} - Inhalt"
+      "content": "{{ entity }} - Inhalt",
+      "preview": "{{ entity }} - Vorschau",
+      "sign": "{{ entity }} - unterschreiben",
+      "reports": "Berichte"
     },
     "content": {
       "loading": "Inhalt wird geladen…",
       "add_text_block": "Textblock hinzufügen",
-      "add_widget_block": "Widget hinzufügen",
-      "toolbar": {
-        "label": "Textformatierung",
-        "bold": "Fett",
-        "italic": "Kursiv",
-        "strike": "Durchgestrichen",
-        "code": "Inline-Code",
-        "heading_1": "Überschrift 1",
-        "heading_2": "Überschrift 2",
-        "heading_3": "Überschrift 3",
-        "bullet_list": "Aufzählung",
-        "ordered_list": "Nummerierte Liste",
-        "blockquote": "Zitat",
-        "horizontal_rule": "Trennlinie",
-        "undo": "Rückgängig",
-        "redo": "Wiederherstellen"
-      }
+      "add_widget_block": "Widget hinzufügen"
+    },
+    "sign": {
+      "loading": "Das veröffentlichte Dokument wird geladen…",
+      "not_published": "Dieses Dokument ist noch nicht veröffentlicht, daher gibt es nichts zu unterschreiben.",
+      "accept": "Ich habe dieses Dokument gelesen und akzeptiere es.",
+      "button": "Unterschreiben",
+      "signed": "Unterschrieben von {{ signer }} am {{ date }}.",
+      "signatures": "Unterschriften",
+      "none": "Dieses Dokument hat noch niemand unterschrieben."
+    },
+    "widget_settings": {
+      "title": "Widget-Einstellungen",
+      "props": "Eigenschaften",
+      "bindings": "Daten",
+      "no_props": "Dieses Widget hat keine Eigenschaften.",
+      "invalid_json": "Kein gültiges JSON."
+    },
+    "report": {
+      "insert_field": "Datenfeld einfügen",
+      "field": "Feld",
+      "format": "Format",
+      "insert": "Einfügen",
+      "cancel": "Abbrechen",
+      "apply": "Übernehmen",
+      "table_settings": "Tabelleneinstellungen",
+      "rows": "Zeilen",
+      "caption": "Beschriftung",
+      "header": "Überschrift",
+      "total": "Summe",
+      "move_up": "Nach oben",
+      "move_down": "Nach unten",
+      "print": "Drucken / Als PDF speichern",
+      "missing_parameters": "Wählen Sie einen Wert für: {{ ports }}",
+      "template": "Bericht",
+      "not_published": "Dieser Bericht ist noch nicht veröffentlicht."
     },
     "_tooltips": {
       "slug": "Der Schlüssel des Dokuments in seiner Adresse, eindeutig in Ihrer Organisation. Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. getting-started.",
@@ -49,7 +72,8 @@
       "editorRoles": "Rollen, die Inhalt und Eigenschaften des Dokuments ändern dürfen, je ein Chip, z. B. editor.",
       "publisherRoles": "Rollen, die das Dokument veröffentlichen dürfen, je ein Chip. Leer lassen, damit auch die Bearbeiterrollen veröffentlichen können.",
       "inputPorts": "Werte, die die Seite, in die das Dokument eingebettet ist, übergibt, z. B. der angezeigte Kunde, damit Widgets im Dokument sie nutzen können.",
-      "outputPorts": "Werte, die das Dokument an die einbettende Seite zurückgibt, z. B. ein vom Leser ausgewählter Datensatz."
+      "outputPorts": "Werte, die das Dokument an die einbettende Seite zurückgibt, z. B. ein vom Leser ausgewählter Datensatz.",
+      "kind": "DOCUMENT ist eine feste Seite; REPORT_TEMPLATE ist ein Layout, das je Objekt erzeugt wird, z. B. eine Rechnung je Bestellung, wobei die Entitäts-Ports jedes Mal neu befüllt werden."
     }
   },
   "document_input_port": {
@@ -87,5 +111,85 @@
       "entityType": "Nur für ENTITY_REF und ENTITY_COLLECTION: der Entitätstyp der Datensätze, z. B. Order.",
       "attributeVisibility": "Nur für ENTITY_REF und ENTITY_COLLECTION: welche Attribute der Datensätze angezeigt werden. mode ist ALL, INCLUDE oder EXCLUDE; attributes nennt die betroffenen Attributnamen."
     }
+  },
+  "content_book": {
+    "_self": "Inhaltsbuch",
+    "slug": "Slug",
+    "title": "Titel",
+    "description": "Beschreibung",
+    "isPublic": "Öffentlich",
+    "readerRoles": "Leserollen",
+    "editorRoles": "Bearbeiterrollen",
+    "tabs": {
+      "content": "{{ entity }} - Inhalt"
+    },
+    "_tooltips": {
+      "slug": "Der Schlüssel des Buches, eindeutig unter den Büchern Ihrer Organisation. Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. handbuch.",
+      "title": "Der Titel des Buches über seinem Inhaltsverzeichnis, z. B. Mitarbeiterhandbuch.",
+      "description": "Eine kurze Zusammenfassung dessen, was das Buch sammelt.",
+      "isPublic": "Ankreuzen, damit jeder das Buch ohne Anmeldung öffnen kann; die Leserollen werden dann ignoriert. Jede Seite behält ihre eigenen Zugriffsrechte.",
+      "readerRoles": "Rollen, die das Buch öffnen dürfen, je ein Chip. Leer lassen, damit jedes angemeldete Mitglied es öffnen kann.",
+      "editorRoles": "Rollen, die Seiten des Buches hinzufügen, anordnen und entfernen dürfen, je ein Chip. Leer lassen, damit jedes angemeldete Mitglied das darf."
+    },
+    "widget": {
+      "loading": "Buch wird geladen…",
+      "not_found": "Es gibt kein Buch namens „{{ slug }}“, oder Sie dürfen es nicht öffnen.",
+      "load_error": "Das Buch konnte nicht geladen werden: {{ message }}",
+      "empty": "Dieses Buch hat noch keine Seiten.",
+      "contents": "Inhalt",
+      "restricted": "Gesperrte Seite",
+      "restricted_text": "Sie dürfen diese Seite nicht lesen.",
+      "page_loading": "Seite wird geladen…",
+      "not_published": "Diese Seite wurde noch nicht veröffentlicht.",
+      "draft_banner": "Unveröffentlichter Entwurf – Leser sehen ihn noch nicht. Veröffentlichen Sie ihn unter Dokumente.",
+      "edit": "Bearbeiten",
+      "read": "Bearbeitung beenden",
+      "edit_note": "Änderungen werden im Entwurf gespeichert. Veröffentlichen Sie sie unter Dokumente, damit Leser sie sehen.",
+      "actions": "Seitenaktionen",
+      "add_document": "Seite hinzufügen",
+      "add_child": "Unterseite hinzufügen",
+      "move_up": "Nach oben",
+      "move_down": "Nach unten",
+      "indent": "Einrücken",
+      "outdent": "Ausrücken",
+      "remove": "Aus dem Buch entfernen",
+      "delete_document": "Dokument löschen",
+      "confirm_delete_title": "Dokument löschen?",
+      "confirm_delete_text": "„{{ title }}“ wird endgültig gelöscht, aus diesem und jedem anderen Buch. Darunter abgelegte Seiten bleiben im Buch.",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "save_error": "Die Änderung konnte nicht gespeichert werden: {{ message }}",
+      "dialog": {
+        "title": "Seite hinzufügen",
+        "new": "Neues Dokument",
+        "existing": "Vorhandenes Dokument",
+        "document_title": "Titel",
+        "document_slug": "Slug",
+        "document": "Dokument",
+        "none_left": "Alle Dokumente der Organisation sind bereits in diesem Buch.",
+        "add": "Hinzufügen",
+        "cancel": "Abbrechen"
+      }
+    }
+  },
+  "signature": {
+    "name": "Unterschrift",
+    "for_role": "als {{ role }}",
+    "saving_pdf": "PDF wird gespeichert…",
+    "pdf_missing": "PDF fehlt — erneut versuchen",
+    "placeholder": "kann unterschrieben werden, wenn der Bericht für ein Objekt geöffnet ist."
+  },
+  "issued_document": {
+    "_self": "Ausgestelltes Dokument",
+    "name": "Name",
+    "title": "Dokument",
+    "subjectType": "Objekttyp",
+    "subjectId": "Objekt",
+    "signedBy": "Unterschrieben von",
+    "signedAt": "Unterschrieben am",
+    "pdf": "PDF",
+    "locale": "Sprache",
+    "revision": "Revision",
+    "documentId": "Dokument-ID"
   }
 }

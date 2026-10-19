@@ -180,7 +180,11 @@ The sections above describe the target. A review against the release code (phase
    - The dry run of decision 5 is the pending view itself. `GET .../releases/pending` runs the steps, plans, and rolls back, and reports each step's outcome.
    - Steps recorded with the release, and listed in its history.
    - A state is remapped with `mapValues` on the entity's state attribute. No state-specific operation is needed.
-3. **Resolve forms and the step list** in the Release section: the rename question, the fill value, and the mapping table pre-filled with the distinct values found in the data.
+3. **Resolve forms and the step list** in the Release section.
+   - A problem carries its resolutions (`ProblemResolution`). Each is a step the participant that found the problem prepared, plus the one value the designer still gives, with its kind and the choices it may take. The Release panel renders that generically and never reads entity or state definitions itself.
+   - The entity participant offers a rename for a removed attribute, choosing among the attributes the draft adds with the same shape. It offers a fill for an attribute that objects have no value for, with the enum values as choices.
+   - The state participant offers to move the objects out of a removed state to one of the draft's states (`mapValues` on the state attribute).
+   - Applying a resolution adds its step and reloads the dry run, so the problem disappears and the step shows how many objects it would change. The step list allows removing a step. The release history counts the steps each release ran.
 4. **Moving removed values aside** (decision 11).
 
 ### 12.6 Later

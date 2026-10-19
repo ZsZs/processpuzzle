@@ -64,6 +64,11 @@
           },
           {
             "glob": "**/*",
+            "input": "libs/js-shared/base-calculation-frontend/src/assets/i18n/base_calculation",
+            "output": "assets/i18n/base_calculation"
+          },
+          {
+            "glob": "**/*",
             "input": "libs/js-shared/base-release-frontend/src/assets/i18n/base_release",
             "output": "assets/i18n/base_release"
           },

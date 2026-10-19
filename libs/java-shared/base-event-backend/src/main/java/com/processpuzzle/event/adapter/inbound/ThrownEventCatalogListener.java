@@ -18,8 +18,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 /**
  * Recognises events a workflow threw: an {@link EventThrown} naming a MESSAGE or SIGNAL definition of
  * the organization's catalog is republished as a {@link DefinedEventOccurred} of that kind, carrying
- * the thrower's correlation value and occurrence id. That keeps this module the only publisher of
- * occurrences — a catching workflow observes the same event whatever raised it.
+ * the thrower's correlation value and occurrence id, and the definition's parameters as the thrower sent them.
+ * That keeps this module the only publisher of occurrences — a catching workflow observes the same event whatever
+ * raised it.
  *
  * <p>A throw naming no definition, or a SYSTEM one, is logged and dropped rather than refused: the
  * workflow validator checks both when a workflow is saved, so getting here means the catalog changed
@@ -61,6 +62,6 @@ class ThrownEventCatalogListener {
         eventPublisher.publishEvent(new DefinedEventOccurred(thrown.orgKey(), thrown.eventDefinitionId(),
                 thrown.subjectType(), thrown.subjectId(), thrown.payload(), thrown.occurredAt(),
                 CatalogEventKind.valueOf(kind.name()), thrown.occurrenceId(), thrown.correlationValue(),
-                thrown.sourceWorkflowInstanceId()));
+                thrown.sourceWorkflowInstanceId(), definition.get().parametersFrom(thrown.payload())));
     }
 }

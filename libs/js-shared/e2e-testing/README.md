@@ -162,9 +162,9 @@ A to-many relationship is not a value a form can be filled with, and it is estab
 |---|---|---|
 | `RELATED_ENTITIES` | a reference to an entity that lives on its own | removing the row detaches only — the target is **still in its own list** |
 | `COMPONENTS` | a child persisted through its own endpoint, pointing back through a foreign key | the child is created, read, edited and destroyed **through the owner's form alone**; attaching stamps the owner into its foreign key, and removing the row **destroys** it |
-| `EMBEDDED_COMPONENTS` | a child carried inside the owner's payload, edited on a nested route | the same, one step further: the child has no endpoint at all, so its own Save writes the owner's document, the owner's form never saves, the breadcrumb names the chain, and an unsaved owner offers no add button |
+| `EMBEDDED_COMPONENTS` | a child carried inside the owner's payload, edited on a nested route | the same, one step further: the child has no endpoint at all, so its own Save only stages the owner's document and the owner's Save persists it, the breadcrumb names the chain, and an unsaved owner offers no add button |
 
-**Where a save is effective** is what separates the two containment flows, and each test asserts it: a component's own fields take the child's Save while the reference array takes the owner's, whereas an embedded child's Save writes the containing document and the owner's Save takes no part at all.
+**Where a save is effective** is what separates the two containment flows, and each test asserts it: a component's own fields take the child's Save while the reference array takes the owner's, whereas an embedded child's Save only stages the containing document: the flow saves each enclosing form out to the root before it reloads, and a reload without that Save would discard the change.
 
 Neither containment flow ever addresses the child's own URL — a component belongs to one parent, so its list is only the picker the owner's add button opens, and an embedded child has no list. A component is therefore created by that picker's **New**, and picked on a second visit: `SELECT_OR_CREATE` hands a *selection* back to the form that asked, never a freshly created entity.
 

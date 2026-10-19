@@ -8,9 +8,22 @@ mat-toolbar {
   height: auto;
 }
 
-.app-logo {
+// The testbed's logo is a tall one, framed in white: the widget is sized up, and the frame drawn on its host —
+// only while it shows an image, or a small screen, where the widget hides it, would keep an empty frame.
+pp-app-logo {
+  --pp-app-logo-max-height: 85px;
+  --pp-app-logo-max-width: 75px;
+}
+
+pp-app-logo:has(img) {
   margin: 5px;
   border: 5px solid var(--pp-color-white);
+}
+
+// In the toolbar's own colour, as the plain title it replaces was, rather than the theme's primary.
+// `currentColor`, not `inherit`: on a custom property `inherit` inherits the variable, not the colour.
+pp-app-title {
+  --pp-app-title-color: currentColor;
 }
 
 mat-menu {

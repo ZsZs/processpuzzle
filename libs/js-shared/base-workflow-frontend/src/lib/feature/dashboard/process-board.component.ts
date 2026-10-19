@@ -16,10 +16,8 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
  *
  * **What this deliberately does not draw is sequence.** It shows *what* is stuck, not *where* in the flow it
  * sits relative to its siblings, or whether a `parallel` group is half finished. That is structural
- * information and the modeler already draws it from `WorkflowTaskAssignment.dependsOn` / `joinType` /
- * `parallel`. A second graph view here would be two layouts of one model to keep in step, and the better
- * move if the board turns out to be insufficient is to layer live status onto the modeler's existing nodes —
- * not to grow a diagram in this component.
+ * information, and `ProcessDiagramComponent` above the board draws it — the modeler's own diagram with live
+ * status layered onto its nodes, rather than a second graph grown in this component.
  *
  * Column headings carry the raw status for the same reason the badges do: nothing in this workspace
  * translates an enum value, and a translated heading above untranslated cards would read as two fields.
@@ -36,7 +34,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
           <div>
             <div class="board__title" data-testid="board-workflow">{{ instance.workflowName || instance.workflowId }}</div>
             <div class="board__subtitle">
-              <span data-testid="board-entity">{{ instance.entityId || '—' }}</span>
+              <span data-testid="board-entity">{{ store.selectedSubjectName() || '—' }}</span>
               @if (instance.startedAt) {
                 <span data-testid="board-started">{{ instance.startedAt | date: 'short' }}</span>
               }
@@ -47,6 +45,12 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                 >{{ waitingForKey | transloco }} {{ event.name || event.eventDefinitionId || event.eventUseId }}@if (event.dueAt) {
                   · {{ event.dueAt | date: 'short' }}
                 }</span
+              >
+            }
+            <!-- A throw that is due but held: a required parameter of its event resolves to nothing. -->
+            @for (event of heldEvents(instance.events); track event.id) {
+              <span class="board__held" [attr.data-testid]="'board-held-' + event.eventUseId" [title]="event.blockedReason"
+                >{{ heldKey | transloco }} {{ event.name || event.eventDefinitionId || event.eventUseId }}</span
               >
             }
           </div>
@@ -81,7 +85,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
                       <span class="card__detail" [attr.data-testid]="'board-cancel-reason-' + row.task.id">{{ row.task.cancelReason || '—' }}</span>
                     }
                     @default {
-                      <span class="card__detail">{{ row.task.assignedTo || (unassignedKey | transloco) }}</span>
+                      <span class="card__detail">{{ row.task.assigneeName || row.task.assignedTo || (unassignedKey | transloco) }}</span>
                     }
                   }
                 </button>
@@ -129,6 +133,16 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
       background-color: #fff4e5;
       font-size: 11px;
       color: #8a5300;
+    }
+    .board__held {
+      display: inline-block;
+      margin-top: 4px;
+      margin-right: 6px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      background-color: #fdecea;
+      font-size: 11px;
+      color: #b3261e;
     }
     .board__status {
       font-size: 11px;
@@ -212,6 +226,7 @@ export class ProcessBoardComponent {
   protected readonly unassignedKey = `${TASK_DASHBOARD_I18N_SCOPE}.unassigned`;
   protected readonly noRunKey = `${TASK_DASHBOARD_I18N_SCOPE}.run_none`;
   protected readonly waitingForKey = `${TASK_DASHBOARD_I18N_SCOPE}.waiting_for`;
+  protected readonly heldKey = `${TASK_DASHBOARD_I18N_SCOPE}.held`;
 
   // `@switch` compares against values, so the enum members are fields rather than reachable as a type.
   protected readonly blocked = TaskInstanceStatus.BLOCKED;
@@ -221,6 +236,10 @@ export class ProcessBoardComponent {
 
   protected waitingEvents(events: EventInstance[] | undefined): EventInstance[] {
     return (events ?? []).filter((event) => event.status === EventInstanceStatus.WAITING);
+  }
+
+  protected heldEvents(events: EventInstance[] | undefined): EventInstance[] {
+    return (events ?? []).filter((event) => event.status === EventInstanceStatus.PENDING && !!event.blockedReason);
   }
 
   protected isSelected(row: DashboardTask): boolean {

@@ -13,29 +13,52 @@
     "publisherRoles": "Közzétevő szerepkörök",
     "inputPorts": "Bemeneti portok",
     "outputPorts": "Kimeneti portok",
+    "kind": "Fajta",
     "tabs": {
-      "content": "{{ entity }} - tartalom"
+      "content": "{{ entity }} - tartalom",
+      "preview": "{{ entity }} - előnézet",
+      "sign": "{{ entity }} - aláírás",
+      "reports": "Jelentések"
     },
     "content": {
       "loading": "Tartalom betöltése…",
       "add_text_block": "Szövegblokk hozzáadása",
-      "add_widget_block": "Widget hozzáadása",
-      "toolbar": {
-        "label": "Szövegformázás",
-        "bold": "Félkövér",
-        "italic": "Dőlt",
-        "strike": "Áthúzott",
-        "code": "Beágyazott kód",
-        "heading_1": "Címsor 1",
-        "heading_2": "Címsor 2",
-        "heading_3": "Címsor 3",
-        "bullet_list": "Felsorolás",
-        "ordered_list": "Számozott lista",
-        "blockquote": "Idézet",
-        "horizontal_rule": "Elválasztó",
-        "undo": "Visszavonás",
-        "redo": "Újra"
-      }
+      "add_widget_block": "Widget hozzáadása"
+    },
+    "sign": {
+      "loading": "A közzétett dokumentum betöltése…",
+      "not_published": "Ez a dokumentum még nincs közzétéve, így nincs mit aláírni.",
+      "accept": "Elolvastam és elfogadom ezt a dokumentumot.",
+      "button": "Aláírás",
+      "signed": "Aláírta: {{ signer }}, {{ date }}.",
+      "signatures": "Aláírások",
+      "none": "Ezt a dokumentumot még senki nem írta alá."
+    },
+    "widget_settings": {
+      "title": "Widget beállításai",
+      "props": "Tulajdonságok",
+      "bindings": "Adatok",
+      "no_props": "Ennek a widgetnek nincsenek tulajdonságai.",
+      "invalid_json": "Érvénytelen JSON."
+    },
+    "report": {
+      "insert_field": "Adatmező beszúrása",
+      "field": "Mező",
+      "format": "Formátum",
+      "insert": "Beszúrás",
+      "cancel": "Mégse",
+      "apply": "Alkalmaz",
+      "table_settings": "Táblázat beállításai",
+      "rows": "Sorok",
+      "caption": "Felirat",
+      "header": "Fejléc",
+      "total": "Összesen",
+      "move_up": "Feljebb",
+      "move_down": "Lejjebb",
+      "print": "Nyomtatás / Mentés PDF-ként",
+      "missing_parameters": "Válasszon értéket ehhez: {{ ports }}",
+      "template": "Jelentés",
+      "not_published": "Ez a jelentés még nincs közzétéve."
     },
     "_tooltips": {
       "slug": "A dokumentum kulcsa a címében, a szervezeten belül egyedi. Csak kisbetűk, számjegyek és kötőjelek, pl. getting-started.",
@@ -49,7 +72,8 @@
       "editorRoles": "A dokumentum tartalmát és tulajdonságait módosítható szerepkörök, mindegyik egy címke, pl. editor.",
       "publisherRoles": "A dokumentumot közzétehető szerepkörök, mindegyik egy címke. Üresen a szerkesztő szerepkörök is közzétehetik.",
       "inputPorts": "Értékek, amelyeket a dokumentumot beágyazó oldal átad, pl. a megtekintett ügyfél, hogy a dokumentum widgetjei használhassák őket.",
-      "outputPorts": "Értékek, amelyeket a dokumentum visszaad az őt beágyazó oldalnak, pl. az olvasó által kiválasztott rekord."
+      "outputPorts": "Értékek, amelyeket a dokumentum visszaad az őt beágyazó oldalnak, pl. az olvasó által kiválasztott rekord.",
+      "kind": "A DOCUMENT egy rögzített oldal; a REPORT_TEMPLATE objektumonként előállított elrendezés, pl. rendelésenként egy számla, amelynek entitás-portjai minden alkalommal újra kitöltődnek."
     }
   },
   "document_input_port": {
@@ -87,5 +111,85 @@
       "entityType": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok entitástípusa, pl. Order.",
       "attributeVisibility": "Csak ENTITY_REF és ENTITY_COLLECTION esetén: a rekordok mely attribútumai látszanak. A mode értéke ALL, INCLUDE vagy EXCLUDE; az attributes az érintett attribútumneveket sorolja fel."
     }
+  },
+  "content_book": {
+    "_self": "Tartalomkönyv",
+    "slug": "Slug",
+    "title": "Cím",
+    "description": "Leírás",
+    "isPublic": "Nyilvános",
+    "readerRoles": "Olvasói szerepkörök",
+    "editorRoles": "Szerkesztői szerepkörök",
+    "tabs": {
+      "content": "{{ entity }} - tartalom"
+    },
+    "_tooltips": {
+      "slug": "A könyv kulcsa, egyedi a szervezet könyvei között. Csak kisbetűk, számjegyek és kötőjelek, pl. kezikonyv.",
+      "title": "A könyv címe, a tartalomjegyzéke fölött jelenik meg, pl. Munkavállalói kézikönyv.",
+      "description": "Rövid összefoglaló arról, mit gyűjt a könyv.",
+      "isPublic": "Jelölje be, hogy bárki bejelentkezés nélkül megnyithassa a könyvet; ekkor az olvasói szerepkörök nem számítanak. Minden oldal megtartja a saját hozzáférését.",
+      "readerRoles": "A könyvet megnyitni jogosult szerepkörök, egy-egy címke. Hagyja üresen, hogy minden bejelentkezett tag megnyithassa.",
+      "editorRoles": "A könyv oldalait hozzáadni, rendezni és eltávolítani jogosult szerepkörök, egy-egy címke. Hagyja üresen, hogy minden bejelentkezett tag megtehesse."
+    },
+    "widget": {
+      "loading": "A könyv betöltése…",
+      "not_found": "Nincs „{{ slug }}” nevű könyv, vagy nem nyithatja meg.",
+      "load_error": "A könyvet nem sikerült betölteni: {{ message }}",
+      "empty": "Ennek a könyvnek még nincsenek oldalai.",
+      "contents": "Tartalom",
+      "restricted": "Korlátozott oldal",
+      "restricted_text": "Ezt az oldalt nem olvashatja.",
+      "page_loading": "Az oldal betöltése…",
+      "not_published": "Ezt az oldalt még nem tették közzé.",
+      "draft_banner": "Közzé nem tett vázlat – az olvasók még nem látják. Tegye közzé a Dokumentumoknál.",
+      "edit": "Szerkesztés",
+      "read": "Szerkesztés befejezése",
+      "edit_note": "A módosítások a vázlatba kerülnek. Tegye közzé őket a Dokumentumoknál, hogy az olvasók is lássák.",
+      "actions": "Oldalműveletek",
+      "add_document": "Oldal hozzáadása",
+      "add_child": "Aloldal hozzáadása",
+      "move_up": "Feljebb",
+      "move_down": "Lejjebb",
+      "indent": "Behúzás",
+      "outdent": "Kihúzás",
+      "remove": "Eltávolítás a könyvből",
+      "delete_document": "Dokumentum törlése",
+      "confirm_delete_title": "Törli a dokumentumot?",
+      "confirm_delete_text": "A(z) „{{ title }}” véglegesen törlődik, ebből és minden más könyvből. Az alá sorolt oldalak a könyvben maradnak.",
+      "cancel": "Mégse",
+      "delete": "Törlés",
+      "save_error": "A módosítást nem sikerült menteni: {{ message }}",
+      "dialog": {
+        "title": "Oldal hozzáadása",
+        "new": "Új dokumentum",
+        "existing": "Meglévő dokumentum",
+        "document_title": "Cím",
+        "document_slug": "Slug",
+        "document": "Dokumentum",
+        "none_left": "A szervezet minden dokumentuma már szerepel ebben a könyvben.",
+        "add": "Hozzáadás",
+        "cancel": "Mégse"
+      }
+    }
+  },
+  "signature": {
+    "name": "Aláírás",
+    "for_role": "mint {{ role }}",
+    "saving_pdf": "A PDF mentése…",
+    "pdf_missing": "Hiányzik a PDF — újrapróbálás",
+    "placeholder": "akkor írható alá, ha a jelentés egy objektumhoz van megnyitva."
+  },
+  "issued_document": {
+    "_self": "Kiállított dokumentum",
+    "name": "Név",
+    "title": "Dokumentum",
+    "subjectType": "Objektum típusa",
+    "subjectId": "Objektum",
+    "signedBy": "Aláíró",
+    "signedAt": "Aláírás ideje",
+    "pdf": "PDF",
+    "locale": "Nyelv",
+    "revision": "Revízió",
+    "documentId": "Dokumentum azonosító"
   }
 }

@@ -5,6 +5,12 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
+import cz.jirutka.rsql.parser.RSQLParserException;
+import java.math.BigDecimal;
+import org.springframework.data.jpa.domain.Specification;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +36,12 @@ class EntityObjectAccessAdapterTest {
     @Mock
     private EntityObjectRepository repository;
 
+    @Mock
+    private RsqlToInstanceSpecificationPort rsqlPort;
+
+    @Mock
+    private EntityDefinitionLookupPort lookupPort;
+
     private EntityObjectAccessAdapter adapter;
 
     private static final String ORG = "acme";
@@ -38,7 +50,7 @@ class EntityObjectAccessAdapterTest {
 
     @BeforeEach
     void setUp() {
-        adapter = new EntityObjectAccessAdapter(repository, new EntityObjectScope(repository));
+        adapter = new EntityObjectAccessAdapter(repository, new EntityObjectScope(repository), rsqlPort, lookupPort);
     }
 
     private EntityObject order(long version, Map<String, Object> payload) {
@@ -178,5 +190,75 @@ class EntityObjectAccessAdapterTest {
         assertThat(views).extracting(EntityObjectView::id).containsExactly(id);
         verify(repository).findAllByOrgKeyAndEntityDefinitionCode(ORG, "order");
         verify(repository, never()).findAll();
+    }
+
+    @Test
+    void findWhere_scopesTheFilterToTheOrganizationAndType() {
+        when(rsqlPort.toSpecification(ORG, "status==DRAFT", "order")).thenReturn((root, query, cb) -> cb.conjunction());
+        when(repository.findAll(org.mockito.ArgumentMatchers.<Specification<EntityObject>>any()))
+            .thenReturn(List.of(order(4L, Map.of("status", "DRAFT"))));
+
+        assertThat(adapter.findWhere(ORG, "order", "status==DRAFT")).singleElement()
+            .satisfies(view -> assertThat(view.version()).isEqualTo(4L));
+    }
+
+    @Test
+    void findWhere_blankFilterReadsEveryObjectAndBadRsqlIsAnArgumentError() {
+        when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "order")).thenReturn(List.of(order(1L, Map.of())));
+        assertThat(adapter.findWhere(ORG, "order", " ")).hasSize(1);
+
+        when(rsqlPort.toSpecification(ORG, "==", "order")).thenThrow(new RSQLParserException(new RuntimeException("bad")));
+        assertThatThrownBy(() -> adapter.findWhere(ORG, "order", "==")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void updateAttributes_mergesTypedValuesWithoutMovingTheVersion() {
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(order(2L, Map.of("name", "ACME", "total", 1))));
+        when(repository.replacePayloadKeepingVersion(org.mockito.ArgumentMatchers.eq(id), org.mockito.ArgumentMatchers.eq(ORG),
+            org.mockito.ArgumentMatchers.eq(2L), any())).thenReturn(1);
+
+        adapter.updateAttributes(ORG, "order", id, Map.of("total", new BigDecimal("89.88")), 2L);
+
+        verify(repository).replacePayloadKeepingVersion(id, ORG, 2L, Map.of("name", "ACME", "total", new BigDecimal("89.88")));
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateAttributes_refusesAMovedObject() {
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(order(3L, Map.of())));
+        assertThatThrownBy(() -> adapter.updateAttributes(ORG, "order", id, Map.of("total", 1), 2L))
+            .isInstanceOf(EntityObjectAccessException.VersionConflict.class);
+
+        when(repository.replacePayloadKeepingVersion(any(), any(), any(), any())).thenReturn(0);
+        assertThatThrownBy(() -> adapter.updateAttributes(ORG, "order", id, Map.of("total", 1), 3L))
+            .isInstanceOf(EntityObjectAccessException.VersionConflict.class);
+    }
+
+    @Test
+    void upsertAllByKey_updatesTheMatchingObjectsAndCreatesTheRestReadingTheTypeOnce() {
+        when(lookupPort.findByCode(ORG, "series-result"))
+            .thenReturn(Optional.of(new EntityDefinitionView("series-result", false, List.of(), null, "Series Result")));
+        EntityObject existing = EntityObject.builder().id(id).orgKey(ORG).entityDefinitionCode("series-result").version(0L)
+            .payload(new LinkedHashMap<>(Map.of("boat", "Alpha", "round", 1))).build();
+        when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "series-result")).thenReturn(List.of(existing));
+        when(repository.replacePayloadKeepingVersion(any(), any(), any(), any())).thenReturn(1);
+
+        int created = adapter.upsertAllByKey(ORG, "series-result", List.of("boat", "round"), List.of(
+            Map.of("boat", "Alpha", "round", new BigDecimal("1.0"), "rank", 2),
+            Map.of("boat", "Bravo", "round", 1, "rank", 1)));
+
+        assertThat(created).isEqualTo(1);
+        verify(repository).findAllByOrgKeyAndEntityDefinitionCode(ORG, "series-result");
+        verify(repository).replacePayloadKeepingVersion(org.mockito.ArgumentMatchers.eq(id), any(), any(),
+            org.mockito.ArgumentMatchers.argThat(payload -> Integer.valueOf(2).equals(payload.get("rank"))));
+        verify(repository).save(org.mockito.ArgumentMatchers.argThat(saved -> "Bravo".equals(saved.getPayload().get("boat"))
+            && ORG.equals(saved.getOrgKey())));
+    }
+
+    @Test
+    void upsertAllByKey_unknownTypeIsRefused() {
+        when(lookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> adapter.upsertAllByKey(ORG, "nope", List.of(), List.of()))
+            .isInstanceOf(EntityObjectAccessException.UnknownType.class);
     }
 }

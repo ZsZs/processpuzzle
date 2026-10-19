@@ -25,5 +25,9 @@
     "dark": "Oscuro",
     "auto": "Según el sistema",
     "reset": "Restablecer valor predeterminado"
+  },
+  "sidenav_content": {
+    "show_menu": "Mostrar el menú",
+    "show_content": "Mostrar el contenido"
   }
 }

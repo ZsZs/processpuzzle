@@ -29,6 +29,23 @@ export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-componen
 export { EmbeddedListComponent } from './lib/base-form/embedded-list/embedded-list.component';
 export { EmbeddedObjectComponent } from './lib/base-form/embedded-object/embedded-object.component';
 export { RelatedEntitiesListComponent } from './lib/base-form/related-entities/related-entities-list.component';
+export { CommentsComponent } from './lib/base-form/comments/comments.component';
+export { commentsOf, type EntityComment } from './lib/base-form/comments/entity-comment';
+export { EntityUserContext } from './lib/base-entity-user/entity-user.context';
+export { AddressComponent } from './lib/base-form/address/address.component';
+export { addressOf, geoPointOf, isAddressEmpty, type GeoPoint, type LocationSource, type PostalAddress } from './lib/base-form/address/postal-address';
+export { addressFormatOf, formatAddress, type AddressFormat } from './lib/base-form/address/address-formats';
+export { AddressPipe } from './lib/base-form/address/address.pipe';
+export { AddressGeocoder } from './lib/base-form/address/address-geocoder';
+export { COUNTRY_CODES, countryName, countryOptions } from './lib/base-form/address/countries';
+export { GeoLocationComponent } from './lib/base-form/geo-location/geo-location.component';
+export { formatGeoLocation, geoLocationOf, type GeoLocation } from './lib/base-form/geo-location/geo-location';
+export { GeoLocationPipe } from './lib/base-form/geo-location/geo-location.pipe';
+export { GeoLocator, GeoLocatorFailure, type GeoLocatorError } from './lib/base-form/geo-location/geo-locator';
+export { DEFAULT_MAP_PROVIDER, MAP_PROVIDERS, googleMapsUrl, mapEmbedUrl, type MapProvider } from './lib/base-form/address/address-map';
+// The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.
+export { EMPTY_RICH_TEXT, isRichTextEmpty, RichTextEditorComponent, type RichTextContent } from './lib/rich-text/rich-text-editor.component';
+export { RichTextToolbarComponent } from './lib/rich-text/rich-text-toolbar.component';
 export { BaseEntityDescriptor, type BaseEntityDescriptorOptions, type EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 export { EntityLabelPipe, translateLabel } from './lib/i18n/entity-label.pipe';
 export { DateFormatPipe } from './lib/i18n/date-format.pipe';

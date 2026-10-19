@@ -1,5 +1,5 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { ArtifactAttr, BaseEntityMapper, getEnumKeyByValue, getEnumValueByKey } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntityMapper, EntityComment, getEnumKeyByValue, type GeoLocation, type PostalAddress, getEnumValueByKey } from '@processpuzzle/base-entity';
 import { TestEntity, TestEntityOptions, TestEnum } from './test-entity';
 import { inject, Injectable } from '@angular/core';
 import { EmbeddedComponentMapper } from '../embedded-component/embedded-component.mapper';
@@ -21,6 +21,9 @@ interface TestEntityDto {
   embeddedComponents?: unknown[];
   relatedEntities?: unknown[];
   additionalProperties?: Record<string, string>;
+  comments?: EntityComment[];
+  address?: PostalAddress;
+  location?: GeoLocation;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -48,6 +51,9 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
       embeddedComponents: source.embeddedComponents?.map((embeddedComponent) => this.embeddedComponentMapper.fromDto(embeddedComponent)),
       relatedEntities: source.relatedEntities?.map((relatedEntity) => this.relatedEntityMapper.fromDto(relatedEntity)),
       additionalProperties: source.additionalProperties,
+      comments: source.comments,
+      address: source.address,
+      location: source.location,
     };
     return new TestEntity(options);
   }

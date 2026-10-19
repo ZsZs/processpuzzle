@@ -1,1 +1,57 @@
-<h1>My profile</h1>
+<div class="my-profile-container">
+  <ng-container *transloco="let t">
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ t('auth.my_profile_form.title') }}</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (user(); as user) {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ t('auth.my_profile_form.email_label') }}</mat-label>
+            <input id="my-profile-email" matInput readonly [value]="user.email ?? ''" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ t('auth.my_profile_form.first_name_label') }}</mat-label>
+            <input id="my-profile-first-name" matInput readonly [value]="user.firstName ?? ''" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ t('auth.my_profile_form.last_name_label') }}</mat-label>
+            <input id="my-profile-last-name" matInput readonly [value]="user.lastName ?? ''" />
+          </mat-form-field>
+
+          <h3>{{ t('auth.my_profile_form.roles_label') }}</h3>
+          @if (roles().length > 0) {
+            <ul class="roles" [attr.aria-label]="t('auth.my_profile_form.roles_label')">
+              @for (role of roles(); track role.id) {
+                <li>
+                  <mat-chip disableRipple>{{ role.name }}</mat-chip>
+                  @if (role.description) {
+                    <span class="role-description">{{ role.description }}</span>
+                  } @else if (role.descriptionKey) {
+                    <span class="role-description">{{ t(role.descriptionKey) }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="hint">{{ t('auth.my_profile_form.no_roles') }}</p>
+          }
+        } @else {
+          <p class="hint">{{ t('auth.my_profile_form.not_signed_in') }}</p>
+        }
+      </mat-card-content>
+
+      @if (accountManagementUrl(); as url) {
+        <mat-card-actions align="end">
+          <a mat-flat-button [href]="url">
+            <mat-icon>manage_accounts</mat-icon>
+            {{ t('auth.my_profile_form.manage_account_button') }}
+          </a>
+        </mat-card-actions>
+      }
+    </mat-card>
+  </ng-container>
+</div>

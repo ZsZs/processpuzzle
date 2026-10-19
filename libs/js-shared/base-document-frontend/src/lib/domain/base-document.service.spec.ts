@@ -5,7 +5,7 @@ import { PersistedEntity } from '@processpuzzle/base-entity';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Document, DocumentInputPort, DocumentStatus, PortType } from './base-document';
+import { Document, DocumentInputPort, DocumentKind, DocumentStatus, PortType } from './base-document';
 import { BaseDocumentMapper } from './base-document.mapper';
 import { BaseDocumentService } from './base-document.service';
 
@@ -94,6 +94,7 @@ describe('BaseDocumentService', () => {
       publisherRoles: ['publisher'],
       inputPorts: [new DocumentInputPort('customer', PortType.ENTITY_REF, true)],
       outputPorts: [],
+      kind: DocumentKind.DOCUMENT,
     });
     request.flush({ id: 'q3-plan', title: 'Q3 plan' });
   });
@@ -130,6 +131,32 @@ describe('BaseDocumentService', () => {
     request.flush({ locale: 'hu', status: 'DRAFT', blocks: [{ id: 'intro', kind: 'TEXT' }] });
 
     expect((await pending).blocks).toHaveLength(1);
+  });
+
+  it('signs for a subject, naming the locale only when one is given', async () => {
+    const pending = service.sign('q3-plan', { subjectType: 'employee', subjectId: 'e-1' });
+
+    const request = controller.expectOne(`${serviceRoot}/documents/q3-plan/signatures`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ subjectType: 'employee', subjectId: 'e-1' });
+    request.flush({ id: 's-1', documentId: 'q3-plan', locale: 'en', revision: 2, contentHash: 'h', subjectType: 'employee', subjectId: 'e-1', signedBy: 'Ada', signedAt: '2026-10-17T10:00:00Z' });
+    expect((await pending).signedBy).toBe('Ada');
+
+    void service.sign('q3-plan', { subjectType: 'employee', subjectId: 'e-1' }, 'de');
+    expect(controller.expectOne(`${serviceRoot}/documents/q3-plan/signatures`).request.body).toEqual({ subjectType: 'employee', subjectId: 'e-1', locale: 'de' });
+  });
+
+  it('lists signatures, narrowed to a subject when one is given', async () => {
+    const all = service.listSignatures('q3-plan');
+    const everything = controller.expectOne((candidate) => candidate.url === `${serviceRoot}/documents/q3-plan/signatures`);
+    expect(everything.request.params.keys()).toEqual([]);
+    everything.flush([]);
+    expect(await all).toEqual([]);
+
+    void service.listSignatures('q3-plan', { subjectType: 'employee', subjectId: 'e-1' });
+    const narrowed = controller.expectOne((candidate) => candidate.url === `${serviceRoot}/documents/q3-plan/signatures`);
+    expect(narrowed.request.params.get('subjectType')).toBe('employee');
+    expect(narrowed.request.params.get('subjectId')).toBe('e-1');
   });
 
   /** An explicit empty array, so a new draft starts blank instead of inheriting the source locale's prose. */

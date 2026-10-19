@@ -13,29 +13,52 @@
     "publisherRoles": "Rôles de publication",
     "inputPorts": "Ports d'entrée",
     "outputPorts": "Ports de sortie",
+    "kind": "Type",
     "tabs": {
-      "content": "{{ entity }} - contenu"
+      "content": "{{ entity }} - contenu",
+      "preview": "{{ entity }} - aperçu",
+      "sign": "{{ entity }} - signer",
+      "reports": "Rapports"
     },
     "content": {
       "loading": "Chargement du contenu…",
       "add_text_block": "Ajouter un bloc de texte",
-      "add_widget_block": "Ajouter un widget",
-      "toolbar": {
-        "label": "Mise en forme du texte",
-        "bold": "Gras",
-        "italic": "Italique",
-        "strike": "Barré",
-        "code": "Code en ligne",
-        "heading_1": "Titre 1",
-        "heading_2": "Titre 2",
-        "heading_3": "Titre 3",
-        "bullet_list": "Liste à puces",
-        "ordered_list": "Liste numérotée",
-        "blockquote": "Citation",
-        "horizontal_rule": "Séparateur",
-        "undo": "Annuler",
-        "redo": "Rétablir"
-      }
+      "add_widget_block": "Ajouter un widget"
+    },
+    "sign": {
+      "loading": "Chargement du document publié…",
+      "not_published": "Ce document n'est pas encore publié : il n'y a rien à signer.",
+      "accept": "J'ai lu ce document et je l'accepte.",
+      "button": "Signer",
+      "signed": "Signé par {{ signer }} le {{ date }}.",
+      "signatures": "Signatures",
+      "none": "Personne n'a encore signé ce document."
+    },
+    "widget_settings": {
+      "title": "Paramètres du widget",
+      "props": "Propriétés",
+      "bindings": "Données",
+      "no_props": "Ce widget n'a pas de propriétés.",
+      "invalid_json": "JSON non valide."
+    },
+    "report": {
+      "insert_field": "Insérer un champ de données",
+      "field": "Champ",
+      "format": "Format",
+      "insert": "Insérer",
+      "cancel": "Annuler",
+      "apply": "Appliquer",
+      "table_settings": "Paramètres du tableau",
+      "rows": "Lignes",
+      "caption": "Légende",
+      "header": "En-tête",
+      "total": "Total",
+      "move_up": "Monter",
+      "move_down": "Descendre",
+      "print": "Imprimer / Enregistrer en PDF",
+      "missing_parameters": "Choisissez une valeur pour : {{ ports }}",
+      "template": "Rapport",
+      "not_published": "Ce rapport n'est pas encore publié."
     },
     "_tooltips": {
       "slug": "La clé du document dans son adresse, unique dans votre organisation. Uniquement minuscules, chiffres et tirets, p. ex. getting-started.",
@@ -49,7 +72,8 @@
       "editorRoles": "Rôles autorisés à modifier le contenu et les propriétés du document, un par puce, p. ex. editor.",
       "publisherRoles": "Rôles autorisés à publier le document, un par puce. Laissez vide pour que les rôles d'édition puissent aussi publier.",
       "inputPorts": "Valeurs transmises par la page qui intègre le document, p. ex. le client consulté, afin que les widgets du document puissent les utiliser.",
-      "outputPorts": "Valeurs que le document renvoie à la page qui l'intègre, p. ex. un enregistrement choisi par le lecteur."
+      "outputPorts": "Valeurs que le document renvoie à la page qui l'intègre, p. ex. un enregistrement choisi par le lecteur.",
+      "kind": "DOCUMENT est une page fixe ; REPORT_TEMPLATE est une mise en page produite pour chaque objet, p. ex. une facture par commande, ses ports d'entité étant remplis à chaque fois."
     }
   },
   "document_input_port": {
@@ -87,5 +111,85 @@
       "entityType": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : le type d'entité des enregistrements, p. ex. Order.",
       "attributeVisibility": "Uniquement pour ENTITY_REF et ENTITY_COLLECTION : les attributs des enregistrements affichés. mode vaut ALL, INCLUDE ou EXCLUDE ; attributes liste les noms d'attributs concernés."
     }
+  },
+  "content_book": {
+    "_self": "Livre de contenu",
+    "slug": "Slug",
+    "title": "Titre",
+    "description": "Description",
+    "isPublic": "Public",
+    "readerRoles": "Rôles de lecture",
+    "editorRoles": "Rôles d'édition",
+    "tabs": {
+      "content": "{{ entity }} - contenu"
+    },
+    "_tooltips": {
+      "slug": "La clé du livre, unique parmi les livres de votre organisation. Minuscules, chiffres et tirets uniquement, p. ex. manuel.",
+      "title": "Le titre du livre, affiché au-dessus de son sommaire, p. ex. Manuel du personnel.",
+      "description": "Un bref résumé de ce que le livre rassemble.",
+      "isPublic": "Cochez pour que tout le monde puisse ouvrir le livre sans se connecter ; les rôles de lecture sont alors ignorés. Chaque page garde ses propres droits d'accès.",
+      "readerRoles": "Rôles autorisés à ouvrir le livre, une puce par rôle. Laissez vide pour que tout membre connecté puisse l’ouvrir.",
+      "editorRoles": "Rôles autorisés à ajouter, ordonner et retirer les pages du livre, une puce par rôle. Laissez vide pour que tout membre connecté le puisse."
+    },
+    "widget": {
+      "loading": "Chargement du livre…",
+      "not_found": "Aucun livre ne s’appelle « {{ slug }} », ou vous ne pouvez pas l’ouvrir.",
+      "load_error": "Le livre n’a pas pu être chargé : {{ message }}",
+      "empty": "Ce livre n’a pas encore de pages.",
+      "contents": "Sommaire",
+      "restricted": "Page restreinte",
+      "restricted_text": "Vous ne pouvez pas lire cette page.",
+      "page_loading": "Chargement de la page…",
+      "not_published": "Cette page n’a pas encore été publiée.",
+      "draft_banner": "Brouillon non publié — les lecteurs ne le voient pas encore. Publiez-le dans Documents.",
+      "edit": "Modifier",
+      "read": "Terminer la modification",
+      "edit_note": "Les modifications sont enregistrées dans le brouillon. Publiez-les dans Documents pour les montrer aux lecteurs.",
+      "actions": "Actions de la page",
+      "add_document": "Ajouter une page",
+      "add_child": "Ajouter une sous-page",
+      "move_up": "Monter",
+      "move_down": "Descendre",
+      "indent": "Augmenter le retrait",
+      "outdent": "Diminuer le retrait",
+      "remove": "Retirer du livre",
+      "delete_document": "Supprimer le document",
+      "confirm_delete_title": "Supprimer le document ?",
+      "confirm_delete_text": "« {{ title }} » sera supprimé définitivement, de ce livre et de tous les autres. Les pages rangées en dessous restent dans le livre.",
+      "cancel": "Annuler",
+      "delete": "Supprimer",
+      "save_error": "La modification n’a pas pu être enregistrée : {{ message }}",
+      "dialog": {
+        "title": "Ajouter une page",
+        "new": "Nouveau document",
+        "existing": "Document existant",
+        "document_title": "Titre",
+        "document_slug": "Slug",
+        "document": "Document",
+        "none_left": "Tous les documents de l’organisation sont déjà dans ce livre.",
+        "add": "Ajouter",
+        "cancel": "Annuler"
+      }
+    }
+  },
+  "signature": {
+    "name": "Signature",
+    "for_role": "pour {{ role }}",
+    "saving_pdf": "Enregistrement du PDF…",
+    "pdf_missing": "PDF manquant — réessayer",
+    "placeholder": "peut être signé lorsque le rapport est ouvert pour un objet."
+  },
+  "issued_document": {
+    "_self": "Document émis",
+    "name": "Nom",
+    "title": "Document",
+    "subjectType": "Type d'objet",
+    "subjectId": "Objet",
+    "signedBy": "Signé par",
+    "signedAt": "Signé le",
+    "pdf": "PDF",
+    "locale": "Langue",
+    "revision": "Révision",
+    "documentId": "ID du document"
   }
 }

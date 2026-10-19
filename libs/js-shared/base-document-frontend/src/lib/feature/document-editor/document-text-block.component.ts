@@ -1,10 +1,18 @@
 import { AfterViewInit, Component, computed, DestroyRef, ElementRef, EnvironmentInjector, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
+import { MatIcon } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
+import { RichTextToolbarComponent } from '@processpuzzle/base-entity';
 import { WIDGET_REGISTRY, WidgetRegistration } from '@processpuzzle/widgets';
+import { firstValueFrom } from 'rxjs';
 import { DocumentBlock } from '../../domain/base-document';
+import { DocumentPathCatalog } from '../report/document-path-catalog';
+import { DataFieldChoice, DataFieldDialogComponent } from './data-field-dialog.component';
+import { createDataFieldExtension, DATA_FIELD_NODE } from './data-field-node';
 import { DocumentContentStore } from './document-content.store';
-import { DocumentTextBlockToolbarComponent } from './document-text-block-toolbar.component';
 import { createWidgetEmbedExtension } from './widget-embed-node';
 
 /**
@@ -17,10 +25,22 @@ import { createWidgetEmbedExtension } from './widget-embed-node';
 @Component({
   selector: 'pp-document-text-block',
   standalone: true,
-  imports: [DocumentTextBlockToolbarComponent],
+  imports: [MatIcon, MatTooltip, RichTextToolbarComponent, TranslocoPipe],
   template: `
     @if (isToolbarVisible()) {
-      <pp-document-text-block-toolbar [editor]="editorInstance()!" />
+      <pp-rich-text-toolbar [editor]="editorInstance()!" testIdPrefix="document-text-block" />
+      @if (hasPorts()) {
+        <button
+          type="button"
+          class="pp-document-text-block__insert-field"
+          data-testid="document-text-block-insert-field"
+          [matTooltip]="'base_document.document.report.insert_field' | transloco"
+          (mousedown)="$event.preventDefault()"
+          (click)="onInsertField()"
+        >
+          <mat-icon>data_object</mat-icon>
+        </button>
+      }
     }
     <div #editorHost class="pp-document-text-block" [class.pp-document-text-block--readonly]="!block().editable"></div>
   `,
@@ -54,6 +74,30 @@ import { createWidgetEmbedExtension } from './widget-embed-node';
       :host ::ng-deep .ProseMirror:focus {
         outline: none;
       }
+      /* Opposite the formatting toolbar, in the same reserved strip. */
+      .pp-document-text-block__insert-field {
+        position: absolute;
+        top: 1px;
+        right: 4px;
+        z-index: 5;
+        display: inline-flex;
+        padding: 2px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        cursor: pointer;
+      }
+      .pp-document-text-block__insert-field:hover {
+        background: rgba(0, 0, 0, 0.08);
+      }
+      /* Unresolved only while authoring: the path the field will print, so the author sees what goes where. */
+      :host ::ng-deep .pp-data-field--unresolved {
+        padding: 0 4px;
+        border: 1px dashed rgba(0, 0, 0, 0.38);
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+      }
       /* An empty block still has to be a visible, clickable extent rather than a zero-height line. */
       :host ::ng-deep .ProseMirror {
         min-height: 1.5em;
@@ -74,6 +118,12 @@ export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
   private readonly widgetRegistry = inject(WIDGET_REGISTRY, { optional: true }) ?? new Map<string, WidgetRegistration>();
   private readonly contentStore = inject(DocumentContentStore);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(MatDialog);
+  private readonly pathCatalog = inject(DocumentPathCatalog);
+  private readonly transloco = inject(TranslocoService);
+
+  /** A field needs a port to come from; a document without input ports has nothing to insert. */
+  protected readonly hasPorts = computed(() => this.contentStore.inputPorts().length > 0);
 
   private editor: Editor | null = null;
 
@@ -91,6 +141,12 @@ export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
           blocksById: this.contentStore.blocksById,
           resolveBinding: (portName) => this.contentStore.resolveBinding(portName),
           publishOutput: (event) => this.contentStore.publishOutput(event.port, event.value),
+        }),
+        createDataFieldExtension({
+          environmentInjector: this.environmentInjector,
+          resolveBinding: (path) => this.contentStore.resolveBinding(path),
+          locale: () => this.contentStore.currentLocale() ?? this.transloco.getActiveLang(),
+          editable: block.editable !== false,
         }),
       ],
       onUpdate: ({ editor }) => {
@@ -119,5 +175,19 @@ export class DocumentTextBlockComponent implements AfterViewInit, OnDestroy {
    */
   embedWidget(blockId: string) {
     this.editor?.chain().focus().insertContent({ type: 'widgetEmbed', attrs: { blockId } }).run();
+  }
+
+  /**
+   * Asks which value to place, then inserts a `dataField` node where the caret was. `focus()` before the
+   * insert restores the selection the dialog took focus from.
+   */
+  protected async onInsertField(): Promise<void> {
+    const { fields } = await this.pathCatalog.describe(this.contentStore.inputPorts());
+    const choice = await firstValueFrom(this.dialog.open<DataFieldDialogComponent, unknown, DataFieldChoice>(DataFieldDialogComponent, { data: { fields } }).afterClosed());
+    if (choice) this.insertField(choice);
+  }
+
+  insertField(choice: DataFieldChoice) {
+    this.editor?.chain().focus().insertContent({ type: DATA_FIELD_NODE, attrs: { path: choice.path, format: choice.format } }).run();
   }
 }

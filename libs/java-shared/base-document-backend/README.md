@@ -52,6 +52,10 @@ entry is mutated**, including entries that replace role metadata. One unauthoriz
 the whole import without creating or changing earlier entries. Creating a new document still
 requires organization membership.
 
+## Content books
+
+`ContentBook` groups documents into a tree stored on the book (`/organizations/{orgKey}/content-books`, plus `PUT …/{id}/nodes` to replace the tree). It carries the document access fields and is guarded by the same `DocumentGuard` ladder; deleting a document detaches it from every book. `SampleContentBookLoader` seeds `sample-content-books/*-content-books.yaml`, create-only, nodes referencing documents by slug. See [Content Book](../../../docs/content-book.md).
+
 ## Sample documents
 
 `SampleDocumentLoader` imports the bundled samples on `ApplicationReadyEvent` when `base-document.loadSamples` is true (it is, in `processpuzzle-testbed-backend`). The owning organization is the part of the file name before `-documents.yaml`, so `sample-documents/processpuzzle-testbed-documents.yaml` lands in `processpuzzle-testbed` — the same convention `SampleRuleLoader` and `DefaultAppLoader` use, and the reason seeding another tenant is adding a file rather than changing configuration. The scan is `classpath*:`, so a host application can contribute its own `sample-documents/` directory.

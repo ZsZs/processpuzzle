@@ -4,12 +4,20 @@ import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
 import com.processpuzzle.core.definition.ReleaseProblem;
+import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
+import com.processpuzzle.workflow.definition.domain.ArtifactDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.ArtifactUse;
 import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.RequiredStartArtifact;
 import com.processpuzzle.workflow.definition.domain.RoleUse;
 import com.processpuzzle.workflow.definition.domain.StartEvent;
+import com.processpuzzle.workflow.definition.domain.StateTransitionCoverage;
+import com.processpuzzle.workflow.definition.domain.StateTransitionCoverage.Gap;
+import com.processpuzzle.workflow.definition.domain.TaskDefinition;
+import com.processpuzzle.workflow.definition.domain.TaskDefinitionRepository;
 import com.processpuzzle.workflow.definition.domain.TaskUse;
+import com.processpuzzle.workflow.definition.domain.ThrowParameterCoverage;
+import com.processpuzzle.workflow.definition.domain.ThrowParameterCoverage.Shortfall;
 import com.processpuzzle.workflow.definition.domain.ToolUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.domain.WorkflowDiagram;
@@ -17,17 +25,27 @@ import com.processpuzzle.workflow.definition.domain.WorkflowDiagramRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowRepository;
 import com.processpuzzle.workflow.definition.domain.WorkflowStartConditionType;
 import com.processpuzzle.workflow.definition.domain.event.WorkflowChangedEvent;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogParameter;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.NoStateMachineCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.StateMachineCatalogPort;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +59,12 @@ import org.springframework.stereotype.Component;
  * waits for.
  *
  * <p><strong>What it refuses.</strong> Removing a workflow while instances of it run: they could neither progress nor
- * finish. A released workflow's start timers follow the release, not the draft: the release announces
+ * finish. And a workflow that leaves a state transition of its artifacts unhandled — a task expects the order in
+ * DRAFT, the order's machine can cancel it from there, and nothing in the workflow says what happens then (see
+ * {@link StateTransitionCoverage}): published, its runs would wait forever on a task about an object that has moved
+ * on. And a workflow throwing an event whose required parameter nothing before the throw produces (see
+ * {@link ThrowParameterCoverage}): its runs would hold the throw. One only a task's completion could supply is a
+ * warning — the completion's free context cannot be read ahead. A released workflow's start timers follow the release, not the draft: the release announces
  * {@link WorkflowChangedEvent}, which reschedules them after it commits.
  */
 @Component
@@ -54,14 +77,25 @@ public class WorkflowReleaseParticipant extends DefinitionReleaseParticipant<Wor
     private final WorkflowDiagramRepository diagrams;
     private final WorkflowInstanceRepository instances;
     private final ApplicationEventPublisher events;
+    private final ArtifactDefinitionRepository artifacts;
+    private final TaskDefinitionRepository tasks;
+    private final StateMachineCatalogPort machines;
+    private final EventCatalogPort eventCatalog;
 
     public WorkflowReleaseParticipant(WorkflowRepository repository, WorkflowDiagramRepository diagrams,
-                                      WorkflowInstanceRepository instances, ApplicationEventPublisher events) {
+                                      WorkflowInstanceRepository instances, ApplicationEventPublisher events,
+                                      ArtifactDefinitionRepository artifacts, TaskDefinitionRepository tasks,
+                                      ObjectProvider<StateMachineCatalogPort> machines,
+                                      ObjectProvider<EventCatalogPort> eventCatalog) {
         super(DefinitionKinds.WORKFLOW, DefinitionKinds.WORKFLOW_ORDER, repository);
         this.repository = repository;
         this.diagrams = diagrams;
         this.instances = instances;
         this.events = events;
+        this.artifacts = artifacts;
+        this.tasks = tasks;
+        this.machines = machines.getIfUnique(NoStateMachineCatalogPort::new);
+        this.eventCatalog = eventCatalog.getIfUnique(PermitAllEventCatalogPort::new);
     }
 
     /**
@@ -149,12 +183,96 @@ public class WorkflowReleaseParticipant extends DefinitionReleaseParticipant<Wor
 
     @Override
     protected List<ReleaseProblem> problemsOf(String orgKey, Map<String, Workflow> drafts, Map<String, Workflow> released) {
-        return released.keySet().stream()
+        List<ReleaseProblem> problems = new ArrayList<>(released.keySet().stream()
                 .filter(workflowId -> !drafts.containsKey(workflowId))
                 .filter(workflowId -> instances.existsByOrgKeyAndWorkflowIdAndStatusIn(orgKey, workflowId, RUNNING))
                 .map(workflowId -> ReleaseProblem.error(kind(), workflowId, "workflow.release.workflowRemovedWhileRunning",
                         "The workflow '%s' is removed, but instances of it are still running.".formatted(workflowId)))
-                .toList();
+                .toList());
+        problems.addAll(unhandledTransitions(orgKey, drafts.values()));
+        problems.addAll(unfilledThrowParameters(orgKey, drafts.values()));
+        return problems;
+    }
+
+    /**
+     * One problem per required parameter a draft workflow's throw may send without — see {@link ThrowParameterCoverage}.
+     * Read against the drafts of the event catalog and the task definitions, which this release publishes too.
+     */
+    private List<ReleaseProblem> unfilledThrowParameters(String orgKey, Collection<Workflow> drafts) {
+        if (drafts.isEmpty()) {
+            return List.of();
+        }
+        Map<String, TaskDefinition> tasksById = tasks.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
+                .collect(Collectors.toMap(TaskDefinition::getId, Function.identity(), (first, second) -> first));
+        Map<String, List<CatalogParameter>> parametersById = new HashMap<>();
+        List<ReleaseProblem> problems = new ArrayList<>();
+        for (Workflow workflow : drafts) {
+            ThrowParameterCoverage.shortfallsOf(workflow,
+                            id -> parametersById.computeIfAbsent(id, eventId -> eventCatalog.draftParametersOf(orgKey, eventId)),
+                            id -> eventCatalog.kindOf(orgKey, id),
+                            id -> Optional.ofNullable(tasksById.get(id)))
+                    .forEach(shortfall -> problems.add(unfilled(workflow, shortfall)));
+        }
+        return problems;
+    }
+
+    private ReleaseProblem unfilled(Workflow workflow, Shortfall shortfall) {
+        String throwOf = "Workflow '%s': the throw '%s' of '%s' needs its parameter '%s'"
+                .formatted(nameOf(workflow.getName(), workflow.getId()), shortfall.eventUseId(), shortfall.eventDefinitionId(),
+                        shortfall.parameter());
+        ReleaseProblem problem = switch (shortfall.reason()) {
+            case UNFILLED -> ReleaseProblem.error(kind(), workflow.getId(), "workflow.release.unfilledThrowParameter",
+                    throwOf + ", but nothing before it produces that name. Map it in the throw's payload mapping.");
+            case AMBIGUOUS -> ReleaseProblem.error(kind(), workflow.getId(), "workflow.release.ambiguousThrowParameter",
+                    throwOf + ", which %s all carry. Say which in the throw's payload mapping."
+                            .formatted(String.join(", ", shortfall.carriers())));
+            case TASK_ONLY -> ReleaseProblem.warning(kind(), workflow.getId(), "workflow.release.throwParameterFromTaskOnly",
+                    throwOf + ", which only a task's completion before it could supply. If it does not, the run holds the throw.");
+        };
+        return problem.about(shortfall.eventUseId(), null);
+    }
+
+    /**
+     * One error per transition a draft workflow leaves unhandled — see {@link StateTransitionCoverage}. Read against
+     * the drafts of everything else too, because that is what this release publishes: an artifact given its state
+     * machine and a machine given its cancel transition in the same release are both already in force.
+     */
+    private List<ReleaseProblem> unhandledTransitions(String orgKey, Collection<Workflow> drafts) {
+        if (drafts.isEmpty()) {
+            return List.of();
+        }
+        Map<String, ArtifactDefinition> artifactsById = artifacts.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
+                .collect(Collectors.toMap(ArtifactDefinition::getId, Function.identity(), (first, second) -> first));
+        Map<String, TaskDefinition> tasksById = tasks.findByOrgKeyAndChannel(orgKey, Channel.DRAFT).stream()
+                .collect(Collectors.toMap(TaskDefinition::getId, Function.identity(), (first, second) -> first));
+        Map<String, Optional<StateMachineCatalogPort.Machine>> machinesById = new HashMap<>();
+
+        List<ReleaseProblem> problems = new ArrayList<>();
+        for (Workflow workflow : drafts) {
+            List<Gap> gaps = StateTransitionCoverage.gapsOf(workflow,
+                    id -> Optional.ofNullable(artifactsById.get(id)),
+                    id -> machinesById.computeIfAbsent(id, machineId -> machines.draftOf(orgKey, machineId)),
+                    id -> eventCatalog.stateChangeOf(orgKey, id));
+            gaps.forEach(gap -> problems.add(unhandled(workflow, gap, tasksById.get(gap.taskDefinitionId()),
+                    artifactsById.get(gap.artifactDefinitionId()))));
+        }
+        return problems;
+    }
+
+    private ReleaseProblem unhandled(Workflow workflow, Gap gap, TaskDefinition task, ArtifactDefinition artifact) {
+        String transition = gap.transition().name() == null || gap.transition().name().isBlank()
+                ? gap.transition().key() : gap.transition().name();
+        String message = ("Workflow '%s': task '%s' expects '%s' in %s, from where '%s' takes it to %s — but the workflow "
+                + "does not handle that. Leave it in %s from the task, or attach a catch event of that state change to the task.")
+                .formatted(nameOf(workflow.getName(), workflow.getId()),
+                        task == null ? gap.taskDefinitionId() : nameOf(task.getName(), task.getId()),
+                        artifact == null ? gap.artifactDefinitionId() : nameOf(artifact.getName(), artifact.getId()),
+                        gap.fromState(), transition, gap.transition().targetStateKey(), gap.transition().targetStateKey());
+        return ReleaseProblem.error(kind(), workflow.getId(), "workflow.release.unhandledStateTransition", message);
+    }
+
+    private static String nameOf(String name, String id) {
+        return name == null || name.isBlank() ? id : name;
     }
 
     @Override

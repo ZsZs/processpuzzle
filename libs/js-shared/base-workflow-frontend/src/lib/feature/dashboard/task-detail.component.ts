@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { RichTextContent } from '@processpuzzle/base-entity';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
 import { TaskInstanceStatus } from '../../domain/execution/workflow-instance';
 import { PropertyMap } from '../../domain/property-map';
 import { ArtifactPanelComponent } from './artifact-panel.component';
 import { CompletionFormComponent } from './completion-form.component';
+import { TaskCommentsComponent } from './task-comments.component';
 import { StepChecklistComponent } from './step-checklist.component';
 import { TaskStatusBadgeComponent } from './task-status-badge.component';
 
@@ -19,6 +21,9 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
  * else the sections are shown read-only rather than hidden, because seeing what a colleague is doing is not
  * the same as being invited to do it.
  *
+ * Complete is enabled once every user step is ticked and every output is in the state this workflow says the
+ * task leaves it in — `WorkflowDashboardStore.isReadyToComplete`.
+ *
  * The completion form appears only for an `ACTIVE` task that is the session's own. A `PENDING` task has not
  * been activated by the engine, and a `COMPLETED` or `SKIPPED` one is finished — in both cases `complete`
  * answers `409`, so the button is absent rather than present and doomed.
@@ -26,7 +31,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
 @Component({
   selector: 'pp-task-detail',
   standalone: true,
-  imports: [TranslocoPipe, TaskStatusBadgeComponent, StepChecklistComponent, ArtifactPanelComponent, CompletionFormComponent],
+  imports: [TranslocoPipe, TaskStatusBadgeComponent, StepChecklistComponent, ArtifactPanelComponent, CompletionFormComponent, TaskCommentsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="detail" data-testid="task-detail">
@@ -38,7 +43,7 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
         <p class="detail__meta">
           <span data-testid="task-detail-workflow">{{ row.workflowName }}</span>
           @if (row.task.assignedTo) {
-            <span data-testid="task-detail-assignee">{{ assignedToKey | transloco }}: {{ row.task.assignedTo }}</span>
+            <span data-testid="task-detail-assignee">{{ assignedToKey | transloco }}: {{ row.task.assigneeName || row.task.assignedTo }}</span>
           } @else {
             <span data-testid="task-detail-unassigned">{{ unassignedKey | transloco }}</span>
           }
@@ -58,17 +63,32 @@ import { TaskStatusBadgeComponent } from './task-status-badge.component';
         } @else {
           <section class="detail__section">
             <h5 class="detail__section-heading">{{ stepsKey | transloco }}</h5>
-            <pp-step-checklist [steps]="store.selectedDefinition()?.steps ?? []" [stepResults]="row.task.stepResults" [readOnly]="!store.isMine()" />
+            <pp-step-checklist
+              [steps]="store.selectedDefinition()?.steps ?? []"
+              [stepResults]="row.task.stepResults"
+              [readOnly]="!store.isMine()"
+              [checkedIds]="store.checkedStepIdSet()"
+              [tools]="store.selectedTools()"
+              (stepToggled)="store.toggleStep($event)"
+            />
           </section>
 
           <section class="detail__section">
             <pp-artifact-panel [inputs]="store.selectedInputs()" [outputs]="store.selectedOutputs()" />
           </section>
 
+          <section class="detail__section">
+            <!-- Keyed on the count, so a saved comment rebuilds the editor empty — see TaskCommentsComponent. -->
+            @for (count of [row.task.comments.length]; track count) {
+              <pp-task-comments [task]="row.task" [editable]="isActive()" [isBusy]="store.isActing()" [commentRequested]="addComment" />
+            }
+          </section>
+
           @if (canComplete()) {
             <section class="detail__section">
               <pp-completion-form
                 [isBusy]="store.isActing()"
+                [isReady]="store.isReadyToComplete()"
                 [canSkip]="store.canSkip()"
                 [postconditionDetail]="store.postconditionDetail()"
                 (completeRequested)="complete($event)"
@@ -173,6 +193,17 @@ export class TaskDetailComponent {
   protected readonly selectPromptKey = `${TASK_DASHBOARD_I18N_SCOPE}.select_prompt`;
   protected readonly assignedToKey = `${TASK_DASHBOARD_I18N_SCOPE}.assigned_to`;
   protected readonly unassignedKey = `${TASK_DASHBOARD_I18N_SCOPE}.unassigned`;
+
+  /** Comments are taken while the task is being worked on — the backend refuses them on a finished task. */
+  protected isActive(): boolean {
+    return this.store.selectedTask()?.status === TaskInstanceStatus.ACTIVE;
+  }
+
+  /** An arrow, so it can be handed to the comments component with its `this`. */
+  protected readonly addComment = async (content: RichTextContent): Promise<boolean> => {
+    const row = this.store.selectedRow();
+    return row ? this.store.comment(row, content) : false;
+  };
 
   /** Only an `ACTIVE` task the session holds can be completed — see the class comment. */
   protected canComplete(): boolean {

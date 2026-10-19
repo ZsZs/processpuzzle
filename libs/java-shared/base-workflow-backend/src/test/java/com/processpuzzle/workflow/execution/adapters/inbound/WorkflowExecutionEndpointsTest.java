@@ -5,8 +5,10 @@ import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
+import com.processpuzzle.workflow.execution.domain.TaskComment;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
+import com.processpuzzle.workflow.execution.usecases.inbound.AddTaskCommentUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.AssignTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CancelWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
@@ -19,6 +21,7 @@ import com.processpuzzle.workflow.execution.usecases.inbound.ListArtifactInstanc
 import com.processpuzzle.workflow.execution.usecases.inbound.ListEventInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.SkipTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.StartWorkflowInstanceUseCase;
+import com.processpuzzle.workflow.model.AddTaskCommentRequest;
 import com.processpuzzle.workflow.model.AssignTaskRequest;
 import com.processpuzzle.workflow.model.CancelWorkflowInstanceRequest;
 import com.processpuzzle.workflow.model.CompleteTaskRequest;
@@ -111,11 +114,12 @@ class WorkflowExecutionEndpointsTest {
         ListTaskInstancesUseCase listTasksUseCase = mock(ListTaskInstancesUseCase.class);
         FindTaskInstanceUseCase findTaskUseCase = mock(FindTaskInstanceUseCase.class);
         AssignTaskUseCase assignUseCase = mock(AssignTaskUseCase.class);
+        AddTaskCommentUseCase commentUseCase = mock(AddTaskCommentUseCase.class);
         CompleteTaskUseCase completeUseCase = mock(CompleteTaskUseCase.class);
         SkipTaskUseCase skipUseCase = mock(SkipTaskUseCase.class);
 
         TaskInstancesEndpoint endpoint = new TaskInstancesEndpoint(
-                listTasksUseCase, findTaskUseCase, assignUseCase, completeUseCase, skipUseCase, mapper);
+                listTasksUseCase, findTaskUseCase, assignUseCase, commentUseCase, completeUseCase, skipUseCase, mapper);
 
         UUID instanceId = UUID.randomUUID();
         UUID taskId = UUID.randomUUID();
@@ -150,6 +154,16 @@ class WorkflowExecutionEndpointsTest {
         assertThat(completeRes.getBody().getAccepted()).isTrue();
 
         // Skip
+        Map<String, Object> content = Map.of("type", "doc");
+        TaskInstance commented = TaskInstance.builder().id(taskId).orgKey(ORG).workflowInstanceId(instanceId)
+                .taskDefinitionId("task-1").status(TaskInstanceStatus.ACTIVE).name("Task 1").assigneeName("Ada Lovelace").build();
+        commented.getComments().add(TaskComment.builder().author("Ada Lovelace").authorId("user-1").createdAt(Instant.now()).content(content).build());
+        when(commentUseCase.addComment(ORG, instanceId, "task-1", content)).thenReturn(commented);
+        var commentRes = endpoint.addTaskComment(ORG, instanceId.toString(), "task-1", new AddTaskCommentRequest(content));
+        assertThat(commentRes.getBody().getAssigneeName()).isEqualTo("Ada Lovelace");
+        assertThat(commentRes.getBody().getComments()).singleElement()
+                .satisfies(comment -> assertThat(comment.getAuthor()).isEqualTo("Ada Lovelace"));
+
         CancelWorkflowInstanceRequest skipReq = new CancelWorkflowInstanceRequest();
         skipReq.setReason("Skip reason");
         ResponseEntity<com.processpuzzle.workflow.model.TaskInstance> skipRes = endpoint.skipTask(ORG, instanceId.toString(), "task-1", skipReq);

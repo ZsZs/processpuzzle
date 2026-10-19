@@ -35,7 +35,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   entityId: InputSignal<string> = input.required<string>();
   isAbstract = computed(() => this.entityDescriptor().isAbstract);
   /** A preview of draft definitions over live objects: shown, never saved or deleted — see EntityPreviewMode. */
-  isReadOnly = computed(() => this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  isReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
   isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   store: Signal<BaseEntityStoreApi<Entity>> = computed(() => this.entityDescriptor().store as BaseEntityStoreApi<Entity>);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
@@ -83,6 +83,8 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   }
 
   ngOnDestroy(): void {
+    // Left without Save — by Cancel, or by navigating elsewhere. A Save that succeeded has already cleared the mark.
+    void this.discardStagedChanges();
     this.ruleSubscription?.unsubscribe();
     this.ruleLoad$.complete();
     this.clearFieldRuleErrors();
@@ -93,6 +95,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // region event handlers
   async onCancel() {
     this.store().setCurrentEntity(undefined);
+    await this.discardStagedChanges();
     await this.navigateBack();
   }
 
@@ -113,22 +116,40 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     this.evaluateRules(objectToSave);
     if (this.hasErrorViolations()) return;
     this.store().setCurrentEntity(undefined);
-    if (this.isNewObject()) {
-      await this.store().add(objectToSave);
-    } else {
-      await this.store().update(objectToSave);
+    const saved = this.isNewObject() ? await this.store().add(objectToSave) : await this.store().update(objectToSave);
+    // Refused — by a rule the server enforces, a conflict, the network: the edits stay on the form, and the
+    // store's error says why.
+    if (saved === undefined) {
+      if (!this.isNewObject()) this.store().setCurrentEntity(this.entityId());
+      return;
     }
+    // Saved: should navigating away fail, the form must not keep offering Save for edits already persisted.
+    this.baseEntityForm.markAsPristine();
     await this.navigateBack();
   }
   // endregion
 
   // region protected, private helper methods
   /**
+   * Drops the embedded-child changes staged in this entity's document (see `BaseEntityStoreApi.stage`) by
+   * re-reading it, so an abandoned edit cannot later pass for a saved one. A new object has no document yet.
+   */
+  private async discardStagedChanges(): Promise<void> {
+    if (this.isNewObject() || !this.store().hasStagedChanges(this.entityId())) return;
+    await this.store().reload(this.entityId());
+  }
+
+  /**
    * Leaving an embedded child goes to the form of the entity that contains it. Only a fallback: a drill-down
    * already records where it came from. It is a page opened straight on its URL — a deep link, a reload —
    * that has nothing recorded, and would otherwise land on the child's own list.
+   *
+   * The navigator's entity name is re-claimed first: it is a singleton, and an embedded child opened below
+   * this form — which outlives the child, so `ngOnInit` does not run again — leaves the child's name behind.
+   * The list fallback would then aim at the child's list, which an embedded type does not have.
    */
   private async navigateBack(): Promise<void> {
+    this.formNavigator.setEntityName(this.entityDescriptor().entityName);
     await this.formNavigator.navigateBack(this.entityDescriptor().isEmbedded ? this.formNavigator.determineOwnerUrl() : undefined);
   }
 

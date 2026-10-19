@@ -1,7 +1,9 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.domain.ContentBookRepository;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentSignatureRepository;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.i18n.DocumentUiTranslationRepository;
 import com.processpuzzle.shared.event.OrganizationDeletedEvent;
@@ -12,8 +14,8 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * Deletes this feature's rows of an erased tenant: its published snapshots, drafts and documents,
- * and its UI translations.
+ * Deletes this feature's rows of an erased tenant: its content books, published snapshots, drafts and
+ * documents, its signatures and its UI translations.
  *
  * <p><b>{@code BEFORE_COMMIT}</b>, for the reason base-app's cleaner gives: these deletes join the
  * erasing transaction, so a tenant is either erased in every feature or in none. An
@@ -40,26 +42,33 @@ public class TenantDataCleaner {
     private final DocumentDraftRepository drafts;
     private final DocumentRepository documents;
     private final DocumentUiTranslationRepository translations;
+    private final DocumentSignatureRepository signatures;
+    private final ContentBookRepository contentBooks;
 
     public TenantDataCleaner(PublishedDocumentRepository published, DocumentDraftRepository drafts,
-                             DocumentRepository documents, DocumentUiTranslationRepository translations) {
+                             DocumentRepository documents, DocumentUiTranslationRepository translations,
+                             DocumentSignatureRepository signatures, ContentBookRepository contentBooks) {
+        this.contentBooks = contentBooks;
         this.published = published;
         this.drafts = drafts;
         this.documents = documents;
         this.translations = translations;
+        this.signatures = signatures;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrganizationDeleted(OrganizationDeletedEvent event) {
         String orgKey = event.orgKey();
 
+        int erasedBooks = contentBooks.eraseByOrgKey(orgKey);
         int erasedPublished = published.eraseByOrgKey(orgKey);
         int erasedDrafts = drafts.eraseByOrgKey(orgKey);
         int erasedDocuments = documents.eraseByOrgKey(orgKey);
         int erasedTranslations = translations.eraseByOrgKey(orgKey);
+        int erasedSignatures = signatures.eraseByOrgKey(orgKey);
 
-        LOG.info("Organization '{}' erased: {} document(s), {} draft(s), {} published version(s) and {} "
-                + "translation bundle(s) deleted.", orgKey, erasedDocuments, erasedDrafts, erasedPublished,
-                erasedTranslations);
+        LOG.info("Organization '{}' erased: {} content book(s), {} document(s), {} draft(s), {} published "
+                + "version(s), {} signature(s) and {} translation bundle(s) deleted.", orgKey, erasedBooks,
+                erasedDocuments, erasedDrafts, erasedPublished, erasedSignatures, erasedTranslations);
     }
 }

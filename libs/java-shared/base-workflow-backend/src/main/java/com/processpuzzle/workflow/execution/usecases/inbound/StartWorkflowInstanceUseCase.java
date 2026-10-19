@@ -1,5 +1,7 @@
 package com.processpuzzle.workflow.execution.usecases.inbound;
 
+import com.processpuzzle.shared.event.EventParameterType;
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.workflow.definition.domain.ArtifactDefinition;
 import com.processpuzzle.workflow.definition.domain.ArtifactType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
@@ -16,8 +18,11 @@ import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
 import com.processpuzzle.workflow.execution.events.WorkflowInstanceStartedEvent;
 import com.processpuzzle.workflow.execution.events.ArtifactInstanceCreatedEvent;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -55,6 +60,7 @@ public class StartWorkflowInstanceUseCase {
     private final ArtifactInstanceRepository artifactInstanceRepository;
     private final TaskActivationService taskActivationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ArtifactBinder binder;
 
     public StartWorkflowInstanceUseCase(ResolveWorkflowUseCase resolveWorkflow,
                                         StartEventAdmission startEventAdmission,
@@ -64,7 +70,8 @@ public class StartWorkflowInstanceUseCase {
                                         EventInstanceRepository eventInstanceRepository,
                                         ArtifactInstanceRepository artifactInstanceRepository,
                                         TaskActivationService taskActivationService,
-                                        ApplicationEventPublisher eventPublisher) {
+                                        ApplicationEventPublisher eventPublisher,
+                                        ArtifactBinder binder) {
         this.resolveWorkflow = resolveWorkflow;
         this.startEventAdmission = startEventAdmission;
         this.instanceNumbers = instanceNumbers;
@@ -74,6 +81,7 @@ public class StartWorkflowInstanceUseCase {
         this.artifactInstanceRepository = artifactInstanceRepository;
         this.taskActivationService = taskActivationService;
         this.eventPublisher = eventPublisher;
+        this.binder = binder;
     }
 
     /**
@@ -87,7 +95,7 @@ public class StartWorkflowInstanceUseCase {
         ResolvedWorkflow definition = resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowId);
         String admittedBy = startEventAdmission.admit(orgKey, definition, startEventId, entityId).orElse(null);
         return createInstance(orgKey, definition, entityId, entityId == null ? null : entityTypeOf(definition),
-                admittedBy, initialContext);
+                admittedBy, initialContext, List.of());
     }
 
     /**
@@ -108,12 +116,31 @@ public class StartWorkflowInstanceUseCase {
     public Optional<WorkflowInstance> startTriggered(String orgKey, String workflowId, String startEventId,
                                                      String entityId, String entityType,
                                                      Map<String, Object> initialContext) {
+        return triggeredStart(orgKey, workflowId, startEventId, entityId, entityType, initialContext, List.of());
+    }
+
+    /**
+     * Starts the workflow for a catalogued event that occurred, carrying the event's resolved {@code parameters}: they
+     * are recorded in the context under the start event's id, and their record references bind the run's artifacts.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Optional<WorkflowInstance> startTriggered(String orgKey, String workflowId, String startEventId,
+                                                     String entityId, String entityType,
+                                                     Map<String, Object> initialContext,
+                                                     List<OccurredParameter> parameters) {
+        return triggeredStart(orgKey, workflowId, startEventId, entityId, entityType, initialContext, parameters);
+    }
+
+    private Optional<WorkflowInstance> triggeredStart(String orgKey, String workflowId, String startEventId,
+                                                      String entityId, String entityType,
+                                                      Map<String, Object> initialContext,
+                                                      List<OccurredParameter> parameters) {
         if (entityId != null && workflowInstanceRepository.existsByOrgKeyAndWorkflowIdAndEntityIdAndStatusIn(
                 orgKey, workflowId, entityId, NON_TERMINAL)) {
             return Optional.empty();
         }
         ResolvedWorkflow definition = resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowId);
-        return Optional.of(createInstance(orgKey, definition, entityId, entityType, startEventId, initialContext));
+        return Optional.of(createInstance(orgKey, definition, entityId, entityType, startEventId, initialContext, parameters));
     }
 
     /**
@@ -124,7 +151,34 @@ public class StartWorkflowInstanceUseCase {
      */
     public WorkflowInstance startScheduled(String orgKey, String workflowId, String startEventId) {
         ResolvedWorkflow definition = resolveWorkflow.resolveByOrgKeyAndId(orgKey, workflowId);
-        return createInstance(orgKey, definition, null, null, startEventId, Map.of());
+        return createInstance(orgKey, definition, null, null, startEventId, Map.of(), List.of());
+    }
+
+    /**
+     * Binds the run's artifacts to the records the start names, and records what it carried in the initial context:
+     * the parameters under the start event's id ({@code order-created.orderNumber}), each bound record under its
+     * object's name ({@code new_order}). The run's subject is always a reference — also of an explicit start, which
+     * carries no event — so the artifact of the subject's type is bound however the run began.
+     */
+    private void bindArtifacts(String orgKey, ResolvedWorkflow definition, WorkflowInstance instance, String entityId,
+                               String entityType, String admittedBy, List<OccurredParameter> parameters) {
+        List<OccurredParameter> carried = parameters == null ? List.of() : parameters;
+        List<OccurredParameter> references = new ArrayList<>(carried);
+        boolean carriesSubject = carried.stream().anyMatch(parameter -> OccurredParameter.SUBJECT.equals(parameter.name()));
+        if (!carriesSubject && entityId != null && entityType != null) {
+            references.add(new OccurredParameter(OccurredParameter.SUBJECT, EventParameterType.ENTITY_REF, entityType, entityId));
+        }
+        Map<String, Object> context = new HashMap<>(instance.getInitialContext());
+        if (admittedBy != null && !carried.isEmpty()) {
+            Map<String, Object> values = new LinkedHashMap<>();
+            carried.forEach(parameter -> values.put(parameter.name(), parameter.value()));
+            context.put(admittedBy, values);
+        }
+        context.putAll(binder.bind(orgKey, instance.getId(), definition, admittedBy, references));
+        if (!context.equals(instance.getInitialContext())) {
+            instance.setInitialContext(context);
+            workflowInstanceRepository.save(instance);
+        }
     }
 
     /**
@@ -142,7 +196,8 @@ public class StartWorkflowInstanceUseCase {
     }
 
     private WorkflowInstance createInstance(String orgKey, ResolvedWorkflow definition, String entityId,
-                                            String entityType, String admittedBy, Map<String, Object> initialContext) {
+                                            String entityType, String admittedBy, Map<String, Object> initialContext,
+                                            List<OccurredParameter> parameters) {
         WorkflowInstance instance = workflowInstanceRepository.save(WorkflowInstance.builder()
                 .orgKey(orgKey)
                 .instanceNumber(instanceNumbers.next(orgKey))
@@ -168,6 +223,8 @@ public class StartWorkflowInstanceUseCase {
             eventPublisher.publishEvent(new ArtifactInstanceCreatedEvent(orgKey, instance.getId(), artifact.getId(),
                     artifactDefinition.getId(), artifactDefinition.getStateMachineId(), entityId));
         }
+
+        bindArtifacts(orgKey, definition, instance, entityId, entityType, admittedBy, parameters);
 
         definition.tasks().forEach(task -> taskInstanceRepository.save(TaskInstance.builder()
                 .orgKey(orgKey)

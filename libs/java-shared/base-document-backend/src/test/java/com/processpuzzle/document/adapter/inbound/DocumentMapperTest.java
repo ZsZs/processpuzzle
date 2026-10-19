@@ -306,6 +306,23 @@ class DocumentMapperTest {
     }
 
     @Test
+    void theKindCrossesBothWaysAndAnOmittedOneIsAPlainDocument() {
+        var template = mapper.toCommand(input().kind(com.processpuzzle.document.model.DocumentKind.REPORT_TEMPLATE));
+        var omitted = mapper.toCommand(new DocumentPropertiesInput().slug("s").title("t").sourceLocale("en").kind(null));
+        Document document = document();
+        document.changeKind(com.processpuzzle.document.domain.DocumentKind.REPORT_TEMPLATE);
+
+        assertThat(template.properties().kind()).isEqualTo(com.processpuzzle.document.domain.DocumentKind.REPORT_TEMPLATE);
+        assertThat(omitted.kind()).isEqualTo(com.processpuzzle.document.domain.DocumentKind.DOCUMENT);
+        assertThat(mapper.toModel(document, null, List.of()).getKind())
+                .isEqualTo(com.processpuzzle.document.model.DocumentKind.REPORT_TEMPLATE);
+        assertThat(mapper.toSummaryModel(document, List.of()).getKind())
+                .isEqualTo(com.processpuzzle.document.model.DocumentKind.REPORT_TEMPLATE);
+        assertThat(mapper.toInput(document(), List.of()).getKind())
+                .isEqualTo(com.processpuzzle.document.model.DocumentKind.DOCUMENT);
+    }
+
+    @Test
     void exportRoundTripsThePropertiesAndEveryDraftsBlocks() {
         DocumentInput input = mapper.toInput(document(), List.of(draft()));
 

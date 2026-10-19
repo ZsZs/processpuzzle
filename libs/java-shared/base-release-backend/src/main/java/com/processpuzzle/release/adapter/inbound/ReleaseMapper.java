@@ -2,6 +2,7 @@ package com.processpuzzle.release.adapter.inbound;
 
 import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.core.definition.PendingChange;
+import com.processpuzzle.core.definition.ProblemResolution;
 import com.processpuzzle.core.definition.ReleaseProblem;
 import com.processpuzzle.release.domain.OrgMigrationStep;
 import com.processpuzzle.release.domain.OrgReleaseItem;
@@ -90,6 +91,17 @@ public class ReleaseMapper {
                 problem.kind(), problem.key(), problem.errorId(), problem.message());
         model.setSubject(problem.subject());
         model.setAffectedObjects(problem.affectedObjects());
+        model.setResolutions(problem.resolutions().stream().map(this::toModel).toList());
+        return model;
+    }
+
+    private com.processpuzzle.release.model.ProblemResolution toModel(ProblemResolution resolution) {
+        com.processpuzzle.release.model.ProblemResolution model =
+                new com.processpuzzle.release.model.ProblemResolution(toModel(resolution.step()));
+        model.setInput(resolution.input());
+        model.setInputKind(resolution.inputKind() == null ? null
+                : com.processpuzzle.release.model.ProblemResolution.InputKindEnum.fromValue(resolution.inputKind()));
+        model.setChoices(resolution.choices());
         return model;
     }
 

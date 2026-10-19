@@ -1,5 +1,8 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.usecase.exception.ContentBookInvalidTreeException;
+import com.processpuzzle.document.usecase.exception.ContentBookNotFoundException;
+import com.processpuzzle.document.usecase.exception.ContentBookSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
@@ -41,6 +44,21 @@ class DocumentApiExceptionHandlerTest {
         assertThat(document.getBody().getErrorId()).isEqualTo("document.not-found");
         assertThat(block.getBody().getErrorId()).isEqualTo("document.block.not-found");
         assertThat(translation.getBody().getErrorId()).isEqualTo("document.translation.not-found");
+    }
+
+    @Test
+    void contentBookRefusalsHaveTheirOwnIds() {
+        var notFound = handler.handleContentBookNotFound(new ContentBookNotFoundException(ORG, ID));
+        var slug = handler.handleContentBookSlugConflict(new ContentBookSlugAlreadyExistsException(ORG, "handbook"));
+        var tree = handler.handleContentBookInvalidTree(new ContentBookInvalidTreeException("cycle"));
+
+        assertThat(notFound.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(slug.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(tree.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(notFound.getBody().getErrorId()).isEqualTo("content-book.not-found");
+        assertThat(slug.getBody().getErrorId()).isEqualTo("content-book.slug.already-exists");
+        assertThat(tree.getBody().getErrorId()).isEqualTo("content-book.invalid-tree");
+        assertThat(tree.getBody().getErrorText()).isEqualTo("cycle");
     }
 
     @Test

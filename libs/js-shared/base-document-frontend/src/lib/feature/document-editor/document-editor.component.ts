@@ -1,11 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, OnChanges, signal } from '@angular/core';
-import { MatButton } from '@angular/material/button';
+import { Component, computed, inject, input, OnChanges, signal, SimpleChanges } from '@angular/core';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { WIDGET_REGISTRY, WidgetHostComponent, WidgetPortEvent, WidgetRegistration } from '@processpuzzle/widgets';
-import { DocumentBlock, BlockKind, WidgetPlacement } from '../../domain/base-document';
+import { ENTITY_TABLE_WIDGET, EntityTableColumn, EntityTableTotal, WIDGET_REGISTRY, WidgetHostComponent, WidgetPortEvent, WidgetRegistration } from '@processpuzzle/widgets';
+import { firstValueFrom } from 'rxjs';
+import { DocumentBlock, BlockKind, DocumentInputPort, WidgetPlacement } from '../../domain/base-document';
+import { DocumentPathCatalog } from '../report/document-path-catalog';
+import { WidgetBlockSettings, WidgetBlockSettingsData, WidgetBlockSettingsDialogComponent } from './widget-block-settings-dialog.component';
+import { EntityTableSettings, EntityTableSettingsData, EntityTableSettingsDialogComponent } from './entity-table-settings-dialog.component';
 import { DocumentContentStore } from './document-content.store';
 import { DocumentTextBlockComponent } from './document-text-block.component';
 
@@ -21,7 +27,7 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
 @Component({
   selector: 'pp-document-editor',
   standalone: true,
-  imports: [CommonModule, DocumentTextBlockComponent, WidgetHostComponent, MatButton, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
+  imports: [CommonModule, DocumentTextBlockComponent, WidgetHostComponent, MatButton, MatIcon, MatIconButton, MatMenu, MatMenuItem, MatMenuTrigger, MatTooltip, TranslocoPipe],
   providers: [DocumentContentStore],
   template: `
     <div class="pp-document-editor">
@@ -31,7 +37,32 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
             <pp-document-text-block [block]="block" />
           }
           @case (blockKindWidget) {
-            <pp-widget-host [widget]="block" [bindingResolver]="resolveBinding" (portEmit)="onPortEmit($event)" />
+            <div class="pp-document-editor__configurable">
+              <pp-widget-host [widget]="block" [bindingResolver]="resolveBinding" (portEmit)="onPortEmit($event)" />
+              @if (block.type === entityTableType) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="pp-document-editor__settings"
+                  [attr.data-testid]="'document-table-settings-' + block.id"
+                  [matTooltip]="'base_document.document.report.table_settings' | transloco"
+                  (click)="onConfigureTable(block)"
+                >
+                  <mat-icon>tune</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="pp-document-editor__settings"
+                  [attr.data-testid]="'document-widget-settings-' + block.id"
+                  [matTooltip]="'base_document.document.widget_settings.title' | transloco"
+                  (click)="onConfigureWidget(block)"
+                >
+                  <mat-icon>tune</mat-icon>
+                </button>
+              }
+            </div>
           }
         }
       }
@@ -61,6 +92,15 @@ import { DocumentTextBlockComponent } from './document-text-block.component';
   `,
   styles: [
     `
+      .pp-document-editor__configurable {
+        position: relative;
+        min-height: 40px;
+      }
+      .pp-document-editor__settings {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
       .pp-document-editor__actions {
         display: flex;
         gap: 8px;
@@ -76,9 +116,15 @@ export class DocumentEditorComponent implements OnChanges {
   readonly blocks = input.required<DocumentBlock[]>();
   /** False when the locale has no draft yet, so the first append creates one. See DocumentContentStore. */
   readonly translationExists = input<boolean>(true);
+  /** The document's input ports: where data fields and tables take their paths from. */
+  readonly inputPorts = input<readonly DocumentInputPort[]>([]);
 
   private readonly widgetRegistry = inject(WIDGET_REGISTRY, { optional: true }) ?? new Map<string, WidgetRegistration>();
   private readonly contentStore = inject(DocumentContentStore);
+  private readonly dialog = inject(MatDialog);
+  private readonly pathCatalog = inject(DocumentPathCatalog);
+
+  protected readonly entityTableType = ENTITY_TABLE_WIDGET;
 
   protected readonly blockKindText = BlockKind.TEXT;
   protected readonly blockKindWidget = BlockKind.WIDGET;
@@ -98,8 +144,12 @@ export class DocumentEditorComponent implements OnChanges {
    * template is first executed, and unlike `ngOnInit` it runs again when the container swaps a
    * different document into the same editor instance.
    */
-  ngOnChanges(): void {
-    this.contentStore.initialize(this.documentId(), this.locale(), this.blocks(), this.translationExists());
+  ngOnChanges(changes?: SimpleChanges): void {
+    // The ports arrive on their own — the document entity often loads after its content — and must not
+    // re-seed the blocks, which would drop every edit made since the first seeding.
+    const onlyPortsChanged = changes !== undefined && Object.keys(changes).every((name) => name === 'inputPorts');
+    if (!onlyPortsChanged) this.contentStore.initialize(this.documentId(), this.locale(), this.blocks(), this.translationExists());
+    this.contentStore.inputPorts.set(this.inputPorts());
   }
 
   // Renders from the store's own live signal (not the `blocks` input directly), so edits made
@@ -143,6 +193,47 @@ export class DocumentEditorComponent implements OnChanges {
     } finally {
       this.isAppending.set(false);
     }
+  }
+
+  /** Opens the table settings for one `entity-table` block and saves what comes back as its props and binding. */
+  async onConfigureTable(block: DocumentBlock): Promise<void> {
+    const { collections } = await this.pathCatalog.describe(this.contentStore.inputPorts());
+    const props = block.props ?? {};
+    const current: EntityTableSettings = {
+      source: block.inputBindings?.['rows'],
+      columns: (props['columns'] as EntityTableColumn[] | undefined) ?? [],
+      totals: (props['totals'] as EntityTableTotal[] | undefined) ?? [],
+      caption: props['caption'] as string | undefined,
+    };
+    const dialogRef = this.dialog.open<EntityTableSettingsDialogComponent, EntityTableSettingsData, EntityTableSettings>(EntityTableSettingsDialogComponent, { data: { collections, current } });
+    const settings = await firstValueFrom(dialogRef.afterClosed());
+    if (!settings?.source) return;
+    const { caption, columns, totals } = settings;
+    await this.contentStore.saveWidgetBlock(block.id, {
+      props: { ...props, columns, totals, ...(caption ? { caption } : {}) },
+      inputBindings: { ...block.inputBindings, rows: settings.source },
+    });
+  }
+
+  /**
+   * Opens the settings of any other widget block: its props, from the widget's schema, and which document path
+   * feeds each of its input ports. A block whose widget is not registered is edited as the raw props it carries.
+   */
+  async onConfigureWidget(block: DocumentBlock): Promise<void> {
+    const { collections, fields } = await this.pathCatalog.describe(this.contentStore.inputPorts());
+    const definition = this.widgetRegistry.get(block.type ?? '')?.definition;
+    const data: WidgetBlockSettingsData = {
+      name: definition?.name ?? block.type ?? '',
+      schema: definition?.propsSchema,
+      inputPorts: definition?.inputPorts ?? [],
+      props: block.props ?? {},
+      inputBindings: block.inputBindings ?? {},
+      paths: [...new Set([...collections.map((each) => each.path), ...fields.map((each) => each.path)])],
+    };
+    const dialogRef = this.dialog.open<WidgetBlockSettingsDialogComponent, WidgetBlockSettingsData, WidgetBlockSettings>(WidgetBlockSettingsDialogComponent, { data });
+    const settings = await firstValueFrom(dialogRef.afterClosed());
+    if (!settings) return;
+    await this.contentStore.saveWidgetBlock(block.id, { props: settings.props, inputBindings: settings.inputBindings });
   }
 
   /** Called by a toolbar action to embed a new widget at the given text block's cursor. */

@@ -18,10 +18,13 @@ import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictEx
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
+import com.processpuzzle.shared.event.PlatformEvent;
+import com.processpuzzle.shared.event.PlatformEventAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +44,7 @@ class DiscardDocumentDraftTest {
     private DocumentRepository repository;
     private DocumentDraftRepository draftRepository;
     private PublishedDocumentRepository publishedRepository;
+    private final List<PlatformEvent> facts = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -64,6 +68,30 @@ class DiscardDocumentDraftTest {
         assertThat(draft.getRevision()).isEqualTo(1L);
         assertThat(view.status()).isEqualTo(DocumentStatus.PUBLISHED);
         verify(draftRepository).save(draft);
+    }
+
+    @Test
+    void discardingTheDefaultTranslationsEditsReturnsTheDocumentToPublished() {
+        DocumentDraft draft = draft();
+        draft.replaceBlocks(List.of(text("edited")));
+        stubFound(DocumentRoles.unrestricted(), draft, snapshot(1L));
+
+        discard(TestPolicies.permitAll()).execute(ORG, ID, "en");
+
+        assertThat(facts).singleElement().satisfies(fact -> {
+            assertThat(fact.action()).isEqualTo(PlatformEventAction.STATE_CHANGED);
+            assertThat(fact.subjectId()).isEqualTo(ID);
+            assertThat(fact.state()).isEqualTo("PUBLISHED");
+        });
+    }
+
+    @Test
+    void discardingWithNoEditsChangesNoState() {
+        stubFound(DocumentRoles.unrestricted(), draft(), snapshot(1L));
+
+        discard(TestPolicies.permitAll()).execute(ORG, ID, "en");
+
+        assertThat(facts).isEmpty();
     }
 
     @Test
@@ -109,7 +137,7 @@ class DiscardDocumentDraftTest {
     private DiscardDocumentDraft discard(DocumentAccessPolicy policy) {
         return new DiscardDocumentDraft(repository, draftRepository, publishedRepository,
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.with(policy));
+                TestGuards.with(policy), TestFacts.recordingInto(facts));
     }
 
     private void stubFound(DocumentRoles roles, DocumentDraft draft, PublishedDocument snapshot) {

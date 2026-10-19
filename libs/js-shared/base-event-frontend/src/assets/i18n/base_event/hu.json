@@ -14,10 +14,27 @@
       "description": "Megjegyzés arról, mikor következik be az esemény és mire szolgál; a felhasználók nem látják.",
       "kind": "SYSTEM: a platform váltja ki, amikor egy rekord megváltozik. MESSAGE: az API-n keresztül egy címzettnek küldik. SIGNAL: az API-n keresztül minden figyelőnek szól.",
       "subjectType": "Csak SYSTEM eseményeknél: annak az entitástípusnak a kódja, amelynek rekordjai kiváltják az eseményt, pl. order.",
-      "action": "Csak SYSTEM eseményeknél: mi történik a rekorddal: CREATED, UPDATED, DELETED vagy STATE_CHANGED.",
+      "action": "Csak SYSTEM eseményeknél: mi történik a rekorddal: CREATED, UPDATED, DELETED, STATE_CHANGED vagy SIGNED (dokumentumot írtak alá hozzá).",
       "state": "Csak STATE_CHANGED esetén: az állapot, amelybe a rekord kerül, pl. CONFIRMED.",
-      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be."
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
+      "parameters": "Az esemény minden előfordulásában szereplő értékek, pl. egy megrendelés és annak száma. A munkafolyamatok név szerint olvassák őket."
     },
-    "releaseState": "Kiadás"
+    "releaseState": "Kiadás",
+    "parameters": "Paraméterek"
+  },
+  "event_parameter": {
+    "_self": "Paraméter",
+    "name": "Név",
+    "type": "Típus",
+    "entityType": "Hivatkozott entitástípus",
+    "required": "Kötelező",
+    "description": "Leírás",
+    "_tooltips": {
+      "name": "Az eseményen belül egyedi; betűk, számjegyek és _. SYSTEM eseménynél a tárgy egyik attribútuma kell legyen — válasszon a javaslatok közül, pl. orderNumber —, mert annak értéke tölti ki. Maga a rekord mindig subject néven érkezik; ez a név foglalt, nem kell hozzá paraméter.",
+      "type": "Az érték fajtája: STRING, NUMBER, BOOLEAN, DATE, vagy ENTITY_REF egy rekordra mutató hivatkozáshoz.",
+      "entityType": "Csak ENTITY_REF esetén: annak a rekordnak a típusa, amelyre a paraméter mutat, pl. order vagy document. Nem az az attribútum, amelyből egy SYSTEM paraméter töltődik — az a neve.",
+      "required": "Az esemény minden előfordulásának tartalmaznia kell-e értéket ehhez a paraméterhez.",
+      "description": "Megjegyzés arról, mit jelent az érték; a felhasználók nem látják."
+    }
   }
 }

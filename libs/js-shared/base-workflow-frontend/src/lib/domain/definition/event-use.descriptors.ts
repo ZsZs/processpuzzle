@@ -1,5 +1,6 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { WORKFLOW_EVENT_USE_I18N_SCOPE } from '../../base-workflow.i18n';
+import { EventParametersAttrDescriptor } from './event-parameters-control.component';
 import { EVENT_DEFINITION_ENTITY_NAME, WORKFLOW_ENTITY_NAME, WORKFLOW_EVENT_USE_ENTITY_NAME } from '../workflow-entity-names';
 import { EventDirection, JoinType, TimerType } from './workflow';
 
@@ -56,8 +57,14 @@ function createEventUseAttrDescriptors(): AbstractAttrDescriptor[] {
   correlationKeyAttr.placeholder = 'MESSAGE only — the context variable to correlate on, e.g. orderId';
 
   // CATCH: context variable → path into the occurred event. THROW: payload attribute → path into the context.
-  const payloadMappingAttr = new BaseEntityAttrDescriptor('payloadMapping', FormControlType.ADDITIONAL_PROPERTIES, 'Payload Mapping');
+  // Only overrides: either way the event's parameters are filled by name (docs/event-parameters.md, phase 3).
+  const payloadMappingAttr = new BaseEntityAttrDescriptor('payloadMapping', FormControlType.ADDITIONAL_PROPERTIES, 'Payload Mapping (overrides)');
   payloadMappingAttr.hideInTable = true;
+
+  // What the catalog event carries, beside the mapping that overrides it — read-only, never saved.
+  const eventParametersAttr = new EventParametersAttrDescriptor('eventDefinitionId');
+  const mappingRow = new FlexboxDescriptor([payloadMappingAttr, eventParametersAttr], FlexDirection.ROW);
+  mappingRow.style = { 'column-gap': '10px' };
 
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, directionAttr, eventDefinitionIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
@@ -66,7 +73,7 @@ function createEventUseAttrDescriptors(): AbstractAttrDescriptor[] {
   const timerRow = new FlexboxDescriptor([timerTypeAttr, timerExpressionAttr, attachedToAttr, interruptingAttr], FlexDirection.ROW);
   timerRow.style = { 'column-gap': '10px', 'align-items': 'center' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, flowRow, timerRow, payloadMappingAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, flowRow, timerRow, mappingRow], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

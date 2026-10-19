@@ -2,11 +2,13 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 
 import com.processpuzzle.workflow.api.TaskInstancesApi;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
+import com.processpuzzle.workflow.execution.usecases.inbound.AddTaskCommentUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.AssignTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindTaskInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.SkipTaskUseCase;
+import com.processpuzzle.workflow.model.AddTaskCommentRequest;
 import com.processpuzzle.workflow.model.AssignTaskRequest;
 import com.processpuzzle.workflow.model.CancelWorkflowInstanceRequest;
 import com.processpuzzle.workflow.model.CompleteTaskRequest;
@@ -29,6 +31,7 @@ public class TaskInstancesEndpoint implements TaskInstancesApi {
     private final ListTaskInstancesUseCase listTaskInstances;
     private final FindTaskInstanceUseCase findTaskInstance;
     private final AssignTaskUseCase assignTask;
+    private final AddTaskCommentUseCase addTaskComment;
     private final CompleteTaskUseCase completeTask;
     private final SkipTaskUseCase skipTask;
     private final WorkflowExecutionMapper mapper;
@@ -36,12 +39,14 @@ public class TaskInstancesEndpoint implements TaskInstancesApi {
     public TaskInstancesEndpoint(ListTaskInstancesUseCase listTaskInstances,
                                   FindTaskInstanceUseCase findTaskInstance,
                                   AssignTaskUseCase assignTask,
+                                  AddTaskCommentUseCase addTaskComment,
                                   CompleteTaskUseCase completeTask,
                                   SkipTaskUseCase skipTask,
                                   WorkflowExecutionMapper mapper) {
         this.listTaskInstances = listTaskInstances;
         this.findTaskInstance = findTaskInstance;
         this.assignTask = assignTask;
+        this.addTaskComment = addTaskComment;
         this.completeTask = completeTask;
         this.skipTask = skipTask;
         this.mapper = mapper;
@@ -69,6 +74,12 @@ public class TaskInstancesEndpoint implements TaskInstancesApi {
     @Override
     public ResponseEntity<TaskInstance> assignTask(String orgKey, String instanceId, String taskId, AssignTaskRequest request) {
         var task = assignTask.assign(orgKey, UUID.fromString(instanceId), taskId, request.getUserId());
+        return ResponseEntity.ok(mapper.toModel(task));
+    }
+
+    @Override
+    public ResponseEntity<TaskInstance> addTaskComment(String orgKey, String instanceId, String taskId, AddTaskCommentRequest request) {
+        var task = addTaskComment.addComment(orgKey, UUID.fromString(instanceId), taskId, request == null ? null : request.getContent());
         return ResponseEntity.ok(mapper.toModel(task));
     }
 

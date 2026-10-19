@@ -68,4 +68,34 @@ export interface ResolvedArtifact {
   readonly type: ArtifactType | undefined;
   /** Absent when nothing has produced this artifact in this run yet. */
   readonly instance: ArtifactInstance | undefined;
+  /** The name of the record the run bound the instance to — `ORD-0042`, its `entityLabel`. Absent while unbound. */
+  readonly recordName?: string;
+  /**
+   * The state this workflow's assignment of the task names for the artifact — `TaskArtifactState.inputState`
+   * for an input, `outputState` for an output. Absent when the workflow says nothing about it.
+   */
+  readonly requiredState: string | undefined;
+  /**
+   * Whether the artifact is where {@link requiredState} says it should be: always true without one, false
+   * for an artifact nothing has produced yet. Compared case-insensitively, because the state is a name
+   * typed into the workflow and the instance's `currentState` is the one base-state reports.
+   */
+  readonly satisfied: boolean;
+  /** Where the artifact can be opened, when the host mounts a screen for it — see `DashboardLinkResolver`. */
+  readonly link: string | undefined;
+  /** The query parameters {@link link} carries — the run's subject, for a document's Sign tab. */
+  readonly linkQueryParams?: Record<string, string>;
+}
+
+/** The tool a service step calls, named and — when the host mounts the tool catalog — linked. */
+export interface StepTool {
+  readonly toolDefinitionId: string;
+  readonly name: string;
+  readonly link: string | undefined;
+}
+
+/** One variable of a run's context, as the Process view lists it: a dotted key and its value as text. */
+export interface ContextVariable {
+  readonly key: string;
+  readonly value: string;
 }

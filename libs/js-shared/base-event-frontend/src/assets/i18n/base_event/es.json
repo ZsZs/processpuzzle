@@ -14,10 +14,27 @@
       "description": "Una nota sobre cuándo ocurre el evento y para qué se usa; los usuarios no la ven.",
       "kind": "SYSTEM: lo genera la plataforma cuando cambia un registro. MESSAGE: se envía a un receptor a través de la API. SIGNAL: se difunde a todos los oyentes a través de la API.",
       "subjectType": "Solo para eventos SYSTEM: el código del tipo de entidad cuyos registros generan el evento, p. ej. order.",
-      "action": "Solo para eventos SYSTEM: qué le ocurre al registro: CREATED, UPDATED, DELETED o STATE_CHANGED.",
+      "action": "Solo para eventos SYSTEM: qué le ocurre al registro: CREATED, UPDATED, DELETED, STATE_CHANGED o SIGNED (se firmó un documento para él).",
       "state": "Solo para STATE_CHANGED: el estado al que pasa el registro, p. ej. CONFIRMED.",
-      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema."
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
+      "parameters": "Los valores que lleva cada ocurrencia del evento, p. ej. un pedido y su número. Los flujos de trabajo los leen por su nombre."
     },
-    "releaseState": "Publicación"
+    "releaseState": "Publicación",
+    "parameters": "Parámetros"
+  },
+  "event_parameter": {
+    "_self": "Parámetro",
+    "name": "Nombre",
+    "type": "Tipo",
+    "entityType": "Tipo de entidad referenciada",
+    "required": "Obligatorio",
+    "description": "Descripción",
+    "_tooltips": {
+      "name": "Único dentro del evento; letras, dígitos y _. En un evento SYSTEM debe ser un atributo del sujeto — elija una de las sugerencias, p. ej. orderNumber —, porque el valor de ese atributo lo rellena. El registro mismo siempre viaja como subject, que está reservado, así que no necesita parámetro.",
+      "type": "El tipo de valor: STRING, NUMBER, BOOLEAN, DATE, o ENTITY_REF para una referencia a un registro.",
+      "entityType": "Solo para ENTITY_REF: el tipo de registro al que apunta el parámetro, p. ej. order o document. No es el atributo del que se rellena un parámetro SYSTEM: ese es su nombre.",
+      "required": "Si cada ocurrencia del evento debe llevar un valor para este parámetro.",
+      "description": "Una nota sobre lo que significa el valor; los usuarios no la ven."
+    }
   }
 }

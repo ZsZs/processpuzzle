@@ -87,6 +87,8 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(viewAttr1.embeddedComponent()).isFalse();
         assertThat(viewAttr1.required()).isTrue();
         assertThat(viewAttr1.linkedEntityType()).isNull();
+        assertThat(viewAttr1.comments()).isFalse();
+        assertThat(viewAttr1.address()).isFalse();
 
         EntityAttributeView viewAttr2 = view.attributes().get(1);
         assertThat(viewAttr2.code()).isEqualTo("addresses");
@@ -95,5 +97,56 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(viewAttr2.embeddedComponent()).isTrue();
         assertThat(viewAttr2.required()).isFalse();
         assertThat(viewAttr2.linkedEntityType()).isEqualTo("address");
+    }
+
+    @Test
+    void findByCode_flagsACommentsAttribute() {
+        BaseEntityAttribute commentsAttr = BaseEntityAttribute.builder()
+                .code("comments")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.COMMENTS)
+                .multiplicity(Multiplicity.ZERO_TO_N)
+                .build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("order").attributes(List.of(commentsAttr)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "order", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        EntityAttributeView view = adapter.findByCode("acme", "order").orElseThrow().attributes().get(0);
+
+        assertThat(view.comments()).isTrue();
+        assertThat(view.embeddedComponent()).isFalse();
+        assertThat(view.multiValued()).isTrue();
+    }
+
+    @Test
+    void findByCode_flagsAnAddressAttribute() {
+        BaseEntityAttribute addressAttr = BaseEntityAttribute.builder()
+                .code("address")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.ADDRESS)
+                .build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("customer").attributes(List.of(addressAttr)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "customer", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        EntityAttributeView view = adapter.findByCode("acme", "customer").orElseThrow().attributes().get(0);
+
+        assertThat(view.address()).isTrue();
+        assertThat(view.comments()).isFalse();
+        assertThat(view.multiValued()).isFalse();
+    }
+
+    @Test
+    void findByCode_flagsAGeoLocationAttribute() {
+        BaseEntityAttribute locationAttr = BaseEntityAttribute.builder()
+                .code("location")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.GEO_LOCATION)
+                .build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("visit").attributes(List.of(locationAttr)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "visit", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        EntityAttributeView view = adapter.findByCode("acme", "visit").orElseThrow().attributes().get(0);
+
+        assertThat(view.geoLocation()).isTrue();
+        assertThat(view.address()).isFalse();
     }
 }

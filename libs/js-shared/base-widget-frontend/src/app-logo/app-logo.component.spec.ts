@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { ArtifactAttr, ObjectStoreService } from '@processpuzzle/base-entity';
 import { Observable, of, throwError } from 'rxjs';
+import { LayoutService } from '@processpuzzle/util';
 import { describe, expect, it, vi } from 'vitest';
 import { APPLICATION_CONTEXT } from '../app-context/application-context';
 import { testApplicationContext } from '../app-context/test-application-context';
@@ -34,6 +35,15 @@ describe('AppLogoComponent', () => {
 
     expect(image(fixture)?.getAttribute('src')).toBe('/demo-logo.svg');
     expect(image(fixture)?.getAttribute('alt')).toBe('Demo');
+  });
+
+  it('is hidden on a small screen', () => {
+    const { fixture } = render();
+
+    TestBed.inject(LayoutService).layoutClass.set('handset-layout');
+    fixture.detectChanges();
+
+    expect(image(fixture)).toBeNull();
   });
 
   it('resolves an artifact logo through the object store', () => {

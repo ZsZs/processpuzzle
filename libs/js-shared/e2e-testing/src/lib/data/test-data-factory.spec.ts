@@ -30,6 +30,18 @@ describe('fixtureOverrides', () => {
     expect(updated['valueKind']).toBe('DATE_TIME');
   });
 
+  it('does not generate a pinned field, so a pattern its generator cannot satisfy does not throw', () => {
+    const patterned = descriptor('Attribute');
+    (patterned.attrDescriptors as unknown as Array<Record<string, unknown>>)[0]['pattern'] = '^[A-Z]{2}$';
+    const pins: FixtureOverride[] = [{ entityName: 'Attribute', create: { name: 'HU' }, update: { name: 'DE' }, reason: 'test' }];
+    const context = { descriptor: patterned, descriptorMap: new Map(), fixtureOverrides: pins };
+
+    expect(() => buildCreateDataForContext({ ...context, fixtureOverrides: [] })).toThrow(/does not satisfy the declared pattern/);
+    const created = buildCreateDataForContext(context);
+    expect(created['name']).toBe('HU');
+    expect(buildUpdateDataForContext(context, created)['name']).toBe('DE');
+  });
+
   it('leaves an entity the overrides do not name untouched', () => {
     const data = buildCreateDataForContext({ descriptor: descriptor('Other'), descriptorMap: new Map(), fixtureOverrides: overrides });
 

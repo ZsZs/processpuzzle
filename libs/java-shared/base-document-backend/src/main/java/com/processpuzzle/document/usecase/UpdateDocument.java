@@ -6,11 +6,14 @@ import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentPorts;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentStatus;
+import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentTranslationNotFoundException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.stereotype.Service;
@@ -39,19 +42,22 @@ public class UpdateDocument {
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public UpdateDocument(DocumentRepository repository,
                           DocumentDraftRepository draftRepository,
                           PublishedDocumentRepository publishedRepository,
                           DocumentReferentialIntegrityChecker integrityChecker,
                           DocumentTranslationAssembler assembler,
-                          DocumentGuard guard) {
+                          DocumentGuard guard,
+                          DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.publishedRepository = publishedRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
+        this.facts = facts;
     }
 
     public DocumentDetails execute(String orgKey, String documentId, DocumentCommand input) {
@@ -73,13 +79,15 @@ public class UpdateDocument {
         // Validate the candidate state of every locale — the ones being replaced with their new
         // content, the ones being left alone against the new ports — before writing anything.
         Map<String, DocumentContent> replacements = replacementsOf(input, draftsByLocale, orgKey, documentId);
+        List<PublishedDocument> snapshots = publishedRepository.findByOrgKeyAndDocumentId(orgKey, documentId);
         List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(
                 integrityChecker.checkPortChange(newPorts, List.copyOf(draftsByLocale.values()), replacements,
-                        publishedRepository.findByOrgKeyAndDocumentId(orgKey, documentId)));
+                        snapshots));
         if (!blocking.isEmpty()) {
             throw new IllegalArgumentException("Invalid document: " + blocking);
         }
 
+        DocumentStatus before = DocumentPlatformFacts.defaultStatusOf(document, draftsByLocale.values(), snapshots);
         properties.applyTo(document);
         Document saved = repository.save(document);
 
@@ -88,6 +96,9 @@ public class UpdateDocument {
             draft.replaceBlocks(content.blocks());
             draftRepository.save(draft);
         });
+        // Either a replaced source draft or a switched source locale can move the default status.
+        facts.stateChanged(saved, before,
+                DocumentPlatformFacts.defaultStatusOf(saved, draftsByLocale.values(), snapshots));
 
         return new DocumentDetails(saved,
                 assembler.contentOf(saved, saved.getSourceLocale(), true).orElse(null),

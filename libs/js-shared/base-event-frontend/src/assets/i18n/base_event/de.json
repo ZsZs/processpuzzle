@@ -14,10 +14,27 @@
       "description": "Eine Notiz, wann das Ereignis eintritt und wofür es dient; Benutzer sehen sie nicht.",
       "kind": "SYSTEM: von der Plattform ausgelöst, wenn sich ein Datensatz ändert. MESSAGE: über die API an einen Empfänger gesendet. SIGNAL: über die API an alle Zuhörer gesendet.",
       "subjectType": "Nur für SYSTEM-Ereignisse: der Code des Entitätstyps, dessen Datensätze das Ereignis auslösen, z. B. order.",
-      "action": "Nur für SYSTEM-Ereignisse: was mit dem Datensatz geschieht: CREATED, UPDATED, DELETED oder STATE_CHANGED.",
+      "action": "Nur für SYSTEM-Ereignisse: was mit dem Datensatz geschieht: CREATED, UPDATED, DELETED, STATE_CHANGED oder SIGNED (ein Dokument wurde für ihn unterschrieben).",
       "state": "Nur für STATE_CHANGED: der Zustand, den der Datensatz annimmt, z. B. CONFIRMED.",
-      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt."
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
+      "parameters": "Die Werte, die jedes Auftreten des Ereignisses mitführt, z. B. eine Bestellung und ihre Bestellnummer. Workflows lesen sie über ihren Namen."
     },
-    "releaseState": "Release-Stand"
+    "releaseState": "Release-Stand",
+    "parameters": "Parameter"
+  },
+  "event_parameter": {
+    "_self": "Parameter",
+    "name": "Name",
+    "type": "Typ",
+    "entityType": "Referenzierter Entitätstyp",
+    "required": "Erforderlich",
+    "description": "Beschreibung",
+    "_tooltips": {
+      "name": "Eindeutig innerhalb des Ereignisses; Buchstaben, Ziffern und _. Bei einem SYSTEM-Ereignis muss er ein Attribut des Subjekts sein — wählen Sie einen der Vorschläge, z. B. orderNumber —, denn dessen Wert füllt ihn. Der Datensatz selbst wird immer als subject mitgeführt; der Name ist reserviert und braucht keinen Parameter.",
+      "type": "Die Art des Werts: STRING, NUMBER, BOOLEAN, DATE oder ENTITY_REF für einen Verweis auf einen Datensatz.",
+      "entityType": "Nur für ENTITY_REF: der Typ des Datensatzes, auf den der Parameter verweist, z. B. order oder document. Nicht das Attribut, aus dem ein SYSTEM-Parameter gefüllt wird — das ist sein Name.",
+      "required": "Ob jedes Auftreten des Ereignisses einen Wert für diesen Parameter mitführen muss.",
+      "description": "Eine Notiz dazu, was der Wert bedeutet; Benutzer sehen sie nicht."
+    }
   }
 }

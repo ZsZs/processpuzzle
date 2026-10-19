@@ -5,6 +5,7 @@ import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
 import com.processpuzzle.core.definition.PendingChange;
+import com.processpuzzle.core.definition.PlatformSubject;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.definition.ReleaseProblem;
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,15 +30,18 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>A SYSTEM event names the entity type its facts are about, so it refers to that entity definition. An event holds
  * no data of its own: whether a running workflow still waits for a removed one is a reference of the workflow, which
- * the release checks on the workflow's side.
+ * the release checks on the workflow's side. A subject that is no entity type but a {@link PlatformSubject} a feature
+ * declares — a document, a calculation run — refers to nothing.
  */
 @Component
 public class EventDefinitionReleaseParticipant implements ReleaseParticipant {
 
     private final EventDefinitionRepository repository;
+    private final ObjectProvider<PlatformSubject> platformSubjects;
 
-    public EventDefinitionReleaseParticipant(EventDefinitionRepository repository) {
+    public EventDefinitionReleaseParticipant(EventDefinitionRepository repository, ObjectProvider<PlatformSubject> platformSubjects) {
         this.repository = repository;
+        this.platformSubjects = platformSubjects;
     }
 
     @Override
@@ -73,8 +78,10 @@ public class EventDefinitionReleaseParticipant implements ReleaseParticipant {
 
     @Override
     public List<DefinitionReference> references(String orgKey) {
+        Set<String> platform = platformSubjects.stream().map(PlatformSubject::subjectType).collect(Collectors.toSet());
         return byId(orgKey, Channel.DRAFT).values().stream()
                 .filter(event -> event.getSubjectType() != null && !event.getSubjectType().isBlank())
+                .filter(event -> !platform.contains(event.getSubjectType()))
                 .map(event -> DefinitionReference.required(kind(), event.getId(), DefinitionKinds.ENTITY, event.getSubjectType()))
                 .toList();
     }
@@ -136,6 +143,7 @@ public class EventDefinitionReleaseParticipant implements ReleaseParticipant {
         content.put("subjectType", event.getSubjectType());
         content.put("action", event.getAction());
         content.put("state", event.getState());
+        content.put("parameters", event.getParameters());
         return CanonicalJson.of(content, Set.of());
     }
 }

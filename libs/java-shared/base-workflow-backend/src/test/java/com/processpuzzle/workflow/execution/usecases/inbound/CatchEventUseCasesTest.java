@@ -12,13 +12,17 @@ import static org.mockito.Mockito.when;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.shared.event.CatalogEventKind;
 import com.processpuzzle.shared.event.DefinedEventOccurred;
+import com.processpuzzle.shared.event.EventParameterType;
+import com.processpuzzle.shared.event.OccurredParameter;
 import com.processpuzzle.workflow.definition.domain.EventDirection;
 import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.Workflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolveWorkflowUseCase;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
+import com.processpuzzle.workflow.execution.domain.ArtifactInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
+import com.processpuzzle.workflow.execution.usecases.outbound.EntityStateGateway;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
@@ -135,6 +139,26 @@ class CatchEventUseCasesTest {
         assertThat(context.getValue()).containsEntry("orderId", "42").containsEntry("invoiceNumber", "I-1");
     }
 
+    /** Phase 3: a parameter the catch's mapping does not name lands under its own name, beside the namespaced copy. */
+    @Test
+    void occurTakesTheParametersTheMappingDoesNotName() {
+        EventInstance waiting = waiting();
+        when(events.findByOrgKeyAndId(ORG, EVENT_ID)).thenReturn(Optional.of(waiting));
+        when(events.findByOrgKeyAndWorkflowInstanceId(ORG, INSTANCE_ID)).thenReturn(List.of(waiting));
+        DefinedEventOccurred occurred = new DefinedEventOccurred(ORG, "InvoiceIssued", "order", "42",
+                Map.of("invoiceNumber", "I-1"), Instant.now(), CatalogEventKind.MESSAGE, UUID.randomUUID(), "42",
+                UUID.randomUUID(), List.of(
+                        new OccurredParameter("invoiceNumber", EventParameterType.STRING, null, "I-param"),
+                        new OccurredParameter("issuedBy", EventParameterType.STRING, null, "Bob")));
+
+        useCase(mock(WorkflowProgression.class)).occur(ORG, EVENT_ID, occurred);
+
+        assertThat(waiting.getContextContribution())
+                .containsEntry("invoiceNumber", "I-1")
+                .containsEntry("issuedBy", "Bob")
+                .containsEntry("issued", Map.of("invoiceNumber", "I-param", "issuedBy", "Bob"));
+    }
+
     @Test
     void occurIgnoresACatchThatNoLongerWaits() {
         EventInstance occurred = waiting();
@@ -205,7 +229,9 @@ class CatchEventUseCasesTest {
 
     private OccurCatchEventUseCase useCase(WorkflowProgression progression) {
         return new OccurCatchEventUseCase(events, instances, resolve,
-                new CatchOccurrence(events, tasks, progression, publisher));
+                new CatchOccurrence(events, tasks, progression, publisher,
+                        new ArtifactBinder(mock(ArtifactInstanceRepository.class),
+                                mock(EntityStateGateway.class))));
     }
 
     private static EventInstance waiting() {

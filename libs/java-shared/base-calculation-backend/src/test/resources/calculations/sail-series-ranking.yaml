@@ -1,0 +1,69 @@
+# The proposal's sailing example: a simplified low-point series. DNF, DNS and DSQ score one more than the
+# round's starters; from the fourth completed round on, each boat discards its worst round.
+calculation: sail-series-ranking
+version: 1
+parameters:
+  series: { entity: series }
+inputs:
+  finishes:
+    entity: finish            # boat, round, startTime, finishTime, status
+    where: "series==${series}"
+
+tables:
+  round-points:
+    hitPolicy: FIRST
+    inputs: [status, position, starters]
+    output: points
+    rules:
+      - { when: ['"DNF", "DNS", "DSQ"', '-', '-'], then: "starters + 1" }
+      - { when: ['-', '-', '-'],                  then: "position" }
+  discards:
+    hitPolicy: FIRST
+    inputs: [completedRounds]
+    output: discardCount
+    rules:
+      - { when: ['< 4'],  then: 0 }
+      - { when: ['>= 4'], then: 1 }
+
+decisions:
+  elapsed:                      # FEEL duration, not seconds
+    for: finishes
+    expr: "finishTime - startTime"
+  position:
+    for: finishes
+    requires: [elapsed]
+    rank: { by: elapsed, order: asc, partitionBy: round, filter: 'status = "OK"' }
+  starters:
+    for: finishes
+    aggregate: { count: boat, partitionBy: round }   # broadcast to each row
+  roundPoints:
+    for: finishes
+    requires: [status, position, starters]
+    table: round-points
+  completedRounds:
+    aggregate: { countDistinct: round }
+  discardCount:
+    requires: [completedRounds]
+    table: discards
+  bestRound:
+    for: boat
+    requires: [position]
+    aggregate: { min: position, partitionBy: boat }
+  seriesTotal:
+    for: boat
+    requires: [roundPoints, discardCount]
+    aggregate: { sum: roundPoints, partitionBy: boat, dropWorst: discardCount }
+  seriesRank:
+    for: boat
+    requires: [seriesTotal, bestRound]
+    rank: { by: seriesTotal, order: asc, tieBreak: [bestRound] }
+
+output:
+  entity: series-result
+  for: boat
+  key: [series, boat]
+  mapping: { series: series, boat: boat, total: seriesTotal, rank: seriesRank }
+  materialization: stored
+trigger:
+  state: { entity: series, to: FINISHED }
+  freeze: onCompletion

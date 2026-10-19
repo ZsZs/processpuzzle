@@ -46,6 +46,7 @@ export class SamplesComponent {
     { route: ORDER_PATH, label: ORDER_NAME },
     { route: 'workflow-instance', label: 'Workflow Instance' },
     { route: FULFILLMENT_INVOICE_PATH, label: 'Fulfillment Invoice' },
+    { route: 'issued-document', label: 'Issued Documents' },
     { route: 'workflow', label: 'Workflow' },
     { route: 'tool-definition', label: 'Tool Definition' },
   ];

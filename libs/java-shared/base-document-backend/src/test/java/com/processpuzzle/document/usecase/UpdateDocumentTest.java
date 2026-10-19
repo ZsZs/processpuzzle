@@ -59,7 +59,8 @@ class UpdateDocumentTest {
                 publishedRepository,
                 new DocumentReferentialIntegrityChecker(),
                 new DocumentTranslationAssembler(draftRepository, publishedRepository),
-                TestGuards.permitAll());
+                TestGuards.permitAll(),
+                TestFacts.ignored());
     }
 
     @Test

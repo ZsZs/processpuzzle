@@ -38,5 +38,19 @@
     "password_err_mismatch": "A jelszavak nem egyeznek",
     "create_button": "Fiók létrehozása",
     "sign_in_button": "Már van fiókja? Jelentkezzen be"
+  },
+  "my_profile_form": {
+    "title": "Profilom",
+    "email_label": "E-mail",
+    "first_name_label": "Keresztnév",
+    "last_name_label": "Vezetéknév",
+    "roles_label": "Szerepköreim",
+    "no_roles": "Nincs szerepköre.",
+    "not_signed_in": "Nincs bejelentkezve.",
+    "manage_account_button": "Fiók kezelése",
+    "platform_roles": {
+      "org_admin": "A szervezet adminisztrátora: tagok, szerepkörök és beállítások kezelése.",
+      "org_member": "A szervezet tagja; bejelentkezhet és dolgozhat a szervezet alkalmazásaiban."
+    }
   }
 }

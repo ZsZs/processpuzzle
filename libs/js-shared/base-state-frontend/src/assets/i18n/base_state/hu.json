@@ -117,6 +117,7 @@
     "blockedNoReason": "Az átmenet egy feltétele nem engedi.",
     "rejected": "Az átmenetet elutasították: {{reason}}",
     "fired": "Az állapot megváltozott: {{state}}.",
+    "back": "Vissza",
     "initialState": "Kezdő állapot: {{state}}"
   }
 }

@@ -27,6 +27,13 @@ public sealed class EntityObjectAccessException extends RuntimeException {
         }
     }
 
+    /** No entity type of that code in the organization. */
+    public static final class UnknownType extends EntityObjectAccessException {
+        public UnknownType(String entityDefinitionCode) {
+            super("No entity type '%s'".formatted(entityDefinitionCode));
+        }
+    }
+
     /** {@code expectedVersion} no longer matches — someone else wrote between read and write. */
     public static final class VersionConflict extends EntityObjectAccessException {
         public VersionConflict(UUID objectId, long expectedVersion, long actualVersion) {

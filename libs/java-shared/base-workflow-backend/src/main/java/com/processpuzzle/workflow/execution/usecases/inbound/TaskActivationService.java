@@ -5,11 +5,15 @@ import com.processpuzzle.workflow.definition.domain.EventUse;
 import com.processpuzzle.workflow.definition.domain.JoinType;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow;
 import com.processpuzzle.workflow.definition.usecases.inbound.ResolvedWorkflow.ResolvedTask;
+import com.processpuzzle.workflow.definition.usecases.outbound.CatalogParameter;
+import com.processpuzzle.workflow.definition.usecases.outbound.EventCatalogPort;
+import com.processpuzzle.workflow.definition.usecases.outbound.PermitAllEventCatalogPort;
 import com.processpuzzle.workflow.execution.domain.EventInstance;
 import com.processpuzzle.workflow.execution.domain.EventInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.EventInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.PayloadPath;
 import com.processpuzzle.workflow.execution.domain.TaskInstance;
+import com.processpuzzle.workflow.execution.domain.ThrownParameters;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.TaskInstanceStatus;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
@@ -98,6 +102,7 @@ public class TaskActivationService {
     private final RuleEvaluationPort ruleEvaluationPort;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
+    private EventCatalogPort eventCatalog = new PermitAllEventCatalogPort();
 
     @Autowired
     public TaskActivationService(TaskInstanceRepository taskInstanceRepository,
@@ -121,6 +126,15 @@ public class TaskActivationService {
                                  ApplicationEventPublisher eventPublisher) {
         this(taskInstanceRepository, eventInstanceRepository, workflowInstanceRepository, ruleEvaluationPort,
                 eventPublisher, Clock.systemUTC());
+    }
+
+    /**
+     * The catalog a throw reads its event's declared parameters from. Optional, so a host without base-event — and the
+     * tests constructing this service — throw with their payload mapping only.
+     */
+    @Autowired(required = false)
+    public void setEventCatalog(EventCatalogPort eventCatalog) {
+        this.eventCatalog = eventCatalog;
     }
 
     /**
@@ -194,8 +208,7 @@ public class TaskActivationService {
                 continue;
             }
             if (use.isThrow()) {
-                raise(run, use, event);
-                thrown = true;
+                thrown |= raise(run, use, event);
             } else {
                 startWaiting(run, use, event);
             }
@@ -215,20 +228,44 @@ public class TaskActivationService {
         }
     }
 
-    private void raise(Run run, EventUse use, EventInstance event) {
+    /**
+     * Throws {@code use}, unless a required parameter of its event resolves to nothing: then the throw is held — left
+     * PENDING with its {@code blockedReason} — and tried again as the run advances. @return whether it was thrown
+     */
+    private boolean raise(Run run, EventUse use, EventInstance event) {
         WorkflowInstance instance = run.instance();
         Instant now = clock.instant();
-        Map<String, Object> payload = PayloadPath.map(run.context, use.getPayloadMapping());
+        Map<String, Object> payload = new LinkedHashMap<>(PayloadPath.map(run.context, use.getPayloadMapping()));
+        List<CatalogParameter> declared = eventCatalog.releasedParametersOf(run.orgKey, use.getEventDefinitionId());
+        Map<String, Object> parameters = ThrownParameters.fill(declared, payload, run.context);
+        List<String> missing = ThrownParameters.missing(declared, parameters);
+        if (!missing.isEmpty()) {
+            hold(event, "The required parameter(s) %s of '%s' resolve to nothing in the run's context."
+                    .formatted(String.join(", ", missing), use.getEventDefinitionId()));
+            return false;
+        }
+        payload.putAll(parameters);
         String correlationValue = use.getCorrelationKey() == null ? null : stringOf(run.context.get(use.getCorrelationKey()));
         event.setStatus(EventInstanceStatus.THROWN);
         event.setCorrelationValue(correlationValue);
         event.setPayload(payload);
+        event.setParameters(parameters.isEmpty() ? null : parameters);
+        event.setBlockedReason(null);
         event.setOccurredAt(now);
         event.setOccurrenceId(event.getId());
         eventInstanceRepository.save(event);
         eventPublisher.publishEvent(new EventThrown(run.orgKey, use.getEventDefinitionId(), event.getId(),
                 instance == null ? null : instance.getEntityType(), instance == null ? null : instance.getEntityId(),
                 correlationValue, payload, run.workflowInstanceId, run.workflow.id(), now));
+        return true;
+    }
+
+    /** Records why a due throw is held; saved only when the reason changes, as every advance tries it again. */
+    private void hold(EventInstance event, String reason) {
+        if (!reason.equals(event.getBlockedReason())) {
+            event.setBlockedReason(reason);
+            eventInstanceRepository.save(event);
+        }
     }
 
     /**

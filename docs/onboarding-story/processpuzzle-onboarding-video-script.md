@@ -17,9 +17,9 @@
 
 ## SCENE 2 — Model the Data (0:20–0:50)
 **Narrator (VO):**
-"We start with the data. In ProcessPuzzle, you define entities — the things your business cares about. Here, an Employee, and an Onboarding Task."
+"We start with the data. In ProcessPuzzle, you define entities — the things your business cares about. Here, an Employee, and the Department they join."
 
-**Screen capture spot #1:** Entity designer — create `Employee` entity, add fields (name, email, start date, department, manager). Quick cut to creating `OnboardingTask` entity (title, description, due date, status).
+**Screen capture spot #1:** Entity designer — quick cut of creating `Department` (name, cost center), then the `Employee` entity: name, email, start date, department (lookup to `Department`), manager, contract signed, state.
 
 **Character:** Points at the field list as it grows, gives a thumbs-up when the entity is saved.
 
@@ -30,12 +30,12 @@
 
 ## SCENE 3 — Add the Business Rules (0:50–1:15)
 **Narrator (VO):**
-"Now the logic. What happens automatically? ProcessPuzzle lets you express that as rules, right next to your data."
+"Now the logic. What must always be true? ProcessPuzzle lets you express that as rules, right next to your data — and checks them everywhere the data changes."
 
-**Screen capture spot #2:** Rule designer — show three rules being defined:
-1. Auto-set task due dates relative to the employee's start date
-2. Block the employee from going "Active" until mandatory tasks are done
-3. Notify the manager if a task is overdue
+**Screen capture spot #2:** Rule designer — show three rules on the Employee being defined:
+1. The start date must lie ahead
+2. The email should be on the company domain (a warning, not a blocker)
+3. An employee cannot become Active without a manager
 
 **Character:** Small lightbulb icon appears next to the character as each rule is added.
 
@@ -43,9 +43,9 @@
 
 ## SCENE 4 — Attach the Document (1:15–1:35)
 **Narrator (VO):**
-"Onboarding always needs paperwork. Attach a document template — here, the employment contract — and ProcessPuzzle handles generating and tracking it as part of the process."
+"Onboarding always needs paperwork. Write the document once — here, the employment contract — publish it, and every new hire signs it right inside the process."
 
-**Screen capture spot #3:** Document designer — attach/upload the contract template, link it to the Employee entity.
+**Screen capture spot #3:** Document designer — write and publish the contract, open its Sign tab.
 
 **Character:** Mimes flipping through a small document icon.
 
@@ -53,9 +53,9 @@
 
 ## SCENE 5 — Define the States (1:35–1:55)
 **Narrator (VO):**
-"Every employee moves through stages — invited, pending paperwork, active. ProcessPuzzle lets you draw that directly as a state machine."
+"Every employee moves through stages — invited, pending paperwork, active. ProcessPuzzle lets you draw that directly as a state machine — with a rule guarding the step to active."
 
-**Screen capture spot #4:** State machine designer — build `Employee` states: Invited → Documents Pending → Active. Quick glimpse of the simpler `OnboardingTask` states: Open → In Progress → Done.
+**Screen capture spot #4:** State machine designer — build `Employee` states: Invited → Documents Pending → Active, with the "manager assigned" rule guarding the last transition.
 
 **Character:** Traces the arrows between states with a finger.
 
@@ -63,9 +63,9 @@
 
 ## SCENE 6 — Bring It Together in a Workflow (1:55–2:25)
 **Narrator (VO):**
-"Now we connect everything into a workflow with real people in real roles. An HR Coordinator creates the record and manages the paperwork. The New Hire reviews the contract and completes their own tasks."
+"Now we connect everything into a workflow with real people in real roles. An HR Coordinator creates the record and manages the paperwork. The New Hire signs the contract and works through their own tasks — each with a due date, and a reminder when it slips. Nobody is activated before the signature arrives."
 
-**Screen capture spot #5:** Workflow designer — show the two roles (HR Coordinator, New Hire), each step wired to the entities, rules, document, and state transitions defined earlier.
+**Screen capture spot #5:** Workflow designer — show the two roles (HR Coordinator, New Hire) and the onboarding tasks, each wired to the entities, document and state transitions defined earlier; the workflow waits for the contract's signature, and a timer on the training task escalates to HR when it is overdue.
 
 **Character:** Two small role icons appear beside the character, then join together with a connecting line.
 
@@ -78,7 +78,7 @@
 **Narrator (VO):**
 "Last step: compose it into an application. ProcessPuzzle assembles your entities, rules, documents, states, and workflow into a working app — ready to use."
 
-**Screen capture spot #6:** App composer — assemble the Onboarding app from the pieces just built, then show the finished app running: HR Coordinator creating a new employee, New Hire signing the contract and checking off a task.
+**Screen capture spot #6:** App composer — assemble the Onboarding app from the pieces just built, then show the finished app running: HR Coordinator creating a new employee, New Hire signing the contract from the task dashboard and completing tasks, HR activating the employee.
 
 **Character:** Claps, gives a big thumbs-up.
 

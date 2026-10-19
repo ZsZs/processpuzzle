@@ -126,7 +126,7 @@ describe('DocumentContentStore', () => {
   });
 
   it('refuses to touch anything before it knows which document and locale', async () => {
-    const uninitialized = new DocumentContentStore(TestBed.inject(DocumentContentService), TestBed.inject(BaseDocumentService));
+    const uninitialized = TestBed.runInInjectionContext(() => new DocumentContentStore(TestBed.inject(DocumentContentService), TestBed.inject(BaseDocumentService)));
 
     await expect(uninitialized.appendTextBlock()).rejects.toThrow(/initialize/);
   });

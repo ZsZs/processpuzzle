@@ -2,6 +2,7 @@ package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.TenantScope.RealmScope;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.PasswordPolicyViolationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
@@ -57,7 +58,7 @@ public class KeycloakSelfRegistrationAdapter implements SelfRegistrationPort {
 
         String userId;
         try {
-            userId = client.createAndReturnId("/admin/realms/" + realm + "/users", user).orElse(null);
+            userId = client.createAndReturnId(new RealmScope(realm).adminRealmPath() + "/users", user).orElse(null);
         } catch (IdentityProviderUnavailableException ex) {
             throw translate(ex);
         }
@@ -69,7 +70,7 @@ public class KeycloakSelfRegistrationAdapter implements SelfRegistrationPort {
     private void requestVerificationMail(String realm, String userId) {
         try {
             client.exchange(HttpMethod.PUT,
-                    "/admin/realms/" + realm + "/users/" + userId + "/execute-actions-email",
+                    new RealmScope(realm).adminRealmPath() + "/users/" + userId + "/execute-actions-email",
                     List.of("VERIFY_EMAIL"), null);
         } catch (IdentityProviderUnavailableException ex) {
             LOG.warn("Registered user {} in realm {} but could not send the verification mail.", userId, realm, ex);
@@ -78,7 +79,7 @@ public class KeycloakSelfRegistrationAdapter implements SelfRegistrationPort {
 
     private static RuntimeException translate(IdentityProviderUnavailableException ex) {
         int status = ex.getHttpStatus().orElse(0);
-        if (status == 409) {
+        if (status == KeycloakAdminClient.HTTP_CONFLICT) {
             return new UserAlreadyExistsException("An account with this email already exists.");
         }
         if (status == 400) {

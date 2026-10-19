@@ -1,13 +1,28 @@
 export enum FormControlType {
   ADDITIONAL_PROPERTIES = 'ADDITIONAL_PROPERTIES',
+  /**
+   * A postal address — the value is one `PostalAddress` object. The fields and their order follow the selected
+   * country; with `showMap` the address is also shown on a map, with coordinates derived from it.
+   */
+  ADDRESS = 'ADDRESS',
   ARTIFACT = 'ARTIFACT',
   AVATAR = 'AVATAR',
   CHECKBOX = 'CHECKBOX',
+  /**
+   * An append-only history of rich-text comments, each stamped with its author and time — the value is an
+   * array of `EntityComment`, oldest first. A new comment is written below the history and saved with the record.
+   */
+  COMMENTS = 'COMMENTS',
   COMPONENTS = 'COMPONENTS',
   /** Rendered by the descriptor's own `component` — the extension point for controls base-entity cannot know. */
   CUSTOM = 'CUSTOM',
   DATE = 'DATE',
   DROPDOWN = 'DROPDOWN',
+  /**
+   * Where the device was when the user pressed the control's button — the value is one `GeoLocation` object.
+   * Shown read-only; pressing the button again replaces it. Disabled where the browser offers no location.
+   */
+  GEO_LOCATION = 'GEO_LOCATION',
   EMBEDDED_COMPONENTS = 'EMBEDDED_COMPONENTS',
   EMBEDDED_LIST = 'EMBEDDED_LIST',
   EMBEDDED_OBJECT = 'EMBEDDED_OBJECT',

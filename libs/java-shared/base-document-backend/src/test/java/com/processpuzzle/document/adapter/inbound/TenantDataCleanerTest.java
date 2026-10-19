@@ -1,10 +1,14 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.domain.ContentBook;
+import com.processpuzzle.document.domain.ContentBookRepository;
 import com.processpuzzle.document.domain.Document;
 import com.processpuzzle.document.domain.DocumentContent;
 import com.processpuzzle.document.domain.DocumentDraft;
 import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
+import com.processpuzzle.document.domain.DocumentSignature;
+import com.processpuzzle.document.domain.DocumentSignatureRepository;
 import com.processpuzzle.document.domain.PublishedDocument;
 import com.processpuzzle.document.domain.PublishedDocumentRepository;
 import com.processpuzzle.document.i18n.DocumentUiTranslationBundle;
@@ -77,6 +81,12 @@ class TenantDataCleanerTest {
     private DocumentUiTranslationRepository translations;
 
     @Autowired
+    private DocumentSignatureRepository signatures;
+
+    @Autowired
+    private ContentBookRepository contentBooks;
+
+    @Autowired
     private ApplicationEventPublisher events;
 
     @Autowired
@@ -94,7 +104,9 @@ class TenantDataCleanerTest {
         assertThat(published.findAll()).extracting(PublishedDocument::getOrgKey).containsOnly(KEPT).hasSize(2);
         assertThat(translations.findAll()).extracting(bundle -> bundle.getKey().getOrgKey())
                 .containsOnly(KEPT);
+        assertThat(signatures.findAll()).extracting(DocumentSignature::getOrgKey).containsOnly(KEPT).hasSize(2);
 
+        assertThat(contentBooks.findAll()).extracting(ContentBook::getOrgKey).containsOnly(KEPT).hasSize(1);
         assertThat(documents.findByOrgKey(KEPT)).hasSize(2);
     }
 
@@ -111,6 +123,8 @@ class TenantDataCleanerTest {
         assertThat(drafts.count()).isEqualTo(4);
         assertThat(published.count()).isEqualTo(2);
         assertThat(translations.count()).isEqualTo(1);
+        assertThat(signatures.count()).isEqualTo(2);
+        assertThat(contentBooks.count()).isEqualTo(1);
     }
 
     /** A tenant with nothing here — or erased twice — is not an error. */
@@ -135,13 +149,19 @@ class TenantDataCleanerTest {
             drafts.saveAndFlush(new DocumentDraft(orgKey, id, "de", DocumentContent.empty(), null));
             published.saveAndFlush(new PublishedDocument(orgKey, id, "en", DocumentContent.empty(), 1L,
                     Instant.now(), "ada"));
+            signatures.saveAndFlush(new DocumentSignature(UUID.randomUUID().toString(), orgKey, id, slug, "en", 1L,
+                    "hash", "employee", "e-1", "ada", Instant.now()));
         }
+        contentBooks.saveAndFlush(new ContentBook(orgKey, UUID.nameUUIDFromBytes(orgKey.getBytes()).toString(),
+                "handbook", "Handbook", "ada"));
         translations.saveAndFlush(new DocumentUiTranslationBundle(orgKey, "document", "en",
                 Map.of("title", "Documents")));
     }
 
     @AfterEach
     void cleanUp() {
+        contentBooks.deleteAll();
+        signatures.deleteAll();
         published.deleteAll();
         drafts.deleteAll();
         documents.deleteAll();

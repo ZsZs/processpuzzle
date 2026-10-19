@@ -131,7 +131,8 @@
     "timerType": "Temporizador",
     "timerExpression": "Expresión del temporizador",
     "authorizedRoles": "Roles autorizados",
-    "payloadMapping": "Mapeo de carga",
+    "payloadMapping": "Mapeo de carga (excepciones)",
+    "eventParameters": "Parámetros del evento",
     "requiredArtifacts": "Artefactos requeridos",
     "_tooltips": {
       "id": "Única dentro del flujo, también frente a los ids de sus tareas y eventos, p. ej. order-created.",
@@ -143,7 +144,8 @@
       "timerExpression": "Cuándo se dispara el temporizador, en ISO 8601: una fecha y hora como 2026-12-24T08:00:00Z para DATE, o una repetición como R/P1D (cada día) para CYCLE.",
       "preconditionExpression": "Solo TIME_BASED_PRECONDITION: una condición que debe cumplirse cuando llega el hito, p. ej. milestone.status == 'PASSED'. Se guarda, aún no se evalúa.",
       "authorizedRoles": "Solo ROLE_DEFINITION: los roles cuyos miembros pueden iniciar el flujo a mano. Vacío significa que cualquiera puede.",
-      "payloadMapping": "TRIGGERING_EVENT e INPUT_ARTIFACT: copia datos del evento de inicio en la nueva ejecución. Clave: el nombre con que se guardan, p. ej. orderId; valor: de dónde se leen, p. ej. $.payload.orderId.",
+      "payloadMapping": "Los parámetros del evento llegan a la ejecución con su propio nombre, p. ej. orderNumber; mapee solo lo que no aportan o lo que quiera con otro nombre. TRIGGERING_EVENT e INPUT_ARTIFACT: clave el nombre con que se guarda, p. ej. orderId; valor de dónde se lee, p. ej. $.subjectId. INPUT_ARTIFACT lee un hecho de la plataforma, sin parámetros, así que mapea todo lo que necesita.",
+      "eventParameters": "Lo que lleva el evento elegido. Cada uno entra en la ejecución con su propio nombre (por nombre), salvo que el mapeo de carga lo nombre (mapeado).",
       "requiredArtifacts": "Solo INPUT_ARTIFACT: los artefactos, opcionalmente en un estado dado, que deben existir antes de que empiece el flujo. Cada uno debe estar entre los Artefactos del flujo."
     }
   },
@@ -169,7 +171,8 @@
     "timerExpression": "Expresión del temporizador",
     "attachedTo": "Adjunto a",
     "interrupting": "Interruptor",
-    "payloadMapping": "Mapeo de carga",
+    "payloadMapping": "Mapeo de carga (excepciones)",
+    "eventParameters": "Parámetros del evento",
     "_tooltips": {
       "id": "Única dentro del flujo, también frente a los ids de sus tareas y eventos de inicio, p. ej. invoice-issued. Las tareas la indican en «Depende de».",
       "name": "Etiqueta opcional que se muestra en el modelador, p. ej. Factura emitida. Vacío muestra el nombre del evento del catálogo.",
@@ -182,7 +185,15 @@
       "dependsOn": "Los ids de las tareas o eventos que deben terminar antes de alcanzar este evento, p. ej. issue-invoice. Vacío significa que se alcanza al iniciar el flujo.",
       "joinType": "ALL espera a todas las tareas o eventos de «Depende de» (predeterminado); ANY continúa tras la primera de ellas. Se ignora si «Depende de» está vacío.",
       "correlationKey": "Solo eventos MESSAGE, y obligatoria en ellos: la variable de la ejecución que vincula el mensaje con ella, p. ej. orderId. Un THROW envía su valor; un CATCH espera un mensaje con el mismo valor.",
-      "payloadMapping": "CATCH: copia datos del evento en la ejecución; clave un nombre de variable, valor una ruta como $.payload.amount. THROW: rellena el evento enviado; clave un nombre de atributo, valor una ruta como $.orderId."
+      "payloadMapping": "Los parámetros del evento se rellenan por nombre; mapee solo lo que falte. CATCH: los parámetros llegan a la ejecución con su propio nombre; clave un nombre de variable, valor una ruta como $.payload.amount. THROW: cada parámetro se toma de la variable homónima de la ejecución; clave un nombre de parámetro o atributo, valor una ruta como $.new_order.",
+      "eventParameters": "Lo que lleva el evento. CATCH: cada uno llega a la ejecución con su propio nombre, salvo que el mapeo lo nombre. THROW: cada uno se rellena con la variable homónima de la ejecución, salvo que el mapeo lo nombre."
+    },
+    "event_parameters": {
+      "none": "Este evento no declara parámetros.",
+      "required": "obligatorio",
+      "by_name": "por nombre",
+      "mapped": "mapeado",
+      "binds": "vincula su artefacto"
     }
   },
   "workflow_task_artifact_state": {
@@ -394,14 +405,21 @@
       "artifacts_out": "Escribe",
       "artifacts_none": "Esta tarea no declara artefactos.",
       "not_created": "aún no creado",
+      "required_state": "requerido: {{state}}",
       "note": "Notas (se añaden al contexto del flujo de trabajo)",
       "complete": "Completar tarea",
+      "complete_blocked": "Marque cada paso y lleve cada salida a su estado requerido para completar la tarea.",
       "skip": "Omitir",
       "skip_reason": "Motivo de la omisión",
       "unstated_refusal": "Todavía no aceptada, y el servidor no dio detalles.",
       "unassigned": "sin asignar",
       "assigned_to": "Asignada a",
-      "waiting_for": "Esperando"
+      "comments": "Comentarios",
+      "comment_add": "Añadir comentario",
+      "waiting_for": "Esperando",
+      "held": "Retenido:",
+      "context": "Variables de contexto",
+      "context_none": "Esta ejecución no tiene variables de contexto."
     }
   },
   "artifact_instance": {
@@ -426,7 +444,9 @@
     "occurredAt": "Ocurrido el",
     "dueAt": "Vence el",
     "fireCount": "Disparos",
+    "blockedReason": "Motivo del bloqueo",
     "payload": "Carga",
+    "parameters": "Parámetros",
     "contextContribution": "Aporte al contexto"
   },
   "task_step_result": {

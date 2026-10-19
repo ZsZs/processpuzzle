@@ -74,8 +74,14 @@
   "copyright": {
     "name": "Droits d'auteur"
   },
+  "entity_table": {
+    "name": "Tableau d'entités"
+  },
   "design_button": {
     "name": "Bouton de conception"
+  },
+  "task_dashboard_button": {
+    "name": "Bouton du tableau des tâches"
   },
   "image_zoom": {
     "name": "Zoom d'image"

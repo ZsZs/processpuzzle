@@ -106,7 +106,58 @@ public class WorkflowValidator {
         validateTaskUses(workflow, orgKey, roleIds, taskIds, flowIds, startEventIds);
         validateEvents(workflow, orgKey, new HashSet<>(taskIds), flowIds, startEventIds);
         validateStartEvents(workflow, orgKey, flowIds);
+        validateBindings(workflow, orgKey, startEventIds, new HashSet<>(eventIds));
         detectCycles(workflow);
+    }
+
+    /**
+     * How the run binds its artifacts to records (docs/event-parameters.md): a {@code bindFrom} names an event this
+     * workflow has — {@code <startEventId|eventUseId>.<parameter>} — and of the artifacts of one record type at most one
+     * leaves it out, since a reference of that type would otherwise have no single artifact to bind. Whether the
+     * event actually carries the parameter is the catalog's to say, and is not checked here.
+     */
+    private void validateBindings(Workflow workflow, String orgKey, Set<String> startEventIds, Set<String> eventIds) {
+        List<ArtifactUse> uses = workflow.getArtifacts() == null ? List.of() : workflow.getArtifacts();
+        Map<String, ArtifactDefinition> artifacts = artifactRepository
+                .findByOrgKeyAndIdInAndChannel(orgKey, workflow.artifactDefinitionIds(), Channel.DRAFT).stream()
+                .collect(Collectors.toMap(ArtifactDefinition::getId, Function.identity(), (first, second) -> first));
+        Map<String, List<String>> unnamedByType = new LinkedHashMap<>();
+        for (ArtifactUse use : uses) {
+            String bindFrom = use.getBindFrom();
+            if (bindFrom != null && !bindFrom.isBlank()) {
+                String source = use.bindFromSource();
+                if (source == null || use.bindFromParameter() == null) {
+                    throw new ValidationException("Artifact '%s' binds from '%s', which is not <event>.<parameter>"
+                            .formatted(use.getArtifactDefinitionId(), bindFrom));
+                }
+                if (!startEventIds.contains(source) && !eventIds.contains(source)) {
+                    throw new ValidationException("Artifact '%s' binds from '%s', but the workflow has no start event or event '%s'"
+                            .formatted(use.getArtifactDefinitionId(), bindFrom, source));
+                }
+                continue;
+            }
+            recordTypeOf(artifacts.get(use.getArtifactDefinitionId()))
+                    .ifPresent(type -> unnamedByType.computeIfAbsent(type, key -> new ArrayList<>()).add(use.getArtifactDefinitionId()));
+        }
+        unnamedByType.forEach((type, artifactIds) -> {
+            if (artifactIds.size() > 1) {
+                throw new ValidationException(("Artifacts %s are all records of '%s', so a reference to one would bind any of them — "
+                        + "give each but one a 'bindFrom'").formatted(artifactIds, type));
+            }
+        });
+    }
+
+    /** The type of the records an artifact stands for, as the run binds them: an entity's code, or {@code document}. */
+    private static Optional<String> recordTypeOf(ArtifactDefinition artifact) {
+        if (artifact == null) {
+            return Optional.empty();
+        }
+        if (artifact.getArtifactType() == ArtifactType.DOCUMENT) {
+            return Optional.of("document");
+        }
+        return artifact.getArtifactType() == ArtifactType.ENTITY && artifact.getArtifactTypeId() != null
+                ? Optional.of(artifact.getArtifactTypeId().toLowerCase().replaceAll("[\\s_-]+", ""))
+                : Optional.empty();
     }
 
     private void validateTaskUses(Workflow workflow, String orgKey, List<String> roleIds, List<String> taskIds,

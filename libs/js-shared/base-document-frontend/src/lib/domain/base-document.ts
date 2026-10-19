@@ -1,4 +1,4 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
 import { WidgetInstance } from '@processpuzzle/widgets';
 
 // Re-exported rather than redeclared: WidgetPlacement is one enum shared with base-app, and it now
@@ -26,6 +26,16 @@ export enum AttributeVisibilityMode {
 export interface AttributeVisibility {
   mode: AttributeVisibilityMode;
   attributes: string[];
+}
+
+/**
+ * What a document's entity ports mean: bound once, when it is authored or by the page hosting it (`DOCUMENT`),
+ * or supplied anew each time it is rendered (`REPORT_TEMPLATE` — one invoice layout, one invoice per order).
+ * Content, editor and publication are the same for both; see docs/document-vs-report-template.md.
+ */
+export enum DocumentKind {
+  DOCUMENT = 'DOCUMENT',
+  REPORT_TEMPLATE = 'REPORT_TEMPLATE',
 }
 
 export enum BlockKind {
@@ -89,6 +99,30 @@ export interface DocumentBlock extends Partial<WidgetInstance> {
   kind: BlockKind;
   editable?: boolean;
   content?: Record<string, unknown>; // opaque Tiptap/ProseMirror JSON document
+}
+
+/** The object a signature is given for — one employee's contract out of the one contract document. */
+export interface DocumentSignatureSubject {
+  /** The entity definition code, e.g. `employee`. */
+  subjectType: string;
+  subjectId: string;
+}
+
+/**
+ * One person's acceptance of one published revision, as `GET .../signatures` returns it. Every field but the
+ * subject is the server's: who signed comes from the token, and `revision` / `contentHash` pin what was read.
+ */
+export interface DocumentSignature extends DocumentSignatureSubject {
+  id: string;
+  documentId: string;
+  title?: string;
+  locale: string;
+  revision: number;
+  contentHash: string;
+  signedBy: string;
+  signedAt: string;
+  /** The signed report as a PDF — absent until the signer's browser has uploaded it. */
+  pdf?: ArtifactAttr | null;
 }
 
 export enum DocumentStatus {
@@ -183,6 +217,8 @@ export class Document implements BaseEntity {
     public version?: number,
     public createdAt?: string,
     public updatedAt?: string,
+    /** Last rather than beside the other properties, so the positional call sites before it stay as they are. */
+    public kind: DocumentKind = DocumentKind.DOCUMENT,
   ) {}
 }
 
@@ -195,5 +231,5 @@ export class Document implements BaseEntity {
  */
 export type DocumentProperties = Pick<
   Document,
-  'slug' | 'title' | 'subject' | 'description' | 'author' | 'sourceLocale' | 'isPublic' | 'readerRoles' | 'editorRoles' | 'publisherRoles' | 'inputPorts' | 'outputPorts'
+  'slug' | 'title' | 'subject' | 'description' | 'author' | 'sourceLocale' | 'isPublic' | 'readerRoles' | 'editorRoles' | 'publisherRoles' | 'inputPorts' | 'outputPorts' | 'kind'
 >;

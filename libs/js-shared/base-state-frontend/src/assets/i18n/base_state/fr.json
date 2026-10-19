@@ -117,6 +117,7 @@
     "blockedNoReason": "Non autorisé par une condition de cette transition.",
     "rejected": "La transition a été refusée : {{reason}}",
     "fired": "État changé en {{state}}.",
+    "back": "Retour",
     "initialState": "Commence en {{state}}"
   }
 }

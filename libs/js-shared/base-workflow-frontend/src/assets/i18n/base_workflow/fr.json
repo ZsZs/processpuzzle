@@ -131,7 +131,8 @@
     "timerType": "Minuteur",
     "timerExpression": "Expression du minuteur",
     "authorizedRoles": "Rôles autorisés",
-    "payloadMapping": "Mappage de charge utile",
+    "payloadMapping": "Mappage de charge utile (dérogations)",
+    "eventParameters": "Paramètres de l'événement",
     "requiredArtifacts": "Artefacts requis",
     "_tooltips": {
       "id": "Unique au sein du flux, y compris parmi les ids de ses tâches et événements, p. ex. order-created.",
@@ -143,7 +144,8 @@
       "timerExpression": "Quand le minuteur se déclenche, au format ISO 8601 : une date et heure comme 2026-12-24T08:00:00Z pour DATE, ou une répétition comme R/P1D (chaque jour) pour CYCLE.",
       "preconditionExpression": "TIME_BASED_PRECONDITION uniquement : une condition qui doit être vraie à l'arrivée du jalon, p. ex. milestone.status == 'PASSED'. Enregistrée, pas encore évaluée.",
       "authorizedRoles": "ROLE_DEFINITION uniquement : les rôles dont les membres peuvent démarrer le flux manuellement. Vide signifie que tout le monde le peut.",
-      "payloadMapping": "TRIGGERING_EVENT et INPUT_ARTIFACT : copie des données de l'événement déclencheur dans la nouvelle exécution. Clé : le nom sous lequel les stocker, p. ex. orderId ; valeur : où les lire, p. ex. $.payload.orderId.",
+      "payloadMapping": "Les paramètres de l'événement arrivent dans l'exécution sous leur propre nom, p. ex. orderNumber ; ne mappez que ce qu'ils n'apportent pas ou ce que vous voulez sous un autre nom. TRIGGERING_EVENT et INPUT_ARTIFACT : clé le nom sous lequel stocker, p. ex. orderId ; valeur où le lire, p. ex. $.subjectId. INPUT_ARTIFACT lit un fait de la plateforme, sans paramètres, et mappe donc tout ce dont il a besoin.",
+      "eventParameters": "Ce que porte l'événement choisi. Chacun entre dans l'exécution sous son propre nom (par nom), sauf si le mappage de charge utile le nomme (mappé).",
       "requiredArtifacts": "INPUT_ARTIFACT uniquement : les artefacts, éventuellement dans un état donné, qui doivent exister avant le démarrage du flux. Chacun doit faire partie des Artefacts du flux."
     }
   },
@@ -169,7 +171,8 @@
     "timerExpression": "Expression du minuteur",
     "attachedTo": "Attaché à",
     "interrupting": "Interrompant",
-    "payloadMapping": "Mappage de charge utile",
+    "payloadMapping": "Mappage de charge utile (dérogations)",
+    "eventParameters": "Paramètres de l'événement",
     "_tooltips": {
       "id": "Unique au sein du flux, y compris parmi les ids de ses tâches et événements de démarrage, p. ex. invoice-issued. Les tâches le citent dans « Dépend de ».",
       "name": "Libellé facultatif affiché dans le modeleur, p. ex. Facture émise. Vide, le nom de l'événement du catalogue est affiché.",
@@ -182,7 +185,15 @@
       "dependsOn": "Les ids des tâches ou événements qui doivent être terminés avant que cet événement soit atteint, p. ex. issue-invoice. Vide signifie qu'il est atteint au démarrage du flux.",
       "joinType": "ALL attend toutes les tâches ou événements de « Dépend de » (par défaut) ; ANY poursuit après le premier d'entre eux. Ignoré si « Dépend de » est vide.",
       "correlationKey": "Événements MESSAGE uniquement, et obligatoire pour eux : la variable de l'exécution qui rattache le message à celle-ci, p. ex. orderId. Un THROW envoie sa valeur ; un CATCH attend un message de même valeur.",
-      "payloadMapping": "CATCH : copie des données de l'événement dans l'exécution — clé un nom de variable, valeur un chemin comme $.payload.amount. THROW : remplit l'événement envoyé — clé un nom d'attribut, valeur un chemin comme $.orderId."
+      "payloadMapping": "Les paramètres de l'événement sont remplis par nom ; ne mappez que ce qui manque. CATCH : les paramètres arrivent dans l'exécution sous leur propre nom ; clé un nom de variable, valeur un chemin comme $.payload.amount. THROW : chaque paramètre est pris dans la variable du même nom de l'exécution ; clé un nom de paramètre ou d'attribut, valeur un chemin comme $.new_order.",
+      "eventParameters": "Ce que porte l'événement. CATCH : chacun arrive dans l'exécution sous son propre nom, sauf si le mappage le nomme. THROW : chacun est rempli depuis la variable du même nom de l'exécution, sauf si le mappage le nomme."
+    },
+    "event_parameters": {
+      "none": "Cet événement ne déclare aucun paramètre.",
+      "required": "obligatoire",
+      "by_name": "par nom",
+      "mapped": "mappé",
+      "binds": "lie son artefact"
     }
   },
   "workflow_task_artifact_state": {
@@ -394,14 +405,21 @@
       "artifacts_out": "Écrit",
       "artifacts_none": "Cette tâche ne déclare aucun artéfact.",
       "not_created": "pas encore créé",
+      "required_state": "requis : {{state}}",
       "note": "Notes (ajoutées au contexte du flux de travail)",
       "complete": "Terminer la tâche",
+      "complete_blocked": "Cochez chaque étape et amenez chaque sortie dans l’état requis pour terminer la tâche.",
       "skip": "Ignorer",
       "skip_reason": "Motif de l’omission",
       "unstated_refusal": "Pas encore acceptée, et le serveur n’a donné aucun détail.",
       "unassigned": "non attribuée",
       "assigned_to": "Attribuée à",
-      "waiting_for": "En attente de"
+      "comments": "Commentaires",
+      "comment_add": "Ajouter un commentaire",
+      "waiting_for": "En attente de",
+      "held": "Retenu :",
+      "context": "Variables de contexte",
+      "context_none": "Cette exécution ne contient aucune variable de contexte."
     }
   },
   "artifact_instance": {
@@ -426,7 +444,9 @@
     "occurredAt": "Survenu le",
     "dueAt": "Échéance",
     "fireCount": "Déclenchements",
+    "blockedReason": "Motif du blocage",
     "payload": "Charge utile",
+    "parameters": "Paramètres",
     "contextContribution": "Contribution au contexte"
   },
   "task_step_result": {

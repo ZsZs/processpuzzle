@@ -64,7 +64,9 @@ stateMachines:
   #
   # 'cancel' is reachable from both DRAFT and CONFIRMED but is deliberately not fired by any workflow
   # task in processpuzzle-testbed-workflows.yaml — cancellation is an out-of-band action available on
-  # the order directly, not a step in the normal fulfillment path.
+  # the order directly, not a step in the normal fulfillment path. The workflow still has to handle it:
+  # order-fulfillment-workflow catches OrderCancelledEvent on the tasks waiting on the order in those two
+  # states, and its release is refused without that.
   - entityName: order
     name: Order State Machine
     description: >-

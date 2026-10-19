@@ -2,6 +2,8 @@ package com.processpuzzle.workflow.definition.adapters.outbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakTenancy;
+import com.processpuzzle.core.identity.KeycloakTenantDirectory;
 import com.processpuzzle.workflow.definition.usecases.outbound.NoOpRoleDirectoryPort;
 import com.processpuzzle.workflow.definition.usecases.outbound.RoleDirectoryPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -153,17 +155,27 @@ class KeycloakRoleDirectoryAdapterTest {
 
         @Test
         void registersTheNoOpDirectoryWithoutAnAdminSecret() {
-            when(client.isConfigured()).thenReturn(false);
+            when(client.tenancy()).thenReturn(KeycloakTenancy.UNCONFIGURED);
 
-            assertThat(configuration.roleDirectoryPort(client)).isInstanceOf(NoOpRoleDirectoryPort.class);
+            assertThat(configuration.roleDirectoryPort(client, new KeycloakTenantDirectory(client)))
+                    .isInstanceOf(NoOpRoleDirectoryPort.class);
         }
 
         @Test
         void registersTheKeycloakDirectoryWithAnAdminSecret() {
-            when(client.isConfigured()).thenReturn(true);
+            when(client.tenancy()).thenReturn(KeycloakTenancy.REALM_PER_TENANT);
 
-            assertThat(configuration.roleDirectoryPort(client))
+            assertThat(configuration.roleDirectoryPort(client, new KeycloakTenantDirectory(client)))
                     .isInstanceOf(KeycloakRoleDirectoryAdapter.class);
+        }
+
+        @Test
+        void registersTheOrganizationDirectoryWithAnOrganizationRealm() {
+            when(client.tenancy()).thenReturn(KeycloakTenancy.ORGANIZATION);
+            when(client.organizationRealm()).thenReturn(Optional.of("shared"));
+
+            assertThat(configuration.roleDirectoryPort(client, new KeycloakTenantDirectory(client)))
+                    .isInstanceOf(KeycloakOrganizationRoleDirectoryAdapter.class);
         }
     }
 

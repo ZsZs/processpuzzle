@@ -25,5 +25,9 @@
     "dark": "Sötét",
     "auto": "Rendszer szerint",
     "reset": "Alapértelmezés visszaállítása"
+  },
+  "sidenav_content": {
+    "show_menu": "Menü megjelenítése",
+    "show_content": "Tartalom megjelenítése"
   }
 }

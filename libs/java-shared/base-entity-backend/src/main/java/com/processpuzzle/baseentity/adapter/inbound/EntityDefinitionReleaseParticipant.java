@@ -3,11 +3,14 @@ package com.processpuzzle.baseentity.adapter.inbound;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
+import com.processpuzzle.baseentity.definition.domain.ValueKind;
 import com.processpuzzle.baseentity.definition.usecases.outbound.EntityInstanceDataPort;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
+import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.core.definition.PendingChange;
+import com.processpuzzle.core.definition.ProblemResolution;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.definition.ReleaseProblem;
@@ -41,6 +44,9 @@ import org.springframework.stereotype.Component;
  * until they get one). The objects are judged by what they hold, so a change no object's data contradicts — a type
  * changed on an attribute nobody filled in — is no problem. A rename is a removal and an addition, and is judged as
  * such.
+ *
+ * <p>A problem a {@link EntityMigrationParticipant migration step} can resolve says how: a removed attribute may be
+ * renamed to one the draft adds in its place, and an attribute objects have no value for may be filled.
  */
 @Component
 public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
@@ -169,7 +175,8 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
                     problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeRemoved",
                             "'%s.%s' is removed; the values %d object(s) hold for it stay stored but are no longer shown."
                                 .formatted(code, attributeCode, holding))
-                        .about(attributeCode, holding));
+                        .about(attributeCode, holding)
+                        .resolvableBy(renames(code, old, before, after)));
                 }
             } else if (old.getValueKind() != changed.getValueKind() || old.isMultiValued() != changed.isMultiValued()) {
                 long misfits = count(payloads, attributeCode, value -> !StoredValues.isBlank(value)
@@ -186,7 +193,8 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
                     problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeNowRequired",
                             "'%s.%s' becomes required; %d object(s) without a value cannot be saved until they get one."
                                 .formatted(code, attributeCode, empty))
-                        .about(attributeCode, empty));
+                        .about(attributeCode, empty)
+                        .resolvableBy(fill(code, changed)));
                 }
             }
         });
@@ -197,11 +205,54 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
                     problems.add(ReleaseProblem.error(kind(), code, "entity.release.requiredWithoutDefault",
                             "'%s.%s' is required and has no default, but %d object(s) have no value for it."
                                 .formatted(code, attributeCode, empty))
-                        .about(attributeCode, empty));
+                        .about(attributeCode, empty)
+                        .resolvableBy(fill(code, added)));
                 }
             }
         });
         return problems;
+    }
+
+    /**
+     * Renaming the removed attribute {@code old} to an attribute the draft adds in its place — one of the same shape.
+     * None when the draft adds no such attribute.
+     */
+    private List<ProblemResolution> renames(String code, BaseEntityAttribute old, Map<String, BaseEntityAttribute> before,
+                                            Map<String, BaseEntityAttribute> after) {
+        List<String> candidates = after.values().stream()
+            .filter(added -> !before.containsKey(added.getCode()))
+            .filter(added -> added.getValueKind() == old.getValueKind() && added.isMultiValued() == old.isMultiValued())
+            .map(BaseEntityAttribute::getCode)
+            .toList();
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+        return List.of(ProblemResolution.asking(
+            new MigrationStep(null, kind(), code, EntityMigrationParticipant.RENAME_ATTRIBUTE, old.getCode(), Map.of()),
+            "to", "text", candidates));
+    }
+
+    /**
+     * Filling the attribute where objects have no value, with one the designer gives. None for a reference or a
+     * multi-valued attribute, whose value a designer does not type.
+     */
+    private List<ProblemResolution> fill(String code, BaseEntityAttribute attribute) {
+        String inputKind = switch (attribute.getValueKind()) {
+            case TEXT, ENUM -> "text";
+            case NUMBER -> "number";
+            case BOOLEAN -> "boolean";
+            case DATE -> "date";
+            case DATE_TIME -> "dateTime";
+            case REFERENCE -> null;
+        };
+        if (inputKind == null || attribute.isMultiValued()) {
+            return List.of();
+        }
+        List<String> choices = attribute.getValueKind() == ValueKind.ENUM && attribute.getEnumValues() != null
+            ? attribute.getEnumValues() : List.of();
+        return List.of(ProblemResolution.asking(
+            new MigrationStep(null, kind(), code, EntityMigrationParticipant.FILL_ATTRIBUTE, attribute.getCode(), Map.of()),
+            "value", inputKind, choices));
     }
 
     /** How many of the objects hold, under {@code attributeCode}, a value that {@code matches}. */

@@ -33,6 +33,21 @@
     "kind_task": "Tasks",
     "kind_workflow": "Workflows",
     "kind_module": "Modules",
-    "kind_app": "Application"
+    "kind_app": "Application",
+    "steps": "Migration steps",
+    "steps-intro": "The release runs these first, in order, to make existing objects fit your drafts. The problems above are checked on the data as the steps leave it.",
+    "steps-run": "{{count}} migration step(s)",
+    "step_renameAttribute": "Rename {{key}}.{{subject}}",
+    "step_fillAttribute": "Fill {{key}}.{{subject}}",
+    "step_mapValues": "Map the values of {{key}}.{{subject}}",
+    "step_remove": "Remove",
+    "outcome_applied": "{{count}} object(s) would change",
+    "outcome_skipped": "Skipped:",
+    "outcome_failed": "Failed:",
+    "resolve_renameAttribute": "It was renamed to",
+    "resolve_fillAttribute": "Fill objects without a value with",
+    "resolve_mapValues": "Move these objects to",
+    "resolve_choose": "Choose…",
+    "resolve_apply": "Apply"
   }
 }

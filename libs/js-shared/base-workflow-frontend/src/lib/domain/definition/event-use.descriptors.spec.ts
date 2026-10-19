@@ -24,7 +24,7 @@ describe('createEventUseDescriptor', () => {
   });
 
   it('describes the identity, the flow wiring and the mapping', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'direction', 'eventDefinitionId', 'dependsOn', 'joinType', 'correlationKey', 'timerType', 'timerExpression', 'attachedTo', 'interrupting', 'payloadMapping']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'direction', 'eventDefinitionId', 'dependsOn', 'joinType', 'correlationKey', 'timerType', 'timerExpression', 'attachedTo', 'interrupting', 'payloadMapping', 'eventParameters']);
   });
 
   // Like a start event, and unlike the workflow's other rows, an event has a key of its own.

@@ -13,29 +13,52 @@
     "publisherRoles": "Publisher roles",
     "inputPorts": "Input ports",
     "outputPorts": "Output ports",
+    "kind": "Kind",
     "tabs": {
-      "content": "{{ entity }} - content"
+      "content": "{{ entity }} - content",
+      "preview": "{{ entity }} - preview",
+      "sign": "{{ entity }} - sign",
+      "reports": "Reports"
     },
     "content": {
       "loading": "Loading content…",
       "add_text_block": "Add text block",
-      "add_widget_block": "Add widget",
-      "toolbar": {
-        "label": "Text formatting",
-        "bold": "Bold",
-        "italic": "Italic",
-        "strike": "Strikethrough",
-        "code": "Inline code",
-        "heading_1": "Heading 1",
-        "heading_2": "Heading 2",
-        "heading_3": "Heading 3",
-        "bullet_list": "Bullet list",
-        "ordered_list": "Numbered list",
-        "blockquote": "Quote",
-        "horizontal_rule": "Divider",
-        "undo": "Undo",
-        "redo": "Redo"
-      }
+      "add_widget_block": "Add widget"
+    },
+    "sign": {
+      "loading": "Loading the published document…",
+      "not_published": "This document has not been published yet, so there is nothing to sign.",
+      "accept": "I have read this document and accept it.",
+      "button": "Sign",
+      "signed": "Signed by {{ signer }} on {{ date }}.",
+      "signatures": "Signatures",
+      "none": "Nobody has signed this document yet."
+    },
+    "widget_settings": {
+      "title": "Widget settings",
+      "props": "Properties",
+      "bindings": "Data",
+      "no_props": "This widget has no properties.",
+      "invalid_json": "Not valid JSON."
+    },
+    "report": {
+      "insert_field": "Insert data field",
+      "field": "Field",
+      "format": "Format",
+      "insert": "Insert",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "table_settings": "Table settings",
+      "rows": "Rows",
+      "caption": "Caption",
+      "header": "Header",
+      "total": "Total",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "print": "Print / Save as PDF",
+      "missing_parameters": "Choose a value for: {{ ports }}",
+      "template": "Report",
+      "not_published": "This report has not been published yet."
     },
     "_tooltips": {
       "slug": "The document's key in its address, unique within your organization. Lower-case letters, digits and hyphens only, e.g. getting-started.",
@@ -49,7 +72,8 @@
       "editorRoles": "Roles allowed to change the document's content and properties, one chip each, e.g. editor.",
       "publisherRoles": "Roles allowed to publish the document, one chip each. Leave empty to let the editor roles publish too.",
       "inputPorts": "Values the page embedding the document hands in, e.g. the customer being viewed, so widgets in the document can use them.",
-      "outputPorts": "Values the document hands back to the page embedding it, e.g. a record the reader selected."
+      "outputPorts": "Values the document hands back to the page embedding it, e.g. a record the reader selected.",
+      "kind": "DOCUMENT is one fixed page; REPORT_TEMPLATE is a layout rendered once per object, e.g. one invoice per order, with its entity ports filled in each time."
     }
   },
   "document_input_port": {
@@ -87,5 +111,85 @@
       "entityType": "For ENTITY_REF and ENTITY_COLLECTION only: the entity type of the record(s), e.g. Order.",
       "attributeVisibility": "For ENTITY_REF and ENTITY_COLLECTION only: which attributes of the records are shown. mode is ALL, INCLUDE or EXCLUDE; attributes lists the attribute names it applies to."
     }
+  },
+  "content_book": {
+    "_self": "Content book",
+    "slug": "Slug",
+    "title": "Title",
+    "description": "Description",
+    "isPublic": "Public",
+    "readerRoles": "Reader roles",
+    "editorRoles": "Editor roles",
+    "tabs": {
+      "content": "{{ entity }} - content"
+    },
+    "_tooltips": {
+      "slug": "The book's key, unique among your organization's books. Lower-case letters, digits and hyphens only, e.g. handbook.",
+      "title": "The book's title, shown above its table of contents, e.g. Employee handbook.",
+      "description": "A short summary of what the book collects.",
+      "isPublic": "Tick to let anyone open the book without signing in; Reader roles are then ignored. Each page still follows its own access.",
+      "readerRoles": "Roles allowed to open the book, one chip each. Leave empty to let every signed-in member open it.",
+      "editorRoles": "Roles allowed to add, arrange and remove the pages of the book, one chip each. Leave empty to let every signed-in member do so."
+    },
+    "widget": {
+      "loading": "Loading the book…",
+      "not_found": "There is no book called “{{ slug }}”, or you may not open it.",
+      "load_error": "The book could not be loaded: {{ message }}",
+      "empty": "This book has no pages yet.",
+      "contents": "Contents",
+      "restricted": "Restricted page",
+      "restricted_text": "You may not read this page.",
+      "page_loading": "Loading the page…",
+      "not_published": "This page has not been published yet.",
+      "draft_banner": "Unpublished draft — readers cannot see it yet. Publish it in Documents.",
+      "edit": "Edit",
+      "read": "Done editing",
+      "edit_note": "Edits are saved to the draft. Publish them in Documents to show them to readers.",
+      "actions": "Page actions",
+      "add_document": "Add page",
+      "add_child": "Add subpage",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "indent": "Indent",
+      "outdent": "Outdent",
+      "remove": "Remove from book",
+      "delete_document": "Delete document",
+      "confirm_delete_title": "Delete the document?",
+      "confirm_delete_text": "“{{ title }}” will be deleted for good, from this book and from every other. Pages filed under it stay in the book.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "save_error": "The change could not be saved: {{ message }}",
+      "dialog": {
+        "title": "Add a page",
+        "new": "New document",
+        "existing": "Existing document",
+        "document_title": "Title",
+        "document_slug": "Slug",
+        "document": "Document",
+        "none_left": "Every document of the organization is already in this book.",
+        "add": "Add",
+        "cancel": "Cancel"
+      }
+    }
+  },
+  "signature": {
+    "name": "Signature",
+    "for_role": "for {{ role }}",
+    "saving_pdf": "Saving the PDF…",
+    "pdf_missing": "PDF missing — retry",
+    "placeholder": "can be signed when the report is opened for an object."
+  },
+  "issued_document": {
+    "_self": "Issued document",
+    "name": "Name",
+    "title": "Document",
+    "subjectType": "Subject type",
+    "subjectId": "Subject",
+    "signedBy": "Signed by",
+    "signedAt": "Signed at",
+    "pdf": "PDF",
+    "locale": "Language",
+    "revision": "Revision",
+    "documentId": "Document id"
   }
 }

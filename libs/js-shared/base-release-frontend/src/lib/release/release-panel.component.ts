@@ -5,19 +5,22 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { provideTranslocoScope, TranslocoPipe } from '@jsverse/transloco';
 import { BASE_RELEASE_TRANSLOCO_SCOPE } from '../base-release.i18n';
+import { ProblemResolutionComponent } from './problem-resolution.component';
+import { MigrationStep } from './release';
 import { ReleaseStore } from './release.store';
 
 /**
  * Publishes the organization: every definition the designer changed since the last release goes live at once,
  * or nothing does. Shows what would be released, by kind; the problems that refuse it (errors) or need
- * confirming (warnings); and the releases made so far.
+ * confirming (warnings), each with the migration steps that would resolve it; the steps the release runs first,
+ * with what each would change; and the releases made so far.
  *
  * The live application reads only released definitions, so this is the one place a change reaches end users.
  */
 @Component({
   selector: 'pp-release-panel',
   standalone: true,
-  imports: [TranslocoPipe, DatePipe, MatButton, MatCheckbox, MatProgressBar],
+  imports: [TranslocoPipe, DatePipe, MatButton, MatCheckbox, MatProgressBar, ProblemResolutionComponent],
   providers: [ReleaseStore, provideTranslocoScope({ scope: BASE_RELEASE_TRANSLOCO_SCOPE, alias: BASE_RELEASE_TRANSLOCO_SCOPE })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -53,7 +56,9 @@ import { ReleaseStore } from './release.store';
                 @for (change of group.changes; track change.key; let first = $first) {
                   <tr [attr.data-testid]="'release-change-' + change.kind + '-' + change.key">
                     <td>{{ first ? ('base_release.release.kind_' + change.kind | transloco) : '' }}</td>
-                    <td><code>{{ change.key }}</code></td>
+                    <td>
+                      <code>{{ change.key }}</code>
+                    </td>
                     <td [class]="'change change--' + change.change">{{ 'base_release.release.change_' + change.change | transloco }}</td>
                   </tr>
                 }
@@ -70,11 +75,17 @@ import { ReleaseStore } from './release.store';
             @for (problem of store.errors(); track $index) {
               <li class="problem problem--error">
                 <strong>{{ 'base_release.release.severity_error' | transloco }}</strong> {{ problem.message }}
+                @for (resolution of problem.resolutions ?? []; track $index) {
+                  <pp-problem-resolution [resolution]="resolution" [disabled]="store.isBusy()" (applied)="store.applyResolution(resolution, $event)" />
+                }
               </li>
             }
             @for (problem of store.warnings(); track $index) {
               <li class="problem problem--warning">
                 <strong>{{ 'base_release.release.severity_warning' | transloco }}</strong> {{ problem.message }}
+                @for (resolution of problem.resolutions ?? []; track $index) {
+                  <pp-problem-resolution [resolution]="resolution" [disabled]="store.isBusy()" (applied)="store.applyResolution(resolution, $event)" />
+                }
               </li>
             }
           </ul>
@@ -83,6 +94,33 @@ import { ReleaseStore } from './release.store';
               {{ 'base_release.release.acknowledge' | transloco }}
             </mat-checkbox>
           }
+        </section>
+      }
+
+      @if (store.steps().length) {
+        <section>
+          <h3>{{ 'base_release.release.steps' | transloco }}</h3>
+          <p class="release__hint">{{ 'base_release.release.steps-intro' | transloco }}</p>
+          <ol class="release__steps" data-testid="release-steps">
+            @for (step of store.steps(); track $index; let index = $index) {
+              <li [attr.data-testid]="'release-step-' + index">
+                {{ 'base_release.release.step_' + step.operation | transloco: { key: step.key, subject: step.subject } }}
+                <code>{{ parametersOf(step) }}</code>
+                @if (store.stepOutcomes()[index]; as outcome) {
+                  <span [class]="'outcome outcome--' + outcome.outcome">
+                    @if (outcome.outcome === 'applied') {
+                      {{ 'base_release.release.outcome_applied' | transloco: { count: outcome.affectedObjects ?? 0 } }}
+                    } @else {
+                      {{ 'base_release.release.outcome_' + outcome.outcome | transloco }} {{ outcome.reason }}
+                    }
+                  </span>
+                }
+                <button mat-button type="button" [attr.data-testid]="'release-step-remove-' + index" [disabled]="store.isBusy()" (click)="store.removeStep(index)">
+                  {{ 'base_release.release.step_remove' | transloco }}
+                </button>
+              </li>
+            }
+          </ol>
         </section>
       }
 
@@ -106,6 +144,9 @@ import { ReleaseStore } from './release.store';
                   · {{ 'base_release.release.by' | transloco: { name: release.releasedBy } }}
                 }
                 · {{ 'base_release.release.items' | transloco: { count: release.items.length } }}
+                @if (release.steps?.length) {
+                  · {{ 'base_release.release.steps-run' | transloco: { count: release.steps?.length } }}
+                }
               </li>
             }
           </ul>
@@ -153,6 +194,19 @@ import { ReleaseStore } from './release.store';
     .change--removed {
       color: #c62828;
     }
+    .release__steps code {
+      margin: 0 8px;
+      font-size: 12px;
+    }
+    .outcome--applied {
+      color: #2e7d32;
+    }
+    .outcome--skipped {
+      color: #ef6c00;
+    }
+    .outcome--failed {
+      color: #c62828;
+    }
   `,
 })
 export class ReleasePanelComponent implements OnInit {
@@ -160,5 +214,10 @@ export class ReleasePanelComponent implements OnInit {
 
   ngOnInit(): void {
     void this.store.load();
+  }
+
+  /** A step's parameters as the designer gave them, in brief. */
+  protected parametersOf(step: MigrationStep): string {
+    return JSON.stringify(step.parameters ?? {});
   }
 }

@@ -40,6 +40,14 @@ function createEventInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   payloadAttr.hideInTable = true;
   const contextContributionAttr = readOnlyAttr('contextContribution', FormControlType.ADDITIONAL_PROPERTIES, 'Context Contribution');
   contextContributionAttr.hideInTable = true;
+  // What the occurrence carried by name — THROW: sent, CATCH: received.
+  const parametersAttr = readOnlyAttr('parameters', FormControlType.ADDITIONAL_PROPERTIES, 'Parameters');
+  parametersAttr.hideInTable = true;
+
+  // A held throw: due, but a required parameter of its event resolves to nothing.
+  const blockedReasonAttr = readOnlyAttr('blockedReason', FormControlType.TEXTAREA, 'Blocked Reason');
+  blockedReasonAttr.styleClass = 'full-width';
+  blockedReasonAttr.hideInTable = true;
 
   const identityRow = new FlexboxDescriptor([eventUseIdAttr, directionAttr, statusAttr, eventDefinitionIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
@@ -47,10 +55,10 @@ function createEventInstanceAttrDescriptors(): AbstractAttrDescriptor[] {
   deliveryRow.style = { 'column-gap': '10px' };
   const timerRow = new FlexboxDescriptor([dueAtAttr, fireCountAttr], FlexDirection.ROW);
   timerRow.style = { 'column-gap': '10px' };
-  const dataRow = new FlexboxDescriptor([payloadAttr, contextContributionAttr], FlexDirection.ROW);
+  const dataRow = new FlexboxDescriptor([payloadAttr, parametersAttr, contextContributionAttr], FlexDirection.ROW);
   dataRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, deliveryRow, timerRow, dataRow], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, deliveryRow, timerRow, blockedReasonAttr, dataRow], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

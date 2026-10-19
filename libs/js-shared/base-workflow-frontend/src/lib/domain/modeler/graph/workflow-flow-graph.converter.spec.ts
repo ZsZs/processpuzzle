@@ -708,6 +708,47 @@ describe('WorkflowFlowGraphConverter', () => {
       expect(node?.data.description).toBe('OrderCancelledEvent');
     });
 
+    describe('the end an interrupting boundary event implies', () => {
+      const CANCELLED_END = elementNodeId('end', 'on:OrderCancelledEvent');
+
+      /** The seed's cancellation path: the order cancelled while either of the first two tasks waits on it. */
+      function withCancellation(overrides: Partial<EventUse> = {}): Workflow {
+        const cancelled = (id: string, attachedTo: string) =>
+          new EventUse({ id, name: 'Order cancelled', eventDefinitionId: 'OrderCancelledEvent', direction: EventDirection.CATCH, attachedTo, ...overrides });
+        return workflow({ events: [cancelled('order-cancelled-in-review', 'review-order'), cancelled('order-cancelled-before-shipment', 'approve-shipment')] });
+      }
+
+      it('ends the run there, in an end named after the event', () => {
+        expect(nodeOf(convert(withCancellation()), CANCELLED_END)?.data).toEqual({ kind: 'end', label: 'Order cancelled' });
+      });
+
+      // One end per catalog event: both cancellations end the run the same way.
+      it('leads every catch of the same event into one end, downwards out of the circle', () => {
+        const edges = convert(withCancellation()).edges.filter((edge) => edge.target === CANCELLED_END);
+
+        expect(edges.map((edge) => edge.source)).toEqual([elementNodeId('event', 'order-cancelled-in-review'), elementNodeId('event', 'order-cancelled-before-shipment')]);
+        expect(edges.every((edge) => edge.sourcePort === 'port-bottom' && edge.data?.relation === 'sequence')).toBe(true);
+      });
+
+      it('puts the end in the lane of the last task catching it', () => {
+        expect(nodeOf(convert(withCancellation()), CANCELLED_END)?.groupId).toBe(laneNodeId('manager'));
+      });
+
+      it('keeps the end the regular flow leads to', () => {
+        expect(nodeOf(convert(withCancellation()), END)).toBeDefined();
+      });
+
+      // A non-interrupting event leaves its task running, so the run does not end there.
+      it('draws none for a non-interrupting event', () => {
+        expect(nodeOf(convert(withCancellation({ interrupting: false })), CANCELLED_END)).toBeUndefined();
+      });
+
+      // What follows the event is where the run goes on — escalate-review, here — so that is not an end.
+      it('draws none for an event something depends on', () => {
+        expect(convert(withOverdueReview()).nodes.filter((node) => node.data.kind === 'end').map((node) => node.id)).toEqual([END]);
+      });
+    });
+
     it('marks an intermediate timer as a timer, with no host', () => {
       const node = nodeOf(convert(withOverdueReview({ attachedTo: undefined, dependsOn: ['review-order'] })), OVERDUE);
 
@@ -835,6 +876,18 @@ describe('WorkflowFlowGraphConverter', () => {
 
       expect(graph.nodes.find((node) => node.id === ORDER)?.data).toMatchObject({ elementId: 'order-entity', label: 'new_order : Order' });
       expect(graph.nodes.find((node) => node.id === INVOICE)?.data.label).toBe(':Fulfillment Invoice');
+    });
+
+    // The dashboard's Process view draws one run, whose objects are records with names of their own.
+    it('labels an artifact with the name of the record a run holds, when given one', () => {
+      const objectNames = new Map([
+        ['order-entity', 'ORD-0042'],
+        ['fulfillment-invoice', 'INV-7'],
+      ]);
+      const graph = convert(stateless(), { objectNames });
+
+      expect(graph.nodes.find((node) => node.id === ORDER)?.data.label).toBe('ORD-0042 : Order');
+      expect(graph.nodes.find((node) => node.id === INVOICE)?.data.label).toBe('INV-7 : Fulfillment Invoice');
     });
 
     // The artifact feeds the event it starts, not the root after it.

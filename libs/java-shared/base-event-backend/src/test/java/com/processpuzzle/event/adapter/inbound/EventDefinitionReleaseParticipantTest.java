@@ -6,12 +6,14 @@ import static org.assertj.core.api.Assertions.tuple;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
+import com.processpuzzle.core.definition.PlatformSubject;
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.event.domain.EventDefinition;
 import com.processpuzzle.event.domain.EventDefinitionRepository;
 import com.processpuzzle.event.domain.EventKind;
 import com.processpuzzle.shared.event.PlatformEventAction;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +53,11 @@ class EventDefinitionReleaseParticipantTest {
         @Bean
         TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
             return new TransactionTemplate(transactionManager);
+        }
+
+        @Bean
+        PlatformSubject calculationRuns() {
+            return new PlatformSubject("calculation-run", Set.of("calculationId"));
         }
     }
 
@@ -127,6 +134,15 @@ class EventDefinitionReleaseParticipantTest {
                         DefinitionReference::toKey)
                 .containsExactly(tuple("OrderCreated", DefinitionKinds.ENTITY, "order"));
         assertThat(participant.drafts(ORG)).containsExactly("OrderCreated", "PaymentReceived");
+    }
+
+    /** A subject a feature declares as a platform subject is no entity type, so the event refers to nothing. */
+    @Test
+    void anEventAboutADeclaredPlatformSubjectRefersToNoEntityType() {
+        saveDraft(EventDefinition.builder().orgKey(ORG).id("CalculationFrozen").name("Calculation frozen")
+                .kind(EventKind.SYSTEM).subjectType("calculation-run").action(PlatformEventAction.STATE_CHANGED).state("FROZEN").build());
+
+        assertThat(participant.references(ORG)).isEmpty();
     }
 
     private void release() {

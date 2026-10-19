@@ -1,22 +1,13 @@
 <mat-toolbar color="primary" class="app-header">
-  <pp-navigate-back/>
+  <pp-navigate-back />
+  <!-- Logo and title are the shared widgets, which leave a small screen on their own; see testbedApplicationContext. -->
+  @if (!isDesignRoute()) {
+    <pp-app-logo link="/home" />
+  }
   @if (!layoutService.isSmallDevice()) {
-    @if (!isDesignRoute()) {
-      <a [routerLink]="['/home']">
-        <img
-          ngSrc="../../../assets/processpuzzle-logo-with-title.jpg"
-          class="app-logo"
-          priority width="75"
-          height="85"
-          (click)="onLogoClick()"
-          (keydown)="onLogoKeyPress($event)"
-          alt="ProcessPuzzle Logo" />
-      </a>
-    }
     <button mat-icon-button (click)="sidenavToggle()" class="example-icon" aria-label="Example icon-button with menu icon">
       <mat-icon>menu</mat-icon>
     </button>
-    <span>{{ title() }}</span>
   } @else {
     <ng-container *transloco="let t; prefix: 'navigation'">
       <div>
@@ -33,12 +24,12 @@
         </mat-menu>
       </div>
     </ng-container>
-    <h1>{{ title() }}</h1>
   }
-  <span class="toolbar-spacer"></span>
-  <pp-design-button/>
-  <pp-like-button/>
-  <pp-share-button/>
-  <pp-language-selector/>
-  <pp-auth-button/>
+  <pp-app-title />
+  <pp-task-dashboard-button />
+  <pp-design-button />
+  <pp-like-button />
+  <pp-share-button />
+  <pp-language-selector />
+  <pp-auth-button />
 </mat-toolbar>

@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { patchState } from '@ngrx/signals';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { EntityKeyResolver, entityKeyById, EntityStoreHandle } from './base-entity.store';
+import { unstage } from './stageEntity';
 
 export const updateEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>, keyOf: EntityKeyResolver<Entity> = entityKeyById) => {
   return async (entity: PersistedEntity<Entity>): Promise<PersistedEntity<Entity> | undefined> => {
@@ -15,7 +16,7 @@ export const updateEntity = <Entity extends BaseEntity>(store: EntityStoreHandle
       const key = keyOf(entity);
       const indexToUpdate = key === undefined ? -1 : currentEntities.findIndex((item) => keyOf(item) === key);
       if (indexToUpdate >= 0) currentEntities[indexToUpdate] = updatedEntity;
-      patchState(store, { entities: currentEntities, isLoading: false });
+      patchState(store, { entities: currentEntities, stagedIds: unstage(store, key), isLoading: false });
       return updatedEntity;
     } catch (error) {
       patchState(store, { error: httpErrorMessage(error), isLoading: false });

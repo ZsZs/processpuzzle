@@ -37,7 +37,7 @@ class SampleDocumentsContentTest {
     void theTestbedSampleFileIsImportable() throws IOException {
         List<DocumentInput> documents = readSamples();
 
-        assertThat(documents).hasSize(3);
+        assertThat(documents).hasSize(4);
         for (DocumentInput document : documents) {
             assertThat(document.getSlug()).isNotBlank();
             assertThat(document.getSourceLocale()).isNotBlank();
@@ -97,6 +97,20 @@ class SampleDocumentsContentTest {
         });
         assertThat(invoice.getTranslations().getFirst().getBlocks())
                 .anyMatch(block -> block.getInputBindings() != null && "order".equals(block.getInputBindings().get("entity")));
+    }
+
+    /** The report template sample: its port is a parameter, and its content binds paths below the port. */
+    @Test
+    void theOrderInvoiceIsAReportTemplateOverTheOrdersLineItems() throws IOException {
+        DocumentInput invoice = sample("order-invoice");
+
+        assertThat(invoice.getKind()).isEqualTo(com.processpuzzle.document.model.DocumentKind.REPORT_TEMPLATE);
+        assertThat(invoice.getInputPorts()).singleElement()
+                .satisfies(port -> assertThat(port.getEntityType()).isEqualTo("Order"));
+        assertThat(invoice.getTranslations().getFirst().getBlocks())
+                .anyMatch(block -> "entity-table".equals(block.getType())
+                        && "order.lineItems".equals(block.getInputBindings().get("rows")))
+                .anyMatch(block -> block.getContent() != null && block.getContent().toString().contains("dataField"));
     }
 
     private DocumentInput sample(String slug) throws IOException {

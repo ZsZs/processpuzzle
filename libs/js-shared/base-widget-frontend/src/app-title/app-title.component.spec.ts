@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { LayoutService } from '@processpuzzle/util';
 import { describe, expect, it } from 'vitest';
 import { APPLICATION_CONTEXT } from '../app-context/application-context';
 import { testApplicationContext } from '../app-context/test-application-context';
@@ -31,6 +32,16 @@ describe('AppTitleComponent', () => {
     fixture.detectChanges();
 
     expect(heading(fixture)).toBe('After');
+  });
+
+  it('hides the heading on a small screen, keeping the host that pushes the widgets after it aside', () => {
+    const fixture = render(undefined);
+
+    TestBed.inject(LayoutService).layoutClass.set('handset-layout');
+    fixture.detectChanges();
+
+    expect(heading(fixture)).toBeUndefined();
+    expect(fixture.nativeElement).toBeTruthy();
   });
 
   it('renders nothing outside an application with no title set', () => {

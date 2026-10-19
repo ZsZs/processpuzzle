@@ -46,6 +46,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
@@ -188,7 +189,8 @@ class DefaultWorkflowImporterTest {
                 assertThat(startEvent.getName()).isEqualTo("OrderCreatedEvent");
                 assertThat(startEvent.getStartType()).isEqualTo(WorkflowStartConditionType.TRIGGERING_EVENT);
                 assertThat(startEvent.getEventType()).isEqualTo("OrderCreatedEvent");
-                assertThat(startEvent.getPayloadMapping()).containsEntry("orderId", "$.subjectId");
+                // The event's parameters land by name (docs/event-parameters.md, phase 3); only what they lack is mapped.
+                assertThat(startEvent.getPayloadMapping()).containsOnly(entry("orderId", "$.subjectId"));
                 assertThat(startEvent.getRequiredArtifacts()).isEmpty();
             });
             // The order walks its state machine from task to task.
@@ -200,13 +202,21 @@ class DefaultWorkflowImporterTest {
             assertThat(def.getEvents()).extracting(EventUse::getId, EventUse::getDirection, EventUse::getEventDefinitionId)
                     .containsExactly(tuple("request-invoice", EventDirection.THROW, "InvoiceRequested"),
                             tuple("invoice-issued", EventDirection.CATCH, "InvoiceIssued"),
-                            tuple("approval-reminder", EventDirection.CATCH, null));
+                            tuple("approval-reminder", EventDirection.CATCH, null),
+                            tuple("order-cancelled-in-review", EventDirection.CATCH, "OrderCancelledEvent"),
+                            tuple("order-cancelled-before-shipment", EventDirection.CATCH, "OrderCancelledEvent"));
+            // The cancellation path: the two tasks waiting on the order where its machine can cancel it catch
+            // that, interrupting — which is what the release's state-coverage check asks of them.
+            assertThat(def.getEvents()).filteredOn(event -> "OrderCancelledEvent".equals(event.getEventDefinitionId()))
+                    .extracting(EventUse::getAttachedTo, EventUse::isInterrupting)
+                    .containsExactly(tuple("review-order", true), tuple("approve-shipment", true));
             // A reminder while the manager has not approved: a non-interrupting cycle on the task.
             assertThat(def.findEventUse("approval-reminder")).hasValueSatisfying(reminder -> {
                 assertThat(reminder.getAttachedTo()).isEqualTo("approve-shipment");
                 assertThat(reminder.isInterrupting()).isFalse();
                 assertThat(reminder.getTimer()).isEqualTo(new TimerDefinition(TimerType.CYCLE, "R2/PT5M"));
             });
+            assertThat(def.findEventUse("invoice-issued")).hasValueSatisfying(issued -> assertThat(issued.getPayloadMapping()).isNullOrEmpty());
             assertThat(def.findTaskUse("confirm-delivery")).map(TaskUse::getDependsOn).contains(List.of("invoice-issued"));
 
             Workflow invoicing = defCaptor.getAllValues().get(1);

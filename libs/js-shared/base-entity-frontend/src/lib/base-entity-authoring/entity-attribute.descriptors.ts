@@ -5,6 +5,7 @@ import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { MULTIPLICITIES } from '../base-entity/multiplicity';
 import { toSelectables } from '../base-entity/selectables';
+import { MAP_PROVIDERS } from '../base-form/address/address-map';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE } from '../i18n/base-entity.i18n';
 import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './entity-authoring-names';
@@ -99,6 +100,16 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   defaultAvatarAttr.placeholder = 'Icon name or image URL for AVATAR fallback, e.g. person, sailing';
   defaultAvatarAttr.hideInTable = true;
 
+  // ADDRESS only — the mapper drops them for any other control. Without a provider the map is OpenStreetMap's.
+  const showMapAttr = new BaseEntityAttrDescriptor('showMap', FormControlType.CHECKBOX, 'Shows a map');
+  showMapAttr.hideInTable = true;
+  const mapProviderAttr = new BaseEntityAttrDescriptor('mapProvider', FormControlType.DROPDOWN, 'Map provider', toSelectables(MAP_PROVIDERS));
+  mapProviderAttr.hideInTable = true;
+  const defaultCountryAttr = new BaseEntityAttrDescriptor('defaultCountry', FormControlType.TEXT_BOX, 'Default country');
+  defaultCountryAttr.placeholder = 'ISO 3166-1 alpha-2 code, e.g. HU';
+  defaultCountryAttr.pattern = '^[A-Za-z]{2}$';
+  defaultCountryAttr.hideInTable = true;
+
   // The two halves of `dateFormat`, for DATE / DATE_TIME only — the mapper drops them for any other kind,
   // and `timeStyle` for DATE. Left empty, a style falls back to the value kind's default.
   const dateStyleAttr = new BaseEntityAttrDescriptor('dateStyle', FormControlType.DROPDOWN, 'Date Style', toSelectables(DATE_STYLES));
@@ -121,7 +132,10 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   const formatRow = new FlexboxDescriptor([dateStyleAttr, timeStyleAttr], FlexDirection.ROW);
   formatRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, enumValuesAttr], FlexDirection.COLUMN);
+  const addressRow = new FlexboxDescriptor([showMapAttr, mapProviderAttr, defaultCountryAttr], FlexDirection.ROW);
+  addressRow.style = { 'column-gap': '10px' };
+
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, addressRow, enumValuesAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

@@ -1,6 +1,9 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { CommentsComponent } from '@processpuzzle/base-entity';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { TaskInstance } from '../../domain/execution/workflow-instance';
 import { CurrentUserContext, PROCESS_OWNER_ROLE } from '../../domain/dashboard/current-user.context';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
 import { TaskDetailComponent } from './task-detail.component';
@@ -45,13 +48,13 @@ describe('TaskDetailComponent', () => {
       store.select(RUN_ID, APPROVE_SHIPMENT_TASK_ID);
     });
 
-    it('names the task, its status, its run and its assignee', () => {
+    it('names the task, its status, its run and its assignee — by name, not by id', () => {
       const host = render();
 
       expect(host.querySelector('[data-testid="task-detail-name"]')?.textContent?.trim()).toBe('Approve Shipment');
       expect(host.querySelector('[data-testid="task-status-ACTIVE"]')).not.toBeNull();
       expect(host.querySelector('[data-testid="task-detail-workflow"]')?.textContent?.trim()).toBe('Order Fulfillment Workflow');
-      expect(host.querySelector('[data-testid="task-detail-assignee"]')?.textContent).toContain('manager-user');
+      expect(host.querySelector('[data-testid="task-detail-assignee"]')?.textContent).toContain('Maria Manager');
     });
 
     // The three sections of screen 2: how to do it, what it touches, how to finish it.
@@ -61,6 +64,19 @@ describe('TaskDetailComponent', () => {
       expect(host.querySelector('pp-step-checklist')).not.toBeNull();
       expect(host.querySelector('pp-artifact-panel')).not.toBeNull();
       expect(host.querySelector('pp-completion-form')).not.toBeNull();
+    });
+
+    it('shows the task’s comments, and posts a new one as content alone', () => {
+      const host = render();
+      expect(host.querySelectorAll('[data-testid="comment-card"]')).toHaveLength(1);
+
+      const comments = fixture.debugElement.query(By.directive(CommentsComponent)).componentInstance as CommentsComponent<TaskInstance>;
+      const content = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Checked with the carrier.' }] }] };
+      comments.onDraftChange(content);
+      required<HTMLButtonElement>(render(), '[data-testid="task-comment-add"]').click();
+
+      const request = controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances/${RUN_ID}/tasks/approve-shipment/comments`);
+      expect(request.request.body).toEqual({ content });
     });
 
     it('completes the task through the run that owns it', () => {

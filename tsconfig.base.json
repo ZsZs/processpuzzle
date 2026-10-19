@@ -26,6 +26,7 @@
       "@processpuzzle/base-ai": ["./libs/js-shared/base-ai-frontend/src/public-api.ts"],
       "@processpuzzle/base-starter": ["./libs/js-shared/base-starter-frontend/src/public-api.ts"],
       "@processpuzzle/base-event": ["./libs/js-shared/base-event-frontend/src/public-api.ts"],
+      "@processpuzzle/base-calculation": ["./libs/js-shared/base-calculation-frontend/src/public-api.ts"],
       "@processpuzzle/base-release": ["./libs/js-shared/base-release-frontend/src/public-api.ts"],
       "@processpuzzle/base-app": ["./libs/js-shared/base-app-frontend/src/public-api.ts"],
       "@processpuzzle/base-document": ["./libs/js-shared/base-document-frontend/src/public-api.ts"],

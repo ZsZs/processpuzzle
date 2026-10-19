@@ -74,7 +74,10 @@ class ReleaseEndpointTest {
                         new PendingChange("app", "app", PendingChange.Change.CHANGED, "{}")),
                 List.of(ReleaseProblem.warning("app", "app", "release.unresolved-reference", "Mounts a missing module."),
                         ReleaseProblem.error("entity", "claim", "entity.release.attributeTypeChanged", "Changes its type.")
-                                .about("amount", 3L))));
+                                .about("amount", 3L)
+                                .resolvableBy(List.of(com.processpuzzle.core.definition.ProblemResolution.asking(
+                                        new MigrationStep(null, "entity", "claim", "fillAttribute", "amount", java.util.Map.of()),
+                                        "value", "number", List.of()))))));
 
         var body = endpoint.getPendingRelease(ORG).getBody();
 
@@ -86,6 +89,12 @@ class ReleaseEndpointTest {
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple(com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.WARNING, null, null),
                         org.assertj.core.groups.Tuple.tuple(com.processpuzzle.release.model.ReleaseProblem.SeverityEnum.ERROR, "amount", 3L));
+        assertThat(body.getProblems().get(1).getResolutions()).singleElement().satisfies(resolution -> {
+            assertThat(resolution.getStep().getOperation()).isEqualTo("fillAttribute");
+            assertThat(resolution.getInput()).isEqualTo("value");
+            assertThat(resolution.getInputKind())
+                    .isEqualTo(com.processpuzzle.release.model.ProblemResolution.InputKindEnum.NUMBER);
+        });
     }
 
     @Test

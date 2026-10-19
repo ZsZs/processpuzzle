@@ -2,6 +2,7 @@ package com.processpuzzle.baseentity.instances.usecases;
 
 import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.NotFoundException;
+import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
@@ -13,6 +14,8 @@ import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInsta
 import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
@@ -166,6 +169,91 @@ class InstancesUseCasesTest {
         Map<String, Object> expected = Map.of("name", "New", "status", "DRAFT");
         assertThat(result.getPayload()).isEqualTo(expected);
         verify(payloadValidatorPort).validate(ORG, defView, expected);
+    }
+
+    private static final EntityDefinitionView NOTE_DEF = new EntityDefinitionView("note", false, List.of(
+            new EntityAttributeView("comments", ValueKindView.REFERENCE, true, false, null, false, true)));
+    private static final Map<String, Object> FIRST = Map.of("author", "Ada", "createdAt", "2026-10-01T09:30:00Z",
+            "content", Map.of("type", "doc", "content", List.of(Map.of("type", "heading", "attrs", Map.of("level", 1)))));
+    private static final Map<String, Object> SECOND = Map.of("author", "Grace", "createdAt", "2026-10-02T10:00:00Z", "content", Map.of("type", "doc"));
+    private static final Map<String, Object> THIRD = Map.of("author", "Alan", "createdAt", "2026-10-03T11:00:00Z", "content", Map.of("type", "doc"));
+
+    private EntityObject storedNote(UUID id, List<Map<String, Object>> comments) {
+        EntityObject existing = EntityObject.builder()
+                .id(id)
+                .entityDefinitionCode("note")
+                .version(1L)
+                .payload(Map.of("title", "Old", "comments", comments))
+                .build();
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
+        when(definitionLookupPort.findByCode(ORG, "note")).thenReturn(Optional.of(NOTE_DEF));
+        return existing;
+    }
+
+    @Test
+    void updateEntityInstance_appendingAComment_isAccepted() {
+        UUID id = UUID.randomUUID();
+        storedNote(id, List.of(FIRST, SECOND));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Map<String, Object> payload = Map.of("title", "New", "comments", List.of(FIRST, SECOND, THIRD));
+        EntityObject result = updateUseCase.update(ORG, "note", id, 1L, payload);
+
+        assertThat(result.getPayload()).isEqualTo(payload);
+    }
+
+    /** The stored side and the submitted side parse JSON numbers independently; a 1 is a 1 either way. */
+    @Test
+    void updateEntityInstance_resubmittingTheHistoryWithOtherNumberTypes_isAccepted() {
+        UUID id = UUID.randomUUID();
+        storedNote(id, List.of(FIRST));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        Map<String, Object> resubmitted = Map.of("author", "Ada", "createdAt", "2026-10-01T09:30:00Z",
+                "content", Map.of("type", "doc", "content", List.of(Map.of("type", "heading", "attrs", Map.of("level", 1L)))));
+
+        updateUseCase.update(ORG, "note", id, 1L, Map.of("title", "New", "comments", List.of(resubmitted)));
+
+        verify(repository).saveAndFlush(any());
+    }
+
+    @Test
+    void updateEntityInstance_omittingTheComments_keepsTheStoredHistory() {
+        UUID id = UUID.randomUUID();
+        storedNote(id, List.of(FIRST, SECOND));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        EntityObject result = updateUseCase.update(ORG, "note", id, 1L, Map.of("title", "New"));
+
+        Map<String, Object> expected = Map.of("title", "New", "comments", List.of(FIRST, SECOND));
+        assertThat(result.getPayload()).isEqualTo(expected);
+        verify(payloadValidatorPort).validate(ORG, NOTE_DEF, expected);
+    }
+
+    @Test
+    void updateEntityInstance_editingRemovingReorderingOrTruncatingAComment_isRejected() {
+        UUID id = UUID.randomUUID();
+        storedNote(id, List.of(FIRST, SECOND));
+        Map<String, Object> edited = Map.of("author", "Grace", "createdAt", "2026-10-02T10:00:00Z", "content", Map.of("type", "doc", "edited", true));
+
+        for (Object comments : List.of(List.of(FIRST, edited), List.of(SECOND, THIRD), List.of(SECOND, FIRST), List.of(FIRST), List.of(), "gone")) {
+            assertThatThrownBy(() -> updateUseCase.update(ORG, "note", id, 1L, Map.of("title", "New", "comments", comments)))
+                    .as("comments %s", comments)
+                    .isInstanceOf(ValidationException.class)
+                    .satisfies(ex -> assertThat(((ValidationException) ex).getViolations())
+                            .containsExactly(new ValidationException.Violation("comments", "comments are append-only")));
+        }
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateEntityInstance_withoutAStoredHistory_acceptsAnyComments() {
+        UUID id = UUID.randomUUID();
+        storedNote(id, List.of());
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        EntityObject result = updateUseCase.update(ORG, "note", id, 1L, Map.of("title", "New", "comments", List.of(THIRD)));
+
+        assertThat(result.getPayload()).containsEntry("comments", List.of(THIRD));
     }
 
     @Test

@@ -9,10 +9,10 @@ import { LayoutService } from '@processpuzzle/util';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { DesignRouteService, DesignSidenavComponent } from '@processpuzzle/design';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-import { SidenavAutosizeDirective } from '@processpuzzle/widgets';
+import { SidenavAutosizeDirective, SidenavContentOutletComponent } from '@processpuzzle/widgets';
 
 @Component({
-  imports: [RouterModule, HeaderComponent, SidenavComponent, DesignSidenavComponent, MatSidenav, MatSidenavContent, MatSidenavContainer, SidenavAutosizeDirective, FooterComponent],
+  imports: [RouterModule, HeaderComponent, SidenavComponent, DesignSidenavComponent, MatSidenav, MatSidenavContent, MatSidenavContainer, SidenavAutosizeDirective, SidenavContentOutletComponent, FooterComponent],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

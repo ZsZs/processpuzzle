@@ -7,6 +7,7 @@ import com.processpuzzle.document.domain.DocumentDraftRepository;
 import com.processpuzzle.document.domain.DocumentRepository;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.service.DocumentGuard;
+import com.processpuzzle.document.usecase.service.DocumentPlatformFacts;
 import com.processpuzzle.document.usecase.service.DocumentReferentialIntegrityChecker;
 import com.processpuzzle.document.usecase.service.DocumentTranslationAssembler;
 import org.springframework.stereotype.Service;
@@ -29,17 +30,20 @@ public class CreateDocument {
     private final DocumentReferentialIntegrityChecker integrityChecker;
     private final DocumentTranslationAssembler assembler;
     private final DocumentGuard guard;
+    private final DocumentPlatformFacts facts;
 
     public CreateDocument(DocumentRepository repository,
                           DocumentDraftRepository draftRepository,
                           DocumentReferentialIntegrityChecker integrityChecker,
                           DocumentTranslationAssembler assembler,
-                          DocumentGuard guard) {
+                          DocumentGuard guard,
+                          DocumentPlatformFacts facts) {
         this.repository = repository;
         this.draftRepository = draftRepository;
         this.integrityChecker = integrityChecker;
         this.assembler = assembler;
         this.guard = guard;
+        this.facts = facts;
     }
 
     public DocumentDetails execute(String orgKey, DocumentCommand input) {
@@ -64,6 +68,7 @@ public class CreateDocument {
         // basedOnRevision is null: the source locale is based on nothing, which is also what keeps
         // it from ever reporting itself out of date.
         draftRepository.save(new DocumentDraft(orgKey, documentId, document.getSourceLocale(), sourceContent, null));
+        facts.created(saved);
 
         return new DocumentDetails(saved,
                 assembler.contentOf(saved, saved.getSourceLocale(), true).orElse(null),

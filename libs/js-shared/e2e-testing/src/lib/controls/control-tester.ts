@@ -666,6 +666,40 @@ export class ArtifactControlTester extends ControlTester {
   }
 }
 
+/**
+ * A COMMENTS control: filling it writes a new comment into the editor below the history, which the record's Save
+ * stamps and appends. The value is that comment's text; after a save it is the newest history card. Before one
+ * it is still the draft, so the assertion accepts either — the suites assert both before and after saving.
+ */
+export class CommentsControlTester extends ControlTester {
+  innerLocator(): string {
+    return '[data-testid="new-comment-content"] [contenteditable="true"]';
+  }
+
+  override createValue(context: ControlDataContext): string {
+    const suffix = context.uniqueSuffix ? ` ${context.uniqueSuffix}` : '';
+    return `Test comment${suffix}`;
+  }
+
+  /** A new comment rather than an edited one: saved comments are append-only. */
+  override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
+    return `Updated ${original[this.attr.attrName] || 'comment'}`;
+  }
+
+  override async fill(context: ControlInteractionContext, value: string): Promise<void> {
+    if (!value) return;
+    const editor = this.inner(context.page, context.descriptor);
+    await editor.click();
+    await editor.pressSequentially(value, { delay: 10 });
+  }
+
+  override async assertValue(context: ControlInteractionContext, value: string): Promise<void> {
+    if (!value) return;
+    const holders = this.control(context.page, context.descriptor).locator('[data-testid="comment-card"], [data-testid="new-comment-content"]');
+    await expect(holders.filter({ hasText: value }).last()).toBeVisible(expectOptions(context));
+  }
+}
+
 class NoopControlTester extends ControlTester {
   override readonly isInput: boolean;
 
@@ -698,6 +732,8 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
       return new DropdownControlTester(attr);
     case 'TAGS':
       return new TagsControlTester(attr);
+    case 'COMMENTS':
+      return new CommentsControlTester(attr);
     case 'FOREIGN_KEY':
       return new ForeignKeyControlTester(attr);
     case 'LOOKUP':

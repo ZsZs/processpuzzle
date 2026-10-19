@@ -3,8 +3,10 @@ package com.processpuzzle.shared.event;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,6 +36,10 @@ import java.util.UUID;
  * @param occurrenceId             identifies this occurrence across redeliveries
  * @param correlationValue         MESSAGE: the value the recipient is matched on; null otherwise
  * @param sourceWorkflowInstanceId MESSAGE / SIGNAL: the workflow instance that threw it
+ * @param parameters               the definition's parameters, resolved against this occurrence — SYSTEM: the
+ *                                 implicit {@link OccurredParameter#SUBJECT} and the declared ones from the
+ *                                 payload; MESSAGE / SIGNAL: the declared ones from what the thrower sent. Empty
+ *                                 on publications older than this field
  */
 public record DefinedEventOccurred(
     String orgKey,
@@ -45,12 +51,24 @@ public record DefinedEventOccurred(
     CatalogEventKind kind,
     UUID occurrenceId,
     String correlationValue,
-    UUID sourceWorkflowInstanceId
+    UUID sourceWorkflowInstanceId,
+    List<OccurredParameter> parameters
 ) {
 
     @JsonCreator
     public DefinedEventOccurred {
         payload = payload == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(payload));
+        // Not List.copyOf: a parameter the occurrence did not carry legitimately holds a null value, and the list
+        // itself is null on a publication older than this field.
+        parameters = parameters == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(parameters));
+    }
+
+    /** An occurrence without resolved parameters — what was published before parameters existed. */
+    public DefinedEventOccurred(String orgKey, String eventDefinitionId, String subjectType, String subjectId,
+                                Map<String, Object> payload, Instant occurredAt, CatalogEventKind kind, UUID occurrenceId,
+                                String correlationValue, UUID sourceWorkflowInstanceId) {
+        this(orgKey, eventDefinitionId, subjectType, subjectId, payload, occurredAt, kind, occurrenceId, correlationValue,
+            sourceWorkflowInstanceId, List.of());
     }
 
     /**
@@ -59,8 +77,19 @@ public record DefinedEventOccurred(
      */
     public DefinedEventOccurred(String orgKey, String eventDefinitionId, String subjectType, String subjectId,
                                 Map<String, Object> payload, Instant occurredAt) {
+        this(orgKey, eventDefinitionId, subjectType, subjectId, payload, occurredAt, List.of());
+    }
+
+    /** A SYSTEM occurrence with its parameters resolved. */
+    public DefinedEventOccurred(String orgKey, String eventDefinitionId, String subjectType, String subjectId,
+                                Map<String, Object> payload, Instant occurredAt, List<OccurredParameter> parameters) {
         this(orgKey, eventDefinitionId, subjectType, subjectId, payload, occurredAt, CatalogEventKind.SYSTEM,
-            systemOccurrenceId(orgKey, eventDefinitionId, subjectType, subjectId, occurredAt), null, null);
+            systemOccurrenceId(orgKey, eventDefinitionId, subjectType, subjectId, occurredAt), null, null, parameters);
+    }
+
+    /** The parameter of that name, or null when the occurrence carries none. */
+    public OccurredParameter parameter(String name) {
+        return parameters.stream().filter(parameter -> parameter.name().equals(name)).findFirst().orElse(null);
     }
 
     /** {@link #kind()}, with a publication older than that field read as SYSTEM. */

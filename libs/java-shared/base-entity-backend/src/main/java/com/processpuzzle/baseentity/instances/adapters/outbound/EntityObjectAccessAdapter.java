@@ -6,11 +6,18 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
+import cz.jirutka.rsql.parser.RSQLParserException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +37,8 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
 
     private final EntityObjectRepository repository;
     private final EntityObjectScope scope;
+    private final RsqlToInstanceSpecificationPort rsqlSpecificationPort;
+    private final EntityDefinitionLookupPort definitionLookupPort;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,6 +74,90 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
         entityObject.setPayload(payload);
 
         return version(repository.saveAndFlush(entityObject));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EntityObjectView> findWhere(String orgKey, String entityDefinitionCode, String rsql) {
+        if (rsql == null || rsql.isBlank()) {
+            return scope.findAll(orgKey, entityDefinitionCode).stream().map(this::view).toList();
+        }
+        String storageOrgKey = scope.storageOrgKey(orgKey, entityDefinitionCode);
+        Specification<EntityObject> specification;
+        try {
+            specification = rsqlSpecificationPort.toSpecification(orgKey, rsql, entityDefinitionCode);
+        } catch (RSQLParserException e) {
+            throw new IllegalArgumentException("Not valid RSQL: " + rsql, e);
+        }
+        Specification<EntityObject> scoped = specification
+            .and((root, query, cb) -> cb.equal(root.get("orgKey"), storageOrgKey))
+            .and((root, query, cb) -> cb.equal(root.get("entityDefinitionCode"), entityDefinitionCode));
+        return repository.findAll(scoped).stream().map(this::view).toList();
+    }
+
+    @Override
+    @Transactional
+    public void updateAttributes(String orgKey, String entityDefinitionCode, UUID objectId, Map<String, Object> values,
+                                 long expectedVersion) {
+        EntityObject entityObject = load(orgKey, entityDefinitionCode, objectId);
+        if (version(entityObject) != expectedVersion) {
+            throw new EntityObjectAccessException.VersionConflict(objectId, expectedVersion, version(entityObject));
+        }
+        writeKeepingVersion(entityObject, values);
+    }
+
+    @Override
+    @Transactional
+    public int upsertAllByKey(String orgKey, String entityDefinitionCode, List<String> keyAttributes,
+                              List<Map<String, Object>> rows) {
+        if (definitionLookupPort.findByCode(orgKey, entityDefinitionCode).isEmpty()) {
+            throw new EntityObjectAccessException.UnknownType(entityDefinitionCode);
+        }
+        Map<List<Object>, EntityObject> byKey = new HashMap<>();
+        for (EntityObject entityObject : scope.findAll(orgKey, entityDefinitionCode)) {
+            byKey.putIfAbsent(keyOf(entityObject.getPayload(), keyAttributes), entityObject);
+        }
+        int created = 0;
+        for (Map<String, Object> row : rows) {
+            List<Object> key = keyOf(row, keyAttributes);
+            EntityObject existing = byKey.get(key);
+            if (existing != null) {
+                writeKeepingVersion(existing, row);
+            } else {
+                byKey.put(key, repository.save(EntityObject.builder()
+                    .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
+                    .entityDefinitionCode(entityDefinitionCode)
+                    .payload(new LinkedHashMap<>(row))
+                    .build()));
+                created++;
+            }
+        }
+        return created;
+    }
+
+    /** The values of {@code attributes}, numbers by value — a stored {@code 1} and a written {@code 1.0} are one key. */
+    private static List<Object> keyOf(Map<String, Object> payload, List<String> attributes) {
+        List<Object> key = new ArrayList<>(attributes.size());
+        for (String attribute : attributes) {
+            Object value = payload.get(attribute);
+            key.add(value instanceof Number number ? new BigDecimal(number.toString()).stripTrailingZeros() : value);
+        }
+        return key;
+    }
+
+    private void writeKeepingVersion(EntityObject entityObject, Map<String, Object> values) {
+        Map<String, Object> payload = new LinkedHashMap<>(entityObject.getPayload());
+        payload.putAll(values);
+        int written = repository.replacePayloadKeepingVersion(entityObject.getId(), entityObject.getOrgKey(),
+            entityObject.getVersion(), payload);
+        if (written == 0) {
+            // Moved on between the read above and this write.
+            throw new EntityObjectAccessException.VersionConflict(entityObject.getId(), version(entityObject), version(entityObject) + 1);
+        }
+    }
+
+    private EntityObjectView view(EntityObject entityObject) {
+        return new EntityObjectView(entityObject.getId(), version(entityObject), entityObject.getPayload());
     }
 
     /** Another organization's object, or one of another type, is not found — see {@link EntityObjectScope#find}. */

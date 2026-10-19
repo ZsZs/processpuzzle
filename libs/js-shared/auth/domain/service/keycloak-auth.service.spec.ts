@@ -170,6 +170,24 @@ describe('KeycloakAuthService', () => {
     });
   });
 
+  describe('getAccountManagementUrl', () => {
+    it('should pass the return URL to the account console as is', () => {
+      const createAccountUrl = vi.fn().mockReturnValue('http://test-auth-server/realms/test-realm/account');
+      (mockKeycloakInstance as unknown as { createAccountUrl: typeof createAccountUrl }).createAccountUrl = createAccountUrl;
+
+      expect(service.getAccountManagementUrl('http://localhost:4200/en/auth/my-profile')).toBe('http://test-auth-server/realms/test-realm/account');
+      expect(createAccountUrl).toHaveBeenCalledWith({ redirectUri: 'http://localhost:4200/en/auth/my-profile' });
+    });
+
+    it('should return undefined while keycloak cannot build the URL', () => {
+      (mockKeycloakInstance as unknown as { createAccountUrl: () => string }).createAccountUrl = () => {
+        throw new Error('not initialized');
+      };
+
+      expect(service.getAccountManagementUrl()).toBeUndefined();
+    });
+  });
+
   describe('initKeycloak (via ensureInitialized)', () => {
     it('should map profile fields to User model correctly', async () => {
       mockKeycloakInstance.authenticated = true;

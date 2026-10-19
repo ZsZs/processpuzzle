@@ -1,12 +1,13 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { DOCUMENT_I18N_SCOPE } from '../base-document.i18n';
-import { DOCUMENT_SLUG_PATTERN, DOCUMENT_SOURCE_LOCALES } from './base-document';
+import { DOCUMENT_SLUG_PATTERN, DOCUMENT_SOURCE_LOCALES, DocumentKind } from './base-document';
 import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './document-entity-names';
 import { DOCUMENT_PORT_ID_FIELD } from './document-port.descriptors';
 
 export { DOCUMENT_ENTITY_NAME };
 
 const sourceLocaleSelectables = toSelectables([...DOCUMENT_SOURCE_LOCALES]);
+const kindSelectables = toSelectables(Object.values(DocumentKind));
 
 function createDocumentAttrDescriptors(): AbstractAttrDescriptor[] {
   // Required and pattern-validated because the contract makes it both: `POST /documents` and
@@ -20,6 +21,10 @@ function createDocumentAttrDescriptors(): AbstractAttrDescriptor[] {
   const titleAttr = new BaseEntityAttrDescriptor('title', FormControlType.TEXT_BOX, 'Title', undefined, true);
   titleAttr.required = true;
   titleAttr.isHeading = true;
+
+  // Required: the contract defaults it, but an empty dropdown would send `null` back and read as a choice.
+  const kindAttr = new BaseEntityAttrDescriptor('kind', FormControlType.DROPDOWN, 'Kind', kindSelectables);
+  kindAttr.required = true;
 
   const subjectAttr = new BaseEntityAttrDescriptor('subject', FormControlType.TEXT_BOX, 'Subject');
   subjectAttr.placeholder = 'What the document is about, one line';
@@ -68,7 +73,7 @@ function createDocumentAttrDescriptors(): AbstractAttrDescriptor[] {
   // is structurally incapable of touching blocks even by accident.
   const identityRow = new FlexboxDescriptor([slugAttr, titleAttr, sourceLocaleAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const aboutRow = new FlexboxDescriptor([subjectAttr, authorAttr], FlexDirection.ROW);
+  const aboutRow = new FlexboxDescriptor([kindAttr, subjectAttr, authorAttr], FlexDirection.ROW);
   aboutRow.style = { 'column-gap': '10px' };
   const accessRow = new FlexboxDescriptor([isPublicAttr, readerRolesAttr, editorRolesAttr, publisherRolesAttr], FlexDirection.ROW);
   accessRow.style = { 'column-gap': '10px' };

@@ -42,6 +42,9 @@ public class ReplaceAttributeUseCase {
         existing.setLinkedEntityType(desiredState.getLinkedEntityType());
         existing.setLinkToDetails(desiredState.isLinkToDetails());
         existing.setAutosizeColumn(desiredState.isAutosizeColumn());
+        existing.setShowMap(desiredState.isShowMap());
+        existing.setMapProvider(desiredState.getMapProvider());
+        existing.setDefaultCountry(desiredState.getDefaultCountry());
         existing.setValidationRules(desiredState.getValidationRules());
 
         validator.validate(definition);

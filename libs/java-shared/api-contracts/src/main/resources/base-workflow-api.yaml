@@ -1013,6 +1013,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/InstanceIdParam"
+      - $ref: "#/components/parameters/TaskIdParam"
+    post:
+      operationId: addTaskComment
+      tags: [ Task Instances ]
+      summary: Leave a comment on an active task
+      description: >-
+        Appends one comment to the task's history. The server stamps the author and the time from
+        the caller's token, so the request carries the content alone, and nothing can edit or remove
+        an entry once it is there. Only an ACTIVE task takes comments: they are notes made while the
+        work is being done, and a finished task's history is its record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddTaskCommentRequest"
+      responses:
+        "200":
+          description: The task, with the comment appended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskInstance"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Task is not in ACTIVE status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /organizations/{orgKey}/instances/{instanceId}/tasks/{taskId}/skip:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -1955,8 +1993,17 @@ components:
           nullable: true
           description: >-
             The name the artifact's object goes by in this workflow — the `new_order` of UML's
-            `new_order : Order` object notation. Display only; absent draws an anonymous object.
+            `new_order : Order` object notation. Once the run binds the artifact to a record, the
+            record's id is the context variable of this name.
           example: new_order
+        bindFrom:
+          type: string
+          nullable: true
+          description: >-
+            Which event parameter binds this artifact to its record: `<startEventId|eventUseId>.<parameter>`.
+            Needed only when the workflow declares more than one artifact of the same entity type;
+            otherwise the run binds the artifact from any ENTITY_REF parameter of its type.
+          example: order-created.subject
 
     # ── Tool Use ────────────────────────────────────────────
     ToolUse:
@@ -2253,6 +2300,13 @@ components:
           type: string
           nullable: true
           description: User id (from base-entity)
+        assigneeName:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The assignee as people know them, recorded when the task was assigned — so a screen shows
+            a name without a user directory of its own. Absent when the directory knew no name.
         blockedReason:
           type: string
           nullable: true
@@ -2285,6 +2339,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StepResult"
+        comments:
+          type: array
+          readOnly: true
+          description: Notes left on the task while it was ACTIVE, oldest first — see addTaskComment.
+          items:
+            $ref: "#/components/schemas/TaskComment"
         contextContribution:
           type: object
           readOnly: true
@@ -2344,6 +2404,22 @@ components:
           nullable: true
           description: CATCH — what the payload mapping added to the workflow context.
           additionalProperties: true
+        parameters:
+          type: object
+          nullable: true
+          readOnly: true
+          description: >-
+            The parameters the occurrence carried, by name (THROW: sent, CATCH: received). Also in the
+            context, namespaced under this event's eventUseId.
+          additionalProperties: true
+        blockedReason:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            THROW — set while the throw is held: it is due, but a required parameter of its event
+            resolves to nothing, so it stays PENDING rather than send an incomplete message, and is
+            tried again as the run advances.
         dueAt:
           type: string
           format: date-time
@@ -2372,6 +2448,36 @@ components:
         error:
           type: string
           nullable: true
+
+    TaskComment:
+      type: object
+      description: >-
+        One entry of a task's comments, in the shape base-entity's COMMENTS attribute stores — so
+        the same control renders both.
+      required: [ author, createdAt, content ]
+      properties:
+        author:
+          type: string
+          description: The author's name as the token gave it, or the user id when it gave none.
+        authorId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        content:
+          type: object
+          description: Rich text, as the editor's JSON document.
+          additionalProperties: true
+
+    AddTaskCommentRequest:
+      type: object
+      required: [ content ]
+      properties:
+        content:
+          type: object
+          description: Rich text, as the editor's JSON document.
+          additionalProperties: true
 
     AssignTaskRequest:
       type: object
@@ -2426,7 +2532,22 @@ components:
         entityId:
           type: string
           nullable: true
-          description: ID of the actual entity instance in base-entity.
+          description: >-
+            Id of the record this artifact is in this run — an entity's or a document's. Bound by the run
+            from an ENTITY_REF parameter of the event it starts on or catches, or from a task completion
+            naming the artifact's objectName; never re-bound once set. Null until then.
+        entityType:
+          type: string
+          nullable: true
+          readOnly: true
+          description: The record's type — the base-entity definition code, or `document`.
+        entityLabel:
+          type: string
+          nullable: true
+          readOnly: true
+          description: >-
+            The bound record's name as its type shows it, resolved per response like
+            WorkflowInstance.entityLabel; falls back to entityId.
         stateMachineInstanceId:
           type: string
           nullable: true
@@ -2438,8 +2559,8 @@ components:
           type: string
           nullable: true
           description: >-
-            Cached current state name from base-state, refreshed when
-            EntityStateChangedEvent is received. Provided here as a convenience so
+            The bound record's current state, refreshed from every state-change fact about it — base-state's
+            for an entity, base-document's for a document. Provided here as a convenience so
             clients don't need to query base-state just to render a workflow overview.
         updatedAt:
           type: string

@@ -46,7 +46,7 @@ describe('ProcessBoardComponent', () => {
       const host = render();
 
       expect(host.querySelector('[data-testid="board-workflow"]')?.textContent?.trim()).toBe('Order Fulfillment Workflow');
-      expect(host.querySelector('[data-testid="board-entity"]')?.textContent?.trim()).toBe('1');
+      expect(host.querySelector('[data-testid="board-entity"]')?.textContent?.trim()).toBe('ORD-1001');
       expect(host.querySelector('[data-testid="board-started"]')?.textContent?.trim()).toBeTruthy();
       expect(host.querySelector('[data-testid="board-status-ACTIVE"]')).not.toBeNull();
     });
@@ -68,7 +68,7 @@ describe('ProcessBoardComponent', () => {
     it('shows the assignee on an active card and the completion time on a completed one', () => {
       const host = render();
 
-      expect(host.querySelector(`[data-testid="board-card-${APPROVE_SHIPMENT_TASK_ID}"] .card__detail`)?.textContent?.trim()).toBe('manager-user');
+      expect(host.querySelector(`[data-testid="board-card-${APPROVE_SHIPMENT_TASK_ID}"] .card__detail`)?.textContent?.trim()).toBe('Maria Manager');
       expect(host.querySelector(`[data-testid="board-card-${REVIEW_ORDER_TASK_ID}"] .card__detail`)?.textContent?.trim()).toBeTruthy();
     });
 
@@ -143,6 +143,22 @@ describe('ProcessBoardComponent', () => {
     const host = render();
     expect(host.querySelector('[data-testid="board-waiting-invoice-issued"]')?.textContent).toContain('Invoice issued');
     expect(host.querySelector('[data-testid="board-waiting-request-invoice"]')).toBeNull();
+  });
+
+  it('names a throw that is held, with why on hover', () => {
+    store.selectInstance(RUN_ID);
+    store.reload();
+    const [request, issued] = WORKFLOW_INSTANCE_DTO.events;
+    const reason = "The required parameter(s) orderNumber of 'InvoiceRequested' resolve to nothing in the run's context.";
+    controller
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [{ ...request, status: 'PENDING', blockedReason: reason }, { ...issued, status: 'PENDING' }] }] });
+
+    const host = render();
+    const held = host.querySelector('[data-testid="board-held-request-invoice"]');
+    expect(held?.textContent).toContain(request.name);
+    expect(held?.getAttribute('title')).toBe(reason);
+    expect(host.querySelector('[data-testid="board-held-invoice-issued"]')).toBeNull();
   });
 
   it('marks an empty column rather than collapsing it', () => {

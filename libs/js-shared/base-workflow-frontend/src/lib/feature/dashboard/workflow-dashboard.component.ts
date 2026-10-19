@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TASK_DASHBOARD_I18N_SCOPE } from '../../base-workflow.i18n';
 import { INBOX_SCOPES, InboxScope } from '../../domain/dashboard/dashboard-task';
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
+import { modelerIconUrl, TEAM_ICON_URL } from '../../domain/modeler/modeler-icons';
 import { ProcessBoardComponent } from './process-board.component';
+import { ProcessDiagramComponent } from './process-diagram.component';
+import { RunContextComponent } from './run-context.component';
 import { TaskDetailComponent } from './task-detail.component';
 import { TaskListComponent } from './task-list.component';
 
@@ -27,8 +30,13 @@ import { TaskListComponent } from './task-list.component';
  * | Process | one run's board, grouped by status | where is this run stuck |
  *
  * The Process scope lays out differently on purpose: a four-column board squeezed into a third of the width
- * is four unreadable columns, so it takes the full row and the task detail moves below it. The other two are
- * a list beside a detail — the standard two-pane inbox.
+ * is four unreadable columns, so it takes the full row and the task detail moves below it, with the run's
+ * workflow diagram above it — see `ProcessDiagramComponent` — and its context variables below it — see
+ * `RunContextComponent`. The other two are a list beside a detail — the standard two-pane inbox.
+ *
+ * **A title of its own, unless the host already names it.** Mounted as a page — where a task dashboard button
+ * leads — the screen says what it is. A host that shows it as one tab among others names it in the tab bar,
+ * and sets {@link showTitle} off through the route's `data` rather than saying it twice.
  *
  * The run picker is a plain `<select>`, like every other control on this screen: the library declares no
  * `@angular/material` peer dependency, which is why the modeler's toolbar is bare checkboxes and its Save is
@@ -37,10 +45,13 @@ import { TaskListComponent } from './task-list.component';
 @Component({
   selector: 'pp-workflow-dashboard',
   standalone: true,
-  imports: [TranslocoPipe, TaskListComponent, TaskDetailComponent, ProcessBoardComponent],
+  imports: [TranslocoPipe, TaskListComponent, TaskDetailComponent, ProcessBoardComponent, ProcessDiagramComponent, RunContextComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dashboard">
+      @if (showTitle()) {
+        <h2 class="dashboard__title" data-testid="dashboard-title">{{ titleKey | transloco }}</h2>
+      }
       <div class="dashboard__toolbar">
         <div class="dashboard__scopes" role="tablist" [attr.aria-label]="titleKey | transloco">
           @for (scope of scopes; track scope) {
@@ -53,6 +64,7 @@ import { TaskListComponent } from './task-list.component';
               [attr.data-testid]="'dashboard-scope-' + scope"
               (click)="store.setScope(scope)"
             >
+              <img class="scope__icon" [src]="scopeIcons[scope]" alt="" aria-hidden="true" />
               {{ scopeKey(scope) | transloco }}
               <span class="scope__count">{{ countOf(scope) }}</span>
             </button>
@@ -65,7 +77,7 @@ import { TaskListComponent } from './task-list.component';
             <select class="dashboard__select" [value]="store.selectedInstanceId() ?? ''" data-testid="dashboard-run" (change)="pickRun($event)">
               <option value="">—</option>
               @for (instance of store.selectableInstances(); track instance.id) {
-                <option [value]="instance.id">{{ instance.workflowName || instance.workflowId }} · {{ instance.id }}</option>
+                <option [value]="instance.id">{{ store.instanceLabels().get(instance.id) }}</option>
               }
             </select>
           </label>
@@ -74,7 +86,9 @@ import { TaskListComponent } from './task-list.component';
 
       <div class="dashboard__body" [class.dashboard__body--stacked]="isProcess()">
         @if (isProcess()) {
+          <pp-process-diagram />
           <pp-process-board />
+          <pp-run-context />
         } @else {
           <pp-task-list />
         }
@@ -91,6 +105,11 @@ import { TaskListComponent } from './task-list.component';
       background-color: #ffffff;
       border-radius: 6px;
       padding: 16px 20px 24px;
+    }
+    .dashboard__title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 500;
     }
     .dashboard__toolbar {
       display: flex;
@@ -118,6 +137,11 @@ import { TaskListComponent } from './task-list.component';
       font: inherit;
       font-size: 13px;
       cursor: pointer;
+    }
+    .scope__icon {
+      width: 14px;
+      height: 16px;
+      object-fit: contain;
     }
     .scope:last-child {
       border-right: 0;
@@ -167,11 +191,25 @@ import { TaskListComponent } from './task-list.component';
 export class WorkflowDashboardComponent {
   protected readonly store = inject(WorkflowDashboardStore);
 
+  /**
+   * Whether the screen names itself; see the class description. Bound from route `data` by
+   * `withComponentInputBinding` — which sets an input the route does not mention to `undefined`, so that reads
+   * as the default rather than as "off".
+   */
+  readonly showTitle = input(true, { transform: (show: boolean | undefined) => show ?? true });
+
   protected readonly scopes = INBOX_SCOPES;
+  /** The modeler's own symbols, so a queue looks like what it holds: my tasks, the team's roles, the whole process. */
+  protected readonly scopeIcons: Record<InboxScope, string> = { mine: modelerIconUrl('task'), team: TEAM_ICON_URL, process: modelerIconUrl('workflow') };
   protected readonly titleKey = `${TASK_DASHBOARD_I18N_SCOPE}.title`;
   protected readonly runKey = `${TASK_DASHBOARD_I18N_SCOPE}.run`;
 
   protected readonly isProcess = computed(() => this.store.scope() === 'process');
+
+  constructor() {
+    // The store outlives this screen — see `refresh` for why entering it re-reads the runs.
+    this.store.refresh();
+  }
 
   protected scopeKey(scope: InboxScope): string {
     return `${TASK_DASHBOARD_I18N_SCOPE}.scopes.${scope}`;

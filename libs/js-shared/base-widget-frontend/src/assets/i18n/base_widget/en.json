@@ -74,8 +74,14 @@
   "copyright": {
     "name": "Copyright"
   },
+  "entity_table": {
+    "name": "Entity table"
+  },
   "design_button": {
     "name": "Design button"
+  },
+  "task_dashboard_button": {
+    "name": "Task dashboard button"
   },
   "image_zoom": {
     "name": "Image zoom"

@@ -14,10 +14,27 @@
       "description": "A note on when the event happens and what it is used for; users do not see it.",
       "kind": "SYSTEM: raised by the platform when a record changes. MESSAGE: sent to one receiver through the API. SIGNAL: broadcast to every listener through the API.",
       "subjectType": "For SYSTEM events only: the code of the entity type whose records raise the event, e.g. order.",
-      "action": "For SYSTEM events only: what happens to the record: CREATED, UPDATED, DELETED or STATE_CHANGED.",
+      "action": "For SYSTEM events only: what happens to the record: CREATED, UPDATED, DELETED, STATE_CHANGED or SIGNED (a document was signed for it).",
       "state": "For STATE_CHANGED only: the state the record enters, e.g. CONFIRMED.",
-      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system."
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
+      "parameters": "The values every occurrence of the event carries, e.g. an order and its order number. Workflows read them by name."
     },
-    "releaseState": "Release"
+    "releaseState": "Release",
+    "parameters": "Parameters"
+  },
+  "event_parameter": {
+    "_self": "Parameter",
+    "name": "Name",
+    "type": "Type",
+    "entityType": "Referenced Entity Type",
+    "required": "Required",
+    "description": "Description",
+    "_tooltips": {
+      "name": "Unique within the event; letters, digits and _. For a SYSTEM event it must be an attribute of the subject — pick one of the suggestions, e.g. orderNumber — because that attribute's value fills it. The record itself is always carried as subject, which is reserved, so it needs no parameter.",
+      "type": "The kind of value: STRING, NUMBER, BOOLEAN, DATE, or ENTITY_REF for a reference to a record.",
+      "entityType": "For ENTITY_REF only: the type of record the parameter points at, e.g. order, or document. Not the attribute a SYSTEM parameter is filled from — that is its name.",
+      "required": "Whether every occurrence of the event has to carry a value for this parameter.",
+      "description": "A note on what the value means; users do not see it."
+    }
   }
 }

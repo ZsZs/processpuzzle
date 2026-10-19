@@ -62,6 +62,33 @@ describe('GenericEntityFormComponent', () => {
       expect(component.onCancel).toHaveBeenCalled();
     });
 
+    /** An embedded child's Save only staged this document; abandoning the form must not leave that behind. */
+    it('onCancel() discards the embedded-child changes staged in the document', async () => {
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      vi.spyOn(store, 'reload').mockResolvedValue(testEntity);
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+
+      await component.onCancel();
+
+      expect(store.reload).toHaveBeenCalledWith(component.entityId());
+      expect(formNavigator.navigateBack).toHaveBeenCalled();
+    });
+
+    it('onCancel() re-reads nothing when no child change is staged', async () => {
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      vi.spyOn(store, 'reload');
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+
+      await component.onCancel();
+
+      expect(store.reload).not.toHaveBeenCalled();
+    });
+
     it('onSubmit(), when its an existing object updates it in store.', async () => {
       // SETUP:
       const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
@@ -87,6 +114,26 @@ describe('GenericEntityFormComponent', () => {
       expect(store.update).toHaveBeenCalledWith({ ...testEntity, ...component.baseEntityForm.value });
       expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
       expect(formNavigator.navigateBack).toHaveBeenCalled();
+    });
+
+    it('onSubmit() stays on the form, dirty, when the store refuses the save', async () => {
+      // SETUP:
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      component.baseEntityForm.markAsDirty();
+      vi.spyOn(store, 'update').mockResolvedValue(undefined);
+      vi.spyOn(store, 'setCurrentEntity');
+      vi.spyOn(formNavigator, 'navigateBack');
+
+      // EXERCISE:
+      await component.onSubmit();
+
+      // VERIFY:
+      expect(store.update).toHaveBeenCalled();
+      expect(formNavigator.navigateBack).not.toHaveBeenCalled();
+      expect(component.baseEntityForm.dirty).toBe(true);
+      expect(store.setCurrentEntity).toHaveBeenLastCalledWith(component.entityId());
     });
 
     it('onSubmit(), when its new object saves it in store.', async () => {
@@ -116,6 +163,26 @@ describe('GenericEntityFormComponent', () => {
       expect(store.add).toHaveBeenCalledWith({ ...component.entity(), ...component.baseEntityForm.value });
       expect(store.setCurrentEntity).toHaveBeenCalledWith(undefined);
       expect(formNavigator.navigateBack).toHaveBeenCalled();
+    });
+
+    it('onSubmit() re-claims the navigator entity name an embedded child left behind, and leaves the form pristine', async () => {
+      const { fixture, component, store, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      component.baseEntityForm.get('boolean')?.setValue(false);
+      component.baseEntityForm.markAsDirty();
+      vi.spyOn(store, 'update').mockImplementation(async (entity) => entity);
+      let entityNameOnNavigate: string | undefined;
+      vi.spyOn(formNavigator, 'navigateBack').mockImplementation(async () => {
+        entityNameOnNavigate = formNavigator.entityName();
+      });
+      formNavigator.setEntityName('embedded-child');
+
+      await component.onSubmit();
+
+      expect(entityNameOnNavigate).toBe(component.entityDescriptor().entityName);
+      expect(component.baseEntityForm.pristine).toBe(true);
+      expect(component.saveDisabled()).toBe(true);
     });
 
     it('enables Save after a signal-less programmatic mutation (zoneless-safe reactive binding)', async () => {

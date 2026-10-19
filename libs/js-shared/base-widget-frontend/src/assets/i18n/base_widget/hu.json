@@ -74,8 +74,14 @@
   "copyright": {
     "name": "Szerzői jog"
   },
+  "entity_table": {
+    "name": "Entitástáblázat"
+  },
   "design_button": {
     "name": "Tervező gomb"
+  },
+  "task_dashboard_button": {
+    "name": "Feladat-irányítópult gomb"
   },
   "image_zoom": {
     "name": "Képnagyító"

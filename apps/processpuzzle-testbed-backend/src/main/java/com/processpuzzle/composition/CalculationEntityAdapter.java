@@ -1,0 +1,78 @@
+package com.processpuzzle.composition;
+
+import com.processpuzzle.baseentity.api.EntityObjectAccess;
+import com.processpuzzle.baseentity.api.EntityObjectAccessException;
+import com.processpuzzle.baseentity.api.EntityObjectView;
+import com.processpuzzle.calculation.port.EntityQueryPort;
+import com.processpuzzle.calculation.port.EntityRecord;
+import com.processpuzzle.calculation.port.EntityWriteConflict;
+import com.processpuzzle.calculation.port.EntityWritePort;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.stereotype.Component;
+
+/**
+ * Reads base-calculation's inputs from base-entity and writes its outputs back, through base-entity's
+ * {@code EntityObjectAccess}. base-entity's failures are translated into the port's: an object that is not there
+ * is not found, one that moved on or a type that does not exist is an {@link EntityWriteConflict}.
+ */
+@Component
+public class CalculationEntityAdapter implements EntityQueryPort, EntityWritePort {
+
+    private final EntityObjectAccess entities;
+
+    public CalculationEntityAdapter(EntityObjectAccess entities) {
+        this.entities = entities;
+    }
+
+    @Override
+    public Optional<EntityRecord> find(String orgKey, String entity, String id) {
+        Optional<UUID> objectId = uuidOf(id);
+        if (objectId.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(recordOf(entities.find(orgKey, entity, objectId.get())));
+        } catch (EntityObjectAccessException.NotFound e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public List<EntityRecord> findWhere(String orgKey, String entity, String rsql) {
+        return entities.findWhere(orgKey, entity, rsql).stream().map(CalculationEntityAdapter::recordOf).toList();
+    }
+
+    @Override
+    public void updateAttributes(String orgKey, String entity, String id, Map<String, Object> values, long expectedVersion) {
+        try {
+            entities.updateAttributes(orgKey, entity, uuidOf(id).orElseThrow(() -> new EntityWriteConflict("'%s' is no object id".formatted(id))),
+                    values, expectedVersion);
+        } catch (EntityObjectAccessException e) {
+            throw new EntityWriteConflict(e.getMessage());
+        }
+    }
+
+    @Override
+    public int upsertAllByKey(String orgKey, String entity, List<String> keyAttributes, List<Map<String, Object>> rows) {
+        try {
+            return entities.upsertAllByKey(orgKey, entity, keyAttributes, rows);
+        } catch (EntityObjectAccessException e) {
+            throw new EntityWriteConflict(e.getMessage());
+        }
+    }
+
+    private static EntityRecord recordOf(EntityObjectView view) {
+        return new EntityRecord(view.id().toString(), view.version(), view.payload());
+    }
+
+    private static Optional<UUID> uuidOf(String id) {
+        try {
+            return Optional.of(UUID.fromString(id));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+}

@@ -36,6 +36,64 @@
         "owner": "alice",
         "region": "eu-west-1"
       },
+      "comments": [
+        {
+          "author": "Alice Example",
+          "authorId": "alice",
+          "createdAt": "2026-10-01T09:30:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Created for the comments demo."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "author": "Bob Example",
+          "authorId": "bob",
+          "createdAt": "2026-10-02T14:15:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Reviewed — "
+                  },
+                  {
+                    "type": "text",
+                    "marks": [
+                      {
+                        "type": "bold"
+                      }
+                    ],
+                    "text": "looks good"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "address": {
+        "country": "HU",
+        "city": "Budapest",
+        "postalCode": "1014",
+        "street": "Szentháromság tér 2.",
+        "latitude": 47.5019,
+        "longitude": 19.0346,
+        "locationSource": "GEOCODED"
+      },
       "components": [
         "1",
         "2",
@@ -106,6 +164,55 @@
         "name": "HUK24_Versicherungsschein",
         "mimeType": "application/pdf"
       },
+      "comments": [
+        {
+          "author": "Alice Example",
+          "authorId": "alice",
+          "createdAt": "2026-10-03T08:00:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Waiting for the second review."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "author": "Carol Example",
+          "authorId": "carol",
+          "createdAt": "2026-10-04T16:45:00.000Z",
+          "content": {
+            "type": "doc",
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Approved."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Ready to ship."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
       "components": [
         "4",
         "5"
@@ -289,5 +396,7 @@
       "description": "Supervisor Rolle",
       "value": "Wert 4"
     }
-  ]
+  ],
+  "inventory-checks": [],
+  "documents": []
 }

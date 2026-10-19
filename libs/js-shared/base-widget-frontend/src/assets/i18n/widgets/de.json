@@ -25,5 +25,9 @@
     "dark": "Dunkel",
     "auto": "Systemeinstellung",
     "reset": "Auf Standard zurücksetzen"
+  },
+  "sidenav_content": {
+    "show_menu": "Menü anzeigen",
+    "show_content": "Inhalt anzeigen"
   }
 }

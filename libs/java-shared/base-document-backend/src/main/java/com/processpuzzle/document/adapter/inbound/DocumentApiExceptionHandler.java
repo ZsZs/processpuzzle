@@ -1,9 +1,13 @@
 package com.processpuzzle.document.adapter.inbound;
 
+import com.processpuzzle.document.usecase.exception.ContentBookInvalidTreeException;
+import com.processpuzzle.document.usecase.exception.ContentBookNotFoundException;
+import com.processpuzzle.document.usecase.exception.ContentBookSlugAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedException;
 import com.processpuzzle.document.usecase.exception.DocumentAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockReferencedException;
+import com.processpuzzle.document.usecase.exception.DocumentFileStoreUnavailableException;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
@@ -81,6 +85,11 @@ public class DocumentApiExceptionHandler {
         return error(HttpStatus.FORBIDDEN, "document.access-denied", ex.getMessage());
     }
 
+    @ExceptionHandler(DocumentFileStoreUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleStoreUnavailable(DocumentFileStoreUnavailableException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "document.file-store.unavailable", ex.getMessage());
+    }
+
     /**
      * The referring block ids stay inside {@code errorText}, where the exception message already names
      * them. They used to be a second {@code referencingBlockIds} key, which no contract declared and no
@@ -90,6 +99,21 @@ public class DocumentApiExceptionHandler {
     @ExceptionHandler(DocumentBlockReferencedException.class)
     public ResponseEntity<ErrorResponse> handleBlockReferenced(DocumentBlockReferencedException ex) {
         return error(HttpStatus.CONFLICT, "document.block.referenced", ex.getMessage());
+    }
+
+    @ExceptionHandler(ContentBookNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleContentBookNotFound(ContentBookNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "content-book.not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(ContentBookSlugAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleContentBookSlugConflict(ContentBookSlugAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "content-book.slug.already-exists", ex.getMessage());
+    }
+
+    @ExceptionHandler(ContentBookInvalidTreeException.class)
+    public ResponseEntity<ErrorResponse> handleContentBookInvalidTree(ContentBookInvalidTreeException ex) {
+        return error(HttpStatus.BAD_REQUEST, "content-book.invalid-tree", ex.getMessage());
     }
 
     /**

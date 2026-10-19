@@ -33,6 +33,21 @@
     "kind_task": "Aufgaben",
     "kind_workflow": "Workflows",
     "kind_module": "Module",
-    "kind_app": "Anwendung"
+    "kind_app": "Anwendung",
+    "steps": "Migrationsschritte",
+    "steps-intro": "Das Release führt diese Schritte zuerst und der Reihe nach aus, damit vorhandene Objekte zu Ihren Entwürfen passen. Die Probleme oben werden an den Daten geprüft, wie die Schritte sie hinterlassen.",
+    "steps-run": "{{count}} Migrationsschritt(e)",
+    "step_renameAttribute": "{{key}}.{{subject}} umbenennen",
+    "step_fillAttribute": "{{key}}.{{subject}} füllen",
+    "step_mapValues": "Werte von {{key}}.{{subject}} zuordnen",
+    "step_remove": "Entfernen",
+    "outcome_applied": "{{count}} Objekt(e) würden geändert",
+    "outcome_skipped": "Übersprungen:",
+    "outcome_failed": "Fehlgeschlagen:",
+    "resolve_renameAttribute": "Es wurde umbenannt in",
+    "resolve_fillAttribute": "Objekte ohne Wert füllen mit",
+    "resolve_mapValues": "Diese Objekte verschieben nach",
+    "resolve_choose": "Auswählen…",
+    "resolve_apply": "Anwenden"
   }
 }

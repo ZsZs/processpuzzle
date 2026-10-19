@@ -6,7 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { RouterOutlet } from '@angular/router';
 import { LayoutService } from '@processpuzzle/util';
-import { APPLICATION_CONTEXT, SidenavAutosizeDirective, ThemeService } from '@processpuzzle/widgets';
+import { APPLICATION_CONTEXT, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
 import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
@@ -70,7 +70,7 @@ export class ShellActionsDirective {}
 @Component({
   selector: 'pp-app-shell',
   standalone: true,
-  imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet, SidenavAutosizeDirective],
+  imports: [NgComponentOutlet, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet, SidenavAutosizeDirective, SidenavContentOutletComponent],
   providers: [
     ThemeService,
     ShellApplicationContext,
@@ -105,7 +105,10 @@ export class ShellActionsDirective {}
           [opened]="layout().sidenavOpened && !layoutService.isSidenavHidden()"
           [position]="layout().sidenavPosition"
         >
-          <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
+          <!-- A page such as a content book may take the sidenav over; the outlet keeps the nav one click away. -->
+          <pp-sidenav-content-outlet>
+            <ng-container *ngComponentOutlet="view.component; inputs: sidenavInputs()"></ng-container>
+          </pp-sidenav-content-outlet>
         </mat-sidenav>
       }
       <mat-sidenav-content>

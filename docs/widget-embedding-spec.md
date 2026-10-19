@@ -86,6 +86,12 @@ from — the registration is what keeps it honest.
 The Tiptap node view of base-document cannot use a template, so it calls the same two functions
 (`resolveWidgetInputs`, `widgetOutputBindings`) around `createComponent`. There is no third resolution rule.
 
+What a binding names is the container's business. In a document an `inputBindings` value is a **port path** —
+`order`, or `order.lineItems` below an `ENTITY_REF` port — resolved by the `DocumentDataContext` of whoever
+renders the document with data (the Preview and Reports tabs); the editor has none and resolves nothing. The
+`entity-table` widget is built for this: its `rows` input is bound to a collection path, its `columns` and
+`totals` are props. See [Document vs. report template](document-vs-report-template.md#entity-binding).
+
 Placement stays the container's concern: `REFERENCED` instances are skipped by the container's list (base-app's
 `WidgetListComponent`, base-document's editor) and rendered where a `childIds` entry or a `widgetEmbed` node
 points at them.

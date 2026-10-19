@@ -1,0 +1,30 @@
+# Sample content books of the 'processpuzzle-testbed' organization.
+#
+# SampleContentBookLoader creates these on startup when `base-document.loadSamples` is true, after
+# SampleDocumentLoader has imported the documents they show. The owning organization is the part of
+# the file name before `-content-books.yaml`, as for sample documents.
+#
+# Nodes name their document by `documentSlug`: document ids are generated on import, so the slug is
+# the only reference this file can know. Create-only — a book that already exists is never touched,
+# so a tree an editor rearranged survives a restart.
+#
+# The handbook is public while one of its pages is not: a reader without a reviewer role sees the
+# release notes in the tree but is told they are not published, which is what the access model says.
+
+contentBooks:
+  - slug: testbed-handbook
+    title: Testbed Handbook
+    description: >-
+      The testbed's documentation as one navigable book — the platform overview with the pages that
+      go deeper filed under it.
+    isPublic: true
+    editorRoles:
+      - documentation-editor
+    nodes:
+      - id: overview
+        documentSlug: platform-overview
+      - id: fulfillment-invoice
+        documentSlug: fulfillment-invoice
+        parentId: overview
+      - id: release-notes
+        documentSlug: testbed-release-notes
