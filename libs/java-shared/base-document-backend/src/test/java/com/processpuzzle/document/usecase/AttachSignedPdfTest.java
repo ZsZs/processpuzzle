@@ -91,12 +91,14 @@ class AttachSignedPdfTest {
     @Test
     void refusesWhatIsNotAPdf() {
         AttachSignedPdf useCase = useCase(store);
+        byte[] gif = "GIF89a".getBytes(StandardCharsets.UTF_8);
+        byte[] empty = new byte[0];
 
         assertThatThrownBy(() -> useCase.execute(ORG, ID, SIGNATURE, PDF, "a.png", "image/png"))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> useCase.execute(ORG, ID, SIGNATURE, "GIF89a".getBytes(), "a.pdf", "application/pdf"))
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, SIGNATURE, gif, "a.pdf", "application/pdf"))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> useCase.execute(ORG, ID, SIGNATURE, new byte[0], "a.pdf", "application/pdf"))
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, SIGNATURE, empty, "a.pdf", "application/pdf"))
                 .isInstanceOf(IllegalArgumentException.class);
         verify(store, never()).store(any(), any(), any());
     }
