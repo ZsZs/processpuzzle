@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
-import { BaseEntityMapper } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntityMapper } from '@processpuzzle/base-entity';
 import { IssuedDocument } from './issued-document';
 
 /** One `DocumentSignature` of the API, as `GET /issued-documents` returns it. */
 interface IssuedDocumentDto extends Partial<Omit<IssuedDocument, 'name' | 'pdf'>> {
-  pdf?: IssuedDocument['pdf'] | null;
+  pdf?: ArtifactAttr | null;
 }
 
 @Injectable({ providedIn: 'root' })
