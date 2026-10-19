@@ -17,7 +17,7 @@ import { RuntimeConfiguration } from './runtime-configuration';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
-import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, provideAuthenticationService, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, authTokenInterceptorFor, provideAuthenticationService, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
@@ -76,7 +76,14 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // the framework for consumers who deploy on them; a consumer that does adds these providers itself.
       provideAuthenticationService(runtimeConfiguration),
       provideZonelessChangeDetection(),
-      provideHttpClient(withInterceptors([centralHttpErrorInterceptor])),
+      // The backend validates a bearer token whenever one is sent, and signing a document needs one. Only the
+      // platform's own roots are named: the third-party root (json-server) must never receive the token.
+      provideHttpClient(
+        withInterceptors([
+          authTokenInterceptorFor([runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT]),
+          centralHttpErrorInterceptor,
+        ]),
+      ),
       provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
       provideCentralErrorHandler(),
       provideAppPropertyStore(),

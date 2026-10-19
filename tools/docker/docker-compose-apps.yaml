@@ -266,6 +266,9 @@ services:
       # sets it explicitly.
       PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL: ${PROCESSPUZZLE_SECURITY_ISSUER_BASE_URL:-http://localhost:7070}
       PROCESSPUZZLE_SECURITY_JWKS_BASE_URL: ${PROCESSPUZZLE_SECURITY_JWKS_BASE_URL:-http://keycloak:8080}
+      # How often the workflow engine looks for due timers. The default is what every deployed environment runs;
+      # testbed/.env.ci shortens it so the e2e timer specs do not wait half a minute per sweep.
+      BASE_WORKFLOW_TIMERS_INTERVAL: ${BASE_WORKFLOW_TIMERS_INTERVAL:-PT30S}
     ports:
       - "${PP_TESTBED_BACKEND_PUBLISH}"
     tty: true

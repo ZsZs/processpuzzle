@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 import path from 'path';
+import { STORAGE_STATE } from './src/support/auth.paths';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const environment = process.env['ENVIRONMENT'] || 'dev';
@@ -26,6 +27,8 @@ export default defineConfig({
   grep,
   // Opt out of parallel tests on CI.
   workers: process.env['ENVIRONMENT'] === 'ci' ? 1 : 1,
+  // A single retry on CI: the suite drives a freshly started stack, and a first request that lands before the backend has warmed up is not a regression.
+  retries: process.env['CI'] ? 1 : 0,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     baseURL,
@@ -58,9 +61,24 @@ export default defineConfig({
     ['junit', { outputFile: path.join(__dirname, 'reports/e2e/results.xml') }], // combine multiple
   ],
   projects: [
+    // Registers and signs in a test user once; only the `@auth` project depends on it, so the anonymous suites
+    // (and the prod smoke run) neither need sign-up to be open nor change behaviour.
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
     {
       name: 'chromium',
+      grepInvert: /@auth/,
       use: { ...devices['Desktop Chrome'] },
+    },
+    // Specs that need a signed-in user are tagged `@auth` in their describe title.
+    {
+      name: 'chromium-auth',
+      grep: /@auth/,
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
     },
 
     // Uncomment for mobile browsers support

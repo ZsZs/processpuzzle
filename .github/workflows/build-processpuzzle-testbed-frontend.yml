@@ -70,3 +70,31 @@ jobs:
           # One env file per Coolify resource, and repeated `--env-file` is additive — the
           # infrastructure file for the shared services, the testbed one for the stack's two halves.
           compose-flags: '--env-file tools/docker/env/infrastructure/.env.ci --env-file tools/docker/env/testbed/.env.ci'
+
+      # The compose step returns as soon as the containers are created, and the backend then needs a few
+      # minutes (migrations, seeding) before it answers. Probe what the e2e suite itself depends on: the
+      # backend, the frontend's reverse proxy to it, and the stack realm the sign-in goes through.
+      - name: Wait for the stack
+        run: |
+          DEADLINE=$(( $(date +%s) + 900 ))
+          for PROBE in http://localhost:8080/actuator/health/readiness \
+                       http://localhost:9090/api/actuator/health/readiness \
+                       http://localhost:7070/realms/processpuzzle-testbed; do
+            echo "Probing ${PROBE}"
+            until curl -fs -o /dev/null --max-time 10 "${PROBE}"; do
+              if [ "$(date +%s)" -ge "${DEADLINE}" ]; then
+                echo "::error::${PROBE} did not answer within 15 minutes."
+                docker compose -p processpuzzle ps || true
+                exit 1
+              fi
+              sleep 5
+            done
+          done
+
+      # The same suite stage runs after a deploy, here against the stack this job just built: the `ci`
+      # topology on :9090, with real Keycloak sign-in and the shortened timer sweep of testbed/.env.ci.
+      - name: End-to-end tests
+        uses: ./.github/actions/e2e-test
+        with:
+          base_dir: 'apps/processpuzzle-testbed-e2e'
+          target_environment: ci
