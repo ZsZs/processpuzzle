@@ -45,25 +45,33 @@ artifact-definitions:
     artifactTypeId: fulfillment-invoice
 
 tool-definitions:
+  # The THIRD-PARTY service the order fulfillment steps call, played by the json-server mock of the shared
+  # infrastructure (tools/mock-backend/db.json) — the same container the frontend reaches as /third-party/.
+  # json-server answers a POST to a collection with 201 and the stored record, i.e. the payload plus an
+  # `id`: an echo, but a real HTTP round trip whose answer the task's step checklist shows and whose `id`
+  # the step maps into the workflow context. It ignores the bearer token; AUTOMATED_CHECK_TOKEN is sent
+  # when the backend has it set. `json-server` resolves on the shared Docker network only, so a backend
+  # started outside Docker records the step as failed.
   - id: automated-check-tool
     name: Automated Check Tool
-    description: Stand-in for the inventory and document service the order fulfillment steps call.
-    baseUrl: https://checks.example.com
+    description: Third-party inventory and document service the order fulfillment steps call, mocked by json-server.
+    baseUrl: http://json-server:3000
     auth:
       type: BEARER_TOKEN
       secretRef: AUTOMATED_CHECK_TOKEN
     operations:
       - id: inventory-check
         method: POST
-        path: /v1/inventory/check
+        path: /inventory-checks
         description: Verifies that every line item of an order is available in stock.
-        payloadTemplate: '{ "orderId": "${entityId}" }'
-        expectedStatusCodes: [ 200 ]
+        payloadTemplate: '{ "orderId": "${orderId}", "orderNumber": "${orderNumber}", "available": true }'
+        expectedStatusCodes: [ 200, 201 ]
 
       - id: generate-doc
         method: POST
-        path: /v1/documents
+        path: /documents
         description: Produces the delivery confirmation and final invoice.
+        payloadTemplate: '{ "orderId": "${orderId}", "invoiceNumber": "${invoiceNumber}", "kind": "DELIVERY_CONFIRMATION" }'
         expectedStatusCodes: [ 200, 201 ]
 
 # `inputs` and `outputs` name artifact definition ids. There is no separate reference type: an
@@ -83,6 +91,13 @@ task-definitions:
         stepType: SERVICE_STEP
         toolDefinitionId: automated-check-tool
         toolOperation: inventory-check
+        # The payload template reads orderId and orderNumber straight from the context. The reference
+        # json-server returns lands there too, as inventoryCheckId, for every later task to see.
+        inputMapping:
+          orderId: orderId
+          orderNumber: orderNumber
+        outputMapping:
+          inventoryCheckId: id
 
   - id: approve-shipment
     name: Approve Shipment
@@ -109,6 +124,11 @@ task-definitions:
         stepType: SERVICE_STEP
         toolDefinitionId: automated-check-tool
         toolOperation: generate-doc
+        inputMapping:
+          orderId: orderId
+          invoiceNumber: invoiceNumber
+        outputMapping:
+          deliveryDocumentId: id
 
   - id: issue-invoice
     name: Issue Invoice
