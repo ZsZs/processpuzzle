@@ -2,9 +2,14 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { IssuedDocument } from './issued-document';
 
+/** One `DocumentSignature` of the API, as `GET /issued-documents` returns it. */
+interface IssuedDocumentDto extends Partial<Omit<IssuedDocument, 'name' | 'pdf'>> {
+  pdf?: IssuedDocument['pdf'] | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class IssuedDocumentMapper implements BaseEntityMapper<IssuedDocument> {
-  fromDto(dto: any): IssuedDocument {
+  fromDto(dto: IssuedDocumentDto): IssuedDocument {
     return new IssuedDocument(
       dto.id,
       `${dto.title ?? ''} – ${dto.subjectId ?? ''}`,
@@ -21,7 +26,7 @@ export class IssuedDocumentMapper implements BaseEntityMapper<IssuedDocument> {
   }
 
   /** Never sent: the entity is read-only, and the server answers 405 to anything but a read. */
-  toDto(entity: IssuedDocument): any {
+  toDto(entity: IssuedDocument): IssuedDocument {
     return { ...entity };
   }
 }

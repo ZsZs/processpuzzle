@@ -48,6 +48,13 @@ function render(signing: SigningContext | null, inputs: Record<string, unknown> 
 
 const byId = <T extends HTMLElement>(root: HTMLElement, id: string) => root.querySelector<T>(`[data-testid="${id}"]`);
 
+/** The element a test is about to act on; a missing one fails the test with its id rather than with a TypeError. */
+function required<T extends HTMLElement>(root: HTMLElement, id: string): T {
+  const element = byId<T>(root, id);
+  if (!element) throw new Error(`No element with data-testid '${id}'`);
+  return element;
+}
+
 describe('SignatureStampComponent', () => {
   it('is a placeholder outside a report', () => {
     const { root } = render(null);
@@ -59,10 +66,10 @@ describe('SignatureStampComponent', () => {
   it('offers Sign only once the reader has accepted', () => {
     const signing = context();
     const { fixture, root } = render(signing);
-    const button = byId<HTMLButtonElement>(root, 'signature-sign')!;
+    const button = required<HTMLButtonElement>(root, 'signature-sign');
     expect(button.disabled).toBe(true);
 
-    const accept = byId<HTMLInputElement>(root, 'signature-accept')!;
+    const accept = required<HTMLInputElement>(root, 'signature-accept');
     accept.checked = true;
     accept.dispatchEvent(new Event('change'));
     fixture.detectChanges();
@@ -86,7 +93,7 @@ describe('SignatureStampComponent', () => {
     const signing = context({ ...SIGNATURE, pdf: PDF });
     const { root } = render(signing);
 
-    byId(root, 'signature-pdf-link')!.click();
+    required(root, 'signature-pdf-link').click();
 
     expect(signing.openPdf).toHaveBeenCalledOnce();
   });
@@ -95,7 +102,7 @@ describe('SignatureStampComponent', () => {
     const signing = context(SIGNATURE);
     const { root } = render(signing);
 
-    const retry = byId(root, 'signature-retry-pdf')!;
+    const retry = required(root, 'signature-retry-pdf');
     expect(retry.textContent).toContain('PDF missing');
     retry.click();
 

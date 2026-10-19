@@ -58,9 +58,10 @@ export class ReportSigningContext implements SigningContext {
 
   async sign(): Promise<void> {
     const target = this.target;
-    if (!target?.subject || this.busy()) return;
+    const subject = target?.subject;
+    if (!target || !subject || this.busy()) return;
     await this.run(async () => {
-      const signature = await this.documents.sign(target.documentId, target.subject!, target.locale);
+      const signature = await this.documents.sign(target.documentId, subject, target.locale);
       this.signature.set(signature);
       if (!signature.pdf) await this.uploadPdf(target, signature);
     });
@@ -82,7 +83,7 @@ export class ReportSigningContext implements SigningContext {
         window.open(url, '_blank', 'noopener');
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       },
-      error: (failure) => this.error.set(failure instanceof Error ? failure.message : String(failure)),
+      error: (error_) => this.error.set(error_ instanceof Error ? error_.message : String(error_)),
     });
   }
 
@@ -98,8 +99,8 @@ export class ReportSigningContext implements SigningContext {
     this.error.set(undefined);
     try {
       await action();
-    } catch (failure) {
-      this.error.set(failure instanceof Error ? failure.message : String(failure));
+    } catch (error_) {
+      this.error.set(error_ instanceof Error ? error_.message : String(error_));
     } finally {
       this.busy.set(false);
     }

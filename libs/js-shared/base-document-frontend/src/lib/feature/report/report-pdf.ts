@@ -27,10 +27,12 @@ export async function renderPdf(element: HTMLElement): Promise<Blob> {
 
 /** `order-invoice-1001.pdf` from a template slug and the object's label or id; anything unsafe becomes `-`. */
 export function reportFileName(templateName: string, subjectLabel: string): string {
+  // Split on the unsafe runs and drop the empty pieces, which trims the dashes without a backtracking pattern.
   const base = `${templateName}-${subjectLabel}`
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .join('-');
   return `${base || 'report'}.pdf`;
 }
 
