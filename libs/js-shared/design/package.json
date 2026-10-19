@@ -32,7 +32,7 @@
     "@processpuzzle/base-state": "^0.2.0",
     "@processpuzzle/base-workflow": "^0.1.1",
     "@processpuzzle/util": "^1.3.0",
-    "@processpuzzle/widgets": "^1.0.0",
+    "@processpuzzle/widgets": "^1.1.0",
     "rxjs": "~7.8.2"
   },
   "dependencies": {
