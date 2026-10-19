@@ -12,7 +12,7 @@ import { ORDER_NAME, ORDER_PATH, orderScreenRoutes, SPECIAL_ORDER_NAME, SPECIAL_
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
-import { BASE_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
+import { BASE_DOCUMENT_ROUTES, ISSUED_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
@@ -378,6 +378,8 @@ export const appRoutes: Route[] = [
             loadChildren: orderScreenRoutes,
           },
           ...BASE_DOCUMENT_ROUTES,
+          // The signed reports — what the Reports tab's `signature` widget issues — as a read-only list.
+          ...ISSUED_DOCUMENT_ROUTES,
         ],
       },
     ],

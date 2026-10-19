@@ -7,6 +7,7 @@ import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedExceptio
 import com.processpuzzle.document.usecase.exception.DocumentAlreadyExistsException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentBlockReferencedException;
+import com.processpuzzle.document.usecase.exception.DocumentFileStoreUnavailableException;
 import com.processpuzzle.document.usecase.exception.DocumentNotFoundException;
 import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.exception.DocumentSlugAlreadyExistsException;
@@ -82,6 +83,11 @@ public class DocumentApiExceptionHandler {
     @ExceptionHandler(DocumentAccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(DocumentAccessDeniedException ex) {
         return error(HttpStatus.FORBIDDEN, "document.access-denied", ex.getMessage());
+    }
+
+    @ExceptionHandler(DocumentFileStoreUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleStoreUnavailable(DocumentFileStoreUnavailableException ex) {
+        return error(HttpStatus.SERVICE_UNAVAILABLE, "document.file-store.unavailable", ex.getMessage());
     }
 
     /**

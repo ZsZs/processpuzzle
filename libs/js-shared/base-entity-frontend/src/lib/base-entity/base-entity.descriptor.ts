@@ -66,6 +66,12 @@ export interface BaseEntityDescriptorOptions {
    */
   titleKey?: string;
   isAbstract?: boolean;
+  /**
+   * True for an entity whose screens only look: the toolbar offers neither New nor Delete and the form cannot
+   * be saved. For rows the server alone writes — issued documents, say. Distinct from {@link isAbstract}, which
+   * is about inheritance, and from the preview mode, which is a host's decision about definitions built at run time.
+   */
+  isReadOnly?: boolean;
   /** Name of the entity this one inherits from. Unrelated to {@link componentParent}. */
   parentEntity?: string;
   route?: string;
@@ -98,6 +104,7 @@ export class BaseEntityDescriptor {
   titleKey?: string;
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
+  readonly isReadOnly: boolean;
   route: string | undefined;
   /** Normalized {@link BaseEntityDescriptorOptions.componentParent}; empty when this is not a component. */
   readonly componentParents: readonly string[];
@@ -113,6 +120,7 @@ export class BaseEntityDescriptor {
     i18nScope,
     titleKey,
     isAbstract,
+    isReadOnly,
     parentEntity,
     route,
     componentParent,
@@ -127,6 +135,7 @@ export class BaseEntityDescriptor {
     this.i18nScope = i18nScope;
     this.titleKey = titleKey;
     this.isAbstract = isAbstract ?? false;
+    this.isReadOnly = isReadOnly ?? false;
     this.parentEntity = parentEntity;
     this.route = route;
     this.componentParents = componentParent === undefined ? [] : [componentParent].flat();

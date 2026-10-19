@@ -35,7 +35,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   entityId: InputSignal<string> = input.required<string>();
   isAbstract = computed(() => this.entityDescriptor().isAbstract);
   /** A preview of draft definitions over live objects: shown, never saved or deleted — see EntityPreviewMode. */
-  isReadOnly = computed(() => this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  isReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
   isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   store: Signal<BaseEntityStoreApi<Entity>> = computed(() => this.entityDescriptor().store as BaseEntityStoreApi<Entity>);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;

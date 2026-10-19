@@ -89,7 +89,7 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   private readonly previewMode = inject(EntityPreviewMode);
   store!: BaseEntityStoreApi<Entity>;
   /** A preview of draft definitions over live objects: they may be opened, not created or deleted. */
-  isReadOnly = computed(() => this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  isReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
   isDeleteEnabled = computed(() => this.store?.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract && !this.isReadOnly());
   isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
   isNewEnabled = computed(() => !this.entityDescriptor().isAbstract && !this.isReadOnly());

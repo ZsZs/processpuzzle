@@ -171,5 +171,25 @@
         "cancel": "Abbrechen"
       }
     }
+  },
+  "signature": {
+    "name": "Unterschrift",
+    "for_role": "als {{ role }}",
+    "saving_pdf": "PDF wird gespeichert…",
+    "pdf_missing": "PDF fehlt — erneut versuchen",
+    "placeholder": "kann unterschrieben werden, wenn der Bericht für ein Objekt geöffnet ist."
+  },
+  "issued_document": {
+    "_self": "Ausgestelltes Dokument",
+    "name": "Name",
+    "title": "Dokument",
+    "subjectType": "Objekttyp",
+    "subjectId": "Objekt",
+    "signedBy": "Unterschrieben von",
+    "signedAt": "Unterschrieben am",
+    "pdf": "PDF",
+    "locale": "Sprache",
+    "revision": "Revision",
+    "documentId": "Dokument-ID"
   }
 }

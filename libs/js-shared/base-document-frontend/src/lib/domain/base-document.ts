@@ -1,4 +1,4 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { ArtifactAttr, BaseEntity } from '@processpuzzle/base-entity';
 import { WidgetInstance } from '@processpuzzle/widgets';
 
 // Re-exported rather than redeclared: WidgetPlacement is one enum shared with base-app, and it now
@@ -121,6 +121,8 @@ export interface DocumentSignature extends DocumentSignatureSubject {
   contentHash: string;
   signedBy: string;
   signedAt: string;
+  /** The signed report as a PDF — absent until the signer's browser has uploaded it. */
+  pdf?: ArtifactAttr | null;
 }
 
 export enum DocumentStatus {

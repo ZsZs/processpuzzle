@@ -46,6 +46,11 @@ public class DocumentPublishingConflictException extends RuntimeException {
                         + " nothing to sign.");
     }
 
+    public static DocumentPublishingConflictException pdfAlreadyAttached(String signatureId) {
+        return new DocumentPublishingConflictException("document.sign.pdf-already-attached",
+                "Signature '" + signatureId + "' already has its PDF; a signed report is not replaced.");
+    }
+
     /** Id matches the Cloud Function's, which answers the same refusal — see base-document.handlers.ts. */
     public static DocumentPublishingConflictException sourceLocaleNotRemovable(String documentId, String locale) {
         return new DocumentPublishingConflictException("document.translation.source-locale-not-removable",

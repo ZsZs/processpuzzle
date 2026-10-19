@@ -171,5 +171,25 @@
         "cancel": "Annuler"
       }
     }
+  },
+  "signature": {
+    "name": "Signature",
+    "for_role": "pour {{ role }}",
+    "saving_pdf": "Enregistrement du PDF…",
+    "pdf_missing": "PDF manquant — réessayer",
+    "placeholder": "peut être signé lorsque le rapport est ouvert pour un objet."
+  },
+  "issued_document": {
+    "_self": "Document émis",
+    "name": "Nom",
+    "title": "Document",
+    "subjectType": "Type d'objet",
+    "subjectId": "Objet",
+    "signedBy": "Signé par",
+    "signedAt": "Signé le",
+    "pdf": "PDF",
+    "locale": "Langue",
+    "revision": "Révision",
+    "documentId": "ID du document"
   }
 }

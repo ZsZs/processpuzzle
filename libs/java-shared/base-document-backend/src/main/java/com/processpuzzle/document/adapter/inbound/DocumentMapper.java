@@ -480,7 +480,12 @@ public class DocumentMapper {
                 .subjectType(signature.getSubjectType())
                 .subjectId(signature.getSubjectId())
                 .signedBy(signature.getSignedBy())
-                .signedAt(toOffsetDateTime(signature.getSignedAt()));
+                .signedAt(toOffsetDateTime(signature.getSignedAt()))
+                .pdf(signature.hasPdf() ? new com.processpuzzle.document.model.SignedPdf()
+                        .bucket(signature.getPdfBucket())
+                        .objectId(signature.getPdfObjectId())
+                        .name(signature.getPdfFileName())
+                        .mimeType("application/pdf") : null);
     }
 
     private OffsetDateTime toOffsetDateTime(Instant instant) {

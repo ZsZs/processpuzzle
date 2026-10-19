@@ -171,5 +171,25 @@
         "cancel": "Mégse"
       }
     }
+  },
+  "signature": {
+    "name": "Aláírás",
+    "for_role": "mint {{ role }}",
+    "saving_pdf": "A PDF mentése…",
+    "pdf_missing": "Hiányzik a PDF — újrapróbálás",
+    "placeholder": "akkor írható alá, ha a jelentés egy objektumhoz van megnyitva."
+  },
+  "issued_document": {
+    "_self": "Kiállított dokumentum",
+    "name": "Név",
+    "title": "Dokumentum",
+    "subjectType": "Objektum típusa",
+    "subjectId": "Objektum",
+    "signedBy": "Aláíró",
+    "signedAt": "Aláírás ideje",
+    "pdf": "PDF",
+    "locale": "Nyelv",
+    "revision": "Revízió",
+    "documentId": "Dokumentum azonosító"
   }
 }

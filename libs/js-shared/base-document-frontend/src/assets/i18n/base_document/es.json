@@ -171,5 +171,25 @@
         "cancel": "Cancelar"
       }
     }
+  },
+  "signature": {
+    "name": "Firma",
+    "for_role": "como {{ role }}",
+    "saving_pdf": "Guardando el PDF…",
+    "pdf_missing": "Falta el PDF — reintentar",
+    "placeholder": "se puede firmar cuando el informe se abre para un objeto."
+  },
+  "issued_document": {
+    "_self": "Documento emitido",
+    "name": "Nombre",
+    "title": "Documento",
+    "subjectType": "Tipo de objeto",
+    "subjectId": "Objeto",
+    "signedBy": "Firmado por",
+    "signedAt": "Firmado el",
+    "pdf": "PDF",
+    "locale": "Idioma",
+    "revision": "Revisión",
+    "documentId": "ID del documento"
   }
 }

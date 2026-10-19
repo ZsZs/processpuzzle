@@ -30,6 +30,9 @@ export const DOCUMENT_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.document`;
  */
 export const DOCUMENT_CONTENT_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.content`;
 
+/** Key root of the `IssuedDocument` entity name (`._self`) and of its attribute labels. */
+export const ISSUED_DOCUMENT_I18N_SCOPE = `${BASE_DOCUMENT_TRANSLOCO_SCOPE}.issued_document`;
+
 /** Label of the Sign tab, resolved like {@link DOCUMENT_CONTENT_I18N_KEY}. */
 export const DOCUMENT_SIGN_I18N_KEY = `${DOCUMENT_I18N_SCOPE}.tabs.sign`;
 

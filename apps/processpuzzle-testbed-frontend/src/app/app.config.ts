@@ -39,6 +39,7 @@ import {
   type DocumentAccessContext,
   provideContentBookWidget,
   provideEntityReportsTab,
+  provideSignatureWidget,
 } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
@@ -132,6 +133,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-document: the Reports tab, offered to every entity a report template reports on —
       // `Order` in this tenant, through the `order-invoice` sample.
       ...provideEntityReportsTab(),
+      // The `signature` widget a report template embeds to be signed; it needs a document's signing context, so
+      // base-document registers it rather than provideBaseWidgets().
+      ...provideSignatureWidget(),
       // Fills WIDGET_REGISTRY with the components behind the catalogue's keys. base-app's shell renders a
       // widget instance by looking its `type` up there, and provides nothing itself by design — which
       // component answers a key is the hosting application's decision, not the shell's.

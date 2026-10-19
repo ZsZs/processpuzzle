@@ -1,5 +1,7 @@
 package com.processpuzzle.document.domain;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +14,20 @@ import java.util.Optional;
 public interface DocumentSignatureRepository extends JpaRepository<DocumentSignature, String> {
 
     List<DocumentSignature> findByOrgKeyAndDocumentIdOrderBySignedAtDesc(String orgKey, String documentId);
+
+    Optional<DocumentSignature> findByOrgKeyAndIdAndDocumentId(String orgKey, String id, String documentId);
+
+    /** The issued documents: every signature of the tenant, newest first, each filter ignored when null. */
+    @Query("""
+            select s from DocumentSignature s
+            where s.orgKey = :orgKey
+              and (:documentId is null or s.documentId = :documentId)
+              and (:subjectType is null or s.subjectType = :subjectType)
+              and (:subjectId is null or s.subjectId = :subjectId)
+            order by s.signedAt desc, s.id""")
+    Page<DocumentSignature> findIssued(@Param("orgKey") String orgKey, @Param("documentId") String documentId,
+                                       @Param("subjectType") String subjectType, @Param("subjectId") String subjectId,
+                                       Pageable pageable);
 
     @SuppressWarnings("java:S107") // a derived query names every column it matches
     Optional<DocumentSignature> findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedBy(

@@ -501,3 +501,13 @@ documents:
                     - type: text
                       text: >-
                         Payment is due within 30 days. Please quote the invoice number with your payment.
+
+          # Where the invoice is signed: a Sign button, then a stamp, and the signed page is stored as a PDF
+          # (see the `signature` widget of base-document-frontend). Only a published report can be signed.
+          - id: signature
+            kind: WIDGET
+            placement: STANDALONE
+            type: signature
+            props:
+              label: Signed by
+              role: Order Manager

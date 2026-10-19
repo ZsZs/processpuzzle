@@ -8,6 +8,7 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BASE_DOCUMENT_ENTITY_FACADES, BASE_DOCUMENT_FACADE_PROVIDERS } from './base-document.providers';
 import { Document, DocumentInputPort, DocumentOutputPort } from './domain/base-document';
+import { ISSUED_DOCUMENT_ENTITY_NAME } from './domain/issued-document/issued-document';
 import { ContentBook } from './domain/content-book';
 import { CONTENT_BOOK_ENTITY_NAME, DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './domain/document-entity-names';
 
@@ -32,8 +33,8 @@ describe('BASE_DOCUMENT facade providers', () => {
 
   const descriptorOf = (entityName: string): BaseEntityDescriptor => injector.get(BASE_DOCUMENT_ENTITY_FACADES[entityName]).descriptor;
 
-  it('registers the routable document, the two embedded port lists below it and the content book', () => {
-    expect(Object.keys(BASE_DOCUMENT_ENTITY_FACADES)).toEqual([DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME, CONTENT_BOOK_ENTITY_NAME]);
+  it('registers the routable document, the two embedded port lists below it, the content book and the read-only issued documents', () => {
+    expect(Object.keys(BASE_DOCUMENT_ENTITY_FACADES)).toEqual([DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME, CONTENT_BOOK_ENTITY_NAME, ISSUED_DOCUMENT_ENTITY_NAME]);
     expect(BASE_DOCUMENT_FACADE_PROVIDERS).toHaveLength(Object.keys(BASE_DOCUMENT_ENTITY_FACADES).length);
   });
 
