@@ -144,5 +144,7 @@ With `base-calculation.loadDefaultTranslations=true` it seeds `default-translati
 - A result table is matched by reading every object of its entity once per run; fine for a result table, not for
   millions. (base-entity's RSQL filter is PostgreSQL jsonpath, so narrowing the read would leave the H2 tests behind.)
 - A calculated value reaches the caller that saved the object — base-entity answers a create or update with the
-  object as committed, after the calculation wrote — but not another user who has the object open.
+  object as committed, after the calculation wrote — but not another user who has the object open. That user's
+  form stays stale until reloaded; it is display-only, since a calculation write keeps the object's version and an
+  ordinary update keeps managed attributes as stored, so a later save by them cannot overwrite the value.
 - No DMN XML import/export, no browser-side evaluation (the designer previews through `evaluate`).
