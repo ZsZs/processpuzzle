@@ -32,6 +32,22 @@ export interface CalculationRunSummary {
   [key: string]: unknown;
 }
 
+/** The parts of a stored workflow the specs read; the rest is left as it comes. */
+export interface WorkflowDefinition {
+  id: string;
+  startEvents?: { id: string; name?: string; startType?: string; eventType?: string; timer?: { type?: string; expression?: string }; preconditionExpression?: string }[];
+  events?: {
+    id: string;
+    name?: string;
+    direction?: string;
+    eventDefinitionId?: string;
+    attachedTo?: string;
+    interrupting?: boolean;
+    timer?: { type?: string; expression?: string };
+  }[];
+  [key: string]: unknown;
+}
+
 export class PlatformApi {
   constructor(
     private readonly request: APIRequestContext,
@@ -102,5 +118,53 @@ export class PlatformApi {
   async deleteDocument(id: string): Promise<void> {
     const response = await this.request.delete(`${this.roots.backend}/documents/${encodeURIComponent(id)}`);
     expect([204, 404], `deleting document ${id}`).toContain(response.status());
+  }
+
+  /** Imports a SPEM YAML catalog (roles, tasks, workflows) in one all-or-nothing call. */
+  async importWorkflows(yaml: string): Promise<void> {
+    const response = await this.request.post(`${this.roots.backend}/workflows/import`, {
+      multipart: { file: { name: 'workflows.yaml', mimeType: 'application/x-yaml', buffer: Buffer.from(yaml) } },
+    });
+    expect(response.status(), `importing workflows: ${await response.text()}`).toBe(200);
+    expect((await response.json()).errors, 'import errors').toEqual([]);
+  }
+
+  /**
+   * What would stop or qualify a release right now, without releasing anything: a problem per definition, with
+   * `severity: 'error'` for the ones that block it.
+   */
+  async pendingProblems(): Promise<{ severity: string; kind: string; key: string; errorId: string; message: string }[]> {
+    const response = await this.request.get(`${this.roots.backend}/releases/pending`);
+    expect(response.ok(), `reading the pending release: ${response.status()}`).toBe(true);
+    return (await response.json()).problems ?? [];
+  }
+
+  /** A workflow definition as stored: its start events, events, tasks and roles. */
+  async workflow(id: string): Promise<WorkflowDefinition> {
+    const response = await this.request.get(`${this.roots.backend}/workflows/${encodeURIComponent(id)}`);
+    expect(response.ok(), `reading workflow ${id}: ${response.status()}`).toBe(true);
+    return (await response.json()) as WorkflowDefinition;
+  }
+
+  /** The saved modeler arrangement of a workflow, or `undefined` while it has never been arranged. */
+  async workflowLayout(workflowId: string): Promise<Record<string, unknown> | undefined> {
+    const response = await this.request.get(`${this.roots.backend}/workflow-diagrams/${encodeURIComponent(workflowId)}`);
+    if (response.status() === 404) return undefined;
+    expect(response.ok(), `reading the layout of ${workflowId}: ${response.status()}`).toBe(true);
+    return (await response.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * Removes definitions by collection and id, in the order given; absent ones are fine. Every one is attempted
+   * even when an earlier one is refused, so a single refusal does not leave the rest behind, and the failures are
+   * reported together at the end.
+   */
+  async deleteDefinitions(definitions: { collection: 'workflows' | 'tasks' | 'roles' | 'artifacts'; id: string }[]): Promise<void> {
+    const failures: string[] = [];
+    for (const { collection, id } of definitions) {
+      const response = await this.request.delete(`${this.roots.backend}/${collection}/${encodeURIComponent(id)}`);
+      if (![204, 404].includes(response.status())) failures.push(`${collection}/${id}: ${response.status()} ${await response.text()}`);
+    }
+    expect(failures, 'definitions that could not be deleted').toEqual([]);
   }
 }
