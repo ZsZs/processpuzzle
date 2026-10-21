@@ -1,7 +1,7 @@
 import { expect, Locator, Page, test } from '@playwright/test';
-import { randomUUID } from 'node:crypto';
 import { PlatformApi } from '../support/platform.api';
 import { serviceRoots } from '../support/race-sample.api';
+import { importOwnWorkflow, OwnWorkflow, removeOwnWorkflow } from '../support/workflow-fixtures';
 
 const MODELER = '/base-workflow/samples/workflow/order-fulfillment-workflow/modeler';
 
@@ -84,44 +84,15 @@ test.describe('Workflow modeler', () => {
     // The arrangement is saved per workflow and cannot be deleted through the API, so this runs on a workflow of its
     // own: the seeded one keeps its automatic layout for the specs above.
     let platform: PlatformApi;
-    let ids: { workflow: string; first: string; second: string; role: string };
+    let own: OwnWorkflow;
 
     test.beforeEach(async ({ request, baseURL }) => {
       platform = new PlatformApi(request, await serviceRoots(request, baseURL as string));
-      const run = randomUUID().slice(0, 8);
-      ids = { workflow: `e2e-wf-${run}`, first: `e2e-first-${run}`, second: `e2e-second-${run}`, role: `e2e-role-${run}` };
-      await platform.importWorkflows(`---
-role-definitions:
-- { id: "${ids.role}", name: "E2E Role ${run}", description: "e2e" }
-task-definitions:
-- id: "${ids.first}"
-  name: "First ${run}"
-  description: "first"
-  performedByRoles: ["${ids.role}"]
-  steps: [ { id: "s1", name: "Step", description: "d", stepType: "USER_STEP" } ]
-- id: "${ids.second}"
-  name: "Second ${run}"
-  description: "second"
-  performedByRoles: ["${ids.role}"]
-  steps: [ { id: "s1", name: "Step", description: "d", stepType: "USER_STEP" } ]
-workflows:
-- id: "${ids.workflow}"
-  name: "E2E Workflow ${run}"
-  description: "e2e"
-  roles: [ { roleDefinitionId: "${ids.role}" } ]
-  tasks:
-  - { taskDefinitionId: "${ids.first}", performedBy: "${ids.role}", joinType: "ALL" }
-  - { taskDefinitionId: "${ids.second}", performedBy: "${ids.role}", dependsOn: ["${ids.first}"], joinType: "ALL" }
-`);
+      own = await importOwnWorkflow(platform);
     });
 
     test.afterEach(async () => {
-      await platform.deleteDefinitions([
-        { collection: 'workflows', id: ids.workflow },
-        { collection: 'tasks', id: ids.first },
-        { collection: 'tasks', id: ids.second },
-        { collection: 'roles', id: ids.role },
-      ]);
+      await removeOwnWorkflow(platform, own);
     });
 
     const centre = async (locator: Locator) => {
@@ -161,7 +132,7 @@ workflows:
     };
 
     const openModeler = async (page: Page) => {
-      await page.goto(`/base-workflow/samples/workflow/${ids.workflow}/modeler`);
+      await page.goto(`/base-workflow/samples/workflow/${own.workflow}/modeler`);
       await expect(node(page, 'task')).toHaveCount(2, { timeout: DIAGRAM_TIMEOUT });
     };
 
@@ -178,7 +149,7 @@ workflows:
 
     test('a moved task stays where it was put after saving and reloading', async ({ page }) => {
       await openModeler(page);
-      expect(await platform.workflowLayout(ids.workflow), 'never arranged yet').toBeUndefined();
+      expect(await platform.workflowLayout(own.workflow), 'never arranged yet').toBeUndefined();
       const automatic = await settledOffset(page);
 
       await moveSecondTask(page);
@@ -186,7 +157,7 @@ workflows:
       expect(near(moved, automatic, DIFFERENT), `the drag moved the task: ${JSON.stringify(automatic)} -> ${JSON.stringify(moved)}`).toBe(false);
 
       await page.getByTestId('workflow-modeler-save').click();
-      await expect.poll(() => platform.workflowLayout(ids.workflow), { message: 'the layout is stored' }).toBeDefined();
+      await expect.poll(() => platform.workflowLayout(own.workflow), { message: 'the layout is stored' }).toBeDefined();
 
       await page.reload();
       await expect(node(page, 'task')).toHaveCount(2, { timeout: DIAGRAM_TIMEOUT });
@@ -207,7 +178,7 @@ workflows:
 
       const reloaded = await settledOffset(page);
       expect(near(reloaded, automatic, SAME), `after reload ${JSON.stringify(reloaded)}, automatic ${JSON.stringify(automatic)}`).toBe(true);
-      expect(await platform.workflowLayout(ids.workflow)).toBeUndefined();
+      expect(await platform.workflowLayout(own.workflow)).toBeUndefined();
     });
   });
 });
