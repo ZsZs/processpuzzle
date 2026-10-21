@@ -5,7 +5,7 @@ import { CurrentUserContext } from '../../domain/dashboard/current-user.context'
 import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboard.store';
 import { WORKFLOW_INSTANCE_DTO } from '../../domain/execution/test-workflow-instance';
 import { TaskListComponent } from './task-list.component';
-import { APPROVE_SHIPMENT_TASK_ID, DASHBOARD_SERVICE_ROOT, flushDashboardCatalogs, provideDashboardTesting, required, REVIEW_ORDER_TASK_ID, RUN_ID } from './test-dashboard';
+import { APPROVE_SHIPMENT_TASK_ID, DASHBOARD_SERVICE_ROOT, flushDashboardCatalogs, openRunsRead, provideDashboardTesting, required, REVIEW_ORDER_TASK_ID, RUN_ID } from './test-dashboard';
 
 describe('TaskListComponent', () => {
   let fixture: ComponentFixture<TaskListComponent>;
@@ -62,9 +62,9 @@ describe('TaskListComponent', () => {
     store.setScope('process');
     store.selectInstance(RUN_ID);
     store.reload();
-    controller
-      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`)
-      .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'BLOCKED', blockedReason: 'positive-quantities: line item 3 has quantity 0' }] }] });
+    openRunsRead(controller).flush({
+      content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'BLOCKED', blockedReason: 'positive-quantities: line item 3 has quantity 0' }] }],
+    });
 
     expect(render().querySelector('[data-testid^="task-blocked-"]')?.textContent?.trim()).toBe('positive-quantities: line item 3 has quantity 0');
   });
@@ -73,7 +73,7 @@ describe('TaskListComponent', () => {
     beforeEach(() => {
       store.setScope('team');
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[1], assignedTo: undefined }] }] });
+      openRunsRead(controller).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[1], assignedTo: undefined }] }] });
     });
 
     // On the row, not only in the detail pane: the Team queue is a list of things to pick up, and making
@@ -98,7 +98,7 @@ describe('TaskListComponent', () => {
       store.setScope('process');
       store.selectInstance(RUN_ID);
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[1]] }] });
+      openRunsRead(controller).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[1]] }] });
 
       const host = render();
       expect(host.querySelector(`[data-testid="task-row-${APPROVE_SHIPMENT_TASK_ID}"]`)).not.toBeNull();
@@ -110,7 +110,7 @@ describe('TaskListComponent', () => {
       store.setScope('process');
       store.selectInstance(RUN_ID);
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[2]] }] });
+      openRunsRead(controller).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[2]] }] });
 
       expect(render().querySelector('[data-testid^="claim-task-"]')).toBeNull();
     });
@@ -131,7 +131,7 @@ describe('TaskListComponent', () => {
 
     it('reports a failed read instead of an empty queue', () => {
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ errorId: 'boom' }, { status: 500, statusText: 'Server Error' });
+      openRunsRead(controller).flush({ errorId: 'boom' }, { status: 500, statusText: 'Server Error' });
 
       const host = render();
       expect(host.querySelector('[data-testid="task-list-error"]')?.textContent?.trim()).toBe('The runs could not be loaded.');

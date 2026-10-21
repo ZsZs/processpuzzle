@@ -2,6 +2,7 @@ import { expect, Page, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { E2eUser, USER_FILE } from '../support/auth.paths';
+import { OrderRun } from '../support/order-run';
 import { PlatformApi, TaskInstanceSummary } from '../support/platform.api';
 import { EntityApi, ServiceRoots, serviceRoots } from '../support/race-sample.api';
 
@@ -156,5 +157,26 @@ test.describe('Task dashboard @auth', () => {
     await expect(page.getByTestId('board-column-ACTIVE').getByTestId(`board-card-${tasks.review.id}`)).toBeVisible();
     await expect(page.getByTestId('board-column-PENDING').getByTestId(`board-card-${tasks.approve.id}`)).toBeVisible();
     await expect(page.getByTestId('board-column-PENDING').getByTestId(`board-card-${tasks.deliver.id}`)).toBeVisible();
+  });
+
+  // The dashboard works on the runs in progress. A finished run is history: it is not offered, and it does not take
+  // the place of a running one (the dashboard once read the first page of every run there had ever been).
+  test('a finished run is not offered, a run in progress is', async ({ page }) => {
+    const finished = await OrderRun.start(entities, platform);
+    await finished.throughShipmentApproval();
+    await expect.poll(() => finished.otherRun('invoicing-workflow'), { message: 'the invoicing run' }).toBeDefined();
+    const invoicing = await finished.otherRun('invoicing-workflow');
+    await finished.work('issue-invoice', { invoiceNumber: 'INV-E2E-DONE' }, invoicing?.id);
+    await expect.poll(() => finished.taskStatus('confirm-delivery')).toBe('ACTIVE');
+    await finished.transition('deliver');
+    await finished.work('confirm-delivery');
+    await expect.poll(async () => (await finished.state()).status).toBe('COMPLETED');
+
+    await page.goto(DASHBOARD);
+    await page.getByTestId('dashboard-scope-process').click();
+    const picker = page.getByTestId('dashboard-run');
+
+    await expect(picker.locator(`option[value="${runId}"]`)).toHaveCount(1, { timeout: 20_000 });
+    await expect(picker.locator(`option[value="${finished.runId}"]`)).toHaveCount(0);
   });
 });
