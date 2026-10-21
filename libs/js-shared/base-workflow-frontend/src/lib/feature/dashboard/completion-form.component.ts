@@ -54,7 +54,7 @@ interface ContextRow {
       }
 
       <fieldset class="form__context">
-        <legend class="form__legend">{{ noteKey | transloco }}</legend>
+        <legend class="form__legend">{{ contextKey | transloco }}</legend>
         @for (row of rows(); track $index; let index = $index) {
           <div class="form__row">
             <input
@@ -63,7 +63,7 @@ interface ContextRow {
               [value]="row.key"
               [disabled]="isBusy()"
               [attr.data-testid]="'context-key-' + index"
-              [attr.aria-label]="(noteKey | transloco) + ' — key ' + (index + 1)"
+              [attr.aria-label]="(contextKey | transloco) + ' — key ' + (index + 1)"
               (input)="setKey(index, $event)"
             />
             <input
@@ -72,7 +72,7 @@ interface ContextRow {
               [value]="row.value"
               [disabled]="isBusy()"
               [attr.data-testid]="'context-value-' + index"
-              [attr.aria-label]="(noteKey | transloco) + ' — value ' + (index + 1)"
+              [attr.aria-label]="(contextKey | transloco) + ' — value ' + (index + 1)"
               (input)="setValue(index, $event)"
             />
           </div>
@@ -205,7 +205,7 @@ export class CompletionFormComponent {
   readonly completeRequested = output<PropertyMap | undefined>();
   readonly skipRequested = output<string | undefined>();
 
-  protected readonly noteKey = `${TASK_DASHBOARD_I18N_SCOPE}.note`;
+  protected readonly contextKey = `${TASK_DASHBOARD_I18N_SCOPE}.context_variables`;
   protected readonly completeKey = `${TASK_DASHBOARD_I18N_SCOPE}.complete`;
   protected readonly skipKey = `${TASK_DASHBOARD_I18N_SCOPE}.skip`;
   protected readonly skipReasonKey = `${TASK_DASHBOARD_I18N_SCOPE}.skip_reason`;
