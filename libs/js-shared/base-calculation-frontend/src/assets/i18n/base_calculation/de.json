@@ -75,5 +75,9 @@
     "freeze": "Einfrieren",
     "frozenAt": "Eingefroren am {{at}}",
     "source": "Definition beim Lauf"
+  },
+  "calculated_control": {
+    "badge": "Berechnet durch {{calculation}}",
+    "error": "Neuberechnung nicht möglich; der letzte Wert wird angezeigt."
   }
 }

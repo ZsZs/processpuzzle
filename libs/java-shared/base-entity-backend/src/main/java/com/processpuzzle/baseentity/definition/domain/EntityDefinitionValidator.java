@@ -62,6 +62,21 @@ public class EntityDefinitionValidator {
         validateComments(attribute, violations);
         validateAddress(attribute, violations);
         validateGeoLocation(attribute, violations);
+        validateCalculated(attribute, violations);
+    }
+
+    /** A calculated value is one scalar the calculation writes; the form never edits it. */
+    private void validateCalculated(BaseEntityAttribute attribute, List<Violation> violations) {
+        if (attribute.getFormControlType() != FormControlType.CALCULATED) {
+            return;
+        }
+        boolean scalar = attribute.getValueKind() == ValueKind.NUMBER || attribute.getValueKind() == ValueKind.TEXT
+            || attribute.getValueKind() == ValueKind.DATE || attribute.getValueKind() == ValueKind.BOOLEAN;
+        if (!scalar || attribute.isMultiValued()
+            || (attribute.getLinkedEntityType() != null && !attribute.getLinkedEntityType().isBlank())) {
+            violations.add(new Violation(attribute.getCode(),
+                "CALCULATED attributes must declare valueKind NUMBER, TEXT, DATE or BOOLEAN, a single value and no linkedEntityType"));
+        }
     }
 
     /** A geolocation is one structured value owned by the record, like an address. */

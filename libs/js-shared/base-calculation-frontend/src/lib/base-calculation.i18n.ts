@@ -23,6 +23,9 @@ export const CALCULATION_TABLES_I18N_SCOPE = `${BASE_CALCULATION_TRANSLOCO_SCOPE
 export const CALCULATION_EVALUATE_I18N_SCOPE = `${BASE_CALCULATION_TRANSLOCO_SCOPE}.evaluate`;
 export const CALCULATION_RUNS_I18N_SCOPE = `${BASE_CALCULATION_TRANSLOCO_SCOPE}.runs`;
 
+/** Key root of the CALCULATED form control's texts. */
+export const CALCULATED_CONTROL_I18N_SCOPE = `${BASE_CALCULATION_TRANSLOCO_SCOPE}.calculated_control`;
+
 /**
  * Where this library's transloco bundles come from when the application ships without its assets: base-calculation
  * serves `/organizations/{orgKey}/calculation/translations/{scope}/{locale}`. It seeds the names of the tenant's

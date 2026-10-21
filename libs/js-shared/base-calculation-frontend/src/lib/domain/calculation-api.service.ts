@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { Observable } from 'rxjs';
-import type { CalculationRun, EvaluationResult, Revision, TraceEntry, ValidationReport } from './calculation-api';
+import type { CalculationOutput, CalculationRun, EvaluationResult, Revision, TraceEntry, ValidationReport } from './calculation-api';
 
 /**
  * The calculation verbs the generic CRUD cannot express: validate a source, evaluate, run, and read and freeze
@@ -25,9 +25,21 @@ export class CalculationApiService {
    * `POST /calculations/{id}/evaluate` — computes and stores nothing.
    *
    * @param source an unsaved source to evaluate instead of the stored draft — the editor's preview
+   * @param unsaved unsaved objects by entity parameter name, read instead of the stored ones — what a form shows
    */
-  evaluate(calculationId: string, parameters: Record<string, unknown>, revision: Revision = 'draft', source?: string): Observable<EvaluationResult> {
-    return this.http.post<EvaluationResult>(`${this.calculationUrl(calculationId)}/evaluate`, { parameters, revision, source }, { headers: this.headers });
+  evaluate(
+    calculationId: string,
+    parameters: Record<string, unknown>,
+    revision: Revision = 'draft',
+    source?: string,
+    unsaved?: Record<string, Record<string, unknown>>,
+  ): Observable<EvaluationResult> {
+    return this.http.post<EvaluationResult>(`${this.calculationUrl(calculationId)}/evaluate`, { parameters, revision, source, unsaved }, { headers: this.headers });
+  }
+
+  /** `GET /calculation-outputs?entity=` — the attributes of an entity that released calculations write. */
+  outputs(entityCode: string): Observable<CalculationOutput[]> {
+    return this.http.get<CalculationOutput[]>(`${this.serviceRoot}/calculation-outputs`, { params: { entity: entityCode } });
   }
 
   /** `POST /calculations/{id}/runs` — computes, writes the output and keeps the run. */
