@@ -406,7 +406,7 @@
       "artifacts_none": "Cette tâche ne déclare aucun artéfact.",
       "not_created": "pas encore créé",
       "required_state": "requis : {{state}}",
-      "note": "Notes (ajoutées au contexte du flux de travail)",
+      "context_variables": "Variables de contexte (ajoutées au contexte du flux de travail)",
       "complete": "Terminer la tâche",
       "complete_blocked": "Cochez chaque étape et amenez chaque sortie dans l’état requis pour terminer la tâche.",
       "skip": "Ignorer",

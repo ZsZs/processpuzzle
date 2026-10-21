@@ -406,7 +406,7 @@
       "artifacts_none": "Diese Aufgabe deklariert keine Artefakte.",
       "not_created": "noch nicht erstellt",
       "required_state": "erforderlich: {{state}}",
-      "note": "Notizen (werden dem Workflow-Kontext hinzugefügt)",
+      "context_variables": "Kontextvariablen (werden dem Workflow-Kontext hinzugefügt)",
       "complete": "Aufgabe abschließen",
       "complete_blocked": "Haken Sie jeden Schritt ab und bringen Sie jedes Ergebnis in den erforderlichen Zustand, um die Aufgabe abzuschließen.",
       "skip": "Überspringen",
