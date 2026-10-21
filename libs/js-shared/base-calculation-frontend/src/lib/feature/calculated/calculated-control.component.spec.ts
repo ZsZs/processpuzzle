@@ -33,7 +33,7 @@ describe('CalculatedControlComponent', () => {
   const value = () => (fixture.nativeElement.querySelector('[data-testid="calculated-control-value"]') as HTMLInputElement).value;
   const error = () => fixture.nativeElement.querySelector('[data-testid="calculated-control-error"]') as HTMLElement | null;
 
-  async function render(options: { output?: CalculationOutput | undefined; entity?: Order; evaluation?: () => Observable<EvaluationResult> } = {}) {
+  async function render(options: { output?: CalculationOutput; entity?: Order; evaluation?: () => Observable<EvaluationResult> } = {}) {
     const entity: Order = options.entity ?? { id: 'o-1', orderNumber: 'ORD-1', total: 10 };
     const found = 'output' in options ? options.output : output;
     evaluate = vi.fn(options.evaluation ?? (() => of({ values: { total: 42 } })));
