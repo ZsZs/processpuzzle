@@ -66,7 +66,8 @@ class SelfServiceRolesTest {
         properties.setEnabled(false);
 
         assertThatThrownBy(() -> find.execute(ORG_KEY)).isInstanceOf(SelfServiceRolesDisabledException.class);
-        assertThatThrownBy(() -> replace.execute(ORG_KEY, List.of("documentation-editor")))
+        List<String> requested = List.of("documentation-editor");
+        assertThatThrownBy(() -> replace.execute(ORG_KEY, requested))
                 .isInstanceOf(SelfServiceRolesDisabledException.class);
         verify(directory, never()).replaceRoles(anyString(), anyString(), anyList());
     }
@@ -82,14 +83,16 @@ class SelfServiceRolesTest {
 
     @Test
     void requestingAPrivilegedRoleIsRefusedAndWritesNothing() {
-        assertThatThrownBy(() -> replace.execute(ORG_KEY, List.of("documentation-editor", "platform-admin")))
+        List<String> requested = List.of("documentation-editor", "platform-admin");
+        assertThatThrownBy(() -> replace.execute(ORG_KEY, requested))
                 .isInstanceOf(UnknownRoleException.class);
         verify(directory, never()).replaceRoles(anyString(), anyString(), anyList());
     }
 
     @Test
     void anUnknownRoleIsRefused() {
-        assertThatThrownBy(() -> replace.execute(ORG_KEY, List.of("typo")))
+        List<String> requested = List.of("typo");
+        assertThatThrownBy(() -> replace.execute(ORG_KEY, requested))
                 .isInstanceOf(UnknownRoleException.class);
     }
 

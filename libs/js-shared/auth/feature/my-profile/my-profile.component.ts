@@ -1,4 +1,4 @@
-import { Component, computed, DOCUMENT, inject, signal } from '@angular/core';
+import { Component, computed, DOCUMENT, inject, OnInit, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardActions, MatCardContent, MatCardHeader, MatCardTitle } from '@angular/material/card';
@@ -43,7 +43,7 @@ interface DisplayedRole {
   imports: [MatCard, MatCardHeader, MatCardTitle, MatCardContent, MatCardActions, MatFormField, MatLabel, MatInput, MatChip, MatCheckbox, MatButton, MatIcon, TranslocoDirective],
   providers: [provideTranslocoScope('auth')],
 })
-export class MyProfileComponent {
+export class MyProfileComponent implements OnInit {
   private readonly authService = inject(AUTHENTICATION_SERVICE);
   private readonly document = inject(DOCUMENT);
   private readonly selfService = inject(SelfServiceRolesService);
@@ -67,7 +67,7 @@ export class MyProfileComponent {
   });
   readonly accountManagementUrl = computed(() => (this.user() ? this.authService.getAccountManagementUrl(this.document.location.href) : undefined));
 
-  constructor() {
+  ngOnInit(): void {
     if (this.selfService.available) void this.loadSelectableRoles();
   }
 
