@@ -15,6 +15,7 @@ import { BaseDocumentService } from '../../domain/base-document.service';
 import { ContentBook, ContentBookNode } from '../../domain/content-book';
 import { ContentBookService } from '../../domain/content-book.service';
 import { DOCUMENT_ACCESS_CONTEXT } from '../../domain/document-access-context';
+import { PDF_RENDERER } from '../report/report-pdf';
 import { ContentBookDocumentViewComponent } from './content-book-document-view.component';
 import { ContentBookWidgetComponent, documentScreensUrl } from './content-book-widget.component';
 
@@ -42,6 +43,7 @@ interface WidgetInternals {
   effectiveLocale(): string;
   publishPage(): Promise<void>;
   archivePage(): Promise<void>;
+  exportPdf(): Promise<void>;
   openProperties(): void;
   showUnpublished: { (): boolean; set(value: boolean): void };
   treeNodes(): { id: string; icon?: string }[];
@@ -73,6 +75,7 @@ describe('ContentBookWidgetComponent', () => {
   let routeOverride: unknown;
   let navigateToUrl: ReturnType<typeof vi.fn>;
   let small: ReturnType<typeof signal<boolean>>;
+  let renderPdf: ReturnType<typeof vi.fn>;
 
   const byTestId = (id: string): HTMLElement | null => fixture.nativeElement.querySelector(`[data-testid="${id}"]`);
   const component = (): WidgetInternals => fixture.componentInstance as unknown as WidgetInternals;
@@ -101,6 +104,7 @@ describe('ContentBookWidgetComponent', () => {
   beforeEach(() => {
     queryParams = {};
     small = signal(false);
+    renderPdf = vi.fn().mockResolvedValue(new Blob(['pdf']));
     withoutRouter = false;
     routeOverride = undefined;
     navigateToUrl = vi.fn();
@@ -124,6 +128,7 @@ describe('ContentBookWidgetComponent', () => {
         { provide: Router, useFactory: () => (withoutRouter ? null : router) },
         { provide: ActivatedRoute, useFactory: () => (withoutRouter ? null : (routeOverride ?? { snapshot: { queryParamMap: convertToParamMap(queryParams) } })) },
         { provide: BaseFormNavigatorSingletonStore, useFactory: () => ({ navigateToUrl }) },
+        { provide: PDF_RENDERER, useValue: renderPdf },
         { provide: LayoutService, useValue: { isSmallDevice: small } },
         { provide: DOCUMENT_ACCESS_CONTEXT, useFactory: () => ({ roles }) },
       ],
@@ -397,6 +402,30 @@ describe('ContentBookWidgetComponent', () => {
     await clickMenuItem('n-notes', 'content-book-delete-document');
 
     expect(documentService.delete).toHaveBeenCalledWith('d-notes');
+  });
+
+  it('downloads the open page as a PDF named after the book and the document', async () => {
+    await render();
+    const createObjectURL = vi.fn(() => 'blob:page');
+    const revokeObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+
+    await component().exportPdf();
+
+    expect(renderPdf).toHaveBeenCalledWith(byTestId('content-book-page'));
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:page');
+    click.mockRestore();
+  });
+
+  it('exports nothing without an open page', async () => {
+    bookService.findBySlug.mockResolvedValue(undefined);
+    await render();
+
+    await component().exportPdf();
+
+    expect(renderPdf).not.toHaveBeenCalled();
   });
 
   it('does nothing without a loaded book', async () => {
