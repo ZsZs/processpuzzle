@@ -17,7 +17,7 @@ status=0
 mapfile -t js < <(changed '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs')
 if [ ${#js[@]} -gt 0 ]; then
   echo "pre-push: ESLint (Sonar rules) on ${#js[@]} changed file(s)"
-  npx eslint --no-warn-ignored "${js[@]}" || status=1
+  npx eslint -c eslint.sonar.config.mjs --no-warn-ignored "${js[@]}" || status=1
 fi
 
 mapfile -t java < <(changed '*.java')

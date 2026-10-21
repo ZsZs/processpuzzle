@@ -34,4 +34,4 @@ Processpuzzle is a metadata driven application framework. It's core goal to faci
 <!-- nx configuration end-->
 
 # Before pushing
-A Husky `pre-push` hook (`tools/scripts/pre-push-check.sh`) lints the branch's changed files with the Sonar-aligned ESLint rules (`eslint-plugin-sonarjs`) and runs Checkstyle and PMD (cognitive complexity, `tools/pmd-ruleset.xml`) on touched Maven modules. Fix its findings instead of bypassing it; run `bash tools/scripts/pre-push-check.sh` to check early. Run `npm install --legacy-peer-deps` once so Husky activates.
+A Husky `pre-push` hook (`tools/scripts/pre-push-check.sh`) lints the branch's changed files with the Sonar-aligned ESLint rules (`eslint.sonar.config.mjs`, `eslint-plugin-sonarjs`; not part of `nx lint`) and runs Checkstyle and PMD (cognitive complexity, `tools/pmd-ruleset.xml`) on touched Maven modules. Fix its findings instead of bypassing it; run `bash tools/scripts/pre-push-check.sh` to check early. Run `npm install --legacy-peer-deps` once so Husky activates.
