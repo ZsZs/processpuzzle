@@ -28,6 +28,7 @@ export interface WorkflowInstanceSummary {
 export interface SignatureSummary {
   id: string;
   signedBy: string;
+  signedById?: string | null;
   signedAt: string;
   subjectType: string;
   subjectId: string;
