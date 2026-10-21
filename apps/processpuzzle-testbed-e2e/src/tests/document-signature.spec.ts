@@ -157,11 +157,13 @@ test.describe('Document signature @auth', () => {
     const [signature] = await signaturesOfOrder();
     expect(signature.signedBy).toBe(user.displayName);
 
-    // The tab lists the signature on the next visit. It does not recognise it as the user's own, so it offers the
-    // box and the button again; signing a second time is harmless, because the server answers the first signature.
+    expect(signature.signedById).toBeTruthy();
+
+    // On the next visit the tab lists the signature and knows it is the user's own: it says so and offers no button.
     await page.goto(signTab);
     await expect(page.getByTestId(`document-signature-${signature.id}`)).toBeVisible();
-    await sign();
+    await expect(page.getByTestId('document-signed')).toBeVisible();
+    await expect(page.getByTestId('document-sign-button')).toHaveCount(0);
     expect((await signaturesOfOrder()).map((each) => each.id)).toEqual([signature.id]);
   });
 

@@ -401,6 +401,7 @@ class DocumentEndpointTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody().getDocumentId()).isEqualTo(DOCUMENT_ID);
         assertThat(response.getBody().getSignedBy()).isEqualTo("Ada");
+        assertThat(response.getBody().getSignedById()).isEqualTo("kc-ada");
         assertThat(response.getBody().getRevision()).isEqualTo(3L);
     }
 
@@ -456,7 +457,7 @@ class DocumentEndpointTest {
     // region fixtures
     private static DocumentSignature signature() {
         return new DocumentSignature("22222222-2222-2222-2222-222222222222", ORG, ID, "Getting started", "en", 3L,
-                "abc", "employee", "e-1", "Ada", Instant.parse("2026-10-17T10:00:00Z"));
+                "abc", "employee", "e-1", "Ada", "kc-ada", Instant.parse("2026-10-17T10:00:00Z"));
     }
 
     private static Document document() {
