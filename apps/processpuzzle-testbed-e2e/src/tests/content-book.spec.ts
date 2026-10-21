@@ -42,6 +42,7 @@ async function openHandbookContent(page: Page): Promise<void> {
   await page.goto(LIST_PATH);
   // The slug is a `link-to-details` anchor without an href, which has no `link` role — so it is found by class.
   await page.locator('a.link-to-details').filter({ hasText: new RegExp(`^\\s*${HANDBOOK_SLUG}\\s*$`) }).click();
-  await page.locator('a[mat-tab-link]').filter({ hasText: /^\s*Content\s*$/ }).click();
+  // The tab bar names each tab after the entity: "Content book - content".
+  await page.getByRole('tab', { name: /content book - content/i }).click();
   await expect(page.getByTestId('content-book-toolbar')).toBeVisible();
 }
