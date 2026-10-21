@@ -25,6 +25,8 @@ export interface EntityTabDescriptor {
   i18nKey: string;
   /** Component the route mounts. */
   component: Type<unknown>;
+  /** Leaves out the entity status bar (breadcrumb) while this tab is open — for a tab that brings a header of its own. */
+  hideStatusbar?: boolean;
   /** Suffix for the link's `data-testid`; defaults to `show-<segment>`. */
   testIdSuffix?: string;
   /**

@@ -22,7 +22,7 @@ export {
 } from './lib/base-entity/multiplicity';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
 export { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
-export type { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
+export { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
 export { ComponentsListComponent } from './lib/base-form/components/components-list.component';
 export { EmbeddedComponentsListComponent } from './lib/base-form/embedded-components/embedded-components-list.component';
 export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-components/embedded-component-ref.component';

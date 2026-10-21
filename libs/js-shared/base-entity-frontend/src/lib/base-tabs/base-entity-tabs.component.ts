@@ -42,7 +42,9 @@ import { translateLabel } from '../i18n/entity-label.pipe';
     </nav>
 
     <mat-tab-nav-panel #tabPanel>
-      <base-entity-statusbar [entityDescriptor]="entityDescriptor()" />
+      @if (!hidesStatusbar()) {
+        <base-entity-statusbar [entityDescriptor]="entityDescriptor()" />
+      }
       <base-entity-toolbar [entityDescriptor]="entityDescriptor()" />
       <router-outlet [routerOutletData]="entityDescriptor()" />
     </mat-tab-nav-panel>
@@ -54,6 +56,7 @@ export class BaseEntityTabsComponent implements OnDestroy, OnInit {
   selectedEntityId: Signal<string | undefined> = computed(() => (this.store.currentId() ? this.store.currentId() : BaseUrlSegments.NewEntity));
   detailsTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - details');
   listTabName: Signal<string> = computed(() => this.entityDescriptor().entityName + ' - list');
+  protected readonly hidesStatusbar = computed(() => this.entityDescriptor().extraTabs.some((tab) => tab.hideStatusbar && this.store?.currentTab() === this.tabName(tab)));
   protected readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly transloco = inject(TranslocoService);
 

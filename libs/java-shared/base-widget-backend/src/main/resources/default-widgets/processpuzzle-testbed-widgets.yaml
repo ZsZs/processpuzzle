@@ -198,6 +198,34 @@ widgetDefinitions:
       type: ENTITY_COLLECTION
       required: false
       description: The objects to list, one row each.
+  - key: entity-form
+    name: Entity form
+    translocoId: base_widget.entity_form.name
+    description: The generated form of one object, laid out by its entity type and shown in place — without Save, Cancel or Delete.
+    category: Data
+    icon: article
+    propsSchema:
+      type: object
+      properties:
+        entityName:
+          type: string
+          title: Entity name
+          description: The entity type whose form lays the object out.
+        readOnly:
+          type: boolean
+          title: Read only
+          description: "Disable every control. On by default: the widget never saves."
+          default: true
+        entity:
+          type: object
+          title: Entity
+          description: The object to show. Usually bound to a port rather than typed in.
+      additionalProperties: false
+    inputPorts:
+      - name: entity
+        type: ENTITY_REF
+        required: false
+        description: The object to show.
   - key: image-zoom
     name: Image zoom
     translocoId: base_widget.image_zoom.name

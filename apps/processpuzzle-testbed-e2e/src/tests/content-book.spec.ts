@@ -1,53 +1,46 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * The `content-book` widget on the testbed's handbook page, which no generated suite reaches: the CRUD suites
- * drive the ContentBook list and form, but the tree, the sidenav takeover and the page it opens are a widget's
- * behaviour rather than anything a descriptor declares.
+ * The `content-book` widget on the Content tab of the seeded handbook, which no generated suite reaches: the
+ * CRUD suites drive the ContentBook list and form, but the tree, the toolbar and the page it opens are a
+ * widget's behaviour rather than anything a descriptor declares.
  *
  * Read-only on purpose. The handbook is a seeded, create-only book (SampleContentBookLoader never touches it
  * again), so a test that rearranged its tree would leave every later run looking at a different book.
  */
-const HANDBOOK_PATH = '/base-document/samples/handbook';
+const LIST_PATH = '/base-document/samples/content-book/list';
+const HANDBOOK_SLUG = 'testbed-handbook';
 const HANDBOOK_TITLE = 'Testbed Handbook';
 const OVERVIEW_TITLE = 'ProcessPuzzle Platform Overview';
 const OVERVIEW_SLUG = 'platform-overview';
 
-test.describe('[ContentBook] HANDBOOK', () => {
-  test('shows the book in the sidenav and opens a page from it', async ({ page }) => {
-    await openHandbook(page);
+test.describe('[ContentBook] CONTENT', () => {
+  test('opens the book from the slug in the list and shows its toolbar instead of the status bar', async ({ page }) => {
+    await openHandbookContent(page);
 
-    await expect(page.getByTestId('sidenav-content-title')).toHaveText(HANDBOOK_TITLE);
-    const tree = page.getByTestId('sidenav-content-body');
-    await expect(tree.locator('[data-testid^="tree-nav-node-"]').first()).toBeVisible();
-
-    // Each node has two buttons named after the page: the expander and the label that selects it.
-    await tree.locator('button.pp-tree-nav__label').filter({ hasText: OVERVIEW_TITLE }).click();
-
-    // The slug in the URL is what makes a page shareable; the view below it is what the reader came for.
-    await expect(page).toHaveURL(new RegExp(`[?&]doc=${OVERVIEW_SLUG}(&|$)`));
-    await expect(page.getByTestId('content-book-page').locator('pp-content-book-document-view')).toBeVisible();
+    const toolbar = page.getByTestId('content-book-toolbar');
+    await expect(toolbar).toContainText(HANDBOOK_TITLE);
+    await expect(page.locator('base-entity-statusbar mat-toolbar')).toHaveCount(0);
+    for (const testId of ['content-book-page-edit', 'content-book-delete', 'content-book-add-before', 'content-book-add-after', 'content-book-pdf']) {
+      await expect(toolbar.getByTestId(testId)).toBeVisible();
+    }
   });
 
-  test('gives the sidenav back to the menu and takes it again', async ({ page }) => {
-    await openHandbook(page);
-    const toggle = page.getByTestId('sidenav-content-toggle');
-    const tree = page.getByTestId('sidenav-content-body');
+  test('stays on the Content tab while navigating the tree', async ({ page }) => {
+    await openHandbookContent(page);
 
-    await expect(tree).toBeVisible();
-    await expect(page.locator('app-sidenav')).toHaveCount(0);
+    await page.locator('button.pp-tree-nav__label').filter({ hasText: OVERVIEW_TITLE }).click();
 
-    await toggle.click();
-    await expect(tree).toHaveCount(0);
-    await expect(page.locator('app-sidenav')).toBeVisible();
-
-    await toggle.click();
-    await expect(tree).toBeVisible();
-    await expect(page.locator('app-sidenav')).toHaveCount(0);
+    // The slug in the URL is what makes a page shareable; the URL staying on `content` is the tab staying put.
+    await expect(page).toHaveURL(new RegExp(`/content\\?(.*&)?doc=${OVERVIEW_SLUG}(&|$)`));
+    await expect(page.getByTestId('content-book-page').locator('pp-content-book-document-view')).toBeVisible();
+    await expect(page.getByTestId('content-book-toolbar')).toBeVisible();
   });
 });
 
-async function openHandbook(page: Page): Promise<void> {
-  await page.goto(HANDBOOK_PATH);
-  await expect(page.getByTestId('sidenav-content-toggle')).toBeVisible();
+async function openHandbookContent(page: Page): Promise<void> {
+  await page.goto(LIST_PATH);
+  await page.getByRole('link', { name: HANDBOOK_SLUG, exact: true }).click();
+  await page.locator('a[mat-tab-link]').filter({ hasText: /^\s*Content\s*$/ }).click();
+  await expect(page.getByTestId('content-book-toolbar')).toBeVisible();
 }

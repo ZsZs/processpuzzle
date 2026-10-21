@@ -12,6 +12,7 @@ export {
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
+  ENTITY_FORM_WIDGET,
   ENTITY_TABLE_WIDGET,
   IMAGE_ZOOM_WIDGET,
   LANGUAGE_SELECTOR_WIDGET,
@@ -32,6 +33,7 @@ export {
   provideCardsGridWidget,
   provideCopyrightWidget,
   provideDesignButtonWidget,
+  provideEntityFormWidget,
   provideEntityTableWidget,
   provideImageZoomWidget,
   provideLanguageSelectorWidget,
@@ -49,6 +51,7 @@ export {
 } from './base-widget.providers';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
 export { CopyrightComponent } from './copyright/copyright.component';
+export { EntityFormComponent } from './entity-form/entity-form.component';
 export { EntityTableComponent } from './entity-table/entity-table.component';
 export type { EntityTableColumn, EntityTableTotal } from './entity-table/entity-table.component';
 export { formatValue, VALUE_FORMATS, valueAtPath } from './value-format/value-format';

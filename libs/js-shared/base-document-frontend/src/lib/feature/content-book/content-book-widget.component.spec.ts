@@ -385,9 +385,7 @@ describe('ContentBookWidgetComponent', () => {
     await clickMenuItem('n-overview', 'content-book-add-child');
     expect((bookService.replaceNodes.mock.calls[0][1] as ContentBookNode[]).find((node) => node.documentId === 'd-new')?.parentId).toBe('n-overview');
 
-    byTestId('content-book-add-document')?.click();
-    fixture.detectChanges();
-    (globalThis.document.querySelector('[data-testid="content-book-add-after"]') as HTMLButtonElement).click();
+    byTestId('content-book-add-after')?.click();
     await flush();
     expect(dialog.open).toHaveBeenCalledTimes(2);
   });

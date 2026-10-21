@@ -84,6 +84,11 @@ function levelUpUrl(currentUrl: string): string {
   return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
 }
 
+/** The URL without its query string and fragment: a page-addressing `?doc=…` must not hide the last segment. */
+function pathOf(url: string): string {
+  return url.split(/[?#]/)[0];
+}
+
 /**
  * Whether the URL's last segment is exactly `segment`, anchored on the preceding `/`.
  *
@@ -159,7 +164,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
 
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
-      const currentUrl = Reflect.get(route, '_routerState').snapshot.url;
+      const currentUrl = determineCurrentUrl();
       const tabSegment = findTabSegment(currentUrl, store.tabSegments());
       // A list or details form the URL *ends* on wins over a tab it merely passes through: those two are the
       // innermost screen wherever they appear, including inside a container tab.
@@ -242,7 +247,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     }
 
     function determineCurrentUrl(): string {
-      return Reflect.get(route, '_routerState').snapshot.url;
+      return pathOf(Reflect.get(route, '_routerState').snapshot.url);
     }
 
     /**
