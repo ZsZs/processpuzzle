@@ -43,6 +43,7 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.steps_none': 'This task declares no steps.',
   'base_workflow.task_instance.dashboard.step_user': 'user step',
   'base_workflow.task_instance.dashboard.step_service': 'service step',
+  'base_workflow.task_instance.dashboard.step_tool_ui': 'open tool UI',
   'base_workflow.task_instance.dashboard.artifacts_in': 'Reads',
   'base_workflow.task_instance.dashboard.artifacts_out': 'Writes',
   'base_workflow.task_instance.dashboard.artifacts_none': 'This task declares no artifacts.',
@@ -59,6 +60,8 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.comments': 'Comments',
   'base_workflow.task_instance.dashboard.comment_add': 'Add comment',
   'base_workflow.task_instance.dashboard.context': 'Context variables',
+  'base_workflow.task_instance.dashboard.context_key': 'Key',
+  'base_workflow.task_instance.dashboard.context_value': 'Value',
   'base_workflow.task_instance.dashboard.context_none': 'This run holds no context variables.',
 };
 

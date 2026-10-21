@@ -4,6 +4,7 @@ WORKDIR /usr/src/mock-backend
 COPY ./tools/mock-backend/db.json .
 COPY ./tools/mock-backend/cert.pem .
 COPY ./tools/mock-backend/key.pem .
+COPY ./tools/mock-backend/public ./public
 COPY ./tools/mock-backend/package.json .
 RUN npm install
 

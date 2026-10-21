@@ -313,6 +313,7 @@
     "name": "Nombre",
     "description": "Descripción",
     "baseUrl": "URL base",
+    "uiUrl": "URL de la interfaz",
     "type": "Tipo de autenticación",
     "secretRef": "Referencia del secreto",
     "version": "Versión",
@@ -323,6 +324,7 @@
       "id": "Única dentro de tu organización; los flujos y los pasos de tarea se refieren a la herramienta mediante ella. Corta, en minúsculas y con guiones, p. ej. jira; evita cambiarla después.",
       "name": "El nombre de la herramienta tal como se muestra, p. ej. Jira.",
       "baseUrl": "La dirección a la que se añade la ruta de cada operación, sin espacios, p. ej. https://example.atlassian.net.",
+      "uiUrl": "Dónde abrir la interfaz propia de la herramienta, p. ej. /third-party/automated-check/. Opcional.",
       "description": "Qué es esta herramienta y para qué la usan los flujos; una nota para ti y los demás diseñadores.",
       "type": "Cómo se autentica el sistema ante la herramienta: NONE, BEARER_TOKEN, BASIC (usuario y contraseña) o API_KEY.",
       "secretRef": "Dónde se guarda la credencial: el nombre de una variable de entorno o una ruta de Vault, p. ej. JIRA_TOKEN. Nunca introduzcas la contraseña o el token.",
@@ -401,6 +403,7 @@
       "steps_none": "Esta tarea no declara pasos.",
       "step_user": "paso de usuario",
       "step_service": "paso de servicio",
+      "step_tool_ui": "abrir la interfaz de la herramienta",
       "artifacts_in": "Lee",
       "artifacts_out": "Escribe",
       "artifacts_none": "Esta tarea no declara artefactos.",
@@ -419,6 +422,8 @@
       "waiting_for": "Esperando",
       "held": "Retenido:",
       "context": "Variables de contexto",
+      "context_key": "Clave",
+      "context_value": "Valor",
       "context_none": "Esta ejecución no tiene variables de contexto."
     }
   },

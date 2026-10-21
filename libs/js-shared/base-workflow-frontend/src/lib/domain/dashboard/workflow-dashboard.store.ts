@@ -394,7 +394,7 @@ export const WorkflowDashboardStore = signalStore(
         (selectedDefinition()?.steps ?? []).forEach((step) => {
           const toolDefinitionId = step.toolDefinitionId;
           if (!toolDefinitionId || tools.has(toolDefinitionId)) return;
-          tools.set(toolDefinitionId, { toolDefinitionId, name: catalog.get(toolDefinitionId)?.name || toolDefinitionId, link: links.toolLink(toolDefinitionId) });
+          tools.set(toolDefinitionId, { toolDefinitionId, name: catalog.get(toolDefinitionId)?.name || toolDefinitionId, link: links.toolLink(toolDefinitionId), uiUrl: catalog.get(toolDefinitionId)?.uiUrl || undefined });
         });
         return tools;
       }),
