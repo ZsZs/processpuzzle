@@ -120,6 +120,11 @@ export interface DocumentSignature extends DocumentSignatureSubject {
   revision: number;
   contentHash: string;
   signedBy: string;
+  /**
+   * The signer's id in the identity provider, which is what tells the signature of the person looking at it from
+   * somebody else's. Absent for a signature recorded before the server kept it.
+   */
+  signedById?: string | null;
   signedAt: string;
   /** The signed report as a PDF — absent until the signer's browser has uploaded it. */
   pdf?: ArtifactAttr | null;

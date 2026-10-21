@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
-import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
+import { RUNTIME_CONFIGURATION, SessionUser } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DocumentReaderComponent } from './document-reader.component';
 import { DocumentSignTabComponent } from './document-sign-tab.component';
@@ -119,6 +119,45 @@ describe('DocumentSignTabComponent', () => {
     expect(byTestId('document-signed')?.textContent).toContain('base_document.document.sign.signed');
     expect(byTestId('document-sign-button')).toBeNull();
     expect(byTestId('document-signature-s-9')).not.toBeNull();
+  });
+
+  /** The signature the user gave before the page was loaded again is theirs, recognised by the signer's id. */
+  describe('a signature already in the list', () => {
+    const subject = { subjectType: 'employee', subjectId: 'e-1' };
+
+    it('is shown as signed, with no button, when it is the signed-in user own signature', async () => {
+      TestBed.inject(SessionUser).set({ userId: 'kc-ada' });
+
+      await publishedWith([{ ...signature('s-1'), signedById: 'kc-ada' }], subject);
+
+      expect(byTestId('document-signed')).not.toBeNull();
+      expect(byTestId('document-sign-button')).toBeNull();
+      expect(byTestId('document-signature-s-1')).not.toBeNull();
+    });
+
+    it('does not stop somebody else signing, even a person of the same name', async () => {
+      TestBed.inject(SessionUser).set({ userId: 'kc-other-ada' });
+
+      await publishedWith([{ ...signature('s-1'), signedById: 'kc-ada' }], subject);
+
+      expect(byTestId('document-signed')).toBeNull();
+      expect(byTestId('document-sign-button')).not.toBeNull();
+    });
+
+    it('belongs to nobody in particular when the server kept no id for it', async () => {
+      TestBed.inject(SessionUser).set({ userId: 'kc-ada' });
+
+      await publishedWith([signature('s-1')], subject);
+
+      expect(byTestId('document-signed')).toBeNull();
+      expect(byTestId('document-sign-button')).not.toBeNull();
+    });
+
+    it('leaves the button when nobody is signed in', async () => {
+      await publishedWith([{ ...signature('s-1'), signedById: 'kc-ada' }], subject);
+
+      expect(byTestId('document-sign-button')).not.toBeNull();
+    });
   });
 
   it('shows a refused signature beside the button', async () => {

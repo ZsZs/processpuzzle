@@ -83,7 +83,7 @@ public class SignDocument {
             throw new DocumentNotFoundException(orgKey, documentId);
         }
         guard.requireOrganizationAccess(orgKey);
-        String signer = signerOf(guard, currentPrincipal, orgKey)
+        Signer signer = signerOf(guard, currentPrincipal, orgKey)
                 .orElseThrow(() -> new DocumentAccessDeniedException(
                         "There is no authenticated member of '" + orgKey + "' to sign document '" + documentId
                                 + "' as"));
@@ -92,32 +92,51 @@ public class SignDocument {
         PublishedDocument snapshot = publishedRepository.findByOrgKeyAndDocumentIdAndLocale(orgKey, documentId, locale)
                 .orElseThrow(() -> DocumentPublishingConflictException.notPublished(documentId, locale));
 
-        Optional<DocumentSignature> existing = signatureRepository
-                .findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedBy(
-                        orgKey, documentId, locale, snapshot.getPublishedRevision(), subjectType, subjectId, signer);
+        Optional<DocumentSignature> existing = signer.id() != null
+                ? signatureRepository.findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedById(
+                        orgKey, documentId, locale, snapshot.getPublishedRevision(), subjectType, subjectId, signer.id())
+                : signatureRepository.findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedBy(
+                        orgKey, documentId, locale, snapshot.getPublishedRevision(), subjectType, subjectId, signer.name());
         if (existing.isPresent()) {
             return new Outcome(existing.get(), false);
         }
 
         DocumentSignature signature = signatureRepository.save(new DocumentSignature(
                 UUID.randomUUID().toString(), orgKey, documentId, document.getTitle(), locale,
-                snapshot.getPublishedRevision(), hashOf(snapshot), subjectType, subjectId, signer, Instant.now()));
+                snapshot.getPublishedRevision(), hashOf(snapshot), subjectType, subjectId, signer.name(), signer.id(),
+                Instant.now()));
         facts.signed(document, signature);
         return new Outcome(signature, true);
     }
 
     /** Who is acting as a member of {@code orgKey}; shared with {@link AttachSignedPdf}, which must agree. */
-    static Optional<String> signerOf(DocumentGuard guard, ObjectProvider<CurrentPrincipal> currentPrincipal,
+    static Optional<Signer> signerOf(DocumentGuard guard, ObjectProvider<CurrentPrincipal> currentPrincipal,
                                      String orgKey) {
+        CurrentPrincipal principal = currentPrincipal.getIfAvailable();
         String fromPolicy = guard.currentPrincipal();
         if (fromPolicy != null && !fromPolicy.isBlank()) {
-            return Optional.of(fromPolicy);
+            return Optional.of(new Signer(fromPolicy, idOf(principal)));
         }
-        CurrentPrincipal principal = currentPrincipal.getIfAvailable();
         if (principal == null || !principal.isMemberOf(orgKey)) {
             return Optional.empty();
         }
-        return principal.displayName();
+        return principal.displayName().map(name -> new Signer(name, idOf(principal)));
+    }
+
+    /** The identity provider's id of whoever is acting, when something is acting and has one. */
+    private static String idOf(CurrentPrincipal principal) {
+        return principal == null ? null : principal.subject().filter(id -> !id.isBlank()).orElse(null);
+    }
+
+    /**
+     * Whoever signs: the name that is shown, and the identity provider's id where there is one. Signing twice for the
+     * same object is the same signature when the signers are the same, which the ids settle when both have one and
+     * the names otherwise.
+     */
+    record Signer(String name, String id) {
+        boolean is(DocumentSignature signature) {
+            return id != null && signature.getSignedById() != null ? id.equals(signature.getSignedById()) : name.equals(signature.getSignedBy());
+        }
     }
 
     /** Hex SHA-256 of the block list exactly as it is stored, so the hash can be recomputed from the row. */

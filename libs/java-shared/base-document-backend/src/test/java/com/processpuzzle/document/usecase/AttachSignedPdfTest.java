@@ -78,6 +78,29 @@ class AttachSignedPdfTest {
     }
 
     @Test
+    void aSignerOfTheSameNameButAnotherIdentityMayNotAttach() {
+        signature = new DocumentSignature(SIGNATURE, ORG, ID, "Invoice", "en", 1L, "hash", "order", "o-1", "Ada", "kc-ada",
+                Instant.parse("2026-10-17T10:00:00Z"));
+        when(signatureRepository.findByOrgKeyAndIdAndDocumentId(ORG, SIGNATURE, ID)).thenReturn(Optional.of(signature));
+        when(principal.subject()).thenReturn(Optional.of("kc-other-ada"));
+        AttachSignedPdf useCase = useCase(store);
+
+        assertThatThrownBy(() -> useCase.execute(ORG, ID, SIGNATURE, PDF, "a.pdf", "application/pdf"))
+                .isInstanceOf(DocumentAccessDeniedException.class);
+        verify(store, never()).store(any(), any(), any());
+    }
+
+    @Test
+    void theSignerAttachesWhenTheIdentitiesAgree() {
+        signature = new DocumentSignature(SIGNATURE, ORG, ID, "Invoice", "en", 1L, "hash", "order", "o-1", "Ada", "kc-ada",
+                Instant.parse("2026-10-17T10:00:00Z"));
+        when(signatureRepository.findByOrgKeyAndIdAndDocumentId(ORG, SIGNATURE, ID)).thenReturn(Optional.of(signature));
+        when(principal.subject()).thenReturn(Optional.of("kc-ada"));
+
+        assertThat(useCase(store).execute(ORG, ID, SIGNATURE, PDF, "a.pdf", "application/pdf").hasPdf()).isTrue();
+    }
+
+    @Test
     void aSecondPdfIsRefused() {
         AttachSignedPdf useCase = useCase(store);
         useCase.execute(ORG, ID, SIGNATURE, PDF, "a.pdf", "application/pdf");

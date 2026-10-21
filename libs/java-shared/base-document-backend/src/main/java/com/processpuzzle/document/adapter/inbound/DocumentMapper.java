@@ -497,6 +497,7 @@ public class DocumentMapper {
                 .subjectType(signature.getSubjectType())
                 .subjectId(signature.getSubjectId())
                 .signedBy(signature.getSignedBy())
+                .signedById(signature.getSignedById())
                 .signedAt(toOffsetDateTime(signature.getSignedAt()))
                 .pdf(signature.hasPdf() ? new com.processpuzzle.document.model.SignedPdf()
                         .bucket(signature.getPdfBucket())

@@ -34,6 +34,12 @@ public interface DocumentSignatureRepository extends JpaRepository<DocumentSigna
             String orgKey, String documentId, String locale, Long revision, String subjectType, String subjectId,
             String signedBy);
 
+    /** As above, for a signer known by an id: two people of one name are two signers. */
+    @SuppressWarnings("java:S107") // a derived query names every column it matches
+    Optional<DocumentSignature> findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedById(
+            String orgKey, String documentId, String locale, Long revision, String subjectType, String subjectId,
+            String signedById);
+
     /** Every signature of a tenant in one statement, for erasing the tenant. */
     @Modifying(flushAutomatically = true)
     @Query("delete from DocumentSignature s where s.orgKey = :orgKey")
