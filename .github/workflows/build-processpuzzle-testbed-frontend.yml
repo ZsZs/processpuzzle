@@ -98,3 +98,5 @@ jobs:
         with:
           base_dir: 'apps/processpuzzle-testbed-e2e'
           target_environment: ci
+          # The stack was started by this job and is thrown away with it, so a spec may release what it created.
+          allow_release: 'true'
