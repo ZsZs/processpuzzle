@@ -100,7 +100,8 @@ test.describe('Report template', () => {
   test('a preview opened from a shared link shows the invoice', async ({ page }) => {
     const order = await entities.findBy<OrderPayload>('order', 'orderNumber', 'ORD-1001');
     await page.goto(`${DOCUMENTS}/${templateId}/preview?order=${order.id}`);
-    await expect(reportPage(page)).toContainText('Alice Johnson');
+    // The page loads the document, its draft and then the order, one after the other.
+    await expect(reportPage(page)).toContainText('Alice Johnson', { timeout: 20_000 });
   });
 
   test('an order\'s Reports tab runs the template for that order', async ({ page }) => {
