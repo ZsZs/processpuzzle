@@ -78,6 +78,8 @@ export class ToolDefinition implements BaseEntity {
   name: string;
   description?: string;
   baseUrl: string;
+  /** Where the tool's own user interface lives, when it has one — an absolute URL or a path on the application's host. */
+  uiUrl?: string;
   // region flattened auth
   type: AuthType | undefined;
   secretRef: string | undefined;
@@ -97,6 +99,7 @@ export class ToolDefinition implements BaseEntity {
     this.name = init.name ?? '';
     this.description = init.description;
     this.baseUrl = init.baseUrl ?? '';
+    this.uiUrl = init.uiUrl;
     this.type = init.type;
     this.secretRef = init.secretRef;
     this.operations = init.operations ?? [];

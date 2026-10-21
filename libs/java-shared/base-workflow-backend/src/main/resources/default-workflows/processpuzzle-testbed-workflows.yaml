@@ -56,6 +56,8 @@ tool-definitions:
     name: Automated Check Tool
     description: Third-party inventory and document service the order fulfillment steps call, mocked by json-server.
     baseUrl: http://json-server:3000
+    # The vendor's own console, a static page json-server serves; /third-party/ is what nginx proxies to it.
+    uiUrl: /third-party/automated-check/
     auth:
       type: BEARER_TOKEN
       secretRef: AUTOMATED_CHECK_TOKEN
@@ -64,7 +66,7 @@ tool-definitions:
         method: POST
         path: /inventory-checks
         description: Verifies that every line item of an order is available in stock.
-        payloadTemplate: '{ "orderId": "${orderId}", "orderNumber": "${orderNumber}", "available": true }'
+        payloadTemplate: '{ "orderId": "${orderId}", "orderNumber": "${orderNumber}", "available": true, "warehouse": "WH-1", "checkedBy": "ACME Inventory" }'
         expectedStatusCodes: [ 200, 201 ]
 
       - id: generate-doc

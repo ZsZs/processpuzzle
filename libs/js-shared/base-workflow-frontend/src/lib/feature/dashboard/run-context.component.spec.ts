@@ -32,7 +32,9 @@ describe('RunContextComponent', () => {
     const host = render();
 
     expect(host.querySelector('.context__heading')?.textContent?.trim()).toBe('Context variables');
-    expect(Array.from(host.querySelectorAll('.context__key')).map((key) => key.textContent?.trim())).toEqual([
+    expect(host.querySelector('[data-testid="context-head-key"]')?.textContent?.trim()).toBe('Key');
+    expect(host.querySelector('[data-testid="context-head-value"]')?.textContent?.trim()).toBe('Value');
+    expect(Array.from(host.querySelectorAll('.context__key:not(.context__head)')).map((key) => key.textContent?.trim())).toEqual([
       'channel',
       'priority',
       'order-created.subject',

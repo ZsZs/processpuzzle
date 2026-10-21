@@ -1552,6 +1552,13 @@ components:
           type: string
           format: uri
           example: https://checks.example.com
+        uiUrl:
+          type: string
+          nullable: true
+          description: >-
+            Where a person can open the tool's own user interface — an absolute URL or a path on the host
+            serving the application. Optional; the dashboard and the tool's detail screen link to it when set.
+          example: /third-party/automated-check/
         auth:
           $ref: "#/components/schemas/ToolAuthConfig"
         operations:

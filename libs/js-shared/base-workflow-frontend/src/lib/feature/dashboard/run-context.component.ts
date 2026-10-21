@@ -22,6 +22,8 @@ import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboar
         <h5 class="context__heading">{{ titleKey | transloco }}</h5>
         @if (store.selectedContext().length > 0) {
           <dl class="context__list">
+            <dt class="context__key context__head" data-testid="context-head-key">{{ keyKey | transloco }}</dt>
+            <dd class="context__value context__head" data-testid="context-head-value">{{ valueKey | transloco }}</dd>
             @for (variable of store.selectedContext(); track variable.key) {
               <dt class="context__key" [attr.data-testid]="'context-key-' + variable.key">{{ variable.key }}</dt>
               <dd class="context__value" [attr.data-testid]="'context-value-' + variable.key">{{ variable.value }}</dd>
@@ -59,6 +61,12 @@ import { WorkflowDashboardStore } from '../../domain/dashboard/workflow-dashboar
       color: #777777;
       font-family: monospace;
     }
+    .context__head {
+      font-family: inherit;
+      font-weight: 600;
+      color: #666666;
+      border-bottom: 1px solid #dddddd;
+    }
     .context__value {
       margin: 0;
       overflow-wrap: anywhere;
@@ -74,5 +82,7 @@ export class RunContextComponent {
   protected readonly store = inject(WorkflowDashboardStore);
 
   protected readonly titleKey = `${TASK_DASHBOARD_I18N_SCOPE}.context`;
+  protected readonly keyKey = `${TASK_DASHBOARD_I18N_SCOPE}.context_key`;
+  protected readonly valueKey = `${TASK_DASHBOARD_I18N_SCOPE}.context_value`;
   protected readonly noneKey = `${TASK_DASHBOARD_I18N_SCOPE}.context_none`;
 }

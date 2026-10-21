@@ -313,6 +313,7 @@
     "name": "Name",
     "description": "Beschreibung",
     "baseUrl": "Basis-URL",
+    "uiUrl": "UI-URL",
     "type": "Authentifizierungsart",
     "secretRef": "Secret-Referenz",
     "version": "Version",
@@ -323,6 +324,7 @@
       "id": "Eindeutig innerhalb Ihrer Organisation; Workflows und Aufgabenschritte verweisen über sie auf das Werkzeug. Kurz, kleingeschrieben und mit Bindestrichen, z. B. jira; später möglichst nicht mehr ändern.",
       "name": "Der Name des Werkzeugs, wie er angezeigt wird, z. B. Jira.",
       "baseUrl": "Die Adresse, an die der Pfad jeder Operation angehängt wird, ohne Leerzeichen, z. B. https://example.atlassian.net.",
+      "uiUrl": "Wo die eigene Benutzeroberfläche des Tools geöffnet werden kann, z. B. /third-party/automated-check/. Optional.",
       "description": "Was dieses Werkzeug ist und wofür die Workflows es nutzen; eine Notiz für Sie und Ihre Designer-Kollegen.",
       "type": "Wie sich das System beim Werkzeug anmeldet: NONE, BEARER_TOKEN, BASIC (Benutzername und Passwort) oder API_KEY.",
       "secretRef": "Wo die Zugangsdaten hinterlegt sind: der Name einer Umgebungsvariablen oder ein Vault-Pfad, z. B. JIRA_TOKEN. Niemals das Passwort oder Token selbst eingeben.",
@@ -401,6 +403,7 @@
       "steps_none": "Diese Aufgabe deklariert keine Schritte.",
       "step_user": "Benutzerschritt",
       "step_service": "Dienstschritt",
+      "step_tool_ui": "Tool-Oberfläche öffnen",
       "artifacts_in": "Liest",
       "artifacts_out": "Schreibt",
       "artifacts_none": "Diese Aufgabe deklariert keine Artefakte.",
@@ -419,6 +422,8 @@
       "waiting_for": "Wartet auf",
       "held": "Angehalten:",
       "context": "Kontextvariablen",
+      "context_key": "Schlüssel",
+      "context_value": "Wert",
       "context_none": "Diese Ausführung enthält keine Kontextvariablen."
     }
   },

@@ -43,6 +43,7 @@ import { EdgeContextMenuService } from '../services/edge-context-menu.service';
       [strokeOpacity]="style().opacity"
       [strokeWidth]="style().width"
       [attr.data-relation]="relation()"
+      [attr.data-passed]="passed() ? 'true' : null"
       (contextmenu)="onContextMenu($event)"
     >
       @if (label(); as text) {
@@ -59,6 +60,10 @@ import { EdgeContextMenuService } from '../services/edge-context-menu.service';
     ng-diagram-base-edge:hover:not(.selected):not(.temporary) {
       --edge-stroke: var(--ngd-default-edge-stroke-hover);
       --edge-label-border-color: var(--ngd-default-edge-stroke-hover);
+    }
+    /* A flow edge the open run has travelled — the same green as a finished element's ring. */
+    ng-diagram-base-edge[data-passed='true']:not(.selected) {
+      --edge-stroke: #2e7d32;
     }
     ng-diagram-base-edge.selected {
       --edge-stroke: var(--ngd-default-edge-stroke-selected);
@@ -83,7 +88,8 @@ export class WorkflowRelationEdgeComponent implements NgDiagramEdgeTemplate<Work
    */
   protected readonly relation = computed(() => this.edge().data?.relation);
   protected readonly label = computed(() => this.edge().data?.label);
-  protected readonly style = computed(() => strokeOf(RELATION_STYLES[this.relation() ?? 'sequence'], !!this.edge().selected));
+  protected readonly passed = computed(() => this.edge().data?.passed === true);
+  protected readonly style = computed(() => strokeOf(RELATION_STYLES[this.relation() ?? 'sequence'], !!this.edge().selected, this.passed()));
 
   private readonly contextMenu = inject(EdgeContextMenuService);
 
@@ -96,6 +102,8 @@ export class WorkflowRelationEdgeComponent implements NgDiagramEdgeTemplate<Work
 
 /** ng-diagram's own edge width, which an unselected edge keeps. */
 const STROKE_WIDTH = 2;
+/** A travelled edge's width: heavier than the rest, lighter than a selected one. */
+const PASSED_STROKE_WIDTH = 3;
 /** A selected edge's width. Twice the default, so a dotted association still reads as picked. */
 const SELECTED_STROKE_WIDTH = 4;
 
@@ -121,8 +129,9 @@ const RELATION_STYLES: Record<WorkflowRelation, { dash?: number[]; opacity: numb
  * The stroke one relation is drawn with. The dash scales with the width, because a pattern is measured in
  * user units: `2 4` at twice the width would be square dots packed twice as close — a near-solid line.
  */
-function strokeOf(style: { dash?: number[]; opacity: number }, selected: boolean): { dash?: string; opacity: number; width: number } {
-  const width = selected ? SELECTED_STROKE_WIDTH : STROKE_WIDTH;
+function strokeOf(style: { dash?: number[]; opacity: number }, selected: boolean, passed = false): { dash?: string; opacity: number; width: number } {
+  let width = passed ? PASSED_STROKE_WIDTH : STROKE_WIDTH;
+  if (selected) width = SELECTED_STROKE_WIDTH;
   const scale = width / STROKE_WIDTH;
-  return { dash: style.dash?.map((length) => length * scale).join(' '), opacity: selected ? 1 : style.opacity, width };
+  return { dash: style.dash?.map((length) => length * scale).join(' '), opacity: selected || passed ? 1 : style.opacity, width };
 }

@@ -67,7 +67,8 @@ describe('StepChecklistComponent', () => {
       const host = render([serviceStep], [new StepResult({ stepId: 'check-items', completedAt: '2026-08-20T09:01:30Z', toolResponse: { available: 'true' } })]);
 
       expect(host.querySelector('[data-testid="step-check-items"] .step__icon')?.getAttribute('data-state')).toBe('done');
-      expect(host.querySelector('[data-testid="step-response-check-items"]')?.textContent?.trim()).toBe('available: true');
+      expect(host.querySelector('[data-testid="step-response-check-items"] .step__response-key')?.textContent?.trim()).toBe('available');
+      expect(host.querySelector('[data-testid="step-response-check-items"] .step__response-value')?.textContent?.trim()).toBe('true');
     });
 
     /** The one thing on this screen a user cannot work around, so it is spelled out rather than summarized. */
@@ -139,6 +140,18 @@ describe('StepChecklistComponent', () => {
       expect(tool.tagName).toBe('A');
       expect(tool.getAttribute('href')).toBe('/tool-definition/automated-check-tool/details');
       expect(tool.textContent?.trim()).toBe('Automated Check Tool');
+    });
+
+    it('offers the tool’s own UI in a new tab when its definition names one', () => {
+      fixture.componentRef.setInput(
+        'tools',
+        new Map([['automated-check-tool', { toolDefinitionId: 'automated-check-tool', name: 'Automated Check Tool', link: undefined, uiUrl: '/third-party/automated-check/' }]]),
+      );
+      const host = render([serviceStep]);
+
+      const ui = required<HTMLAnchorElement>(host, '[data-testid="step-tool-ui-check-items"]');
+      expect(ui.getAttribute('href')).toBe('/third-party/automated-check/');
+      expect(ui.getAttribute('target')).toBe('_blank');
     });
 
     it('is plain text when nothing is mounted for it', () => {

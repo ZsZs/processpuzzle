@@ -199,6 +199,11 @@ export interface WorkflowEdgeData {
   relation?: WorkflowRelation;
   /** Written at the edge's midpoint when set. Used for the `ANY` join, the model's only gateway. */
   label?: string;
+  /**
+   * True for a flow edge the open run has travelled — set only when the diagram is drawn for one run, as the
+   * task dashboard's Process view does. Drawn in the "done" green, like the finished elements it joins.
+   */
+  passed?: boolean;
 }
 
 export type WorkflowNode = Node<WorkflowNodeData>;
