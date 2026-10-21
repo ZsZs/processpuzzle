@@ -22,7 +22,7 @@ describe('KeycloakAuthService', () => {
   const config: KeycloakAuthConfig = {
     realm: 'test-realm',
     clientId: 'test-client',
-    authServerUrl: 'http://test-auth-server',
+    authServerUrl: 'https://test-auth-server',
   };
 
   beforeEach(() => {
@@ -210,10 +210,10 @@ describe('KeycloakAuthService', () => {
 
   describe('getAccountManagementUrl', () => {
     it('should pass the return URL to the account console as is', () => {
-      const createAccountUrl = vi.fn().mockReturnValue('http://test-auth-server/realms/test-realm/account');
+      const createAccountUrl = vi.fn().mockReturnValue('https://test-auth-server/realms/test-realm/account');
       (mockKeycloakInstance as unknown as { createAccountUrl: typeof createAccountUrl }).createAccountUrl = createAccountUrl;
 
-      expect(service.getAccountManagementUrl('http://localhost:4200/en/auth/my-profile')).toBe('http://test-auth-server/realms/test-realm/account');
+      expect(service.getAccountManagementUrl('http://localhost:4200/en/auth/my-profile')).toBe('https://test-auth-server/realms/test-realm/account');
       expect(createAccountUrl).toHaveBeenCalledWith({ redirectUri: 'http://localhost:4200/en/auth/my-profile' });
     });
 

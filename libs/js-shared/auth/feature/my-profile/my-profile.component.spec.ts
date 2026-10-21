@@ -43,7 +43,7 @@ describe('MyProfileComponent', () => {
     vi.clearAllMocks();
     selfService.available = false;
     reloadUser.mockResolvedValue(undefined);
-    getAccountManagementUrl.mockReturnValue('http://keycloak/realms/test/account');
+    getAccountManagementUrl.mockReturnValue('https://keycloak/realms/test/account');
   });
 
   it('should show the signed-in user read-only', async () => {
@@ -102,7 +102,7 @@ describe('MyProfileComponent', () => {
   it('should link to the account page and come back to this one', async () => {
     await renderComponent(new User('john.doe@example.com', '123'));
 
-    expect(screen.getByRole('link', { name: /Manage account/ })).toHaveAttribute('href', 'http://keycloak/realms/test/account');
+    expect(screen.getByRole('link', { name: /Manage account/ })).toHaveAttribute('href', 'https://keycloak/realms/test/account');
     expect(getAccountManagementUrl).toHaveBeenCalledWith(document.location.href);
   });
 
