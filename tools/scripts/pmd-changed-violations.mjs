@@ -13,15 +13,26 @@ const changed = new Set(
     .map((file) => path.resolve(root, file)),
 );
 
+const attribute = (line, name) => new RegExp(` ${name}="([^"]*)"`).exec(line)?.[1];
+
 let found = 0;
 for (const module of new Set(modules)) {
   const report = path.join(root, module, 'target', 'pmd.xml');
   if (!existsSync(report)) continue;
-  for (const [, name, body] of readFileSync(report, 'utf8').matchAll(/<file name="([^"]+)">([\s\S]*?)<\/file>/g)) {
-    if (!changed.has(path.resolve(name))) continue;
-    for (const [, line, rule, method, message] of body.matchAll(/<violation beginline="(\d+)"[^>]*? rule="([^"]+)"[^>]*?(?:method="([^"]*)")?[^>]*>\s*([\s\S]*?)\s*<\/violation>/g)) {
-      console.log(`${path.relative(root, name)}:${line}  ${rule}${method ? ` (${method})` : ''}  ${message.trim()}`);
+  let file;
+  let violation;
+  for (const line of readFileSync(report, 'utf8').split('\n')) {
+    if (line.startsWith('<file ')) {
+      file = path.resolve(attribute(line, 'name'));
+    } else if (line.startsWith('<violation ') && changed.has(file)) {
+      violation = { line: attribute(line, 'beginline'), rule: attribute(line, 'rule'), method: attribute(line, 'method'), message: '' };
+    } else if (violation && line.startsWith('</violation>')) {
+      const method = violation.method ? ' (' + violation.method + ')' : '';
+      console.log(path.relative(root, file) + ':' + violation.line + '  ' + violation.rule + method + '  ' + violation.message.trim());
       found++;
+      violation = undefined;
+    } else if (violation) {
+      violation.message += line.replace(/^.*?>/, '') + ' ';
     }
   }
 }
