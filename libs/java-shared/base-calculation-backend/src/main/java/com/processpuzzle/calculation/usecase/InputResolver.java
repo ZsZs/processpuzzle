@@ -19,7 +19,8 @@ import org.springframework.stereotype.Component;
  * Reads what a calculation computes over. An entity parameter's object is read by id; a query input's filter gets
  * its {@code ${parameter}} placeholders replaced — an entity parameter by its id, {@code ${parameter.attribute}} by
  * that attribute of its object, quoted for RSQL where needed; an embedded input is the list at its path in a
- * parameter's object. Every row carries its object's {@code id}, an embedded row its position as {@code index}.
+ * parameter's object. An entity parameter with an unsaved payload reads that instead of the stored object, so a
+ * form can ask what a calculation would produce from what is on screen. Every row carries its object's {@code id}, an embedded row its position as {@code index}.
  */
 @Component
 public class InputResolver {
@@ -39,6 +40,17 @@ public class InputResolver {
      *                                    exist
      */
     public ResolvedInputs resolve(String orgKey, CalculationModel model, Map<String, Object> values) {
+        return resolve(orgKey, model, values, null);
+    }
+
+    /**
+     * @param unsaved payloads by entity parameter name, read instead of the stored objects; an unsaved object
+     *                without an id substitutes nothing into query inputs
+     * @throws InvalidParametersException when a parameter has no value, or an entity parameter's object does not
+     *                                    exist
+     */
+    public ResolvedInputs resolve(String orgKey, CalculationModel model, Map<String, Object> values,
+                                  Map<String, Map<String, Object>> unsaved) {
         Map<String, Object> given = values == null ? Map.of() : values;
         TypedValues.Typer typer = typedValues.typer(orgKey);
         Map<String, Object> parameters = new LinkedHashMap<>();
@@ -46,12 +58,15 @@ public class InputResolver {
         Map<String, Object> supplied = new LinkedHashMap<>();
         model.parameters().forEach((name, parameter) -> {
             Object value = given.get(name) != null ? given.get(name) : parameter.defaultValue();
-            if (value == null) {
+            Map<String, Object> draft = parameter.isEntity() && unsaved != null ? unsaved.get(name) : null;
+            if (value == null && draft == null) {
                 throw new InvalidParametersException("parameter '%s' needs a value".formatted(name));
             }
-            supplied.put(name, value);
+            if (value != null) {
+                supplied.put(name, value);
+            }
             if (parameter.isEntity()) {
-                EntityRecord object = read(orgKey, name, parameter, value);
+                EntityRecord object = draft != null ? unsavedObject(draft, value) : read(orgKey, name, parameter, value);
                 objects.put(name, object);
                 Map<String, Object> payload = typer.payload(parameter.entity(), object.payload());
                 payload.put("id", object.id());
@@ -66,6 +81,11 @@ public class InputResolver {
                 ? embedded(typer, input, objects.get(input.from()))
                 : queried(orgKey, typer, input, supplied, objects)));
         return new ResolvedInputs(parameters, inputs, objects, supplied);
+    }
+
+    private static EntityRecord unsavedObject(Map<String, Object> draft, Object value) {
+        Object id = draft.get("id") != null ? draft.get("id") : value instanceof Map<?, ?> map ? map.get("id") : value;
+        return new EntityRecord(id == null ? null : id.toString(), 0, draft);
     }
 
     private EntityRecord read(String orgKey, String name, ParameterSpec parameter, Object value) {

@@ -44,6 +44,15 @@ public class EvaluateCalculation {
      */
     public Evaluation evaluate(String orgKey, String calculationId, Channel channel, Map<String, Object> parameters,
                                String source) {
+        return evaluate(orgKey, calculationId, channel, parameters, source, null);
+    }
+
+    /**
+     * @param unsaved payloads by entity parameter name, read instead of the stored objects — what a form shows
+     *                before it is saved
+     */
+    public Evaluation evaluate(String orgKey, String calculationId, Channel channel, Map<String, Object> parameters,
+                               String source, Map<String, Map<String, Object>> unsaved) {
         CalculationValidator.Validation validation = source != null ? validator.validate(source)
                 : validator.validate(definitions.find(orgKey, calculationId, channel).parsedModel());
         if (!validation.isValid()) {
@@ -51,7 +60,7 @@ public class EvaluateCalculation {
         }
         CalculationModel model = validation.model();
         return reading.execute(status -> {
-            ResolvedInputs inputs = resolver.resolve(orgKey, model, parameters);
+            ResolvedInputs inputs = resolver.resolve(orgKey, model, parameters, unsaved);
             try {
                 return new Evaluation(engine.evaluate(validation.analysis().plan(), inputs.parameters(), inputs.inputs()).plain(), null);
             } catch (CalculationException e) {

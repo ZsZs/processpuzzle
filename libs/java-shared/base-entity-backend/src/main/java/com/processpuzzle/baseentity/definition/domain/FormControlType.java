@@ -39,6 +39,11 @@ public enum FormControlType {
      * linkedEntityType. The value is {@code {latitude, longitude, accuracy?, capturedAt?}}, read from the browser.
      */
     GEO_LOCATION,
+    /**
+     * A value a base-calculation calculation derives: single-valued, a scalar valueKind (NUMBER, TEXT, DATE or
+     * BOOLEAN), no linkedEntityType. The form shows it read-only, recomputed from the unsaved form state.
+     */
+    CALCULATED,
     TAGS,
     TITLE,
     LABEL,

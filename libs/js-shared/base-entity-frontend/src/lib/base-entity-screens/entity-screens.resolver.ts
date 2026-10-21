@@ -9,6 +9,7 @@ import { ENTITY_TAB_CONTRIBUTORS, type EntityTabContributor } from './entity-tab
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import { ENTITY_STATE_CONTROL } from '../base-form/state/entity-state-control';
+import { ENTITY_CALCULATED_CONTROL } from '../base-form/calculated/entity-calculated-control';
 
 /** Everything needed to mount one entity's List and Details screens somewhere. */
 export interface EntityScreens {
@@ -44,6 +45,7 @@ export class EntityScreenResolver {
   private readonly injector = inject(Injector);
   private readonly tabContributors = inject(ENTITY_TAB_CONTRIBUTORS, { optional: true }) ?? [];
   private readonly stateControl = inject(ENTITY_STATE_CONTROL, { optional: true });
+  private readonly calculatedControl = inject(ENTITY_CALCULATED_CONTROL, { optional: true });
 
   /** `undefined` when neither a facade nor a definition answers to `entityName`. */
   async resolve(entityName: string | undefined): Promise<EntityScreens | undefined> {
@@ -53,6 +55,7 @@ export class EntityScreenResolver {
     if (!descriptor) return undefined;
 
     await this.markStateAttribute(descriptor);
+    await this.markCalculatedAttributes(descriptor);
     return { descriptor, embeddedChildren: this.embeddedChildrenOf(descriptor), extraTabs: await this.extraTabsOf(descriptor) };
   }
 
@@ -72,6 +75,24 @@ export class EntityScreenResolver {
     if (!attrName) return;
     const attrDescriptor = filterAttributeDescriptors(descriptor.attrDescriptors).find((candidate) => candidate.attrName === attrName);
     if (attrDescriptor) attrDescriptor.formControlType = FormControlType.STATE;
+  }
+
+  /**
+   * Turns the attributes a calculation writes into {@link FormControlType.CALCULATED} controls, so the form shows
+   * them read-only and recomputed instead of offering a free edit that the backend would discard. Same contract as
+   * {@link markStateAttribute}: idempotent, a provider that throws leaves the descriptor as it was, and an attribute
+   * a state machine governs stays STATE.
+   */
+  private async markCalculatedAttributes(descriptor: BaseEntityDescriptor): Promise<void> {
+    const calculatedControl = this.calculatedControl;
+    if (!calculatedControl) return;
+    const attrNames = await Promise.resolve()
+      .then(() => calculatedControl.calculatedAttributesOf(descriptor))
+      .catch(() => [] as string[]);
+    const names = new Set(attrNames);
+    filterAttributeDescriptors(descriptor.attrDescriptors)
+      .filter((candidate) => names.has(candidate.attrName) && candidate.formControlType !== FormControlType.STATE)
+      .forEach((candidate) => (candidate.formControlType = FormControlType.CALCULATED));
   }
 
   /**
