@@ -60,3 +60,14 @@ export interface CalculationRun {
 
 /** Which row of a definition a request computes with. */
 export type Revision = 'draft' | 'released';
+
+/**
+ * The contract's `CalculationOutput`: one attribute a released calculation stores its result in.
+ * `parameter` is the entity parameter whose object is the output entity, `null` when there is none.
+ */
+export interface CalculationOutput {
+  readonly calculationId: string;
+  readonly attribute: string;
+  readonly decision: string;
+  readonly parameter?: string | null;
+}

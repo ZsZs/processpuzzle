@@ -86,7 +86,7 @@ class CalculationEndpointsTest {
         mvc = MockMvcBuilders.standaloneSetup(
                         new CalculationDefinitionsEndpoint(create, replace, deleteUseCase, find, importer, validator, mapper,
                                 mock(CalculationReleaseParticipant.class)),
-                        new CalculationsEndpoint(evaluate, run, runs, mapper),
+                        new CalculationsEndpoint(evaluate, run, runs, find, mapper),
                         new CalculationRunsEndpoint(freeze, runs, mapper))
                 .setControllerAdvice(new CalculationApiExceptionHandler())
                 .build();
@@ -174,7 +174,7 @@ class CalculationEndpointsTest {
     void evaluatesRunsAndFreezes() throws Exception {
         EvaluationResult result = new EvaluationResult(Map.of("total", 10), Map.of(), Map.of(), List.of("total"),
                 List.of(new TraceEntry("total", com.processpuzzle.calculation.domain.definition.DecisionKind.EXPR, "scalar", 10, null)));
-        when(evaluate.evaluate(eq("org"), eq("order-total"), eq(Channel.DRAFT), anyMap(), isNull()))
+        when(evaluate.evaluate(eq("org"), eq("order-total"), eq(Channel.DRAFT), anyMap(), isNull(), anyMap()))
                 .thenReturn(new EvaluateCalculation.Evaluation(result, "stopped"));
         when(run.run(eq("org"), eq("order-total"), eq(Channel.RELEASED), anyMap(), eq(RunTrigger.MANUAL))).thenReturn(storedRun());
         when(runs.findAll("org", "order-total", null)).thenReturn(List.of(storedRun()));

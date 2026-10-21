@@ -9,12 +9,12 @@ import { CONTENT_BOOK_ENTITY_NAME } from './document-entity-names';
  */
 function createContentBookAttrDescriptors(): AbstractAttrDescriptor[] {
   // Same pattern as a document's slug: the contract reuses the `DocumentSlug` schema for both.
-  const slugAttr = new BaseEntityAttrDescriptor('slug', FormControlType.TEXT_BOX, 'Slug');
+  const slugAttr = new BaseEntityAttrDescriptor('slug', FormControlType.TEXT_BOX, 'Slug', undefined, true);
   slugAttr.required = true;
   slugAttr.pattern = DOCUMENT_SLUG_PATTERN;
   slugAttr.placeholder = 'URL key, unique among the books, e.g. handbook';
 
-  const titleAttr = new BaseEntityAttrDescriptor('title', FormControlType.TEXT_BOX, 'Title', undefined, true);
+  const titleAttr = new BaseEntityAttrDescriptor('title', FormControlType.TEXT_BOX, 'Title');
   titleAttr.required = true;
   titleAttr.isHeading = true;
 

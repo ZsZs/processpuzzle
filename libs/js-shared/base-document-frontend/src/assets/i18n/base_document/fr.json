@@ -177,6 +177,7 @@
       "publish": "Publier",
       "archive": "Archiver",
       "properties": "Propriétés",
+      "pdf_report": "Rapport PDF",
       "show_unpublished": "Non publiées",
       "confirm_archive_title": "Archiver le document ?",
       "confirm_archive_text": "« {{title}} » est enregistré sous forme d’instantané et ne pourra plus être modifié.",

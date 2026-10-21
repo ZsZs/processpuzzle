@@ -214,6 +214,30 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /organizations/{orgKey}/calculation-outputs:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listCalculationOutputs
+      tags: [ Calculations ]
+      summary: The attributes of an entity that released calculations store their results in
+      parameters:
+        - name: entity
+          in: query
+          required: true
+          schema:
+            type: string
+          description: The entity definition code.
+      responses:
+        "200":
+          description: Outputs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalculationOutput"
+
   /organizations/{orgKey}/calculations/{calculationId}/runs:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -625,6 +649,34 @@ components:
           type: string
           nullable: true
           description: An unsaved source to evaluate instead of the stored one — a designer's preview.
+        unsaved:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
+          description: >-
+            Unsaved objects by entity parameter name: the payload is read instead of the stored object, so a
+            form can ask what a calculation would produce from what is on screen. Stored nothing; an object
+            without an `id` substitutes nothing into query inputs.
+
+    CalculationOutput:
+      type: object
+      required: [ calculationId, attribute, decision ]
+      properties:
+        calculationId:
+          type: string
+        attribute:
+          type: string
+          description: The attribute of the output entity the calculation writes.
+        decision:
+          type: string
+          description: The decision, group column or parameter its value comes from.
+        parameter:
+          type: string
+          nullable: true
+          description: >-
+            The entity parameter whose object is the output entity; null when there is none, and the value
+            cannot be recomputed from an unsaved object.
 
     RunRequest:
       type: object

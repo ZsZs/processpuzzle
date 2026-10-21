@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<ruleset name="processpuzzle-sonar-aligned"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+  <description>
+    Rules Sonar flags on pull requests that Checkstyle cannot express. Run by the pre-push hook
+    (tools/scripts/pre-push-check.sh) on the files a branch changes, not by the Maven build.
+  </description>
+
+  <!-- Sonar java:S3776 — allows up to 15, PMD reports from reportLevel, hence 16. -->
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties>
+      <property name="reportLevel" value="16"/>
+    </properties>
+  </rule>
+</ruleset>

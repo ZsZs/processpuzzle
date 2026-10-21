@@ -601,6 +601,7 @@ components:
         - COMMENTS
         - ADDRESS
         - GEO_LOCATION
+        - CALCULATED
         - TAGS
         - TITLE
         - LABEL

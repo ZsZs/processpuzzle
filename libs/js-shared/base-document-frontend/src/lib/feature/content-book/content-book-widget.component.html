@@ -52,12 +52,6 @@
 </mat-menu>
 
 <mat-menu #addMenu>
-  <button mat-menu-item type="button" data-testid="content-book-add-before" [disabled]="!selectedNode()" (click)="addDocument('before')">
-    <mat-icon>vertical_align_top</mat-icon>{{ 'base_document.content_book.widget.add_before' | transloco }}
-  </button>
-  <button mat-menu-item type="button" data-testid="content-book-add-after" [disabled]="!selectedNode()" (click)="addDocument('after')">
-    <mat-icon>vertical_align_bottom</mat-icon>{{ 'base_document.content_book.widget.add_after' | transloco }}
-  </button>
   <button mat-menu-item type="button" data-testid="content-book-add-below" [disabled]="!selectedNode()" (click)="addDocument('child')">
     <mat-icon>subdirectory_arrow_right</mat-icon>{{ 'base_document.content_book.widget.add_child' | transloco }}
   </button>
@@ -88,9 +82,53 @@
         <button mat-button type="button" data-testid="content-book-add-document" [matMenuTriggerFor]="addMenu">
           <mat-icon>add</mat-icon>{{ 'base_document.content_book.widget.add' | transloco }}
         </button>
+        <button
+          mat-icon-button
+          type="button"
+          data-testid="content-book-add-before"
+          [disabled]="!selectedNode() || busy()"
+          [matTooltip]="'base_document.content_book.widget.add_before' | transloco"
+          [attr.aria-label]="'base_document.content_book.widget.add_before' | transloco"
+          (click)="addDocument('before')"
+        >
+          <mat-icon>vertical_align_top</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          data-testid="content-book-add-after"
+          [disabled]="!selectedNode() || busy()"
+          [matTooltip]="'base_document.content_book.widget.add_after' | transloco"
+          [attr.aria-label]="'base_document.content_book.widget.add_after' | transloco"
+          (click)="addDocument('after')"
+        >
+          <mat-icon>vertical_align_bottom</mat-icon>
+        </button>
         <button mat-button type="button" data-testid="content-book-page-edit" [disabled]="!pageView()?.canEdit()" (click)="pageView()?.toggleEditing()">
           <mat-icon>{{ pageView()?.editing() ? 'visibility' : 'edit' }}</mat-icon>
           {{ (pageView()?.editing() ? 'base_document.content_book.widget.read' : 'base_document.content_book.widget.edit') | transloco }}
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          data-testid="content-book-delete"
+          [disabled]="!selectedNode() || busy()"
+          [matTooltip]="'base_document.content_book.widget.delete_document' | transloco"
+          [attr.aria-label]="'base_document.content_book.widget.delete_document' | transloco"
+          (click)="deleteDocument(selectedNodeId()!)"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          type="button"
+          data-testid="content-book-pdf"
+          [disabled]="!selectedDocument() || pageView()?.editing() || busy()"
+          [matTooltip]="'base_document.content_book.widget.pdf_report' | transloco"
+          [attr.aria-label]="'base_document.content_book.widget.pdf_report' | transloco"
+          (click)="exportPdf()"
+        >
+          <mat-icon>picture_as_pdf</mat-icon>
         </button>
         <button mat-button type="button" data-testid="content-book-publish" [disabled]="!canPublishPage() || busy()" (click)="publishPage()">
           <mat-icon>publish</mat-icon>{{ 'base_document.content_book.widget.publish' | transloco }}

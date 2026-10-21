@@ -274,6 +274,33 @@ class CalculationRunsIntegrationTest {
     }
 
     @Test
+    void evaluatesAnUnsavedObjectInPlaceOfTheStoredOne() {
+        String orderId = order(1, 1);
+        Map<String, Object> draft = Map.of("orderNumber", "ORD-1", "lineItems",
+                List.of(Map.of("productName", "A", "quantity", 4, "unitPrice", 5)));
+
+        var withId = evaluate.evaluate(ORG, "order-total", Channel.DRAFT, Map.of("order", orderId),
+                Calculations.source("order-total"), Map.of("order", draft));
+        var withoutId = evaluate.evaluate(ORG, "order-total", Channel.DRAFT, Map.of(),
+                Calculations.source("order-total"), Map.of("order", draft));
+
+        assertThat(withId.result().values()).containsEntry("total", new BigDecimal("20.00"));
+        assertThat(withoutId.error()).isNull();
+        assertThat(withoutId.result().values()).containsEntry("total", new BigDecimal("20.00"));
+        assertThat(entities.payload("order", orderId)).doesNotContainKey("total");
+    }
+
+    @Test
+    void listsWhatAReleasedCalculationStores() {
+        seedOrderTotal();
+        assertThat(find.storedOutputsOf(ORG, "order")).singleElement().satisfies(output -> {
+            assertThat(output.calculationId()).isEqualTo("order-total");
+            assertThat(output.attribute()).isEqualTo("total");
+            assertThat(output.parameter()).isEqualTo("order");
+        });
+    }
+
+    @Test
     void importsAllOrNothing() {
         ImportOutcome outcome = importer.execute(ORG, Calculations.source("order-total") + "---\ncalculation: broken\n");
         assertThat(outcome.errors()).singleElement().asString().startsWith("'broken'");

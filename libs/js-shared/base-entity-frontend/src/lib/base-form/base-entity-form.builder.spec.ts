@@ -23,6 +23,7 @@ import { BaseFormControlComponent } from './base-form-control.component';
 import { MatTooltip } from '@angular/material/tooltip';
 import { TranslocoService } from '@jsverse/transloco';
 import { ENTITY_STATE_CONTROL } from './state/entity-state-control';
+import { ENTITY_CALCULATED_CONTROL } from './calculated/entity-calculated-control';
 
 @Component({ selector: 'test-custom-control', template: `<span class="test-custom-control">custom</span>` })
 class TestCustomControlComponent extends BaseFormControlComponent<TestEntity> {}
@@ -359,6 +360,69 @@ describe('BaseEntityFormBuilder, STATE attributes', () => {
     const { component } = setup(true);
 
     expect(component.form.get('status')?.disabled).toBe(true);
+    expect(Object.keys(component.form.value)).toEqual(['name']);
+  });
+});
+
+@Component({ selector: 'test-calculated-control', template: `<span class="test-calculated-control">calculated</span>` })
+class TestCalculatedControlComponent extends BaseFormControlComponent<TestEntity> {}
+
+describe('BaseEntityFormBuilder, CALCULATED attributes', () => {
+  @Component({
+    selector: 'mock-calculated-container',
+    imports: [BaseFormHostDirective, FormsModule, ReactiveFormsModule],
+    template: `
+      <form [formGroup]="form">
+        <ng-template baseFormHost></ng-template>
+      </form>
+    `,
+  })
+  class MockCalculatedContainerComponent {
+    form = new FormGroup({});
+    @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) formHost!: BaseFormHostDirective;
+  }
+
+  const testEntity: Signal<TestEntity> = signal(new TestEntity());
+
+  function setup(withCalculatedControl: boolean) {
+    TestBed.configureTestingModule({
+      imports: [BaseFormHostDirective, MockCalculatedContainerComponent],
+      providers: [
+        provideHttpClient(),
+        provideLogger({ level: 7 }),
+        provideRouter([]),
+        provideTranslocoTesting({ translations: {} }),
+        TestEntityStore,
+        { provide: TestEntityService, useValue: setupMockService() },
+        ...(withCalculatedControl ? [{ provide: ENTITY_CALCULATED_CONTROL, useValue: { component: TestCalculatedControlComponent, calculatedAttributesOf: () => ['total'] } }] : []),
+      ],
+    });
+    const fixture = TestBed.createComponent(MockCalculatedContainerComponent);
+    const component = fixture.componentInstance;
+    const formBuilder = TestBed.inject(BaseEntityFormBuilder) as unknown as BaseEntityFormBuilder<TestEntity>;
+    const store = TestBed.inject(TestEntityStore);
+    formBuilder.buildForm(component.formHost.viewContainerRef, component.form, store, [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name'), new BaseEntityAttrDescriptor('total', FormControlType.CALCULATED, 'Total')], testEntity, 'Test Entity');
+    fixture.detectChanges();
+    return { fixture, component };
+  }
+
+  it('renders a CALCULATED attribute with the component ENTITY_CALCULATED_CONTROL registers', () => {
+    const { fixture } = setup(true);
+
+    expect(fixture.debugElement.query(By.css('test-calculated-control .test-calculated-control'))).toBeTruthy();
+  });
+
+  it('falls back to a read-only label without an ENTITY_CALCULATED_CONTROL', () => {
+    const { fixture } = setup(false);
+
+    expect(fixture.debugElement.query(By.css('base-label'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('test-calculated-control'))).toBeNull();
+  });
+
+  it('creates the FormControl of a CALCULATED attribute disabled, so the form never saves it', () => {
+    const { component } = setup(true);
+
+    expect(component.form.get('total')?.disabled).toBe(true);
     expect(Object.keys(component.form.value)).toEqual(['name']);
   });
 });
