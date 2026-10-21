@@ -19,6 +19,9 @@ export interface WorkflowInstanceSummary {
   id: string;
   workflowId: string;
   status: string;
+  entityId?: string;
+  startEventId?: string;
+  context?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -166,5 +169,24 @@ export class PlatformApi {
       if (![204, 404].includes(response.status())) failures.push(`${collection}/${id}: ${response.status()} ${await response.text()}`);
     }
     expect(failures, 'definitions that could not be deleted').toEqual([]);
+  }
+
+  /** Starts a workflow by hand; answers the response as is, because a refusal is often what a test is after. */
+  async startWorkflow(workflowId: string): Promise<{ status: number; body: { errorId?: string; errorText?: string } & Record<string, unknown> }> {
+    const response = await this.request.post(`${this.roots.backend}/instances`, { data: { workflowId } });
+    return { status: response.status(), body: await response.json().catch(() => ({})) };
+  }
+
+  /** An event definition as stored, or `undefined` when there is none. */
+  async eventDefinition(id: string): Promise<{ id: string; kind?: string; subjectType?: string; action?: string; releaseState?: string } | undefined> {
+    const response = await this.request.get(`${this.roots.backend}/event-definitions/${encodeURIComponent(id)}`);
+    if (response.status() === 404) return undefined;
+    expect(response.ok(), `reading event definition ${id}: ${response.status()}`).toBe(true);
+    return await response.json();
+  }
+
+  async deleteEventDefinition(id: string): Promise<void> {
+    const response = await this.request.delete(`${this.roots.backend}/event-definitions/${encodeURIComponent(id)}`);
+    expect([204, 404], `deleting event definition ${id}: ${response.status()}`).toContain(response.status());
   }
 }
