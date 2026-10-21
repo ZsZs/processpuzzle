@@ -8,7 +8,7 @@ import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BlockKind, Document, DocumentInputPort, DocumentKind, PortType } from '../../domain/base-document';
+import { BlockKind, Document, DocumentInputPort, DocumentKind, DocumentStatus, DocumentTranslationSummary, PortType } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { BaseDocumentStore } from '../../domain/base-document.store';
 import { ReportSigningContext } from '../signature/report-signing-context';
@@ -210,7 +210,10 @@ describe('EntityReportsTabComponent', () => {
   }
 
   it('runs the first template for this object, from its published content', async () => {
-    const getTranslation = vi.fn().mockRejectedValueOnce(new HttpErrorResponse({ status: 404 })).mockResolvedValue({ locale: 'hu', blocks: BLOCKS });
+    const getTranslation = vi
+      .fn()
+      .mockRejectedValueOnce(new HttpErrorResponse({ status: 404 }))
+      .mockResolvedValue({ locale: 'hu', blocks: BLOCKS });
     const fixture = create(
       [
         { document: invoice, port: ORDER_PORT },
@@ -255,8 +258,9 @@ describe('EntityReportsTabComponent', () => {
 });
 
 describe('EntityReportRegistry', () => {
-  const template = (id: string, kind: DocumentKind, entityType = 'Order') =>
-    Object.assign(new Document(id), { kind, inputPorts: [Object.assign(new DocumentInputPort('subject', PortType.ENTITY_REF), { entityType })] });
+  const published = [{ locale: 'en', status: DocumentStatus.PUBLISHED, publishedRevision: 1 }];
+  const template = (id: string, kind: DocumentKind, entityType = 'Order', translations: DocumentTranslationSummary[] = published) =>
+    Object.assign(new Document(id), { kind, translations, inputPorts: [Object.assign(new DocumentInputPort('subject', PortType.ENTITY_REF), { entityType })] });
 
   function create(findAll: () => unknown) {
     TestBed.configureTestingModule({ providers: [{ provide: BaseDocumentService, useValue: { findAll: vi.fn(findAll) } }] });
@@ -274,6 +278,22 @@ describe('EntityReportRegistry', () => {
     registry.reset();
     await registry.templatesFor('Order');
     expect(TestBed.inject(BaseDocumentService).findAll).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not offer a draft: a template nobody has published belongs to its author alone', async () => {
+    const draft = [{ locale: 'en', status: DocumentStatus.DRAFT, publishedRevision: null }];
+    const editedSincePublished = [{ locale: 'en', status: DocumentStatus.PUBLISHED_WITH_DRAFT_CHANGES, publishedRevision: 1 }];
+    const registry = create(() =>
+      of([
+        template('draft', DocumentKind.REPORT_TEMPLATE, 'Order', draft),
+        template('untouched', DocumentKind.REPORT_TEMPLATE, 'Order', []),
+        template('edited', DocumentKind.REPORT_TEMPLATE, 'Order', editedSincePublished),
+        template('invoice', DocumentKind.REPORT_TEMPLATE),
+      ]),
+    );
+
+    // Readers get the published revision, so a published template that has been edited since is still offered.
+    expect((await registry.templatesFor('Order')).map((entry) => entry.document.id)).toEqual(['edited', 'invoice']);
   });
 
   it('reads a paged answer, and a failure as no templates', async () => {
