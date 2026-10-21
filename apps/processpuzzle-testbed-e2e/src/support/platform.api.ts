@@ -103,4 +103,29 @@ export class PlatformApi {
     const response = await this.request.delete(`${this.roots.backend}/documents/${encodeURIComponent(id)}`);
     expect([204, 404], `deleting document ${id}`).toContain(response.status());
   }
+
+  /** Imports a SPEM YAML catalog (roles, tasks, workflows) in one all-or-nothing call. */
+  async importWorkflows(yaml: string): Promise<void> {
+    const response = await this.request.post(`${this.roots.backend}/workflows/import`, {
+      multipart: { file: { name: 'workflows.yaml', mimeType: 'application/x-yaml', buffer: Buffer.from(yaml) } },
+    });
+    expect(response.status(), `importing workflows: ${await response.text()}`).toBe(200);
+    expect((await response.json()).errors, 'import errors').toEqual([]);
+  }
+
+  /** The saved modeler arrangement of a workflow, or `undefined` while it has never been arranged. */
+  async workflowLayout(workflowId: string): Promise<Record<string, unknown> | undefined> {
+    const response = await this.request.get(`${this.roots.backend}/workflow-diagrams/${encodeURIComponent(workflowId)}`);
+    if (response.status() === 404) return undefined;
+    expect(response.ok(), `reading the layout of ${workflowId}: ${response.status()}`).toBe(true);
+    return (await response.json()) as Record<string, unknown>;
+  }
+
+  /** Removes definitions by collection and id, in the order given; absent ones are fine. */
+  async deleteDefinitions(definitions: { collection: 'workflows' | 'tasks' | 'roles'; id: string }[]): Promise<void> {
+    for (const { collection, id } of definitions) {
+      const response = await this.request.delete(`${this.roots.backend}/${collection}/${encodeURIComponent(id)}`);
+      expect([204, 404], `deleting ${collection}/${id}`).toContain(response.status());
+    }
+  }
 }
