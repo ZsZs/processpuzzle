@@ -32,7 +32,7 @@ describe('WorkflowDashboardStore', () => {
   let controller: HttpTestingController;
 
   const flushCatalogs = (): void => {
-    controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO));
+    controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO));
     controller.expectOne(`${serviceRoot}/tasks`).flush([TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
     controller.expectOne(`${serviceRoot}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
     controller.expectOne(`${serviceRoot}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));
@@ -46,7 +46,7 @@ describe('WorkflowDashboardStore', () => {
    */
   const reloadWith = (...runs: object[]): void => {
     store.reload();
-    controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(...runs));
+    controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(...runs));
   };
 
   beforeEach(() => {
@@ -281,7 +281,7 @@ describe('WorkflowDashboardStore', () => {
 
       // The whole list, not the one task the verb answered with: completing or skipping a task activates
       // whatever depended on it.
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
       expect(store.isActing()).toBe(false);
     });
 
@@ -298,7 +298,7 @@ describe('WorkflowDashboardStore', () => {
 
       expect(await completing).toBe(true);
       expect(store.postconditionDetail()).toBeUndefined();
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     /** A refusal is a 200 with the task still ACTIVE — the detail belongs beside the form, not in an error. */
@@ -310,7 +310,7 @@ describe('WorkflowDashboardStore', () => {
       expect(await completing).toBe(false);
       expect(store.postconditionDetail()).toBe('shipment-approved: not set');
       expect(store.actionError()).toBeUndefined();
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     // `postconditionDetail` is nullable, and an unchanged screen would read as a submission that vanished.
@@ -321,7 +321,7 @@ describe('WorkflowDashboardStore', () => {
       await completing;
 
       expect(store.postconditionDetail()).toBe('unstated_refusal');
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     it('skips with the reason it was given', async () => {
@@ -332,7 +332,7 @@ describe('WorkflowDashboardStore', () => {
       request.flush(WORKFLOW_INSTANCE_DTO.tasks[1]);
 
       expect(await skipping).toBe(true);
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     it('surfaces a failed verb as a message and stops acting', async () => {
@@ -344,14 +344,14 @@ describe('WorkflowDashboardStore', () => {
       expect(store.actionError()).toBeTruthy();
       expect(store.isActing()).toBe(false);
       // No reload after a failure: nothing changed, so re-reading the list would only hide the message.
-      controller.expectNone(`${serviceRoot}/instances`);
+      controller.expectNone(`${serviceRoot}/instances?size=200`);
     });
 
     it('clears a stale refusal when a different task is opened', async () => {
       const completing = store.complete(row());
       controller.expectOne(`${taskUrl}/complete`).flush({ accepted: false, postconditionDetail: 'nope' });
       await completing;
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
 
       store.select(runId, reviewOrderTaskId);
 
@@ -386,7 +386,7 @@ describe('WorkflowDashboardStore', () => {
     store.reload();
     expect(store.isLoading()).toBe(true);
 
-    controller.expectOne(`${serviceRoot}/instances`).flush({ errorId: 'oops' }, { status: 500, statusText: 'Server Error' });
+    controller.expectOne(`${serviceRoot}/instances?size=200`).flush({ errorId: 'oops' }, { status: 500, statusText: 'Server Error' });
     expect(store.loadError()).toBeTruthy();
   });
 
@@ -451,7 +451,7 @@ describe('WorkflowDashboardStore', () => {
   });
 
   describe('refresh', () => {
-    const instanceReads = () => controller.match(`${serviceRoot}/instances`);
+    const instanceReads = () => controller.match(`${serviceRoot}/instances?size=200`);
 
     it('re-reads the runs when the dashboard is entered again', () => {
       store.refresh();
