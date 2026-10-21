@@ -39,17 +39,39 @@
           } @else {
             <p class="hint">{{ t('auth.my_profile_form.no_roles') }}</p>
           }
+
+          @if (selectableRoles().length > 0) {
+            <h3>{{ t('auth.my_profile_form.self_service_title') }}</h3>
+            <p class="hint">{{ t('auth.my_profile_form.self_service_hint') }}</p>
+            <ul class="roles self-service-roles">
+              @for (role of selectableRoles(); track role.id) {
+                <li>
+                  <mat-checkbox [aria-label]="role.name" [checked]="selected().has(role.id)" [disabled]="saving()" (change)="toggle(role.id, $event.checked)">{{ role.name }}</mat-checkbox>
+                  @if (role.description) {
+                    <span class="role-description">{{ role.description }}</span>
+                  }
+                </li>
+              }
+            </ul>
+          }
         } @else {
           <p class="hint">{{ t('auth.my_profile_form.not_signed_in') }}</p>
         }
       </mat-card-content>
 
-      @if (accountManagementUrl(); as url) {
+      @if (user() && (selectableRoles().length > 0 || accountManagementUrl())) {
         <mat-card-actions align="end">
-          <a mat-flat-button [href]="url">
-            <mat-icon>manage_accounts</mat-icon>
-            {{ t('auth.my_profile_form.manage_account_button') }}
-          </a>
+          @if (selectableRoles().length > 0) {
+            <button mat-flat-button type="button" id="my-profile-save-roles" [disabled]="!dirty() || saving()" (click)="saveRoles()">
+              {{ t('auth.my_profile_form.save_roles_button') }}
+            </button>
+          }
+          @if (accountManagementUrl(); as url) {
+            <a mat-flat-button [href]="url">
+              <mat-icon>manage_accounts</mat-icon>
+              {{ t('auth.my_profile_form.manage_account_button') }}
+            </a>
+          }
         </mat-card-actions>
       }
     </mat-card>

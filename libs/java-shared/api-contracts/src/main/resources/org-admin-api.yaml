@@ -66,6 +66,8 @@ tags:
     description: The realm roles a tenant declares, and their assignment.
   - name: Registration
     description: Self-registration into the stack's own realm.
+  - name: SelfService
+    description: What a signed-in user may do to their own account. Off unless the deployment opts in.
 
 paths:
   /registration:
@@ -362,6 +364,58 @@ paths:
         "503":
           $ref: "#/components/responses/IdentityProviderUnavailable"
 
+  /organizations/{orgKey}/me/roles:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: getMyRoles
+      tags: [ SelfService ]
+      summary: Read the caller's own realm roles and the ones they may pick
+      description: >-
+        Acts on the token subject, never on a path parameter. 404 when the deployment has not
+        enabled self-service roles.
+      responses:
+        "200":
+          description: The caller's roles and the roles open to self-selection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SelfServiceRoles"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+    put:
+      operationId: replaceMyRoles
+      tags: [ SelfService ]
+      summary: Replace the caller's selectable realm roles
+      description: >-
+        Every requested name must be selectable — 400 otherwise. Privileged roles the caller
+        already holds (`org-admin`, `platform-admin`, built-ins) are neither offered nor revoked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleAssignment"
+      responses:
+        "200":
+          description: The caller's roles after the replacement.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SelfServiceRoles"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
 components:
   parameters:
     OrgKeyParam:
@@ -582,6 +636,21 @@ components:
           type: array
           items:
             type: string
+
+    SelfServiceRoles:
+      type: object
+      required: [ assigned, selectable ]
+      properties:
+        assigned:
+          type: array
+          description: Names of every realm role the caller holds.
+          items:
+            type: string
+        selectable:
+          type: array
+          description: The roles the caller may choose for themselves.
+          items:
+            $ref: "#/components/schemas/OrganizationRole"
 
     PageOf_OrganizationUser:
       type: object

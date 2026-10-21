@@ -4,6 +4,7 @@
     "DEPLOYMENT_ENVIRONMENT": "docker",
     "BACKEND_SERVICE_PROVIDER": "rest",
     "BACKEND_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
+    "SELF_SERVICE_ROLES_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
     "THIRD_PARTY_ROOT": "https://testbed.stage.processpuzzle.de/third-party",
     "OBJECT_STORE_SERVICE_ROOT": "/api",
     "FIREBASE_CONFIGURATION": {}

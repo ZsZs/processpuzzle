@@ -5,6 +5,9 @@ ProcessPuzzle is a Low-Code platform for content management and business workflo
 ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
 - [ProcessPuzzle Testbed](/apps/processpuzzle-testbed-frontend) – Web application to test and demonstrate the framework capabilities
+  Its My Profile page lets any signed-in user pick realm roles for themselves (for example `documentation-editor`
+  to edit the Handbook); administrative roles are never offered, and the feature is off unless an application
+  opts in — see the [auth library](/libs/js-shared/auth/README.md#self-service-roles).
 - **ProcessPuzzle UI** and **ProcessPuzzle Admin** – the Low-Code designer and the staff administration application. Both live in the private `processpuzzle-biz` repository, together with the commercial `platform-admin` feature, and consume the framework libraries above through a submodule – see [Extracting platform-admin](/docs/platform-admin-extraction.md).
 
 Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over

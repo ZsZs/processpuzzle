@@ -48,6 +48,12 @@
     "no_roles": "Nincs szerepköre.",
     "not_signed_in": "Nincs bejelentkezve.",
     "manage_account_button": "Fiók kezelése",
+    "self_service_title": "Szerepköreid kiválasztása",
+    "self_service_hint": "Válaszd ki a szükséges szerepköröket. Adminisztrátori szerepkörök itt nem érhetők el.",
+    "save_roles_button": "Szerepkörök mentése",
+    "roles_saved": "A szerepköreid mentve.",
+    "roles_save_failed": "A szerepköröket nem sikerült menteni. Próbáld újra.",
+    "close_button": "Bezárás",
     "platform_roles": {
       "org_admin": "A szervezet adminisztrátora: tagok, szerepkörök és beállítások kezelése.",
       "org_member": "A szervezet tagja; bejelentkezhet és dolgozhat a szervezet alkalmazásaiban."

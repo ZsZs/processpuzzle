@@ -10,6 +10,7 @@ type MockedKeycloak = {
   login: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;
   loadUserProfile: ReturnType<typeof vi.fn>;
+  updateToken?: ReturnType<typeof vi.fn>;
 };
 
 // Save original location
@@ -167,6 +168,43 @@ describe('KeycloakAuthService', () => {
     it('should return empty array if realmAccess is missing', () => {
       mockKeycloakInstance.realmAccess = undefined;
       expect(service.getUserRoles()).toEqual([]);
+    });
+  });
+
+  describe('reloadUser', () => {
+    it('should force a token refresh and rebuild the user with the new roles', async () => {
+      mockKeycloakInstance.authenticated = true;
+      await service.authenticate();
+      mockKeycloakInstance.updateToken = vi.fn().mockImplementation(async () => {
+        mockKeycloakInstance.realmAccess = { roles: ['user', 'documentation-editor'] };
+        return true;
+      });
+
+      await service.reloadUser();
+
+      expect(mockKeycloakInstance.updateToken).toHaveBeenCalledWith(-1);
+      const user = service.getCurrentUser();
+      expect(user?.id).toBe('123');
+      expect(user?.email).toBe('john.doe@example.com');
+      expect(user?.roles).toEqual(['user', 'documentation-editor']);
+    });
+
+    it('should keep the user when the refresh fails', async () => {
+      mockKeycloakInstance.authenticated = true;
+      await service.authenticate();
+      mockKeycloakInstance.updateToken = vi.fn().mockRejectedValue(new Error('session gone'));
+
+      await service.reloadUser();
+
+      expect(service.getCurrentUser()?.roles).toEqual(['user', 'admin']);
+    });
+
+    it('should do nothing when nobody is signed in', async () => {
+      mockKeycloakInstance.updateToken = vi.fn();
+
+      await service.reloadUser();
+
+      expect(mockKeycloakInstance.updateToken).not.toHaveBeenCalled();
     });
   });
 
