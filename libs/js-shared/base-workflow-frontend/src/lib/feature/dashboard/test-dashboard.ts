@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { EnvironmentProviders, Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
@@ -76,6 +76,17 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
 }
 
 /**
+ * The one read of the runs that is open, whichever it is: the first page of every run, which building the instance store
+ * starts, or the runs in progress, which the dashboard page asks for on entering and after every action, and which
+ * cancels a read still in flight. Specs address it by being the one open read, not by a URL that depends on who asked.
+ */
+export function openRunsRead(controller: HttpTestingController): TestRequest {
+  const reads = controller.match((request) => request.url.startsWith(`${DASHBOARD_SERVICE_ROOT}/instances`) && !request.url.includes('/instances/')).filter((read) => !read.cancelled);
+  if (reads.length !== 1) throw new Error(`Expected one open read of the runs, found ${reads.length}`);
+  return reads[0];
+}
+
+/**
  * Answers the six collection reads the store's construction issues, by URL rather than in order — which
  * store is built first is an implementation detail of `withComputed`.
  *
@@ -84,7 +95,7 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
  */
 export function flushDashboardCatalogs(controller: HttpTestingController, ...runs: object[]): void {
   const content = runs.length > 0 ? runs : [WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO];
-  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush(pageOfWorkflowInstances(...content));
+  openRunsRead(controller).flush(pageOfWorkflowInstances(...content));
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/tasks`).flush([TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));

@@ -1,6 +1,6 @@
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { RichTextContent } from '@processpuzzle/base-entity';
+import { BaseEntityQueryCondition, RichTextContent } from '@processpuzzle/base-entity';
 import { withDevtools } from '@angular-architects/ngrx-toolkit';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
@@ -122,6 +122,15 @@ const initialState: DashboardState = {
  * was open — and so the six catalogs are shared with every other screen reading them rather than loaded
  * again per visit.
  */
+/**
+ * The runs the dashboard works on: those still in progress, all of them. A queue is made of the tasks of running
+ * work, so a finished run is history the screen has no use for, and it must not take the place of a running one: the
+ * runs the screen reads were once the first page of every run there had ever been, oldest first, and from the 21st
+ * run on a new one never appeared. Every page is read, because the number of runs in progress is the business's,
+ * not a page's.
+ */
+export const IN_PROGRESS_RUNS: BaseEntityQueryCondition = { query: 'status==ACTIVE', allPages: true };
+
 export const WorkflowDashboardStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
@@ -440,7 +449,7 @@ export const WorkflowDashboardStore = signalStore(
      * board stale in a way that looks like the engine did nothing.
      */
     const reload = (): void => {
-      instanceStore.load({});
+      instanceStore.load(IN_PROGRESS_RUNS);
     };
 
     const runAction = async <Result>(action: () => Promise<Result>): Promise<Result | undefined> => {
@@ -479,14 +488,14 @@ export const WorkflowDashboardStore = signalStore(
       },
 
       /**
-       * Re-reads the runs when the dashboard is entered again. The store is root-scoped and outlives the
-       * screen, so without this a user who followed an artifact link, moved the order on, and came back would
-       * find Complete still waiting for a state the order has already reached. Skipped while a read is in
-       * flight — which is the first visit, whose read the instance store's own construction started.
+       * Reads the runs when the dashboard is entered. The store is root-scoped and outlives the screen, so without
+       * this a user who followed an artifact link, moved the order on, and came back would find Complete still
+       * waiting for a state the order has already reached.
+       *
+       * Always, the first visit included: the read the instance store starts when it is built is of the first page of
+       * every run, which is not what the dashboard works on, and a newer read replaces one still in flight.
        */
-      refresh: (): void => {
-        if (!instanceStore.isLoading()) reload();
-      },
+      refresh: (): void => reload(),
 
       /** Points the Process scope at one run, dropping a selection that belonged to a different one. */
       selectInstance: (instanceId: string | undefined): void => {

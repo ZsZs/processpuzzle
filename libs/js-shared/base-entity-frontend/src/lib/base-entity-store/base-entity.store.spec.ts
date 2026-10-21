@@ -5,11 +5,11 @@ import { TestEntityService } from '../base-entity-service/test-entity.service';
 import { TestEntityStore } from '../test-entity.store';
 import { provideRouter } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
-import { BaseEntityLoadResponse } from '../base-entity-service/base-entity-load-response';
+import { BaseEntityLoadResponse, BaseEntityQueryCondition } from '../base-entity-service/base-entity-load-response';
 import { DummyComponent, MOCK_API_RESPONSE, MOCK_PAGED_RESPONSE, newTestEntity, setupMockService, testEntity_1, testEntity_2 } from '../../test-setup';
 import { describe, expect, it, vi } from 'vitest';
 import { signalStore } from '@ngrx/signals';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { mock } from 'vitest-mock-extended';
 import { entityNameFromType } from '../base-entity/base-entity-utility';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
@@ -394,6 +394,86 @@ describe('BaseEntityStore', () => {
       // The row is kept (it was fetched), but it is no longer the current one.
       await vi.waitFor(() => expect(store.entities().map((entity) => entity.id)).toContain('21'));
       expect(store.currentEntity()).toBe(testEntity_1);
+    });
+  });
+
+  describe('load() of every page', () => {
+    const row = (id: string) => new TestEntity(id, `row ${id}`, 'd', true, Number(id), new Date('2024-01-18T20:02:27.000Z'), TestEnum.VALUE_ONE) as PersistedEntity<TestEntity>;
+    const pages = [[row('1'), row('2')], [row('3')], [row('4')]];
+    const answerPage = (query: BaseEntityQueryCondition): Observable<BaseEntityLoadResponse<PersistedEntity<TestEntity>>> => {
+      const page = query.page ?? 0;
+      return of({ content: pages[page] ?? [], number: page, size: 2, totalElements: 4, totalPages: pages.length });
+    };
+
+    it('reads every page, one after another, and holds the rows together in order', () => {
+      const { store, mockService } = setup();
+      mockService.findByQuery.mockClear();
+      mockService.findByQuery.mockImplementation(answerPage);
+
+      store.load({ allPages: true, query: 'status==ACTIVE' });
+
+      expect(store.entities().map((entity) => entity.id)).toEqual(['1', '2', '3', '4']);
+      expect(mockService.findByQuery.mock.calls.map(([query]) => [query.page, query.pageSize, query.allPages, query.query])).toEqual([
+        [0, 200, false, 'status==ACTIVE'],
+        [1, 200, false, 'status==ACTIVE'],
+        [2, 200, false, 'status==ACTIVE'],
+      ]);
+      expect(store.totalElements()).toBe(4);
+      expect(store.isLoading()).toBe(false);
+    });
+
+    it('asks for the page size it is given', () => {
+      const { store, mockService } = setup();
+      mockService.findByQuery.mockClear();
+      mockService.findByQuery.mockImplementation(answerPage);
+
+      store.load({ allPages: true, pageSize: 2 });
+
+      expect(mockService.findByQuery.mock.calls.every(([query]) => query.pageSize === 2)).toBe(true);
+    });
+
+    it('takes a bare array answer as it is: there are no pages to follow', () => {
+      const { store, mockService } = setup();
+      mockService.findByQuery.mockClear();
+      mockService.findByQuery.mockReturnValue(of([row('1'), row('2')]));
+
+      store.load({ allPages: true });
+
+      expect(store.entities().map((entity) => entity.id)).toEqual(['1', '2']);
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it('follows no more than a hundred pages', () => {
+      const { store, mockService } = setup();
+      mockService.findByQuery.mockClear();
+      mockService.findByQuery.mockImplementation((query) => of({ content: [row(String(query.page ?? 0))], number: query.page ?? 0, size: 1, totalElements: 5000, totalPages: 5000 }));
+
+      store.load({ allPages: true });
+
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(100);
+      expect(store.entities()).toHaveLength(100);
+    });
+
+    it('reads a single page when the option is not given, as before', () => {
+      const { store, mockService } = setup();
+      mockService.findByQuery.mockClear();
+      mockService.findByQuery.mockImplementation(answerPage);
+
+      store.load({});
+
+      expect(mockService.findByQuery).toHaveBeenCalledTimes(1);
+      expect(store.entities().map((entity) => entity.id)).toEqual(['1', '2']);
+    });
+
+    it('leaves the error in the state, and stops loading, when a page fails', () => {
+      const { store, mockService } = setup();
+      mockService.findByQuery.mockClear();
+      mockService.findByQuery.mockImplementation((query) => ((query.page ?? 0) === 1 ? throwError(() => new Error('page two failed')) : answerPage(query)));
+
+      store.load({ allPages: true });
+
+      expect(store.error()).toContain('page two failed');
+      expect(store.isLoading()).toBe(false);
     });
   });
 
