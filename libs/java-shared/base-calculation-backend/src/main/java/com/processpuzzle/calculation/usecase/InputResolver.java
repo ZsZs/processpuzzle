@@ -58,22 +58,20 @@ public class InputResolver {
         Map<String, Object> supplied = new LinkedHashMap<>();
         model.parameters().forEach((name, parameter) -> {
             Object value = given.get(name) != null ? given.get(name) : parameter.defaultValue();
-            Map<String, Object> draft = parameter.isEntity() && unsaved != null ? unsaved.get(name) : null;
+            Map<String, Object> draft = draftOf(name, parameter, unsaved);
             if (value == null && draft == null) {
-                throw new InvalidParametersException("parameter '%s' needs a value".formatted(name));
+                throw new InvalidParametersException("parameter %s needs a value".formatted(name));
             }
             if (value != null) {
                 supplied.put(name, value);
             }
-            if (parameter.isEntity()) {
-                EntityRecord object = draft != null ? unsavedObject(draft, value) : read(orgKey, name, parameter, value);
-                objects.put(name, object);
-                Map<String, Object> payload = typer.payload(parameter.entity(), object.payload());
-                payload.put("id", object.id());
-                parameters.put(name, payload);
-            } else {
+            if (!parameter.isEntity()) {
                 parameters.put(name, TypedValues.ofParameterType(parameter.type(), value));
+                return;
             }
+            EntityRecord object = draft != null ? unsavedObject(draft, value) : read(orgKey, name, parameter, value);
+            objects.put(name, object);
+            parameters.put(name, typedPayload(typer, parameter, object));
         });
 
         Map<String, List<Map<String, Object>>> inputs = new LinkedHashMap<>();
@@ -83,9 +81,26 @@ public class InputResolver {
         return new ResolvedInputs(parameters, inputs, objects, supplied);
     }
 
+    private static Map<String, Object> typedPayload(TypedValues.Typer typer, ParameterSpec parameter, EntityRecord object) {
+        Map<String, Object> payload = typer.payload(parameter.entity(), object.payload());
+        payload.put("id", object.id());
+        return payload;
+    }
+
+    private static Map<String, Object> draftOf(String name, ParameterSpec parameter, Map<String, Map<String, Object>> unsaved) {
+        return parameter.isEntity() && unsaved != null ? unsaved.get(name) : null;
+    }
+
     private static EntityRecord unsavedObject(Map<String, Object> draft, Object value) {
-        Object id = draft.get("id") != null ? draft.get("id") : value instanceof Map<?, ?> map ? map.get("id") : value;
+        Object id = draft.get("id");
+        if (id == null) {
+            id = idOf(value);
+        }
         return new EntityRecord(id == null ? null : id.toString(), 0, draft);
+    }
+
+    private static Object idOf(Object value) {
+        return value instanceof Map<?, ?> map ? map.get("id") : value;
     }
 
     private EntityRecord read(String orgKey, String name, ParameterSpec parameter, Object value) {
