@@ -25,6 +25,16 @@ export interface WorkflowInstanceSummary {
   [key: string]: unknown;
 }
 
+export interface SignatureSummary {
+  id: string;
+  signedBy: string;
+  signedAt: string;
+  subjectType: string;
+  subjectId: string;
+  pdf?: { bucket: string; objectId: string; name: string; mimeType: string } | null;
+  [key: string]: unknown;
+}
+
 export interface TaskInstanceSummary {
   id: string;
   taskDefinitionId: string;
@@ -177,6 +187,30 @@ export class PlatformApi {
       if (![204, 404].includes(response.status())) failures.push(`${collection}/${id}: ${response.status()} ${await response.text()}`);
     }
     expect(failures, 'definitions that could not be deleted').toEqual([]);
+  }
+
+  /** The id of a document by its slug, which is what the seed files and the screens' URLs name. */
+  async documentIdBySlug(slug: string): Promise<string> {
+    const response = await this.request.get(`${this.roots.backend}/documents`, { params: { size: 200 } });
+    expect(response.ok(), `listing documents: ${response.status()}`).toBe(true);
+    const body = await response.json();
+    const found = (Array.isArray(body) ? body : body.content).find((document: { slug: string }) => document.slug === slug);
+    expect(found, `no document with the slug ${slug}`).toBeDefined();
+    return found.id as string;
+  }
+
+  /** The signatures a document has for one object. */
+  async signatures(documentId: string, subjectType: string, subjectId: string): Promise<SignatureSummary[]> {
+    const response = await this.request.get(`${this.roots.backend}/documents/${documentId}/signatures`, { params: { subjectType, subjectId } });
+    expect(response.ok(), `listing signatures: ${response.status()}`).toBe(true);
+    const body = await response.json();
+    return Array.isArray(body) ? body : (body.content ?? []);
+  }
+
+  /** Signs a document *without* a signed-in user, answering the response as is: the refusal is the point. */
+  async signAnonymously(documentId: string, subjectType: string, subjectId: string): Promise<{ status: number; errorId?: string }> {
+    const response = await this.request.post(`${this.roots.backend}/documents/${documentId}/signatures`, { data: { subjectType, subjectId, locale: 'en' } });
+    return { status: response.status(), errorId: (await response.json().catch(() => ({}))).errorId };
   }
 
   /** One run with its tasks nested, as the dashboard reads it. */
