@@ -61,5 +61,20 @@ Target project: `apps/processpuzzle-testbed-e2e` (Playwright, real Spring backen
 ## Phase 3 — cross-feature
 - `order-lifecycle.spec.ts`: create order → calculated total → workflow on the dashboard → confirm
   freezes → report signed → issued document. Replaces the stub-driven living-docs scenario.
-- `workflow-timers.spec.ts` (`@slow`): duration boundary timer escalates; cycle timer fire count on the
-  event-instance tab.
+- `workflow-timers.spec.ts`: a duration timer interrupts a task and hands the run to an escalation; a date in
+  the past fires at once; a cycle fires its repetitions without interrupting; a time-based start event starts a
+  workflow by itself (a bounded cycle, and a date that has passed). **Opt-in:** a workflow only runs once
+  released, and a release publishes everything pending in the organization and cannot be undone (a released
+  definition cannot be deleted while referenced), so the spec is skipped unless `E2E_ALLOW_RELEASE=true`. The pull
+  request workflow sets it for the stack it starts and discards; a developer's stack and every deployed
+  environment leave it off.
+
+## Environment switches
+| Variable | Effect |
+|---|---|
+| `ENVIRONMENT` | `dev` (default), `ci`, `stage`, `prod`: which `env/.env.<name>` and run-time config the suite reads |
+| `E2E_ALLOW_RELEASE` | `true` lets specs release every pending definition; see the timers spec |
+| `E2E_ENTITY`, `E2E_SUITE` | narrow the generated suites to one entity and/or `CRUD` / `LIST` |
+
+Spec files are **not** run in parallel: the generated suites share data, and three workers gave 47 failures and
+three times the run time of one.

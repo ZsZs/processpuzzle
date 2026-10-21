@@ -75,13 +75,14 @@ export class PlatformApi {
   }
 
   /**
-   * Releases every pending definition of the organization. Event definitions, workflows and calculations
-   * only take effect once released, so a spec that creates one through the UI releases before it expects
-   * the platform to react. A 409 means nothing was pending, which is as good as released.
+   * Releases **every** pending definition of the organization, warnings acknowledged. A workflow only runs once
+   * released, so a spec that needs a run of a workflow it created has to do this, and it cannot be undone: a
+   * released definition cannot be deleted while it is referenced. Only for a stack nobody else is working on;
+   * the specs that call it are opt-in (`E2E_ALLOW_RELEASE`). Fails, with what the release said, when it is refused.
    */
-  async release(): Promise<void> {
-    const response = await this.request.post(`${this.roots.backend}/releases`, { data: {} });
-    expect([201, 409], `releasing: ${response.status()} ${await response.text()}`).toContain(response.status());
+  async releaseAll(): Promise<void> {
+    const response = await this.request.post(`${this.roots.backend}/releases`, { data: { acknowledgeWarnings: true } });
+    expect(response.status(), `releasing: ${await response.text()}`).toBe(201);
   }
 
   async workflowInstances(query: { workflowId?: string; status?: string; entityId?: string } = {}): Promise<WorkflowInstanceSummary[]> {
