@@ -415,6 +415,23 @@ that value must be `https://custom.stage.processpuzzle.de/*`; the obsolete
 The §5.2 caveat applies to all of them: `--import-realm` skips an existing realm, so these committed
 values reach a fresh environment only. Every realm already running on stage needs the console edit.
 
+### 5.4 Self-service roles need the roles to exist in the realm
+
+My Profile lets any signed-in Testbed user pick realm roles (`processpuzzle.self-service-roles.enabled`,
+default on for the Testbed backend). It only offers roles the realm declares, and the committed
+`processpuzzle-testbed-realm.json` declares `documentation-editor`, `documentation-publisher` and
+`documentation-reviewer` — which, as in §5.2, reaches a fresh environment only. For the live stage realm,
+create them once (in the `keycloak` container, after `kcadm.sh config credentials`):
+
+```bash
+for role in documentation-editor documentation-publisher documentation-reviewer; do
+  /opt/keycloak/bin/kcadm.sh create roles -r processpuzzle-testbed -s name=$role
+done
+```
+
+An "already exists" error is harmless. The backend's `platform-admin-service` client also needs
+`manage-users` and `view-realm`, as for registration.
+
 ---
 
 ## 6. Verify

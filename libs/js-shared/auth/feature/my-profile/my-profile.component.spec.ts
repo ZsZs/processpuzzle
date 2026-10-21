@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { screen } from '@testing-library/angular';
+import { fireEvent, screen, waitFor } from '@testing-library/angular';
 import { ANIMATION_MODULE_TYPE, signal } from '@angular/core';
-import { AUTHENTICATION_SERVICE, ROLE_DESCRIPTION_SOURCE, type RoleDescription, User } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_SERVICE, ROLE_DESCRIPTION_SOURCE, type RoleDescription, SelfServiceRolesService, User } from '@processpuzzle/auth/domain';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, of, throwError } from 'rxjs';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
@@ -21,12 +22,17 @@ const testConfig: TranslocoTestConfig = {
 
 describe('MyProfileComponent', () => {
   const getAccountManagementUrl = vi.fn();
+  const reloadUser = vi.fn();
+  const snackBar = { open: vi.fn() };
+  const selfService = { available: false, load: vi.fn(), replace: vi.fn() };
 
   const renderComponent = async (user?: User, describeRoles?: () => Observable<ReadonlyMap<string, RoleDescription>>) => {
     return await setUpTranslocoTestBed(MyProfileComponent, testConfig, {
       providers: [
         { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
-        { provide: AUTHENTICATION_SERVICE, useValue: { currentUser: signal(user), getAccountManagementUrl } },
+        { provide: AUTHENTICATION_SERVICE, useValue: { currentUser: signal(user), getAccountManagementUrl, reloadUser } },
+        { provide: SelfServiceRolesService, useValue: selfService },
+        { provide: MatSnackBar, useValue: snackBar },
         { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
         ...(describeRoles ? [{ provide: ROLE_DESCRIPTION_SOURCE, useValue: { describeRoles } }] : []),
       ],
@@ -35,7 +41,9 @@ describe('MyProfileComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    getAccountManagementUrl.mockReturnValue('http://keycloak/realms/test/account');
+    selfService.available = false;
+    reloadUser.mockResolvedValue(undefined);
+    getAccountManagementUrl.mockReturnValue('https://keycloak/realms/test/account');
   });
 
   it('should show the signed-in user read-only', async () => {
@@ -94,7 +102,7 @@ describe('MyProfileComponent', () => {
   it('should link to the account page and come back to this one', async () => {
     await renderComponent(new User('john.doe@example.com', '123'));
 
-    expect(screen.getByRole('link', { name: /Manage account/ })).toHaveAttribute('href', 'http://keycloak/realms/test/account');
+    expect(screen.getByRole('link', { name: /Manage account/ })).toHaveAttribute('href', 'https://keycloak/realms/test/account');
     expect(getAccountManagementUrl).toHaveBeenCalledWith(document.location.href);
   });
 
@@ -111,5 +119,78 @@ describe('MyProfileComponent', () => {
     expect(screen.getByText(authEn.my_profile_form.not_signed_in)).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(getAccountManagementUrl).not.toHaveBeenCalled();
+  });
+
+  describe('self-service roles', () => {
+    const member = () => new User('john.doe@example.com', '123', 'John', 'Doe', null, ['org-member']);
+    const offered = { assigned: ['org-member'], selectable: [{ name: 'documentation-editor', description: 'Edits the handbook' }, { name: 'documentation-reviewer' }] };
+
+    beforeEach(() => {
+      selfService.available = true;
+      selfService.load.mockResolvedValue(offered);
+    });
+
+    it('should offer nothing when the feature is not configured', async () => {
+      selfService.available = false;
+      await renderComponent(member());
+
+      expect(selfService.load).not.toHaveBeenCalled();
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: authEn.my_profile_form.save_roles_button })).not.toBeInTheDocument();
+    });
+
+    it('should list the selectable roles with their descriptions, nothing checked yet', async () => {
+      await renderComponent(member());
+
+      expect(await screen.findByRole('checkbox', { name: 'documentation-editor' })).not.toBeChecked();
+      expect(screen.getByRole('checkbox', { name: 'documentation-reviewer' })).not.toBeChecked();
+      expect(screen.getByText('Edits the handbook')).toBeInTheDocument();
+    });
+
+    it('should leave the section out when the backend refuses', async () => {
+      selfService.load.mockRejectedValue(new Error('404'));
+      await renderComponent(member());
+
+      await waitFor(() => expect(selfService.load).toHaveBeenCalled());
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    });
+
+    it('should enable Save only once the selection differs', async () => {
+      await renderComponent(member());
+      const save = await screen.findByRole('button', { name: authEn.my_profile_form.save_roles_button });
+      expect(save).toBeDisabled();
+
+      fireEvent.click(screen.getByRole('checkbox', { name: 'documentation-editor' }));
+
+      await waitFor(() => expect(save).toBeEnabled());
+    });
+
+    it('should save the chosen roles, reload the user and say so', async () => {
+      selfService.replace.mockResolvedValue({ assigned: ['org-member', 'documentation-editor'], selectable: offered.selectable });
+      await renderComponent(member());
+      fireEvent.click(await screen.findByRole('checkbox', { name: 'documentation-editor' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: authEn.my_profile_form.save_roles_button })).toBeEnabled());
+
+      fireEvent.click(screen.getByRole('button', { name: authEn.my_profile_form.save_roles_button }));
+
+      await waitFor(() => expect(snackBar.open).toHaveBeenCalled());
+      expect(selfService.replace).toHaveBeenCalledWith(['documentation-editor']);
+      expect(reloadUser).toHaveBeenCalled();
+      expect(snackBar.open).toHaveBeenCalledWith(authEn.my_profile_form.roles_saved, authEn.my_profile_form.close_button, { duration: 5000 });
+      expect(screen.getByRole('checkbox', { name: 'documentation-editor' })).toBeChecked();
+    });
+
+    it('should report a failed save without reloading the user', async () => {
+      selfService.replace.mockRejectedValue(new Error('boom'));
+      await renderComponent(member());
+      fireEvent.click(await screen.findByRole('checkbox', { name: 'documentation-editor' }));
+      await waitFor(() => expect(screen.getByRole('button', { name: authEn.my_profile_form.save_roles_button })).toBeEnabled());
+
+      fireEvent.click(screen.getByRole('button', { name: authEn.my_profile_form.save_roles_button }));
+
+      await waitFor(() => expect(snackBar.open).toHaveBeenCalled());
+      expect(reloadUser).not.toHaveBeenCalled();
+      expect(snackBar.open).toHaveBeenCalledWith(authEn.my_profile_form.roles_save_failed, authEn.my_profile_form.close_button, expect.objectContaining({ panelClass: ['error-snackbar'] }));
+    });
   });
 });

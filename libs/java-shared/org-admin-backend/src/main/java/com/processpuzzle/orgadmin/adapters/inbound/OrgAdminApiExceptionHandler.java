@@ -8,6 +8,7 @@ import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspend
 import com.processpuzzle.orgadmin.usecases.inbound.exception.PasswordPolicyViolationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationDisabledException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationRateLimitedException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.SelfServiceRolesDisabledException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UserAlreadyExistsException;
@@ -94,6 +95,11 @@ public class OrgAdminApiExceptionHandler {
     @ExceptionHandler(RegistrationDisabledException.class)
     public ResponseEntity<ErrorResponse> handleRegistrationDisabled(RegistrationDisabledException ex) {
         return error(HttpStatus.NOT_FOUND, "registration.disabled", ex.getMessage());
+    }
+
+    @ExceptionHandler(SelfServiceRolesDisabledException.class)
+    public ResponseEntity<ErrorResponse> handleSelfServiceRolesDisabled(SelfServiceRolesDisabledException ex) {
+        return error(HttpStatus.NOT_FOUND, "self-service-roles.disabled", ex.getMessage());
     }
 
     @ExceptionHandler(PasswordPolicyViolationException.class)

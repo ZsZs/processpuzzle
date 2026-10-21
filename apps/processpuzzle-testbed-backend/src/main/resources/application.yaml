@@ -205,6 +205,11 @@ processpuzzle:
   registration:
     enabled: ${PROCESSPUZZLE_REGISTRATION_ENABLED:true}
     verify-email: ${PROCESSPUZZLE_REGISTRATION_VERIFY_EMAIL:false}
+  # Testbed only, like registration: any signed-in user may pick realm roles for themselves on My
+  # Profile (e.g. documentation-editor). Acts through the Keycloak Admin client, so it needs
+  # keycloak.admin.client-secret too. Administrative roles are never offered.
+  self-service-roles:
+    enabled: ${PROCESSPUZZLE_SELF_SERVICE_ROLES_ENABLED:true}
 
 keycloak:
   admin:

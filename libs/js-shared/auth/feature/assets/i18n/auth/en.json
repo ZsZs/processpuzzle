@@ -48,6 +48,12 @@
     "no_roles": "You hold no roles.",
     "not_signed_in": "You are not signed in.",
     "manage_account_button": "Manage account",
+    "self_service_title": "Choose your roles",
+    "self_service_hint": "Pick the roles you need. Administrative roles are not offered here.",
+    "save_roles_button": "Save roles",
+    "roles_saved": "Your roles were saved.",
+    "roles_save_failed": "Your roles could not be saved. Please try again.",
+    "close_button": "Close",
     "platform_roles": {
       "org_admin": "Administers the organization: members, roles and settings.",
       "org_member": "Member of the organization; may sign in and work in its applications."

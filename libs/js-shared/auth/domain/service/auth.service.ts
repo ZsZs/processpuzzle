@@ -40,6 +40,17 @@ export abstract class AuthService {
   }
 
   /**
+   * Re-reads the signed-in user from the provider, so a change made on the server — a role the user
+   * just picked for themselves — shows without signing in again. {@link currentUser} updates.
+   *
+   * The default does nothing, for the same reason as {@link getAccessToken}: a provider whose user
+   * cannot change underneath it needs no change.
+   */
+  async reloadUser(): Promise<void> {
+    // Nothing to re-read by default.
+  }
+
+  /**
    * Where the user edits their own account — name, e-mail, password — at the identity provider, coming
    * back to `returnUrl` afterwards; `undefined` when the provider hosts no such page.
    *
