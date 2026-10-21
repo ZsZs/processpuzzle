@@ -32,3 +32,6 @@ Processpuzzle is a metadata driven application framework. It's core goal to faci
 - documents build from text, images, data values and widgets
 - workflows for the users. Workflows handles roles and their activities. Activities can have input/output entities or documents.
 <!-- nx configuration end-->
+
+# Before pushing
+A Husky `pre-push` hook (`tools/scripts/pre-push-check.sh`) lints the branch's changed files with the Sonar-aligned ESLint rules (`eslint-plugin-sonarjs`) and runs Checkstyle and PMD (cognitive complexity, `tools/pmd-ruleset.xml`) on touched Maven modules. Fix its findings instead of bypassing it; run `bash tools/scripts/pre-push-check.sh` to check early. Run `npm install --legacy-peer-deps` once so Husky activates.

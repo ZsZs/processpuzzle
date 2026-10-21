@@ -1,9 +1,13 @@
 import nx from '@nx/eslint-plugin';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
+  // The same analyzer family SonarCloud runs on the PR, so findings (cognitive complexity, duplicated strings, ...)
+  // surface locally in `nx lint` and the pre-push hook instead of in the pull request.
+  { ...sonarjs.configs.recommended, files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx', '**/*.mjs', '**/*.cjs'] },
   {
     ignores: ['**/dist', '**/reports', '**/coverage', 'tools/mock-backend'],
   },
