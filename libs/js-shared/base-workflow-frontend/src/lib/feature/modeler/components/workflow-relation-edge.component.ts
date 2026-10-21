@@ -130,7 +130,8 @@ const RELATION_STYLES: Record<WorkflowRelation, { dash?: number[]; opacity: numb
  * user units: `2 4` at twice the width would be square dots packed twice as close — a near-solid line.
  */
 function strokeOf(style: { dash?: number[]; opacity: number }, selected: boolean, passed = false): { dash?: string; opacity: number; width: number } {
-  const width = selected ? SELECTED_STROKE_WIDTH : passed ? PASSED_STROKE_WIDTH : STROKE_WIDTH;
+  let width = passed ? PASSED_STROKE_WIDTH : STROKE_WIDTH;
+  if (selected) width = SELECTED_STROKE_WIDTH;
   const scale = width / STROKE_WIDTH;
   return { dash: style.dash?.map((length) => length * scale).join(' '), opacity: selected || passed ? 1 : style.opacity, width };
 }
