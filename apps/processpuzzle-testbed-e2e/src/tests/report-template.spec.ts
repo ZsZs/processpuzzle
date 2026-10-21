@@ -96,12 +96,12 @@ test.describe('Report template', () => {
     await expect(page).toHaveURL(new RegExp(`[?&]order=${order.id}`));
   });
 
-  // The Preview tab documents "a preview of one invoice is a link", but opening that link directly shows an empty
-  // invoice: no parameter bar, no request for the order. Reached through the app (details, then Preview) it works.
-  test.fixme('a preview opened from a shared link shows the invoice', async ({ page }) => {
+  // The Preview tab documents "a preview of one invoice is a link": opened directly, it shows that invoice.
+  test('a preview opened from a shared link shows the invoice', async ({ page }) => {
     const order = await entities.findBy<OrderPayload>('order', 'orderNumber', 'ORD-1001');
     await page.goto(`${DOCUMENTS}/${templateId}/preview?order=${order.id}`);
-    await expect(reportPage(page)).toContainText('Alice Johnson');
+    // The page loads the document, its draft and then the order, one after the other.
+    await expect(reportPage(page)).toContainText('Alice Johnson', { timeout: 20_000 });
   });
 
   test('an order\'s Reports tab runs the template for that order', async ({ page }) => {
@@ -125,10 +125,8 @@ test.describe('Report template', () => {
   test('a field and a table added to a template appear in its preview', async ({ page }) => {
     const id = await platform.createReportTemplate(`e2e-${randomUUID().slice(0, 8)}`, 'E2E invoice', { name: 'order', entityType: 'Order' });
     createdDocuments.push(id);
-    // Through the details page, not a deep link: the editor and the preview learn the template's ports from the
-    // document the app already holds, which a direct visit to a tab does not load (see the fixme above).
-    await page.goto(`${DOCUMENTS}/${id}/details`);
-    await page.getByTestId('document-show-content').click();
+    // Opened by its link, as a template is when it is shared or the page is reloaded.
+    await page.goto(`${DOCUMENTS}/${id}/content`);
     await page.getByTestId('document-add-text-block').click();
     const editor = page.locator('.pp-document-text-block [contenteditable="true"]');
     await editor.click();

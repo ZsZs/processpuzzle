@@ -112,48 +112,93 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
       selectedEntities: [],
       stagedIds: [],
     }),
-    withMethods((store, repository = getRepository()) => ({
-      clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
-      createEntity: (): Entity => new entityType(),
-      add: addEntity(store, repository),
-      delete: deleteEntity(store, repository, keyOf),
-      hasStagedChanges: (id: string): boolean => store.stagedIds().includes(id),
-      deleteAll: deleteAllEntities(store, repository),
-      deselectAll: () => {
-        patchState(store, { selectedEntities: [] });
-      },
-      deselectEntity: (id: string) => {
-        const subjectEntity = store.selectedEntities().find((entity) => keyOf(entity) === id);
-        if (subjectEntity) {
-          const index = store.selectedEntities().indexOf(subjectEntity, 0);
-          if (index > -1) {
-            const selectedEntities = store.selectedEntities().concat([]);
-            selectedEntities.splice(index, 1);
-            patchState(store, { selectedEntities });
+    withMethods((store, repository = getRepository()) => {
+      /** The row asked for as the current one that the loaded rows did not hold, until it is found or given up on. */
+      let requestedId: string | undefined;
+      /** The row being fetched on its own, so asking for it again while it is on its way does not fetch it twice. */
+      let fetchingId: string | undefined;
+      const reload = reloadEntity(store, repository, keyOf);
+
+      /**
+       * Makes the row asked for current once it can be found. The rows may have arrived since it was asked for, so they
+       * are looked through first; if it is still not among them it is on a page the list did not bring (the 21st
+       * workflow, say) and is asked for on its own. Without this a row beyond the first page could not be opened by its
+       * link, because the screen looked for it among the rows the list had brought.
+       *
+       * Runs when the row is asked for, if no list is on its way, and when a list arrives, if one was.
+       */
+      async function resolveRequested(): Promise<void> {
+        const id = requestedId;
+        if (id === undefined) return;
+        const found = store.entities().find((entity) => keyOf(entity) === id);
+        if (!found && fetchingId === id) return; // already on its way: the screen asks again once the list has arrived
+        requestedId = undefined;
+        let row = found;
+        if (!row) {
+          fetchingId = id;
+          try {
+            row = await reload(id);
+          } finally {
+            fetchingId = undefined;
           }
         }
-      },
-      load: findByQuery(store, repository),
-      loadById: (id: string): Entity | undefined => {
-        return store.entities().find((entity) => keyOf(entity) === id);
-      },
-      reload: reloadEntity(store, repository, keyOf),
-      resetErrorState: () => patchState(store, { error: undefined }),
-      selectEntity: (id: string) => {
-        const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;
-        if (foundEntity?.length === 1 && !store.selectedEntities().includes(foundEntity[0])) {
-          patchState(store, { selectedEntities: store.selectedEntities().concat(foundEntity) });
-        }
-      },
-      setCurrentEntity: (id: string | undefined): void => {
-        const foundEntity = id != null && store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;
-        if (foundEntity && foundEntity.length > 0) {
-          patchState(store, { currentEntity: foundEntity[0], currentId: keyOf(foundEntity[0]) });
-        } else patchState(store, { currentEntity: undefined, currentId: undefined });
-      },
-      stage: stageEntity(store, keyOf),
-      update: updateEntity(store, repository, keyOf),
-    })),
+        // Somebody may have asked for another row while this one was on its way: theirs stands.
+        const stillWanted = requestedId === undefined || requestedId === id;
+        if (row && stillWanted && store.currentId() === undefined) patchState(store, { currentEntity: row, currentId: keyOf(row) });
+        if (requestedId === id) requestedId = undefined;
+      }
+
+      return {
+        clearCurrentEntity: () => patchState(store, { currentEntity: undefined }),
+        createEntity: (): Entity => new entityType(),
+        add: addEntity(store, repository),
+        delete: deleteEntity(store, repository, keyOf),
+        hasStagedChanges: (id: string): boolean => store.stagedIds().includes(id),
+        deleteAll: deleteAllEntities(store, repository),
+        deselectAll: () => {
+          patchState(store, { selectedEntities: [] });
+        },
+        deselectEntity: (id: string) => {
+          const subjectEntity = store.selectedEntities().find((entity) => keyOf(entity) === id);
+          if (subjectEntity) {
+            const index = store.selectedEntities().indexOf(subjectEntity, 0);
+            if (index > -1) {
+              const selectedEntities = store.selectedEntities().concat([]);
+              selectedEntities.splice(index, 1);
+              patchState(store, { selectedEntities });
+            }
+          }
+        },
+        load: findByQuery(store, repository, () => void resolveRequested()),
+        loadById: (id: string): Entity | undefined => {
+          return store.entities().find((entity) => keyOf(entity) === id);
+        },
+        reload,
+        resetErrorState: () => patchState(store, { error: undefined }),
+        selectEntity: (id: string) => {
+          const foundEntity = store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;
+          if (foundEntity?.length === 1 && !store.selectedEntities().includes(foundEntity[0])) {
+            patchState(store, { selectedEntities: store.selectedEntities().concat(foundEntity) });
+          }
+        },
+        setCurrentEntity: (id: string | undefined): void => {
+          requestedId = undefined;
+          const foundEntity = id != null && store.entities().length > 0 ? store.entities().filter((entity) => keyOf(entity) === id) : undefined;
+          if (foundEntity && foundEntity.length > 0) {
+            patchState(store, { currentEntity: foundEntity[0], currentId: keyOf(foundEntity[0]) });
+            return;
+          }
+          patchState(store, { currentEntity: undefined, currentId: undefined });
+          // A row keyed by something other than `id` lives inside its owner's document: there is no endpoint to ask.
+          if (id == null || keyOf !== entityKeyById) return;
+          requestedId = id;
+          // With a list on its way the row may be in it: the list resolves the request when it arrives.
+          if (!store.isLoading()) void resolveRequested();
+        },
+        stage: stageEntity(store, keyOf),
+        update: updateEntity(store, repository, keyOf),
+      };
+    }),
     withHooks((store) => ({
       onInit: () => {
         store.load({});

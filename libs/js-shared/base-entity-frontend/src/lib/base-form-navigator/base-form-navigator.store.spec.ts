@@ -3,7 +3,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
 import { signalStore } from '@ngrx/signals';
-import { BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.store';
+import { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments } from './base-form-navigator.store';
 import { Component } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NavigatorCommand, type NavigationPayload } from './navigation-payload';
@@ -289,6 +289,49 @@ describe('BaseFormNavigatorStore', () => {
 
     expect(store.popResponsePayload()).toEqual(shipperPayload);
     expect(Array.from(store.responsePayloads().values())).toEqual([customerPayload]);
+  });
+
+  describe('form snapshot', () => {
+    const childValues = { id: 'order-created', name: 'Order created' };
+    // The forms use the singleton the entity-scoped stores delegate to.
+    let navigator: InstanceType<typeof BaseFormNavigatorSingletonStore>;
+
+    beforeEach(() => {
+      navigator = TestBed.inject(BaseFormNavigatorSingletonStore);
+    });
+
+    it('is given back once, to the form that left it', () => {
+      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+
+      expect(navigator.popFormSnapshot('Workflow Start Event')).toEqual(childValues);
+      expect(navigator.popFormSnapshot('Workflow Start Event')).toBeUndefined();
+    });
+
+    // A workflow's form shows the form of one of its start events inside it, and both ask for the values when the
+    // page comes back from the list the start event chose its event from. The outer one asks first.
+    it('is withheld from the form of another entity, which leaves it for its owner', () => {
+      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+
+      expect(navigator.popFormSnapshot('Workflow')).toBeUndefined();
+      expect(navigator.popFormSnapshot('Workflow Start Event')).toEqual(childValues);
+    });
+
+    it('is taken by whoever asks when no owner was recorded or none is named, as before', () => {
+      navigator.captureFormSnapshot(childValues);
+      expect(navigator.popFormSnapshot('Workflow')).toEqual(childValues);
+
+      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+      expect(navigator.popFormSnapshot()).toEqual(childValues);
+    });
+
+    it('is dropped with the payload stacks when the router navigates on its own', async () => {
+      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+
+      await router.navigateByUrl('/home');
+      await router.navigateByUrl('/test-entity/list');
+
+      expect(navigator.popFormSnapshot('Workflow Start Event')).toBeUndefined();
+    });
   });
 
   it('pushing a payload with the same attrName replaces the prior entry and moves it to the end.', () => {
