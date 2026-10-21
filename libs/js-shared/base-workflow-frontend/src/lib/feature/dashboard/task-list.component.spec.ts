@@ -63,7 +63,7 @@ describe('TaskListComponent', () => {
     store.selectInstance(RUN_ID);
     store.reload();
     controller
-      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`)
       .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'BLOCKED', blockedReason: 'positive-quantities: line item 3 has quantity 0' }] }] });
 
     expect(render().querySelector('[data-testid^="task-blocked-"]')?.textContent?.trim()).toBe('positive-quantities: line item 3 has quantity 0');
@@ -73,7 +73,7 @@ describe('TaskListComponent', () => {
     beforeEach(() => {
       store.setScope('team');
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[1], assignedTo: undefined }] }] });
+      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[1], assignedTo: undefined }] }] });
     });
 
     // On the row, not only in the detail pane: the Team queue is a list of things to pick up, and making
@@ -98,7 +98,7 @@ describe('TaskListComponent', () => {
       store.setScope('process');
       store.selectInstance(RUN_ID);
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[1]] }] });
+      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[1]] }] });
 
       const host = render();
       expect(host.querySelector(`[data-testid="task-row-${APPROVE_SHIPMENT_TASK_ID}"]`)).not.toBeNull();
@@ -110,7 +110,7 @@ describe('TaskListComponent', () => {
       store.setScope('process');
       store.selectInstance(RUN_ID);
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[2]] }] });
+      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [WORKFLOW_INSTANCE_DTO.tasks[2]] }] });
 
       expect(render().querySelector('[data-testid^="claim-task-"]')).toBeNull();
     });
@@ -131,7 +131,7 @@ describe('TaskListComponent', () => {
 
     it('reports a failed read instead of an empty queue', () => {
       store.reload();
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ errorId: 'boom' }, { status: 500, statusText: 'Server Error' });
+      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ errorId: 'boom' }, { status: 500, statusText: 'Server Error' });
 
       const host = render();
       expect(host.querySelector('[data-testid="task-list-error"]')?.textContent?.trim()).toBe('The runs could not be loaded.');

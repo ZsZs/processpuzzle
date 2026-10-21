@@ -406,7 +406,7 @@
       "artifacts_none": "Ez a feladat nem határoz meg terméket.",
       "not_created": "még nem jött létre",
       "required_state": "elvárt: {{state}}",
-      "note": "Megjegyzések (a munkafolyamat kontextusához adva)",
+      "context_variables": "Kontextusváltozók (a munkafolyamat kontextusához adva)",
       "complete": "Feladat befejezése",
       "complete_blocked": "A feladat befejezéséhez pipáljon ki minden lépést, és hozza minden kimenetet az elvárt állapotba.",
       "skip": "Kihagyás",

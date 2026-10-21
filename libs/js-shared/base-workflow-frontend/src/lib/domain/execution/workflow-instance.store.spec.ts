@@ -17,7 +17,7 @@ describe('WorkflowInstanceStore', () => {
     });
     store = TestBed.inject(WorkflowInstanceStore);
     controller = TestBed.inject(HttpTestingController);
-    controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO));
+    controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO));
   });
 
   it('loads the runs of the organization on init', () => {

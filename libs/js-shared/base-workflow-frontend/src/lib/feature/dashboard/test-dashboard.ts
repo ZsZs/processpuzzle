@@ -49,7 +49,7 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.not_created': 'not created yet',
   'base_workflow.task_instance.dashboard.required_state': 'required: {{state}}',
   'base_workflow.task_instance.dashboard.complete_blocked': 'Tick every step and bring each output into its required state to complete the task.',
-  'base_workflow.task_instance.dashboard.note': 'Notes',
+  'base_workflow.task_instance.dashboard.context_variables': 'Context variables',
   'base_workflow.task_instance.dashboard.complete': 'Complete task',
   'base_workflow.task_instance.dashboard.skip': 'Skip',
   'base_workflow.task_instance.dashboard.skip_reason': 'Reason for skipping',
@@ -84,7 +84,7 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
  */
 export function flushDashboardCatalogs(controller: HttpTestingController, ...runs: object[]): void {
   const content = runs.length > 0 ? runs : [WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO];
-  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush(pageOfWorkflowInstances(...content));
+  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush(pageOfWorkflowInstances(...content));
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/tasks`).flush([TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));

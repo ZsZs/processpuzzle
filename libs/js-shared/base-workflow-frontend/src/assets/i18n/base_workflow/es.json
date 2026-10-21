@@ -406,7 +406,7 @@
       "artifacts_none": "Esta tarea no declara artefactos.",
       "not_created": "aún no creado",
       "required_state": "requerido: {{state}}",
-      "note": "Notas (se añaden al contexto del flujo de trabajo)",
+      "context_variables": "Variables de contexto (se añaden al contexto del flujo de trabajo)",
       "complete": "Completar tarea",
       "complete_blocked": "Marque cada paso y lleve cada salida a su estado requerido para completar la tarea.",
       "skip": "Omitir",

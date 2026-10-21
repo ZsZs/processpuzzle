@@ -406,7 +406,7 @@
       "artifacts_none": "This task declares no artifacts.",
       "not_created": "not created yet",
       "required_state": "required: {{state}}",
-      "note": "Notes (added to the workflow context)",
+      "context_variables": "Context variables (added to the workflow context)",
       "complete": "Complete task",
       "complete_blocked": "Tick every step and bring each output into its required state to complete the task.",
       "skip": "Skip",
