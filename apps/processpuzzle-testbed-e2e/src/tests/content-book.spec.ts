@@ -15,14 +15,15 @@ const OVERVIEW_TITLE = 'ProcessPuzzle Platform Overview';
 const OVERVIEW_SLUG = 'platform-overview';
 
 test.describe('[ContentBook] CONTENT', () => {
-  test('opens the book from the slug in the list and shows its toolbar instead of the status bar', async ({ page }) => {
+  test('opens the book from the slug in the list and shows a reader its toolbar instead of the status bar', async ({ page }) => {
     await openHandbookContent(page);
 
     const toolbar = page.getByTestId('content-book-toolbar');
     await expect(toolbar).toContainText(HANDBOOK_TITLE);
     await expect(page.locator('base-entity-statusbar mat-toolbar')).toHaveCount(0);
+    // The signed-in e2e user holds no `documentation-editor` role, so the book's editor controls stay hidden.
     for (const testId of ['content-book-page-edit', 'content-book-delete', 'content-book-add-before', 'content-book-add-after', 'content-book-pdf']) {
-      await expect(toolbar.getByTestId(testId)).toBeVisible();
+      await expect(toolbar.getByTestId(testId)).toHaveCount(0);
     }
   });
 
