@@ -25,6 +25,14 @@ export interface WorkflowInstanceSummary {
   [key: string]: unknown;
 }
 
+export interface TaskInstanceSummary {
+  id: string;
+  taskDefinitionId: string;
+  status: string;
+  assignedTo?: string | null;
+  [key: string]: unknown;
+}
+
 export interface CalculationRunSummary {
   id: string;
   calculationId: string;
@@ -169,6 +177,26 @@ export class PlatformApi {
       if (![204, 404].includes(response.status())) failures.push(`${collection}/${id}: ${response.status()} ${await response.text()}`);
     }
     expect(failures, 'definitions that could not be deleted').toEqual([]);
+  }
+
+  /** One run with its tasks nested, as the dashboard reads it. */
+  async workflowInstance(id: string): Promise<WorkflowInstanceSummary & { tasks: TaskInstanceSummary[] }> {
+    const response = await this.request.get(`${this.roots.backend}/instances/${encodeURIComponent(id)}`);
+    expect(response.ok(), `reading instance ${id}: ${response.status()}`).toBe(true);
+    return await response.json();
+  }
+
+  /** Assigns a task of a run to a user. Task verbs address the task by its *definition* id, not the instance's. */
+  async assignTask(runId: string, taskDefinitionId: string, userId: string): Promise<void> {
+    const response = await this.request.post(`${this.roots.backend}/instances/${runId}/tasks/${taskDefinitionId}/assign`, { data: { userId } });
+    expect(response.status(), `assigning ${taskDefinitionId}: ${await response.text()}`).toBe(200);
+  }
+
+  /** Completes a task of a run; `context` is merged into the run's context first. Answers whether it was accepted. */
+  async completeTask(runId: string, taskDefinitionId: string, context: Record<string, unknown> = {}): Promise<boolean> {
+    const response = await this.request.post(`${this.roots.backend}/instances/${runId}/tasks/${taskDefinitionId}/complete`, { data: { context } });
+    expect(response.status(), `completing ${taskDefinitionId}: ${await response.text()}`).toBe(200);
+    return (await response.json()).accepted === true;
   }
 
   /** Starts a workflow by hand; answers the response as is, because a refusal is often what a test is after. */

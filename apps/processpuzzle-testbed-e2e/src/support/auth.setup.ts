@@ -30,8 +30,9 @@ setup('register and sign in a test user', async ({ page, request, baseURL }) => 
   await page.locator('form [type=submit]').first().click();
 
   await page.waitForURL((url) => url.origin === new URL(baseURL as string).origin);
-  await expect(page.getByRole('button', { name: 'Auth Button' })).toBeVisible();
-  await expect(page.locator('pp-auth-button .avatar')).toBeVisible();
+  // The application boots again after the redirect (a development server compiles on the first request).
+  await expect(page.getByRole('button', { name: 'Auth Button' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('pp-auth-button .avatar')).toBeVisible({ timeout: 30_000 });
 
   mkdirSync(AUTH_DIRECTORY, { recursive: true });
   const registered: E2eUser = { ...user, displayName: `${user.firstName} ${user.lastName}` };
