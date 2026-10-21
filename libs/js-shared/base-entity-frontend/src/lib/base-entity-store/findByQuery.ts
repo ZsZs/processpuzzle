@@ -8,7 +8,11 @@ import { tapResponse } from '@ngrx/operators';
 import { httpErrorMessage } from '@processpuzzle/util';
 import { EntityStoreHandle } from './base-entity.store';
 
-export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>) => {
+/**
+ * `onLoaded` runs after each answer, successful or not, once the rows (if any) are in the store: for whoever asked for a
+ * row while the list was on its way.
+ */
+export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>, onLoaded?: () => void) => {
   return rxMethod<BaseEntityQueryCondition>(
     pipe(
       tap((query: BaseEntityQueryCondition) => patchState(store, { number: query.page, isLoading: true, error: undefined })),
@@ -39,8 +43,12 @@ export const findByQuery = <Entity extends BaseEntity>(store: EntityStoreHandle<
                   isLoading: false,
                 });
               }
+              onLoaded?.();
             },
-            error: (error: unknown) => patchState(store, { error: httpErrorMessage(error) }),
+            error: (error: unknown) => {
+              patchState(store, { error: httpErrorMessage(error) });
+              onLoaded?.();
+            },
             finalize: () => patchState(store, { isLoading: false }),
           }),
         ),

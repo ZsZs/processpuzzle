@@ -214,7 +214,15 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
       if (this.entityId() && this.entityDescriptor() && this.entity())
         untracked(() => {
           const snapshot = this.formNavigator.popFormSnapshot(this.entityDescriptor().entityName);
-          this.entityFormBuilder.buildForm(this.componentHost.viewContainerRef, this.baseEntityForm, this.store(), this.entityDescriptor().attrDescriptors, this.entity, this.entityDescriptor().entityName, snapshot);
+          this.entityFormBuilder.buildForm(
+            this.componentHost.viewContainerRef,
+            this.baseEntityForm,
+            this.store(),
+            this.entityDescriptor().attrDescriptors,
+            this.entity,
+            this.entityDescriptor().entityName,
+            snapshot,
+          );
         });
     });
 
@@ -222,7 +230,11 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     // `id` — the row was found by that segment — but an embedded row may carry no id at all, and passing
     // its `undefined` would clear the selection instead of making the row current.
     effect(() => {
-      if (this.entity()) this.store().setCurrentEntity(this.entityId());
+      const entity = this.entity();
+      // A new object has no row to be current. For a saved one the store is asked even when the loaded rows do not
+      // hold it (it is beyond the first page of the list, or the list has not arrived), and finds it by its key.
+      if (this.isNewObject()) this.store().setCurrentEntity(undefined);
+      else if (entity || this.entityId()) this.store().setCurrentEntity(this.entityId());
     });
   }
   // endregion
