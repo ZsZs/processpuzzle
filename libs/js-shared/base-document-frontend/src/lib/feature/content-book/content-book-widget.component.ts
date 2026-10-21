@@ -1,7 +1,7 @@
 import { TemplatePortal } from '@angular/cdk/portal';
 import { HttpErrorResponse } from '@angular/common/http';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, DestroyRef, effect, inject, Injector, input, output, signal, TemplateRef, untracked, viewChild, ViewContainerRef } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, Injector, input, output, signal, TemplateRef, untracked, viewChild, ViewContainerRef } from '@angular/core';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDivider } from '@angular/material/divider';
@@ -22,6 +22,7 @@ import { ContentBook, ContentBookNode } from '../../domain/content-book';
 import { contentOf, ContentBookService } from '../../domain/content-book.service';
 import { DOCUMENT_ACCESS_CONTEXT, mayEdit } from '../../domain/document-access-context';
 import { DOCUMENT_ENTITY_NAME } from '../../domain/document-entity-names';
+import { PDF_RENDERER, reportFileName } from '../report/report-pdf';
 import { AddDocumentDialog, AddDocumentDialogData } from './add-document.dialog';
 import { ConfirmArchiveDocumentDialog } from './confirm-archive-document.dialog';
 import { ConfirmDeleteDocumentDialog } from './confirm-delete-document.dialog';
@@ -58,7 +59,7 @@ export type ContentBookAddPosition = 'before' | 'after' | 'child' | 'root';
  * **Addressed by slug**, so a seeded book is addressable before anyone knows its generated id; the open page is
  * the `doc` query parameter, a document slug for the same reason.
  *
- * **The toolbar** — Add, Edit, Publish, Archive, Properties — is offered to editors of the book; whether a verb
+ * **The toolbar** — Add, Insert above / below, Edit, Delete, PDF, Publish, Archive, Properties — is offered to editors of the book; whether a verb
  * is *allowed* on a page is the page's own roles' business, and finally the backend's. Editing a published page
  * edits its draft, so readers keep the published revision until the next Publish. An archived page is
  * read-only. Readers see only published, unarchived pages; editors see every page unless they switch the
@@ -168,6 +169,8 @@ export class ContentBookWidgetComponent {
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly injector = inject(Injector);
   private readonly viewContainerRef = inject(ViewContainerRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly renderPdf = inject(PDF_RENDERER);
 
   private readonly contentsTemplate = viewChild.required<TemplateRef<unknown>>('contents');
   protected readonly pageView = viewChild(ContentBookDocumentViewComponent);
@@ -209,7 +212,7 @@ export class ContentBookWidgetComponent {
     });
   });
   protected readonly selectedNode = computed(() => this.book()?.nodes.find((node) => node.id === this.selectedNodeId()));
-  private readonly selectedDocument = computed(() => {
+  protected readonly selectedDocument = computed(() => {
     const node = this.selectedNode();
     return node ? this.documents().get(node.documentId) : undefined;
   });
@@ -357,6 +360,21 @@ export class ContentBookWidgetComponent {
     await this.act(async () => {
       const archived = await this.documentService.archive(documentId);
       this.documents.update((documents) => new Map(documents).set(documentId, archived));
+    });
+  }
+
+  /** Downloads the page as shown — the open page's reader — as a PDF named after the book and the document. */
+  protected exportPdf(): Promise<void> {
+    const document = this.selectedDocument();
+    const page = this.host.nativeElement.querySelector<HTMLElement>('[data-testid="content-book-page"]');
+    if (!document || !page) return Promise.resolve();
+    return this.act(async () => {
+      const blob = await this.renderPdf(page);
+      const link = globalThis.document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = reportFileName(this.book()?.slug ?? 'book', document.slug ?? document.title);
+      link.click();
+      URL.revokeObjectURL(link.href);
     });
   }
 

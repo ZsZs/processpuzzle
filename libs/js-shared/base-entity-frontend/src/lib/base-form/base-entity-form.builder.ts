@@ -34,6 +34,7 @@ import { TitleComponent } from './title/title.component';
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { translateLabel } from '../i18n/entity-label.pipe';
 import { ENTITY_STATE_CONTROL } from './state/entity-state-control';
+import { ENTITY_CALCULATED_CONTROL } from './calculated/entity-calculated-control';
 
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
@@ -69,6 +70,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
   // Optional so a host without transloco still gets a working form — its tooltips fall back to `description`.
   private readonly transloco = inject(TranslocoService, { optional: true });
   private readonly stateControl = inject(ENTITY_STATE_CONTROL, { optional: true });
+  private readonly calculatedControl = inject(ENTITY_CALCULATED_CONTROL, { optional: true });
 
   // region public methods
   public buildForm(
@@ -152,7 +154,9 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
 
     // A STATE control is always disabled, and that is what keeps it out of the PUT: `BaseEntityFormComponent` saves
     // `form.value`, which leaves disabled controls out. The state changes only by firing a transition.
-    const disabled = column.disabled || column.formControlType === FormControlType.STATE;
+    // A CALCULATED control is disabled for the same reason: the stored value stays out of the PUT, and the backend
+    // keeps what a calculation wrote anyway.
+    const disabled = column.disabled || column.formControlType === FormControlType.STATE || column.formControlType === FormControlType.CALCULATED;
     return new FormControl({ value: currentAttrValue, disabled }, validators);
   }
 
@@ -164,6 +168,7 @@ export class BaseEntityFormBuilder<Entity extends BaseEntity> {
 
   private componentOf(formControlType: FormControlType): AnyFormControlComponent | undefined {
     if (formControlType === FormControlType.STATE) return (this.stateControl?.component as AnyFormControlComponent | undefined) ?? LabelComponent;
+    if (formControlType === FormControlType.CALCULATED) return (this.calculatedControl?.component as AnyFormControlComponent | undefined) ?? LabelComponent;
     return FORM_CONTROL_COMPONENTS[formControlType];
   }
 

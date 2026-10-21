@@ -43,7 +43,7 @@ import {
 } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
-import { BASE_CALCULATION_ENTITY_FACADES, BASE_CALCULATION_FACADE_PROVIDERS, BASE_CALCULATION_TRANSLATION_SOURCE } from '@processpuzzle/base-calculation';
+import { BASE_CALCULATION_ENTITY_FACADES, BASE_CALCULATION_FACADE_PROVIDERS, BASE_CALCULATION_TRANSLATION_SOURCE, provideEntityCalculatedControl } from '@processpuzzle/base-calculation';
 import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
 import {
   BASE_WORKFLOW_ENTITY_FACADES,
@@ -134,6 +134,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // transloco scope, without which the tab's label would render as its key on those screens.
       ...provideEntityStateMachineTab(),
       ...provideEntityStateControl(),
+      // base-calculation does the same for the attributes a released calculation writes (`Order.total`): they render
+      // read-only and recompute from the unsaved form instead of offering an edit the backend would discard.
+      ...provideEntityCalculatedControl(),
       // The same arrangement for base-ai: the Enrollment tab, offered to every entity type that has a
       // recognition profile — `Boat` in this tenant, a metadata-defined entity that names base-ai nowhere.
       ...provideEntityEnrollmentTab(),

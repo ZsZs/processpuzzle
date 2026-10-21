@@ -75,5 +75,9 @@
     "freeze": "Befagyasztás",
     "frozenAt": "Befagyasztva: {{at}}",
     "source": "A definíció a futáskor"
+  },
+  "calculated_control": {
+    "badge": "Számítja: {{calculation}}",
+    "error": "Az újraszámítás nem sikerült; az utolsó érték látható."
   }
 }

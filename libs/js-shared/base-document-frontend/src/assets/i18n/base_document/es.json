@@ -177,6 +177,7 @@
       "publish": "Publicar",
       "archive": "Archivar",
       "properties": "Propiedades",
+      "pdf_report": "Informe PDF",
       "show_unpublished": "No publicadas",
       "confirm_archive_title": "¿Archivar el documento?",
       "confirm_archive_text": "«{{title}}» se guarda como instantánea y ya no se podrá editar.",

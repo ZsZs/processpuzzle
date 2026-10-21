@@ -74,6 +74,9 @@
   "copyright": {
     "name": "Copyright"
   },
+  "entity_form": {
+    "name": "Entity form"
+  },
   "entity_table": {
     "name": "Entity table"
   },

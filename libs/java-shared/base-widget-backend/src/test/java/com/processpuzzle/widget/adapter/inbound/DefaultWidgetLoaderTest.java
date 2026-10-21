@@ -72,7 +72,7 @@ class DefaultWidgetLoaderTest {
         // base-document-frontend's content-book; a palette entry with no component behind it only fails when
         // an app is previewed. See the file header.
         assertThat(capturedDefinitions()).extracting(WidgetDefinitionInput::getKey)
-                .containsExactly("cards-grid", "markdown-page", "entity-table", "image-zoom", "photo-album", "app-logo", "app-title", "nav-bar",
+                .containsExactly("cards-grid", "markdown-page", "entity-table", "entity-form", "image-zoom", "photo-album", "app-logo", "app-title", "nav-bar",
                         "nav-menu", "spacer", "navigate-back", "language-selector", "themes-button", "like-button", "share-button", "version-button",
                         "design-button", "task-dashboard-button", "copyright", "content-book");
     }

@@ -75,5 +75,9 @@
     "freeze": "Freeze",
     "frozenAt": "Frozen at {{at}}",
     "source": "Definition as it ran"
+  },
+  "calculated_control": {
+    "badge": "Calculated by {{calculation}}",
+    "error": "Could not recalculate; showing the last value."
   }
 }

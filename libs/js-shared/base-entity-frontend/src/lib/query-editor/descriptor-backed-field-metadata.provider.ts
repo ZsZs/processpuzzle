@@ -74,7 +74,7 @@ export class DescriptorBackedFieldMetadataProvider extends RsqlFieldMetadataProv
   }
 
   private resolveType(descriptor: BaseEntityAttrDescriptor): RsqlFieldType {
-    if (descriptor.formControlType === FormControlType.TEXT_BOX) {
+    if (descriptor.formControlType === FormControlType.TEXT_BOX || descriptor.formControlType === FormControlType.CALCULATED) {
       const inputType = descriptor.options?.inputType;
       if (inputType && INPUT_TYPE_TO_RSQL_TYPE[inputType]) return INPUT_TYPE_TO_RSQL_TYPE[inputType];
     }

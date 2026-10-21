@@ -103,6 +103,16 @@ describe('BaseFormNavigatorStore', () => {
       expect(store.activeTabSegment()).toEqual('content');
     });
 
+    it('keeps a tab classified when the URL carries a query string', async () => {
+      store.registerTabSegments(['content']);
+
+      await store.navigateToUrl('test-entity/1/content?doc=intro', 'home');
+
+      expect(store.activeRouteSegment()).toEqual(RouteSegments.ENTITY_TAB_ROUTE);
+      expect(store.activeTabSegment()).toEqual('content');
+      expect(store.determineCurrentUrl()).toEqual('/test-entity/1/content');
+    });
+
     it('navigateToTab() builds <entity>/<id>/<segment> on the details route prefix', async () => {
       store.registerTabSegments(['content']);
 

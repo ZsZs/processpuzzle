@@ -748,6 +748,7 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
       return new ArtifactControlTester(attr);
     case 'FLEX_BOX':
     case 'LABEL':
+    case 'CALCULATED':
       return new NoopControlTester(attr, false);
     default:
       return new NoopControlTester(attr, true);

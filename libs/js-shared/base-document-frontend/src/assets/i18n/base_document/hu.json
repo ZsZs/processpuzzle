@@ -177,6 +177,7 @@
       "publish": "Közzététel",
       "archive": "Archiválás",
       "properties": "Tulajdonságok",
+      "pdf_report": "PDF jelentés",
       "show_unpublished": "Nem közzétettek",
       "confirm_archive_title": "Archiválja a dokumentumot?",
       "confirm_archive_text": "A(z) „{{title}}” pillanatképként mentésre kerül, és többé nem szerkeszthető.",

@@ -26,9 +26,13 @@ rules:
 
   - id: total-matches-line-items
     name: Total matches sum of line items
+    description: >-
+      Disabled: the order total is owned by the `order-total` calculation, which applies a volume discount and
+      writes the result after the save. base-entity keeps the stored (stale) total on update, so this rule
+      rejected every edit of the lines and every discounted order. Kept as an example of a cross-field rule.
     context: Order
     severity: ERROR
-    enabled: true
+    enabled: false
     fields:
       - total
       - lineItems

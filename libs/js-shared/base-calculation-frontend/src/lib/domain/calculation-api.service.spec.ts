@@ -30,6 +30,19 @@ describe('CalculationApiService', () => {
     expect((await pending).errors).toEqual(['bad']);
   });
 
+  it('evaluates an unsaved object in place of the stored one, and lists the outputs of an entity', async () => {
+    service.evaluate('order-total', { order: 'o-1' }, 'released', undefined, { order: { total: 1 } }).subscribe();
+    const evaluation = controller.expectOne(`${SERVICE_ROOT}/calculations/order-total/evaluate`);
+    expect(evaluation.request.body).toEqual({ parameters: { order: 'o-1' }, revision: 'released', unsaved: { order: { total: 1 } } });
+    evaluation.flush({});
+
+    const outputs = firstValueFrom(service.outputs('order'));
+    const request = controller.expectOne(`${SERVICE_ROOT}/calculation-outputs?entity=order`);
+    request.flush([{ calculationId: 'order-total', attribute: 'total', decision: 'total', parameter: 'order' }]);
+
+    expect((await outputs)[0].attribute).toBe('total');
+  });
+
   it('evaluates the draft, or an unsaved source, and runs the released definition', async () => {
     service.evaluate('order total', { order: 'o-1' }).subscribe();
     const evaluation = controller.expectOne(`${SERVICE_ROOT}/calculations/order%20total/evaluate`);
