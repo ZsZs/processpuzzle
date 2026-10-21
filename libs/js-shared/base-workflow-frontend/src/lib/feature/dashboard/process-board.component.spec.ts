@@ -7,7 +7,6 @@ import { ProcessBoardComponent } from './process-board.component';
 import {
   APPROVE_SHIPMENT_TASK_ID,
   CONFIRM_DELIVERY_TASK_ID,
-  DASHBOARD_SERVICE_ROOT,
   flushDashboardCatalogs,
   openRunsRead,
   provideDashboardTesting,
