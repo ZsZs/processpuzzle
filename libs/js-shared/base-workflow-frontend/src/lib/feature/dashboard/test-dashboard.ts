@@ -84,7 +84,7 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
  */
 export function flushDashboardCatalogs(controller: HttpTestingController, ...runs: object[]): void {
   const content = runs.length > 0 ? runs : [WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO];
-  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush(pageOfWorkflowInstances(...content));
+  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush(pageOfWorkflowInstances(...content));
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/tasks`).flush([TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));

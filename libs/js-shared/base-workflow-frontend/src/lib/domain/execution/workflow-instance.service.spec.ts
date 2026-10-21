@@ -35,7 +35,7 @@ describe('WorkflowInstanceService', () => {
   it('lists complete instances, tasks and artifacts included', async () => {
     const pending = firstValueFrom(service.findAll());
 
-    const request = controller.expectOne(`${serviceRoot}/instances`);
+    const request = controller.expectOne(`${serviceRoot}/instances?size=200`);
     expect(request.request.method).toBe('GET');
     request.flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
 
@@ -44,6 +44,16 @@ describe('WorkflowInstanceService', () => {
     expect(listed.tasks).toHaveLength(3);
     expect(listed.tasks[0].stepResults[0].stepId).toBe('check-items');
     expect(listed.artifacts).toHaveLength(2);
+  });
+
+  // The backend lists 20 runs without a size, the oldest first, and the dashboard works from what the store loaded:
+  // a 21st run would be invisible to it.
+  it('asks for a page large enough to hold every run unless the caller names a size', () => {
+    void firstValueFrom(service.findByQuery({ page: 1, pageSize: 5 }));
+    controller.expectOne(`${serviceRoot}/instances?page=1&size=5`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+
+    void firstValueFrom(service.findByQuery({ page: 1 }));
+    controller.expectOne(`${serviceRoot}/instances?page=1&size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
   });
 
   it('addresses a single instance by its server-minted id', () => {

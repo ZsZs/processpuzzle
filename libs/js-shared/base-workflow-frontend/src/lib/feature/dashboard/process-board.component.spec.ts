@@ -88,7 +88,7 @@ describe('ProcessBoardComponent', () => {
     store.selectInstance(RUN_ID);
     store.reload();
     controller
-      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`)
       .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'BLOCKED', blockedReason: 'line item 3 has quantity 0' }] }] });
 
     expect(render().querySelector('[data-testid="board-column-BLOCKED"] .card__detail--danger')?.textContent?.trim()).toBe('line item 3 has quantity 0');
@@ -101,7 +101,7 @@ describe('ProcessBoardComponent', () => {
   it('folds a skipped card into the completed column and badges it there', () => {
     store.selectInstance(RUN_ID);
     store.reload();
-    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'SKIPPED' }] }] });
+    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [{ ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'SKIPPED' }] }] });
 
     const host = render();
     expect(host.querySelector('[data-testid="board-column-COMPLETED"] [data-testid="task-status-SKIPPED"]')).not.toBeNull();
@@ -113,7 +113,7 @@ describe('ProcessBoardComponent', () => {
     store.selectInstance(RUN_ID);
     store.reload();
     const cancelled = { ...WORKFLOW_INSTANCE_DTO.tasks[2], status: 'CANCELLED', cancelReason: 'interrupted by invoice-overdue' };
-    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [cancelled] }] });
+    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, tasks: [cancelled] }] });
 
     const host = render();
     expect(host.querySelector('[data-testid="board-column-COMPLETED"] [data-testid="task-status-CANCELLED"]')).not.toBeNull();
@@ -125,7 +125,7 @@ describe('ProcessBoardComponent', () => {
     store.selectInstance(RUN_ID);
     store.reload();
     const timer = { id: 'e-timer', eventUseId: 'invoice-overdue', name: 'Invoice overdue', direction: 'CATCH', status: 'WAITING', dueAt: '2026-10-08T11:00:00Z', fireCount: 0 };
-    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [timer] }] });
+    controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`).flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [timer] }] });
 
     const text = render().querySelector('[data-testid="board-waiting-invoice-overdue"]')?.textContent ?? '';
     expect(text).toContain('Invoice overdue');
@@ -137,7 +137,7 @@ describe('ProcessBoardComponent', () => {
     store.reload();
     const [request, issued] = WORKFLOW_INSTANCE_DTO.events;
     controller
-      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`)
       .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [{ ...request, status: 'THROWN' }, { ...issued, status: 'WAITING' }] }] });
 
     const host = render();
@@ -151,7 +151,7 @@ describe('ProcessBoardComponent', () => {
     const [request, issued] = WORKFLOW_INSTANCE_DTO.events;
     const reason = "The required parameter(s) orderNumber of 'InvoiceRequested' resolve to nothing in the run's context.";
     controller
-      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`)
+      .expectOne(`${DASHBOARD_SERVICE_ROOT}/instances?size=200`)
       .flush({ content: [{ ...WORKFLOW_INSTANCE_DTO, events: [{ ...request, status: 'PENDING', blockedReason: reason }, { ...issued, status: 'PENDING' }] }] });
 
     const host = render();
