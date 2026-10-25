@@ -22,6 +22,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EnsureReferencedRolesTest {
 
@@ -91,12 +92,7 @@ class EnsureReferencedRolesTest {
     @SuppressWarnings("unchecked")
     private static ObjectProvider<TenantRealmDirectory> provider(Supplier<TenantRealmDirectory> current) {
         ObjectProvider<TenantRealmDirectory> provider = mock(ObjectProvider.class);
-        org.mockito.Mockito.when(provider.getIfUnique(any(Supplier.class))).thenAnswer(call -> new TenantRealmDirectory() {
-            @Override
-            public Optional<Tenant> find(String orgKey) {
-                return current.get().find(orgKey);
-            }
-        });
+        when(provider.getIfUnique(any(Supplier.class))).thenAnswer(call -> (TenantRealmDirectory) orgKey -> current.get().find(orgKey));
         return provider;
     }
 }
