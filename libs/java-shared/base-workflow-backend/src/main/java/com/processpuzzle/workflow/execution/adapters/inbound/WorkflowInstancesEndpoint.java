@@ -3,6 +3,7 @@ package com.processpuzzle.workflow.execution.adapters.inbound;
 import com.processpuzzle.workflow.api.WorkflowInstancesApi;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import com.processpuzzle.workflow.execution.usecases.inbound.CancelWorkflowInstanceUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.DeleteWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindAllWorkflowInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.ListTaskInstancesUseCase;
@@ -39,6 +40,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
     private final FindWorkflowInstanceUseCase findWorkflowInstance;
     private final FindAllWorkflowInstancesUseCase findAllWorkflowInstances;
     private final CancelWorkflowInstanceUseCase cancelWorkflowInstance;
+    private final DeleteWorkflowInstanceUseCase deleteWorkflowInstance;
     private final ListTaskInstancesUseCase listTaskInstances;
     private final ListArtifactInstancesUseCase listArtifactInstances;
     private final ListEventInstancesUseCase listEventInstances;
@@ -48,6 +50,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
                                      FindWorkflowInstanceUseCase findWorkflowInstance,
                                      FindAllWorkflowInstancesUseCase findAllWorkflowInstances,
                                      CancelWorkflowInstanceUseCase cancelWorkflowInstance,
+                                     DeleteWorkflowInstanceUseCase deleteWorkflowInstance,
                                      ListTaskInstancesUseCase listTaskInstances,
                                      ListArtifactInstancesUseCase listArtifactInstances,
                                      ListEventInstancesUseCase listEventInstances,
@@ -56,6 +59,7 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
         this.findWorkflowInstance = findWorkflowInstance;
         this.findAllWorkflowInstances = findAllWorkflowInstances;
         this.cancelWorkflowInstance = cancelWorkflowInstance;
+        this.deleteWorkflowInstance = deleteWorkflowInstance;
         this.listTaskInstances = listTaskInstances;
         this.listArtifactInstances = listArtifactInstances;
         this.listEventInstances = listEventInstances;
@@ -112,6 +116,12 @@ public class WorkflowInstancesEndpoint implements WorkflowInstancesApi {
     public ResponseEntity<Void> cancelWorkflowInstance(String orgKey, String instanceId, CancelWorkflowInstanceRequest request) {
         String reason = request == null ? null : request.getReason();
         cancelWorkflowInstance.cancel(orgKey, UUID.fromString(instanceId), reason);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteWorkflowInstance(String orgKey, String instanceId) {
+        deleteWorkflowInstance.delete(orgKey, UUID.fromString(instanceId));
         return ResponseEntity.noContent().build();
     }
 
