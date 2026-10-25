@@ -56,6 +56,7 @@ public class CreateDocument {
         }
 
         Document document = input.properties().create(orgKey, documentId, guard.currentPrincipal());
+        guard.declareRoles(orgKey, input.properties().roles());
         DocumentContent sourceContent = sourceContentOf(input);
 
         List<DocumentValidationProblem> blocking = DocumentValidationProblem.blocking(

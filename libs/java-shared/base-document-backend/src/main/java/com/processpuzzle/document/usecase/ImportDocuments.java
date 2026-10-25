@@ -133,6 +133,7 @@ public class ImportDocuments {
     private void createFrom(String orgKey, DocumentCommand entry) {
         String documentId = UUID.randomUUID().toString();
         Document document = entry.properties().create(orgKey, documentId, guard.currentPrincipal());
+        guard.declareRoles(orgKey, entry.properties().roles());
         repository.save(document);
 
         Map<String, DocumentContent> byLocale = contentByLocale(entry);
@@ -154,6 +155,7 @@ public class ImportDocuments {
         DocumentStatus before = DocumentPlatformFacts.defaultStatusOf(existing, draftsByLocale.values(), snapshots);
 
         entry.properties().applyTo(existing);
+        guard.declareRoles(orgKey, entry.properties().roles());
         repository.save(existing);
 
         List<DocumentDraft> written = new ArrayList<>(draftsByLocale.values());

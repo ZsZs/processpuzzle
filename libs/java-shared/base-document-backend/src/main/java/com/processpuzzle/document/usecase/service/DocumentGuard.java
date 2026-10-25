@@ -6,10 +6,14 @@ import com.processpuzzle.document.usecase.exception.DocumentAccessDeniedExceptio
 import com.processpuzzle.document.usecase.exception.DocumentPublishingConflictException;
 import com.processpuzzle.document.usecase.port.DocumentAccessPolicy;
 import com.processpuzzle.document.usecase.port.PermitAllDocumentAccessPolicy;
+import com.processpuzzle.core.tenancy.RolesReferenced;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * The single place this feature consults {@link DocumentAccessPolicy}. Use cases depend on this
@@ -38,10 +42,34 @@ import java.util.List;
 @Component
 public class DocumentGuard {
 
-    private final DocumentAccessPolicy policy;
+    private static final String ROLES_DESCRIPTION = "Referenced by documents and content books";
 
-    public DocumentGuard(ObjectProvider<DocumentAccessPolicy> policyProvider) {
+    private final DocumentAccessPolicy policy;
+    private final ApplicationEventPublisher events;
+
+    @Autowired
+    public DocumentGuard(ObjectProvider<DocumentAccessPolicy> policyProvider, ApplicationEventPublisher events) {
         this.policy = policyProvider.getIfUnique(PermitAllDocumentAccessPolicy::new);
+        this.events = events;
+    }
+
+    /** For callers that have no one to tell about the roles they name. */
+    public DocumentGuard(ObjectProvider<DocumentAccessPolicy> policyProvider) {
+        this(policyProvider, event -> { });
+    }
+
+    /**
+     * Tells the organization's role catalog that these access roles are now in use, so each exists in
+     * the identity provider and can be picked on My Profile. Called by every use case that stores
+     * {@link DocumentRoles}; it sits here because this is the one component they all already share.
+     */
+    public void declareRoles(String orgKey, DocumentRoles roles) {
+        List<String> named = Stream.of(roles.readerRoles(), roles.editorRoles(), roles.publisherRoles())
+                .flatMap(List::stream)
+                .toList();
+        if (!named.isEmpty()) {
+            events.publishEvent(new RolesReferenced(orgKey, ROLES_DESCRIPTION, named));
+        }
     }
 
     /** Rejects the call with 403 when the principal is not a member of {@code orgKey}. */
