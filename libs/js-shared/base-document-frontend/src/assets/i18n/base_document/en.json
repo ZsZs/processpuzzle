@@ -177,6 +177,7 @@
       "publish": "Publish",
       "archive": "Archive",
       "properties": "Properties",
+      "pdf_report": "PDF report",
       "show_unpublished": "Unpublished",
       "confirm_archive_title": "Archive document?",
       "confirm_archive_text": "\"{{title}}\" is stored as a snapshot and can no longer be edited.",

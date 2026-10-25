@@ -311,6 +311,35 @@ The `MyProfileComponent` provides a user interface for viewing and managing the 
 - Displays user profile information
 - Clean, intuitive interface with Material Design styling
 - Integrated with the authentication system
+- Optional **self-service roles**: the user picks realm roles for themselves (see below)
+
+### Self-service roles
+
+Off by default, so the roles stay read-only chips. An application switches it on by setting the optional
+runtime key `BASE_CONFIGURATION.SELF_SERVICE_ROLES_SERVICE_ROOT` to its organization-scoped backend root
+(e.g. `/api/organizations/processpuzzle-testbed`); there is deliberately no fallback to
+`BACKEND_SERVICE_ROOT`. The Testbed sets it; ProcessPuzzle UI / Admin leave role assignment to
+administrators and omit it.
+
+With the key set, the page loads `GET {root}/me/roles` through `SelfServiceRolesService` and shows the
+`selectable` roles as checkboxes (names and descriptions from `ROLE_DESCRIPTION_SOURCE`, else the backend's
+own). **Save** sends `PUT {root}/me/roles`, then calls `AuthService.reloadUser()` — the Keycloak
+implementation forces a token refresh and rebuilds the user, so the chips and role-guarded UI (for instance
+the Handbook's edit button) update without signing in again. Other providers keep the no-op default.
+
+The backend offers no administrative roles (`org-admin`, `platform-admin`, built-ins) and never revokes
+ones the user already holds; it must also have `processpuzzle.self-service-roles.enabled` on — see
+[Auth feature strategy](../../../docs/auth-feature-strategy.md).
+
+### Role catalog suggestions
+
+`provideRoleCatalogSuggestions()` (from `@processpuzzle/auth/domain`) makes every `TAGS` attribute whose
+descriptor sets `tagSuggestions = REALM_ROLE_SUGGESTIONS` (`@processpuzzle/base-entity`) offer the
+organization's roles as you type — the reader / editor / publisher roles of documents and content books do.
+It reads `GET {root}/role-catalog`, open to every member, with the same organization root as self-service roles; the
+backend leaves out administrative roles. The field stays free text: a role the catalog does not know is drawn
+dashed ("new") and is created in the realm when the document is saved. Without the provider or the root the
+field is plain free text.
 
 ### Usage
 

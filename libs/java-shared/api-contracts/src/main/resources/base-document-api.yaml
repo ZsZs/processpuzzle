@@ -2224,6 +2224,13 @@ components:
         signedBy:
           type: string
           description: The signer's principal name, taken from the token.
+        signedById:
+          type: string
+          nullable: true
+          description: >-
+            The signer's id in the identity provider (the token's subject), so that a screen can tell the signature of
+            the person looking at it from somebody else's, and two people of one name apart. Absent for a signature
+            recorded before this field existed, or given under a policy that names the signer by something else.
         signedAt:
           type: string
           format: date-time

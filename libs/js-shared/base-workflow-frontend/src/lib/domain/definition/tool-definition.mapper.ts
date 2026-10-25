@@ -19,6 +19,7 @@ interface ToolDefinitionDto {
   name?: string;
   description?: string;
   baseUrl?: string;
+  uiUrl?: string;
   auth?: ToolAuthConfig;
   operations?: ToolOperationDto[];
   version?: number;
@@ -53,6 +54,7 @@ export class ToolDefinitionMapper implements BaseEntityMapper<ToolDefinition> {
       name: source.name,
       description: source.description,
       baseUrl: source.baseUrl,
+      uiUrl: source.uiUrl,
       type: auth?.type as AuthType | undefined,
       secretRef: auth?.secretRef,
       // Kept so toDto can merge onto it rather than replace it.
@@ -72,6 +74,7 @@ export class ToolDefinitionMapper implements BaseEntityMapper<ToolDefinition> {
       name: entity.name,
       description: entity.description,
       baseUrl: entity.baseUrl,
+      uiUrl: entity.uiUrl || undefined,
       auth: mergeAuth(entity),
       operations: (entity.operations ?? []).map(fromToolOperation),
       version: entity.version,

@@ -37,6 +37,7 @@ public class ToolReleaseParticipant extends DefinitionReleaseParticipant<ToolDef
         content.put("name", row.getName());
         content.put("description", row.getDescription());
         content.put("baseUrl", row.getBaseUrl());
+        content.put("uiUrl", row.getUiUrl());
         content.put("auth", row.getAuth());
         content.put("operations", row.getOperations());
         return content;
@@ -52,6 +53,7 @@ public class ToolReleaseParticipant extends DefinitionReleaseParticipant<ToolDef
         released.setName(draft.getName());
         released.setDescription(draft.getDescription());
         released.setBaseUrl(draft.getBaseUrl());
+        released.setUiUrl(draft.getUiUrl());
         released.setAuth(draft.getAuth());
         released.setOperations(draft.getOperations() == null ? null : new ArrayList<>(draft.getOperations()));
     }

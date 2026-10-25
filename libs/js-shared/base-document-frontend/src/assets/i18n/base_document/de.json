@@ -177,6 +177,7 @@
       "publish": "Veröffentlichen",
       "archive": "Archivieren",
       "properties": "Eigenschaften",
+      "pdf_report": "PDF-Bericht",
       "show_unpublished": "Unveröffentlichte",
       "confirm_archive_title": "Dokument archivieren?",
       "confirm_archive_text": "„{{title}}“ wird als Schnappschuss gespeichert und kann nicht mehr bearbeitet werden.",

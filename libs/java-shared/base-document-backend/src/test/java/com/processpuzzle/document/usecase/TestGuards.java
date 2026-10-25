@@ -29,6 +29,11 @@ public final class TestGuards {
         return new DocumentGuard(new SingletonProvider(policy));
     }
 
+    /** A permit-all guard that hands every event it publishes to {@code events}. */
+    public static DocumentGuard publishingTo(java.util.List<Object> events) {
+        return new DocumentGuard(new SingletonProvider(null), events::add);
+    }
+
     private record SingletonProvider(DocumentAccessPolicy policy) implements ObjectProvider<DocumentAccessPolicy> {
 
         @Override

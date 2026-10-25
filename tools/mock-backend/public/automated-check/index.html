@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ACME Inventory &amp; Documents</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
+    header { background: #3b2a6d; color: #fff; padding: 14px 24px; display: flex; align-items: baseline; gap: 12px; }
+    header h1 { margin: 0; font-size: 1.2rem; }
+    header span { opacity: .7; font-size: .85rem; }
+    main { padding: 20px 24px; display: grid; gap: 24px; max-width: 960px; }
+    section { background: #fff; border-radius: 6px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    h2 { margin: 0 0 8px; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #eee; }
+    th { color: #666; font-weight: 600; }
+    .ok { color: #1b7f5f; font-weight: 600; }
+    .no { color: #b3261e; font-weight: 600; }
+    .empty { color: #999; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <header><h1>ACME Inventory &amp; Documents</h1><span>a third-party system, mocked by json-server</span></header>
+  <main>
+    <section>
+      <h2>Inventory checks</h2>
+      <div id="checks"></div>
+    </section>
+    <section>
+      <h2>Generated documents</h2>
+      <div id="documents"></div>
+    </section>
+  </main>
+  <script>
+    // Relative on purpose: behind the application's nginx this resolves under /third-party/, and straight on
+    // json-server's own port it resolves at the root.
+    const text = (value) => String(value ?? '');
+    const cell = (name, value) => {
+      if (name === 'available') return `<td class="${value ? 'ok' : 'no'}">${value ? 'in stock' : 'not available'}</td>`;
+      return `<td>${text(value).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</td>`;
+    };
+    const table = (rows) => {
+      if (!rows.length) return '<p class="empty">Nothing recorded yet.</p>';
+      const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+      return `<table><thead><tr>${columns.map((c) => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows
+        .slice()
+        .reverse()
+        .map((row) => `<tr>${columns.map((c) => cell(c, row[c])).join('')}</tr>`)
+        .join('')}</tbody></table>`;
+    };
+    async function load(resource, target) {
+      try {
+        const response = await fetch(`../${resource}`);
+        document.getElementById(target).innerHTML = table(await response.json());
+      } catch {
+        document.getElementById(target).innerHTML = '<p class="empty">The service is not reachable.</p>';
+      }
+    }
+    const refresh = () => { load('inventory-checks', 'checks'); load('documents', 'documents'); };
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>

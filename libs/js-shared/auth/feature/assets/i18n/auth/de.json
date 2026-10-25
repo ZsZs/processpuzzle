@@ -48,6 +48,12 @@
     "no_roles": "Sie haben keine Rollen.",
     "not_signed_in": "Sie sind nicht angemeldet.",
     "manage_account_button": "Konto verwalten",
+    "self_service_title": "Rollen auswählen",
+    "self_service_hint": "Wählen Sie die Rollen, die Sie benötigen. Administrative Rollen werden hier nicht angeboten.",
+    "save_roles_button": "Rollen speichern",
+    "roles_saved": "Ihre Rollen wurden gespeichert.",
+    "roles_save_failed": "Ihre Rollen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "close_button": "Schließen",
     "platform_roles": {
       "org_admin": "Verwaltet die Organisation: Mitglieder, Rollen und Einstellungen.",
       "org_member": "Mitglied der Organisation; darf sich anmelden und in ihren Anwendungen arbeiten."

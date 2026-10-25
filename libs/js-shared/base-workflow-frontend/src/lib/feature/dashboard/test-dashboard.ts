@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting, TestRequest } from '@angular/common/http/testing';
 import { EnvironmentProviders, Provider } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
@@ -43,13 +43,14 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.steps_none': 'This task declares no steps.',
   'base_workflow.task_instance.dashboard.step_user': 'user step',
   'base_workflow.task_instance.dashboard.step_service': 'service step',
+  'base_workflow.task_instance.dashboard.step_tool_ui': 'open tool UI',
   'base_workflow.task_instance.dashboard.artifacts_in': 'Reads',
   'base_workflow.task_instance.dashboard.artifacts_out': 'Writes',
   'base_workflow.task_instance.dashboard.artifacts_none': 'This task declares no artifacts.',
   'base_workflow.task_instance.dashboard.not_created': 'not created yet',
   'base_workflow.task_instance.dashboard.required_state': 'required: {{state}}',
   'base_workflow.task_instance.dashboard.complete_blocked': 'Tick every step and bring each output into its required state to complete the task.',
-  'base_workflow.task_instance.dashboard.note': 'Notes',
+  'base_workflow.task_instance.dashboard.context_variables': 'Context variables',
   'base_workflow.task_instance.dashboard.complete': 'Complete task',
   'base_workflow.task_instance.dashboard.skip': 'Skip',
   'base_workflow.task_instance.dashboard.skip_reason': 'Reason for skipping',
@@ -59,6 +60,8 @@ const DASHBOARD_TRANSLATIONS: Record<string, string> = {
   'base_workflow.task_instance.dashboard.comments': 'Comments',
   'base_workflow.task_instance.dashboard.comment_add': 'Add comment',
   'base_workflow.task_instance.dashboard.context': 'Context variables',
+  'base_workflow.task_instance.dashboard.context_key': 'Key',
+  'base_workflow.task_instance.dashboard.context_value': 'Value',
   'base_workflow.task_instance.dashboard.context_none': 'This run holds no context variables.',
 };
 
@@ -76,6 +79,17 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
 }
 
 /**
+ * The one read of the runs that is open, whichever it is: the first page of every run, which building the instance store
+ * starts, or the runs in progress, which the dashboard page asks for on entering and after every action, and which
+ * cancels a read still in flight. Specs address it by being the one open read, not by a URL that depends on who asked.
+ */
+export function openRunsRead(controller: HttpTestingController): TestRequest {
+  const reads = controller.match((request) => request.url.startsWith(`${DASHBOARD_SERVICE_ROOT}/instances`) && !request.url.includes('/instances/')).filter((read) => !read.cancelled);
+  if (reads.length !== 1) throw new Error(`Expected one open read of the runs, found ${reads.length}`);
+  return reads[0];
+}
+
+/**
  * Answers the six collection reads the store's construction issues, by URL rather than in order — which
  * store is built first is an implementation detail of `withComputed`.
  *
@@ -84,7 +98,7 @@ export function provideDashboardTesting(): (Provider | EnvironmentProviders)[] {
  */
 export function flushDashboardCatalogs(controller: HttpTestingController, ...runs: object[]): void {
   const content = runs.length > 0 ? runs : [WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO];
-  controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances`).flush(pageOfWorkflowInstances(...content));
+  openRunsRead(controller).flush(pageOfWorkflowInstances(...content));
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/tasks`).flush([TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
   controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));

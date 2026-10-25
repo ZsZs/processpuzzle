@@ -3,10 +3,12 @@ package com.processpuzzle.calculation.adapter.inbound;
 import com.processpuzzle.calculation.api.CalculationsApi;
 import com.processpuzzle.calculation.domain.RunTrigger;
 import com.processpuzzle.calculation.model.CalculationRun;
+import com.processpuzzle.calculation.model.CalculationOutput;
 import com.processpuzzle.calculation.model.EvaluationRequest;
 import com.processpuzzle.calculation.model.EvaluationResult;
 import com.processpuzzle.calculation.model.RunRequest;
 import com.processpuzzle.calculation.usecase.EvaluateCalculation;
+import com.processpuzzle.calculation.usecase.FindCalculationDefinition;
 import com.processpuzzle.calculation.usecase.FindCalculationRuns;
 import com.processpuzzle.calculation.usecase.RunCalculation;
 import com.processpuzzle.core.definition.Channel;
@@ -22,12 +24,15 @@ public class CalculationsEndpoint implements CalculationsApi {
     private final EvaluateCalculation evaluate;
     private final RunCalculation run;
     private final FindCalculationRuns runs;
+    private final FindCalculationDefinition definitions;
     private final CalculationMapper mapper;
 
-    public CalculationsEndpoint(EvaluateCalculation evaluate, RunCalculation run, FindCalculationRuns runs, CalculationMapper mapper) {
+    public CalculationsEndpoint(EvaluateCalculation evaluate, RunCalculation run, FindCalculationRuns runs,
+                              FindCalculationDefinition definitions, CalculationMapper mapper) {
         this.evaluate = evaluate;
         this.run = run;
         this.runs = runs;
+        this.definitions = definitions;
         this.mapper = mapper;
     }
 
@@ -35,7 +40,7 @@ public class CalculationsEndpoint implements CalculationsApi {
     public ResponseEntity<EvaluationResult> evaluateCalculation(String orgKey, String calculationId, EvaluationRequest request) {
         Channel channel = Channel.ofRevision(request.getRevision() == null ? null : request.getRevision().getValue());
         return ResponseEntity.ok(mapper.toModel(evaluate.evaluate(orgKey, calculationId, channel, request.getParameters(),
-                request.getSource())));
+                request.getSource(), request.getUnsaved())));
     }
 
     @Override
@@ -48,5 +53,12 @@ public class CalculationsEndpoint implements CalculationsApi {
     @Override
     public ResponseEntity<List<CalculationRun>> listCalculationRunsOfCalculation(String orgKey, String calculationId) {
         return ResponseEntity.ok(runs.findAll(orgKey, calculationId, null).stream().map(mapper::toModel).toList());
+    }
+    @Override
+    public ResponseEntity<List<CalculationOutput>> listCalculationOutputs(String orgKey, String entity) {
+        return ResponseEntity.ok(definitions.storedOutputsOf(orgKey, entity).stream()
+                .map(output -> new CalculationOutput().calculationId(output.calculationId()).attribute(output.attribute())
+                        .decision(output.decision()).parameter(output.parameter()))
+                .toList());
     }
 }

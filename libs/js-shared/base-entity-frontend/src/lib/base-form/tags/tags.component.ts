@@ -1,12 +1,16 @@
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 import { BaseFormControlComponent } from '../base-form-control.component';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatChipEditedEvent, MatChipGrid, MatChipInput, MatChipInputEvent, MatChipRemove, MatChipRow } from '@angular/material/chips';
+import { MatAutocomplete, MatAutocompleteSelectedEvent, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 import { MatIcon } from '@angular/material/icon';
 import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
+import { TAG_SUGGESTION_SOURCES } from './tag-suggestions';
 
 @Component({
   selector: 'base-tags',
@@ -18,15 +22,27 @@ import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
           <mat-label>{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
           <mat-chip-grid #chipGrid [id]="config().attrName">
             @for (tag of tags(); track $index; let i = $index) {
-              <mat-chip-row [editable]="true" (edited)="edit(i, $event)" (removed)="remove(i)">
+              <mat-chip-row [editable]="true" [class.pp-tag-new]="isNew(tag)" [attr.title]="isNew(tag) ? 'New value' : null" (edited)="edit(i, $event)" (removed)="remove(i)">
                 {{ tag }}
                 <button matChipRemove [attr.aria-label]="'remove ' + tag">
                   <mat-icon>cancel</mat-icon>
                 </button>
               </mat-chip-row>
             }
-            <input [matChipInputFor]="chipGrid" [matChipInputSeparatorKeyCodes]="separatorKeysCodes" (matChipInputTokenEnd)="add($event)" />
+            <input
+              [matChipInputFor]="chipGrid"
+              [matAutocomplete]="auto"
+              [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+              (input)="typed.set(tagInput.value)"
+              (matChipInputTokenEnd)="add($event)"
+              #tagInput
+            />
           </mat-chip-grid>
+          <mat-autocomplete #auto="matAutocomplete" (optionSelected)="pick($event, tagInput)">
+            @for (option of options(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-autocomplete>
         </mat-form-field>
       </div>
     }
@@ -46,6 +62,11 @@ import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
         flex-basis: 30px;
       }
       /* Brand the chips light green; consumers can retarget via --pp-chip-*. */
+      /* A value the suggestion source does not know: dashed, so the author sees it is about to be created. */
+      mat-chip-row.pp-tag-new {
+        outline: 1px dashed var(--pp-chip-text);
+        outline-offset: -2px;
+      }
       mat-chip-row {
         --mat-chip-elevated-container-color: var(--pp-chip-bg);
         --mat-chip-label-text-color: var(--pp-chip-text);
@@ -53,10 +74,47 @@ import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
       }
     `,
   ],
-  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon, EntityLabelPipe],
+  imports: [ReactiveFormsModule, MatFormField, MatLabel, MatChipGrid, MatChipRow, MatChipInput, MatChipRemove, MatIcon, MatAutocomplete, MatAutocompleteTrigger, MatOption, EntityLabelPipe],
 })
-export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
+export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> implements OnInit {
   readonly separatorKeysCodes: number[] = [ENTER, COMMA];
+  readonly typed = signal('');
+
+  private readonly sources = inject(TAG_SUGGESTION_SOURCES, { optional: true }) ?? [];
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly suggested = signal<readonly string[]>([]);
+  /** What the attribute's suggestion source offers; empty for free text, and when the source fails. */
+  readonly suggestions = this.suggested.asReadonly();
+
+  ngOnInit(): void {
+    const source = this.sources.find((candidate) => candidate.key === this.config().tagSuggestions);
+    source
+      ?.suggestions()
+      .pipe(
+        catchError(() => of([] as readonly string[])),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((values) => this.suggested.set(values));
+  }
+
+  /** The suggestions not yet picked that match what is being typed. */
+  options(): string[] {
+    const picked = new Set(this.tags());
+    const typed = this.typed().trim().toLowerCase();
+    return this.suggestions().filter((option) => !picked.has(option) && option.toLowerCase().includes(typed));
+  }
+
+  /** Whether the suggestion source is in play and does not know `tag`. */
+  isNew(tag: string): boolean {
+    const known = this.suggestions();
+    return known.length > 0 && !known.includes(tag);
+  }
+
+  pick(event: MatAutocompleteSelectedEvent, input: HTMLInputElement): void {
+    this.setTags([...this.tags(), event.option.value]);
+    input.value = '';
+    this.typed.set('');
+  }
 
   add(event: MatChipInputEvent): void {
     const value = (event.value || '').trim();

@@ -20,6 +20,11 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   dateFormat?: DateFormat;
   isLinkToDetails?: boolean;
   selectables?: SelectablesInput;
+  /**
+   * `TAGS` only: the key of the `TAG_SUGGESTION_SOURCES` entry that supplies values to pick from. The control
+   * still accepts free text; values the source does not know are marked as new.
+   */
+  tagSuggestions?: string;
   visible = true;
   showThumbnail?: boolean = true;
   /**

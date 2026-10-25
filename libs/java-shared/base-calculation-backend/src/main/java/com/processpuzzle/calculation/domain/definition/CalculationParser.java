@@ -65,7 +65,7 @@ public final class CalculationParser {
     public static List<String> documents(String file) {
         return DOCUMENT_SEPARATOR.splitAsStream(file == null ? "" : file)
                 .filter(CalculationParser::hasContent)
-                .map(document -> document.strip() + System.lineSeparator())
+                .map(document -> document.strip() + "\n")
                 .toList();
     }
 

@@ -92,6 +92,8 @@ export interface StepTool {
   readonly toolDefinitionId: string;
   readonly name: string;
   readonly link: string | undefined;
+  /** The tool's own user interface, when its definition names one — opened outside the application. */
+  readonly uiUrl?: string;
 }
 
 /** One variable of a run's context, as the Process view lists it: a dotted key and its value as text. */

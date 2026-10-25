@@ -90,6 +90,7 @@ public class UpdateDocument {
 
         DocumentStatus before = DocumentPlatformFacts.defaultStatusOf(document, draftsByLocale.values(), snapshots);
         properties.applyTo(document);
+        guard.declareRoles(orgKey, properties.roles());
         Document saved = repository.save(document);
 
         replacements.forEach((locale, content) -> {

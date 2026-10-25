@@ -1,9 +1,12 @@
 package com.processpuzzle.core.tenancy;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * The single place any feature consults {@link OrganizationAccessPolicy}. Use cases depend on this
@@ -33,8 +36,28 @@ public class OrganizationGuard {
 
     private final OrganizationAccessPolicy policy;
 
-    public OrganizationGuard(ObjectProvider<OrganizationAccessPolicy> policyProvider) {
+    private final ApplicationEventPublisher events;
+
+    @Autowired
+    public OrganizationGuard(ObjectProvider<OrganizationAccessPolicy> policyProvider, ApplicationEventPublisher events) {
         this.policy = policyProvider.getObject();
+        this.events = events;
+    }
+
+    /** For callers that have no one to tell about the roles they name. */
+    public OrganizationGuard(ObjectProvider<OrganizationAccessPolicy> policyProvider) {
+        this(policyProvider, event -> { });
+    }
+
+    /**
+     * Tells the organization's role catalog that these roles are now referred to — a navigation item
+     * visible only to them, say — so each exists in the identity provider. See {@link RolesReferenced}.
+     * It sits on the guard because every use case that stores a role list already holds one.
+     */
+    public void declareRoles(String orgKey, String description, Collection<String> roles) {
+        if (roles != null && !roles.isEmpty()) {
+            events.publishEvent(new RolesReferenced(orgKey, description, List.copyOf(roles)));
+        }
     }
 
     /** Rejects the call with 403 when the principal is not a member of {@code orgKey}. */

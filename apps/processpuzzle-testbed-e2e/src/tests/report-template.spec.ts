@@ -59,19 +59,9 @@ test.describe('Report template', () => {
     await option.click();
   }
 
-  /**
-   * An order's Reports tab with the seeded Invoice chosen. Every report template of the Order type is offered there,
-   * drafts included, and the first one is selected: a template another test or an author left unpublished would
-   * otherwise be the one shown.
-   */
+  /** An order's Reports tab, which shows the seeded Invoice: the only published report template of the Order type. */
   async function openInvoice(page: Page, orderId: string): Promise<void> {
     await page.goto(`${ORDERS}/${orderId}/reports`);
-    const picker = page.getByTestId('entity-reports-template');
-    await picker.waitFor({ state: 'visible', timeout: 3000 }).catch(() => undefined);
-    if (await picker.isVisible()) {
-      await picker.click();
-      await page.getByRole('option', { name: 'Invoice', exact: true }).click();
-    }
   }
 
   async function openPreview(page: Page): Promise<void> {
@@ -96,12 +86,12 @@ test.describe('Report template', () => {
     await expect(page).toHaveURL(new RegExp(`[?&]order=${order.id}`));
   });
 
-  // The Preview tab documents "a preview of one invoice is a link", but opening that link directly shows an empty
-  // invoice: no parameter bar, no request for the order. Reached through the app (details, then Preview) it works.
-  test.fixme('a preview opened from a shared link shows the invoice', async ({ page }) => {
+  // The Preview tab documents "a preview of one invoice is a link": opened directly, it shows that invoice.
+  test('a preview opened from a shared link shows the invoice', async ({ page }) => {
     const order = await entities.findBy<OrderPayload>('order', 'orderNumber', 'ORD-1001');
     await page.goto(`${DOCUMENTS}/${templateId}/preview?order=${order.id}`);
-    await expect(reportPage(page)).toContainText('Alice Johnson');
+    // The page loads the document, its draft and then the order, one after the other.
+    await expect(reportPage(page)).toContainText('Alice Johnson', { timeout: 20_000 });
   });
 
   test('an order\'s Reports tab runs the template for that order', async ({ page }) => {
@@ -122,13 +112,32 @@ test.describe('Report template', () => {
     await expect(reportPage(page)).toContainText('30.00');
   });
 
+  // A template nobody has published is its author's: offering it on every order's Reports tab made a draft somebody
+  // left the report an order opened with, saying "not published yet" in place of the invoice.
+  test('a draft template is not offered on the Reports tab of an order', async ({ page }) => {
+    const draft = await platform.createReportTemplate(`e2e-${randomUUID().slice(0, 8)}`, 'E2E draft invoice', { name: 'order', entityType: 'Order' });
+    createdDocuments.push(draft);
+    const run = randomUUID().slice(0, 8);
+    const order = await entities.create<OrderPayload>('order', {
+      orderNumber: `E2E-${run}`,
+      customerName: `Customer ${run}`,
+      status: 'DRAFT',
+      total: 10,
+      lineItems: [{ productName: 'Item', quantity: 1, unitPrice: 10 }],
+    });
+
+    await openInvoice(page, order.id);
+
+    await expect(reportPage(page)).toContainText(`E2E-${run}`, { timeout: 20_000 });
+    await expect(page.getByTestId('entity-reports-template'), 'one published template: nothing to choose between').toHaveCount(0);
+    await expect(page.getByTestId('entity-reports-not-published')).toHaveCount(0);
+  });
+
   test('a field and a table added to a template appear in its preview', async ({ page }) => {
     const id = await platform.createReportTemplate(`e2e-${randomUUID().slice(0, 8)}`, 'E2E invoice', { name: 'order', entityType: 'Order' });
     createdDocuments.push(id);
-    // Through the details page, not a deep link: the editor and the preview learn the template's ports from the
-    // document the app already holds, which a direct visit to a tab does not load (see the fixme above).
-    await page.goto(`${DOCUMENTS}/${id}/details`);
-    await page.getByTestId('document-show-content').click();
+    // Opened by its link, as a template is when it is shared or the page is reloaded.
+    await page.goto(`${DOCUMENTS}/${id}/content`);
     await page.getByTestId('document-add-text-block').click();
     const editor = page.locator('.pp-document-text-block [contenteditable="true"]');
     await editor.click();

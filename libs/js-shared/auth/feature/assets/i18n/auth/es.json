@@ -48,6 +48,12 @@
     "no_roles": "No tiene roles.",
     "not_signed_in": "No ha iniciado sesión.",
     "manage_account_button": "Gestionar cuenta",
+    "self_service_title": "Elegir tus roles",
+    "self_service_hint": "Elige los roles que necesites. Los roles administrativos no se ofrecen aquí.",
+    "save_roles_button": "Guardar roles",
+    "roles_saved": "Tus roles se han guardado.",
+    "roles_save_failed": "No se pudieron guardar tus roles. Inténtalo de nuevo.",
+    "close_button": "Cerrar",
     "platform_roles": {
       "org_admin": "Administra la organización: miembros, roles y configuración.",
       "org_member": "Miembro de la organización; puede iniciar sesión y trabajar en sus aplicaciones."

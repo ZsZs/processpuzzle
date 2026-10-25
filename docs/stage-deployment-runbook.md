@@ -415,6 +415,33 @@ that value must be `https://custom.stage.processpuzzle.de/*`; the obsolete
 The §5.2 caveat applies to all of them: `--import-realm` skips an existing realm, so these committed
 values reach a fresh environment only. Every realm already running on stage needs the console edit.
 
+### 5.4 Self-service roles need the roles to exist in the realm
+
+My Profile lets any signed-in Testbed user pick realm roles (`processpuzzle.self-service-roles.enabled`,
+default on for the Testbed backend). It only offers roles the realm declares, and the committed
+`processpuzzle-testbed-realm.json` declares `documentation-editor`, `documentation-publisher` and
+`documentation-reviewer` — which, as in §5.2, reaches a fresh environment only. For the live stage realm,
+create them once (in the `keycloak` container, after `kcadm.sh config credentials`):
+
+```bash
+for role in documentation-editor documentation-publisher documentation-reviewer; do
+  /opt/keycloak/bin/kcadm.sh create roles -r processpuzzle-testbed -s name=$role
+done
+```
+
+An "already exists" error is harmless. The backend's `platform-admin-service` client also needs
+`manage-users` and `view-realm`, as for registration.
+
+This manual step is only a fallback. Every role a document or content book names in `readerRoles` /
+`editorRoles` / `publisherRoles`, and every role on an app definition's or module's routes and navigation items, is created in the realm automatically after the save commits
+(`RolesReferenced` event → org-admin's `EnsureReferencedRoles`), including the sample documents and books
+loaded at startup (`base-document.loadSamples`). It needs the same `manage-users` / `view-realm` rights; when
+Keycloak is unreachable the failure is logged (`Could not create the referenced roles`) and the next save of
+the reference retries. Platform and Keycloak names (`org-admin`, `org-member`, `platform-admin`,
+`default-roles-*`, built-ins) are never created this way. The workflow task dashboard's `process-owner` is
+declared as a role definition in the bundled Testbed workflows, so it reaches the realm the same way as
+`clerk` and `manager`.
+
 ---
 
 ## 6. Verify

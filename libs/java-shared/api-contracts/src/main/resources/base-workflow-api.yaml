@@ -893,6 +893,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /organizations/{orgKey}/instances/{instanceId}/purge:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/InstanceIdParam"
+    delete:
+      operationId: deleteWorkflowInstance
+      tags: [ Workflow Instances ]
+      summary: Delete a finished workflow instance
+      description: >
+        Erases a COMPLETED or CANCELLED instance together with its tasks, events and artifacts. The entity the
+        instance acted on is not touched. Cancel a running instance first (`DELETE /instances/{instanceId}`).
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Instance is still running
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ── Task Instances ─────────────────────────────────────────
 
   /organizations/{orgKey}/instances/{instanceId}/tasks:
@@ -1552,6 +1575,13 @@ components:
           type: string
           format: uri
           example: https://checks.example.com
+        uiUrl:
+          type: string
+          nullable: true
+          description: >-
+            Where a person can open the tool's own user interface — an absolute URL or a path on the host
+            serving the application. Optional; the dashboard and the tool's detail screen link to it when set.
+          example: /third-party/automated-check/
         auth:
           $ref: "#/components/schemas/ToolAuthConfig"
         operations:

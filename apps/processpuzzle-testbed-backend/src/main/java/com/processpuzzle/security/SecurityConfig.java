@@ -77,6 +77,16 @@ public class SecurityConfig {
     };
 
     /**
+     * What a signed-in user may do to their own account. Always authenticated, whatever
+     * {@code require-authentication} says: the use cases act on the token subject, which an anonymous
+     * call does not have.
+     */
+    private static final String[] SELF_SERVICE_PATHS = {
+            "/api/organizations/*/me/**",
+            "/organizations/*/me/**",
+    };
+
+    /**
      * The vision server's job notifications. Never a user call: each is authenticated by its own
      * per-job {@code X-Callback-Token}, which base-ai-backend checks against the job it names. The token is
      * not a bearer token on purpose — the resource server below would try to parse one as a JWT.
@@ -152,6 +162,7 @@ public class SecurityConfig {
                     requests.requestMatchers("/api/platform/**", "/platform/**")
                             .hasAuthority(properties.getPlatformAdminAuthority());
                     requests.requestMatchers(ORG_ADMIN_PATHS).authenticated();
+                    requests.requestMatchers(SELF_SERVICE_PATHS).authenticated();
                     if (properties.isRequireAuthentication()) {
                         requests.anyRequest().authenticated();
                     } else {

@@ -16,6 +16,13 @@ inputs:
     description: 'Playwright workers: spec files that run side by side. One for a deployed environment, more for a stack this job started.'
     required: false
     default: '1'
+  allow_release:
+    description: >-
+      'true' lets specs release every pending definition of the organization, which they need to run a workflow
+      they created (the timer specs) and which cannot be undone. Only for a stack this job started and nobody else
+      uses; never for a deployed environment.
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -42,6 +49,7 @@ runs:
       env:
         ENVIRONMENT: ${{inputs.target_environment}}
         E2E_WORKERS: ${{inputs.workers}}
+        E2E_ALLOW_RELEASE: ${{inputs.allow_release}}
 
     - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}

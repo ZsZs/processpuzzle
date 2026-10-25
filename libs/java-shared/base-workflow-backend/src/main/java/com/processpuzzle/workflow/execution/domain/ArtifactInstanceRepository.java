@@ -40,4 +40,9 @@ public interface ArtifactInstanceRepository
     @Modifying(flushAutomatically = true)
     @Query("delete from ArtifactInstance a where a.orgKey = :orgKey")
     int eraseByOrgKey(@Param("orgKey") String orgKey);
+
+    /** Every artifact instance of one workflow instance in one statement, for deleting the instance. */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ArtifactInstance a where a.orgKey = :orgKey and a.workflowInstanceId = :instanceId")
+    int deleteByWorkflowInstance(@Param("orgKey") String orgKey, @Param("instanceId") UUID instanceId);
 }

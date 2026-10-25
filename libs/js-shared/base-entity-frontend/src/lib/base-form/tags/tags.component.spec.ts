@@ -1,10 +1,13 @@
 import { COMMA, ENTER } from '@angular/cdk/keycodes';
+import { Provider } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { TestEntity } from '../../test-entity';
 import { setupFormControlTest } from '../../../test-setup';
 import { TagsComponent } from './tags.component';
+import { TAG_SUGGESTION_SOURCES } from './tag-suggestions';
+import { Observable, of, throwError } from 'rxjs';
 
 function makeConfig(): BaseEntityAttrDescriptor {
   return new BaseEntityAttrDescriptor('tags', FormControlType.TAGS, 'Tags');
@@ -16,9 +19,9 @@ function makeEntity(tags?: unknown): TestEntity {
   return entity;
 }
 
-async function setupTags(config: BaseEntityAttrDescriptor, tagValue?: unknown) {
+async function setupTags(config: BaseEntityAttrDescriptor, tagValue?: unknown, providers: Provider[] = []) {
   const entity = makeEntity(tagValue);
-  const harness = await setupFormControlTest(TagsComponent, config, entity, []);
+  const harness = await setupFormControlTest(TagsComponent, config, entity, providers);
   return { ...harness, entity, component: harness.component as TagsComponent<TestEntity> };
 }
 
@@ -149,6 +152,61 @@ describe('TagsComponent', () => {
 
       expect(host.querySelector('mat-form-field')).toBeNull();
       expect(host.querySelector('mat-chip-row')).toBeNull();
+    });
+  });
+
+  describe('suggestions', () => {
+    function suggested(source: () => Observable<readonly string[]>): Provider[] {
+      return [{ provide: TAG_SUGGESTION_SOURCES, multi: true, useValue: { key: 'realm-roles', suggestions: source } }];
+    }
+    function suggestingConfig(): BaseEntityAttrDescriptor {
+      const config = makeConfig();
+      config.tagSuggestions = 'realm-roles';
+      return config;
+    }
+
+    it('offers what the named source knows, minus what is already picked and filtered by what is typed', async () => {
+      const { component, fixture } = await setupTags(suggestingConfig(), ['editor'], suggested(() => of(['editor', 'reviewer', 'publisher'])));
+      await fixture.whenStable();
+
+      expect(component.options()).toEqual(['reviewer', 'publisher']);
+      component.typed.set('REV');
+      expect(component.options()).toEqual(['reviewer']);
+    });
+
+    it('marks a value the source does not know as new', async () => {
+      const { component, fixture } = await setupTags(suggestingConfig(), [], suggested(() => of(['editor'])));
+      await fixture.whenStable();
+
+      expect(component.isNew('editor')).toBe(false);
+      expect(component.isNew('typo')).toBe(true);
+    });
+
+    it('marks nothing as new when the attribute names no source', async () => {
+      const { component, fixture } = await setupTags(makeConfig(), []);
+      await fixture.whenStable();
+
+      expect(component.isNew('anything')).toBe(false);
+    });
+
+    it('stays a free-text control when the source fails', async () => {
+      const { component, fixture } = await setupTags(suggestingConfig(), [], suggested(() => throwError(() => new Error('down'))));
+      await fixture.whenStable();
+
+      expect(component.options()).toEqual([]);
+      expect(component.isNew('anything')).toBe(false);
+    });
+
+    it('adds a picked suggestion and clears the input', async () => {
+      const { component, fixture } = await setupTags(suggestingConfig(), ['editor'], suggested(() => of(['editor', 'reviewer'])));
+      await fixture.whenStable();
+      const input = { value: 'rev' } as HTMLInputElement;
+
+      component.pick({ option: { value: 'reviewer' } } as never, input);
+
+      expect(component.tags()).toEqual(['editor', 'reviewer']);
+      expect(input.value).toBe('');
+      expect(component.typed()).toBe('');
     });
   });
 });

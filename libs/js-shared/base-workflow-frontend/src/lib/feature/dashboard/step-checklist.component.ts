@@ -64,6 +64,9 @@ import { ReturningLinkDirective } from './returning-link.directive';
                   } @else {
                     <span class="step__tool" [attr.data-testid]="'step-tool-' + step.id">{{ tool.name }}</span>
                   }
+                  @if (tool.uiUrl) {
+                    <a class="step__tool" [href]="tool.uiUrl" target="_blank" rel="noopener" [attr.data-testid]="'step-tool-ui-' + step.id">{{ toolUiKey | transloco }} ↗</a>
+                  }
                 }
               </span>
               @if (step.description) {
@@ -73,7 +76,12 @@ import { ReturningLinkDirective } from './returning-link.directive';
                 @if (result.error) {
                   <span class="step__error" role="alert" [attr.data-testid]="'step-error-' + step.id">{{ result.error }}</span>
                 } @else if (result.toolResponse; as response) {
-                  <span class="step__response" [attr.data-testid]="'step-response-' + step.id">{{ responseText(response) }}</span>
+                  <dl class="step__response" [attr.data-testid]="'step-response-' + step.id">
+                    @for (entry of responseEntries(response); track entry.key) {
+                      <dt class="step__response-key">{{ entry.key }}</dt>
+                      <dd class="step__response-value">{{ entry.value }}</dd>
+                    }
+                  </dl>
                 }
               }
             </span>
@@ -153,9 +161,21 @@ import { ReturningLinkDirective } from './returning-link.directive';
       font-size: 12px;
       color: #b3261e;
     }
+    /* The tool's answer, key beside value — generic, because the response is an open map. */
     .step__response {
+      display: grid;
+      grid-template-columns: minmax(80px, max-content) minmax(0, 1fr);
+      gap: 1px 12px;
+      margin: 2px 0 0;
       font-size: 11px;
       color: #777777;
+    }
+    .step__response-key {
+      font-family: monospace;
+    }
+    .step__response-value {
+      margin: 0;
+      color: #444444;
       overflow-wrap: anywhere;
     }
     .steps__empty {
@@ -183,6 +203,7 @@ export class StepChecklistComponent {
 
   protected readonly userKey = `${TASK_DASHBOARD_I18N_SCOPE}.step_user`;
   protected readonly serviceKey = `${TASK_DASHBOARD_I18N_SCOPE}.step_service`;
+  protected readonly toolUiKey = `${TASK_DASHBOARD_I18N_SCOPE}.step_tool_ui`;
   protected readonly emptyKey = `${TASK_DASHBOARD_I18N_SCOPE}.steps_none`;
 
   private readonly resultsByStepId = computed(() => new Map(this.stepResults().map((result) => [result.stepId, result])));
@@ -211,10 +232,8 @@ export class StepChecklistComponent {
   }
 
   /** The tool's answer as the open map it is — see the class comment on why it is not summarized. */
-  protected responseText(response: Record<string, string>): string {
-    return Object.entries(response)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join(' · ');
+  protected responseEntries(response: Record<string, string>): { key: string; value: string }[] {
+    return Object.entries(response).map(([key, value]) => ({ key, value: String(value) }));
   }
 
   protected toggle(stepId: string): void {

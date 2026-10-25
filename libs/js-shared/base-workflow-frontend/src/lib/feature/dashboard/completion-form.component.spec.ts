@@ -19,7 +19,7 @@ describe('CompletionFormComponent', () => {
         provideTranslocoTesting({
           translations: {
             en: {
-              'base_workflow.task_instance.dashboard.note': 'Notes',
+              'base_workflow.task_instance.dashboard.context_variables': 'Context variables',
               'base_workflow.task_instance.dashboard.complete': 'Complete task',
               'base_workflow.task_instance.dashboard.skip': 'Skip',
               'base_workflow.task_instance.dashboard.skip_reason': 'Reason for skipping',

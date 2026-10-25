@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, REALM_ROLE_SUGGESTIONS } from '@processpuzzle/base-entity';
 import { CONTENT_BOOK_I18N_SCOPE } from '../base-document.i18n';
 import { DOCUMENT_SLUG_PATTERN } from './base-document';
 import { CONTENT_BOOK_ENTITY_NAME } from './document-entity-names';
@@ -9,12 +9,12 @@ import { CONTENT_BOOK_ENTITY_NAME } from './document-entity-names';
  */
 function createContentBookAttrDescriptors(): AbstractAttrDescriptor[] {
   // Same pattern as a document's slug: the contract reuses the `DocumentSlug` schema for both.
-  const slugAttr = new BaseEntityAttrDescriptor('slug', FormControlType.TEXT_BOX, 'Slug');
+  const slugAttr = new BaseEntityAttrDescriptor('slug', FormControlType.TEXT_BOX, 'Slug', undefined, true);
   slugAttr.required = true;
   slugAttr.pattern = DOCUMENT_SLUG_PATTERN;
   slugAttr.placeholder = 'URL key, unique among the books, e.g. handbook';
 
-  const titleAttr = new BaseEntityAttrDescriptor('title', FormControlType.TEXT_BOX, 'Title', undefined, true);
+  const titleAttr = new BaseEntityAttrDescriptor('title', FormControlType.TEXT_BOX, 'Title');
   titleAttr.required = true;
   titleAttr.isHeading = true;
 
@@ -25,9 +25,11 @@ function createContentBookAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const readerRolesAttr = new BaseEntityAttrDescriptor('readerRoles', FormControlType.TAGS, 'Reader roles');
   readerRolesAttr.hideInTable = true;
+  readerRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const editorRolesAttr = new BaseEntityAttrDescriptor('editorRoles', FormControlType.TAGS, 'Editor roles');
   editorRolesAttr.hideInTable = true;
+  editorRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const identityRow = new FlexboxDescriptor([slugAttr, titleAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };

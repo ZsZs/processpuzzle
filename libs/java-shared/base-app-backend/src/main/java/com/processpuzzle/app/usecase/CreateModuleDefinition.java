@@ -1,6 +1,7 @@
 package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.app.adapter.inbound.AppMapper;
+import com.processpuzzle.app.domain.AppRoles;
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
@@ -63,6 +64,7 @@ public class CreateModuleDefinition {
 
         ModuleDefinition module = new ModuleDefinition(orgKey, input.getKey(), input.getName());
         mapper.applyToModule(module, input);
+        guard.declareRoles(orgKey, AppRoles.DESCRIPTION, AppRoles.of(module));
         return repository.save(module);
     }
 

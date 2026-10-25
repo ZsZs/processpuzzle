@@ -53,6 +53,9 @@ public class ToolDefinition extends ReleasableDefinition {
     @Column(nullable = false)
     private String baseUrl;
 
+    /** Where the tool's own user interface lives, when it has one. */
+    private String uiUrl;
+
     @Embedded
     @Builder.Default
     private ToolAuthConfig auth = ToolAuthConfig.builder().build();

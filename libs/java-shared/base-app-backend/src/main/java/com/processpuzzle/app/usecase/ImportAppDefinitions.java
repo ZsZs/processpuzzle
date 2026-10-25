@@ -7,6 +7,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.adapter.inbound.dto.AppYamlDocument;
 import com.processpuzzle.app.domain.AppDefinition;
+import com.processpuzzle.app.domain.AppRoles;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.model.AppDefinitionInput;
@@ -104,6 +105,7 @@ public class ImportAppDefinitions {
                         entry.getTranslocoId(), entry.getDescription(), mapper.toDomainGraph(entry));
                 created++;
             }
+            guard.declareRoles(orgKey, AppRoles.DESCRIPTION, AppRoles.of(definition.getDraftGraph()));
             repository.save(definition);
         }
 

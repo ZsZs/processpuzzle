@@ -74,6 +74,9 @@
   "copyright": {
     "name": "Droits d'auteur"
   },
+  "entity_form": {
+    "name": "Formulaire d’entité"
+  },
   "entity_table": {
     "name": "Tableau d'entités"
   },

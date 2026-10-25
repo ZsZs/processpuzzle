@@ -10,8 +10,11 @@ export interface EntityReportTemplate {
 }
 
 /**
- * The organization's report templates, by the entity whose objects they report on: a `REPORT_TEMPLATE` with an
- * `ENTITY_REF` port of that entity type is a report of one such object — the invoice of one order.
+ * The organization's *published* report templates, by the entity whose objects they report on: a `REPORT_TEMPLATE`
+ * with an `ENTITY_REF` port of that entity type is a report of one such object — the invoice of one order.
+ *
+ * A template nobody has published is a draft, and a draft is its author's: it is not offered to everybody who opens
+ * an order, and it must not become the report an order opens with. The author checks it on the Preview tab.
  *
  * Fetched once and memoized as a promise, like `EntityDefinitionRegistry`: every entity's screens ask, and
  * they ask concurrently while an application's routes are built.
@@ -39,10 +42,15 @@ export class EntityReportRegistry {
     try {
       const response: unknown = await firstValueFrom(this.documentService.findAll());
       const documents = Array.isArray(response) ? response : ((response as { content?: Document[] } | undefined)?.content ?? []);
-      return (documents as Document[]).filter((document) => document.kind === DocumentKind.REPORT_TEMPLATE);
+      return (documents as Document[]).filter((document) => document.kind === DocumentKind.REPORT_TEMPLATE && isPublished(document));
     } catch {
       // No documents, or none readable: no Reports tab anywhere, rather than a failed route.
       return [];
     }
   }
+}
+
+/** Published in some locale, whether or not it has been edited since: what readers get is the published revision. */
+function isPublished(document: Document): boolean {
+  return (document.translations ?? []).some((translation) => translation.publishedRevision != null);
 }
