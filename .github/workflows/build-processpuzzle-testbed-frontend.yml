@@ -48,9 +48,14 @@ jobs:
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
 
+      # The jar is only here to be put into an image for the e2e run. Its tests, and those of every library it is
+      # built from, run in their own workflows and in the `backend` job of build-testbed-apps.yml; running them again
+      # here (twice over, the libraries are built once by nx and again by `-am`) was 16 of this job's 35 minutes.
       - id: build-backend
         name: Build backend jar
         run: npx nx run processpuzzle-testbed-backend:build --no-cloud
+        env:
+          MAVEN_ARGS: -DskipTests
 
       - id: docker-compose
         name: run-docker-compose
@@ -98,3 +103,4 @@ jobs:
         with:
           base_dir: 'apps/processpuzzle-testbed-e2e'
           target_environment: ci
+          workers: 3

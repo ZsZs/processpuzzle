@@ -12,6 +12,10 @@ inputs:
     description: 'full = run all e2e tests; smoke = run only @smoke-tagged tests'
     required: false
     default: full
+  workers:
+    description: 'Playwright workers: spec files that run side by side. One for a deployed environment, more for a stack this job started.'
+    required: false
+    default: '1'
 runs:
   using: composite
   steps:
@@ -37,6 +41,7 @@ runs:
       shell: bash
       env:
         ENVIRONMENT: ${{inputs.target_environment}}
+        E2E_WORKERS: ${{inputs.workers}}
 
     - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}
