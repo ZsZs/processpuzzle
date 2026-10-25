@@ -289,6 +289,7 @@ describe('WorkflowDashboardStore', () => {
       await store.claim(row());
 
       controller.expectNone(`${taskUrl}/assign`);
+      expect(store.isActing()).toBe(false);
     });
 
     it('reports an accepted completion and leaves no refusal behind', async () => {
