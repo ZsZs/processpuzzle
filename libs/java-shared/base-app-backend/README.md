@@ -6,6 +6,10 @@
 
 ProcessPuzzle Base App Backend is the server-side companion of [`@processpuzzle/base-app-frontend`](../../js-shared/base-app-frontend/README.md). It exposes application-level services (user workspace, preferences, panel layout) consumed by the Angular application shell.
 
+Roles on routes and navigation items (`NavNode.roles`, `AppRoute.roles`) are declared to the organization's role
+catalog when an app definition or module is created, updated or imported (`OrganizationGuard.declareRoles`
+publishes `RolesReferenced`), so they exist in the identity provider and can be picked on My Profile.
+
 ## Technologies
 
 - **Java 25**
