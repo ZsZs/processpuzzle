@@ -11,7 +11,9 @@ import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RoleDirectorySyncListenerTest {
 
@@ -57,5 +59,37 @@ class RoleDirectorySyncListenerTest {
 
         new RoleDirectoryReconciler(sync).reconcileOnStartup();
         verify(sync).reconcile();
+    }
+
+    /** Keycloak may come up after the backend; an incomplete startup pass is repeated until one completes. */
+    @Test
+    void retriesTheReconcileUntilItCompletes() {
+        when(sync.reconcile()).thenReturn(false, false, true);
+        RoleDirectoryReconciler reconciler = new RoleDirectoryReconciler(sync);
+
+        reconciler.reconcileOnStartup();
+        reconciler.retryWhilePending();
+        reconciler.retryWhilePending();
+        reconciler.retryWhilePending();
+        reconciler.retryWhilePending();
+
+        verify(sync, times(3)).reconcile();
+    }
+
+    @Test
+    void doesNotRetryAfterACompleteStartupPassAndGivesUpEventually() {
+        when(sync.reconcile()).thenReturn(true);
+        RoleDirectoryReconciler complete = new RoleDirectoryReconciler(sync);
+        complete.reconcileOnStartup();
+        complete.retryWhilePending();
+        verify(sync, times(1)).reconcile();
+
+        SyncRoleDirectory stuck = mock(SyncRoleDirectory.class);
+        RoleDirectoryReconciler reconciler = new RoleDirectoryReconciler(stuck);
+        reconciler.reconcileOnStartup();
+        for (int i = 0; i < RoleDirectoryReconciler.MAX_RETRIES + 5; i++) {
+            reconciler.retryWhilePending();
+        }
+        verify(stuck, times(1 + RoleDirectoryReconciler.MAX_RETRIES)).reconcile();
     }
 }
