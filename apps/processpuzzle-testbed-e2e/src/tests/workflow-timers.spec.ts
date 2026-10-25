@@ -106,8 +106,21 @@ workflows:
     platform = new PlatformApi(request, await serviceRoots(request, baseURL as string));
   });
 
+  // The runs of the two workflows that start themselves are what their specs count, and they begin as soon as the
+  // release is through — so they are removed once the whole suite is done, not after each spec.
   test.afterEach(async () => {
-    for (const workflowId of Object.values(WORKFLOW)) await platform.cancelWorkflowInstances({ workflowId });
+    for (const workflowId of [WORKFLOW.duration, WORKFLOW.past, WORKFLOW.cycle]) await platform.deleteWorkflowInstances({ workflowId });
+  });
+
+  test.afterAll(async ({ playwright, baseURL }) => {
+    if (process.env['E2E_ALLOW_RELEASE'] !== 'true') return;
+    const request = await playwright.request.newContext();
+    try {
+      const api = new PlatformApi(request, await serviceRoots(request, baseURL as string));
+      for (const workflowId of [WORKFLOW.startCycle, WORKFLOW.startDate]) await api.deleteWorkflowInstances({ workflowId });
+    } finally {
+      await request.dispose();
+    }
   });
 
   type Run = Awaited<ReturnType<PlatformApi['workflowInstance']>> & { events: { eventUseId: string; status: string; fireCount: number }[] };

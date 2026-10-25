@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { BaseEntityQueryCondition, RichTextContent } from '@processpuzzle/base-entity';
@@ -464,6 +465,11 @@ export const WorkflowDashboardStore = signalStore(
         return result;
       } catch (error) {
         patchState(store, { isActing: false, actionError: httpErrorMessage(error) });
+        // 404: the run was deleted while it was open here. The list still shows it, so re-read it; the message stays.
+        if (error instanceof HttpErrorResponse && error.status === 404) {
+          patchState(store, { selectedInstanceId: undefined, selectedTaskId: undefined, checkedStepIds: [] });
+          reload();
+        }
         return undefined;
       }
     };

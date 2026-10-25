@@ -103,14 +103,18 @@ export class PlatformApi {
   }
 
   /**
-   * Cancels the runs that are still going, so a finished spec leaves nothing running or timing. Cancelling is all the
-   * API offers — the instance stays, as CANCELLED. A run already over (409) is fine.
+   * Deletes the runs a finished spec leaves behind: the ones still going are cancelled first (which disarms their
+   * timers), then every run is erased with its tasks, events and artifacts. A run that is already gone (404) is fine.
    */
-  async cancelWorkflowInstances(query: { workflowId?: string; entityId?: string }): Promise<void> {
+  async deleteWorkflowInstances(query: { workflowId?: string; entityId?: string }): Promise<void> {
     for (const instance of await this.workflowInstances(query)) {
-      if (instance.status === 'COMPLETED' || instance.status === 'CANCELLED') continue;
-      const response = await this.request.delete(`${this.roots.backend}/instances/${encodeURIComponent(instance.id)}`, { data: { reason: 'e2e cleanup' } });
-      expect([204, 404, 409], `cancelling instance ${instance.id}: ${response.status()}`).toContain(response.status());
+      const id = encodeURIComponent(instance.id);
+      if (instance.status !== 'COMPLETED' && instance.status !== 'CANCELLED') {
+        const cancelled = await this.request.delete(`${this.roots.backend}/instances/${id}`, { data: { reason: 'e2e cleanup' } });
+        expect([204, 404, 409], `cancelling instance ${instance.id}: ${cancelled.status()}`).toContain(cancelled.status());
+      }
+      const deleted = await this.request.delete(`${this.roots.backend}/instances/${id}/purge`);
+      expect([204, 404], `deleting instance ${instance.id}: ${deleted.status()}`).toContain(deleted.status());
     }
   }
 

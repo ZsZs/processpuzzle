@@ -56,7 +56,7 @@ test.describe('Task dashboard @auth', () => {
   });
 
   test.afterEach(async () => {
-    for (const entityId of entities.createdIds('order')) await platform.cancelWorkflowInstances({ entityId });
+    for (const entityId of entities.createdIds('order')) await platform.deleteWorkflowInstances({ entityId });
     await entities.removeAll();
   });
 
