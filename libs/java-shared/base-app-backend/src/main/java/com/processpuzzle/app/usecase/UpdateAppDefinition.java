@@ -2,6 +2,8 @@ package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
+import com.processpuzzle.app.domain.AppGraph;
+import com.processpuzzle.app.domain.AppRoles;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.model.AppDefinitionInput;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
@@ -60,8 +62,9 @@ public class UpdateAppDefinition {
             throw new AppDefinitionInvalidException(orgKey, appId, blockers);
         }
 
-        existing.replaceDraft(input.getName(), input.getTranslocoId(), input.getDescription(),
-                mapper.toDomainGraph(input));
+        AppGraph graph = mapper.toDomainGraph(input);
+        existing.replaceDraft(input.getName(), input.getTranslocoId(), input.getDescription(), graph);
+        guard.declareRoles(orgKey, AppRoles.DESCRIPTION, AppRoles.of(graph));
         return repository.save(existing);
     }
 }

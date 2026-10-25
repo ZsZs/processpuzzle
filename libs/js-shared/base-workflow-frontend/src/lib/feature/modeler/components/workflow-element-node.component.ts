@@ -134,12 +134,17 @@ const EVENT_KINDS: ReadonlySet<WorkflowElementKind> = new Set(['start', 'end', '
         0 0 0 3px #b3261e,
         0 0 0 8px rgba(179, 38, 30, 0.2);
     }
-    [data-run-status='COMPLETED'],
     [data-run-status='SKIPPED'],
-    [data-run-status='CANCELLED'],
+    [data-run-status='CANCELLED'] {
+      opacity: 0.55;
+    }
+    /* Passed: ringed in green rather than faded, so the path the run took stands out from what is still ahead. */
+    [data-run-status='COMPLETED'],
     [data-run-status='OCCURRED'],
     [data-run-status='THROWN'] {
-      opacity: 0.55;
+      box-shadow:
+        0 0 0 3px #2e7d32,
+        0 0 0 6px rgba(46, 125, 50, 0.2);
     }
     /* A reference to something the catalog does not contain. The border *style* changes and its width does
        not, so the card measures the same as any other and the layout is unaffected. */

@@ -12,6 +12,13 @@ inputs:
     description: 'full = run all e2e tests; smoke = run only @smoke-tagged tests'
     required: false
     default: full
+  allow_release:
+    description: >-
+      'true' lets specs release every pending definition of the organization, which they need to run a workflow
+      they created (the timer specs) and which cannot be undone. Only for a stack this job started and nobody else
+      uses; never for a deployed environment.
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -37,6 +44,7 @@ runs:
       shell: bash
       env:
         ENVIRONMENT: ${{inputs.target_environment}}
+        E2E_ALLOW_RELEASE: ${{inputs.allow_release}}
 
     - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}

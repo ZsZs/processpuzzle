@@ -28,6 +28,7 @@ public class ReplaceToolDefinitionUseCase {
         existing.setName(desiredState.getName());
         existing.setDescription(desiredState.getDescription());
         existing.setBaseUrl(desiredState.getBaseUrl());
+        existing.setUiUrl(desiredState.getUiUrl());
         existing.setAuth(desiredState.getAuth());
         existing.setOperations(desiredState.getOperations());
         return repository.save(existing);

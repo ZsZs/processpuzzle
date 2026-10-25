@@ -1,5 +1,6 @@
 package com.processpuzzle.orgadmin.adapters.outbound;
 
+import com.processpuzzle.orgadmin.usecases.outbound.NoOpRoleProvisioningPort;
 import com.processpuzzle.orgadmin.usecases.outbound.NoOpUserDirectoryPort;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
@@ -41,5 +42,17 @@ class UserDirectoryConfigurationTest {
         UserDirectoryPort port = configuration.userDirectoryPort(client, tenants);
 
         assertThat(port).isInstanceOf(KeycloakOrganizationUserDirectoryAdapter.class);
+    }
+
+    @Test
+    void createsRolesOnlyWhereTheyAreRealmRoles() {
+        when(client.tenancy()).thenReturn(KeycloakTenancy.REALM_PER_TENANT);
+        assertThat(configuration.roleProvisioningPort(client)).isInstanceOf(KeycloakRoleProvisioningAdapter.class);
+
+        when(client.tenancy()).thenReturn(KeycloakTenancy.ORGANIZATION);
+        assertThat(configuration.roleProvisioningPort(client)).isInstanceOf(NoOpRoleProvisioningPort.class);
+
+        when(client.tenancy()).thenReturn(KeycloakTenancy.UNCONFIGURED);
+        assertThat(configuration.roleProvisioningPort(client)).isInstanceOf(NoOpRoleProvisioningPort.class);
     }
 }

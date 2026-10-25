@@ -336,6 +336,26 @@ class EntityDefinitionValidatorTest {
         assertSingleViolation(geoLocationAttribute(ValueKind.REFERENCE, null, "place"), message);
     }
 
+    @Test
+    void validate_calculatedOfAnotherShape_throwsValidationException() {
+        String message = "CALCULATED attributes must declare valueKind NUMBER, TEXT, DATE or BOOLEAN, a single value and no linkedEntityType";
+        assertSingleViolation(calculatedAttribute(ValueKind.REFERENCE, null, null), message);
+        assertSingleViolation(calculatedAttribute(ValueKind.NUMBER, Multiplicity.ZERO_TO_N, null), message);
+        assertSingleViolation(calculatedAttribute(ValueKind.NUMBER, null, "place"), message);
+    }
+
+    @Test
+    void validate_calculatedScalar_passes() {
+        for (ValueKind kind : List.of(ValueKind.NUMBER, ValueKind.TEXT, ValueKind.DATE, ValueKind.BOOLEAN)) {
+            validator.validate(definitionWith(calculatedAttribute(kind, null, null)));
+        }
+    }
+
+    private static BaseEntityAttribute calculatedAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
+        return BaseEntityAttribute.builder().code("total").name("Total").valueKind(valueKind)
+                .formControlType(FormControlType.CALCULATED).multiplicity(multiplicity).linkedEntityType(linkedEntityType).build();
+    }
+
     private static BaseEntityAttribute geoLocationAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
         return BaseEntityAttribute.builder()
                 .code("location")

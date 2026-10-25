@@ -5,6 +5,7 @@ import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatIcon } from '@angular/material/icon';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { SessionUser } from '@processpuzzle/util';
 import { Document, DocumentBlock, DocumentSignature, DocumentSignatureSubject } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { BaseDocumentStore } from '../../domain/base-document.store';
@@ -123,6 +124,7 @@ export class DocumentSignTabComponent implements OnInit {
   private readonly documentService = inject(BaseDocumentService);
   private readonly store = inject(BaseDocumentStore);
   private readonly transloco = inject(TranslocoService);
+  private readonly sessionUser = inject(SessionUser);
 
   protected readonly locale = signal(this.transloco.getActiveLang());
   protected readonly blocks = signal<DocumentBlock[]>([]);
@@ -133,8 +135,17 @@ export class DocumentSignTabComponent implements OnInit {
   protected readonly accepted = signal(false);
   protected readonly isSigning = signal(false);
   protected readonly signError = signal<string | undefined>(undefined);
-  /** The signature this session just gave, or already had — shown instead of the button. */
-  protected readonly ownSignature = signal<DocumentSignature | undefined>(undefined);
+  /** The signature this page has just given, which the list does not hold until it is read again. */
+  private readonly signedNow = signal<DocumentSignature | undefined>(undefined);
+  /**
+   * The signature of the signed-in user for this object — the one just given, or one the list already holds, so that
+   * a reload shows "signed" rather than offering the button again. Recognised by the signer's id; a signature with
+   * none (recorded before the server kept it) is nobody's in particular and is not taken for the user's.
+   */
+  protected readonly ownSignature = computed<DocumentSignature | undefined>(() => {
+    const userId = this.sessionUser.userId();
+    return this.signedNow() ?? (userId ? this.signatures().find((signature) => signature.signedById === userId) : undefined);
+  });
 
   protected readonly title = computed(() => (this.store.currentEntity() as Document | undefined)?.title ?? '');
   protected readonly subject = computed<DocumentSignatureSubject | undefined>(() => {
@@ -155,7 +166,7 @@ export class DocumentSignTabComponent implements OnInit {
     this.signError.set(undefined);
     try {
       const signature = await this.documentService.sign(this.entityId(), subject, this.locale());
-      this.ownSignature.set(signature);
+      this.signedNow.set(signature);
       this.signatures.update((list) => [signature, ...list.filter((existing) => existing.id !== signature.id)]);
     } catch (error) {
       this.signError.set(messageOf(error));

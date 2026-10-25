@@ -89,7 +89,7 @@ describe('createControlTester', () => {
     await expect(tester.assertValue()).resolves.toBeUndefined();
   });
 
-  it.each(['FLEX_BOX', 'LABEL'])('keeps %s out of form filling — it holds no value at all', (formControlType) => {
+  it.each(['FLEX_BOX', 'LABEL', 'CALCULATED'])('keeps %s out of form filling — it holds no value of its own to fill', (formControlType) => {
     expect(createControlTester(attr({ attrName: 'layout', formControlType })).isInput).toBe(false);
   });
 

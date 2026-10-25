@@ -5,6 +5,9 @@ ProcessPuzzle is a Low-Code platform for content management and business workflo
 ProcessPuzzle has a couple of Building Blocks:
 - [ProcessPuzzle Framework](/libs/README.md) – Is a set of libraries for building Low-Code Angular applications
 - [ProcessPuzzle Testbed](/apps/processpuzzle-testbed-frontend) – Web application to test and demonstrate the framework capabilities
+  Its My Profile page lets any signed-in user pick realm roles for themselves (for example `documentation-editor`
+  to edit the Handbook); administrative roles are never offered, and the feature is off unless an application
+  opts in — see the [auth library](/libs/js-shared/auth/README.md#self-service-roles).
 - **ProcessPuzzle UI** and **ProcessPuzzle Admin** – the Low-Code designer and the staff administration application. Both live in the private `processpuzzle-biz` repository, together with the commercial `platform-admin` feature, and consume the framework libraries above through a submodule – see [Extracting platform-admin](/docs/platform-admin-extraction.md).
 
 Each of these is deployed as a **stack** with its own Keycloak realm, database and object-storage namespace over
@@ -164,6 +167,11 @@ sequenceDiagram
   end
   Note over R,W: rules re-evaluated on every state change,<br/>so automation and manual edits obey the same constraints
 ```
+
+The same mechanism keeps **roles** in step with Keycloak: a document, content book, route or navigation item that
+names a role publishes `RolesReferenced`, and org-admin creates the missing realm role. Role fields in the
+designers then offer the organization's role catalog (`GET /organizations/{orgKey}/role-catalog`) while still accepting
+new names — see the [auth library](/libs/js-shared/auth/README.md#role-catalog-suggestions).
 
 Why events rather than direct dependencies:
 - **Consistency.** A rule guards a change regardless of whether it originated from a user in a form or from a

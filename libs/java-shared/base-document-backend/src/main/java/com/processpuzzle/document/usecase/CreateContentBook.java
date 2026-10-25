@@ -34,6 +34,7 @@ public class CreateContentBook {
         ContentBook book = new ContentBook(orgKey, UUID.randomUUID().toString(), input.slug(), input.title(),
                 guard.currentPrincipal());
         input.applyTo(book);
+        guard.declareRoles(orgKey, input.roles());
         if (input.nodes() != null) {
             book.replaceNodes(treeChecker.check(orgKey, input.nodes()));
         }

@@ -2,9 +2,11 @@ package com.processpuzzle.calculation.usecase;
 
 import com.processpuzzle.calculation.domain.CalculationDefinition;
 import com.processpuzzle.calculation.domain.CalculationDefinitionRepository;
+import com.processpuzzle.calculation.domain.definition.CalculationModel;
 import com.processpuzzle.calculation.domain.definition.OutputSpec;
 import com.processpuzzle.calculation.usecase.exception.CalculationNotFoundException;
 import com.processpuzzle.core.definition.Channel;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,12 +38,31 @@ public class FindCalculationDefinition {
      */
     public Set<String> storedAttributesOf(String orgKey, String entity) {
         Set<String> attributes = new LinkedHashSet<>();
+        storedOutputsOf(orgKey, entity).forEach(output -> attributes.add(output.attribute()));
+        return attributes;
+    }
+
+    /**
+     * One stored attribute of an entity and where its value comes from.
+     *
+     * @param decision  the decision, group column or parameter the value comes from
+     * @param parameter the entity parameter whose object is the output entity, null when there is none
+     */
+    public record StoredOutput(String calculationId, String attribute, String decision, String parameter) {
+    }
+
+    /** What the released calculations store into {@code entity}: one entry per attribute, grouped outputs left out. */
+    public List<StoredOutput> storedOutputsOf(String orgKey, String entity) {
+        List<StoredOutput> outputs = new ArrayList<>();
         for (CalculationDefinition definition : repository.findByOrgKeyAndChannelAndOutputEntity(orgKey, Channel.RELEASED, entity)) {
-            OutputSpec output = definition.parsedModel().output();
+            CalculationModel model = definition.parsedModel();
+            OutputSpec output = model.output();
             if (output != null && output.isStored() && !output.isGrouped()) {
-                attributes.addAll(output.mapping().keySet());
+                String parameter = OutputWriter.targetOf(model);
+                output.mapping().forEach((attribute, decision) ->
+                        outputs.add(new StoredOutput(definition.getId(), attribute, decision, parameter)));
             }
         }
-        return attributes;
+        return outputs;
     }
 }

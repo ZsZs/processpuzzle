@@ -74,6 +74,9 @@
   "copyright": {
     "name": "Szerzői jog"
   },
+  "entity_form": {
+    "name": "Entitásűrlap"
+  },
   "entity_table": {
     "name": "Entitástáblázat"
   },

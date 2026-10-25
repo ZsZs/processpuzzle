@@ -66,10 +66,10 @@ public class AttachSignedPdf {
         guard.requireOrganizationAccess(orgKey);
         DocumentSignature signature = signatureRepository.findByOrgKeyAndIdAndDocumentId(orgKey, signatureId, documentId)
                 .orElseThrow(() -> new DocumentNotFoundException(orgKey, documentId));
-        String signer = SignDocument.signerOf(guard, currentPrincipal, orgKey)
+        SignDocument.Signer signer = SignDocument.signerOf(guard, currentPrincipal, orgKey)
                 .orElseThrow(() -> new DocumentAccessDeniedException(
                         "There is no authenticated member of '" + orgKey + "' to attach a PDF as"));
-        if (!signer.equals(signature.getSignedBy())) {
+        if (!signer.is(signature)) {
             throw new DocumentAccessDeniedException("Only the signer may attach the PDF of signature '" + signatureId + "'");
         }
         if (signature.hasPdf()) {

@@ -52,6 +52,14 @@ describe('ProcessDiagramComponent', () => {
     expect(nodeData(elementNodeId('event', 'invoice-issued'))?.runStatus).toBe('PENDING');
   });
 
+  it('marks the flow edges the run has travelled', async () => {
+    await answerLayout();
+
+    const passed = (from: string, to: string) => graph().edges.find((edge) => edge.source === elementNodeId('task', from) && edge.target === elementNodeId('task', to))?.data?.passed;
+    expect(passed('review-order', 'approve-shipment')).toBe(true);
+    expect(passed('approve-shipment', 'confirm-delivery')).toBeUndefined();
+  });
+
   it('highlights the open task', async () => {
     await answerLayout();
 

@@ -32,7 +32,7 @@ describe('WorkflowDashboardStore', () => {
   let controller: HttpTestingController;
 
   const flushCatalogs = (): void => {
-    controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO));
+    controller.expectOne(`${serviceRoot}/instances?size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO, OTHER_WORKFLOW_INSTANCE_DTO));
     controller.expectOne(`${serviceRoot}/tasks`).flush([TASK_DEFINITION_DTO, OTHER_TASK_DEFINITION_DTO, THIRD_TASK_DEFINITION_DTO]);
     controller.expectOne(`${serviceRoot}/artifacts`).flush([ARTIFACT_DEFINITION_DTO, OTHER_ARTIFACT_DEFINITION_DTO]);
     controller.expectOne(`${serviceRoot}/workflows`).flush(pageOfWorkflows(WORKFLOW_DTO));
@@ -46,7 +46,7 @@ describe('WorkflowDashboardStore', () => {
    */
   const reloadWith = (...runs: object[]): void => {
     store.reload();
-    controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(...runs));
+    controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(...runs));
   };
 
   beforeEach(() => {
@@ -281,7 +281,7 @@ describe('WorkflowDashboardStore', () => {
 
       // The whole list, not the one task the verb answered with: completing or skipping a task activates
       // whatever depended on it.
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
       expect(store.isActing()).toBe(false);
     });
 
@@ -289,6 +289,7 @@ describe('WorkflowDashboardStore', () => {
       await store.claim(row());
 
       controller.expectNone(`${taskUrl}/assign`);
+      expect(store.isActing()).toBe(false);
     });
 
     it('reports an accepted completion and leaves no refusal behind', async () => {
@@ -298,7 +299,7 @@ describe('WorkflowDashboardStore', () => {
 
       expect(await completing).toBe(true);
       expect(store.postconditionDetail()).toBeUndefined();
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     /** A refusal is a 200 with the task still ACTIVE — the detail belongs beside the form, not in an error. */
@@ -310,7 +311,7 @@ describe('WorkflowDashboardStore', () => {
       expect(await completing).toBe(false);
       expect(store.postconditionDetail()).toBe('shipment-approved: not set');
       expect(store.actionError()).toBeUndefined();
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     // `postconditionDetail` is nullable, and an unchanged screen would read as a submission that vanished.
@@ -321,7 +322,7 @@ describe('WorkflowDashboardStore', () => {
       await completing;
 
       expect(store.postconditionDetail()).toBe('unstated_refusal');
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     it('skips with the reason it was given', async () => {
@@ -332,7 +333,7 @@ describe('WorkflowDashboardStore', () => {
       request.flush(WORKFLOW_INSTANCE_DTO.tasks[1]);
 
       expect(await skipping).toBe(true);
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
     });
 
     it('surfaces a failed verb as a message and stops acting', async () => {
@@ -344,14 +345,26 @@ describe('WorkflowDashboardStore', () => {
       expect(store.actionError()).toBeTruthy();
       expect(store.isActing()).toBe(false);
       // No reload after a failure: nothing changed, so re-reading the list would only hide the message.
-      controller.expectNone(`${serviceRoot}/instances`);
+      controller.expectNone(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`);
+    });
+
+    it('drops the selection and re-reads the runs when the run was deleted meanwhile', async () => {
+      store.select(runId, 'task-1');
+      const completing = store.complete(row());
+
+      controller.expectOne(`${taskUrl}/complete`).flush({ errorId: 'instance.not.found' }, { status: 404, statusText: 'Not Found' });
+
+      expect(await completing).toBe(false);
+      expect(store.actionError()).toBeTruthy();
+      expect(store.selectedInstanceId()).toBeUndefined();
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances());
     });
 
     it('clears a stale refusal when a different task is opened', async () => {
       const completing = store.complete(row());
       controller.expectOne(`${taskUrl}/complete`).flush({ accepted: false, postconditionDetail: 'nope' });
       await completing;
-      controller.expectOne(`${serviceRoot}/instances`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
 
       store.select(runId, reviewOrderTaskId);
 
@@ -386,7 +399,7 @@ describe('WorkflowDashboardStore', () => {
     store.reload();
     expect(store.isLoading()).toBe(true);
 
-    controller.expectOne(`${serviceRoot}/instances`).flush({ errorId: 'oops' }, { status: 500, statusText: 'Server Error' });
+    controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush({ errorId: 'oops' }, { status: 500, statusText: 'Server Error' });
     expect(store.loadError()).toBeTruthy();
   });
 
@@ -451,7 +464,7 @@ describe('WorkflowDashboardStore', () => {
   });
 
   describe('refresh', () => {
-    const instanceReads = () => controller.match(`${serviceRoot}/instances`);
+    const instanceReads = () => controller.match(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`);
 
     it('re-reads the runs when the dashboard is entered again', () => {
       store.refresh();
@@ -462,13 +475,35 @@ describe('WorkflowDashboardStore', () => {
       expect(store.instances().map((instance) => instance.id)).toEqual([runId]);
     });
 
-    it('does not double a read already in flight', () => {
+    // The first visit finds the read the instance store started when it was built (the first page of every run), and
+    // the dashboard works on the runs in progress: its own read replaces that one rather than waiting for it.
+    it('replaces a read already in flight with its own', () => {
       store.reload();
       store.refresh();
 
       const reads = instanceReads();
-      expect(reads).toHaveLength(1);
-      reads[0].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      expect(reads.map((read) => read.cancelled)).toEqual([true, false]);
+      reads[1].flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+      expect(store.instances().map((instance) => instance.id)).toEqual([runId]);
+    });
+
+    it('asks for the runs in progress, every page of them', () => {
+      store.refresh();
+
+      const [read] = instanceReads();
+      expect(read.request.urlWithParams).toBe(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`);
+      read.flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+    });
+
+    it('follows the pages when the runs in progress do not fit one', () => {
+      store.refresh();
+      const [first] = instanceReads();
+      first.flush({ content: [WORKFLOW_INSTANCE_DTO], number: 0, size: 200, totalElements: 201, totalPages: 2 });
+
+      const second = controller.expectOne((request) => request.urlWithParams.includes('/instances?page=1&'));
+      second.flush({ content: [OTHER_WORKFLOW_INSTANCE_DTO], number: 1, size: 200, totalElements: 201, totalPages: 2 });
+
+      expect(store.instances().map((instance) => instance.id)).toEqual([runId, OTHER_WORKFLOW_INSTANCE_DTO.id]);
     });
   });
 

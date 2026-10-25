@@ -48,4 +48,9 @@ public interface EventInstanceRepository extends JpaRepository<EventInstance, UU
     @Modifying(flushAutomatically = true)
     @Query("delete from EventInstance e where e.orgKey = :orgKey")
     int eraseByOrgKey(@Param("orgKey") String orgKey);
+
+    /** Every event instance of one workflow instance in one statement, for deleting the instance. */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from EventInstance e where e.orgKey = :orgKey and e.workflowInstanceId = :instanceId")
+    int deleteByWorkflowInstance(@Param("orgKey") String orgKey, @Param("instanceId") UUID instanceId);
 }

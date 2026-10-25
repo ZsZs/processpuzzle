@@ -7,6 +7,11 @@ export enum FormControlType {
   ADDRESS = 'ADDRESS',
   ARTIFACT = 'ARTIFACT',
   AVATAR = 'AVATAR',
+  /**
+   * A value a calculation derives. Read-only; shows what the calculation would produce from the form's unsaved
+   * state. Rendered by the component registered under `ENTITY_CALCULATED_CONTROL`, a plain label without one.
+   */
+  CALCULATED = 'CALCULATED',
   CHECKBOX = 'CHECKBOX',
   /**
    * An append-only history of rich-text comments, each stamped with its author and time — the value is an

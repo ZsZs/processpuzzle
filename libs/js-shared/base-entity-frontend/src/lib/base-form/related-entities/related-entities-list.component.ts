@@ -77,7 +77,7 @@ export class RelatedEntitiesListComponent<Entity extends BaseEntity> extends Bas
       return;
     }
 
-    this.formNavigator.captureFormSnapshot(this.formGroup.getRawValue());
+    this.formNavigator.captureFormSnapshot(this.formGroup.getRawValue(), this.entityName());
     this.formNavigator.navigateToRelatedList(this.linkedEntityName(), this.formNavigator.determineCurrentUrl(), {
       command: NavigatorCommand.SELECT_OR_CREATE,
       attrName: this.config().attrName,

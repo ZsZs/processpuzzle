@@ -31,6 +31,19 @@ tenants before touching the directory. `TenantRealmResolver` authorizes the call
 feature-owned `TenantRealmDirectory` port, supplied by the host. The module declares only
 `allowedDependencies = {"core", "shared"}`; it does not depend on platform-admin.
 
+## The role catalog
+
+Roles that other features refer to — a document's editor roles, a navigation item's visibility — have to exist
+in the realm before anyone can hold them. Those features publish `RolesReferenced` (core) after saving, and
+`EnsureReferencedRoles` creates the missing realm roles through the `RoleProvisioningPort`, once the saving
+transaction has committed. It is create-only (a realm's roles are one shared namespace, so nothing is ever
+removed), skips `org-admin`, `org-member`, `platform-admin`, the Keycloak built-ins and `default-roles-*`, and
+logs rather than fails when Keycloak is unreachable — saving the reference again retries. With Keycloak
+Organizations (`keycloak.admin.organization-realm`) a role is a group of a shared realm, so nothing is created.
+
+`GET /organizations/{orgKey}/role-catalog` lists what an author may refer to: the realm's roles minus the reserved ones.
+It is open to every member, unlike `/admin/roles`, and is what the role pickers in the frontend read.
+
 ## Invitation failure and recovery
 
 Both Keycloak adapters use the same compensating invitation workflow. An account is created

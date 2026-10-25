@@ -95,7 +95,7 @@ the widget is destroyed.
 documents, organization taken from the file name as for every other loader. Nodes name their document by
 `documentSlug`, resolved to an id at import. Create-only: a book that exists is never touched, so a tree an
 editor rearranged survives a restart. The testbed seeds `testbed-handbook`, shown at
-`/base-document/samples/handbook`.
+the Content tab of the book at `/base-document/samples/content-book/list`.
 
 ## Not done
 

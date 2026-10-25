@@ -246,7 +246,7 @@ entityDefinitions:
         name: Total
         displayOrder: 4
         valueKind: NUMBER
-        formControlType: TEXT_BOX
+        formControlType: CALCULATED
       - code: shippingAddress
         name: Shipping Address
         displayOrder: 5
@@ -355,7 +355,7 @@ entityDefinitions:
         name: Total
         displayOrder: 4
         valueKind: NUMBER
-        formControlType: TEXT_BOX
+        formControlType: CALCULATED
       - code: shippingAddress
         name: Shipping Address
         displayOrder: 5

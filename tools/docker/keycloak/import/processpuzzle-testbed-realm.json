@@ -14,6 +14,13 @@
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9090 http://localhost:4200 https://testbed.stage.processpuzzle.de https://testbed.processpuzzle.com; object-src 'none';",
     "xFrameOptions": ""
   },
+  "roles": {
+    "realm": [
+      { "name": "documentation-editor", "description": "May edit the Testbed Handbook and sample documents" },
+      { "name": "documentation-publisher", "description": "May publish Testbed documents" },
+      { "name": "documentation-reviewer", "description": "May read draft Testbed documents" }
+    ]
+  },
   "users": [
     {
       "username": "test-user",

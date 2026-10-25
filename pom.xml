@@ -92,6 +92,7 @@
          under its own root and fail. Such a repository overrides these two properties, one
          line each, instead of re-declaring checkstyle and spotless. -->
     <pp.checkstyle.config>${maven.multiModuleProjectDirectory}/tools/checkstyle.xml</pp.checkstyle.config>
+    <pp.pmd.config>${maven.multiModuleProjectDirectory}/tools/pmd-ruleset.xml</pp.pmd.config>
     <pp.formatter.config>${maven.multiModuleProjectDirectory}/tools/eclipse-formatter.xml</pp.formatter.config>
     <!-- Per-lib versions. Single source of truth: each child pom references the matching
          property via <version>${<lib>.version}</version>, and root <dependencyManagement>
@@ -100,7 +101,7 @@
          tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
          flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
     <base-ai-backend.version>0.2.0</base-ai-backend.version>
-    <api-contracts.version>1.14.0</api-contracts.version>
+    <api-contracts.version>1.15.0</api-contracts.version>
     <base-app-backend.version>1.6.0</base-app-backend.version>
     <base-document-backend.version>1.3.0</base-document-backend.version>
     <base-entity-backend.version>1.8.0</base-entity-backend.version>
@@ -297,6 +298,23 @@
               </goals>
             </execution>
           </executions>
+        </plugin>
+
+        <!-- PMD: cognitive complexity only (Sonar java:S3776). Not bound to the build; the pre-push hook runs
+             pmd:check directly on the modules a branch touches. -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>3.28.0</version>
+          <configuration>
+            <rulesets>
+              <ruleset>${pp.pmd.config}</ruleset>
+            </rulesets>
+            <printFailingErrors>true</printFailingErrors>
+            <failOnViolation>true</failOnViolation>
+            <skipPmdError>false</skipPmdError>
+            <includeTests>false</includeTests>
+          </configuration>
         </plugin>
 
         <!-- Compiler plugin for Java compilation -->

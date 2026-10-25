@@ -11,6 +11,7 @@ import com.processpuzzle.workflow.execution.domain.ArtifactInstance;
 import com.processpuzzle.workflow.execution.usecases.inbound.AddTaskCommentUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.AssignTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CancelWorkflowInstanceUseCase;
+import com.processpuzzle.workflow.execution.usecases.inbound.DeleteWorkflowInstanceUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.CompleteTaskUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindAllWorkflowInstancesUseCase;
 import com.processpuzzle.workflow.execution.usecases.inbound.FindWorkflowInstanceUseCase;
@@ -62,12 +63,13 @@ class WorkflowExecutionEndpointsTest {
         FindWorkflowInstanceUseCase findUseCase = mock(FindWorkflowInstanceUseCase.class);
         FindAllWorkflowInstancesUseCase findAllUseCase = mock(FindAllWorkflowInstancesUseCase.class);
         CancelWorkflowInstanceUseCase cancelUseCase = mock(CancelWorkflowInstanceUseCase.class);
+        DeleteWorkflowInstanceUseCase deleteUseCase = mock(DeleteWorkflowInstanceUseCase.class);
         ListTaskInstancesUseCase listTasksUseCase = mock(ListTaskInstancesUseCase.class);
         ListArtifactInstancesUseCase listWpsUseCase = mock(ListArtifactInstancesUseCase.class);
         ListEventInstancesUseCase listEventsUseCase = mock(ListEventInstancesUseCase.class);
 
         WorkflowInstancesEndpoint endpoint = new WorkflowInstancesEndpoint(
-                startUseCase, findUseCase, findAllUseCase, cancelUseCase, listTasksUseCase, listWpsUseCase,
+                startUseCase, findUseCase, findAllUseCase, cancelUseCase, deleteUseCase, listTasksUseCase, listWpsUseCase,
                 listEventsUseCase, mapper);
 
         UUID instanceId = UUID.randomUUID();
@@ -107,6 +109,10 @@ class WorkflowExecutionEndpointsTest {
         ResponseEntity<Void> cancelRes = endpoint.cancelWorkflowInstance(ORG, instanceId.toString(), cancelReq);
         assertThat(cancelRes.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(cancelUseCase).cancel(ORG, instanceId, "Cancel it");
+
+        // Delete
+        assertThat(endpoint.deleteWorkflowInstance(ORG, instanceId.toString()).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(deleteUseCase).delete(ORG, instanceId);
     }
 
     @Test

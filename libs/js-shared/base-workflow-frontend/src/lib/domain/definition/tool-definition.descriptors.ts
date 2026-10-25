@@ -28,6 +28,10 @@ function createToolDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // does so for an attribute with a pattern).
   baseUrlAttr.pattern = '^\\S+$';
 
+  const uiUrlAttr = new BaseEntityAttrDescriptor('uiUrl', FormControlType.TEXT_BOX, 'UI URL');
+  uiUrlAttr.placeholder = '/third-party/automated-check/';
+  uiUrlAttr.hideInTable = true;
+
   const descriptionAttr = new BaseEntityAttrDescriptor('description', FormControlType.TEXTAREA, 'Description');
   descriptionAttr.styleClass = 'full-width';
   descriptionAttr.hideInTable = true;
@@ -65,10 +69,11 @@ function createToolDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   identityRow.style = { 'column-gap': '10px' };
   const endpointRow = new FlexboxDescriptor([baseUrlAttr, authTypeAttr, secretRefAttr], FlexDirection.ROW);
   endpointRow.style = { 'column-gap': '10px' };
+  const uiRow = new FlexboxDescriptor([uiUrlAttr], FlexDirection.ROW);
   const revisionRow = new FlexboxDescriptor([versionAttr, createdAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, endpointRow, revisionRow, descriptionAttr, operationsAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, endpointRow, uiRow, revisionRow, descriptionAttr, operationsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

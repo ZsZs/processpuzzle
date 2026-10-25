@@ -13,6 +13,7 @@ public record ToolYamlEntry(
         String name,
         String description,
         String baseUrl,
+        String uiUrl,
         ToolAuthYaml auth,
         List<ToolOperationYaml> operations
 ) {

@@ -115,6 +115,56 @@ class SignDocumentTest {
     }
 
     @Test
+    void recordsTheSignersIdentityWhereTheTokenHasOne() {
+        stub(document(), snapshot(4L, "intro"));
+        when(principal.subject()).thenReturn(Optional.of("kc-ada"));
+
+        DocumentSignature signature = useCase().execute(ORG, ID, "employee", "e-1", null).signature();
+
+        assertThat(signature.getSignedBy()).isEqualTo("Ada Lovelace");
+        assertThat(signature.getSignedById()).isEqualTo("kc-ada");
+    }
+
+    @Test
+    void aSignatureHasNoIdentityWhenTheTokenCarriesNone() {
+        stub(document(), snapshot(4L, "intro"));
+
+        assertThat(useCase().execute(ORG, ID, "employee", "e-1", null).signature().getSignedById()).isNull();
+    }
+
+    @Test
+    void signingAgainAsTheSameIdentityReturnsTheExistingSignature() {
+        stub(document(), snapshot(4L, "intro"));
+        when(principal.subject()).thenReturn(Optional.of("kc-ada"));
+        DocumentSignature existing = new DocumentSignature("s-1", ORG, ID, "Employment contract", "en", 4L, "hash",
+                "employee", "e-1", "Ada Lovelace", "kc-ada", Instant.now());
+        when(signatureRepository.findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedById(
+                ORG, ID, "en", 4L, "employee", "e-1", "kc-ada")).thenReturn(Optional.of(existing));
+
+        SignDocument.Outcome outcome = useCase().execute(ORG, ID, "employee", "e-1", null);
+
+        assertThat(outcome.created()).isFalse();
+        assertThat(outcome.signature()).isSameAs(existing);
+        verify(signatureRepository, never()).save(any());
+    }
+
+    // The name is what a person reads; two of them can share one, and are two signers.
+    @Test
+    void twoPeopleOfOneNameAreTwoSigners() {
+        stub(document(), snapshot(4L, "intro"));
+        when(principal.subject()).thenReturn(Optional.of("kc-other-ada"));
+        DocumentSignature firstAda = new DocumentSignature("s-1", ORG, ID, "Employment contract", "en", 4L, "hash",
+                "employee", "e-1", "Ada Lovelace", "kc-ada", Instant.now());
+        when(signatureRepository.findFirstByOrgKeyAndDocumentIdAndLocaleAndRevisionAndSubjectTypeAndSubjectIdAndSignedBy(
+                ORG, ID, "en", 4L, "employee", "e-1", "Ada Lovelace")).thenReturn(Optional.of(firstAda));
+
+        SignDocument.Outcome outcome = useCase().execute(ORG, ID, "employee", "e-1", null);
+
+        assertThat(outcome.created()).isTrue();
+        assertThat(outcome.signature().getSignedById()).isEqualTo("kc-other-ada");
+    }
+
+    @Test
     void theAccessPolicysPrincipalIsPreferredOverTheToken() {
         stub(document(), snapshot(1L, "intro"));
         DocumentAccessPolicy policy = new DocumentAccessPolicy() {

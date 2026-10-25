@@ -17,7 +17,7 @@ import { RuntimeConfiguration } from './runtime-configuration';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
-import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, authTokenInterceptorFor, provideAuthenticationService, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, authTokenInterceptorFor, provideAuthenticationService, provideRoleCatalogSuggestions, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
@@ -43,7 +43,7 @@ import {
 } from '@processpuzzle/base-document';
 import { BASE_STATE_ENTITY_FACADES, BASE_STATE_FACADE_PROVIDERS, BASE_STATE_TRANSLATION_SOURCE, provideEntityStateControl, provideEntityStateMachineTab } from '@processpuzzle/base-state';
 import { BASE_EVENT_ENTITY_FACADES, BASE_EVENT_FACADE_PROVIDERS, BASE_EVENT_TRANSLATION_SOURCE } from '@processpuzzle/base-event';
-import { BASE_CALCULATION_ENTITY_FACADES, BASE_CALCULATION_FACADE_PROVIDERS, BASE_CALCULATION_TRANSLATION_SOURCE } from '@processpuzzle/base-calculation';
+import { BASE_CALCULATION_ENTITY_FACADES, BASE_CALCULATION_FACADE_PROVIDERS, BASE_CALCULATION_TRANSLATION_SOURCE, provideEntityCalculatedControl } from '@processpuzzle/base-calculation';
 import { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS, BASE_AI_TRANSLATION_SOURCE, provideEntityEnrollmentTab } from '@processpuzzle/base-ai';
 import {
   BASE_WORKFLOW_ENTITY_FACADES,
@@ -127,6 +127,8 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideTestbedApplicationContext(),
       // And the other way round: My Profile describes the user's roles from base-workflow's role catalog.
       { provide: ROLE_DESCRIPTION_SOURCE, useExisting: WorkflowRoleDescriptionSource },
+      // Role fields on documents and content books offer the organization's role catalog.
+      provideRoleCatalogSuggestions(),
       // Adds the read-only State Machine tab to every entity a state machine governs — `Order` and
       // `Dynamic Entity` in this tenant, both of them metadata-defined entities that name base-state
       // nowhere. base-entity asks the registered contributors when it resolves an entity's screens, so
@@ -134,6 +136,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // transloco scope, without which the tab's label would render as its key on those screens.
       ...provideEntityStateMachineTab(),
       ...provideEntityStateControl(),
+      // base-calculation does the same for the attributes a released calculation writes (`Order.total`): they render
+      // read-only and recompute from the unsaved form instead of offering an edit the backend would discard.
+      ...provideEntityCalculatedControl(),
       // The same arrangement for base-ai: the Enrollment tab, offered to every entity type that has a
       // recognition profile — `Boat` in this tenant, a metadata-defined entity that names base-ai nowhere.
       ...provideEntityEnrollmentTab(),

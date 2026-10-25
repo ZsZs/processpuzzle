@@ -14,6 +14,7 @@ import { EntityDefinition } from '../base-entity-definition/entity-definition';
 import { TEST_ENTITY_DEFINITIONS } from '../base-entity-definition/test-entity-definition';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { ENTITY_STATE_CONTROL, type EntityStateControl } from '../base-form/state/entity-state-control';
+import { ENTITY_CALCULATED_CONTROL, type EntityCalculatedControl } from '../base-form/calculated/entity-calculated-control';
 
 const ENTITY_DEFINITIONS_URL = 'http://localhost:8080/organizations/acme/entity-definitions?page=0&size=200';
 
@@ -291,6 +292,61 @@ describe('EntityScreenResolver', () => {
 
       expect(screens?.descriptor).toBe(descriptor);
       expect(attrOf(descriptor, 'status')?.formControlType).toBe(FormControlType.TEXT_BOX);
+    });
+  });
+
+  describe('calculated attributes', () => {
+    function descriptorOf(): BaseEntityDescriptor {
+      const attrs = [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name'), new BaseEntityAttrDescriptor('total', FormControlType.TEXT_BOX, 'Total'), new BaseEntityAttrDescriptor('status', FormControlType.STATE, 'Status')];
+      return new BaseEntityDescriptor({ entityName: 'Test Entity', entityTitle: 'Test Entity', attrDescriptors: attrs });
+    }
+
+    function resolverFor(descriptor: BaseEntityDescriptor, answer?: EntityCalculatedControl['calculatedAttributesOf']) {
+      const facadeToken = new InjectionToken<unknown>('TEST_ENTITY_FACADE');
+      const providers: Array<Record<string, unknown>> = [{ provide: facadeToken, useValue: facadeOf(descriptor) }];
+      if (answer) providers.push({ provide: ENTITY_CALCULATED_CONTROL, useValue: { component: class {}, calculatedAttributesOf: answer } });
+      return setup(providers, { 'Test Entity': facadeToken });
+    }
+
+    const typeOf = (descriptor: BaseEntityDescriptor, name: string) => (descriptor.attrDescriptors as BaseEntityAttrDescriptor[]).find((attr) => attr.attrName === name)?.formControlType;
+
+    it('turns the attributes the calculated control names into CALCULATED controls, idempotently', async () => {
+      const descriptor = descriptorOf();
+      const resolver = resolverFor(descriptor, async () => ['total']);
+
+      await resolver.resolve('Test Entity');
+      await resolver.resolve('Test Entity');
+
+      expect(typeOf(descriptor, 'total')).toBe(FormControlType.CALCULATED);
+      expect(typeOf(descriptor, 'name')).toBe(FormControlType.TEXT_BOX);
+    });
+
+    it('leaves an attribute a state machine governs a STATE control', async () => {
+      const descriptor = descriptorOf();
+
+      await resolverFor(descriptor, () => ['status']).resolve('Test Entity');
+
+      expect(typeOf(descriptor, 'status')).toBe(FormControlType.STATE);
+    });
+
+    it('leaves the descriptor alone without a calculated control', async () => {
+      const descriptor = descriptorOf();
+
+      await resolverFor(descriptor).resolve('Test Entity');
+
+      expect(typeOf(descriptor, 'total')).toBe(FormControlType.TEXT_BOX);
+    });
+
+    it.each([
+      ['rejects', () => Promise.reject(new Error('base-calculation is unreachable'))],
+      ['throws synchronously', () => { throw new Error('misconfigured'); }],
+    ])('still resolves, with the attribute editable, when the calculated control %s', async (_case, answer) => {
+      const descriptor = descriptorOf();
+
+      const screens = await resolverFor(descriptor, answer as EntityCalculatedControl['calculatedAttributesOf']).resolve('Test Entity');
+
+      expect(screens?.descriptor).toBe(descriptor);
+      expect(typeOf(descriptor, 'total')).toBe(FormControlType.TEXT_BOX);
     });
   });
 

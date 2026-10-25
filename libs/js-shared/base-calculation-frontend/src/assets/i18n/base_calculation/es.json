@@ -75,5 +75,9 @@
     "freeze": "Congelar",
     "frozenAt": "Congelado el {{at}}",
     "source": "Definición al ejecutarse"
+  },
+  "calculated_control": {
+    "badge": "Calculado por {{calculation}}",
+    "error": "No se pudo recalcular; se muestra el último valor."
   }
 }

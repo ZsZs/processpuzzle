@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { provideTranslocoScope } from '@jsverse/transloco';
-import { BASE_WORKFLOW_TRANSLOCO_SCOPE, TASK_DASHBOARD_I18N_SCOPE } from './base-workflow.i18n';
+import { BASE_ENTITY_TRANSLOCO_SCOPE, BASE_WORKFLOW_TRANSLOCO_SCOPE, TASK_DASHBOARD_I18N_SCOPE } from './base-workflow.i18n';
 import { WorkflowDashboardComponent } from './feature/dashboard/workflow-dashboard.component';
 
 /** The segment the dashboard mounts at, named once because the host's tab link has to agree with it. */
@@ -41,6 +41,7 @@ export const WORKFLOW_DASHBOARD_ROUTES: Routes = [
     // renders the raw key. This one resolves.
     data: { icon: 'checklist', menuTitle: `${TASK_DASHBOARD_I18N_SCOPE}.title` },
     component: WorkflowDashboardComponent,
-    providers: [provideTranslocoScope({ scope: BASE_WORKFLOW_TRANSLOCO_SCOPE, alias: BASE_WORKFLOW_TRANSLOCO_SCOPE })],
+    // base_entity too: the task's comments are base-entity's control, which reads its labels from that scope.
+    providers: [provideTranslocoScope({ scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE }, { scope: BASE_WORKFLOW_TRANSLOCO_SCOPE, alias: BASE_WORKFLOW_TRANSLOCO_SCOPE })],
   },
 ];

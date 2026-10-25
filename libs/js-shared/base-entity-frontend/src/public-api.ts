@@ -21,8 +21,9 @@ export {
   upperBound,
 } from './lib/base-entity/multiplicity';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
+export { REALM_ROLE_SUGGESTIONS, TAG_SUGGESTION_SOURCES, type TagSuggestionSource } from './lib/base-form/tags/tag-suggestions';
 export { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
-export type { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
+export { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
 export { ComponentsListComponent } from './lib/base-form/components/components-list.component';
 export { EmbeddedComponentsListComponent } from './lib/base-form/embedded-components/embedded-components-list.component';
 export { EmbeddedComponentRefComponent } from './lib/base-form/embedded-components/embedded-component-ref.component';
@@ -97,6 +98,7 @@ export { ENTITY_PREVIEW_READ_ONLY, EntityPreviewMode } from './lib/base-entity-d
 export { EntityScreenResolver, type EntityScreens } from './lib/base-entity-screens/entity-screens.resolver';
 export { ENTITY_TAB_CONTRIBUTORS, type EntityTabContributor } from './lib/base-entity-screens/entity-tab-contributor';
 export { ENTITY_STATE_CONTROL, type EntityStateControl } from './lib/base-form/state/entity-state-control';
+export { ENTITY_CALCULATED_CONTROL, type EntityCalculatedControl } from './lib/base-form/calculated/entity-calculated-control';
 export { entityScreenRoute, type EntityScreenRouteOptions } from './lib/base-entity-screens/entity-screen-routes';
 export { BaseEntityScreensComponent, ENTITY_DESCRIPTOR_ROUTE_DATA_KEY, REQUESTED_ENTITY_ROUTE_DATA_KEY } from './lib/base-entity-screens/entity-screens.component';
 export { EmbeddedEntityFacade } from './lib/base-entity-facade/embedded-entity.facade';

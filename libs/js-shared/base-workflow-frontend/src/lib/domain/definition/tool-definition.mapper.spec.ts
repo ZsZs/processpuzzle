@@ -90,7 +90,7 @@ describe('ToolDefinitionMapper', () => {
   it('emits exactly the contract’s fields and nothing else', () => {
     const dto = mapper.toDto(mapper.fromDto(TOOL_DEFINITION_DTO));
 
-    expect(Object.keys(dto).sort()).toEqual(['auth', 'baseUrl', 'createdAt', 'description', 'id', 'name', 'operations', 'version']);
+    expect(Object.keys(dto).sort()).toEqual(['auth', 'baseUrl', 'createdAt', 'description', 'id', 'name', 'operations', 'uiUrl', 'version']);
   });
 
   it('defaults the operations of a tool that declares none', () => {

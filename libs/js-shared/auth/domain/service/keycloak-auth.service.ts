@@ -76,6 +76,22 @@ export class KeycloakAuthService extends AuthService {
   }
 
   /**
+   * Roles are read from the token once, at init, so a role granted afterwards stays invisible until the
+   * token is replaced. `updateToken(-1)` forces that replacement; the user is then rebuilt from the new
+   * token with the profile it already had. A failed refresh leaves the user as it was.
+   */
+  override async reloadUser(): Promise<void> {
+    const current = this.user();
+    if (!current || !this.keycloak.authenticated) return;
+    try {
+      await this.keycloak.updateToken(-1);
+    } catch {
+      return;
+    }
+    this._user.set(new User(current.email, current.id, current.firstName, current.lastName, current.photoUrl, this.getUserRoles()));
+  }
+
+  /**
    * Keycloak's account console. `returnUrl` is passed through as is, unlike {@link login}'s target: the
    * profile page that links here lives under `/auth`, which {@link toRedirectUri} would send home.
    */

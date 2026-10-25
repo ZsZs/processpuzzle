@@ -65,6 +65,15 @@ public class DocumentSignature {
     @Column(name = "signed_by", nullable = false, length = 200)
     private String signedBy;
 
+    /**
+     * The signer's identity in the identity provider (the token's subject), where there was one. The name is what a
+     * person reads; this is what tells two people of the same name apart, and what lets a screen recognise the
+     * signature of the person looking at it. Null for a signature given before it was recorded, or by a policy
+     * that names the signer by something else.
+     */
+    @Column(name = "signed_by_id", length = 200)
+    private String signedById;
+
     @Column(name = "signed_at", nullable = false)
     private Instant signedAt;
 
@@ -102,6 +111,15 @@ public class DocumentSignature {
         this.subjectId = subjectId;
         this.signedBy = signedBy;
         this.signedAt = signedAt;
+    }
+
+    /** As the other constructor, for a signer the identity provider knows by an id as well as a name. */
+    @SuppressWarnings("java:S107") // one parameter per recorded fact; a builder would only rename them
+    public DocumentSignature(String id, String orgKey, String documentId, String title, String locale, Long revision,
+                             String contentHash, String subjectType, String subjectId, String signedBy,
+                             String signedById, Instant signedAt) {
+        this(id, orgKey, documentId, title, locale, revision, contentHash, subjectType, subjectId, signedBy, signedAt);
+        this.signedById = signedById;
     }
 
     public String getId() {
@@ -142,6 +160,10 @@ public class DocumentSignature {
 
     public String getSignedBy() {
         return signedBy;
+    }
+
+    public String getSignedById() {
+        return signedById;
     }
 
     public Instant getSignedAt() {

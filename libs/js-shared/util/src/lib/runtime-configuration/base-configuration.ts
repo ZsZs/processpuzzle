@@ -69,5 +69,12 @@ export interface BaseConfiguration {
    */
   readonly PLATFORM_ADMIN_SERVICE_ROOT?: string;
   readonly ORG_ADMIN_SERVICE_ROOT?: string;
+  /**
+   * Organization-scoped root of the self-service role endpoints (`<root>/me/roles`), same shape as
+   * `BACKEND_SERVICE_ROOT`. Optional and **the switch** for the feature: My Profile offers role
+   * selection only when it is set. The Testbed sets it; applications that leave role assignment to
+   * administrators omit it, and it does not fall back to `BACKEND_SERVICE_ROOT` for that reason.
+   */
+  readonly SELF_SERVICE_ROLES_SERVICE_ROOT?: string;
   readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

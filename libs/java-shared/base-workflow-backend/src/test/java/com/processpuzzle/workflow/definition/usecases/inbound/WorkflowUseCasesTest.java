@@ -467,8 +467,11 @@ class WorkflowUseCasesTest {
 
         assertThat(findAllUseCase.findAll(ORG, Channel.DRAFT, null, null)).containsExactly(tool);
 
-        ToolDefinition desired = ToolDefinition.builder().orgKey(ORG).id("tool1").name("Tool Updated").build();
-        assertThat(replaceUseCase.replace(ORG, "tool1", desired).getName()).isEqualTo("Tool Updated");
+        ToolDefinition desired = ToolDefinition.builder().orgKey(ORG).id("tool1").name("Tool Updated")
+                .uiUrl("https://example.com/ui").build();
+        ToolDefinition replaced = replaceUseCase.replace(ORG, "tool1", desired);
+        assertThat(replaced.getName()).isEqualTo("Tool Updated");
+        assertThat(replaced.getUiUrl()).isEqualTo("https://example.com/ui");
 
         tool.setVersion(1L);
         ToolDefinition wrongVersion = ToolDefinition.builder().orgKey(ORG).id("tool1").version(99L).build();

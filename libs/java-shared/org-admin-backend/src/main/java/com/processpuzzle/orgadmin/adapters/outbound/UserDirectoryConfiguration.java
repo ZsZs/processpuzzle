@@ -1,8 +1,11 @@
 package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.orgadmin.usecases.outbound.NoOpUserDirectoryPort;
+import com.processpuzzle.orgadmin.usecases.outbound.NoOpRoleProvisioningPort;
+import com.processpuzzle.orgadmin.usecases.outbound.RoleProvisioningPort;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
+import com.processpuzzle.core.identity.KeycloakTenancy;
 import com.processpuzzle.core.identity.KeycloakTenantDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,5 +44,16 @@ public class UserDirectoryConfiguration {
             }
             case REALM_PER_TENANT -> new KeycloakUserDirectoryAdapter(client);
         };
+    }
+
+    /**
+     * Roles other features refer to are created only where they are realm roles: with Keycloak
+     * Organizations a role is a group of the shared realm, which an author's reference must not mint.
+     */
+    @Bean
+    public RoleProvisioningPort roleProvisioningPort(KeycloakAdminClient client) {
+        return client.tenancy() == KeycloakTenancy.REALM_PER_TENANT
+                ? new KeycloakRoleProvisioningAdapter(client)
+                : new NoOpRoleProvisioningPort();
     }
 }

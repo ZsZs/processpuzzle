@@ -49,6 +49,12 @@ export interface BaseEntityQueryCondition {
   filterGroup?: FilterGroup;
   orderBys?: OrderBy[];
   query?: string;
+  /**
+   * Read every page and answer them as one, for a screen that works on the whole set (a dashboard) rather than on a
+   * page of it behind a pager. Pages are read one after another, `pageSize` (200 when not given) rows each; a bare
+   * array answer has no pages and comes back as it is.
+   */
+  allPages?: boolean;
 }
 
 export interface FirestoreQuery<Entity extends BaseEntity> {

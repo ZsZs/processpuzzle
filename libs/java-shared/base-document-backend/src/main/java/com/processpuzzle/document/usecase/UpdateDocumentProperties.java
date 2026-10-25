@@ -81,6 +81,7 @@ public class UpdateDocumentProperties {
 
         DocumentStatus before = DocumentPlatformFacts.defaultStatusOf(document, drafts, snapshots);
         input.applyTo(document);
+        guard.declareRoles(orgKey, input.roles());
 
         Document saved = repository.save(document);
         // No content changes here, but switching the source locale switches whose status is the document's.

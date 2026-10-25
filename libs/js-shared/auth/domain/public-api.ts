@@ -9,3 +9,5 @@ export type { KeycloakAuthConfig } from './service/keycloak-auth.config';
 export { RegistrationError, RegistrationService, type RegistrationRequest } from './service/registration.service';
 export { User } from './user/user';
 export { isIdentityProviderRole, ROLE_DESCRIPTION_SOURCE, type RoleDescription, type RoleDescriptionSource } from './user/role-description';
+export { provideRoleCatalogSuggestions, RoleCatalogService } from './service/role-catalog.service';
+export { SelfServiceRolesError, SelfServiceRolesService, type SelectableRole, type SelfServiceRoles } from './service/self-service-roles.service';

@@ -16,6 +16,9 @@ import { elementNodeId, WorkflowGraph } from '../../domain/modeler/workflow-grap
 import { WorkflowDiagramComponent } from '../modeler/components/workflow-diagram.component';
 import { WorkflowSelectionService } from '../modeler/services/workflow-selection.service';
 
+/** The run statuses of a task or event that is behind the run — what the diagram draws as passed. */
+const PASSED_STATUSES: ReadonlySet<string> = new Set(['COMPLETED', 'OCCURRED', 'THROWN']);
+
 /** What a layout lookup answered: the arrangement, or `undefined` for a workflow never arranged. */
 type LayoutLookup = { readonly layout: WorkflowDiagram | undefined };
 
@@ -29,6 +32,7 @@ type LayoutLookup = { readonly layout: WorkflowDiagram | undefined };
  *
  * - each task and event node carries its instance's status (`runStatus`), which the node template rings —
  *   active work and a waiting catch loudest, a blocked task in red, finished work faded;
+ * - the elements the run has passed are ringed in green, and so are the flow edges it travelled between them;
  * - the open task is `highlighted`, the mark the modeler uses for "the element you came from";
  * - each artifact is labelled with the record the run actually holds — `ORD-0042 : Order` — rather than the
  *   workflow's object name, once the run has bound it (`ArtifactInstance.entityLabel`).
@@ -111,8 +115,20 @@ export class ProcessDiagramComponent {
     ]);
     const openTask = this.store.selectedTask();
     const openNodeId = openTask ? elementNodeId('task', openTask.taskDefinitionId) : undefined;
+    const isPassed = (status: string | undefined): boolean => !!status && PASSED_STATUSES.has(status);
+    const kinds = new Map(graph.nodes.map((node) => [node.id, node.data.kind] as const));
+    // A flow edge was travelled once what it leaves is behind the run — a finished element, or the start —
+    // and what it enters has been reached; the derived end node has no instance, so it is reached with the run.
+    const travelled = (source: string, target: string): boolean => {
+      const left = kinds.get(source) === 'start' || isPassed(statuses.get(source));
+      const reached = kinds.get(target) === 'end' ? instance.status === 'COMPLETED' : statuses.has(target);
+      return left && reached;
+    };
     return {
       ...graph,
+      edges: graph.edges.map((edge) =>
+        (edge.data?.relation === 'sequence' || edge.data?.relation === 'implicit') && travelled(edge.source, edge.target) ? { ...edge, data: { ...edge.data, passed: true } } : edge,
+      ),
       nodes: graph.nodes.map((node) => {
         const runStatus = statuses.get(node.id);
         const highlighted = node.id === openNodeId;

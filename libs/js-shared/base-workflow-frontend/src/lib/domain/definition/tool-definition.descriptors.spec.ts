@@ -26,7 +26,7 @@ describe('createToolDefinitionDescriptor', () => {
   // `type` and `secretRef` are the two fields of the contract's nested `auth` object, authored here as
   // siblings because a descriptor addresses a property rather than a path.
   it('authors the flattened auth fields beside the endpoint', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'releaseState', 'baseUrl', 'type', 'secretRef', 'version', 'createdAt', 'description', 'operations']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['id', 'name', 'releaseState', 'baseUrl', 'type', 'secretRef', 'uiUrl', 'version', 'createdAt', 'description', 'operations']);
   });
 
   it('identifies a tool by its author-chosen id', () => {

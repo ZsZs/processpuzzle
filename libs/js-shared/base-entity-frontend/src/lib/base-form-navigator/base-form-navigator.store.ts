@@ -43,6 +43,8 @@ export interface NavigationState {
   requestPayloads: Map<string, NavigationPayload>;
   returnTo: string;
   formSnapshot: Record<string, unknown> | undefined;
+  /** The entity whose form left the values in {@link NavigationState.formSnapshot}; only that form takes them back. */
+  formSnapshotOwner: string | undefined;
 }
 
 const INITIAL_NAVIGATION_STATE: NavigationState = {
@@ -57,12 +59,13 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
   requestPayloads: new Map<string, NavigationPayload>(),
   returnTo: '',
   formSnapshot: undefined,
+  formSnapshotOwner: undefined,
 };
 
 export function snakeCaseName(entityName: string) {
   return entityName
     .replace(/\s+/g, '') // strip whitespace
-    .replace(/([A-Z]+)(?=[A-Z][a-z])/g, '$1-') // "ITVariant" -> "IT-Variant"
+    .replace(/([A-Z])(?=[A-Z][a-z])/g, '$1-') // "ITVariant" -> "IT-Variant"
     .replace(/([a-z\d])([A-Z])/g, '$1-$2') // "DeviceType" -> "Device-Type"
     .toLowerCase();
 }
@@ -82,6 +85,11 @@ function setLast(target: Map<string, NavigationPayload>, key: string, payload: N
 
 function levelUpUrl(currentUrl: string): string {
   return currentUrl.substring(0, currentUrl.lastIndexOf('/'));
+}
+
+/** The URL without its query string and fragment: a page-addressing `?doc=…` must not hide the last segment. */
+function pathOf(url: string): string {
+  return url.split(/[?#]/)[0];
 }
 
 /**
@@ -144,22 +152,38 @@ export const BaseFormNavigatorSingletonStore = signalStore(
         requestPayloads: new Map<string, NavigationPayload>(),
         responsePayloads: new Map<string, NavigationPayload>(),
         formSnapshot: undefined,
+        formSnapshotOwner: undefined,
       });
     }
 
-    function captureFormSnapshot(snapshot: Record<string, unknown>): void {
-      patchState(store, { formSnapshot: snapshot });
+    /**
+     * Keeps a form's values while it is left for a list to choose from, to be given back when it is shown again.
+     *
+     * `owner` names the entity of the form being left. A page can show several forms at once — a workflow's form
+     * with the form of one of its start events inside it — and when the page comes back they all ask for the
+     * values; without an owner the first to ask took them, which was the outer form, and the form they were
+     * taken from came back empty.
+     */
+    function captureFormSnapshot(snapshot: Record<string, unknown>, owner?: string): void {
+      patchState(store, { formSnapshot: snapshot, formSnapshotOwner: owner });
     }
 
-    function popFormSnapshot(): Record<string, unknown> | undefined {
+    /**
+     * The values {@link captureFormSnapshot} kept, once, for the form they belong to. A form of another entity
+     * gets nothing and leaves them where they are; a caller that names no owner, or a snapshot that recorded none,
+     * takes whatever is there, as before.
+     */
+    function popFormSnapshot(owner?: string): Record<string, unknown> | undefined {
+      const keptFor = store.formSnapshotOwner();
+      if (owner !== undefined && keptFor !== undefined && owner !== keptFor) return undefined;
       const snapshot = store.formSnapshot();
-      patchState(store, { formSnapshot: undefined });
+      patchState(store, { formSnapshot: undefined, formSnapshotOwner: undefined });
       return snapshot;
     }
 
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
-      const currentUrl = Reflect.get(route, '_routerState').snapshot.url;
+      const currentUrl = determineCurrentUrl();
       const tabSegment = findTabSegment(currentUrl, store.tabSegments());
       // A list or details form the URL *ends* on wins over a tab it merely passes through: those two are the
       // innermost screen wherever they appear, including inside a container tab.
@@ -242,7 +266,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     }
 
     function determineCurrentUrl(): string {
-      return Reflect.get(route, '_routerState').snapshot.url;
+      return pathOf(Reflect.get(route, '_routerState').snapshot.url);
     }
 
     /**

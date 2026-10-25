@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, REALM_ROLE_SUGGESTIONS, toSelectables } from '@processpuzzle/base-entity';
 import { APP_ROUTE_I18N_SCOPE } from '../base-app.i18n';
 import { ENTITY_MODES, ROUTE_TARGET_KINDS } from './app-definition';
 import { APP_DEFINITION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME, MODULE_DEFINITION_ENTITY_NAME } from './app-entity-names';
@@ -41,6 +41,7 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const rolesAttr = new BaseEntityAttrDescriptor('roles', FormControlType.TAGS, 'Roles');
   rolesAttr.placeholder = 'Empty means any authenticated member of the organization';
   rolesAttr.hideInTable = true;
+  rolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   // region flattened target — re-nested into `target` by AppDefinitionMapper
   // Which of the fields below is meaningful follows from `kind`; all of them are offered, and the

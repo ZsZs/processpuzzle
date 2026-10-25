@@ -48,9 +48,12 @@ jobs:
           sonar_token: ${{secrets.SONAR_TOKEN}}
           firebase_token: ${{ secrets.FIREBASE_TOKEN }}
 
+      # Packaging only. The libraries are tested by their own workflows and the testbed backend's own
+      # tests by Build-ProcessPuzzle-Testbed-Apps; this job exists to run the e2e suite against a built
+      # stack. `build` would run every backend library's tests twice over (^build, then -am).
       - id: build-backend
         name: Build backend jar
-        run: npx nx run processpuzzle-testbed-backend:build --no-cloud
+        run: npx nx run processpuzzle-testbed-backend:package --no-cloud
 
       - id: docker-compose
         name: run-docker-compose
@@ -98,3 +101,5 @@ jobs:
         with:
           base_dir: 'apps/processpuzzle-testbed-e2e'
           target_environment: ci
+          # The stack was started by this job and is thrown away with it, so a spec may release what it created.
+          allow_release: 'true'

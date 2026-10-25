@@ -102,6 +102,7 @@ public class WorkflowYamlMapper {
         tool.setName(entry.name());
         tool.setDescription(entry.description());
         tool.setBaseUrl(entry.baseUrl());
+        tool.setUiUrl(entry.uiUrl());
         tool.setAuth(toAuthDomain(entry.auth()));
         tool.setOperations(safeList(entry.operations()).stream().map(this::toOperationDomain).toList());
     }
@@ -288,6 +289,7 @@ public class WorkflowYamlMapper {
                 tool.getName(),
                 tool.getDescription(),
                 tool.getBaseUrl(),
+                tool.getUiUrl(),
                 auth == null ? null : new ToolAuthYaml(nameOf(auth.getType()), auth.getSecretRef()),
                 safeList(tool.getOperations()).stream().map(this::toOperationYaml).toList());
     }

@@ -25,6 +25,26 @@ class DocumentGuardTest {
     private static final String ID = "11111111-1111-1111-1111-111111111111";
 
     @Test
+    void declaringRolesPublishesEveryRoleTheAccessFieldsName() {
+        List<Object> events = new java.util.ArrayList<>();
+
+        TestGuards.publishingTo(events).declareRoles(ORG,
+                new DocumentRoles(List.of("reviewer"), List.of("editor"), List.of("publisher")));
+
+        assertThat(events).containsExactly(new com.processpuzzle.core.tenancy.RolesReferenced(ORG,
+                "Referenced by documents and content books", List.of("reviewer", "editor", "publisher")));
+    }
+
+    @Test
+    void declaringNoRolesPublishesNothing() {
+        List<Object> events = new java.util.ArrayList<>();
+
+        TestGuards.publishingTo(events).declareRoles(ORG, DocumentRoles.unrestricted());
+
+        assertThat(events).isEmpty();
+    }
+
+    @Test
     void withNoPolicyBeanTheGuardFallsBackToPermitAll() {
         // Matches production when no identity provider is wired: the feature has to stay usable, so
         // the fallback permits rather than denies.

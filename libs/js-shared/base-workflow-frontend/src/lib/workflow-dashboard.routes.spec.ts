@@ -1,7 +1,7 @@
 import { provideTranslocoScope, TRANSLOCO_SCOPE } from '@jsverse/transloco';
 import { describe, expect, it } from 'vitest';
 import { BASE_WORKFLOW_ROUTES } from './base-workflow.routes';
-import { BASE_WORKFLOW_TRANSLOCO_SCOPE, TASK_DASHBOARD_I18N_SCOPE } from './base-workflow.i18n';
+import { BASE_ENTITY_TRANSLOCO_SCOPE, BASE_WORKFLOW_TRANSLOCO_SCOPE, TASK_DASHBOARD_I18N_SCOPE } from './base-workflow.i18n';
 import { WorkflowDashboardComponent } from './feature/dashboard/workflow-dashboard.component';
 import { WORKFLOW_DASHBOARD_PATH, WORKFLOW_DASHBOARD_ROUTES } from './workflow-dashboard.routes';
 
@@ -45,7 +45,10 @@ describe('WORKFLOW_DASHBOARD_ROUTES', () => {
     const providers = (dashboardRoute.providers?.flat() ?? []) as Array<{ provide?: unknown; useValue?: unknown }>;
     const scopes = providers.filter((provider) => provider.provide === TRANSLOCO_SCOPE).map((provider) => provider.useValue);
 
-    expect(scopes).toEqual([{ scope: BASE_WORKFLOW_TRANSLOCO_SCOPE, alias: BASE_WORKFLOW_TRANSLOCO_SCOPE }]);
-    expect(providers).toEqual(provideTranslocoScope({ scope: BASE_WORKFLOW_TRANSLOCO_SCOPE, alias: BASE_WORKFLOW_TRANSLOCO_SCOPE }).flat());
+    expect(scopes).toEqual([
+      { scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE },
+      { scope: BASE_WORKFLOW_TRANSLOCO_SCOPE, alias: BASE_WORKFLOW_TRANSLOCO_SCOPE },
+    ]);
+    expect(providers).toEqual(provideTranslocoScope({ scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE }, { scope: BASE_WORKFLOW_TRANSLOCO_SCOPE, alias: BASE_WORKFLOW_TRANSLOCO_SCOPE }).flat());
   });
 });

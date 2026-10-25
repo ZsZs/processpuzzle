@@ -40,4 +40,9 @@ public interface TaskInstanceRepository
     @Modifying(flushAutomatically = true)
     @Query("delete from TaskInstance t where t.orgKey = :orgKey")
     int eraseByOrgKey(@Param("orgKey") String orgKey);
+
+    /** Every task instance of one workflow instance in one statement, for deleting the instance. */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from TaskInstance t where t.orgKey = :orgKey and t.workflowInstanceId = :instanceId")
+    int deleteByWorkflowInstance(@Param("orgKey") String orgKey, @Param("instanceId") UUID instanceId);
 }
