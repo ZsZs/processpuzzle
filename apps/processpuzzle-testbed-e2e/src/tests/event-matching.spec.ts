@@ -77,6 +77,6 @@ test.describe('Event matching', () => {
 
     // Nothing to wait *for*: an instance that wrongly started would appear within moments of the update.
     await new Promise((resolve) => setTimeout(resolve, 2000));
-    expect((await instancesOf(created.id)).length).toBe(1);
+    expect(await instancesOf(created.id)).toHaveLength(1);
   });
 });

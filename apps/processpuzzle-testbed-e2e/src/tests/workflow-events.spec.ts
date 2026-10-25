@@ -67,6 +67,7 @@ test.describe('Workflow events', () => {
     await expect.poll(() => order.taskStatus('issue-invoice', invoicing.id)).toBe('COMPLETED');
     await expect.poll(() => eventStatus('invoice-issued', invoicing.id)).toBe('PENDING');
     // Nothing to wait *for*: an answer that wrongly went out would arrive within moments.
+    // eslint-disable-next-line sonarjs/no-fixed-wait-in-tests -- a negative: there is no condition to poll for
     await page.waitForTimeout(2500);
     expect(await order.taskStatus('confirm-delivery')).toBe('PENDING');
     expect(await eventStatus('invoice-issued')).toBe('WAITING');

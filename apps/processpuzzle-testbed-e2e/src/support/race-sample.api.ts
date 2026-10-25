@@ -107,7 +107,8 @@ export class EntityApi {
   }
 
   url(code: string, id?: string): string {
-    return `${this.roots.backend}/entities/${code}${id ? `/${encodeURIComponent(id)}` : ''}`;
+    const suffix = id ? `/${encodeURIComponent(id)}` : '';
+    return `${this.roots.backend}/entities/${code}${suffix}`;
   }
 }
 

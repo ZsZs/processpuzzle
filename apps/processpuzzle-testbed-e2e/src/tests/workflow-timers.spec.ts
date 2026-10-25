@@ -89,6 +89,7 @@ workflows:
 `;
 
   test.beforeAll(async ({ playwright, baseURL }) => {
+    // eslint-disable-next-line sonarjs/no-skipped-tests -- opt-in by design: the release cannot be undone
     test.skip(process.env['E2E_ALLOW_RELEASE'] !== 'true', 'Releases every pending definition of the organization and cannot be undone: set E2E_ALLOW_RELEASE=true on a stack that may be changed.');
     const request = await playwright.request.newContext();
     try {
