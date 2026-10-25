@@ -66,10 +66,15 @@ export class SelfServiceRolesService {
   }
 
   private serviceRoot(): string {
-    const base = this.runtimeConfiguration ? Reflect.get(this.runtimeConfiguration, 'BASE_CONFIGURATION') : undefined;
-    const root: string = (base && Reflect.get(base, 'SELF_SERVICE_ROLES_SERVICE_ROOT')) ?? '';
-    return root.endsWith('/') ? root.slice(0, -1) : root;
+    return organizationRoot(this.runtimeConfiguration);
   }
+}
+
+/** The organization-scoped `SELF_SERVICE_ROLES_SERVICE_ROOT`, without a trailing slash; empty when not configured. */
+export function organizationRoot(runtimeConfiguration: object | null): string {
+  const base = runtimeConfiguration ? Reflect.get(runtimeConfiguration, 'BASE_CONFIGURATION') : undefined;
+  const root: string = (base && Reflect.get(base, 'SELF_SERVICE_ROLES_SERVICE_ROOT')) ?? '';
+  return root.endsWith('/') ? root.slice(0, -1) : root;
 }
 
 function toSelfServiceRolesError(error: unknown): SelfServiceRolesError {
