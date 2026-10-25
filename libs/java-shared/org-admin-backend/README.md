@@ -41,7 +41,7 @@ removed), skips `org-admin`, `org-member`, `platform-admin`, the Keycloak built-
 logs rather than fails when Keycloak is unreachable — saving the reference again retries. With Keycloak
 Organizations (`keycloak.admin.organization-realm`) a role is a group of a shared realm, so nothing is created.
 
-`GET /organizations/{orgKey}/roles` lists what an author may refer to: the realm's roles minus the reserved ones.
+`GET /organizations/{orgKey}/role-catalog` lists what an author may refer to: the realm's roles minus the reserved ones.
 It is open to every member, unlike `/admin/roles`, and is what the role pickers in the frontend read.
 
 ## Invitation failure and recovery

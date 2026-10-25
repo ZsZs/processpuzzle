@@ -22,7 +22,7 @@ describe('RoleCatalogService', () => {
     const { http, service } = setup(`${ROOT}/`);
 
     const result = firstValueFrom(service.findAll());
-    http.expectOne(`${ROOT}/roles`).flush([{ name: 'documentation-editor', description: 'Edits' }]);
+    http.expectOne(`${ROOT}/role-catalog`).flush([{ name: 'documentation-editor', description: 'Edits' }]);
 
     expect(await result).toEqual([{ name: 'documentation-editor', description: 'Edits' }]);
   });
@@ -33,7 +33,7 @@ describe('RoleCatalogService', () => {
     TestBed.resetTestingModule();
     const { http, service } = setup(ROOT);
     const result = firstValueFrom(service.findAll());
-    http.expectOne(`${ROOT}/roles`).flush('boom', { status: 503, statusText: 'Unavailable' });
+    http.expectOne(`${ROOT}/role-catalog`).flush('boom', { status: 503, statusText: 'Unavailable' });
     expect(await result).toEqual([]);
   });
 
@@ -42,7 +42,7 @@ describe('RoleCatalogService', () => {
     const [source] = TestBed.inject(TAG_SUGGESTION_SOURCES) as readonly TagSuggestionSource[];
 
     const result = firstValueFrom(source.suggestions());
-    http.expectOne(`${ROOT}/roles`).flush([{ name: 'a' }, { name: 'b' }]);
+    http.expectOne(`${ROOT}/role-catalog`).flush([{ name: 'a' }, { name: 'b' }]);
 
     expect(source.key).toBe('realm-roles');
     expect(await result).toEqual(['a', 'b']);

@@ -366,7 +366,7 @@ paths:
         "503":
           $ref: "#/components/responses/IdentityProviderUnavailable"
 
-  /organizations/{orgKey}/roles:
+  /organizations/{orgKey}/role-catalog:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
     get:

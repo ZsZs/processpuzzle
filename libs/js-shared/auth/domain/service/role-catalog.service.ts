@@ -6,7 +6,7 @@ import { catchError, map, Observable, of } from 'rxjs';
 import { organizationRoot, type SelectableRole } from './self-service-roles.service';
 
 /**
- * The roles an author may refer to — `GET {root}/roles`, open to every member of the organization.
+ * The roles an author may refer to — `GET {root}/role-catalog`, open to every member of the organization.
  * The backend leaves out the administrative roles, so what comes back is safe to offer in a picker.
  *
  * Uses the same organization-scoped root as {@link SelfServiceRolesService}; without it the catalog is
@@ -20,7 +20,7 @@ export class RoleCatalogService {
   findAll(): Observable<readonly SelectableRole[]> {
     const root = organizationRoot(this.runtimeConfiguration);
     if (!root) return of([]);
-    return this.http.get<SelectableRole[]>(`${root}/roles`).pipe(catchError(() => of([])));
+    return this.http.get<SelectableRole[]>(`${root}/role-catalog`).pipe(catchError(() => of([])));
   }
 }
 

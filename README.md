@@ -170,7 +170,7 @@ sequenceDiagram
 
 The same mechanism keeps **roles** in step with Keycloak: a document, content book, route or navigation item that
 names a role publishes `RolesReferenced`, and org-admin creates the missing realm role. Role fields in the
-designers then offer the organization's role catalog (`GET /organizations/{orgKey}/roles`) while still accepting
+designers then offer the organization's role catalog (`GET /organizations/{orgKey}/role-catalog`) while still accepting
 new names — see the [auth library](/libs/js-shared/auth/README.md#role-catalog-suggestions).
 
 Why events rather than direct dependencies:
