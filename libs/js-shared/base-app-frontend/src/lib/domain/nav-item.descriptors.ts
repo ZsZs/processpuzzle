@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, REALM_ROLE_SUGGESTIONS } from '@processpuzzle/base-entity';
 import { APP_NAV_ITEM_I18N_SCOPE } from '../base-app.i18n';
 import { APP_NAV_ITEM_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
 import { APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
@@ -30,6 +30,7 @@ function createNavItemAttrDescriptors(): AbstractAttrDescriptor[] {
   const rolesAttr = new BaseEntityAttrDescriptor('roles', FormControlType.TAGS, 'Roles');
   rolesAttr.placeholder = 'Empty means any authenticated member of the organization';
   rolesAttr.hideInTable = true;
+  rolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   // A group node contains its children rather than pointing at them — they are an inline array of this
   // entry, and the entry itself is nested in the app definition's document.

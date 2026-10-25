@@ -1,6 +1,7 @@
 package com.processpuzzle.app.usecase;
 
 import com.processpuzzle.app.adapter.inbound.AppMapper;
+import com.processpuzzle.app.domain.AppRoles;
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
@@ -54,6 +55,7 @@ public class UpdateModuleDefinition {
         }
 
         mapper.applyToModule(existing, input);
+        guard.declareRoles(orgKey, AppRoles.DESCRIPTION, AppRoles.of(existing));
         existing.markEdited();
         return repository.save(existing);
     }
