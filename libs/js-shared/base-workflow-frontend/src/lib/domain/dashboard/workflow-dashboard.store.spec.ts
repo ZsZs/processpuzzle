@@ -347,6 +347,18 @@ describe('WorkflowDashboardStore', () => {
       controller.expectNone(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`);
     });
 
+    it('drops the selection and re-reads the runs when the run was deleted meanwhile', async () => {
+      store.select(runId, 'task-1');
+      const completing = store.complete(row());
+
+      controller.expectOne(`${taskUrl}/complete`).flush({ errorId: 'instance.not.found' }, { status: 404, statusText: 'Not Found' });
+
+      expect(await completing).toBe(false);
+      expect(store.actionError()).toBeTruthy();
+      expect(store.selectedInstanceId()).toBeUndefined();
+      controller.expectOne(`${serviceRoot}/instances?page=0&size=200&where=status%3D%3DACTIVE`).flush(pageOfWorkflowInstances());
+    });
+
     it('clears a stale refusal when a different task is opened', async () => {
       const completing = store.complete(row());
       controller.expectOne(`${taskUrl}/complete`).flush({ accepted: false, postconditionDetail: 'nope' });

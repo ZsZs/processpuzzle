@@ -107,7 +107,7 @@ workflows:
   });
 
   test.afterEach(async () => {
-    for (const workflowId of Object.values(WORKFLOW)) await platform.cancelWorkflowInstances({ workflowId });
+    for (const workflowId of Object.values(WORKFLOW)) await platform.deleteWorkflowInstances({ workflowId });
   });
 
   type Run = Awaited<ReturnType<PlatformApi['workflowInstance']>> & { events: { eventUseId: string; status: string; fireCount: number }[] };
