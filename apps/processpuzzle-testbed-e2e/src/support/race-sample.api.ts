@@ -65,6 +65,11 @@ export class EntityApi {
     return found as EntityObject<P>;
   }
 
+  /** The ids of the objects of `code` created so far and not yet removed. */
+  createdIds(code: string): string[] {
+    return this.created.filter((object) => object.code === code).map((object) => object.id);
+  }
+
   /** Creates the object and remembers it for {@link removeAll}. */
   async create<P extends object>(code: string, payload: P): Promise<EntityObject<P>> {
     const response = await this.request.post(this.url(code), { data: { entityDefinitionCode: code, payload } });

@@ -31,6 +31,7 @@ test.describe('Order lifecycle @auth', () => {
   });
 
   test.afterEach(async () => {
+    for (const entityId of entities.createdIds('order')) await platform.cancelWorkflowInstances({ entityId });
     await entities.removeAll();
   });
 

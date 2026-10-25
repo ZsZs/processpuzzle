@@ -105,6 +105,10 @@ workflows:
     platform = new PlatformApi(request, await serviceRoots(request, baseURL as string));
   });
 
+  test.afterEach(async () => {
+    for (const workflowId of Object.values(WORKFLOW)) await platform.cancelWorkflowInstances({ workflowId });
+  });
+
   type Run = Awaited<ReturnType<PlatformApi['workflowInstance']>> & { events: { eventUseId: string; status: string; fireCount: number }[] };
 
   /** Starts the workflow by hand, for the ones that have no start event of their own. */

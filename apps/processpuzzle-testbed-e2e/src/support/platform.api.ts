@@ -102,6 +102,18 @@ export class PlatformApi {
     return (await response.json()).content ?? [];
   }
 
+  /**
+   * Cancels the runs that are still going, so a finished spec leaves nothing running or timing. Cancelling is all the
+   * API offers — the instance stays, as CANCELLED. A run already over (409) is fine.
+   */
+  async cancelWorkflowInstances(query: { workflowId?: string; entityId?: string }): Promise<void> {
+    for (const instance of await this.workflowInstances(query)) {
+      if (instance.status === 'COMPLETED' || instance.status === 'CANCELLED') continue;
+      const response = await this.request.delete(`${this.roots.backend}/instances/${encodeURIComponent(instance.id)}`, { data: { reason: 'e2e cleanup' } });
+      expect([204, 404, 409], `cancelling instance ${instance.id}: ${response.status()}`).toContain(response.status());
+    }
+  }
+
   async calculationRuns(calculationId: string, subjectId?: string): Promise<CalculationRunSummary[]> {
     const params: Record<string, string> = { calculationId };
     if (subjectId) params['subjectId'] = subjectId;
