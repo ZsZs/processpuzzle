@@ -168,6 +168,11 @@ sequenceDiagram
   Note over R,W: rules re-evaluated on every state change,<br/>so automation and manual edits obey the same constraints
 ```
 
+The same mechanism keeps **roles** in step with Keycloak: a document, content book, route or navigation item that
+names a role publishes `RolesReferenced`, and org-admin creates the missing realm role. Role fields in the
+designers then offer the organization's role catalog (`GET /organizations/{orgKey}/role-catalog`) while still accepting
+new names — see the [auth library](/libs/js-shared/auth/README.md#role-catalog-suggestions).
+
 Why events rather than direct dependencies:
 - **Consistency.** A rule guards a change regardless of whether it originated from a user in a form or from a
   workflow step — both paths publish the same `EntityChanging` event.

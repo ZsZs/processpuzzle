@@ -432,6 +432,16 @@ done
 An "already exists" error is harmless. The backend's `platform-admin-service` client also needs
 `manage-users` and `view-realm`, as for registration.
 
+This manual step is only a fallback. Every role a document or content book names in `readerRoles` /
+`editorRoles` / `publisherRoles`, and every role on an app definition's or module's routes and navigation items, is created in the realm automatically after the save commits
+(`RolesReferenced` event → org-admin's `EnsureReferencedRoles`), including the sample documents and books
+loaded at startup (`base-document.loadSamples`). It needs the same `manage-users` / `view-realm` rights; when
+Keycloak is unreachable the failure is logged (`Could not create the referenced roles`) and the next save of
+the reference retries. Platform and Keycloak names (`org-admin`, `org-member`, `platform-admin`,
+`default-roles-*`, built-ins) are never created this way. The workflow task dashboard's `process-owner` is
+declared as a role definition in the bundled Testbed workflows, so it reaches the realm the same way as
+`clerk` and `manager`.
+
 ---
 
 ## 6. Verify

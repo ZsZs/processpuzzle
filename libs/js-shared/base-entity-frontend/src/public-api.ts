@@ -21,6 +21,7 @@ export {
   upperBound,
 } from './lib/base-entity/multiplicity';
 export { BaseEntityFormComponent } from './lib/base-form/base-entity-form.component';
+export { REALM_ROLE_SUGGESTIONS, TAG_SUGGESTION_SOURCES, type TagSuggestionSource } from './lib/base-form/tags/tag-suggestions';
 export { BaseFormControlComponent } from './lib/base-form/base-form-control.component';
 export { BaseEntityFormBuilder } from './lib/base-form/base-entity-form.builder';
 export { ComponentsListComponent } from './lib/base-form/components/components-list.component';

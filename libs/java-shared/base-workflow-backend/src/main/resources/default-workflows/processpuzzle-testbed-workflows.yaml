@@ -30,6 +30,12 @@ role-definitions:
     responsibleFor:
       - fulfillment-invoice
 
+  # The one role the dashboard itself checks: only a process owner may skip a task. Declared here so the
+  # role exists in the realm and can be picked on My Profile.
+  - id: process-owner
+    name: Process Owner
+    description: Owns the running processes; may skip a task in the task dashboard.
+
 artifact-definitions:
   - id: order-entity
     name: Order

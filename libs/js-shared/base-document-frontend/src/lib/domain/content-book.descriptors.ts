@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, REALM_ROLE_SUGGESTIONS } from '@processpuzzle/base-entity';
 import { CONTENT_BOOK_I18N_SCOPE } from '../base-document.i18n';
 import { DOCUMENT_SLUG_PATTERN } from './base-document';
 import { CONTENT_BOOK_ENTITY_NAME } from './document-entity-names';
@@ -25,9 +25,11 @@ function createContentBookAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const readerRolesAttr = new BaseEntityAttrDescriptor('readerRoles', FormControlType.TAGS, 'Reader roles');
   readerRolesAttr.hideInTable = true;
+  readerRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const editorRolesAttr = new BaseEntityAttrDescriptor('editorRoles', FormControlType.TAGS, 'Editor roles');
   editorRolesAttr.hideInTable = true;
+  editorRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const identityRow = new FlexboxDescriptor([slugAttr, titleAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };

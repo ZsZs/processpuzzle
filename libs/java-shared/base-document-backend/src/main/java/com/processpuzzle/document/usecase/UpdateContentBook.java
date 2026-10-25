@@ -33,6 +33,7 @@ public class UpdateContentBook {
             throw new ContentBookSlugAlreadyExistsException(orgKey, input.slug());
         }
         input.applyTo(book);
+        guard.declareRoles(orgKey, input.roles());
         if (input.nodes() != null) {
             book.replaceNodes(treeChecker.check(orgKey, input.nodes()));
         }

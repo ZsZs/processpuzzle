@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, REALM_ROLE_SUGGESTIONS, toSelectables } from '@processpuzzle/base-entity';
 import { DOCUMENT_I18N_SCOPE } from '../base-document.i18n';
 import { DOCUMENT_SLUG_PATTERN, DOCUMENT_SOURCE_LOCALES, DocumentKind } from './base-document';
 import { DOCUMENT_ENTITY_NAME, DOCUMENT_INPUT_PORT_ENTITY_NAME, DOCUMENT_OUTPUT_PORT_ENTITY_NAME } from './document-entity-names';
@@ -48,12 +48,15 @@ function createDocumentAttrDescriptors(): AbstractAttrDescriptor[] {
   // over some list this form would have to invent. Empty means "any authenticated member".
   const readerRolesAttr = new BaseEntityAttrDescriptor('readerRoles', FormControlType.TAGS, 'Reader roles');
   readerRolesAttr.hideInTable = true;
+  readerRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const editorRolesAttr = new BaseEntityAttrDescriptor('editorRoles', FormControlType.TAGS, 'Editor roles');
   editorRolesAttr.hideInTable = true;
+  editorRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const publisherRolesAttr = new BaseEntityAttrDescriptor('publisherRoles', FormControlType.TAGS, 'Publisher roles');
   publisherRolesAttr.hideInTable = true;
+  publisherRolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
   const inputPortsAttr = new BaseEntityAttrDescriptor('inputPorts', FormControlType.EMBEDDED_COMPONENTS, 'Input ports');
   inputPortsAttr.linkedEntityType = DOCUMENT_INPUT_PORT_ENTITY_NAME;

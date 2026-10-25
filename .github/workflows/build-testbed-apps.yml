@@ -167,8 +167,15 @@ jobs:
 
       # The `package` phase runs maven-antrun-plugin's copy-jar-to-dist execution, which is what puts
       # the jar at the dist/apps/… path the Dockerfile COPYs.
+      # Tests are split from packaging on purpose: `build` ran every library's tests twice (^build, then
+      # -am), and each library is already tested by its own workflow. What only this workflow covers is
+      # the testbed application itself — its integration tests and ModularityTests — so those run here,
+      # before the image is built, and still gate the deploy.
       - name: Build the Spring Boot jar
-        run: npx nx run processpuzzle-testbed-backend:build --no-cloud
+        run: npx nx run processpuzzle-testbed-backend:package --no-cloud
+
+      - name: Test the testbed backend
+        run: npx nx run processpuzzle-testbed-backend:test-app --no-cloud
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3

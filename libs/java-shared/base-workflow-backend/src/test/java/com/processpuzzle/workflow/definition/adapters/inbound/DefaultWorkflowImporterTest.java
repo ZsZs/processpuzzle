@@ -143,15 +143,15 @@ class DefaultWorkflowImporterTest {
         try (InputStream input = bundledTestbedFile().getInputStream()) {
             ImportOutcome outcome = realImportUseCase.execute(ORG, input);
 
-            // 2 roles + 2 artifacts + 1 tool + 6 tasks + 3 workflows
+            // 3 roles + 2 artifacts + 1 tool + 6 tasks + 3 workflows
             assertThat(outcome.errors()).isEmpty();
-            assertThat(outcome.created()).isEqualTo(14);
+            assertThat(outcome.created()).isEqualTo(15);
             assertThat(outcome.updated()).isZero();
 
-            assertThat(savedRoles).extracting(RoleDefinition::getId).containsExactly("clerk", "manager");
+            assertThat(savedRoles).extracting(RoleDefinition::getId).containsExactly("clerk", "manager", "process-owner");
             // Drafts: seeded roles reach the realm when the loader releases them, which announces them.
             assertThat(savedRoles).extracting(RoleDefinition::getResponsibleFor)
-                    .containsExactly(List.of("order-entity"), List.of("fulfillment-invoice"));
+                    .containsExactly(List.of("order-entity"), List.of("fulfillment-invoice"), List.of());
             assertThat(savedArtifacts).extracting(ArtifactDefinition::getId)
                     .containsExactly("order-entity", "fulfillment-invoice");
             assertThat(savedArtifacts).extracting(ArtifactDefinition::getArtifactType)

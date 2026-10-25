@@ -184,6 +184,30 @@ class OrganizationGuardTest {
         });
     }
 
+    @Test
+    void declaringRolesPublishesThemAndSkipsAnEmptyList() {
+        java.util.List<Object> events = new java.util.ArrayList<>();
+        OrganizationGuard guard = new OrganizationGuard(providerOf(permitting()), events::add);
+
+        guard.declareRoles("demo", "Referenced by x", java.util.List.of("auditor"));
+        guard.declareRoles("demo", "Referenced by x", java.util.List.of());
+        guard.declareRoles("demo", "Referenced by x", null);
+
+        org.assertj.core.api.Assertions.assertThat(events)
+                .containsExactly(new RolesReferenced("demo", "Referenced by x", java.util.List.of("auditor")));
+    }
+
+    private static OrganizationAccessPolicy permitting() {
+        return new PermitAllOrganizationAccessPolicy();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<OrganizationAccessPolicy> providerOf(OrganizationAccessPolicy policy) {
+        ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);
+        when(provider.getObject()).thenReturn(policy);
+        return provider;
+    }
+
     @SuppressWarnings("unchecked")
     private static OrganizationGuard guardWith(OrganizationAccessPolicy policy) {
         ObjectProvider<OrganizationAccessPolicy> provider = mock(ObjectProvider.class);

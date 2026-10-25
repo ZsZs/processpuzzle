@@ -64,6 +64,8 @@ tags:
     description: The tenant's user directory.
   - name: Organization Roles
     description: The realm roles a tenant declares, and their assignment.
+  - name: Role Catalog
+    description: The roles an organization member may refer to when authoring.
   - name: Registration
     description: Self-registration into the stack's own realm.
   - name: SelfService
@@ -351,6 +353,34 @@ paths:
       responses:
         "200":
           description: The realm's roles.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationRole"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
+  /organizations/{orgKey}/role-catalog:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listRoleCatalog
+      tags: [ Role Catalog ]
+      summary: List the roles an author may refer to
+      description: >-
+        The realm's roles minus the ones ProcessPuzzle or the identity provider own (`org-admin`,
+        `org-member`, `platform-admin`, built-ins, `default-roles-*`) — the same set a user may pick
+        for themselves. Open to every member of the organization, so a role picker in a document or
+        navigation editor can offer it; unlike `/admin/roles`, it is not for administration.
+      responses:
+        "200":
+          description: The roles that may be referred to, with their descriptions.
           content:
             application/json:
               schema:
