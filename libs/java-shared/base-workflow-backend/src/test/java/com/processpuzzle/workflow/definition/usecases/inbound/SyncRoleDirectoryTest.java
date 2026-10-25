@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -132,6 +133,21 @@ class SyncRoleDirectoryTest {
 
         verify(directory).upsertRole("other-org", "clerk", "Clerk");
         verify(directory, never()).upsertRole(eq(ORG), anyString(), any());
+    }
+
+    /** The reconciler retries on false, so an unreachable realm or a failed upsert must report it. */
+    @Test
+    void reconcileReportsWhetherEveryOrganizationWasCompleted() {
+        when(repository.findAll()).thenReturn(List.of(role(ORG, "reviewer", "Reviewer", null)));
+        when(directory.findRoleNames(ORG)).thenReturn(List.of());
+        assertThat(sync.reconcile()).isTrue();
+
+        when(directory.findRoleNames(ORG)).thenThrow(unavailable());
+        assertThat(sync.reconcile()).isFalse();
+
+        doReturn(List.of()).when(directory).findRoleNames(ORG);
+        doThrow(unavailable()).when(directory).upsertRole(eq(ORG), eq("reviewer"), any());
+        assertThat(sync.reconcile()).isFalse();
     }
 
     /**

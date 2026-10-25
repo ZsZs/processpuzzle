@@ -7,7 +7,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Runs one reconcile pass over every organization's role catalog at startup, so drift heals itself.
@@ -21,6 +25,11 @@ import org.springframework.stereotype.Component;
  * already in the catalog when the diff is taken. The two orders are explicit constants because
  * Spring's default for an unannotated {@code @EventListener} is {@code LOWEST_PRECEDENCE}, which
  * would leave the relative order of the two arbitrary.
+ *
+ * <p>The identity provider may not be ready when the backend starts: the realm and its admin client are
+ * created by a separate deployment resource, and the two race. A pass that found Keycloak unreachable is
+ * therefore repeated every {@code retry-interval} (default 30s) until one completes, up to
+ * {@link #MAX_RETRIES} times, so no restart is needed once Keycloak is up.
  *
  * <p>Nothing here can fail startup: {@link SyncRoleDirectory#reconcile()} is best-effort per
  * organization, and anything it cannot do it logs.
@@ -36,7 +45,12 @@ public class RoleDirectoryReconciler {
 
     private static final Logger LOG = LoggerFactory.getLogger(RoleDirectoryReconciler.class);
 
+    /** Retries after the startup pass; with the default 30s interval that is about ten minutes. */
+    static final int MAX_RETRIES = 20;
+
     private final SyncRoleDirectory syncRoleDirectory;
+    private final AtomicBoolean pending = new AtomicBoolean();
+    private final AtomicInteger retries = new AtomicInteger();
 
     public RoleDirectoryReconciler(SyncRoleDirectory syncRoleDirectory) {
         this.syncRoleDirectory = syncRoleDirectory;
@@ -45,6 +59,22 @@ public class RoleDirectoryReconciler {
     @EventListener(ApplicationReadyEvent.class)
     public void reconcileOnStartup() {
         LOG.info("Reconciling workflow role definitions with the identity provider's realm roles.");
-        syncRoleDirectory.reconcile();
+        pending.set(!syncRoleDirectory.reconcile());
+    }
+
+    @Scheduled(fixedDelayString = "${processpuzzle.workflow.role-sync.retry-interval:PT30S}",
+            initialDelayString = "${processpuzzle.workflow.role-sync.retry-interval:PT30S}")
+    public void retryWhilePending() {
+        if (!pending.get()) {
+            return;
+        }
+        if (retries.incrementAndGet() > MAX_RETRIES) {
+            pending.set(false);
+            LOG.warn("Giving up reconciling workflow role definitions after {} retries; the next restart "
+                    + "or release of a role definition will retry.", MAX_RETRIES);
+            return;
+        }
+        LOG.info("Retrying the workflow role reconcile ({}/{}).", retries.get(), MAX_RETRIES);
+        pending.set(!syncRoleDirectory.reconcile());
     }
 }
