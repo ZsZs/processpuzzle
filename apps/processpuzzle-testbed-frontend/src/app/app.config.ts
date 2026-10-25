@@ -77,10 +77,14 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideAuthenticationService(runtimeConfiguration),
       provideZonelessChangeDetection(),
       // The backend validates a bearer token whenever one is sent, and signing a document needs one. Only the
-      // platform's own roots are named: the third-party root (json-server) must never receive the token.
+      // platform's own roots are named, and the third-party root (json-server) is withheld explicitly: deployed, it
+      // is published under the application's own origin, so the same-origin rule would otherwise send it the token.
       provideHttpClient(
         withInterceptors([
-          authTokenInterceptorFor([runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT]),
+          authTokenInterceptorFor(
+            [runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT],
+            [runtimeConfiguration.BASE_CONFIGURATION.THIRD_PARTY_ROOT],
+          ),
           centralHttpErrorInterceptor,
         ]),
       ),

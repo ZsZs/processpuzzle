@@ -19,6 +19,10 @@ import { AuthService } from './auth.service';
  * URL has to be named in `apiRoots` to qualify. Relative URLs — which is what
  * `BaseEntityRestService` produces — are same-origin by definition and always qualify.
  *
+ * `withheldRoots` wins over all of that: a URL under one of them never gets a token, even when it is
+ * same-origin. That is the case for a third-party service a reverse proxy publishes under the
+ * application's own origin (`/third-party/…`), which the same-origin rule alone would hand the token to.
+ *
  * Keycloak's own endpoints are excluded even when they are same-origin: the token endpoint
  * authenticates with the refresh token in the body, and an `Authorization` header on it is at best
  * ignored and at worst rejected.
@@ -30,9 +34,9 @@ import { AuthService } from './auth.service';
  * unauthenticated and the server answers 401, which reaches the user as "your session ended" rather
  * than as an exception from inside an HTTP pipeline.
  */
-export function authTokenInterceptor(apiRoots: readonly string[] = []): HttpInterceptorFn {
+export function authTokenInterceptor(apiRoots: readonly string[] = [], withheldRoots: readonly string[] = []): HttpInterceptorFn {
   return (request, next) => {
-    if (!shouldAuthorize(request, apiRoots)) return next(request);
+    if (!shouldAuthorize(request, apiRoots, withheldRoots)) return next(request);
 
     const authService = inject(AUTHENTICATION_SERVICE, { optional: true }) as AuthService | null;
     if (!authService) return next(request);
@@ -49,8 +53,9 @@ export function authTokenInterceptor(apiRoots: readonly string[] = []): HttpInte
 /** Keycloak's own endpoints authenticate by other means; an Authorization header there is noise at best. */
 const IDENTITY_PROVIDER_PATHS = ['/realms/', '/protocol/openid-connect/'];
 
-function shouldAuthorize(request: HttpRequest<unknown>, apiRoots: readonly string[]): boolean {
+function shouldAuthorize(request: HttpRequest<unknown>, apiRoots: readonly string[], withheldRoots: readonly string[]): boolean {
   const url = request.url;
+  if (withheldRoots.some((root) => root !== '' && url.startsWith(root))) return false;
   if (IDENTITY_PROVIDER_PATHS.some((path) => url.includes(path))) return false;
   if (!isAbsolute(url)) return true;
   if (isSameOrigin(url)) return true;
