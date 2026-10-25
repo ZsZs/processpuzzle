@@ -17,7 +17,11 @@ test.describe('Authentication @auth', () => {
     expect(backendHeaders['authorization'], 'Authorization header of the first backend call').toMatch(/^Bearer .+/);
 
     // Test Entity is served by json-server, a third party: the platform's token must never reach it.
-    const thirdPartyCall = page.waitForRequest((request) => new URL(request.url()).port === '3000');
+    // Locally that is port 3000; deployed, nginx serves it under /third-party/ on the application's own origin.
+    const thirdPartyCall = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return url.port === '3000' || url.pathname.startsWith('/third-party/');
+    });
     await page.goto('/base-entity/samples/test-entity/list');
     expect((await (await thirdPartyCall).allHeaders())['authorization']).toBeUndefined();
   });
