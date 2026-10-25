@@ -37,7 +37,8 @@ test.describe('Role catalog @auth', () => {
 
     // The browser's own bearer token, taken from its first backend call: the API context carries no session.
     const backendCall = page.waitForRequest((candidate) => new URL(candidate.url()).pathname.includes('/organizations/'));
-    await page.goto('/');
+    // The home page makes no backend call; an entity page does (as authentication.spec.ts relies on).
+    await page.goto('/base-event/samples/event-definition');
     const authorization = (await (await backendCall).allHeaders())['authorization'];
     expect(authorization, 'bearer token of the signed-in user').toMatch(/^Bearer .+/);
 
