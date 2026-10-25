@@ -25,8 +25,9 @@ export default defineConfig({
   globalSetup: './src/support/global-setup.ts',
   // Was built but never handed to Playwright, which left E2E_ENTITY / E2E_SUITE with no effect at all.
   grep,
-  // Opt out of parallel tests on CI.
-  workers: process.env['ENVIRONMENT'] === 'ci' ? 1 : 1,
+  // Spec files run side by side, one worker each; the tests inside a file stay in order (the generated suites build
+  // on each other's data). One by default, which is what a developer's machine and a deployed stage want.
+  workers: Number(process.env['E2E_WORKERS'] ?? 1),
   // A single retry on CI: the suite drives a freshly started stack, and a first request that lands before the backend has warmed up is not a regression.
   retries: process.env['CI'] ? 1 : 0,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
