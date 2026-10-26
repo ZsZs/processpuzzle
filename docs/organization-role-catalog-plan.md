@@ -29,14 +29,14 @@ hand them out, and nobody can define a role that is not a process role or clean 
 | # | Question | Decision |
 | --- | --- | --- |
 | 1 | Who owns the catalog? | **The org-admin.** Roles projected from the designer's `RoleDefinition`s and the platform's `org-admin` / `org-member` appear in the catalog **read-only**; everything else the administrator creates, describes and deletes. |
-| 2 | How is a role's origin known? | A **Keycloak attribute** on the role / group, `processpuzzle.origin` ∈ `workflow` \| `admin` \| `reference`, written by whoever creates it. org-admin cannot ask base-workflow (sibling libraries), and an attribute travels with the object. A role without the attribute (pre-existing) counts as `admin`. |
+| 2 | How is a role's origin known? | **Derived, not stored** (changed 2026-10-26 after the stage check under Risks). `platform` = `TenantRoles`; `workflow` = the role is a `RoleDefinition` id, reported by base-workflow's `RoleReferenceContributor` (`kind = role-definition`); every other role is `admin`. No attribute, so no extra read per group, nothing for the workflow projection to preserve, and a role definition created over an administrator's role simply becomes `workflow`. The cost is that a `workflow` role whose definition is deleted outside the designer reverts to `admin`, which is the right answer: nothing manages it any more. |
 | 3 | Can a role be renamed? | **No.** Name is the key everywhere — documents, nav items, tokens, `RoleDefinition.id` — and a rename would silently detach all of them. Only the description is editable. Same rule `RoleDefinition.id` already follows. |
 | 4 | When may a role be deleted? | Only an `admin`-origin role, and only when **no user holds it** and **no content names it** — 409 listing what still refers to it. Platform roles never; `workflow` roles only through the designer (base-workflow's `deleteRole` already does that). |
 | 5 | How does org-admin know what content names a role? | A **core port, contributed to by each feature**: `RoleReferenceContributor { Map<String, List<RoleReference>> referencedRoles(orgKey) }` in `processpuzzle-core`, implemented by base-document (documents, content books), base-app (nav items, route definitions) and base-workflow (role definitions). org-admin collects all beans — the same "many implementations, collect" shape as `ReleaseParticipant`. No new inter-library dependency. |
 | 6 | Who may call `/admin/**`? | A new policy method, **`requireAdministration(orgKey)`** — membership *and* the `org-admin` authority (or staff). `requireDesign` stays what it is for the designer. Reads a member legitimately makes — `/role-catalog`, `/me/roles` — move to `requireAccess`. |
 | 7 | Should the pickers stay free text? | **Restricted when a catalog is bound**: a `tagsRestricted` flag on the attribute descriptor, set by the document, content-book, nav-item and route-definition role fields. Unknown text is refused instead of shown dashed. If the suggestion source *fails*, the control falls back to free text (the author must not be blocked by an outage); if it answers *empty*, the field offers nothing — correct, there is nothing to gate by. |
-| 8 | Is `RolesReferenced` → `EnsureReferencedRoles` still needed? | **Kept for realm-per-tenant** (Testbed), where it does create. Once the pickers are restricted it becomes a safety net for the API path only. Its port is folded into the new catalog port (decision 9), which also makes it write `origin=reference`. |
-| 9 | Which port writes the catalog? | A new **`RoleCatalogPort`** in org-admin: `create`, `updateDescription`, `delete`, `findRoles` (with origin), `countHolders`. It replaces `RoleProvisioningPort` (`ensureRoles` becomes `create` with origin `reference`, 409 tolerated). `UserDirectoryPort` keeps its promise of never minting a role from an *assignment*. Two adapters, realm and organization, picked by `UserDirectoryConfiguration` as today. |
+| 8 | Is `RolesReferenced` → `EnsureReferencedRoles` still needed? | **Kept for realm-per-tenant** (Testbed), where it does create. Once the pickers are restricted it becomes a safety net for the API path only. Its port is folded into the new catalog port (decision 9). |
+| 9 | Which port writes the catalog? | A new **`RoleCatalogPort`** in org-admin: `create`, `updateDescription`, `delete`, `countHolders`. It replaces `RoleProvisioningPort` (`ensureRoles` becomes `create`, 409 tolerated). Reading stays on `UserDirectoryPort.findRoles`; origin is added by the use case (decision 2). `UserDirectoryPort` keeps its promise of never minting a role from an *assignment*. Two adapters, realm and organization, picked by `UserDirectoryConfiguration` as today. |
 | 10 | Where does the screen live? | In `org-admin-frontend`, as a second entry of the administration branch: `/{orgKey}/admin/organization-role`, a base-entity list + details like Users. The host's sidenav lists it next to Users. |
 
 ## Gaps this plan closes
@@ -85,7 +85,7 @@ biz:
 ### Phase 1 — Catalog write API (core, `org-admin-backend`, `api-contracts`, `processpuzzle-core`)
 
 contract (`org-admin-api.yaml`):
-- `OrganizationRole` gains `origin` (`platform` \| `workflow` \| `admin` \| `reference`) and keeps
+- `OrganizationRole` gains `origin` (`platform` \| `workflow` \| `admin`, derived — decision 2) and keeps
   `platformManaged` for existing clients.
 - `POST /organizations/{orgKey}/admin/roles` (`NewOrganizationRole { name, description }`) → 201; 400 for a
   reserved or malformed name (`[a-z0-9][a-z0-9-_]*`, same shape `RoleDefinition.id` accepts); 409 when it exists.
@@ -96,19 +96,17 @@ contract (`org-admin-api.yaml`):
 core (`processpuzzle-core`):
 - `RoleReferenceContributor` + `RoleReference(feature, kind, id, title)` in `com.processpuzzle.core.tenancy`.
 - Implementations: base-document (`readerRoles` / `editorRoles` / `publisherRoles` of documents and content
-  books — one query each), base-app (nav items, route definitions), base-workflow (`RoleDefinition` ids —
-  which also makes a `workflow` role that lost its attribute undeletable).
+  books — one query each), base-app (nav items, route definitions), base-workflow (`RoleDefinition` ids, `kind =
+  role-definition` — which is also how a role's `workflow` origin is derived).
 
 org-admin:
 - `RoleCatalogPort` (decision 9) + `KeycloakRealmRoleCatalogAdapter` / `KeycloakOrganizationRoleCatalogAdapter`;
-  both read and write the `processpuzzle.origin` attribute; `countHolders` = `GET /roles/{name}/users?max=1`
+  `countHolders` = `GET /roles/{name}/users?max=1`
   resp. `GET /groups/{id}/members?max=1` (existence, not a count — enough for the guard; the UI shows "in use").
 - Use cases `CreateOrganizationRole`, `UpdateOrganizationRole`, `DeleteOrganizationRole`
   (reserved check reused from `EnsureReferencedRoles.isReserved`, moved to a shared `RoleNames` helper);
-  `FindOrganizationRoles` returns origin. `EnsureReferencedRoles` switches to the new port.
+  `FindOrganizationRoles` adds origin from the contributors. `EnsureReferencedRoles` switches to the new port.
 - `OrgAdminApiExceptionHandler`: `RoleInUseException` → 409 with the body above; `ReservedRoleNameException` → 400.
-- base-workflow: `KeycloakOrganizationRoleDirectoryAdapter` / `KeycloakRoleDirectoryAdapter` write
-  `processpuzzle.origin=workflow` on upsert (attribute on the representation; one line each).
 - Tests: `OrganizationRoleUseCasesTest` (create / reserved / duplicate / update non-admin → 403 / delete with
   holder → 409 / delete with reference → 409 / delete clean → 204), adapter tests against the existing
   Keycloak stubs, `RoleCatalogEndpointTest` unchanged.
@@ -164,9 +162,10 @@ org-admin:
 
 - **Phase 0 can lock out an organization** whose first user was seeded without `org-admin`. Check stage
   before bumping; the seed job's grant is the recovery path.
-- **Keycloak attribute support**: realm roles and groups both carry `attributes`, but the Organization
-  *groups* endpoint (`/organizations/{id}/groups`, 26.6+) must round-trip them — verify against the stage
-  Keycloak before building on decision 2; fallback is a group description prefix, which is uglier.
+- **Keycloak attribute support — verified on stage 2026-10-26, and the reason decision 2 changed.** Organization groups
+  store and update custom attributes, but only the single-group GET returns them; the list endpoint omits
+  `attributes`. An origin attribute would cost one GET per group on every catalog read (every member's role picker)
+  and would be erased by any update that did not resend it, such as the workflow projection's PUT.
 - **Reference contributors run N queries per delete** (one per feature). Acceptable for an admin action;
   not to be reused for the list screen.
 - **Multi-organization accounts** (decision 6, out of scope) — a user with `org-admin` administers every
