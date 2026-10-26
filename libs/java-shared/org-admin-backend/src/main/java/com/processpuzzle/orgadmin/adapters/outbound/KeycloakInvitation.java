@@ -31,7 +31,11 @@ import java.util.function.Function;
 final class KeycloakInvitation {
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakInvitation.class);
-    private static final String REQUIRED_ACTION = "UPDATE_PASSWORD";
+    /**
+     * Following the mailed link is what proves the invitee owns the address, so verifying it is part of
+     * the same visit; Keycloak completes {@code VERIFY_EMAIL} from the link itself and sends no second mail.
+     */
+    private static final List<String> REQUIRED_ACTIONS = List.of("VERIFY_EMAIL", "UPDATE_PASSWORD");
 
     private final KeycloakAdminClient client;
 
@@ -66,11 +70,11 @@ final class KeycloakInvitation {
         }
     }
 
-    /** The action list repeats the account's required action, which is what the link will ask for. */
+    /** The action list repeats the account's required actions, which is what the link will ask for. */
     private void sendActionsEmail(String usersPath, String userId, String operationId) {
         try {
             client.exchange(HttpMethod.PUT, usersPath + "/" + userId + "/execute-actions-email",
-                    List.of(REQUIRED_ACTION), null);
+                    REQUIRED_ACTIONS, null);
             LOG.info("Invitation '{}' mailed the account '{}' its set-password link.", operationId, userId);
         } catch (IdentityProviderUnavailableException failure) {
             LOG.warn("Invitation '{}' created account '{}' but could not mail the set-password link; "
@@ -87,7 +91,7 @@ final class KeycloakInvitation {
         representation.put("lastName", user.lastName());
         representation.put("enabled", false);
         representation.put("emailVerified", false);
-        representation.put("requiredActions", List.of(REQUIRED_ACTION));
+        representation.put("requiredActions", REQUIRED_ACTIONS);
         try {
             return client.createAndReturnId(usersPath, representation)
                     .filter(id -> !id.isBlank())
