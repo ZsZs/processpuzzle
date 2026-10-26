@@ -76,5 +76,12 @@ export interface BaseConfiguration {
    * administrators omit it, and it does not fall back to `BACKEND_SERVICE_ROOT` for that reason.
    */
   readonly SELF_SERVICE_ROLES_SERVICE_ROOT?: string;
+  /**
+   * Organization-scoped root of the role catalog (`<root>/role-catalog`), the roles a role field offers.
+   * Optional and independent of the self-service switch: an application can offer the catalog without
+   * letting its users choose their own roles. Without it the catalog falls back to
+   * `SELF_SERVICE_ROLES_SERVICE_ROOT`, so the Testbed needs no change.
+   */
+  readonly ROLE_CATALOG_SERVICE_ROOT?: string;
   readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

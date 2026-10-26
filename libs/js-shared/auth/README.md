@@ -336,8 +336,10 @@ ones the user already holds; it must also have `processpuzzle.self-service-roles
 `provideRoleCatalogSuggestions()` (from `@processpuzzle/auth/domain`) makes every `TAGS` attribute whose
 descriptor sets `tagSuggestions = REALM_ROLE_SUGGESTIONS` (`@processpuzzle/base-entity`) offer the
 organization's roles as you type — the reader / editor / publisher roles of documents and content books do.
-It reads `GET {root}/role-catalog`, open to every member, with the same organization root as self-service roles; the
-backend leaves out administrative roles. The field stays free text: a role the catalog does not know is drawn
+It reads `GET {root}/role-catalog`, open to every member, from `BASE_CONFIGURATION.ROLE_CATALOG_SERVICE_ROOT`. That
+key is independent of the self-service switch: without it the catalog falls back to `SELF_SERVICE_ROLES_SERVICE_ROOT`,
+so an application can offer the catalog without letting its users pick their own roles. The backend leaves out
+administrative roles. The field stays free text: a role the catalog does not know is drawn
 dashed ("new") and is created in the realm when the document is saved. Without the provider or the root the
 field is plain free text.
 
