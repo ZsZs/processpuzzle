@@ -1,7 +1,9 @@
+import { EnvironmentProviders, Provider } from '@angular/core';
 import { Route, Routes } from '@angular/router';
-import { provideTranslocoScope } from '@jsverse/transloco';
+import { provideTranslocoScope, Translation } from '@jsverse/transloco';
 import { ModuleMount, RouteDefinition } from '../domain/app-definition';
-import { ModuleDefinition, moduleTranslocoScope } from '../domain/module-definition';
+import { MODULE_ASSET_CONTEXT, ModuleAssetContext } from '@processpuzzle/widgets';
+import { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from '../domain/module-definition';
 import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-app.i18n';
 
 /**
@@ -15,12 +17,29 @@ import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-a
  *
  * A key present in `moduleRoutes` is never loaded again, so an empty array there says "this module has no
  * routes" and is honoured as such.
+ *
+ * `loadTranslations` is where a lazily mounted module's own translations come from; without it the module's
+ * scope is registered with the application's default loader alone.
  */
 export interface AppRouteSource {
   routes?: RouteDefinition[];
   modules?: ModuleMount[];
   moduleRoutes?: Record<string, RouteDefinition[] | undefined>;
   loadModule?: ModuleLoader;
+  loadTranslations?: ModuleTranslationLoader;
+  /** The assets of a module, by key, for the widgets below its mount; without it a `module:` value resolves to nothing. */
+  moduleAssets?: (moduleKey: string) => ModuleAssetContext;
+}
+
+/**
+ * Fetches the translations of one module and language. `languages` — read when the module loads, so it may be
+ * a getter — is what the module's scope is registered
+ * for: transloco enumerates an inline loader's languages when the scope is registered, so a loader that
+ * answers any language still has to name the ones it answers.
+ */
+export interface ModuleTranslationLoader {
+  readonly languages: string[];
+  load(moduleKey: string, scope: string, locale: string): Promise<Translation>;
 }
 
 /**
@@ -86,7 +105,7 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
     if (routes) {
       if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute) });
     } else if (source.loadModule) {
-      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute));
+      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations, source.moduleAssets));
     }
   }
   return mounted;
@@ -106,6 +125,14 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
  * name its own. The alias is spelled out, as everywhere in this workspace: transloco would otherwise
  * camel-case it and miss every key below it.
  *
+ * The module's assets reach its widgets the same way, as the {@link MODULE_ASSET_CONTEXT} of the wrapper: a widget
+ * property saying `module:docs/welcome.md` is looked up among *this* module's files.
+ *
+ * The module's own translations — what a user uploaded from the files the Module form prepares — are the scope's
+ * *inline loader*, so they load with the module and not before it. Every route title is translated under a key
+ * as well, the authored `translocoId` or the one derived from the scope and path (see
+ * {@link moduleRouteTranslocoId}), which is what lets an upload translate a title whose designer typed no key.
+ *
  * The framework scopes are re-registered alongside it, for the reason `BASE_APP_ROUTES.authoringScopes()`
  * gives: a route that declares TRANSLOCO_SCOPE *replaces* the collection it inherits rather than adding to
  * it, because Angular does not merge `multi` providers across injectors. A module's routes render the same
@@ -113,24 +140,43 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
  * `base_entity.tabs.*` — so naming only the module's scope here would leave every framework label below the
  * mount unresolved.
  */
-function lazyMount(moduleKey: string, basePath: string, loadModule: ModuleLoader, renderRoute: RouteRenderer): Route {
+function lazyMount(
+  moduleKey: string,
+  basePath: string,
+  loadModule: ModuleLoader,
+  renderRoute: RouteRenderer,
+  translations?: ModuleTranslationLoader,
+  assets?: (moduleKey: string) => ModuleAssetContext,
+): Route {
   return {
     path: basePath,
     loadChildren: async () => {
       const definition = await loadModule(moduleKey);
-      const children = await emitLevel(trieOf(definition?.routes), [], renderRoute);
-      if (!definition || !children.length) return [];
+      if (!definition) return [];
       const scope = moduleTranslocoScope(definition);
-      const providers = [
+      // Every title is translated under a key from here on, authored or derived, so that a module whose
+      // designer never typed a `translocoId` can still be translated from the files it downloads.
+      const routes = definition.routes?.map((route) => ({ ...route, translocoId: moduleRouteTranslocoId(scope, route) }));
+      const children = await emitLevel(trieOf(routes), [], renderRoute);
+      if (!children.length) return [];
+      const providers: Array<Provider | EnvironmentProviders> = [
         provideTranslocoScope(
-          { scope, alias: scope },
+          { scope, alias: scope, ...(translations && { loader: inlineLoaderOf(translations, moduleKey, scope) }) },
           { scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE },
           { scope: BASE_APP_TRANSLOCO_SCOPE, alias: BASE_APP_TRANSLOCO_SCOPE },
         ),
       ];
+      // Provided on the wrapper, so every widget below the mount finds the assets of *this* module, and a widget
+      // rendered anywhere else finds none.
+      if (assets) providers.push({ provide: MODULE_ASSET_CONTEXT, useValue: assets(moduleKey) });
       return [{ path: '', providers, children }];
     },
   };
+}
+
+/** One `() => Promise<Translation>` per language, which is the shape transloco's inline loader takes. */
+function inlineLoaderOf(translations: ModuleTranslationLoader, moduleKey: string, scope: string): Record<string, () => Promise<Translation>> {
+  return Object.fromEntries(translations.languages.map((locale) => [locale, () => translations.load(moduleKey, scope, locale)]));
 }
 
 /** The authored paths as a trie, so a route that is a prefix of another can be recognized as its parent. */

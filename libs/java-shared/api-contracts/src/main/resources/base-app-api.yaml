@@ -397,6 +397,245 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Module translations ──
+  # The prepared translation files of one module. The app is not a translation editor: the user
+  # downloads one file per supported language, translates off-line and uploads them again. The files
+  # hold every translatable item of the module (its name and its route titles), keyed relative to
+  # the module's transloco scope. Distinct from `/app/translations/**` above, which serves the
+  # framework's own seeded bundles.
+  /organizations/{orgKey}/modules/{moduleKey}/translations:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+    get:
+      operationId: downloadModuleTranslations
+      summary: Download the module's translation files as a zip
+      description: >-
+        One `<locale>.json` per supported language, built on the fly from the module's draft. Each
+        value is the uploaded translation when there is one, otherwise the authored text — so the
+        organization's default language comes out complete, and every other language shows the
+        translator what is left to translate. Keys the module no longer uses are not written.
+        Requires a design permission.
+      tags:
+        - Base App Module Translations
+      responses:
+        "200":
+          description: A zip archive.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: uploadModuleTranslations
+      summary: Upload translated files, as a zip or as one `<locale>.json`
+      description: >-
+        Replaces the draft bundle of every language the upload names. All-or-nothing: a malformed
+        archive or file, a non-string value, an entry outside the archive root, or a language that is
+        not supported rejects the whole upload with 400. Problems of content — unknown keys (dropped),
+        missing keys and values still equal to the authored text — are reported, not rejected.
+        Requires a design permission.
+      tags:
+        - Base App Module Translations
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: What was stored, per language.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleTranslationUploadReport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/modules/{moduleKey}/translation-coverage:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+    get:
+      operationId: getModuleTranslationCoverage
+      summary: How much of the module is translated, per supported language
+      tags:
+        - Base App Module Translations
+      responses:
+        "200":
+          description: One entry per supported language.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleTranslationCoverage"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/modules/{moduleKey}/translations/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+      - $ref: "#/components/parameters/TranslationLocaleParam"
+    get:
+      operationId: getModuleTranslationBundle
+      summary: The stored bundle of one module and language
+      description: >-
+        What the module's transloco scope loads at run time: the stored translations only, keys relative
+        to the scope. Answers 200 with an empty object when nothing is stored — the frontend falls back
+        to the authored text — for the same reason as the framework bundles above. The `draft` is the
+        designer's read (design permission); the `released` one is the run-time read.
+      tags:
+        - Base App Module Translations
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: The bundle, empty when nothing is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationBundle"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Module assets ──
+  # The files a module brings along — markdown, images, anything its widgets point at — addressed by a path
+  # relative to the module, so a markdown file can link its images relatively. Uploaded one by one, never as
+  # an archive. Stored per channel like the module itself: an upload writes the draft, a release publishes it.
+  /organizations/{orgKey}/modules/{moduleKey}/assets:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+    get:
+      operationId: listModuleAssets
+      summary: The module's assets, without their content
+      description: >-
+        The `draft` list is the designer's read (design permission); the `released` one is what the running
+        application sees (membership of the organization).
+      tags:
+        - Base App Module Assets
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: The assets, ordered by path.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleAssetInfo"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: uploadModuleAsset
+      summary: Add or replace one asset of the module draft
+      description: >-
+        The file is stored under `path`, or under its own file name at the module root when no path is given.
+        An existing asset of that path is replaced. Requires a design permission.
+      tags:
+        - Base App Module Assets
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                path:
+                  type: string
+                  description: Path relative to the module, e.g. `docs/img/flow.png`.
+      responses:
+        "200":
+          description: The stored asset.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleAssetInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteModuleAsset
+      summary: Remove one asset from the module draft
+      tags:
+        - Base App Module Assets
+      parameters:
+        - $ref: "#/components/parameters/AssetPathParam"
+      responses:
+        "204":
+          description: Removed
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/modules/{moduleKey}/assets/content:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+    get:
+      operationId: getModuleAssetContent
+      summary: The content of one asset
+      description: >-
+        Streamed through the backend rather than redirected to object storage, so relative links keep
+        working and one place checks access. Answered with an `ETag` (the content hash) and revalidated, not
+        cached blindly: the same path may hold other content after the next upload or release. Active
+        content (SVG, HTML) is served sandboxed.
+      tags:
+        - Base App Module Assets
+      parameters:
+        - $ref: "#/components/parameters/AssetPathParam"
+        - $ref: "#/components/parameters/RevisionParam"
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The file, with its stored content type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "304":
+          description: The caller already holds this content.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /organizations/{orgKey}/app-definitions/validate:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -548,6 +787,21 @@ paths:
 
 components:
   parameters:
+    AssetPathParam:
+      name: path
+      in: query
+      required: true
+      description: Path of the asset relative to the module, e.g. `docs/welcome.md`.
+      schema:
+        type: string
+        maxLength: 200
+    ModuleKeyParam:
+      name: moduleKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
     TranslationLocaleParam:
       name: locale
       in: path
@@ -996,6 +1250,78 @@ components:
             module does not mount modules: this is where composition stops.
           items:
             $ref: "#/components/schemas/RouteDefinition"
+
+    ModuleTranslationUploadReport:
+      type: object
+      required: [ languages ]
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModuleTranslationUploadLanguage"
+
+    ModuleTranslationUploadLanguage:
+      type: object
+      required: [ locale, storedKeys, unknownKeys, missingKeys, untranslatedKeys ]
+      properties:
+        locale:
+          type: string
+        storedKeys:
+          type: integer
+          description: How many keys were stored.
+        unknownKeys:
+          type: array
+          description: Keys the module does not have. Dropped.
+          items:
+            type: string
+        missingKeys:
+          type: array
+          description: Keys of the module the file does not carry.
+          items:
+            type: string
+        untranslatedKeys:
+          type: array
+          description: >-
+            Keys whose value still equals the authored text, so probably not translated. Always empty
+            for the organization's default language.
+          items:
+            type: string
+
+    ModuleTranslationCoverage:
+      type: object
+      required: [ locale, defaultLocale, keyCount, translatedCount, missingKeys ]
+      properties:
+        locale:
+          type: string
+        defaultLocale:
+          type: boolean
+          description: The authored texts are in this language, so it is complete by definition.
+        keyCount:
+          type: integer
+        translatedCount:
+          type: integer
+        missingKeys:
+          type: array
+          items:
+            type: string
+
+    ModuleAssetInfo:
+      type: object
+      required: [ path, mimeType, size, sha256 ]
+      properties:
+        path:
+          type: string
+          description: Relative to the module; segments of letters, digits, `.`, `_` and `-`.
+          example: docs/img/flow.png
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+          description: Bytes.
+        sha256:
+          type: string
+          description: Hex SHA-256 of the content; also the ETag.
 
     ModuleDefinition:
       allOf:

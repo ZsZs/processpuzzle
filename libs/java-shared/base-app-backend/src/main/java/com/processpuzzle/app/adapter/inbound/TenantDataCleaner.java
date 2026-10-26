@@ -1,8 +1,11 @@
 package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleTranslationRepository;
 import com.processpuzzle.app.i18n.AppTranslationRepository;
+import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +45,18 @@ public class TenantDataCleaner {
     private final AppDefinitionRepository appDefinitionRepository;
     private final ModuleDefinitionRepository moduleDefinitionRepository;
     private final AppTranslationRepository translationRepository;
+    private final ModuleTranslationRepository moduleTranslationRepository;
+    private final ModuleAssetRepository moduleAssetRepository;
+    private final ModuleAssetSweeper assetSweeper;
 
     public TenantDataCleaner(AppDefinitionRepository appDefinitionRepository,
                              ModuleDefinitionRepository moduleDefinitionRepository,
-                             AppTranslationRepository translationRepository) {
+                             AppTranslationRepository translationRepository,
+                             ModuleTranslationRepository moduleTranslationRepository,
+                             ModuleAssetRepository moduleAssetRepository, ModuleAssetSweeper assetSweeper) {
+        this.moduleAssetRepository = moduleAssetRepository;
+        this.assetSweeper = assetSweeper;
+        this.moduleTranslationRepository = moduleTranslationRepository;
         this.appDefinitionRepository = appDefinitionRepository;
         this.moduleDefinitionRepository = moduleDefinitionRepository;
         this.translationRepository = translationRepository;
@@ -58,5 +69,9 @@ public class TenantDataCleaner {
         appDefinitionRepository.deleteByOrgKey(event.orgKey());
         moduleDefinitionRepository.deleteByOrgKey(event.orgKey());
         translationRepository.eraseByOrgKey(event.orgKey());
+        moduleTranslationRepository.eraseByOrgKey(event.orgKey());
+        moduleAssetRepository.eraseByOrgKey(event.orgKey());
+        // After the commit, so that a tenant whose deletion rolled back keeps the files its rows still name.
+        assetSweeper.eraseAll(event.orgKey());
     }
 }

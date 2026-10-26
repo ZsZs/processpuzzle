@@ -10,6 +10,21 @@ Roles on routes and navigation items (`NavNode.roles`, `AppRoute.roles`) are dec
 catalog when an app definition or module is created, updated or imported (`OrganizationGuard.declareRoles`
 publishes `RolesReferenced`), so they exist in the identity provider and can be picked on My Profile.
 
+## Modules: translations and assets
+
+A `ModuleDefinition` brings its own translations and files, stored per channel (`DRAFT` / `RELEASED`) like the module itself, so a release publishes
+them together with the routes that name them. See [the plan](../../../docs/module-refinement-plan.md).
+
+- **Translations** are not edited in the app. `GET /modules/{key}/translations` prepares one `<lang>.json` per supported language in a zip — the
+  module name and every route title, keyed relative to the module's transloco scope (an element without a `translocoId` gets `module.name` /
+  `route.<path>`). The user translates off-line and `PUT`s the zip, or a single file, back; content problems are reported, structural ones reject the
+  whole upload. The languages come from the `SupportedLanguages` port; the testbed answers it from `base-app.supported-languages`, which has to be kept
+  in step with the frontend's `AVAILABLE_LANGUAGES`.
+- **Assets** (markdown, images) are uploaded one file at a time under a path relative to the module. The bytes go to the `ModuleAssetStore` port — the
+  testbed names objects `<orgKey>/<sha256>` in the `<prefix>-modules` bucket — and the module records path, type, size and hash, so a release copies
+  records and never files. Content is streamed by `GET /modules/{key}/assets/content?path=` with an `ETag`; SVG is sandboxed and HTML is a download.
+  Objects nothing names any more are removed after the transaction commits (`ModuleAssetSweeper`).
+
 ## Technologies
 
 - **Java 25**

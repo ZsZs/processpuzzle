@@ -91,4 +91,13 @@ class BaseAppPortsConfigurationTest {
         assertThat(configuration.ruleEvaluator(evaluateObject)
                 .evaluate("my-org", "App Definition", Map.of("id", "claims-app"))).isEmpty();
     }
+
+    /** The property is a comma list; the same list answers for every organization. */
+    @Test
+    void supportedLanguagesAreTheConfiguredListForEveryOrganization() {
+        var languages = configuration.supportedLanguages(List.of("en", "de"));
+
+        assertThat(languages.codes("any-org")).containsExactly("en", "de");
+        assertThat(languages.codes("another-org")).containsExactly("en", "de");
+    }
 }

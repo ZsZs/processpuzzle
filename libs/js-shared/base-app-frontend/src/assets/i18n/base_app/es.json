@@ -138,6 +138,31 @@
     "version": "Versión",
     "updatedAt": "Actualizado el",
     "routes": "Rutas",
+    "translations": "Traducciones",
+    "translations_panel": {
+      "hint": "Un archivo por idioma admitido contiene todos los textos traducibles del módulo. Traduzca los valores, conserve las claves y vuelva a subir el zip (o un solo archivo).",
+      "language": "Idioma",
+      "translated": "Traducido",
+      "download": "Descargar archivos",
+      "upload": "Subir traducciones",
+      "save_first": "Guarde primero el módulo; los archivos se preparan a partir del módulo guardado.",
+      "stored": "{{count}} claves guardadas",
+      "unknown": "{{count}} claves desconocidas ignoradas",
+      "missing": "{{count}} claves ausentes",
+      "untranslated": "{{count}} aún iguales al original"
+    },
+    "assets": "Archivos",
+    "assets_panel": {
+      "hint": "Añada los archivos uno a uno; un archivo markdown puede enlazar los demás de forma relativa. Los widgets se refieren a un archivo como module:<ruta>.",
+      "path": "Referencia",
+      "type": "Tipo",
+      "size": "Tamaño",
+      "remove": "Quitar",
+      "none": "Aún no hay archivos.",
+      "folder": "Carpeta",
+      "upload": "Subir archivos",
+      "save_first": "Guarde primero el módulo; los archivos pertenecen al módulo guardado."
+    },
     "_tooltips": {
       "id": "Única dentro de tu organización; las aplicaciones montan el módulo mediante esta clave. No debe cambiar una vez que el módulo está en uso. — Guía: Módulos",
       "name": "El nombre del módulo. — Guía: Módulos",
@@ -146,7 +171,9 @@
       "translocoScope": "El ámbito bajo el que se cargan las traducciones del módulo; vacío significa la Clave. — Guía: Módulos",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó el módulo por última vez. Lo establece el sistema.",
-      "routes": "Las páginas del módulo. Sus rutas de acceso son relativas a la ruta base en la que se monta el módulo. — Guía: Módulos"
+      "routes": "Las páginas del módulo. Sus rutas de acceso son relativas a la ruta base en la que se monta el módulo. — Guía: Módulos",
+      "translations": "Descargue los archivos de traducción del módulo, tradúzcalos sin conexión y vuélvalos a subir. — Guía: Módulos",
+      "assets": "Archivos que aporta el módulo: páginas markdown, imágenes. Un widget se refiere a uno como module:<ruta>. — Guía: Módulos"
     }
   },
   "concepts": {

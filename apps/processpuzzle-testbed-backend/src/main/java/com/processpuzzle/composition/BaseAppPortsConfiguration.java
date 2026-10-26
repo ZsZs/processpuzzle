@@ -1,8 +1,10 @@
 package com.processpuzzle.composition;
 
 import com.processpuzzle.app.usecase.port.RuleEvaluator;
+import com.processpuzzle.app.usecase.port.SupportedLanguages;
 import com.processpuzzle.rule.usecase.EvaluateObject;
 import com.processpuzzle.rule.usecase.EvaluationOutcome;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -59,6 +61,26 @@ public class BaseAppPortsConfiguration {
             @Override
             public List<Violation> evaluate(String orgKey, String context, Map<String, Object> candidate) {
                 return toViolations(evaluateObject.execute(orgKey, context, candidate));
+            }
+        };
+    }
+
+    /**
+     * Answers which languages a module's translation files are prepared in, from {@code base-app.supported-languages}.
+     *
+     * <p>The frontend's {@code AVAILABLE_LANGUAGES} ({@code run-time-conf/config.*.json}) is where the list really lives,
+     * and the backend cannot read it, so the two are kept in step by hand. The default is the testbed's own list.
+     * A deployment offering other languages overrides the property; one that leaves a language out here simply
+     * cannot prepare or upload files for it.
+     */
+    @Bean
+    public SupportedLanguages supportedLanguages(
+            @Value("${base-app.supported-languages:en,de,fr,hu,es}") List<String> codes) {
+        List<String> supported = List.copyOf(codes);
+        return new SupportedLanguages() {
+            @Override
+            public List<String> codes(String orgKey) {
+                return supported;
             }
         };
     }

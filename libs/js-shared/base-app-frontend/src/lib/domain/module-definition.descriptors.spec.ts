@@ -50,6 +50,17 @@ describe('createModuleDefinitionDescriptor', () => {
     expect(byName('translocoScope')?.required).toBeFalsy();
   });
 
+  // Not a field of the module: it only talks to the module's own translation endpoints, so the form must not save it.
+  it('offers the prepared translation files through a disabled custom control', () => {
+    expect(byName('translations')?.formControlType).toBe(FormControlType.CUSTOM);
+    expect(byName('translations')?.disabled).toBe(true);
+  });
+
+  it("offers the module's files through a second disabled custom control", () => {
+    expect(byName('assets')?.formControlType).toBe(FormControlType.CUSTOM);
+    expect(byName('assets')?.disabled).toBe(true);
+  });
+
   it('shows the server-assigned revision fields read-only', () => {
     expect(byName('version')?.disabled).toBe(true);
     expect(byName('updatedAt')?.disabled).toBe(true);

@@ -1,6 +1,8 @@
 import { fireEvent, render } from '@testing-library/angular';
 import '@testing-library/jest-dom/vitest';
 import { LayoutService } from '@processpuzzle/util';
+import { of } from 'rxjs';
+import { MODULE_ASSET_CONTEXT } from '../module-asset/module-asset-context';
 import { describe, expect, it, vi } from 'vitest';
 import { PhotoAlbumComponent } from './photo-album.component';
 
@@ -23,6 +25,22 @@ describe('PhotoAlbumComponent', () => {
 
     expect(getByRole('img', { name: 'Conduct Race diagram' })).toHaveAttribute('src', 'assets/Conduct_Race.png');
     expect(getByRole('button', { name: 'Previous image' })).toBeEnabled();
+  });
+
+  it('shows an image of the module from an object URL', async () => {
+    Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:module-image'), revokeObjectURL: vi.fn() });
+    const blob = vi.fn(() => of(new Blob(['x'])));
+
+    const { getByRole } = await render(PhotoAlbumComponent, {
+      inputs: { images: [{ src: 'module:img/a.png', alt: 'From the module' }], maxHeight: 240 },
+      providers: [
+        { provide: LayoutService, useValue: { hideSidenav: vi.fn() } },
+        { provide: MODULE_ASSET_CONTEXT, useValue: { blob } },
+      ],
+    });
+
+    expect(blob).toHaveBeenCalledWith('img/a.png');
+    expect(getByRole('img', { name: 'From the module' })).toHaveAttribute('src', 'blob:module-image');
   });
 
   it('navigates images in the viewer and restores the sidebar after closing', async () => {

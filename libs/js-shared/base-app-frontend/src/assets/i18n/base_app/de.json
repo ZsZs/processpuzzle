@@ -138,6 +138,31 @@
     "version": "Version",
     "updatedAt": "Geändert am",
     "routes": "Routen",
+    "translations": "Übersetzungen",
+    "translations_panel": {
+      "hint": "Eine Datei je unterstützter Sprache enthält jeden übersetzbaren Text des Moduls. Übersetzen Sie die Werte, lassen Sie die Schlüssel unverändert und laden Sie das Zip (oder eine einzelne Datei) wieder hoch.",
+      "language": "Sprache",
+      "translated": "Übersetzt",
+      "download": "Dateien herunterladen",
+      "upload": "Übersetzungen hochladen",
+      "save_first": "Speichern Sie zuerst das Modul; die Dateien werden aus dem gespeicherten Modul erstellt.",
+      "stored": "{{count}} Schlüssel gespeichert",
+      "unknown": "{{count}} unbekannte Schlüssel ignoriert",
+      "missing": "{{count}} Schlüssel fehlen",
+      "untranslated": "{{count}} noch gleich dem Original"
+    },
+    "assets": "Dateien",
+    "assets_panel": {
+      "hint": "Fügen Sie Dateien einzeln hinzu; eine Markdown-Datei kann die anderen relativ verlinken. Widgets verweisen als module:<Pfad> auf eine Datei.",
+      "path": "Verweis",
+      "type": "Typ",
+      "size": "Größe",
+      "remove": "Entfernen",
+      "none": "Noch keine Dateien.",
+      "folder": "Ordner",
+      "upload": "Dateien hochladen",
+      "save_first": "Speichern Sie zuerst das Modul; Dateien gehören zum gespeicherten Modul."
+    },
     "_tooltips": {
       "id": "Eindeutig innerhalb Ihrer Organisation; Anwendungen binden das Modul über diesen Schlüssel ein. Darf sich nicht ändern, sobald das Modul verwendet wird. — Leitfaden: Module",
       "name": "Der Name des Moduls. — Leitfaden: Module",
@@ -146,7 +171,9 @@
       "translocoScope": "Der Bereich, unter dem die Übersetzungen des Moduls geladen werden; leer bedeutet der Schlüssel. — Leitfaden: Module",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
       "updatedAt": "Wann das Modul zuletzt gespeichert wurde. Wird vom System gesetzt.",
-      "routes": "Die Seiten des Moduls. Ihre Pfade sind relativ zum Basispfad, unter dem das Modul eingebunden ist. — Leitfaden: Module"
+      "routes": "Die Seiten des Moduls. Ihre Pfade sind relativ zum Basispfad, unter dem das Modul eingebunden ist. — Leitfaden: Module",
+      "translations": "Laden Sie die Übersetzungsdateien des Moduls herunter, übersetzen Sie sie offline und laden Sie sie wieder hoch. — Leitfaden: Module",
+      "assets": "Dateien, die das Modul mitbringt – Markdown-Seiten, Bilder. Ein Widget verweist als module:<Pfad> darauf. — Leitfaden: Module"
     }
   },
   "concepts": {

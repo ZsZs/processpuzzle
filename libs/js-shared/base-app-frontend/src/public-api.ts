@@ -30,7 +30,13 @@ export {
   type ThemeDefinition,
   type WidgetPlacement,
 } from './lib/domain/app-definition';
-export { ModuleDefinition, moduleTranslocoScope } from './lib/domain/module-definition';
+export { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from './lib/domain/module-definition';
+export type { ModuleTranslationBundle, ModuleTranslationCoverage, ModuleTranslationUploadLanguage, ModuleTranslationUploadReport } from './lib/domain/module-translation';
+export { ModuleTranslationService } from './lib/domain/module-translation.service';
+export type { ModuleAsset } from './lib/domain/module-asset';
+export { ModuleAssetService } from './lib/domain/module-asset.service';
+export { MODULE_ASSETS_I18N_SCOPE, ModuleAssetsControlComponent } from './lib/domain/module-assets-control.component';
+export { MODULE_TRANSLATIONS_I18N_SCOPE, ModuleTranslationsControlComponent } from './lib/domain/module-translations-control.component';
 export {
   APP_DEFINITION_I18N_SCOPE,
   APP_MODULE_MOUNT_I18N_SCOPE,
