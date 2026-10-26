@@ -34,15 +34,14 @@ export class OrganizationUserMapper implements BaseEntityMapper<OrganizationUser
 export class OrganizationRoleMapper implements BaseEntityMapper<OrganizationRole> {
   fromDto(dto: unknown): OrganizationRole {
     const source = dto as OrganizationRoleDto;
-    return new OrganizationRole(source.name, source.description, source.platformManaged);
+    return new OrganizationRole(source.name, source.description, source.platformManaged, source.origin);
   }
 
   /**
-   * Roles are read-only through this library: the API has no create or update for them, because a
-   * role minted from a typo is one nothing in the platform ever matches. The method exists only
-   * because `BaseEntityMapper` requires it.
+   * The role payload both the create and the update send. The name is the key, so the update ignores it and
+   * the create needs it; sending it on both keeps one shape. Nothing else of the role is writable.
    */
   toDto(entity: OrganizationRole): unknown {
-    return { ...entity };
+    return { name: entity.name, description: entity.description ?? '' };
   }
 }

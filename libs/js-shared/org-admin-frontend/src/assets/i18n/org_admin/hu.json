@@ -41,6 +41,7 @@
     "_self": "Szerep",
     "name": "Név",
     "description": "Leírás",
-    "platformManaged": "Managed by ProcessPuzzle"
+    "platformManaged": "Managed by ProcessPuzzle",
+    "origin": "Eredet"
   }
 }

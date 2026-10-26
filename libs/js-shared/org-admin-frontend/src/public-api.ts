@@ -4,11 +4,16 @@
 
 export { OrganizationRole, OrganizationUser, type OrganizationUserInvitation } from './lib/domain/organization-user';
 export { OrganizationRoleMapper, OrganizationUserMapper } from './lib/domain/organization-user.mapper';
+export { createOrganizationRoleDescriptor, ORGANIZATION_ROLE_ENTITY_NAME, ROLE_NAME_PATTERN } from './lib/domain/organization-role.descriptors';
+export { OrganizationRoleStore } from './lib/domain/organization-role.store';
+export { OrganizationRoleEntityService } from './lib/domain/organization-user.service';
 export { ORG_ADMIN_ORG_KEY, OrganizationRoleService, OrganizationUserService } from './lib/domain/organization-user.service';
 export { OrganizationUserStore } from './lib/domain/organization-user.store';
 export { ORGANIZATION_USER_ENTITY_NAME, createOrganizationUserDescriptor } from './lib/domain/organization-user.descriptors';
 
 export { OrganizationUserFacade } from './lib/feature/organization-user.facade';
+export { OrganizationRoleFacade } from './lib/feature/organization-role.facade';
+export { OrganizationRoleContainerComponent } from './lib/feature/organization-role-container.component';
 export { OrganizationUserContainerComponent } from './lib/feature/organization-user-container.component';
 export { InviteUserDialog, type InviteUserDialogData, type InviteUserDialogResult } from './lib/feature/invite-user.dialog';
 export { RoleAssignmentComponent } from './lib/feature/role-assignment.component';

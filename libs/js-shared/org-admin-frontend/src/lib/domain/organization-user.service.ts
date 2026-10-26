@@ -2,7 +2,7 @@ import { inject, Injectable, InjectionToken } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
-import { Observable, map } from 'rxjs';
+import { Observable, map, throwError } from 'rxjs';
 import { OrganizationRole, OrganizationUser, OrganizationUserInvitation } from './organization-user';
 import { OrganizationRoleMapper, OrganizationUserMapper } from './organization-user.mapper';
 
@@ -56,6 +56,29 @@ export class OrganizationUserService extends BaseEntityRestService<OrganizationU
     return this.httpClient
       .post(fullUrl, invitation, { headers: this.headers })
       .pipe(map((response) => this.entityMapper.fromDto(response) as PersistedEntity<OrganizationUser>));
+  }
+}
+
+/**
+ * `/organizations/{orgKey}/admin/roles` as the generic role screen addresses it: the list, one role, and the
+ * create, update and delete a catalog screen needs.
+ *
+ * Three departures from the generic service, each the contract's doing: there is no GET of one role, so
+ * `findById` picks it out of the list; there is no collection DELETE, so `deleteAll` is refused rather than
+ * sent; and the role is removed by name, which is the key the contract addresses it by.
+ */
+@Injectable({ providedIn: 'root' })
+export class OrganizationRoleEntityService extends BaseEntityRestService<OrganizationRole> {
+  constructor(protected override entityMapper: OrganizationRoleMapper) {
+    super(entityMapper, 'ORG_ADMIN_SERVICE_ROOT', `organizations/${inject(ORG_ADMIN_ORG_KEY)}/admin/roles`);
+  }
+
+  override findById(id: string): Observable<PersistedEntity<OrganizationRole> | void> {
+    return (this.findAll() as Observable<PersistedEntity<OrganizationRole>[]>).pipe(map((roles) => roles.find((role) => role.id === id)));
+  }
+
+  override deleteAll(): Observable<unknown> {
+    return throwError(() => new Error('Roles are removed one at a time, by name.'));
   }
 }
 
