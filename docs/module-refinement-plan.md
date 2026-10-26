@@ -1,6 +1,6 @@
 # Module Refinement Plan
 
-Status: **in progress** — phases 1–3 implemented, 4–6 open · Drafted 2026-10-26 · Owner: ZsZs
+Status: **implemented** — phases 1–6 · Drafted 2026-10-26 · Owner: ZsZs
 
 Refines `base-app`'s `ModuleDefinition` (introduced by the
 [AppDefinition Refinement Plan](app-definition-refinement-plan.md), decision 2) so that a module carries
@@ -154,8 +154,9 @@ hash).
 
 ## Phases
 
-Status: **1–3 done** (backend: contract, key extraction, zip, validation, storage with channel, release, delete,
-tenant erase; frontend: Translations section of the Module form, derived keys, inline loader). 4–6 open.
+Status: **all done.** 1–3 translations (backend: contract, key extraction, zip, validation, storage with channel, release, delete,
+tenant erase; frontend: Translations section of the Module form, derived keys, inline loader). 4–5 assets (backend: records per channel, object store
+port, endpoints, release, sweeper; frontend: Assets section, module asset context, widgets, markdown). 6 docs.
 
 Each phase is one PR. Phases 2 and 4 add endpoints and beans, so the testbed backend's `contextLoads` and
 `ModularityTests` run locally before the PR.
@@ -172,6 +173,20 @@ Each phase is one PR. Phases 2 and 4 add endpoints and beans, so the testbed bac
    markdown renderer override, authenticated image pipe.
 6. **Export / import and starter bundles** carry translations and assets; e2e; docs (base-app README,
    Feature maturity table).
+
+## What changed on the way
+
+- **Assets get a table of their own** (`app_module_assets`) instead of a list inside the module: a module is replaced as a whole by its PUT, which would
+  silently drop files its form never carried.
+- **Endpoints use a query parameter for the path** (`/assets?path=…`, `/assets/content?path=…`) rather than a path wildcard, which an OpenAPI
+  contract cannot express.
+- **Only `module:<path>` resolves into the module.** The first draft said a relative path would too; but `assets/demo/welcome.md` already means a file
+  of the hosting application. Inside a module's own markdown file, relative links do resolve against that file.
+- **Phase 6 shrank.** Modules have no export or import today — only app definitions do, and the starter bundles reach modules through the default-apps
+  YAML — so there was nothing to extend. If module export is added, translations travel as the zip the download already produces; assets would need an
+  archive of their own.
+- **No Playwright test was added.** The generic form tests skip disabled controls, so the two sections are untested end to end; the specs cover them as
+  components against a mocked service.
 
 ## Out of scope
 
