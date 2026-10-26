@@ -105,7 +105,7 @@
     <base-ai-backend.version>0.2.0</base-ai-backend.version>
     <api-contracts.version>1.17.0</api-contracts.version>
     <base-app-backend.version>1.8.0</base-app-backend.version>
-    <base-document-backend.version>1.4.0</base-document-backend.version>
+    <base-document-backend.version>1.5.0</base-document-backend.version>
     <base-entity-backend.version>1.9.0</base-entity-backend.version>
     <base-rule-backend.version>1.5.2</base-rule-backend.version>
     <base-starter-backend.version>0.3.0</base-starter-backend.version>
