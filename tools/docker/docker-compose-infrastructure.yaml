@@ -1,6 +1,6 @@
 # ── The shared infrastructure layer ─────────────────────────────────────────────────────────────
 #
-# PostgreSQL, Keycloak (+ its one-shot bootstrap), MinIO, json-server, pgweb and the vision server: the
+# PostgreSQL, Keycloak (+ its one-shot bootstrap), MinIO, json-server, pgweb, the vision server and the LLM gateway (litellm): the
 # services every application stack shares — see docs/application-stacks.md. One definition serves
 # `ci`, `stage` and `prod`; what differs between them is an env file, not a second compose file. This is the
 # "Docker Compose resource" of docs/build-deploy-strategy.md §4, while each application image is its
@@ -613,6 +613,35 @@ services:
       # /v1/health needs no token and loads no model, so it answers within seconds of start. The budget
       # is still written as `retries` x `interval`, since Coolify drops `start_period`.
       test: [ "CMD", "curl", "-fs", "http://localhost:8000/v1/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  litellm:
+    # The LLM gateway behind the AI assistant (docs/ai/implementation-plan.md): one OpenAI-compatible
+    # endpoint in front of whichever vendor the model aliases in litellm/config.yaml name. Shared by every
+    # stack's backend, like Keycloak and MinIO, because it holds no tenant data; the provider key lives
+    # here and nowhere else, so a backend never sees it. Only application stacks that enable the
+    # assistant point at it — the testbed does not.
+    #
+    # Reached on this network only; the reverse proxy does not route it. The port is published for a
+    # backend run on the host during development, bound to loopback everywhere else.
+    pull_policy: always
+    image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-litellm:${PP_IMAGE_TAG}
+    container_name: processpuzzle-litellm
+    ports:
+      - "${PP_LITELLM_PUBLISH}"
+    mem_limit: ${PP_LITELLM_MEM_LIMIT:-1024m}
+    environment:
+      # Bare, not defaulted: a guessable default on a shared service is the failure mode the header of
+      # this file describes. Each backend sends the master key as its API key.
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      # Empty is allowed so a stack without a provider key still starts; calls then fail with a clear 401.
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+    networks:
+      - processpuzzle
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness')" ]
       interval: 10s
       timeout: 5s
       retries: 12

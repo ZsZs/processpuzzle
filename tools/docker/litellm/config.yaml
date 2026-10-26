@@ -1,0 +1,24 @@
+# Model aliases the platform uses. The backend names only the alias (processpuzzle.ai.assistant.model),
+# so switching vendor or model is an edit here, not a release of the backend. The provider keys come
+# from the environment of the container (see docker-compose-infrastructure.yaml).
+#
+# Default: Mistral (Paris), on its free API mode, so the experiment costs nothing. Free-mode inputs
+# may be used by Mistral for training unless opted out under Settings > Privacy in its console, and it
+# publishes no rate limits: demo data only. A customer with real data takes a paid plan (zero
+# retention) or another EU provider. Scaleway Generative APIs (France, 1M free tokens, no training on
+# API data) is the drop-in alternative: model openai/mistral-large-3 (or gpt-oss-120b) with
+# api_base https://api.scaleway.ai/v1 and api_key os.environ/SCW_SECRET_KEY.
+model_list:
+  - model_name: pp-designer
+    litellm_params:
+      model: mistral/mistral-large-latest
+      api_key: os.environ/MISTRAL_API_KEY
+
+general_settings:
+  # Every caller (each stack's backend) authenticates with this key; bare in compose, so a deployment
+  # that forgets it fails instead of running an open gateway.
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+litellm_settings:
+  # Prompts and completions are customer data: do not write them to the gateway's logs.
+  turn_off_message_logging: true

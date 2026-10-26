@@ -81,6 +81,8 @@
     <!-- Spring Boot's BOM does not manage Spring Modulith, so spring-modulith-bom is imported
          below. 2.1.0 is the line built against Spring Boot 4.1. -->
     <spring-modulith.version>2.1.0</spring-modulith.version>
+    <!-- Spring AI 2.0.x is the line built against Spring Boot 4.1 (2.1 moves to Boot 4.2). -->
+    <spring-ai.version>2.0.2</spring-ai.version>
     <!-- Default so surefire's @{argLine} resolves in modules that do NOT run the JaCoCo
          agent (e.g. app modules without the jacoco plugin). jacoco:prepare-agent overrides
          this property with the -javaagent argument in modules that do. Without this default,
@@ -126,6 +128,14 @@
         <groupId>org.springframework.modulith</groupId>
         <artifactId>spring-modulith-bom</artifactId>
         <version>${spring-modulith.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

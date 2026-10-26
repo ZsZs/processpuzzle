@@ -40,6 +40,10 @@
       {
         "name": "org-member",
         "description": "Member of this organization."
+      },
+      {
+        "name": "definition-designer",
+        "description": "May author definitions with the AI assistant (the assistant can only write drafts; publishing is separate)."
       }
     ]
   },

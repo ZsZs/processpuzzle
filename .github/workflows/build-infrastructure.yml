@@ -72,6 +72,8 @@ jobs:
             dockerfile: tools/docker/minio/Dockerfile
           - name: processpuzzle-json-server
             dockerfile: tools/docker/json-server/Dockerfile
+          - name: processpuzzle-litellm
+            dockerfile: tools/docker/litellm/Dockerfile
           # 3.6GB with its models baked in, so it caches in the registry rather than in the 10GB GHA
           # cache the five small images share — one build would otherwise evict all of theirs.
           - name: processpuzzle-vision-server

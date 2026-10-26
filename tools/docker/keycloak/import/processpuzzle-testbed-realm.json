@@ -18,7 +18,8 @@
     "realm": [
       { "name": "documentation-editor", "description": "May edit the Testbed Handbook and sample documents" },
       { "name": "documentation-publisher", "description": "May publish Testbed documents" },
-      { "name": "documentation-reviewer", "description": "May read draft Testbed documents" }
+      { "name": "documentation-reviewer", "description": "May read draft Testbed documents" },
+      { "name": "definition-designer", "description": "May author definitions with the AI assistant (the assistant can only write drafts; publishing is separate)." }
     ]
   },
   "users": [
