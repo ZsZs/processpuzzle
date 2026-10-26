@@ -10,6 +10,8 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
+import { moduleAssetContextOf } from '../../domain/module-asset-context';
+import { ModuleAssetService } from '../../domain/module-asset.service';
 import { ModuleTranslationBundle } from '../../domain/module-translation';
 import { ModuleTranslationService } from '../../domain/module-translation.service';
 import { buildAppRoutes, ModuleLoader, ModuleTranslationLoader } from '../app-route-builder';
@@ -49,10 +51,12 @@ export class AppShellRoutesFactory {
    */
   async childrenFor(definition: AppDefinition): Promise<Routes> {
     const loadModule = definition.mountedModules ? inlineModules(definition.mountedModules) : this.loadModule;
-    // The released modules come with the published layout, so their translations are the released ones too;
-    // a draft definition — the designer's Preview — reads the draft translations a user just uploaded.
-    const loadTranslations = this.translationsOf(definition.mountedModules ? 'released' : 'draft');
-    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule, loadTranslations }, this.renderRoute);
+    // The released modules come with the published layout, so their translations and assets are the released
+    // ones too; a draft definition — the designer's Preview — reads the draft ones a user just uploaded.
+    const revision = definition.mountedModules ? 'released' : 'draft';
+    const loadTranslations = this.translationsOf(revision);
+    const moduleAssets = (moduleKey: string) => moduleAssetContextOf(this.injector.get(ModuleAssetService), moduleKey, revision);
+    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule, loadTranslations, moduleAssets }, this.renderRoute);
     return built.length ? [indexRoute(definition, built), ...built] : built;
   }
 

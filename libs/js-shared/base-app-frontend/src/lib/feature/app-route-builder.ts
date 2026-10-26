@@ -1,6 +1,8 @@
+import { EnvironmentProviders, Provider } from '@angular/core';
 import { Route, Routes } from '@angular/router';
 import { provideTranslocoScope, Translation } from '@jsverse/transloco';
 import { ModuleMount, RouteDefinition } from '../domain/app-definition';
+import { MODULE_ASSET_CONTEXT, ModuleAssetContext } from '@processpuzzle/widgets';
 import { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from '../domain/module-definition';
 import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-app.i18n';
 
@@ -25,6 +27,8 @@ export interface AppRouteSource {
   moduleRoutes?: Record<string, RouteDefinition[] | undefined>;
   loadModule?: ModuleLoader;
   loadTranslations?: ModuleTranslationLoader;
+  /** The assets of a module, by key, for the widgets below its mount; without it a `module:` value resolves to nothing. */
+  moduleAssets?: (moduleKey: string) => ModuleAssetContext;
 }
 
 /**
@@ -101,7 +105,7 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
     if (routes) {
       if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute) });
     } else if (source.loadModule) {
-      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations));
+      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations, source.moduleAssets));
     }
   }
   return mounted;
@@ -121,6 +125,9 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
  * name its own. The alias is spelled out, as everywhere in this workspace: transloco would otherwise
  * camel-case it and miss every key below it.
  *
+ * The module's assets reach its widgets the same way, as the {@link MODULE_ASSET_CONTEXT} of the wrapper: a widget
+ * property saying `module:docs/welcome.md` is looked up among *this* module's files.
+ *
  * The module's own translations — what a user uploaded from the files the Module form prepares — are the scope's
  * *inline loader*, so they load with the module and not before it. Every route title is translated under a key
  * as well, the authored `translocoId` or the one derived from the scope and path (see
@@ -133,7 +140,14 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
  * `base_entity.tabs.*` — so naming only the module's scope here would leave every framework label below the
  * mount unresolved.
  */
-function lazyMount(moduleKey: string, basePath: string, loadModule: ModuleLoader, renderRoute: RouteRenderer, translations?: ModuleTranslationLoader): Route {
+function lazyMount(
+  moduleKey: string,
+  basePath: string,
+  loadModule: ModuleLoader,
+  renderRoute: RouteRenderer,
+  translations?: ModuleTranslationLoader,
+  assets?: (moduleKey: string) => ModuleAssetContext,
+): Route {
   return {
     path: basePath,
     loadChildren: async () => {
@@ -145,13 +159,16 @@ function lazyMount(moduleKey: string, basePath: string, loadModule: ModuleLoader
       const routes = definition.routes?.map((route) => ({ ...route, translocoId: moduleRouteTranslocoId(scope, route) }));
       const children = await emitLevel(trieOf(routes), [], renderRoute);
       if (!children.length) return [];
-      const providers = [
+      const providers: Array<Provider | EnvironmentProviders> = [
         provideTranslocoScope(
           { scope, alias: scope, ...(translations && { loader: inlineLoaderOf(translations, moduleKey, scope) }) },
           { scope: BASE_ENTITY_TRANSLOCO_SCOPE, alias: BASE_ENTITY_TRANSLOCO_SCOPE },
           { scope: BASE_APP_TRANSLOCO_SCOPE, alias: BASE_APP_TRANSLOCO_SCOPE },
         ),
       ];
+      // Provided on the wrapper, so every widget below the mount finds the assets of *this* module, and a widget
+      // rendered anywhere else finds none.
+      if (assets) providers.push({ provide: MODULE_ASSET_CONTEXT, useValue: assets(moduleKey) });
       return [{ path: '', providers, children }];
     },
   };

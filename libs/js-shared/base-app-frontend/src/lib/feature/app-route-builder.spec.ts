@@ -1,5 +1,6 @@
 import { Route, Routes } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
+import { MODULE_ASSET_CONTEXT } from '@processpuzzle/widgets';
 import { RouteDefinition } from '../domain/app-definition';
 import { ModuleDefinition } from '../domain/module-definition';
 import { buildAppRoutes } from './app-route-builder';
@@ -246,6 +247,26 @@ describe('buildAppRoutes', () => {
       expect(loadTranslations.load).toHaveBeenCalledWith('claims', 'claims_module', 'de');
       // The framework scopes keep loading from the application, as they did before.
       expect(frameworkScopes.every((scope) => !scope.loader)).toBe(true);
+    });
+
+    it('provides the assets of this module to every widget below its mount', async () => {
+      const context = { blob: vi.fn() };
+      const moduleAssets = vi.fn().mockReturnValue(context);
+      const loadModule = vi.fn().mockResolvedValue(moduleOf(routeDefinitions('open')));
+
+      const children = await childrenOf((await buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule, moduleAssets }, renderRoute))[0]);
+
+      expect(moduleAssets).toHaveBeenCalledWith('claims');
+      const provided = (children[0].providers ?? []).flat() as Array<{ provide?: unknown; useValue: unknown }>;
+      expect(provided.find((provider) => provider.provide === MODULE_ASSET_CONTEXT)?.useValue).toBe(context);
+    });
+
+    it('provides no asset context when nobody offers assets', async () => {
+      const loadModule = vi.fn().mockResolvedValue(moduleOf(routeDefinitions('open')));
+
+      const children = await childrenOf((await buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule }, renderRoute))[0]);
+
+      expect((children[0].providers ?? []).flat().some((provider) => (provider as { provide?: unknown }).provide === MODULE_ASSET_CONTEXT)).toBe(false);
     });
 
     it('registers the scope with no loader of its own when nobody offers translations', async () => {

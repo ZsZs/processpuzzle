@@ -151,6 +151,18 @@
       "missing": "{{count}} clés manquantes",
       "untranslated": "{{count}} encore identiques à l’original"
     },
+    "assets": "Fichiers",
+    "assets_panel": {
+      "hint": "Ajoutez les fichiers un par un ; un fichier markdown peut lier les autres de façon relative. Les widgets renvoient à un fichier par module:<chemin>.",
+      "path": "Référence",
+      "type": "Type",
+      "size": "Taille",
+      "remove": "Supprimer",
+      "none": "Aucun fichier pour l’instant.",
+      "folder": "Dossier",
+      "upload": "Envoyer des fichiers",
+      "save_first": "Enregistrez d’abord le module ; les fichiers appartiennent au module enregistré."
+    },
     "_tooltips": {
       "id": "Unique au sein de votre organisation ; les applications montent le module par cette clé. Ne doit plus changer une fois le module utilisé. — Guide : Modules",
       "name": "Le nom du module. — Guide : Modules",
@@ -160,7 +172,8 @@
       "version": "Augmente à chaque enregistrement. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement du module. Défini par le système.",
       "routes": "Les pages du module. Leurs chemins sont relatifs au chemin de base sous lequel le module est monté. — Guide : Modules",
-      "translations": "Téléchargez les fichiers de traduction du module, traduisez-les hors ligne et renvoyez-les. — Guide : Modules"
+      "translations": "Téléchargez les fichiers de traduction du module, traduisez-les hors ligne et renvoyez-les. — Guide : Modules",
+      "assets": "Fichiers que le module apporte — pages markdown, images. Un widget y renvoie par module:<chemin>. — Guide : Modules"
     }
   },
   "concepts": {

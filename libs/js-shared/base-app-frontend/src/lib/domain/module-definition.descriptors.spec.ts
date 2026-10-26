@@ -56,6 +56,11 @@ describe('createModuleDefinitionDescriptor', () => {
     expect(byName('translations')?.disabled).toBe(true);
   });
 
+  it("offers the module's files through a second disabled custom control", () => {
+    expect(byName('assets')?.formControlType).toBe(FormControlType.CUSTOM);
+    expect(byName('assets')?.disabled).toBe(true);
+  });
+
   it('shows the server-assigned revision fields read-only', () => {
     expect(byName('version')?.disabled).toBe(true);
     expect(byName('updatedAt')?.disabled).toBe(true);

@@ -151,6 +151,18 @@
       "missing": "{{count}} kulcs hiányzik",
       "untranslated": "{{count}} még megegyezik az eredetivel"
     },
+    "assets": "Fájlok",
+    "assets_panel": {
+      "hint": "Egyenként adjon hozzá fájlokat; egy markdown fájl relatívan hivatkozhat a többire. A widgetek module:<útvonal> alakban hivatkoznak egy fájlra.",
+      "path": "Hivatkozás",
+      "type": "Típus",
+      "size": "Méret",
+      "remove": "Eltávolítás",
+      "none": "Még nincs fájl.",
+      "folder": "Mappa",
+      "upload": "Fájlok feltöltése",
+      "save_first": "Először mentse a modult; a fájlok a mentett modulhoz tartoznak."
+    },
     "_tooltips": {
       "id": "Egyedi a szervezeteden belül; az alkalmazások ezzel a kulccsal építik be a modult. Nem változhat, amint a modul használatba került. — Útmutató: Modulok",
       "name": "A modul neve. — Útmutató: Modulok",
@@ -160,7 +172,8 @@
       "version": "Minden mentéssel nő. A rendszer állítja be.",
       "updatedAt": "A modul utolsó mentésének ideje. A rendszer állítja be.",
       "routes": "A modul oldalai. Útvonalaik ahhoz az alap útvonalhoz képest értendők, ahová a modult beépítik. — Útmutató: Modulok",
-      "translations": "Töltse le a modul fordítási fájljait, fordítsa le őket offline, majd töltse vissza. — Útmutató: Modulok"
+      "translations": "Töltse le a modul fordítási fájljait, fordítsa le őket offline, majd töltse vissza. — Útmutató: Modulok",
+      "assets": "A modul által hozott fájlok – markdown oldalak, képek. A widget module:<útvonal> alakban hivatkozik rájuk. — Útmutató: Modulok"
     }
   },
   "concepts": {

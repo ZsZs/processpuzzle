@@ -11,7 +11,9 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
+import { ModuleAssetService } from '../../domain/module-asset.service';
 import { ModuleTranslationService } from '../../domain/module-translation.service';
+import { MODULE_ASSET_CONTEXT } from '@processpuzzle/widgets';
 
 import { BaseEntityScreensComponent } from '@processpuzzle/base-entity';
 import { RouteWidgetsComponent } from '../route-widgets.component';
@@ -33,6 +35,7 @@ describe('AppShellRoutesFactory', () => {
   const moduleService = { findById: vi.fn() };
   const shippedTranslations = { getTranslation: vi.fn() };
   const moduleTranslations = { bundle: vi.fn() };
+  const moduleAssets = { content: vi.fn() };
 
   function factory(): AppShellRoutesFactory {
     TestBed.configureTestingModule({
@@ -44,6 +47,7 @@ describe('AppShellRoutesFactory', () => {
         { provide: TranslocoService, useValue: { getAvailableLangs: () => ['en', { id: 'de', label: 'Deutsch' }], getActiveLang: () => 'en' } },
         { provide: TranslocoHttpLoader, useValue: shippedTranslations },
         { provide: ModuleTranslationService, useValue: moduleTranslations },
+        { provide: ModuleAssetService, useValue: moduleAssets },
       ],
     });
     return TestBed.inject(AppShellRoutesFactory);
@@ -151,6 +155,28 @@ describe('AppShellRoutesFactory', () => {
       await (await loadersOf(released))['de']();
 
       expect(moduleTranslations.bundle).toHaveBeenCalledWith('order-admin', 'de', 'released');
+    });
+
+    /** The asset context the module's wrapper provides, once something navigates into the mount. */
+    async function assetContextOf(definition: AppDefinition): Promise<{ blob(path: string): unknown }> {
+      const children = await factory().childrenFor(definition);
+      const wrapper = (await expand(children.find((route) => route.path === 'back-office') as Route))[0];
+      const providers = (wrapper.providers?.flat() ?? []) as Array<{ provide?: unknown; useValue: { blob(path: string): unknown } }>;
+      return providers.find((provider) => provider.provide === MODULE_ASSET_CONTEXT)?.useValue as { blob(path: string): unknown };
+    }
+
+    it('gives the module its draft assets in the Preview', async () => {
+      (await assetContextOf(mountOf())).blob('docs/a.md');
+
+      expect(moduleAssets.content).toHaveBeenCalledWith('order-admin', 'docs/a.md', 'draft');
+    });
+
+    it('gives the module its released assets in a published layout', async () => {
+      const released = mountOf({ mountedModules: [new ModuleDefinition({ id: 'order-admin', routes: [widgetsRoute('lines')] })] });
+
+      (await assetContextOf(released)).blob('docs/a.md');
+
+      expect(moduleAssets.content).toHaveBeenCalledWith('order-admin', 'docs/a.md', 'released');
     });
 
     it('keeps the titles readable when the uploaded translations cannot be read', async () => {

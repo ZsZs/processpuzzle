@@ -1,18 +1,19 @@
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { LayoutService } from '@processpuzzle/util';
+import { moduleAssetUrl } from '../module-asset/module-asset-context';
 
 @Component({
   selector: 'pp-image-zoom',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button class="thumb-button" type="button" (click)="open()" [attr.aria-label]="'Zoom image: ' + alt()">
-      <img class="thumb" [src]="src()" [alt]="alt()" loading="lazy" />
+      <img class="thumb" [src]="url()" [alt]="alt()" loading="lazy" />
     </button>
 
     @if (isOpen()) {
       <button class="overlay" type="button" (click)="close()" aria-label="Close image preview"></button>
       <div class="dialog" role="dialog" aria-modal="true" [attr.aria-label]="alt()">
-        <img #fullImg class="full" [src]="src()" [alt]="alt()" />
+        <img #fullImg class="full" [src]="url()" [alt]="alt()" />
         <button class="close-btn" type="button" (click)="close()" aria-label="Close">&times;</button>
       </div>
     }
@@ -92,6 +93,8 @@ export class ImageZoomComponent implements OnDestroy {
   // Required inputs: pass the image URL and alt text from the parent.
   readonly src = input.required<string>();
   readonly alt = input<string>('');
+  /** What the `<img>` shows: `src` itself, or the object URL of a `module:` asset. */
+  protected readonly url = moduleAssetUrl(() => this.src());
 
   readonly isOpen = signal(false);
   private readonly fullImg = viewChild<ElementRef<HTMLImageElement>>('fullImg');

@@ -18,7 +18,7 @@ export const MARKDOWN_PAGE_WIDGET_REGISTRATION: WidgetRegistration = {
         markdownSrc: {
           type: 'string',
           title: 'Markdown source',
-          description: 'URL of the document to render.',
+          description: 'URL of the document to render, or module:<path> for a file the module brought along.',
         },
       },
       required: ['markdownSrc'],
@@ -29,7 +29,7 @@ export const MARKDOWN_PAGE_WIDGET_REGISTRATION: WidgetRegistration = {
         name: 'markdownSrc',
         type: 'STRING',
         required: true,
-        description: 'URL of the document to render.',
+        description: 'URL of the document to render, or module:<path> for a file the module brought along.',
       },
     ],
   },

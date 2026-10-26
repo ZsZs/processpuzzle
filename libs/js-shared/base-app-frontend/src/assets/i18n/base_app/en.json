@@ -151,6 +151,18 @@
       "missing": "{{count}} keys missing",
       "untranslated": "{{count}} still equal to the original"
     },
+    "assets": "Assets",
+    "assets_panel": {
+      "hint": "Add files one by one; a markdown file can link the others relatively. Widgets refer to a file as module:<path>.",
+      "path": "Reference",
+      "type": "Type",
+      "size": "Size",
+      "remove": "Remove",
+      "none": "No assets yet.",
+      "folder": "Folder",
+      "upload": "Upload files",
+      "save_first": "Save the module first; assets belong to the saved module."
+    },
     "_tooltips": {
       "id": "Unique within your organization; applications mount the module by this key. Must not change once the module is in use. — Guide: Modules",
       "name": "The module's name. — Guide: Modules",
@@ -160,7 +172,8 @@
       "version": "Increases with every save. Set by the system.",
       "updatedAt": "When the module was last saved. Set by the system.",
       "routes": "The module's pages. Their paths are relative to the base path the module is mounted at. — Guide: Modules",
-      "translations": "Download the module’s translation files, translate them off-line and upload them again. — Guide: Modules"
+      "translations": "Download the module’s translation files, translate them off-line and upload them again. — Guide: Modules",
+      "assets": "Files the module brings along — markdown pages, images. A widget refers to one as module:<path>. — Guide: Modules"
     }
   },
   "concepts": {
