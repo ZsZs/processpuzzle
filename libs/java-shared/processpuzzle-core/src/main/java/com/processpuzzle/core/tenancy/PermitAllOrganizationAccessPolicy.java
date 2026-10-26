@@ -32,6 +32,11 @@ public class PermitAllOrganizationAccessPolicy implements OrganizationAccessPoli
     }
 
     @Override
+    public void requireAdministration(String orgKey) {
+        // Explicitly unrestricted in demonstration hosts.
+    }
+
+    @Override
     public void requirePlatformAdmin() {
         // Explicitly unrestricted in demonstration hosts.
     }

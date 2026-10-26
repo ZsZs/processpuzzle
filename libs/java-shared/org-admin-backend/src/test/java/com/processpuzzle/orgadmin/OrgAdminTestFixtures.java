@@ -99,8 +99,23 @@ public final class OrgAdminTestFixtures {
     public static OrganizationGuard denyingGuard() {
         return guardWith(new OrganizationAccessPolicy() {
             @Override
-            public void requireDesign(String orgKey) {
+            public void requireAdministration(String orgKey) {
                 throw new OrganizationAccessDeniedException(orgKey);
+            }
+
+            @Override
+            public void requireAccess(String orgKey) {
+                throw new OrganizationAccessDeniedException(orgKey);
+            }
+        });
+    }
+
+    /** A caller who is a member of the tenant but may not administer it. */
+    public static OrganizationGuard membersOnlyGuard() {
+        return guardWith(new OrganizationAccessPolicy() {
+            @Override
+            public void requireAccess(String orgKey) {
+                // A member: access is granted, and administration keeps its default denial.
             }
         });
     }
