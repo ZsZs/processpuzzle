@@ -1,0 +1,52 @@
+package com.processpuzzle.ai.assistant;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+
+/**
+ * Phase 2 step 1 of docs/ai/implementation-plan.md: the real model, through the gateway, calls the draft tools. A
+ * throwaway that spends real tokens, so it only runs when {@code PP_LLM_GATEWAY_URL} is set. Run it against stage
+ * through the SSH tunnel described in {@link com.processpuzzle.ai.LlmGatewaySmokeTest}.
+ */
+@EnabledIfEnvironmentVariable(named = "PP_LLM_GATEWAY_URL", matches = ".+")
+class DesignAssistantGatewaySmokeTest {
+
+    @Test
+    void theModelSavesADraftThroughTheToolAndTheTurnReportsIt() {
+        InMemoryAuthoringParticipant entities = new InMemoryAuthoringParticipant("entity");
+        OpenAiChatModel model = OpenAiChatModel.builder()
+            .options(OpenAiChatOptions.builder()
+                .baseUrl(System.getenv("PP_LLM_GATEWAY_URL"))
+                .apiKey(System.getenv().getOrDefault("PP_LLM_GATEWAY_KEY", "unset"))
+                .model(System.getenv().getOrDefault("PP_LLM_GATEWAY_MODEL", "pp-designer"))
+                .build())
+            .build();
+        DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
+            new DefinitionDrafts(List.of(entities)), new AcmeDesigner(), 5);
+
+        String reply = assistant.respond("Define an entity 'invoice' with the key invoice and no attributes. "
+            + "Save it as a draft with the save_draft tool, then tell me what you saved.");
+
+        System.out.println("model reply: " + reply);
+        assertThat(entities.list("acme")).as("the model called save_draft").containsExactly("invoice");
+    }
+
+    private record AcmeDesigner() implements AssistantAccess {
+
+        @Override
+        public String currentOrganization() {
+            return "acme";
+        }
+
+        @Override
+        public boolean mayDesign() {
+            return true;
+        }
+    }
+}

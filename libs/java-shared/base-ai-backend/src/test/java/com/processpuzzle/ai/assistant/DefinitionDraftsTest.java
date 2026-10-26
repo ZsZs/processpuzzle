@@ -5,11 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.processpuzzle.core.definition.AuthoringIssue;
 import com.processpuzzle.core.definition.DefinitionAuthoringParticipant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
 
 class DefinitionDraftsTest {
@@ -18,15 +14,16 @@ class DefinitionDraftsTest {
 
     @Test
     void kindsAreTheParticipantKindsInNameOrder() {
-        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemory("state"), new InMemory("entity")));
+        DefinitionDrafts drafts = new DefinitionDrafts(List.of(
+            new InMemoryAuthoringParticipant("state"), new InMemoryAuthoringParticipant("entity")));
 
         assertThat(drafts.kinds()).containsExactly("entity", "state");
     }
 
     @Test
     void aDraftIsSavedAndReadBackThroughTheKindsParticipant() {
-        InMemory entities = new InMemory("entity");
-        DefinitionDrafts drafts = new DefinitionDrafts(List.of(entities, new InMemory("state")));
+        DefinitionDrafts drafts = new DefinitionDrafts(List.of(
+            new InMemoryAuthoringParticipant("entity"), new InMemoryAuthoringParticipant("state")));
 
         assertThat(drafts.save(ORG, "entity", "invoice", "{\"code\":\"invoice\"}")).isEmpty();
 
@@ -37,7 +34,7 @@ class DefinitionDraftsTest {
 
     @Test
     void issuesComeBackWhenTheParticipantRefusesTheDraft() {
-        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemory("entity")));
+        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity")));
 
         List<AuthoringIssue> issues = drafts.save(ORG, "entity", "invoice", "refuse");
 
@@ -47,7 +44,7 @@ class DefinitionDraftsTest {
 
     @Test
     void validateAndSchemaAreDelegated() {
-        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemory("entity")));
+        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity")));
 
         assertThat(drafts.schema("entity")).isEqualTo("schema:entity");
         assertThat(drafts.validate(ORG, "entity", "invoice")).isEmpty();
@@ -55,7 +52,7 @@ class DefinitionDraftsTest {
 
     @Test
     void anUnknownKindIsRefusedAndTheMessageNamesTheKindsThatExist() {
-        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemory("entity")));
+        DefinitionDrafts drafts = new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity")));
 
         assertThatThrownBy(() -> drafts.list(ORG, "rule"))
             .isInstanceOf(UnknownDefinitionKindException.class)
@@ -65,55 +62,11 @@ class DefinitionDraftsTest {
 
     @Test
     void twoParticipantsForOneKindAreAConfigurationError() {
-        List<DefinitionAuthoringParticipant> twins = List.of(new InMemory("entity"), new InMemory("entity"));
+        List<DefinitionAuthoringParticipant> twins = List.of(
+            new InMemoryAuthoringParticipant("entity"), new InMemoryAuthoringParticipant("entity"));
 
         assertThatThrownBy(() -> new DefinitionDrafts(twins))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("'entity'");
-    }
-
-    /** Keeps drafts in memory, keyed by the definition key; refuses any draft whose JSON is {@code refuse}. */
-    private static final class InMemory implements DefinitionAuthoringParticipant {
-
-        private final String kind;
-        private final Map<String, String> drafts = new TreeMap<>();
-
-        InMemory(String kind) {
-            this.kind = kind;
-        }
-
-        @Override
-        public String kind() {
-            return kind;
-        }
-
-        @Override
-        public String schema() {
-            return "schema:" + kind;
-        }
-
-        @Override
-        public List<String> list(String orgKey) {
-            return new ArrayList<>(drafts.keySet());
-        }
-
-        @Override
-        public Optional<String> get(String orgKey, String key) {
-            return Optional.ofNullable(drafts.get(key));
-        }
-
-        @Override
-        public List<AuthoringIssue> saveDraft(String orgKey, String key, String json) {
-            if ("refuse".equals(json)) {
-                return List.of(AuthoringIssue.error("", "refused"));
-            }
-            drafts.put(key, json);
-            return List.of();
-        }
-
-        @Override
-        public List<AuthoringIssue> validate(String orgKey, String key) {
-            return List.of();
-        }
     }
 }
