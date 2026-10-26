@@ -38,6 +38,18 @@ public interface OrganizationAccessPolicy {
     }
 
     /**
+     * Rejects the call when the principal may not administer {@code orgKey}: manage its users, their
+     * roles and its role catalog. Stricter than {@link #requireDesign}, because a member who authors
+     * metadata is not thereby allowed to decide who may sign in or what they may do. Defaults to
+     * denial, so a policy written before this method existed does not silently grant administration.
+     *
+     * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException when denied
+     */
+    default void requireAdministration(String orgKey) {
+        throw new OrganizationAccessDeniedException(orgKey);
+    }
+
+    /**
      * Rejects the call when the principal is not ProcessPuzzle staff — the gate on the whole
      * {@code /platform/**} surface.
      *

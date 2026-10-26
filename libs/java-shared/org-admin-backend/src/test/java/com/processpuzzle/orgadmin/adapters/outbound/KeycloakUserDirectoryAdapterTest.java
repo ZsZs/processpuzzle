@@ -101,7 +101,7 @@ class KeycloakUserDirectoryAdapterTest {
         verify(client).createAndReturnId(eq("/admin/realms/acme/users"), representation.capture());
         assertThat(representation.getValue()).containsEntry("username", "ada")
                 .containsEntry("enabled", false)
-                .containsEntry("requiredActions", List.of("UPDATE_PASSWORD"));
+                .containsEntry("requiredActions", List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"));
         verify(client).exchange(HttpMethod.POST, "/admin/realms/acme/users/user-1/role-mappings/realm",
                 List.of(Map.of("id", "org-member-id", "name", "org-member")), null);
         verify(client).exchange(HttpMethod.PUT, "/admin/realms/acme/users/user-1", Map.of("enabled", true), null);

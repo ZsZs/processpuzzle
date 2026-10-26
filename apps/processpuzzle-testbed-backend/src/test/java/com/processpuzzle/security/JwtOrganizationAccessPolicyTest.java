@@ -100,6 +100,25 @@ class JwtOrganizationAccessPolicyTest {
     }
 
     @Test
+    void administrationNeedsOrgAdminOnTopOfMembership() {
+        SecurityTestTokens.authenticateAs("my-org", "ada", "org-member");
+        assertThatThrownBy(() -> policy.requireAdministration("my-org"))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+
+        SecurityTestTokens.authenticateAs("my-org", "grace", "org-member", "org-admin");
+        assertThatCode(() -> policy.requireAdministration("my-org")).doesNotThrowAnyException();
+
+        // An administrator of another tenant is still refused here.
+        assertThatThrownBy(() -> policy.requireAdministration("other-org"))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+    }
+
+    @Test
+    void anUnauthenticatedRequestMayAdministerLikeEveryOtherCheckInThisPolicy() {
+        assertThatCode(() -> policy.requireAdministration("my-org")).doesNotThrowAnyException();
+    }
+
+    @Test
     void anUnauthenticatedRequestIsStillNotPlatformStaff() {
         assertThatThrownBy(policy::requirePlatformAdmin)
                 .isInstanceOf(OrganizationAccessDeniedException.class);

@@ -63,7 +63,28 @@ class KeycloakInvitationTest {
         order.verify(read).apply(USER_ID);
         order.verify(client).exchange(HttpMethod.PUT, USERS + "/" + USER_ID, Map.of("enabled", true), null);
         order.verify(read).apply(USER_ID);
+        order.verify(client).exchange(HttpMethod.PUT, USERS + "/" + USER_ID + "/execute-actions-email",
+                List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"), null);
         verify(client, never()).exchangeTolerating(eq(HttpMethod.DELETE), any(), any(), eq(404));
+    }
+
+    /** A mail server that is down is a delivery problem, not a reason to undo a complete account. */
+    @Test
+    void aFailedMailKeepsTheInvitedAccount() {
+        doThrow(unavailable()).when(client).exchange(
+                HttpMethod.PUT, USERS + "/" + USER_ID + "/execute-actions-email", List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"), null);
+
+        assertThat(invite()).isEqualTo(user(true));
+        verify(client, never()).exchangeTolerating(eq(HttpMethod.DELETE), any(), any(), eq(404));
+    }
+
+    @Test
+    void noMailIsSentWhenTheInvitationFails() {
+        doThrow(new DirectoryUnavailableException("role grant failed")).when(provision).accept(USER_ID);
+
+        assertThatThrownBy(this::invite).isInstanceOf(DirectoryUnavailableException.class);
+        verify(client, never()).exchange(eq(HttpMethod.PUT), eq(USERS + "/" + USER_ID + "/execute-actions-email"),
+                any(), any());
     }
 
     @ParameterizedTest

@@ -45,7 +45,7 @@ class SelfServiceRoleSupport {
         if (!properties.isEnabled()) {
             throw new SelfServiceRolesDisabledException("Self-service roles are not enabled.");
         }
-        String realm = realms.resolve(orgKey);
+        String realm = realms.resolveForMember(orgKey);
         String userId = principal.subject().orElseThrow(() -> new OrganizationAccessDeniedException(orgKey));
         return new Caller(realm, userId);
     }

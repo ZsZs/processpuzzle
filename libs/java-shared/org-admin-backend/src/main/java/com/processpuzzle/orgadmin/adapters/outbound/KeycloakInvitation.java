@@ -19,10 +19,23 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/** Compensates only the account identified by this attempt's successful create response. */
+/**
+ * Compensates only the account identified by this attempt's successful create response.
+ *
+ * <p>Once the account is enabled the invitee is mailed Keycloak's action link, because the account
+ * has no credentials and the administrator never knows a password: without the mail nobody can sign
+ * in. The mail is sent last and is not part of the compensated unit. The account is complete and
+ * valid by then; deleting it because a mail server is down would turn a delivery problem into a
+ * second invitation that fails with "already exists".
+ */
 final class KeycloakInvitation {
 
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakInvitation.class);
+    /**
+     * Following the mailed link is what proves the invitee owns the address, so verifying it is part of
+     * the same visit; Keycloak completes {@code VERIFY_EMAIL} from the link itself and sends no second mail.
+     */
+    private static final List<String> REQUIRED_ACTIONS = List.of("VERIFY_EMAIL", "UPDATE_PASSWORD");
 
     private final KeycloakAdminClient client;
 
@@ -48,11 +61,25 @@ final class KeycloakInvitation {
                 throw new DirectoryUnavailableException("The invited account could not be confirmed enabled.");
             }
             LOG.info("Invitation '{}' completed for account '{}'.", operationId, userId);
+            sendActionsEmail(usersPath, userId, operationId);
             return result;
         } catch (DirectoryUnavailableException | IdentityProviderUnavailableException failure) {
             compensate(usersPath, userId, operationId, failure);
             throw new DirectoryUnavailableException(
                     "Invitation failed; the newly created account was removed. It is safe to retry.", failure);
+        }
+    }
+
+    /** The action list repeats the account's required actions, which is what the link will ask for. */
+    private void sendActionsEmail(String usersPath, String userId, String operationId) {
+        try {
+            client.exchange(HttpMethod.PUT, usersPath + "/" + userId + "/execute-actions-email",
+                    REQUIRED_ACTIONS, null);
+            LOG.info("Invitation '{}' mailed the account '{}' its set-password link.", operationId, userId);
+        } catch (IdentityProviderUnavailableException failure) {
+            LOG.warn("Invitation '{}' created account '{}' but could not mail the set-password link; "
+                    + "check the realm's SMTP settings. The account can be mailed again from Keycloak.",
+                    operationId, userId, failure);
         }
     }
 
@@ -64,7 +91,7 @@ final class KeycloakInvitation {
         representation.put("lastName", user.lastName());
         representation.put("enabled", false);
         representation.put("emailVerified", false);
-        representation.put("requiredActions", List.of("UPDATE_PASSWORD"));
+        representation.put("requiredActions", REQUIRED_ACTIONS);
         try {
             return client.createAndReturnId(usersPath, representation)
                     .filter(id -> !id.isBlank())
