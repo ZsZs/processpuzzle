@@ -366,6 +366,95 @@ paths:
         "503":
           $ref: "#/components/responses/IdentityProviderUnavailable"
 
+    post:
+      operationId: createOrganizationRole
+      tags: [ Organization Roles ]
+      summary: Define a role of this organization
+      description: >-
+        Adds a role to the organization's catalog, so that users can be given it and documents,
+        navigation items and workflows can refer to it. The name is the key everywhere and cannot
+        be changed later. Names ProcessPuzzle or the identity provider own (`org-admin`,
+        `org-member`, `platform-admin`, built-ins, `default-roles-*`) are refused with 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewOrganizationRole"
+      responses:
+        "201":
+          description: The role as created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationRole"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
+  /organizations/{orgKey}/admin/roles/{roleName}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/RoleNameParam"
+    put:
+      operationId: updateOrganizationRole
+      tags: [ Organization Roles ]
+      summary: Change a role's description
+      description: >-
+        Only the description can change; the name is what every reference and token carries. Only
+        roles the administrator defined (`origin: admin`) can be changed here — a role of the
+        platform or one projected from a workflow role definition is refused with 403 and is
+        edited where it comes from.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationRoleUpdate"
+      responses:
+        "200":
+          description: The role as stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationRole"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+    delete:
+      operationId: deleteOrganizationRole
+      tags: [ Organization Roles ]
+      summary: Delete a role of this organization
+      description: >-
+        Refused with 403 unless the role is one the administrator defined (`origin: admin`), and
+        with 409 while a user still holds it or a document, content book, navigation item or
+        workflow still names it — the body says which, so the administrator can release it first.
+      responses:
+        "204":
+          description: The role is gone.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: The role is still in use.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleInUse"
+        "503":
+          $ref: "#/components/responses/IdentityProviderUnavailable"
+
   /organizations/{orgKey}/role-catalog:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -467,6 +556,13 @@ components:
       description: >-
         The identity provider's own opaque id for the user. Not a ProcessPuzzle id and not a
         username; usernames are mutable, this is not.
+    RoleNameParam:
+      name: roleName
+      in: path
+      required: true
+      schema:
+        type: string
+      description: The role's name, which is also its key; names are case-sensitive.
     SearchParam:
       name: search
       in: query
@@ -656,6 +752,66 @@ components:
           description: >-
             True for `org-admin` and `org-member`, which are created with the realm and are the
             only two ProcessPuzzle itself interprets. A client should not offer to delete these.
+        origin:
+          type: string
+          enum: [ platform, workflow, admin ]
+          description: >-
+            Who manages the role. Derived, not stored: `platform` for `org-admin` / `org-member`,
+            `workflow` when a workflow role definition has this id (edit it in the designer), and
+            `admin` for every other role, which the organization's administrator may edit and delete.
+            Absent on the role lists that are not for administration.
+
+    NewOrganizationRole:
+      type: object
+      required: [ name ]
+      properties:
+        name:
+          type: string
+          pattern: '^[a-z0-9][a-z0-9_-]{0,62}$'
+          example: accounting
+        description:
+          type: string
+          maxLength: 255
+
+    OrganizationRoleUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 255
+
+    RoleInUse:
+      type: object
+      description: Why a role cannot be deleted yet.
+      required: [ errorId, errorText, held, references ]
+      properties:
+        errorId:
+          type: string
+        errorText:
+          type: string
+        held:
+          type: boolean
+          description: Whether at least one user still holds the role.
+        references:
+          type: array
+          description: What still names the role.
+          items:
+            $ref: "#/components/schemas/RoleReference"
+
+    RoleReference:
+      type: object
+      required: [ feature, kind, id ]
+      properties:
+        feature:
+          type: string
+          example: document
+        kind:
+          type: string
+          example: reader-role
+        id:
+          type: string
+        title:
+          type: string
 
     RoleAssignment:
       type: object

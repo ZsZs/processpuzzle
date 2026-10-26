@@ -14,6 +14,14 @@
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:9092 https://stage.processpuzzle.de https://processpuzzle.com; object-src 'none';",
     "xFrameOptions": ""
   },
+  "roles": {
+    "realm": [
+      {
+        "name": "definition-designer",
+        "description": "May author definitions with the AI assistant (the assistant can only write drafts; publishing is separate)."
+      }
+    ]
+  },
   "clients": [
     {
       "clientId": "processpuzzle-biz",

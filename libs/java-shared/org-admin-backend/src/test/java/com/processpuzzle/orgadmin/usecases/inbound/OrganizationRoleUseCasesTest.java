@@ -52,12 +52,13 @@ class OrganizationRoleUseCasesTest {
      */
     @Test
     void theRealmsRolesAreListedWithThePlatformOnesFlagged() {
-        List<DirectoryRole> roles = new FindOrganizationRoles(realms, directory).execute(ORG_KEY);
+        List<CatalogRole> roles = new FindOrganizationRoles(realms, directory, OrgAdminTestFixtures.noReferences())
+                .execute(ORG_KEY);
 
-        assertThat(roles).extracting(DirectoryRole::name)
+        assertThat(roles).extracting(CatalogRole::name)
                 .containsExactly("org-admin", "org-member", "claims-auditor");
-        assertThat(roles).filteredOn(DirectoryRole::platformManaged)
-                .extracting(DirectoryRole::name).containsExactly("org-admin", "org-member");
+        assertThat(roles).filteredOn(CatalogRole::platformManaged)
+                .extracting(CatalogRole::name).containsExactly("org-admin", "org-member");
     }
 
     @Test

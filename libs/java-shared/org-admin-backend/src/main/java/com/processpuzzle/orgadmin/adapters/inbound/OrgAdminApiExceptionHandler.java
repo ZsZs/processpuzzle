@@ -2,12 +2,19 @@ package com.processpuzzle.orgadmin.adapters.inbound;
 
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.InvalidRoleNameException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
+import com.processpuzzle.core.tenancy.RoleReference;
 import com.processpuzzle.orgadmin.model.InvitationRecoveryRequired;
+import com.processpuzzle.orgadmin.model.RoleInUse;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.OrganizationSuspendedException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.PasswordPolicyViolationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationDisabledException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.RegistrationRateLimitedException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleAlreadyExistsException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleInUseException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleNotFoundException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleNotManagedException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.SelfServiceRolesDisabledException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownOrganizationException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.UnknownRoleException;
@@ -79,6 +86,35 @@ public class OrgAdminApiExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "role.unknown", ex.getMessage());
     }
 
+    @ExceptionHandler(InvalidRoleNameException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRoleName(InvalidRoleNameException ex) {
+        return error(HttpStatus.BAD_REQUEST, "role.invalid-name", ex.getMessage());
+    }
+
+    @ExceptionHandler(RoleAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleRoleExists(RoleAlreadyExistsException ex) {
+        return error(HttpStatus.CONFLICT, "role.already-exists", ex.getMessage());
+    }
+
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleRoleNotFound(RoleNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "role.not-found", ex.getMessage());
+    }
+
+    /** 403: the role is real but belongs to the platform or the designer, so this caller may not change it. */
+    @ExceptionHandler(RoleNotManagedException.class)
+    public ResponseEntity<ErrorResponse> handleRoleNotManaged(RoleNotManagedException ex) {
+        return error(HttpStatus.FORBIDDEN, "role.not-managed", ex.getMessage());
+    }
+
+    /** 409 with what still uses the role, so the administrator can release it first. */
+    @ExceptionHandler(RoleInUseException.class)
+    public ResponseEntity<RoleInUse> handleRoleInUse(RoleInUseException ex) {
+        RoleInUse body = new RoleInUse("role.in-use", ex.getMessage(), ex.isHeld(),
+                ex.getReferences().stream().map(OrgAdminApiExceptionHandler::toModel).toList());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(InvitationRecoveryRequiredException.class)
     public ResponseEntity<InvitationRecoveryRequired> handleInvitationRecovery(InvitationRecoveryRequiredException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new InvitationRecoveryRequired(
@@ -112,6 +148,13 @@ public class OrgAdminApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, ex.getRetryAfter().toSeconds())))
                 .body(new ErrorResponse("registration.rate-limited", ex.getMessage()));
+    }
+
+    private static com.processpuzzle.orgadmin.model.RoleReference toModel(RoleReference reference) {
+        com.processpuzzle.orgadmin.model.RoleReference model = new com.processpuzzle.orgadmin.model.RoleReference(
+                reference.feature(), reference.kind(), reference.id());
+        model.setTitle(reference.title());
+        return model;
     }
 
     private ResponseEntity<ErrorResponse> error(HttpStatus status, String errorId, String errorText) {

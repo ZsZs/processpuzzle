@@ -1,6 +1,18 @@
 spring:
   application:
     name: processpuzzle-testbed-backend
+  # Spring AI (base-ai assistant). Its OpenAI starter auto-configures six models and fails startup
+  # without an API key, so every model is off until the assistant is configured: chat is switched on
+  # by SPRING_AI_MODEL_CHAT=openai together with the gateway URL and key. The rest are never used.
+  ai:
+    model:
+      chat: ${SPRING_AI_MODEL_CHAT:none}
+      embedding: none
+      image: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
   # PostgreSQL, one database per application stack — see docs/application-stacks.md. The defaults name
   # the TESTBED stack on the compose postgres service published port, so a backend started outside
   # Docker against a running compose stack needs no configuration at all.
