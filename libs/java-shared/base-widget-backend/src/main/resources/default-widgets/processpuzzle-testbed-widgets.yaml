@@ -125,7 +125,7 @@ widgetDefinitions:
         markdownSrc:
           type: string
           title: Markdown source
-          description: URL of the document to render.
+          description: URL of the document to render, or module:<path> for a file the module brought along.
       required:
       - markdownSrc
       additionalProperties: false
@@ -133,7 +133,7 @@ widgetDefinitions:
     - name: markdownSrc
       type: STRING
       required: true
-      description: URL of the document to render.
+      description: URL of the document to render, or module:<path> for a file the module brought along.
   - key: entity-table
     name: Entity table
     translocoId: base_widget.entity_table.name
@@ -238,6 +238,7 @@ widgetDefinitions:
         src:
           type: string
           title: Image URL
+          description: A URL, or module:<path> for an image the module brought along.
           format: uri
         alt:
           type: string

@@ -6,7 +6,10 @@ import org.springframework.beans.factory.ObjectProvider;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.ModuleDefinition;
+import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleTranslationRepository;
+import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.app.model.ModuleDefinitionInput;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
@@ -43,6 +46,8 @@ import static org.mockito.Mockito.when;
 class ModuleDefinitionCrudTest {
 
     private ModuleDefinitionRepository repository;
+    private ModuleTranslationRepository translations;
+    private ModuleAssetRepository assets;
     private ObjectProvider<TenantDirectory> tenantDirectory;
     private CreateModuleDefinition createModuleDefinition;
     private FindModuleDefinition findModuleDefinition;
@@ -53,6 +58,8 @@ class ModuleDefinitionCrudTest {
     @BeforeEach
     void setUp() {
         repository = mock(ModuleDefinitionRepository.class);
+        translations = mock(ModuleTranslationRepository.class);
+        assets = mock(ModuleAssetRepository.class);
         tenantDirectory = AppTestFixtures.tenantDirectory(ORG_KEY);
         when(repository.save(any(ModuleDefinition.class))).thenAnswer(call -> call.getArgument(0));
         createModuleDefinition = new CreateModuleDefinition(repository, tenantDirectory,
@@ -61,7 +68,7 @@ class ModuleDefinitionCrudTest {
         findAllModuleDefinitions = new FindAllModuleDefinitions(repository, AppTestFixtures.permissiveGuard());
         updateModuleDefinition = new UpdateModuleDefinition(repository, AppTestFixtures.structuralValidator(),
                 AppTestFixtures.permissiveGuard(), new AppMapper());
-        deleteModuleDefinition = new DeleteModuleDefinition(repository, AppTestFixtures.permissiveGuard());
+        deleteModuleDefinition = new DeleteModuleDefinition(repository, translations, assets, mock(ModuleAssetSweeper.class), AppTestFixtures.permissiveGuard());
     }
 
     // --- create --------------------------------------------------------------------------
@@ -289,7 +296,8 @@ class ModuleDefinitionCrudTest {
                 AppTestFixtures.denyingGuard(), new AppMapper())
                 .execute(ORG_KEY, MODULE_KEY, AppTestFixtures.validModuleInput(MODULE_KEY)))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
-        assertThatThrownBy(() -> new DeleteModuleDefinition(untouched, AppTestFixtures.denyingGuard())
+        assertThatThrownBy(() -> new DeleteModuleDefinition(untouched, mock(ModuleTranslationRepository.class), mock(ModuleAssetRepository.class),
+                mock(ModuleAssetSweeper.class), AppTestFixtures.denyingGuard())
                 .execute(ORG_KEY, MODULE_KEY)).isInstanceOf(OrganizationAccessDeniedException.class);
 
         verifyNoInteractions(untouched);

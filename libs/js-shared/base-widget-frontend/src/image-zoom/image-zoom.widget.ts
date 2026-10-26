@@ -18,6 +18,7 @@ export const IMAGE_ZOOM_WIDGET_REGISTRATION: WidgetRegistration = {
         src: {
           type: 'string',
           title: 'Image URL',
+          description: 'A URL, or module:<path> for an image the module brought along.',
           format: 'uri',
         },
         alt: {

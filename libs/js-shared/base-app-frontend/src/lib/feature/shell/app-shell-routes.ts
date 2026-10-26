@@ -1,6 +1,8 @@
 import { inject, Injectable, Injector } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
 import { BaseUrlSegments } from '@processpuzzle/base-entity';
+import { TranslocoService } from '@jsverse/transloco';
+import { TranslocoHttpLoader } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppDefinitionService } from '../../domain/app-definition.service';
@@ -8,7 +10,11 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
-import { buildAppRoutes, ModuleLoader } from '../app-route-builder';
+import { moduleAssetContextOf } from '../../domain/module-asset-context';
+import { ModuleAssetService } from '../../domain/module-asset.service';
+import { ModuleTranslationBundle } from '../../domain/module-translation';
+import { ModuleTranslationService } from '../../domain/module-translation.service';
+import { buildAppRoutes, ModuleLoader, ModuleTranslationLoader } from '../app-route-builder';
 import { AppRouteRenderer } from '../app-route-renderer';
 
 /**
@@ -20,7 +26,8 @@ import { AppRouteRenderer } from '../app-route-renderer';
  */
 @Injectable({ providedIn: 'root' })
 export class AppShellRoutesFactory {
-  // The two stores are read on first use rather than injected here. They are the designer's stores of
+  // The two stores — and the translation services, which a host that mounts no module never needs — are read on
+  // first use rather than injected here. They are the designer's stores of
   // drafts, and each loads every definition the moment it is created — which a runtime host, building
   // the routes of the published revision it already holds, must not set off on its way past.
   private readonly injector = inject(Injector);
@@ -44,8 +51,53 @@ export class AppShellRoutesFactory {
    */
   async childrenFor(definition: AppDefinition): Promise<Routes> {
     const loadModule = definition.mountedModules ? inlineModules(definition.mountedModules) : this.loadModule;
-    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule }, this.renderRoute);
+    // The released modules come with the published layout, so their translations and assets are the released
+    // ones too; a draft definition — the designer's Preview — reads the draft ones a user just uploaded.
+    const revision = definition.mountedModules ? 'released' : 'draft';
+    const loadTranslations = this.translationsOf(revision);
+    const moduleAssets = (moduleKey: string) => moduleAssetContextOf(this.injector.get(ModuleAssetService), moduleKey, revision);
+    const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule, loadTranslations, moduleAssets }, this.renderRoute);
     return built.length ? [indexRoute(definition, built), ...built] : built;
+  }
+
+  /**
+   * Where a mounted module's translations come from: whatever the application or the seeded bundles already
+   * serve for the scope, under what the module's own uploaded files say. The shipped bundle stays underneath
+   * so that a module translated the way every module was before files could be uploaded — a seeded
+   * `order_admin` bundle — keeps its words.
+   *
+   * A language the module has nothing uploaded for answers with the shipped bundle alone, and a failed read
+   * of the uploaded one is no reason to fail the load: the titles keep their authored text.
+   */
+  private translationsOf(revision: 'draft' | 'released'): ModuleTranslationLoader {
+    const languages = () => this.languages();
+    return {
+      get languages() {
+        return languages();
+      },
+      load: async (moduleKey, scope, locale) => {
+        const [shipped, uploaded] = await Promise.all([
+          firstValueFrom(this.injector.get(TranslocoHttpLoader).getTranslation(`${scope}/${locale}`, { scope })),
+          this.uploaded(moduleKey, locale, revision),
+        ]);
+        return { ...shipped, ...uploaded };
+      },
+    };
+  }
+
+  private async uploaded(moduleKey: string, locale: string, revision: 'draft' | 'released'): Promise<ModuleTranslationBundle> {
+    try {
+      return await firstValueFrom(this.injector.get(ModuleTranslationService).bundle(moduleKey, locale, revision));
+    } catch {
+      return {};
+    }
+  }
+
+  /** The languages transloco is configured for, the active and the fallback one included. */
+  private languages(): string[] {
+    const transloco = this.injector.get(TranslocoService);
+    const available = transloco.getAvailableLangs().map((lang) => (typeof lang === 'string' ? lang : lang.id));
+    return [...new Set([...available, transloco.getActiveLang(), 'en'])];
   }
 
   /**

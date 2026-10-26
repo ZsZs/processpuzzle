@@ -70,3 +70,13 @@ export class ModuleDefinition implements BaseEntity {
 export function moduleTranslocoScope(definition: ModuleDefinition): string {
   return definition.translocoScope?.trim() || definition.id;
 }
+
+/**
+ * The transloco key a module's route title is translated under: the authored `translocoId`, else one derived
+ * from the scope and the path — `<scope>.route.<path>`. A designer therefore never has to type a key for a
+ * module to be translatable; the backend derives the same key when it prepares the translation files
+ * (`ModuleTranslationKeys`), and the two have to agree.
+ */
+export function moduleRouteTranslocoId(scope: string, route: RouteDefinition): string {
+  return route.translocoId?.trim() || `${scope}.route.${route.path}`;
+}

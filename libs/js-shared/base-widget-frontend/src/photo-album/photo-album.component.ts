@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, inject, input, OnDestroy, signal } from '@angular/core';
 import { LayoutService } from '@processpuzzle/util';
+import { moduleAssetUrl } from '../module-asset/module-asset-context';
 
 export interface PhotoAlbumImage {
   readonly src: string;
@@ -13,7 +14,7 @@ export interface PhotoAlbumImage {
     @if (currentImage(); as image) {
       <div class="embedded" [style.--photo-album-max-height]="maxHeightCss()">
         <button class="image-button" type="button" (click)="open()">
-          <img class="embedded-image" [src]="image.src" [alt]="image.alt" loading="lazy" />
+          <img class="embedded-image" [src]="currentUrl()" [alt]="image.alt" loading="lazy" />
         </button>
 
         @if (images().length > 1) {
@@ -27,7 +28,7 @@ export interface PhotoAlbumImage {
       @if (currentImage(); as image) {
         <div class="overlay" role="dialog" aria-modal="true" [attr.aria-label]="image.alt">
           <button class="backdrop" type="button" aria-label="Close image" (click)="close()"></button>
-          <img class="full" [src]="image.src" [alt]="image.alt" />
+          <img class="full" [src]="currentUrl()" [alt]="image.alt" />
 
           @if (images().length > 1) {
             <button class="viewer-control previous" type="button" aria-label="Previous image in viewer" [disabled]="!hasPrevious()" (click)="previous()">&lt;</button>
@@ -159,6 +160,8 @@ export class PhotoAlbumComponent implements OnDestroy {
 
   readonly selectedIndex = signal(0);
   readonly currentImage = computed(() => this.images()[this.selectedIndex()]);
+  /** What the `<img>` shows: the image's `src` itself, or the object URL of a `module:` asset. */
+  protected readonly currentUrl = moduleAssetUrl(() => this.currentImage()?.src);
   readonly hasPrevious = computed(() => this.selectedIndex() > 0);
   readonly hasNext = computed(() => this.selectedIndex() < this.images().length - 1);
   readonly isOpen = signal(false);

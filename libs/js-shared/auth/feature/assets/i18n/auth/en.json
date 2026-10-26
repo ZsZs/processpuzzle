@@ -56,7 +56,8 @@
     "close_button": "Close",
     "platform_roles": {
       "org_admin": "Administers the organization: members, roles and settings.",
-      "org_member": "Member of the organization; may sign in and work in its applications."
+      "org_member": "Member of the organization; may sign in and work in its applications.",
+      "platform_admin": "Platform staff: administers the platform's organizations, plans and subscriptions."
     }
   }
 }

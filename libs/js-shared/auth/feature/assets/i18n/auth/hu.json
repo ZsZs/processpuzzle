@@ -56,7 +56,8 @@
     "close_button": "Bezárás",
     "platform_roles": {
       "org_admin": "A szervezet adminisztrátora: tagok, szerepkörök és beállítások kezelése.",
-      "org_member": "A szervezet tagja; bejelentkezhet és dolgozhat a szervezet alkalmazásaiban."
+      "org_member": "A szervezet tagja; bejelentkezhet és dolgozhat a szervezet alkalmazásaiban.",
+      "platform_admin": "A platform munkatársa: a platform szervezeteit, csomagjait és előfizetéseit kezeli."
     }
   }
 }

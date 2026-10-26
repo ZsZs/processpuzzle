@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RouteDefinition } from './app-definition';
-import { ModuleDefinition, moduleTranslocoScope } from './module-definition';
+import { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from './module-definition';
 
 describe('ModuleDefinition', () => {
   it('starts out with the two fields the contract requires and nothing else', () => {
@@ -40,5 +40,20 @@ describe('moduleTranslocoScope', () => {
   it('falls back to the key when no scope is authored', () => {
     expect(moduleTranslocoScope(new ModuleDefinition({ id: 'claims' }))).toBe('claims');
     expect(moduleTranslocoScope(new ModuleDefinition({ id: 'claims', translocoScope: '   ' }))).toBe('claims');
+  });
+});
+
+describe('moduleRouteTranslocoId', () => {
+  const route = (fields: Partial<RouteDefinition>) => new RouteDefinition({ path: 'claims/:id', title: 'Claim', kind: 'WIDGETS', ...fields });
+
+  it('prefers the authored key', () => {
+    expect(moduleRouteTranslocoId('claims', route({ translocoId: 'claims.custom.title' }))).toBe('claims.custom.title');
+  });
+
+  // The backend derives the same key when it prepares the files (ModuleTranslationKeys); if the two drift,
+  // an uploaded translation lands under a key nothing looks up.
+  it('derives one from the scope and the path verbatim otherwise', () => {
+    expect(moduleRouteTranslocoId('claims', route({}))).toBe('claims.route.claims/:id');
+    expect(moduleRouteTranslocoId('claims', route({ translocoId: '  ' }))).toBe('claims.route.claims/:id');
   });
 });

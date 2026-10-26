@@ -14,9 +14,11 @@ import { authTokenInterceptor } from './auth-token.interceptor';
  *   if it starts with one of these. Pass the backend's root when the SPA and the API are on different
  *   origins, which is the normal case in development (`http://localhost:8080`) — and pass nothing
  *   else, because every entry here is a host you are willing to hand a working token.
+ * @param withheldRoots URL prefixes that never receive a token, even when same-origin — a third-party
+ *   service published under the application's own origin by a reverse proxy.
  */
-export function provideAuthTokenInterceptor(apiRoots: readonly string[] = []): EnvironmentProviders {
-  return makeEnvironmentProviders([provideHttpClient(withInterceptors([authTokenInterceptor(apiRoots)]))]);
+export function provideAuthTokenInterceptor(apiRoots: readonly string[] = [], withheldRoots: readonly string[] = []): EnvironmentProviders {
+  return makeEnvironmentProviders([provideHttpClient(withInterceptors([authTokenInterceptor(apiRoots, withheldRoots)]))]);
 }
 
 /**
@@ -24,8 +26,8 @@ export function provideAuthTokenInterceptor(apiRoots: readonly string[] = []): E
  * itself and wants to add this to its own list rather than have a second `provideHttpClient` compete
  * with it.
  */
-export function authTokenInterceptorFor(apiRoots: readonly string[] = []) {
-  return authTokenInterceptor(apiRoots);
+export function authTokenInterceptorFor(apiRoots: readonly string[] = [], withheldRoots: readonly string[] = []) {
+  return authTokenInterceptor(apiRoots, withheldRoots);
 }
 
 // Re-exported so a consumer reading this file does not have to guess where the DI token lives when

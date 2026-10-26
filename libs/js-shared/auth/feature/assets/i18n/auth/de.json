@@ -56,7 +56,8 @@
     "close_button": "Schließen",
     "platform_roles": {
       "org_admin": "Verwaltet die Organisation: Mitglieder, Rollen und Einstellungen.",
-      "org_member": "Mitglied der Organisation; darf sich anmelden und in ihren Anwendungen arbeiten."
+      "org_member": "Mitglied der Organisation; darf sich anmelden und in ihren Anwendungen arbeiten.",
+      "platform_admin": "Plattformpersonal: verwaltet die Organisationen, Pläne und Abonnements der Plattform."
     }
   }
 }

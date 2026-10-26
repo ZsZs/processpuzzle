@@ -83,16 +83,23 @@ public class SyncRoleDirectory {
 
     /** Creates or updates the realm role matching a definition that has just been written. */
     public void sync(String orgKey, String roleId, String name, String description) {
+        project(orgKey, roleId, name, description);
+    }
+
+    /** {@link #sync} reporting whether the realm role is now in place; false when Keycloak was unreachable. */
+    private boolean project(String orgKey, String roleId, String name, String description) {
         if (isReserved(roleId)) {
             LOG.warn("Role definition '{}' in organization '{}' names a reserved realm role; "
                     + "not projected into the identity provider.", roleId, orgKey);
-            return;
+            return true;
         }
         try {
             directory.upsertRole(orgKey, roleId, describe(name, description));
+            return true;
         } catch (IdentityProviderUnavailableException ex) {
             LOG.warn("Could not project role '{}' of organization '{}' into the identity provider; "
-                    + "the next startup reconcile will retry. {}", roleId, orgKey, ex.getMessage());
+                    + "the next reconcile will retry. {}", roleId, orgKey, ex.getMessage());
+            return false;
         }
     }
 
@@ -128,41 +135,51 @@ public class SyncRoleDirectory {
      *
      * <p>Best-effort per organization: one unreachable realm is logged and the rest are still
      * reconciled.
+     *
+     * @return whether every organization was reconciled completely; false means the identity provider
+     *         was unreachable for at least one, so a later pass is worthwhile
      */
-    public void reconcile() {
+    public boolean reconcile() {
         // The directory mirrors the released roles; a draft reaches it when it is released.
         Map<String, List<RoleDefinition>> byOrganization = repository.findAll().stream()
                 .filter(role -> role.getChannel() == Channel.RELEASED)
                 .filter(role -> role.getOrgKey() != null && role.getId() != null)
                 .collect(Collectors.groupingBy(RoleDefinition::getOrgKey));
 
+        boolean complete = true;
         for (Map.Entry<String, List<RoleDefinition>> organization : byOrganization.entrySet()) {
-            reconcile(organization.getKey(), organization.getValue());
+            complete &= reconcile(organization.getKey(), organization.getValue());
         }
+        return complete;
     }
 
-    private void reconcile(String orgKey, List<RoleDefinition> definitions) {
+    private boolean reconcile(String orgKey, List<RoleDefinition> definitions) {
         Set<String> declared;
         try {
             declared = new HashSet<>(directory.findRoleNames(orgKey));
         } catch (IdentityProviderUnavailableException ex) {
             LOG.warn("Could not read the realm roles of organization '{}'; its {} role definition(s) "
                     + "were not reconciled. {}", orgKey, definitions.size(), ex.getMessage());
-            return;
+            return false;
         }
 
+        boolean complete = true;
         int created = 0;
         for (RoleDefinition definition : definitions) {
             if (isReserved(definition.getId()) || declared.contains(definition.getId())) {
                 continue;
             }
-            sync(orgKey, definition.getId(), definition.getName(), definition.getDescription());
-            created++;
+            if (project(orgKey, definition.getId(), definition.getName(), definition.getDescription())) {
+                created++;
+            } else {
+                complete = false;
+            }
         }
         if (created > 0) {
             LOG.info("Reconciled organization '{}': {} of {} role definition(s) were missing from its "
                     + "realm and have been created.", orgKey, created, definitions.size());
         }
+        return complete;
     }
 
     /**

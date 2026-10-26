@@ -47,7 +47,7 @@ class StubAuthService extends AuthService {
  * call's providers — `configureTestingModule` is a no-op once the injector has been created, so the
  * second stub would be silently ignored and the assertion would pass or fail for the wrong reason.
  */
-async function intercept(url: string, authService: AuthService | null, apiRoots: string[] = []): Promise<HttpRequest<unknown>> {
+async function intercept(url: string, authService: AuthService | null, apiRoots: string[] = [], withheldRoots: string[] = []): Promise<HttpRequest<unknown>> {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: authService ? [{ provide: AUTHENTICATION_SERVICE, useValue: authService }] : [],
@@ -56,7 +56,7 @@ async function intercept(url: string, authService: AuthService | null, apiRoots:
   const request = new HttpRequest<unknown>('GET', url);
   const next = vi.fn((forwarded: HttpRequest<unknown>) => of(forwarded));
 
-  await TestBed.runInInjectionContext(() => firstValueFrom(authTokenInterceptor(apiRoots)(request, next as never) as never));
+  await TestBed.runInInjectionContext(() => firstValueFrom(authTokenInterceptor(apiRoots, withheldRoots)(request, next as never) as never));
 
   return next.mock.calls[0][0];
 }
@@ -88,6 +88,19 @@ describe('authTokenInterceptor', () => {
 
     expect(withoutRoot.headers.has('Authorization')).toBe(false);
     expect(withRoot.headers.get('Authorization')).toBe('Bearer tok');
+  });
+
+  // A reverse proxy can publish a third party under the application's own origin, where the same-origin rule
+  // would otherwise hand it the token.
+  it('withholds the token from a withheld root even when it is same-origin', async () => {
+    const withheld = ['/third-party', `${window.location.origin}/third-party`];
+    const relative = await intercept('/third-party/test-entity', new StubAuthService('tok'), [], withheld);
+    const absolute = await intercept(`${window.location.origin}/third-party/test-entity`, new StubAuthService('tok'), [], withheld);
+    const neighbour = await intercept('/api/rules', new StubAuthService('tok'), [], withheld);
+
+    expect(relative.headers.has('Authorization')).toBe(false);
+    expect(absolute.headers.has('Authorization')).toBe(false);
+    expect(neighbour.headers.get('Authorization')).toBe('Bearer tok');
   });
 
   // Keycloak's token endpoint authenticates with the refresh token in the body; an Authorization

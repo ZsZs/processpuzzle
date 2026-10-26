@@ -56,7 +56,8 @@
     "close_button": "Fermer",
     "platform_roles": {
       "org_admin": "Administre l’organisation : membres, rôles et paramètres.",
-      "org_member": "Membre de l’organisation ; peut se connecter et travailler dans ses applications."
+      "org_member": "Membre de l’organisation ; peut se connecter et travailler dans ses applications.",
+      "platform_admin": "Personnel de la plateforme : administre les organisations, plans et abonnements de la plateforme."
     }
   }
 }

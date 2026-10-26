@@ -3,7 +3,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MarkdownPageComponent } from './markdown-page.component';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MarkdownComponent } from 'ngx-markdown';
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
+import { of, throwError } from 'rxjs';
+import { MODULE_ASSET_CONTEXT } from '../module-asset/module-asset-context';
 
 @Component({
   selector: 'markdown',
@@ -12,6 +14,8 @@ import { Component, input } from '@angular/core';
 })
 class MockMarkdownComponent {
   src = input<string>();
+  data = input<string>();
+  ready = output<void>();
 }
 
 describe('MarkdownPageComponent', () => {
@@ -127,6 +131,94 @@ describe('MarkdownPageComponent', () => {
       markdownComponent.triggerEventHandler('error', testError);
 
       expect(onErrorSpy).toHaveBeenCalledWith(testError);
+    });
+  });
+
+  describe('a markdown file of the module', () => {
+    const blob = vi.fn();
+
+    async function render(src: string, text = '# Hello', context: object | null = { blob }) {
+      TestBed.resetTestingModule();
+      blob.mockReset();
+      blob.mockImplementation((path: string) => of(new Blob([path === src.slice(7) ? text : 'image-bytes'])));
+      await TestBed.configureTestingModule({
+        imports: [MarkdownPageComponent],
+        providers: [{ provide: MatSnackBar, useValue: snackBarSpy }, ...(context ? [{ provide: MODULE_ASSET_CONTEXT, useValue: context }] : [])],
+      })
+        .overrideComponent(MarkdownPageComponent, { remove: { imports: [MarkdownComponent] }, add: { imports: [MockMarkdownComponent] } })
+        .compileComponents();
+      const module = TestBed.createComponent(MarkdownPageComponent);
+      module.componentRef.setInput('markdownSrc', src);
+      module.detectChanges();
+      await module.whenStable();
+      module.detectChanges();
+      return module;
+    }
+
+    it('is fetched through the asset context, as text, instead of by URL', async () => {
+      const module = await render('module:docs/welcome.md');
+
+      expect(blob).toHaveBeenCalledWith('docs/welcome.md');
+      expect(module.nativeElement.querySelector('markdown')).toBeTruthy();
+    });
+
+    it('shows an error when the page is not part of a module', async () => {
+      await render('module:docs/welcome.md', 'x', null);
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(expect.stringContaining('not part of a module'), 'Close', expect.anything());
+    });
+
+    it('shows an error when the file cannot be had', async () => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [MarkdownPageComponent],
+        providers: [
+          { provide: MatSnackBar, useValue: snackBarSpy },
+          { provide: MODULE_ASSET_CONTEXT, useValue: { blob: () => throwError(() => new Error('404')) } },
+        ],
+      })
+        .overrideComponent(MarkdownPageComponent, { remove: { imports: [MarkdownComponent] }, add: { imports: [MockMarkdownComponent] } })
+        .compileComponents();
+      const module = TestBed.createComponent(MarkdownPageComponent);
+      module.componentRef.setInput('markdownSrc', 'module:gone.md');
+
+      module.detectChanges();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith('Error loading markdown: 404', 'Close', expect.anything());
+    });
+
+    it('shows the images it links to from the module, resolved against its own directory', async () => {
+      Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:img'), revokeObjectURL: vi.fn() });
+      const module = await render('module:docs/welcome.md');
+      const host = module.nativeElement as HTMLElement;
+      host.innerHTML = '<img src="img/flow.png"><img src="https://example.org/x.png">';
+
+      (module.componentInstance as unknown as { onAssetRendered(): void }).onAssetRendered();
+
+      expect(blob).toHaveBeenCalledWith('docs/img/flow.png');
+      expect(blob).not.toHaveBeenCalledWith(expect.stringContaining('example'));
+      const [local, external] = Array.from(host.querySelectorAll('img'));
+      expect(local.getAttribute('src')).toBe('blob:img');
+      expect(external.getAttribute('src')).toBe('https://example.org/x.png');
+    });
+
+    it('opens a link to another file of the module from an object URL, and leaves other links to the browser', async () => {
+      Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:doc'), revokeObjectURL: vi.fn() });
+      const open = vi.spyOn(window, 'open').mockReturnValue(null);
+      const module = await render('module:docs/welcome.md');
+      const host = module.nativeElement as HTMLElement;
+      host.innerHTML = '<a id="in" href="guide.pdf">guide</a><a id="out" href="https://example.org">out</a>';
+      const click = (id: string) => {
+        const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+        host.querySelector(id)?.dispatchEvent(event);
+        (module.componentInstance as unknown as { onAssetClick(e: Event): void }).onAssetClick(Object.defineProperty(event, 'target', { value: host.querySelector(id) }));
+        return event;
+      };
+
+      expect(click('#in').defaultPrevented).toBe(true);
+      expect(open).toHaveBeenCalledWith('blob:doc', '_blank', 'noopener');
+      expect(click('#out').defaultPrevented).toBe(false);
+      expect(open).toHaveBeenCalledOnce();
     });
   });
 });
