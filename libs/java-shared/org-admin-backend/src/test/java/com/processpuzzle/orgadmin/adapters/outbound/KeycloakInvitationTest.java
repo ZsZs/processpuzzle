@@ -64,7 +64,7 @@ class KeycloakInvitationTest {
         order.verify(client).exchange(HttpMethod.PUT, USERS + "/" + USER_ID, Map.of("enabled", true), null);
         order.verify(read).apply(USER_ID);
         order.verify(client).exchange(HttpMethod.PUT, USERS + "/" + USER_ID + "/execute-actions-email",
-                List.of("UPDATE_PASSWORD"), null);
+                List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"), null);
         verify(client, never()).exchangeTolerating(eq(HttpMethod.DELETE), any(), any(), eq(404));
     }
 
@@ -72,7 +72,7 @@ class KeycloakInvitationTest {
     @Test
     void aFailedMailKeepsTheInvitedAccount() {
         doThrow(unavailable()).when(client).exchange(
-                HttpMethod.PUT, USERS + "/" + USER_ID + "/execute-actions-email", List.of("UPDATE_PASSWORD"), null);
+                HttpMethod.PUT, USERS + "/" + USER_ID + "/execute-actions-email", List.of("VERIFY_EMAIL", "UPDATE_PASSWORD"), null);
 
         assertThat(invite()).isEqualTo(user(true));
         verify(client, never()).exchangeTolerating(eq(HttpMethod.DELETE), any(), any(), eq(404));
