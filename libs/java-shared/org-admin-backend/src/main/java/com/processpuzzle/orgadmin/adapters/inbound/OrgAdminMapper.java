@@ -6,6 +6,8 @@ import com.processpuzzle.orgadmin.model.OrganizationUserInvite;
 import com.processpuzzle.orgadmin.model.OrganizationUserUpdate;
 import com.processpuzzle.orgadmin.model.PageOfOrganizationUser;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
+import com.processpuzzle.core.tenancy.RoleReference;
+import com.processpuzzle.orgadmin.usecases.inbound.CatalogRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
@@ -15,6 +17,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 
 /** Directory records to contract, and request payloads to the port's own value types. */
 @Component
@@ -48,6 +51,25 @@ public class OrgAdminMapper {
         OrganizationRole model = new OrganizationRole(role.name());
         model.setDescription(role.description());
         model.setPlatformManaged(role.platformManaged());
+        return model;
+    }
+
+    public OrganizationRole toModel(CatalogRole role) {
+        OrganizationRole model = new OrganizationRole(role.name());
+        model.setDescription(role.description());
+        model.setPlatformManaged(role.platformManaged());
+        model.setOrigin(OrganizationRole.OriginEnum.fromValue(role.origin().name().toLowerCase(Locale.ROOT)));
+        return model;
+    }
+
+    public List<OrganizationRole> toCatalogList(List<CatalogRole> roles) {
+        return roles.stream().map(this::toModel).toList();
+    }
+
+    public com.processpuzzle.orgadmin.model.RoleReference toModel(RoleReference reference) {
+        com.processpuzzle.orgadmin.model.RoleReference model = new com.processpuzzle.orgadmin.model.RoleReference(
+                reference.feature(), reference.kind(), reference.id());
+        model.setTitle(reference.title());
         return model;
     }
 

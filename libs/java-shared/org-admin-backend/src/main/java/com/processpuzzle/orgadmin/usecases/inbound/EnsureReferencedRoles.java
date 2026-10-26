@@ -2,7 +2,6 @@ package com.processpuzzle.orgadmin.usecases.inbound;
 
 import com.processpuzzle.core.identity.IdentityProviderUnavailableException;
 import com.processpuzzle.core.tenancy.RolesReferenced;
-import com.processpuzzle.core.tenancy.TenantRoles;
 import com.processpuzzle.orgadmin.usecases.outbound.RoleProvisioningPort;
 import com.processpuzzle.orgadmin.usecases.outbound.TenantRealmDirectory;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * The organization's role catalog: makes sure every role another feature refers to exists in the
@@ -33,9 +31,6 @@ import java.util.Set;
 public class EnsureReferencedRoles {
 
     private static final Logger LOG = LoggerFactory.getLogger(EnsureReferencedRoles.class);
-    private static final Set<String> RESERVED = Set.of("platform-admin", "offline_access", "uma_authorization");
-    private static final String DEFAULT_ROLES_PREFIX = "default-roles-";
-
     private final RoleProvisioningPort provisioning;
     private final TenantRealmDirectory tenants;
 
@@ -66,6 +61,6 @@ public class EnsureReferencedRoles {
     }
 
     static boolean isReserved(String name) {
-        return TenantRoles.ALL.contains(name) || RESERVED.contains(name) || name.startsWith(DEFAULT_ROLES_PREFIX);
+        return RoleNames.isReserved(name);
     }
 }

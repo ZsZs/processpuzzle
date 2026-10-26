@@ -1,10 +1,18 @@
 package com.processpuzzle.orgadmin.adapters.inbound;
 
 import com.processpuzzle.orgadmin.OrgAdminTestFixtures;
+import com.processpuzzle.orgadmin.model.NewOrganizationRole;
+import com.processpuzzle.orgadmin.model.OrganizationRole;
+import com.processpuzzle.orgadmin.model.OrganizationRoleUpdate;
 import com.processpuzzle.orgadmin.model.OrganizationUserInvite;
 import com.processpuzzle.orgadmin.model.OrganizationUserUpdate;
 import com.processpuzzle.orgadmin.model.RoleAssignment;
+import com.processpuzzle.orgadmin.usecases.inbound.CatalogRole;
+import com.processpuzzle.orgadmin.usecases.inbound.CreateOrganizationRole;
+import com.processpuzzle.orgadmin.usecases.inbound.DeleteOrganizationRole;
 import com.processpuzzle.orgadmin.usecases.inbound.DeleteOrganizationUser;
+import com.processpuzzle.orgadmin.usecases.inbound.RoleOrigin;
+import com.processpuzzle.orgadmin.usecases.inbound.UpdateOrganizationRole;
 import com.processpuzzle.orgadmin.usecases.inbound.FindOrganizationRoles;
 import com.processpuzzle.orgadmin.usecases.inbound.FindOrganizationUser;
 import com.processpuzzle.orgadmin.usecases.inbound.FindOrganizationUserRoles;
@@ -48,6 +56,9 @@ class OrgAdminEndpointsTest {
     private final InviteOrganizationUser inviteUser = mock(InviteOrganizationUser.class);
     private final UpdateOrganizationUser updateUser = mock(UpdateOrganizationUser.class);
     private final DeleteOrganizationUser deleteUser = mock(DeleteOrganizationUser.class);
+    private final CreateOrganizationRole createRole = mock(CreateOrganizationRole.class);
+    private final UpdateOrganizationRole updateRole = mock(UpdateOrganizationRole.class);
+    private final DeleteOrganizationRole deleteRole = mock(DeleteOrganizationRole.class);
     private final FindOrganizationRoles findRoles = mock(FindOrganizationRoles.class);
     private final FindOrganizationUserRoles findUserRoles = mock(FindOrganizationUserRoles.class);
     private final ReplaceOrganizationUserRoles replaceRoles = mock(ReplaceOrganizationUserRoles.class);
@@ -55,7 +66,7 @@ class OrgAdminEndpointsTest {
     private final OrganizationUserEndpoint users = new OrganizationUserEndpoint(
             findUsers, findUser, inviteUser, updateUser, deleteUser, new OrgAdminMapper());
     private final OrganizationRoleEndpoint roles = new OrganizationRoleEndpoint(
-            findRoles, findUserRoles, replaceRoles, new OrgAdminMapper());
+            createRole, updateRole, deleteRole, findRoles, findUserRoles, replaceRoles, new OrgAdminMapper());
 
     @Test
     void listingAnswersThePage() {
@@ -140,9 +151,48 @@ class OrgAdminEndpointsTest {
 
     @Test
     void theRealmsRolesAreAnswered() {
-        when(findRoles.execute(ORG_KEY)).thenReturn(List.of(OrgAdminTestFixtures.role("org-admin")));
+        when(findRoles.execute(ORG_KEY)).thenReturn(List.of(
+                new CatalogRole("org-admin", null, true, RoleOrigin.PLATFORM),
+                new CatalogRole("accounting", "Books", false, RoleOrigin.ADMIN)));
 
-        assertThat(roles.listOrganizationRoles(ORG_KEY).getBody()).isNotNull().hasSize(1);
+        var body = roles.listOrganizationRoles(ORG_KEY).getBody();
+
+        assertThat(body).isNotNull().hasSize(2);
+        assertThat(body.get(0).getOrigin()).isEqualTo(OrganizationRole.OriginEnum.PLATFORM);
+        assertThat(body.get(1).getOrigin()).isEqualTo(OrganizationRole.OriginEnum.ADMIN);
+    }
+
+    @Test
+    void definingARoleAnswers201WithTheRoleAsCreated() {
+        when(createRole.execute(ORG_KEY, "accounting", "Books"))
+                .thenReturn(new CatalogRole("accounting", "Books", false, RoleOrigin.ADMIN));
+
+        var response = roles.createOrganizationRole(ORG_KEY, new NewOrganizationRole("accounting").description("Books"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getName()).isEqualTo("accounting");
+        assertThat(response.getBody().getOrigin()).isEqualTo(OrganizationRole.OriginEnum.ADMIN);
+    }
+
+    @Test
+    void changingARolesDescriptionAnswersTheRole() {
+        when(updateRole.execute(ORG_KEY, "accounting", "New"))
+                .thenReturn(new CatalogRole("accounting", "New", false, RoleOrigin.ADMIN));
+
+        var response = roles.updateOrganizationRole(ORG_KEY, "accounting", new OrganizationRoleUpdate().description("New"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getDescription()).isEqualTo("New");
+    }
+
+    @Test
+    void deletingARoleAnswers204() {
+        var response = roles.deleteOrganizationRole(ORG_KEY, "accounting");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(deleteRole).execute(ORG_KEY, "accounting");
     }
 
     @Test

@@ -1,6 +1,6 @@
 # Organization Role Catalog Plan
 
-Status: **approved, phase 0 implemented (uncommitted)** · Drafted 2026-10-26 · Owner: ZsZs
+Status: **approved; phase 0 released 2026-10-26, phase 1 slices 1-2 in review** · Drafted 2026-10-26 · Owner: ZsZs
 
 Gives the organization administrator ownership of the organization's **role catalog** — the list a
 document's reader / editor / publisher fields, a navigation item's `roles` and a user's role
@@ -36,7 +36,7 @@ hand them out, and nobody can define a role that is not a process role or clean 
 | 6 | Who may call `/admin/**`? | A new policy method, **`requireAdministration(orgKey)`** — membership *and* the `org-admin` authority (or staff). `requireDesign` stays what it is for the designer. Reads a member legitimately makes — `/role-catalog`, `/me/roles` — move to `requireAccess`. |
 | 7 | Should the pickers stay free text? | **Restricted when a catalog is bound**: a `tagsRestricted` flag on the attribute descriptor, set by the document, content-book, nav-item and route-definition role fields. Unknown text is refused instead of shown dashed. If the suggestion source *fails*, the control falls back to free text (the author must not be blocked by an outage); if it answers *empty*, the field offers nothing — correct, there is nothing to gate by. |
 | 8 | Is `RolesReferenced` → `EnsureReferencedRoles` still needed? | **Kept for realm-per-tenant** (Testbed), where it does create. Once the pickers are restricted it becomes a safety net for the API path only. Its port is folded into the new catalog port (decision 9). |
-| 9 | Which port writes the catalog? | A new **`RoleCatalogPort`** in org-admin: `create`, `updateDescription`, `delete`, `countHolders`. It replaces `RoleProvisioningPort` (`ensureRoles` becomes `create`, 409 tolerated). Reading stays on `UserDirectoryPort.findRoles`; origin is added by the use case (decision 2). `UserDirectoryPort` keeps its promise of never minting a role from an *assignment*. Two adapters, realm and organization, picked by `UserDirectoryConfiguration` as today. |
+| 9 | Which port writes the catalog? | A new **`RoleCatalogPort`** in org-admin: `create`, `updateDescription`, `delete`, `countHolders`. It extends `RoleProvisioningPort`, so an author's reference keeps going through `ensureRoles` (a no-op in the organization adapter, where only the administrator defines roles). Reading stays on `UserDirectoryPort.findRoles`; origin is added by the use case (decision 2). `UserDirectoryPort` keeps its promise of never minting a role from an *assignment*. Two adapters, realm and organization, picked by `UserDirectoryConfiguration` as today. |
 | 10 | Where does the screen live? | In `org-admin-frontend`, as a second entry of the administration branch: `/{orgKey}/admin/organization-role`, a base-entity list + details like Users. The host's sidenav lists it next to Users. |
 
 ## Gaps this plan closes

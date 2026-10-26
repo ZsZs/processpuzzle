@@ -5,6 +5,8 @@ import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.TenantRealmDirectory;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
+import com.processpuzzle.core.tenancy.RoleReferenceContributor;
+import com.processpuzzle.orgadmin.usecases.inbound.RoleReferences;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.PermitAllOrganizationAccessPolicy;
@@ -108,6 +110,19 @@ public final class OrgAdminTestFixtures {
                 throw new OrganizationAccessDeniedException(orgKey);
             }
         });
+    }
+
+    /** The role references of a deployment in which no feature contributes any. */
+    public static RoleReferences noReferences() {
+        return referencesFrom();
+    }
+
+    /** The role references as the given contributors report them. */
+    @SuppressWarnings("unchecked")
+    public static RoleReferences referencesFrom(RoleReferenceContributor... contributors) {
+        ObjectProvider<RoleReferenceContributor> provider = mock(ObjectProvider.class);
+        when(provider.orderedStream()).thenAnswer(call -> java.util.stream.Stream.of(contributors));
+        return new RoleReferences(provider);
     }
 
     /** A caller who is a member of the tenant but may not administer it. */

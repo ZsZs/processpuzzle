@@ -1,11 +1,10 @@
 package com.processpuzzle.orgadmin.adapters.outbound;
 
 import com.processpuzzle.orgadmin.usecases.outbound.NoOpUserDirectoryPort;
-import com.processpuzzle.orgadmin.usecases.outbound.NoOpRoleProvisioningPort;
-import com.processpuzzle.orgadmin.usecases.outbound.RoleProvisioningPort;
+import com.processpuzzle.orgadmin.usecases.outbound.NoOpRoleCatalogPort;
+import com.processpuzzle.orgadmin.usecases.outbound.RoleCatalogPort;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
 import com.processpuzzle.core.identity.KeycloakAdminClient;
-import com.processpuzzle.core.identity.KeycloakTenancy;
 import com.processpuzzle.core.identity.KeycloakTenantDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,13 +46,16 @@ public class UserDirectoryConfiguration {
     }
 
     /**
-     * Roles other features refer to are created only where they are realm roles: with Keycloak
-     * Organizations a role is a group of the shared realm, which an author's reference must not mint.
+     * The organization's role catalog, which an administrator writes. A role an author's reference
+     * names is created only where it is a realm role: with Keycloak Organizations a role is a group of
+     * the organization, which a reference must not mint, so that adapter leaves {@code ensureRoles} out.
      */
     @Bean
-    public RoleProvisioningPort roleProvisioningPort(KeycloakAdminClient client) {
-        return client.tenancy() == KeycloakTenancy.REALM_PER_TENANT
-                ? new KeycloakRoleProvisioningAdapter(client)
-                : new NoOpRoleProvisioningPort();
+    public RoleCatalogPort roleCatalogPort(KeycloakAdminClient client, KeycloakTenantDirectory tenants) {
+        return switch (client.tenancy()) {
+            case UNCONFIGURED -> new NoOpRoleCatalogPort();
+            case ORGANIZATION -> new KeycloakOrganizationRoleCatalogAdapter(client, tenants);
+            case REALM_PER_TENANT -> new KeycloakRealmRoleCatalogAdapter(client);
+        };
     }
 }
