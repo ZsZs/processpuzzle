@@ -44,6 +44,27 @@ class TenantRealmResolverTest {
         assertThat(directoryTouched[0]).isFalse();
     }
 
+    /**
+     * An ordinary member of a tenant reads the role catalog and picks their own roles, but must not
+     * administer it: the two entry points ask the guard different questions.
+     */
+    @Test
+    void aMemberWithoutAdministrationRightsIsRefusedAdministrationButMayResolveAsAMember() {
+        TenantRealmResolver resolver = OrgAdminTestFixtures.resolverFor(true, OrgAdminTestFixtures.membersOnlyGuard());
+
+        assertThatThrownBy(() -> resolver.resolve(ORG_KEY))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThat(resolver.resolveForMember(ORG_KEY)).isEqualTo(ORG_KEY);
+    }
+
+    @Test
+    void aNonMemberIsRefusedEvenTheMemberResolution() {
+        TenantRealmResolver resolver = OrgAdminTestFixtures.resolverFor(true, OrgAdminTestFixtures.denyingGuard());
+
+        assertThatThrownBy(() -> resolver.resolveForMember(ORG_KEY))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
+    }
+
     @Test
     void anUnknownTenantIs404() {
         assertThatThrownBy(() -> OrgAdminTestFixtures.resolverForUnknownTenant().resolve(ORG_KEY))

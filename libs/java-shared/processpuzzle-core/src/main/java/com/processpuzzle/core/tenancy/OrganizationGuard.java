@@ -70,6 +70,11 @@ public class OrganizationGuard {
         policy.requireDesign(orgKey);
     }
 
+    /** Rejects the call with 403 when the principal may not administer {@code orgKey}'s users and roles. */
+    public void requireAdministration(String orgKey) {
+        policy.requireAdministration(orgKey);
+    }
+
     /**
      * Rejects the call with 403 unless the principal is ProcessPuzzle staff. Gates the whole
      * {@code /platform/**} surface, which acts across tenants and therefore cannot be gated by

@@ -14,10 +14,11 @@ import org.springframework.stereotype.Component;
  * <p>Three refusals, in this order, and the order is the point:
  *
  * <ol>
- *   <li><b>Membership.</b> {@link OrganizationGuard#requireDesign} — the {@code orgKey} path segment
+ *   <li><b>Authority.</b> {@link OrganizationGuard#requireAdministration} — the {@code orgKey} path segment
  *       is not an authorization decision on its own, and without this check editing the URL is enough
- *       to administer another tenant's users. Design rights rather than mere access, because managing
- *       who may sign in is an administrative act, not a read.
+ *       to administer another tenant's users. Administration rights rather than mere access or design rights, because managing
+ *       who may sign in is an administrative act, not a read. {@link #resolveForMember} asks
+ *       {@link OrganizationGuard#requireAccess} only, for the reads every member makes.
  *   <li><b>Existence.</b> A 404 for an unknown key. Checked <em>after</em> membership so a
  *       non-member cannot enumerate which organizations exist by which keys answer 404 and which 403.
  *   <li><b>Status.</b> A tenant that is not administerable is refused, because its realm is disabled
@@ -55,12 +56,28 @@ public class TenantRealmResolver {
     /**
      * @return the realm to administer, as the directory named it — normally the tenant's own key
      * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException
-     *         when the caller is not an administrator of this tenant
+     *         when the caller does not administer this tenant
      * @throws UnknownOrganizationException when no such organization exists
      * @throws OrganizationSuspendedException when the tenant's realm is disabled or not yet created
      */
     public String resolve(String orgKey) {
-        guard.requireDesign(orgKey);
+        guard.requireAdministration(orgKey);
+        return realmOf(orgKey);
+    }
+
+    /**
+     * As {@link #resolve}, for an operation any member of the organization may perform: reading the
+     * role catalog, or choosing one's own roles.
+     *
+     * @throws com.processpuzzle.core.tenancy.OrganizationAccessDeniedException
+     *         when the caller is not a member of this tenant
+     */
+    public String resolveForMember(String orgKey) {
+        guard.requireAccess(orgKey);
+        return realmOf(orgKey);
+    }
+
+    private String realmOf(String orgKey) {
         TenantRealmDirectory.Tenant tenant = tenants.find(orgKey)
                 .orElseThrow(() -> new UnknownOrganizationException(orgKey));
         if (!tenant.administerable()) {

@@ -26,7 +26,7 @@ public class FindRoleCatalog {
     }
 
     public List<DirectoryRole> execute(String orgKey) {
-        return directory.findRoles(realms.resolve(orgKey)).stream()
+        return directory.findRoles(realms.resolveForMember(orgKey)).stream()
                 .filter(SelfServiceRoleSupport::isSelectable)
                 .toList();
     }

@@ -3,6 +3,7 @@ package com.processpuzzle.security;
 import com.processpuzzle.core.security.CurrentPrincipal;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
+import com.processpuzzle.core.tenancy.TenantRoles;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -55,6 +56,19 @@ public class JwtOrganizationAccessPolicy implements OrganizationAccessPolicy {
     @Override
     public void requireDesign(String orgKey) {
         requireTenant(orgKey);
+    }
+
+    /**
+     * Membership plus the {@code org-admin} authority, or platform staff. An unauthenticated caller
+     * is permitted, as everywhere else in this class.
+     */
+    @Override
+    public void requireAdministration(String orgKey) {
+        requireTenant(orgKey);
+        if (principal.isAuthenticated() && !principal.isPlatformAdmin()
+                && !principal.authorities().contains(TenantRoles.ORG_ADMIN)) {
+            throw new OrganizationAccessDeniedException(orgKey);
+        }
     }
 
     @Override
