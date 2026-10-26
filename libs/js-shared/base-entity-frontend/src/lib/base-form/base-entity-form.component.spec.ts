@@ -301,4 +301,53 @@ describe('GenericEntityFormComponent', () => {
       expect(unsubscribeSpy).toHaveBeenCalled();
     });
   });
+
+  describe('row-level rules:', () => {
+    it('shows a row the descriptor forbids changing read-only', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity, false, [], { isEditable: () => false });
+
+      expect(component.isReadOnly()).toBe(true);
+    });
+
+    it('keeps a row the descriptor allows editable', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity, false, [], { isEditable: () => true });
+
+      expect(component.isReadOnly()).toBe(false);
+    });
+
+    it('keeps a new row editable whatever the descriptor says', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity, true, [], { isEditable: () => false });
+
+      expect(component.isReadOnly()).toBe(false);
+    });
+
+    it('forbids deleting a row the descriptor forbids', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity, false, [], { isDeletable: () => false });
+
+      expect(component.rowDeletable()).toBe(false);
+    });
+
+    it('never forbids deleting a new row', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity, true, [], { isDeletable: () => false });
+
+      expect(component.rowDeletable()).toBe(true);
+    });
+  });
+
+  describe('create-only attributes:', () => {
+    const keyConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
+    keyConfig.createOnly = true;
+
+    it('fixes the attribute once the entity exists', async () => {
+      const { component } = await setupFormComponentTest([keyConfig, labelConfig], testEntity, false);
+
+      expect(component.baseEntityForm.get('boolean')?.disabled).toBe(true);
+    });
+
+    it('leaves the attribute open while the entity is new', async () => {
+      const { component } = await setupFormComponentTest([keyConfig, labelConfig], testEntity, true);
+
+      expect(component.baseEntityForm.get('boolean')?.disabled).toBe(false);
+    });
+  });
 });

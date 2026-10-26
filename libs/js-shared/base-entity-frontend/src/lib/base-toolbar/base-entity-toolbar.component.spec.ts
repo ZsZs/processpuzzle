@@ -211,4 +211,22 @@ describe('BaseEntityToolbarComponent', () => {
       expect(component.store.doFilter).toHaveBeenCalledWith('A');
     });
   });
+
+  describe('row-level delete rule:', () => {
+    it('does not offer delete when a selected row may not be deleted', async () => {
+      const { fixture, component } = await setupContainerComponentTest(BaseEntityToolbarComponent, {}, [], [], { isDeletable: () => false });
+      component.store.selectEntity('1');
+      fixture.detectChanges();
+
+      expect((component as BaseEntityToolbarComponent<TestEntity>).isDeleteEnabled()).toBe(false);
+    });
+
+    it('offers delete when every selected row may be deleted', async () => {
+      const { fixture, component } = await setupContainerComponentTest(BaseEntityToolbarComponent, {}, [], [], { isDeletable: () => true });
+      component.store.selectEntity('1');
+      fixture.detectChanges();
+
+      expect((component as BaseEntityToolbarComponent<TestEntity>).isDeleteEnabled()).toBe(true);
+    });
+  });
 });
