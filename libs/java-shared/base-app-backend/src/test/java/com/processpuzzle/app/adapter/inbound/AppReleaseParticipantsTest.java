@@ -8,6 +8,8 @@ import com.processpuzzle.app.domain.AppRoute;
 import com.processpuzzle.app.domain.ModuleDefinition;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleMount;
+import com.processpuzzle.app.domain.ModuleTranslation;
+import com.processpuzzle.app.domain.ModuleTranslationRepository;
 import com.processpuzzle.app.domain.RouteTarget;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
@@ -26,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,6 +48,8 @@ class AppReleaseParticipantsTest {
     @Autowired
     private ModuleDefinitionRepository moduleRepository;
     @Autowired
+    private ModuleTranslationRepository translationRepository;
+    @Autowired
     private AppDefinitionRepository appRepository;
     @Autowired
     private EntityManager entityManager;
@@ -54,7 +59,7 @@ class AppReleaseParticipantsTest {
 
     @BeforeEach
     void setUp() {
-        modules = new ModuleReleaseParticipant(moduleRepository);
+        modules = new ModuleReleaseParticipant(moduleRepository, translationRepository);
         apps = new AppReleaseParticipant(appRepository, AppTestFixtures.structuralValidator(), new AppMapper());
     }
 
@@ -106,6 +111,47 @@ class AppReleaseParticipantsTest {
         flush();
 
         assertThat(moduleRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).isEmpty();
+    }
+
+    @Test
+    void anUploadedTranslationIsPendingOnAReleasedModule_andReleaseCopiesItAcrossLanguageByLanguage() {
+        moduleRepository.save(module("claims", "Claims", Channel.DRAFT));
+        moduleRepository.save(module("claims", "Claims", Channel.RELEASED));
+        translationRepository.save(translation(Channel.RELEASED, "de", Map.of("module.name", "Alt")));
+        translationRepository.save(translation(Channel.RELEASED, "fr", Map.of("module.name", "Ancien")));
+        translationRepository.save(translation(Channel.DRAFT, "de", Map.of("module.name", "Schaeden")));
+        flush();
+
+        assertThat(modules.pending(ORG)).extracting(PendingChange::change).containsExactly(PendingChange.Change.CHANGED);
+
+        modules.release(ORG);
+        flush();
+
+        assertThat(translationRepository.findByOrgKeyAndModuleKeyAndChannel(ORG, "claims", Channel.RELEASED))
+                .extracting(ModuleTranslation::getLocale, ModuleTranslation::getMessages)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("de", Map.of("module.name", "Schaeden")));
+        assertThat(modules.pending(ORG)).isEmpty();
+    }
+
+    @Test
+    void aModuleWithoutTranslationsKeepsTheFingerprintItHadBeforeTheyExisted() {
+        ModuleDefinition module = module("claims", "Claims", Channel.DRAFT);
+
+        assertThat(ModuleReleaseParticipant.fingerprint(module, Map.of()))
+                .isEqualTo(ModuleReleaseParticipant.fingerprint(module, null))
+                .doesNotContain("translations");
+    }
+
+    @Test
+    void releasingARemovedModuleDeletesItsReleasedTranslations() {
+        moduleRepository.save(module("claims", "Claims", Channel.RELEASED));
+        translationRepository.save(translation(Channel.RELEASED, "de", Map.of("module.name", "Schaeden")));
+        flush();
+
+        modules.release(ORG);
+        flush();
+
+        assertThat(translationRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).isEmpty();
     }
 
     @Test
@@ -169,6 +215,10 @@ class AppReleaseParticipantsTest {
         ModuleDefinition module = new ModuleDefinition(ORG, key, name, channel);
         module.setRoutes(List.of(AppTestFixtures.appRoute("list", "List")));
         return module;
+    }
+
+    private static ModuleTranslation translation(Channel channel, String locale, Map<String, String> messages) {
+        return new ModuleTranslation(ORG, "claims", channel, locale, messages);
     }
 
     private void flush() {

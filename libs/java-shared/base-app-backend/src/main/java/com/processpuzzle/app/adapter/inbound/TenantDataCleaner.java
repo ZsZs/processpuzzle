@@ -2,6 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
+import com.processpuzzle.app.domain.ModuleTranslationRepository;
 import com.processpuzzle.app.i18n.AppTranslationRepository;
 import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import org.slf4j.Logger;
@@ -42,10 +43,13 @@ public class TenantDataCleaner {
     private final AppDefinitionRepository appDefinitionRepository;
     private final ModuleDefinitionRepository moduleDefinitionRepository;
     private final AppTranslationRepository translationRepository;
+    private final ModuleTranslationRepository moduleTranslationRepository;
 
     public TenantDataCleaner(AppDefinitionRepository appDefinitionRepository,
                              ModuleDefinitionRepository moduleDefinitionRepository,
-                             AppTranslationRepository translationRepository) {
+                             AppTranslationRepository translationRepository,
+                             ModuleTranslationRepository moduleTranslationRepository) {
+        this.moduleTranslationRepository = moduleTranslationRepository;
         this.appDefinitionRepository = appDefinitionRepository;
         this.moduleDefinitionRepository = moduleDefinitionRepository;
         this.translationRepository = translationRepository;
@@ -58,5 +62,6 @@ public class TenantDataCleaner {
         appDefinitionRepository.deleteByOrgKey(event.orgKey());
         moduleDefinitionRepository.deleteByOrgKey(event.orgKey());
         translationRepository.eraseByOrgKey(event.orgKey());
+        moduleTranslationRepository.eraseByOrgKey(event.orgKey());
     }
 }

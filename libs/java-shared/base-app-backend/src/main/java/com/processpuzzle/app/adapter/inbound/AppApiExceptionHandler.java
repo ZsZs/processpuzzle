@@ -8,6 +8,7 @@ import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionAlreadyExistsException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.ModuleDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.exception.ModuleTranslationRejectedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.app.usecase.exception.UnknownTenantException;
 import com.processpuzzle.app.usecase.exception.RouteDefinitionNotFoundException;
@@ -86,6 +87,11 @@ public class AppApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleModuleInvalid(ModuleDefinitionInvalidException ex) {
         return error(HttpStatus.BAD_REQUEST, firstErrorId(ex.getProblems(), "module.validation.failed"),
                 detailOf(ex.getProblems(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(ModuleTranslationRejectedException.class)
+    public ResponseEntity<ErrorResponse> handleTranslationRejected(ModuleTranslationRejectedException ex) {
+        return error(HttpStatus.BAD_REQUEST, "module.translation.rejected", ex.getMessage());
     }
 
     /** 404 rather than 409: the contract declares only 404 for the layout and route endpoints. */
