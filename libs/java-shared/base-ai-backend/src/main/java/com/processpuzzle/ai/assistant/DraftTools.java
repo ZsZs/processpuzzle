@@ -49,13 +49,19 @@ public class DraftTools {
     public String saveDraft(@ToolParam(description = "The definition kind") String kind,
                             @ToolParam(description = "The key of the draft; the JSON's own key must match") String key,
                             @ToolParam(description = "The draft as JSON in the shape get_schema describes") String json) {
-        return guarded(() -> describe(drafts.save(access.currentOrganization(), kind, key, json)));
+        return guarded(() -> {
+            List<AuthoringIssue> issues = drafts.save(access.currentOrganization(), kind, key, json);
+            return issues.isEmpty() ? "Saved. No issues." : describe(issues);
+        });
     }
 
     @Tool(name = "validate_draft", description = "Check a stored draft against its rules and return the issues.")
     public String validateDraft(@ToolParam(description = "The definition kind") String kind,
                                 @ToolParam(description = "The key of the draft") String key) {
-        return guarded(() -> describe(drafts.validate(access.currentOrganization(), kind, key)));
+        return guarded(() -> {
+            List<AuthoringIssue> issues = drafts.validate(access.currentOrganization(), kind, key);
+            return issues.isEmpty() ? "No issues." : describe(issues);
+        });
     }
 
     /** Runs one tool call if the caller may design and the turn has calls left; otherwise says why not. */
@@ -74,9 +80,6 @@ public class DraftTools {
     }
 
     private static String describe(List<AuthoringIssue> issues) {
-        if (issues.isEmpty()) {
-            return "Saved. No issues.";
-        }
         return issues.stream()
             .map(issue -> issue.severity() + (issue.path().isEmpty() ? "" : " at " + issue.path()) + ": " + issue.text())
             .collect(Collectors.joining("\n"));

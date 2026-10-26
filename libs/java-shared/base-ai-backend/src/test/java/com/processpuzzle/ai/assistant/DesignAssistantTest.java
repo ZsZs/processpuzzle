@@ -1,0 +1,54 @@
+package com.processpuzzle.ai.assistant;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.openai.OpenAiChatOptions;
+
+class DesignAssistantTest {
+
+    @Test
+    void aMessageGoesToTheModelWithTheSystemPromptAndItsReplyIsReturned() {
+        ChatModel model = mock(ChatModel.class);
+        when(model.getOptions()).thenReturn(OpenAiChatOptions.builder().model("pp-designer").build());
+        when(model.call(any(Prompt.class))).thenReturn(
+            new ChatResponse(List.of(new Generation(new AssistantMessage("Saved the invoice draft.")))));
+        DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
+            new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))),
+            new FixedAccess(), 5);
+
+        String reply = assistant.respond("Define an invoice entity.");
+
+        assertThat(reply).isEqualTo("Saved the invoice draft.");
+        ArgumentCaptor<Prompt> prompt = ArgumentCaptor.forClass(Prompt.class);
+        verify(model).call(prompt.capture());
+        assertThat(prompt.getValue().getContents())
+            .contains(DesignAssistant.SYSTEM_PROMPT)
+            .contains("Define an invoice entity.");
+    }
+
+    private record FixedAccess() implements AssistantAccess {
+
+        @Override
+        public String currentOrganization() {
+            return "acme";
+        }
+
+        @Override
+        public boolean mayDesign() {
+            return true;
+        }
+    }
+}

@@ -27,6 +27,14 @@ class DraftToolsTest {
     }
 
     @Test
+    void validatingAStoredDraftReportsNoIssues() {
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10);
+        tools.saveDraft("entity", "invoice", "{}");
+
+        assertThat(tools.validateDraft("entity", "invoice")).isEqualTo("No issues.");
+    }
+
+    @Test
     void theTurnStopsAtItsCapAndSaysSo() {
         DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 2);
 
