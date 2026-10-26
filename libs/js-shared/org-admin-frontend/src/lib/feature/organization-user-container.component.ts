@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { BaseEntityContainerComponent, BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { OrganizationRole } from '../domain/organization-user';
 import { ORG_ADMIN_ORG_KEY, OrganizationRoleService, OrganizationUserService } from '../domain/organization-user.service';
@@ -28,6 +29,7 @@ import { InviteUserDialog, InviteUserDialogData, InviteUserDialogResult } from '
     <base-entity-container [entityDescriptor]="baseEntityDescriptor"></base-entity-container>
     <ng-template #userActionsTpl>
       <button id="invite-user" type="button" mat-raised-button color="accent" [disabled]="busy" (click)="onInvite()">Invite user…</button>
+      <button id="manage-roles" type="button" mat-stroked-button (click)="onManageRoles()">Roles…</button>
     </ng-template>
   `,
 })
@@ -44,12 +46,21 @@ export class OrganizationUserContainerComponent {
   private readonly orgKey = inject(ORG_ADMIN_ORG_KEY);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   constructor() {
     this.baseEntityDescriptor = createOrganizationUserDescriptor();
     this.baseEntityDescriptor.store = this.store;
     this.baseEntityDescriptor.extraTabs = [ROLE_ASSIGNMENT_TAB];
     this.baseEntityDescriptor.extraFormActionsTemplate = () => this.userActionsTpl();
+  }
+
+  /**
+   * The roles are a screen of their own, beside the users: this is where the administrator reaches them. The
+   * route is the one ORG_ADMIN_ROUTES mounts under the organization's administration branch.
+   */
+  onManageRoles(): void {
+    void this.router.navigateByUrl(`/${this.orgKey}/admin/organization-role`);
   }
 
   onInvite(): void {
