@@ -64,6 +64,20 @@ class OrganizationGuardTest {
     }
 
     /**
+     * Administration is delegated like the other checks, and a policy written before the method existed
+     * does not grant it: {@code denyingGuard} overrides access and design only, so its refusal here is
+     * the interface's default.
+     */
+    @Test
+    void administrationIsDelegatedAndDeniedByDefault() {
+        assertThatCode(() -> permissiveGuard().requireAdministration("my-org")).doesNotThrowAnyException();
+
+        assertThatThrownBy(() -> denyingGuard().requireAdministration("my-org"))
+                .isInstanceOf(OrganizationAccessDeniedException.class)
+                .hasMessageContaining("my-org");
+    }
+
+    /**
      * The staff check takes no {@code orgKey} because it cannot: a platform administrator acts across
      * all tenants, so there is nothing to compare the principal's own organization against.
      */
