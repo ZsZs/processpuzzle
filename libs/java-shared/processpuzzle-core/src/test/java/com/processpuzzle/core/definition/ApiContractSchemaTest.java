@@ -31,6 +31,13 @@ class ApiContractSchemaTest {
     }
 
     @Test
+    void aContractThatCannotBeParsedIsAnError() {
+        assertThatThrownBy(() -> ApiContractSchema.ofComponent("api-contract-schema-malformed.yaml", "Widget"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("cannot be read");
+    }
+
+    @Test
     void aMissingContractIsAnError() {
         assertThatThrownBy(() -> ApiContractSchema.ofComponent("absent.yaml", "Widget"))
             .isInstanceOf(IllegalStateException.class)
