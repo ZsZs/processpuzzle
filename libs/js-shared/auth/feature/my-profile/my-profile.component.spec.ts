@@ -84,6 +84,12 @@ describe('MyProfileComponent', () => {
     expect(screen.getByText(authEn.my_profile_form.platform_roles.org_member)).toBeInTheDocument();
   });
 
+  it('should describe the platform administration role', async () => {
+    await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['platform-admin']));
+
+    expect(screen.getByText(authEn.my_profile_form.platform_roles.platform_admin)).toBeInTheDocument();
+  });
+
   it('should name and describe tenant roles from the description source', async () => {
     const describeRoles = () => of(new Map([['order-clerk', { name: 'Order Clerk', description: 'Takes and checks incoming orders.' }]]));
     await renderComponent(new User('john.doe@example.com', '123', 'John', 'Doe', null, ['order-clerk', 'reviewer']), describeRoles);
