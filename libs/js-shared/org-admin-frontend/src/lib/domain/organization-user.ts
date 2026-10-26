@@ -87,17 +87,31 @@ export interface OrganizationUserInvitation {
  * the only two ProcessPuzzle itself interprets. Everything else is the tenant's own, and is what
  * `NavNode.roles` and a workflow's role definitions are matched against — which is why the role list
  * is read live from the realm rather than being a fixed enum.
+ *
+ * `origin` says who manages the role, derived by the backend rather than stored: `platform` for the two
+ * above, `workflow` for a role a workflow role definition projects (edited in the designer), and
+ * `admin` for everything the organization's administrator defined. Absent on the lists that are not for
+ * administration, such as the role catalog a document's picker reads.
  */
+export type RoleOrigin = 'platform' | 'workflow' | 'admin';
+
 export class OrganizationRole implements BaseEntity {
   readonly id: string;
   readonly name: string;
   description: string | undefined;
   platformManaged: boolean;
+  origin: RoleOrigin | undefined;
 
-  constructor(name?: string, description?: string, platformManaged?: boolean) {
+  constructor(name?: string, description?: string, platformManaged?: boolean, origin?: RoleOrigin) {
     this.name = name ?? '';
     this.id = this.name;
     this.description = description;
     this.platformManaged = platformManaged ?? false;
+    this.origin = origin;
+  }
+
+  /** Only an administrator-defined role may be changed or deleted from the administration screen. */
+  get administratorManaged(): boolean {
+    return this.origin === 'admin';
   }
 }
