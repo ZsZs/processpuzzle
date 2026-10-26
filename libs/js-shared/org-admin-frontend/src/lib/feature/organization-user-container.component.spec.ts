@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ADA_DTO, ADMIN_URL, GRACE_DTO, provideOrgAdminTesting, REALM_ROLE_DTOS, USERS_URL } from '../domain/test-organization-user';
@@ -31,6 +32,7 @@ describe('OrganizationUserContainerComponent', () => {
         { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: MatDialog, useValue: dialogStub },
         { provide: MatSnackBar, useValue: snackBarStub },
+        { provide: Router, useValue: { navigateByUrl: vi.fn(() => Promise.resolve(true)) } },
       ],
       // The template is blanked, the way base-app's container specs do it. What is under test is the
       // descriptor this component builds and the two calls it makes, not the generic container it
@@ -63,6 +65,12 @@ describe('OrganizationUserContainerComponent', () => {
    * The realm's roles are read when the button is pressed rather than cached with the screen: they are
    * the tenant's own, and one may have been added since the list was loaded.
    */
+  it('takes the administrator to the role catalog, beside the users', () => {
+    fixture.componentInstance.onManageRoles();
+
+    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenCalledWith('/my-org/admin/organization-role');
+  });
+
   it('reads the realm roles before opening the dialog', () => {
     fixture.componentInstance.onInvite();
 
