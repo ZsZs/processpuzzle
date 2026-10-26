@@ -42,6 +42,9 @@ class OrganizationRoleCatalogUseCasesTest {
     private RoleCatalogPort catalog;
     private RoleReferences references;
     private TenantRealmResolver realms;
+    private CreateOrganizationRole create;
+    private UpdateOrganizationRole update;
+    private DeleteOrganizationRole delete;
 
     @BeforeEach
     void setUp() {
@@ -57,6 +60,9 @@ class OrganizationRoleCatalogUseCasesTest {
                 new DirectoryRole("reviewer", "Reviews", false),
                 new DirectoryRole("handbook-reader", null, false),
                 new DirectoryRole("accounting", "Books", false)));
+        create = new CreateOrganizationRole(realms, directory, catalog);
+        update = new UpdateOrganizationRole(realms, new ManagedRoles(directory, references), catalog);
+        delete = new DeleteOrganizationRole(realms, new ManagedRoles(directory, references), catalog);
     }
 
     @Test
@@ -76,7 +82,7 @@ class OrganizationRoleCatalogUseCasesTest {
 
     @Test
     void aValidNewRoleIsCreatedAndAnswered() {
-        CatalogRole created = create().execute(ORG_KEY, "claims-auditor", "  Audits claims  ");
+        CatalogRole created = create.execute(ORG_KEY, "claims-auditor", "  Audits claims  ");
 
         assertThat(created).isEqualTo(new CatalogRole("claims-auditor", "Audits claims", false, RoleOrigin.ADMIN));
         verify(catalog).createRole(ORG_KEY, "claims-auditor", "Audits claims");
@@ -84,7 +90,7 @@ class OrganizationRoleCatalogUseCasesTest {
 
     @Test
     void aBlankDescriptionIsStoredAsNone() {
-        create().execute(ORG_KEY, "claims-auditor", "   ");
+        create.execute(ORG_KEY, "claims-auditor", "   ");
 
         verify(catalog).createRole(ORG_KEY, "claims-auditor", null);
     }
@@ -92,7 +98,7 @@ class OrganizationRoleCatalogUseCasesTest {
     @ParameterizedTest
     @ValueSource(strings = {"Claims Auditor", "", "-leading", "has.dot", "UPPER"})
     void aMalformedNameIsRefusedBeforeAnythingIsWritten(String name) {
-        assertThatThrownBy(() -> create().execute(ORG_KEY, name, null)).isInstanceOf(InvalidRoleNameException.class);
+        assertThatThrownBy(() -> create.execute(ORG_KEY, name, null)).isInstanceOf(InvalidRoleNameException.class);
 
         verifyNoInteractions(catalog);
     }
@@ -100,7 +106,7 @@ class OrganizationRoleCatalogUseCasesTest {
     @ParameterizedTest
     @ValueSource(strings = {"org-admin", "org-member", "platform-admin", "offline_access", "default-roles-acme"})
     void aNameThePlatformOrTheProviderOwnsIsRefused(String name) {
-        assertThatThrownBy(() -> create().execute(ORG_KEY, name, null))
+        assertThatThrownBy(() -> create.execute(ORG_KEY, name, null))
                 .isInstanceOf(InvalidRoleNameException.class)
                 .hasMessageContaining("belongs to ProcessPuzzle");
 
@@ -109,7 +115,7 @@ class OrganizationRoleCatalogUseCasesTest {
 
     @Test
     void aRoleTheOrganizationAlreadyDeclaresIsRefusedRatherThanOverwritten() {
-        assertThatThrownBy(() -> create().execute(ORG_KEY, "accounting", "Other"))
+        assertThatThrownBy(() -> create.execute(ORG_KEY, "accounting", "Other"))
                 .isInstanceOf(RoleAlreadyExistsException.class);
 
         verify(catalog, never()).createRole(anyString(), anyString(), anyString());
@@ -119,15 +125,17 @@ class OrganizationRoleCatalogUseCasesTest {
     void aMemberWhoMayNotAdministerCannotDefineARole() {
         TenantRealmResolver membersOnly = OrgAdminTestFixtures.resolverFor(true, OrgAdminTestFixtures.membersOnlyGuard());
 
-        assertThatThrownBy(() -> new CreateOrganizationRole(membersOnly, directory, catalog)
-                .execute(ORG_KEY, "claims-auditor", null)).isInstanceOf(OrganizationAccessDeniedException.class);
+        CreateOrganizationRole create = new CreateOrganizationRole(membersOnly, directory, catalog);
+
+        assertThatThrownBy(() -> create.execute(ORG_KEY, "claims-auditor", null))
+                .isInstanceOf(OrganizationAccessDeniedException.class);
 
         verifyNoInteractions(catalog);
     }
 
     @Test
     void anAdministratorRolesDescriptionCanBeChanged() {
-        CatalogRole updated = update().execute(ORG_KEY, "accounting", "Bookkeeping");
+        CatalogRole updated = update.execute(ORG_KEY, "accounting", "Bookkeeping");
 
         assertThat(updated.description()).isEqualTo("Bookkeeping");
         assertThat(updated.origin()).isEqualTo(RoleOrigin.ADMIN);
@@ -137,19 +145,19 @@ class OrganizationRoleCatalogUseCasesTest {
     @ParameterizedTest
     @ValueSource(strings = {"org-admin", "offline_access", "reviewer"})
     void aRoleThePlatformOrTheDesignerOwnsCannotBeChangedHere(String name) {
-        assertThatThrownBy(() -> update().execute(ORG_KEY, name, "x")).isInstanceOf(RoleNotManagedException.class);
+        assertThatThrownBy(() -> update.execute(ORG_KEY, name, "x")).isInstanceOf(RoleNotManagedException.class);
 
         verify(catalog, never()).updateDescription(anyString(), anyString(), anyString());
     }
 
     @Test
     void changingARoleTheOrganizationDoesNotDeclareIs404() {
-        assertThatThrownBy(() -> update().execute(ORG_KEY, "ghost", "x")).isInstanceOf(RoleNotFoundException.class);
+        assertThatThrownBy(() -> update.execute(ORG_KEY, "ghost", "x")).isInstanceOf(RoleNotFoundException.class);
     }
 
     @Test
     void aRoleNobodyHoldsOrNamesIsDeleted() {
-        delete().execute(ORG_KEY, "accounting");
+        delete.execute(ORG_KEY, "accounting");
 
         verify(catalog).deleteRole(ORG_KEY, "accounting");
     }
@@ -158,7 +166,7 @@ class OrganizationRoleCatalogUseCasesTest {
     void aRoleAUserStillHoldsIsNotDeleted() {
         when(catalog.hasHolders(ORG_KEY, "accounting")).thenReturn(true);
 
-        assertThatThrownBy(() -> delete().execute(ORG_KEY, "accounting"))
+        assertThatThrownBy(() -> delete.execute(ORG_KEY, "accounting"))
                 .isInstanceOfSatisfying(RoleInUseException.class, ex -> {
                     assertThat(ex.isHeld()).isTrue();
                     assertThat(ex.getReferences()).isEmpty();
@@ -169,7 +177,7 @@ class OrganizationRoleCatalogUseCasesTest {
 
     @Test
     void aRoleADocumentStillNamesIsNotDeletedAndTheDocumentIsReported() {
-        assertThatThrownBy(() -> delete().execute(ORG_KEY, "handbook-reader"))
+        assertThatThrownBy(() -> delete.execute(ORG_KEY, "handbook-reader"))
                 .isInstanceOfSatisfying(RoleInUseException.class, ex -> {
                     assertThat(ex.isHeld()).isFalse();
                     assertThat(ex.getReferences()).containsExactly(DOCUMENT);
@@ -181,25 +189,13 @@ class OrganizationRoleCatalogUseCasesTest {
     @ParameterizedTest
     @ValueSource(strings = {"org-member", "reviewer"})
     void aPlatformOrDesignerRoleIsNeverDeletedHere(String name) {
-        assertThatThrownBy(() -> delete().execute(ORG_KEY, name)).isInstanceOf(RoleNotManagedException.class);
+        assertThatThrownBy(() -> delete.execute(ORG_KEY, name)).isInstanceOf(RoleNotManagedException.class);
 
         verify(catalog, never()).deleteRole(anyString(), anyString());
     }
 
     @Test
     void deletingARoleTheOrganizationDoesNotDeclareIs404() {
-        assertThatThrownBy(() -> delete().execute(ORG_KEY, "ghost")).isInstanceOf(RoleNotFoundException.class);
-    }
-
-    private CreateOrganizationRole create() {
-        return new CreateOrganizationRole(realms, directory, catalog);
-    }
-
-    private UpdateOrganizationRole update() {
-        return new UpdateOrganizationRole(realms, new ManagedRoles(directory, references), catalog);
-    }
-
-    private DeleteOrganizationRole delete() {
-        return new DeleteOrganizationRole(realms, new ManagedRoles(directory, references), catalog);
+        assertThatThrownBy(() -> delete.execute(ORG_KEY, "ghost")).isInstanceOf(RoleNotFoundException.class);
     }
 }
