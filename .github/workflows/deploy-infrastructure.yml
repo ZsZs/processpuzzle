@@ -99,6 +99,8 @@ jobs:
             dockerfile: tools/docker/minio/Dockerfile
           - name: processpuzzle-json-server
             dockerfile: tools/docker/json-server/Dockerfile
+          - name: processpuzzle-litellm
+            dockerfile: tools/docker/litellm/Dockerfile
           # Cached in the registry rather than in the GHA cache — see build-infrastructure.yml.
           - name: processpuzzle-vision-server
             dockerfile: tools/docker/vision-server/Dockerfile
@@ -177,7 +179,7 @@ jobs:
         run: |
           set -euo pipefail
           for IMAGE in processpuzzle-postgres processpuzzle-keycloak processpuzzle-keycloak-init \
-                       processpuzzle-minio processpuzzle-json-server processpuzzle-vision-server; do
+                       processpuzzle-minio processpuzzle-json-server processpuzzle-vision-server processpuzzle-litellm; do
             echo "::group::${IMAGE}: ${SOURCE_TAG} -> ${TARGET_TAG}"
             docker buildx imagetools create \
               --tag "ghcr.io/zszs/${IMAGE}:${TARGET_TAG}" \

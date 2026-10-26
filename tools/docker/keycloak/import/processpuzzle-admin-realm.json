@@ -19,6 +19,10 @@
       {
         "name": "platform-admin",
         "description": "ProcessPuzzle staff. Grants the whole /platform/** surface, which creates, suspends and deletes tenants."
+      },
+      {
+        "name": "definition-designer",
+        "description": "May author definitions with the AI assistant (the assistant can only write drafts; publishing is separate)."
       }
     ]
   },
