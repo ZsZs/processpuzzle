@@ -107,6 +107,6 @@ Done 2026-10-26 (steps 1-2):
 - **Tool-call smoke test passed** (`LlmGatewaySmokeTest`, run from the devcontainer through an SSH tunnel to stage's `127.0.0.1:4000`): Spring AI `OpenAiChatModel` -> LiteLLM alias `pp-designer` -> `mistral-small-latest`, one `@Tool` method executed and the model answered.
 - **Mistral findings:**
   - On the free tier, `mistral-large-latest` returns 403 `tier_not_allowed`, `mistral-small-latest` and `mistral-medium-latest` return 429, and `open-mistral-nemo` and `codestral-latest` work.
-  - Adding 10 EUR switches the account to pay-as-you-go, which lifts the limits. `mistral-large-latest` was not retested after the switch, so the alias stays on `mistral-small-latest` until that is done.
+  - Adding 10 EUR switches the account to pay-as-you-go, which lifts the limits. `mistral-large-latest` then returned OK, and the alias `pp-designer` is on `mistral-large-latest` on stage (verified in `/app/config.yaml` of the running container). The smoke test passed against it.
   - The data terms of the paid plan still need checking in the Mistral console before customer data goes through.
 - Not yet done: the stage `definition-designer` realm role in existing realms (the imports only apply to fresh realms); the `trusted_proxy_ranges` warning in LiteLLM (no effect while the gateway is not routed publicly).
