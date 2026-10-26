@@ -65,7 +65,9 @@ class DefinitionDraftsTest {
 
     @Test
     void twoParticipantsForOneKindAreAConfigurationError() {
-        assertThatThrownBy(() -> new DefinitionDrafts(List.of(new InMemory("entity"), new InMemory("entity"))))
+        List<DefinitionAuthoringParticipant> twins = List.of(new InMemory("entity"), new InMemory("entity"));
+
+        assertThatThrownBy(() -> new DefinitionDrafts(twins))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("'entity'");
     }
