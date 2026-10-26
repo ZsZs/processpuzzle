@@ -1,9 +1,11 @@
 package com.processpuzzle.ai.assistant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.concurrent.TimeUnit;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -15,6 +17,7 @@ import org.springframework.ai.openai.OpenAiChatOptions;
  * through the SSH tunnel described in {@link com.processpuzzle.ai.LlmGatewaySmokeTest}.
  */
 @EnabledIfEnvironmentVariable(named = "PP_LLM_GATEWAY_URL", matches = ".+")
+@Timeout(value = 3, unit = TimeUnit.MINUTES)
 class DesignAssistantGatewaySmokeTest {
 
     @Test
