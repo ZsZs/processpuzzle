@@ -41,6 +41,7 @@
     "_self": "Rôle",
     "name": "Nom",
     "description": "Description",
-    "platformManaged": "Managed by ProcessPuzzle"
+    "platformManaged": "Managed by ProcessPuzzle",
+    "origin": "Origine"
   }
 }

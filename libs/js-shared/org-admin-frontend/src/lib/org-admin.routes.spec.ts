@@ -1,3 +1,5 @@
+import { ORGANIZATION_ROLE_ENTITY_NAME } from './domain/organization-role.descriptors';
+import { OrganizationRoleFacade } from './feature/organization-role.facade';
 import { describe, expect, it } from 'vitest';
 import { ACTIVE_ENTITY_FACADE } from '@processpuzzle/base-entity';
 import { ORG_ADMIN_ENTITY_FACADES, ORG_ADMIN_FACADE_PROVIDERS, ORG_ADMIN_ROUTES } from './org-admin.routes';
@@ -11,7 +13,7 @@ describe('ORG_ADMIN_ROUTES', () => {
   const userRoute = ORG_ADMIN_ROUTES.find((route) => route.path === 'organization-user');
 
   it('mounts the users screen and redirects the branch root to it', () => {
-    expect(ORG_ADMIN_ROUTES.map((route) => route.path)).toEqual(['', 'organization-user']);
+    expect(ORG_ADMIN_ROUTES.map((route) => route.path)).toEqual(['', 'organization-user', 'organization-role']);
     expect(ORG_ADMIN_ROUTES[0].redirectTo).toBe('organization-user');
     expect(ORG_ADMIN_ROUTES[0].pathMatch).toBe('full');
   });
@@ -62,16 +64,23 @@ describe('ORG_ADMIN_ROUTES', () => {
   // Roles are the realm's list, read to populate a checkbox set — not something a tenant creates. A
   // route of their own would give them a list and a form that could mint one, and a role minted from a
   // typo is one nothing in the platform ever matches.
-  it('gives roles no routable screen of their own', () => {
-    expect(ORG_ADMIN_ROUTES.map((route) => route.path)).not.toContain('organization-role');
-    expect(userRoute?.children?.some((child) => child.path === 'list')).toBe(true);
+  // The catalog of roles is a screen of its own, beside the users. Its rules per row, which keep a platform or
+  // workflow role read-only, are the descriptor's, so the route carries none of them.
+  it('gives the role catalog a screen of its own, with its own entity name', () => {
+    const roleRoute = ORG_ADMIN_ROUTES.find((route) => route.path === 'organization-role');
+
+    expect(roleRoute?.data).toMatchObject({ entityName: ORGANIZATION_ROLE_ENTITY_NAME });
+    expect(roleRoute?.children?.some((child) => child.path === 'list')).toBe(true);
   });
 
   it('offers the facade for application-level provision and registers it under the entity name', () => {
     // Application level rather than route level: the route binds it with `useExisting`, which needs the
     // instance to already exist — a route-level provider would create a second one per activation and
     // lose whatever the first had loaded.
-    expect(ORG_ADMIN_FACADE_PROVIDERS).toEqual([OrganizationUserFacade]);
-    expect(ORG_ADMIN_ENTITY_FACADES).toEqual({ [ORGANIZATION_USER_ENTITY_NAME]: OrganizationUserFacade });
+    expect(ORG_ADMIN_FACADE_PROVIDERS).toEqual([OrganizationUserFacade, OrganizationRoleFacade]);
+    expect(ORG_ADMIN_ENTITY_FACADES).toEqual({
+      [ORGANIZATION_USER_ENTITY_NAME]: OrganizationUserFacade,
+      [ORGANIZATION_ROLE_ENTITY_NAME]: OrganizationRoleFacade,
+    });
   });
 });

@@ -6,6 +6,9 @@ import { ORGANIZATION_USER_ENTITY_NAME } from './domain/organization-user.descri
 import { OrganizationUserContainerComponent } from './feature/organization-user-container.component';
 import { OrganizationUserFacade } from './feature/organization-user.facade';
 import { ROLE_ASSIGNMENT_TAB } from './feature/role-assignment-tab';
+import { ORGANIZATION_ROLE_ENTITY_NAME } from './domain/organization-role.descriptors';
+import { OrganizationRoleContainerComponent } from './feature/organization-role-container.component';
+import { OrganizationRoleFacade } from './feature/organization-role.facade';
 
 /**
  * A tenant's own administration branch, mounted by `processpuzzle-biz-frontend` under `/{orgKey}/admin`.
@@ -30,6 +33,14 @@ export const ORG_ADMIN_ROUTES: Routes = [
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrganizationUserFacade }, adminScopes()],
     children: baseEntityRoutes([], [ROLE_ASSIGNMENT_TAB]),
   },
+  {
+    path: 'organization-role',
+    title: 'ProcessPuzzle - Roles',
+    data: { icon: 'badge', menuTitle: 'admin.roles', entityName: ORGANIZATION_ROLE_ENTITY_NAME },
+    component: OrganizationRoleContainerComponent,
+    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrganizationRoleFacade }, adminScopes()],
+    children: baseEntityRoutes([]),
+  },
 ];
 
 /**
@@ -51,9 +62,10 @@ function adminScopes() {
  * exist — a route-level entry would create a second instance per activation and lose whatever the
  * first had loaded.
  */
-export const ORG_ADMIN_FACADE_PROVIDERS = [OrganizationUserFacade];
+export const ORG_ADMIN_FACADE_PROVIDERS = [OrganizationUserFacade, OrganizationRoleFacade];
 
 /** Entity name → facade, for a host's `BASE_ENTITY_FACADE_REGISTRY`. */
 export const ORG_ADMIN_ENTITY_FACADES = {
   [ORGANIZATION_USER_ENTITY_NAME]: OrganizationUserFacade,
+  [ORGANIZATION_ROLE_ENTITY_NAME]: OrganizationRoleFacade,
 };
