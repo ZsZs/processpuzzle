@@ -15,6 +15,7 @@ public class AiProperties {
     private VisionServer visionServer = new VisionServer();
     private Poller poller = new Poller();
     private Recognition recognition = new Recognition();
+    private Assistant assistant = new Assistant();
 
     @Getter
     @Setter
@@ -64,5 +65,20 @@ public class AiProperties {
         private Duration overdueAfter = Duration.ofMinutes(10);
         /** Submissions after which a ticket that never reached the vision server is failed. */
         private int maxSubmitAttempts = 20;
+    }
+
+    /** The design assistant; off unless an application enables it and names a gateway. */
+    @Getter
+    @Setter
+    public static class Assistant {
+        private boolean enabled = false;
+        /** The LiteLLM gateway's OpenAI-compatible root, e.g. {@code http://processpuzzle-litellm:4000/v1}. */
+        private String baseUrl;
+        /** The gateway's master key, sent as the API key; never logged. */
+        private String apiKey;
+        /** The model alias the gateway routes, see tools/docker/litellm/config.yaml. */
+        private String model = "pp-designer";
+        /** Tool calls one conversation turn may make before the assistant is told to stop and report. */
+        private int maxToolCalls = 20;
     }
 }
