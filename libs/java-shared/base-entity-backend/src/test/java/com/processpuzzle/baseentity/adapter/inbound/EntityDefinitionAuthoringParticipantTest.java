@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,7 +105,7 @@ class EntityDefinitionAuthoringParticipantTest {
     @Test
     void validationViolationsAreReturnedAsIssuesPerAttribute() {
         when(findByCodes.find(ORG, Set.of("invoice"), Channel.DRAFT)).thenReturn(List.of());
-        org.mockito.Mockito.doThrow(new ValidationException(List.of(
+        doThrow(new ValidationException(List.of(
                 new ValidationException.Violation("amount", "amount needs a value kind"))))
             .when(createUseCase).create(any(), any());
 
@@ -117,7 +118,7 @@ class EntityDefinitionAuthoringParticipantTest {
     @Test
     void aConflictIsReturnedAsAnIssueAtTheDraftLevel() {
         when(findByCodes.find(ORG, Set.of("invoice"), Channel.DRAFT)).thenReturn(List.of());
-        org.mockito.Mockito.doThrow(new ConflictException("Entity definition 'invoice' already exists"))
+        doThrow(new ConflictException("Entity definition 'invoice' already exists"))
             .when(createUseCase).create(any(), any());
 
         List<AuthoringIssue> issues = participant.saveDraft(ORG, "invoice", DRAFT_JSON);
@@ -137,7 +138,7 @@ class EntityDefinitionAuthoringParticipantTest {
     void validateReturnsTheViolationsOfTheStoredDraft() {
         BaseEntityDefinition stored = new BaseEntityDefinition();
         when(findByCodes.find(ORG, Set.of("invoice"), Channel.DRAFT)).thenReturn(List.of(stored));
-        org.mockito.Mockito.doThrow(new ValidationException(List.of(
+        doThrow(new ValidationException(List.of(
                 new ValidationException.Violation(null, "no attributes"))))
             .when(validator).validate(stored);
 
