@@ -118,8 +118,8 @@ The Compose file sets `KC_BOOTSTRAP_ADMIN_USERNAME=admin` / `KC_BOOTSTRAP_ADMIN_
 
 `keycloak-init` creates or reconciles one administrator in each realm that ships a seed user (`processpuzzle-testbed`, `-admin`) from `FIRST_ADMIN_<STACK>_USERNAME` / `_PASSWORD` (both or neither; `_EMAIL` optional) on every
 start, so rotating the password is a redeploy. The admin realm account gets `platform-admin`. Biz and custom have no seed user: biz is public sign-up, and custom tenants get admins through the org-admin invite flow. The imports' seed users (`test-user`, `platform-admin`) remain for local and CI; with
-`KEYCLOAK_REMOVE_SEED_USERS=true` (stage/prod) they are deleted, and the script refuses to do so for a realm
-whose first administrator is not configured. See `env/infrastructure/.env.example`.
+`KEYCLOAK_REMOVE_SEED_USERS=true` (stage/prod) they are deleted, and the script keeps the seed user, with a warning, for a realm
+whose first administrator is not configured, then carries on with the rest of the bootstrap. See `env/infrastructure/.env.example`.
 
 ## The login theme
 

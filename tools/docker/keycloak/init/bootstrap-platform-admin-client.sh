@@ -661,8 +661,12 @@ for stack in TESTBED ADMIN; do
 
   if [ "${REMOVE_SEED_USERS}" = "true" ]; then
     if [ -z "${admin_username}" ]; then
-      echo "ERROR: KEYCLOAK_REMOVE_SEED_USERS=true needs ${user_var}; removing the seed user would leave '${realm}' without an administrator." >&2
-      exit 1
+      # Not an exit: refusing to delete the seed user is the whole safeguard, and aborting here would
+      # also skip everything after this loop -- the create-realm grant and every realm-management
+      # grant -- on a stack whose only fault is a missing variable. The seed user stays until
+      # ${user_var} is set, so this is a warning to act on, not one to ignore.
+      echo "WARNING: KEYCLOAK_REMOVE_SEED_USERS=true needs ${user_var}; keeping the seed user in '${realm}', because removing it would leave the realm without an administrator." >&2
+      continue
     fi
     case "${stack}" in
       TESTBED) remove_seed_user "${realm}" "test-user" "${admin_username}" ;;
