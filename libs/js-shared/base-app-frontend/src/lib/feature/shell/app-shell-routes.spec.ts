@@ -1,6 +1,8 @@
 import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Route, Routes } from '@angular/router';
+import { TranslocoService } from '@jsverse/transloco';
+import { TranslocoHttpLoader } from '@processpuzzle/util';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppDefinition, RouteDefinition } from '../../domain/app-definition';
@@ -9,6 +11,7 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
+import { ModuleTranslationService } from '../../domain/module-translation.service';
 
 import { BaseEntityScreensComponent } from '@processpuzzle/base-entity';
 import { RouteWidgetsComponent } from '../route-widgets.component';
@@ -28,6 +31,8 @@ describe('AppShellRoutesFactory', () => {
   const appService = { findById: vi.fn() };
   const moduleStore = { loadById: vi.fn() };
   const moduleService = { findById: vi.fn() };
+  const shippedTranslations = { getTranslation: vi.fn() };
+  const moduleTranslations = { bundle: vi.fn() };
 
   function factory(): AppShellRoutesFactory {
     TestBed.configureTestingModule({
@@ -36,6 +41,9 @@ describe('AppShellRoutesFactory', () => {
         { provide: AppDefinitionService, useValue: appService },
         { provide: ModuleDefinitionStore, useValue: moduleStore },
         { provide: ModuleDefinitionService, useValue: moduleService },
+        { provide: TranslocoService, useValue: { getAvailableLangs: () => ['en', { id: 'de', label: 'Deutsch' }], getActiveLang: () => 'en' } },
+        { provide: TranslocoHttpLoader, useValue: shippedTranslations },
+        { provide: ModuleTranslationService, useValue: moduleTranslations },
       ],
     });
     return TestBed.inject(AppShellRoutesFactory);
@@ -48,6 +56,8 @@ describe('AppShellRoutesFactory', () => {
     moduleStore.loadById.mockReturnValue(undefined);
     appService.findById.mockReturnValue(of(undefined));
     moduleService.findById.mockReturnValue(of(undefined));
+    shippedTranslations.getTranslation.mockReturnValue(of({}));
+    moduleTranslations.bundle.mockReturnValue(of({}));
   });
 
   it('renders one route per authored route, through AppRouteRenderer', async () => {
@@ -95,6 +105,60 @@ describe('AppShellRoutesFactory', () => {
     const mount = children.find((route) => route.path === 'back-office');
 
     expect(await expand(mount as Route)).not.toEqual([]);
+  });
+
+  describe('a mounted module' + "'s translations", () => {
+    type Loaders = Record<string, () => Promise<Record<string, string>>>;
+
+    /** The inline loaders the module's scope was registered with, once something navigates into the mount. */
+    async function loadersOf(definition: AppDefinition): Promise<Loaders> {
+      const children = await factory().childrenFor(definition);
+      const mount = children.find((route) => route.path === 'back-office') as Route;
+      const wrapper = (await expand(mount))[0];
+      const scopes = (wrapper.providers?.flat() ?? []) as Array<{ useValue: { loader?: Loaders } }>;
+      return scopes[0].useValue.loader as Loaders;
+    }
+
+    const mountOf = (fields: Partial<AppDefinition> = {}) => new AppDefinition({ id: 'demo', modules: [{ moduleKey: 'order-admin', basePath: 'back-office' }], mountedModules: undefined, ...fields });
+
+    beforeEach(() => {
+      moduleStore.loadById.mockReturnValue(new ModuleDefinition({ id: 'order-admin', translocoScope: 'order_admin', routes: [widgetsRoute('lines')] }));
+    });
+
+    it('registers a loader for every language transloco is configured for, definitions of the language included', async () => {
+      expect(Object.keys(await loadersOf(mountOf()))).toEqual(['en', 'de']);
+    });
+
+    it('lays what was uploaded over what the scope already ships, so a seeded bundle keeps its other words', async () => {
+      shippedTranslations.getTranslation.mockReturnValue(of({ route: { orders: 'Alle Aufträge' }, 'module.name': 'Alt' }));
+      moduleTranslations.bundle.mockReturnValue(of({ 'module.name': 'Auftragsverwaltung' }));
+
+      const loaded = await (await loadersOf(mountOf()))['de']();
+
+      expect(shippedTranslations.getTranslation).toHaveBeenCalledWith('order_admin/de', { scope: 'order_admin' });
+      expect(loaded).toEqual({ route: { orders: 'Alle Aufträge' }, 'module.name': 'Auftragsverwaltung' });
+    });
+
+    it('reads the draft translations for a draft definition, as the designer previews', async () => {
+      await (await loadersOf(mountOf()))['de']();
+
+      expect(moduleTranslations.bundle).toHaveBeenCalledWith('order-admin', 'de', 'draft');
+    });
+
+    it('reads the released translations for a published layout, which carries released modules only', async () => {
+      const released = mountOf({ mountedModules: [new ModuleDefinition({ id: 'order-admin', translocoScope: 'order_admin', routes: [widgetsRoute('lines')] })] });
+
+      await (await loadersOf(released))['de']();
+
+      expect(moduleTranslations.bundle).toHaveBeenCalledWith('order-admin', 'de', 'released');
+    });
+
+    it('keeps the titles readable when the uploaded translations cannot be read', async () => {
+      shippedTranslations.getTranslation.mockReturnValue(of({ 'module.name': 'Auftragsverwaltung' }));
+      moduleTranslations.bundle.mockReturnValue(throwError(() => new Error('boom')));
+
+      expect(await (await loadersOf(mountOf()))['de']()).toEqual({ 'module.name': 'Auftragsverwaltung' });
+    });
   });
 
   describe('reading the definition', () => {

@@ -138,6 +138,19 @@
     "version": "Version",
     "updatedAt": "Updated At",
     "routes": "Routes",
+    "translations": "Translations",
+    "translations_panel": {
+      "hint": "One file per supported language holds every translatable text of the module. Translate the values, keep the keys, and upload the zip (or a single file) again.",
+      "language": "Language",
+      "translated": "Translated",
+      "download": "Download files",
+      "upload": "Upload translations",
+      "save_first": "Save the module first; the files are prepared from the saved module.",
+      "stored": "{{count}} keys stored",
+      "unknown": "{{count}} unknown keys ignored",
+      "missing": "{{count}} keys missing",
+      "untranslated": "{{count}} still equal to the original"
+    },
     "_tooltips": {
       "id": "Unique within your organization; applications mount the module by this key. Must not change once the module is in use. — Guide: Modules",
       "name": "The module's name. — Guide: Modules",
@@ -146,7 +159,8 @@
       "translocoScope": "The scope the module's translations are loaded under; empty means the Key. — Guide: Modules",
       "version": "Increases with every save. Set by the system.",
       "updatedAt": "When the module was last saved. Set by the system.",
-      "routes": "The module's pages. Their paths are relative to the base path the module is mounted at. — Guide: Modules"
+      "routes": "The module's pages. Their paths are relative to the base path the module is mounted at. — Guide: Modules",
+      "translations": "Download the module’s translation files, translate them off-line and upload them again. — Guide: Modules"
     }
   },
   "concepts": {

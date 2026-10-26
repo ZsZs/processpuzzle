@@ -1,6 +1,7 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType } from '@processpuzzle/base-entity';
 import { MODULE_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
 import { APP_ROUTE_ENTITY_NAME, MODULE_DEFINITION_ENTITY_NAME } from './app-entity-names';
+import { ModuleTranslationsAttrDescriptor } from './module-translations-control.component';
 import { APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
 
 export { MODULE_DEFINITION_ENTITY_NAME };
@@ -48,12 +49,16 @@ function createModuleDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   routesAttr.referenceIdField = APP_ROUTE_ID_FIELD;
   routesAttr.hideInTable = true;
 
+  // The prepared translation files of the module — fetched and returned here, never edited in the app. Not part
+  // of the saved module: it only talks to the module's own translation endpoints.
+  const translationsAttr = new ModuleTranslationsAttrDescriptor();
+
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, translocoIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([translocoScopeAttr, versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, revisionRow, descriptionAttr, routesAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, revisionRow, descriptionAttr, routesAttr, translationsAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

@@ -116,7 +116,10 @@ describe('buildAppRoutes', () => {
     });
 
     it('mounts the modules after the app own routes', async () => {
-      const routes = await buildAppRoutes({ routes: routeDefinitions('orders'), modules: [{ moduleKey: 'claims', basePath: 'claims' }], moduleRoutes: { claims: routeDefinitions('open') } }, renderRoute);
+      const routes = await buildAppRoutes(
+        { routes: routeDefinitions('orders'), modules: [{ moduleKey: 'claims', basePath: 'claims' }], moduleRoutes: { claims: routeDefinitions('open') } },
+        renderRoute,
+      );
 
       expect(routes.map((route) => route.path)).toEqual(['orders', 'claims']);
     });
@@ -209,6 +212,48 @@ describe('buildAppRoutes', () => {
         { scope: 'base_entity', alias: 'base_entity' },
         { scope: 'base_app', alias: 'base_app' },
       ]);
+    });
+
+    // A designer who never typed a translocoId still gets a module a user can translate from the files the
+    // backend prepares; both sides derive the key from the scope and the path, so they have to agree.
+    it('translates every title under its authored key, or one derived from the scope and the path', async () => {
+      const seen: Array<string | undefined> = [];
+      const record = (definition: RouteDefinition): Route => {
+        seen.push(definition.translocoId);
+        return {};
+      };
+      const routes = [
+        new RouteDefinition({ path: 'cases/:id', title: 'Case', kind: 'WIDGETS' }),
+        new RouteDefinition({ path: 'open', title: 'Open', translocoId: 'claims.custom.open', kind: 'WIDGETS' }),
+      ];
+      const loadModule = vi.fn().mockResolvedValue(moduleOf(routes));
+
+      await childrenOf((await buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule }, record))[0]);
+
+      expect(seen.sort()).toEqual(['claims.custom.open', 'claims.route.cases/:id']);
+    });
+
+    it('registers the module scope with one inline loader per language, answered by the translation loader', async () => {
+      const loadTranslations = { languages: ['en', 'de'], load: vi.fn().mockResolvedValue({ 'module.name': 'Schäden' }) };
+      const loadModule = vi.fn().mockResolvedValue(moduleOf(routeDefinitions('open'), { translocoScope: 'claims_module' }));
+
+      const children = await childrenOf((await buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule, loadTranslations }, renderRoute))[0]);
+
+      const [moduleScope, ...frameworkScopes] = scopesOf(children[0]) as Array<{ scope: string; loader?: Record<string, () => Promise<unknown>> }>;
+      expect(Object.keys(moduleScope.loader ?? {})).toEqual(['en', 'de']);
+      expect(loadTranslations.load).not.toHaveBeenCalled();
+      expect(await moduleScope.loader?.['de']()).toEqual({ 'module.name': 'Schäden' });
+      expect(loadTranslations.load).toHaveBeenCalledWith('claims', 'claims_module', 'de');
+      // The framework scopes keep loading from the application, as they did before.
+      expect(frameworkScopes.every((scope) => !scope.loader)).toBe(true);
+    });
+
+    it('registers the scope with no loader of its own when nobody offers translations', async () => {
+      const loadModule = vi.fn().mockResolvedValue(moduleOf(routeDefinitions('open')));
+
+      const children = await childrenOf((await buildAppRoutes({ modules: [{ moduleKey: 'claims', basePath: 'claims' }], loadModule }, renderRoute))[0]);
+
+      expect(scopesOf(children[0])[0]).not.toHaveProperty('loader');
     });
 
     // A dangling module key stays a warning at run-time too: the mount resolves to nothing rather than

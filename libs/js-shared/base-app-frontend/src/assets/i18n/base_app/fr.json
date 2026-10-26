@@ -138,6 +138,19 @@
     "version": "Version",
     "updatedAt": "Modifié le",
     "routes": "Routes",
+    "translations": "Traductions",
+    "translations_panel": {
+      "hint": "Un fichier par langue prise en charge contient tous les textes traduisibles du module. Traduisez les valeurs, conservez les clés, puis renvoyez le zip (ou un seul fichier).",
+      "language": "Langue",
+      "translated": "Traduit",
+      "download": "Télécharger les fichiers",
+      "upload": "Envoyer les traductions",
+      "save_first": "Enregistrez d’abord le module ; les fichiers sont préparés à partir du module enregistré.",
+      "stored": "{{count}} clés enregistrées",
+      "unknown": "{{count}} clés inconnues ignorées",
+      "missing": "{{count}} clés manquantes",
+      "untranslated": "{{count}} encore identiques à l’original"
+    },
     "_tooltips": {
       "id": "Unique au sein de votre organisation ; les applications montent le module par cette clé. Ne doit plus changer une fois le module utilisé. — Guide : Modules",
       "name": "Le nom du module. — Guide : Modules",
@@ -146,7 +159,8 @@
       "translocoScope": "La portée sous laquelle les traductions du module sont chargées ; vide signifie la Clé. — Guide : Modules",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement du module. Défini par le système.",
-      "routes": "Les pages du module. Leurs chemins sont relatifs au chemin de base sous lequel le module est monté. — Guide : Modules"
+      "routes": "Les pages du module. Leurs chemins sont relatifs au chemin de base sous lequel le module est monté. — Guide : Modules",
+      "translations": "Téléchargez les fichiers de traduction du module, traduisez-les hors ligne et renvoyez-les. — Guide : Modules"
     }
   },
   "concepts": {
