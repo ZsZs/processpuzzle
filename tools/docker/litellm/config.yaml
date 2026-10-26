@@ -2,18 +2,18 @@
 # so switching vendor or model is an edit here, not a release of the backend. The provider keys come
 # from the environment of the container (see docker-compose-infrastructure.yaml).
 #
-# Default: Mistral (Paris) on a pay-as-you-go account, alias on mistral-small. The free tier is
+# Default: Mistral (Paris) on a pay-as-you-go account, alias on mistral-large. The free tier is
 # unusable: it refuses mistral-large (403 tier_not_allowed) and rate limits mistral-small (429), and
-# its inputs may be used for training. Pay-as-you-go lifts the limits; check Settings > Privacy in the
+# its inputs may be used for training. Pay-as-you-go lifts both; check Settings > Privacy in the
 # Mistral console for the data terms before real customer data goes through, and keep demo data until
-# then. mistral-large-latest is a one-line change here once the account is confirmed to allow it.
+# then.
 # Scaleway Generative APIs (France, 1M free tokens, no training on API data) is the drop-in
 # alternative: model openai/mistral-large-3 (or gpt-oss-120b) with
 # api_base https://api.scaleway.ai/v1 and api_key os.environ/SCW_SECRET_KEY.
 model_list:
   - model_name: pp-designer
     litellm_params:
-      model: mistral/mistral-small-latest
+      model: mistral/mistral-large-latest
       api_key: os.environ/MISTRAL_API_KEY
 
 general_settings:
