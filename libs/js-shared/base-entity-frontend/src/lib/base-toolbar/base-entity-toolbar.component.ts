@@ -90,7 +90,13 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
   store!: BaseEntityStoreApi<Entity>;
   /** A preview of draft definitions over live objects: they may be opened, not created or deleted. */
   isReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
-  isDeleteEnabled = computed(() => this.store?.selectedEntities().length != 0 && !this.entityDescriptor().isAbstract && !this.isReadOnly());
+  isDeleteEnabled = computed(
+    () =>
+      this.store?.selectedEntities().length != 0 &&
+      !this.entityDescriptor().isAbstract &&
+      !this.isReadOnly() &&
+      (this.store?.selectedEntities() ?? []).every((entity) => this.entityDescriptor().isDeletable?.(entity) ?? true),
+  );
   isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
   isNewEnabled = computed(() => !this.entityDescriptor().isAbstract && !this.isReadOnly());
   isPdfExportEnabled = computed(() => (this.store?.entities().length ?? 0) > 0);

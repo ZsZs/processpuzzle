@@ -52,6 +52,11 @@ export abstract class AbstractAttrDescriptor {
   attrName: string;
   formControlType: FormControlType;
   disabled = false;
+  /**
+   * Editable only while the entity is new: a key chosen at creation, which the entity is then known by. Once it
+   * has been saved the control is disabled, so it stays out of the update the same way a read-only attribute does.
+   */
+  createOnly = false;
   style: { [p: string]: unknown } | null | undefined;
   /** Optional override for the transloco key segment of this attribute. Defaults to {@link attrName}. */
   labelKey?: string;

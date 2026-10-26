@@ -1,3 +1,4 @@
+import type { BaseEntity } from './base-entity';
 import type { TemplateRef, Type } from '@angular/core';
 import type { Route, Routes } from '@angular/router';
 import { FormControlType, type AbstractAttrDescriptor } from './abstact-attr.descriptor';
@@ -74,6 +75,14 @@ export interface BaseEntityDescriptorOptions {
    * is about inheritance, and from the preview mode, which is a host's decision about definitions built at run time.
    */
   isReadOnly?: boolean;
+  /**
+   * Whether one row may be changed, decided per entity. A row the server owns outright, an administrator's role
+   * for instance, is shown and saved only where this answers true. The form then shows it read-only. Not a
+   * kind of row: that is {@link isReadOnly}.
+   */
+  isEditable?: (entity: BaseEntity) => boolean;
+  /** As {@link isEditable}, for the delete action on the row. */
+  isDeletable?: (entity: BaseEntity) => boolean;
   /** Name of the entity this one inherits from. Unrelated to {@link componentParent}. */
   parentEntity?: string;
   route?: string;
@@ -107,6 +116,8 @@ export class BaseEntityDescriptor {
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
   readonly isReadOnly: boolean;
+  readonly isEditable: ((entity: BaseEntity) => boolean) | undefined;
+  readonly isDeletable: ((entity: BaseEntity) => boolean) | undefined;
   route: string | undefined;
   /** Normalized {@link BaseEntityDescriptorOptions.componentParent}; empty when this is not a component. */
   readonly componentParents: readonly string[];
@@ -123,6 +134,8 @@ export class BaseEntityDescriptor {
     titleKey,
     isAbstract,
     isReadOnly,
+    isEditable,
+    isDeletable,
     parentEntity,
     route,
     componentParent,
@@ -138,6 +151,8 @@ export class BaseEntityDescriptor {
     this.titleKey = titleKey;
     this.isAbstract = isAbstract ?? false;
     this.isReadOnly = isReadOnly ?? false;
+    this.isEditable = isEditable;
+    this.isDeletable = isDeletable;
     this.parentEntity = parentEntity;
     this.route = route;
     this.componentParents = componentParent === undefined ? [] : [componentParent].flat();

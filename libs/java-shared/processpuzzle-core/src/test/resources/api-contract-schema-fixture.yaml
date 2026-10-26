@@ -1,0 +1,23 @@
+openapi: 3.0.3
+components:
+  schemas:
+    Widget:
+      type: object
+      required: [ code, parts ]
+      properties:
+        code:
+          type: string
+        size:
+          $ref: '#/components/schemas/Size'
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Part'
+    Size:
+      type: string
+      enum: [ small, large ]
+    Part:
+      type: object
+      properties:
+        name:
+          type: string

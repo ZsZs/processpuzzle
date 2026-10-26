@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ADMIN_URL, provideOrgAdminTesting, REALM_ROLE_DTOS, required } from '../domain/test-organization-user';
 import { RoleAssignmentComponent } from './role-assignment.component';
@@ -12,6 +13,7 @@ describe('RoleAssignmentComponent', () => {
   let fixture: ComponentFixture<RoleAssignmentComponent>;
   let controller: HttpTestingController;
   let snackBarStub: { open: ReturnType<typeof vi.fn> };
+  let parentId: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const render = (): HTMLElement => {
     fixture.detectChanges();
@@ -27,6 +29,7 @@ describe('RoleAssignmentComponent', () => {
   // `undefined` too, so `configure(undefined)` would silently hand back the inherited `kc-1`.
   function configure(parentParams: Record<string, string> | null = { entityId: 'kc-1' }) {
     snackBarStub = { open: vi.fn() };
+    parentId = new BehaviorSubject(convertToParamMap(parentParams ?? {}));
     TestBed.configureTestingModule({
       imports: [RoleAssignmentComponent],
       providers: [
@@ -37,7 +40,8 @@ describe('RoleAssignmentComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: { paramMap: convertToParamMap({}) },
-            parent: parentParams ? { snapshot: { paramMap: convertToParamMap(parentParams) } } : null,
+            paramMap: of(convertToParamMap({})),
+            parent: parentParams ? { snapshot: { paramMap: convertToParamMap(parentParams) }, paramMap: parentId } : null,
           },
         },
       ],
@@ -165,5 +169,51 @@ describe('RoleAssignmentComponent', () => {
     fixture.componentInstance.onSave();
 
     controller.verify();
+  });
+
+  /**
+   * A failed read leaves no baseline. Shown as an empty set, the administrator could save it and revoke
+   * roles the user was never shown; so it is shown as a failure, with nothing to save, until a retry
+   * reads both again.
+   */
+  it('refuses to save a set it never read, and reads again on retry', () => {
+    render();
+    controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
+    controller.expectOne(userRolesUrl).flush({ errorId: 'user-directory.unavailable' }, { status: 503, statusText: 'Unavailable' });
+
+    const host = render();
+    expect(host.querySelector('mat-checkbox')).toBeNull();
+    expect(host.textContent).toContain('could not be read');
+    expect(host.querySelector('#save-roles')).toBeNull();
+
+    fixture.componentInstance.onSave();
+    controller.verify();
+
+    required<HTMLButtonElement>(host, '#retry-roles').click();
+    controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
+    controller.expectOne(userRolesUrl).flush([{ name: 'accountant' }]);
+    render();
+
+    expect(fixture.componentInstance.failed()).toBe(false);
+    expect([...fixture.componentInstance.selected()]).toEqual(['accountant']);
+  });
+
+  /**
+   * The route is reused for another user, so an answer still in flight for the previous one must not
+   * land in this editor: it would show, and save, the wrong person's roles.
+   */
+  it('starts over for another user and drops the answers still in flight for the last one', () => {
+    render();
+    controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
+    const previous = controller.expectOne(userRolesUrl);
+
+    parentId.next(convertToParamMap({ entityId: 'kc-2' }));
+
+    expect(previous.cancelled).toBe(true);
+    controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
+    controller.expectOne(`${ADMIN_URL}/users/kc-2/roles`).flush([{ name: 'org-member' }]);
+
+    expect(fixture.componentInstance.userId).toBe('kc-2');
+    expect([...fixture.componentInstance.selected()]).toEqual(['org-member']);
   });
 });

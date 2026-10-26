@@ -21,7 +21,7 @@
   </mat-card-content>
   <mat-card-actions>
     <button id="cancel" [attr.data-testid]="entityDescriptor().createTestId('cancel')" mat-raised-button color="secondary" (click)="onCancel()">Cancel</button>
-    <button id="delete" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-raised-button color="primary" type="button" [disabled]="isNewObject() || isAbstract() || isReadOnly()" (click)="onDelete()">Delete</button>
+    <button id="delete" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-raised-button color="primary" type="button" [disabled]="isNewObject() || isAbstract() || entityReadOnly() || !rowDeletable()" (click)="onDelete()">Delete</button>
     @if (entityDescriptor().extraFormActionsTemplate?.(); as extraTpl) {
       <ng-container [ngTemplateOutlet]="extraTpl"></ng-container>
     }

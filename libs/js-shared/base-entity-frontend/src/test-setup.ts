@@ -16,7 +16,7 @@ import { TestEntity, TestEnum } from './lib/test-entity';
 import { AbstractAttrDescriptor, FormControlType } from './lib/base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from './lib/base-entity/base-entity-attr.descriptor';
 import { TestBed } from '@angular/core/testing';
-import { BaseEntityDescriptor, EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
+import { BaseEntityDescriptor, BaseEntityDescriptorOptions, EntityTabDescriptor } from './lib/base-entity/base-entity.descriptor';
 import { TestEntityStore } from './lib/test-entity.store';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -168,12 +168,13 @@ export const TEST_ENTITY_ROUTES: Routes = [
   },
 ];
 
-function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[]) {
+function createEntityDescriptor(attrDescriptors: AbstractAttrDescriptor[], options: Partial<BaseEntityDescriptorOptions> = {}) {
   const entityDescriptor = new BaseEntityDescriptor({
     store: TestEntityStore,
     attrDescriptors: attrDescriptors,
     entityName: 'TestEntity',
     entityTitle: 'Test Entity',
+    ...options,
   });
   return entityDescriptor;
 }
@@ -264,8 +265,14 @@ export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDesc
   return { fixture, component, store, formNavigator };
 }
 
-export async function setupFormComponentTest(attrDescriptors: AbstractAttrDescriptor[], entity = new TestEntity(), isEntityNew = false, extraProviders: Provider[] = []) {
-  const entityDescriptor = createEntityDescriptor(attrDescriptors);
+export async function setupFormComponentTest(
+  attrDescriptors: AbstractAttrDescriptor[],
+  entity = new TestEntity(),
+  isEntityNew = false,
+  extraProviders: Provider[] = [],
+  options: Partial<BaseEntityDescriptorOptions> = {},
+) {
+  const entityDescriptor = createEntityDescriptor(attrDescriptors, options);
   const runtimeConfigMock = {
     BASE_CONFIGURATION: { THIRD_PARTY_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
     LOGGING_CONFIGURATION,
@@ -339,10 +346,12 @@ export async function setupContainerComponentTest(
   translations: TranslationsMap = {},
   extraProviders: Provider[] = [],
   extraTabs: EntityTabDescriptor[] = [],
+  options: Partial<BaseEntityDescriptorOptions> = {},
 ) {
   const checkboxConfig = new BaseEntityAttrDescriptor('boolean', FormControlType.CHECKBOX);
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
   const entityDescriptor = new BaseEntityDescriptor({
+    ...options,
     store: TestEntityStore,
     attrDescriptors: [checkboxConfig, labelConfig],
     entityName: 'TestEntity',
