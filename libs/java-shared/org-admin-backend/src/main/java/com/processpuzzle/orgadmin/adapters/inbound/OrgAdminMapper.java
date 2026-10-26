@@ -6,7 +6,6 @@ import com.processpuzzle.orgadmin.model.OrganizationUserInvite;
 import com.processpuzzle.orgadmin.model.OrganizationUserUpdate;
 import com.processpuzzle.orgadmin.model.PageOfOrganizationUser;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryPage;
-import com.processpuzzle.core.tenancy.RoleReference;
 import com.processpuzzle.orgadmin.usecases.inbound.CatalogRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryRole;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
@@ -64,13 +63,6 @@ public class OrgAdminMapper {
 
     public List<OrganizationRole> toCatalogList(List<CatalogRole> roles) {
         return roles.stream().map(this::toModel).toList();
-    }
-
-    public com.processpuzzle.orgadmin.model.RoleReference toModel(RoleReference reference) {
-        com.processpuzzle.orgadmin.model.RoleReference model = new com.processpuzzle.orgadmin.model.RoleReference(
-                reference.feature(), reference.kind(), reference.id());
-        model.setTitle(reference.title());
-        return model;
     }
 
     public List<OrganizationRole> toRoleList(List<DirectoryRole> roles) {
