@@ -228,7 +228,9 @@ class ModuleTranslationUseCasesTest {
 
     @Test
     void aLanguageThatIsNotSupportedRejectsTheWholeUpload() {
-        assertThatThrownBy(() -> uploadZip(Map.of("de.json", "{}", "it.json", "{}")))
+        Map<String, String> files = Map.of("de.json", "{}", "it.json", "{}");
+
+        assertThatThrownBy(() -> uploadZip(files))
                 .isInstanceOf(ModuleTranslationRejectedException.class).hasMessageContaining("'it'");
         flush();
 
@@ -252,7 +254,9 @@ class ModuleTranslationUseCasesTest {
 
     @Test
     void aMissingModuleIsNotFound() {
-        assertThatThrownBy(() -> upload.execute(ORG, "nope", "de.json", new ByteArrayInputStream("{}".getBytes())))
+        ByteArrayInputStream body = new ByteArrayInputStream("{}".getBytes());
+
+        assertThatThrownBy(() -> upload.execute(ORG, "nope", "de.json", body))
                 .isInstanceOf(ModuleDefinitionNotFoundException.class);
         assertThatThrownBy(() -> download.execute(ORG, "nope")).isInstanceOf(ModuleDefinitionNotFoundException.class);
         assertThatThrownBy(() -> coverage.execute(ORG, "nope")).isInstanceOf(ModuleDefinitionNotFoundException.class);
@@ -322,7 +326,7 @@ class ModuleTranslationUseCasesTest {
     }
 
     @Test
-    void theDefaultLocaleFallsBackToTheFirstSupportedLanguageThenEn() throws IOException {
+    void theDefaultLocaleFallsBackToTheFirstSupportedLanguageThenEn() {
         var viaNoDirectory = new ModuleTranslationLanguages(providerOf(new SupportedLanguages() {
             @Override
             public List<String> codes(String orgKey) {

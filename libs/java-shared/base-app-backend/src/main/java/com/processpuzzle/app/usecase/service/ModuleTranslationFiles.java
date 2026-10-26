@@ -12,7 +12,6 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
@@ -27,9 +26,6 @@ import java.util.zip.ZipOutputStream;
  * caps its archives, so a zip bomb cannot be uploaded here either.
  */
 public final class ModuleTranslationFiles {
-
-    /** BCP-47 language tag: {@code en}, {@code pt-BR}, {@code zh-Hant}. */
-    public static final Pattern LOCALE = Pattern.compile("[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*");
 
     static final int MAX_ENTRIES = 64;
     static final int MAX_FILE_BYTES = 1024 * 1024;
@@ -113,7 +109,7 @@ public final class ModuleTranslationFiles {
 
     private static void put(Map<String, Map<String, String>> files, String name, byte[] content) {
         String locale = name.endsWith(SUFFIX) ? name.substring(0, name.length() - SUFFIX.length()) : "";
-        if (!LOCALE.matcher(locale).matches()) {
+        if (!isLocale(locale)) {
             throw new ModuleTranslationRejectedException("'" + name + "' is not a <locale>.json file at the root.");
         }
         if (files.put(locale, parse(name, content)) != null) {
@@ -164,5 +160,31 @@ public final class ModuleTranslationFiles {
         } catch (IOException e) {
             throw new ModuleTranslationRejectedException("Unable to read " + what + ": " + e.getMessage());
         }
+    }
+
+    /** A BCP-47 language tag: {@code en}, {@code pt-BR}, {@code zh-Hant} — a 2–3 letter primary subtag, then 2–8 character subtags. */
+    private static boolean isLocale(String locale) {
+        String[] subtags = locale.split("-", -1);
+        if (!isSubtag(subtags[0], 2, 3) || !subtags[0].chars().allMatch(ModuleTranslationFiles::isLetter)) {
+            return false;
+        }
+        for (int i = 1; i < subtags.length; i++) {
+            if (!isSubtag(subtags[i], 2, 8) || !subtags[i].chars().allMatch(c -> isLetter(c) || isDigit(c))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isSubtag(String subtag, int min, int max) {
+        return subtag.length() >= min && subtag.length() <= max;
+    }
+
+    private static boolean isLetter(int c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    }
+
+    private static boolean isDigit(int c) {
+        return c >= '0' && c <= '9';
     }
 }

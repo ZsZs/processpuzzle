@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
 /**
  * One file a module brings along — a markdown page, an image — recorded by path, with the hash that names
@@ -19,6 +20,7 @@ import jakarta.persistence.Table;
  * its PUT, which would silently drop assets the form never carried. Stored per {@link Channel} like the module,
  * so a release is a copy of rows and never of files.
  */
+@Getter
 @Entity
 @Table(name = "app_module_assets")
 @IdClass(ModuleAssetKey.class)
@@ -68,33 +70,5 @@ public class ModuleAsset {
         this.sha256 = newSha256;
         this.mimeType = newMimeType;
         this.size = newSize;
-    }
-
-    public String getOrgKey() {
-        return orgKey;
-    }
-
-    public String getModuleKey() {
-        return moduleKey;
-    }
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public String getSha256() {
-        return sha256;
-    }
-
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    public long getSize() {
-        return size;
     }
 }

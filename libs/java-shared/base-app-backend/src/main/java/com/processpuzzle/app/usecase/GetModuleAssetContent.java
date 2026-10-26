@@ -34,7 +34,7 @@ public class GetModuleAssetContent {
         this.guard = guard;
     }
 
-    public ModuleAssetSummary find(String orgKey, String moduleKey, String path, Channel channel) {
+    public ModuleAssetSummary summaryOf(String orgKey, String moduleKey, String path, Channel channel) {
         ModuleAsset asset = record(orgKey, moduleKey, path, channel);
         return new ModuleAssetSummary(asset.getPath(), asset.getMimeType(), asset.getSize(), asset.getSha256());
     }

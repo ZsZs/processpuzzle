@@ -35,7 +35,7 @@ class ModuleTranslationEndpointTest {
 
         var response = endpoint.downloadModuleTranslations("org", "claims");
 
-        assertThat(response.getHeaders().getContentType().toString()).isEqualTo("application/zip");
+        assertThat(response.getHeaders().getContentType()).hasToString("application/zip");
         assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
                 .isEqualTo("attachment; filename=\"claims-translations.zip\"");
         assertThat(response.getBody().contentLength()).isEqualTo(4);

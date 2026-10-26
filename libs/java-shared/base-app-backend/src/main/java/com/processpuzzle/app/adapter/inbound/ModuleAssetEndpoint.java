@@ -79,7 +79,7 @@ public class ModuleAssetEndpoint implements BaseAppModuleAssetsApi {
     public ResponseEntity<Resource> getModuleAssetContent(String orgKey, String moduleKey, String path, String revision,
                                                           String ifNoneMatch) {
         Channel channel = Channel.ofRevision(revision);
-        ModuleAssetSummary known = content.find(orgKey, moduleKey, path, channel);
+        ModuleAssetSummary known = content.summaryOf(orgKey, moduleKey, path, channel);
         String etag = "\"" + known.sha256() + "\"";
         // Revalidated on every use rather than cached outright: the same path holds other content after the
         // next upload or release, so only the hash says whether what the browser has is still the asset.

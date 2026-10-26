@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import lombok.Getter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -23,6 +24,7 @@ import org.hibernate.type.SqlTypes;
  * loads. Separate from {@code AppTranslationBundle}, which holds the framework's own seeded bundles
  * rather than tenant content.
  */
+@Getter
 @Entity
 @Table(name = "app_module_translations")
 @IdClass(ModuleTranslationKey.class)
@@ -60,26 +62,6 @@ public class ModuleTranslation {
         this.channel = channel;
         this.locale = locale;
         setMessages(messages);
-    }
-
-    public String getOrgKey() {
-        return orgKey;
-    }
-
-    public String getModuleKey() {
-        return moduleKey;
-    }
-
-    public Channel getChannel() {
-        return channel;
-    }
-
-    public String getLocale() {
-        return locale;
-    }
-
-    public Map<String, String> getMessages() {
-        return messages;
     }
 
     public void setMessages(Map<String, String> messages) {

@@ -1,7 +1,6 @@
 package com.processpuzzle.app.usecase.service;
 
 import com.processpuzzle.app.usecase.exception.ModuleAssetRejectedException;
-import java.util.regex.Pattern;
 
 /**
  * The shape of an asset path: relative to the module, segments of letters, digits, {@code .}, {@code _} and
@@ -11,8 +10,6 @@ import java.util.regex.Pattern;
 public final class ModuleAssetPaths {
 
     public static final int MAX_LENGTH = 200;
-
-    private static final Pattern PATH = Pattern.compile("[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*");
 
     private ModuleAssetPaths() {
     }
@@ -25,7 +22,7 @@ public final class ModuleAssetPaths {
         if (path.length() > MAX_LENGTH) {
             throw new ModuleAssetRejectedException("The asset path is longer than " + MAX_LENGTH + " characters.");
         }
-        if (!PATH.matcher(path).matches() || isDotSegmentIn(path)) {
+        if (!isValid(path)) {
             throw new ModuleAssetRejectedException("'" + path + "' is not a valid asset path: use segments of letters, "
                     + "digits, '.', '_' and '-' separated by '/', without '.' or '..' segments.");
         }
@@ -41,12 +38,17 @@ public final class ModuleAssetPaths {
         return originalFilename.substring(slash + 1);
     }
 
-    private static boolean isDotSegmentIn(String path) {
-        for (String segment : path.split("/")) {
-            if (segment.chars().allMatch(c -> c == '.')) {
-                return true;
+    /** Segments separated by single slashes, none empty, none made of dots alone, each of the allowed characters. */
+    private static boolean isValid(String path) {
+        for (String segment : path.split("/", -1)) {
+            if (segment.isEmpty() || segment.chars().allMatch(c -> c == '.') || !segment.chars().allMatch(ModuleAssetPaths::isAllowed)) {
+                return false;
             }
         }
-        return false;
+        return true;
+    }
+
+    private static boolean isAllowed(int c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
     }
 }

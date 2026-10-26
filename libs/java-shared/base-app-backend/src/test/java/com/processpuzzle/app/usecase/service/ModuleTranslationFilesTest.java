@@ -90,9 +90,12 @@ class ModuleTranslationFilesTest {
 
     @Test
     void anEntryOutsideTheArchiveRootIsRejected() throws IOException {
-        assertThatThrownBy(() -> read("a.zip", zipOf(Map.of("i18n/de.json", "{}"))))
+        byte[] nested = zipOf(Map.of("i18n/de.json", "{}"));
+        byte[] escaping = zipOf(Map.of("../de.json", "{}"));
+
+        assertThatThrownBy(() -> read("a.zip", nested))
                 .isInstanceOf(ModuleTranslationRejectedException.class).hasMessageContaining("at the root");
-        assertThatThrownBy(() -> read("a.zip", zipOf(Map.of("../de.json", "{}"))))
+        assertThatThrownBy(() -> read("a.zip", escaping))
                 .isInstanceOf(ModuleTranslationRejectedException.class);
     }
 
@@ -109,7 +112,9 @@ class ModuleTranslationFilesTest {
             entries.put("" + (char) ('a' + i / 26) + (char) ('a' + i % 26) + ".json", "{}");
         }
 
-        assertThatThrownBy(() -> read("a.zip", zipOf(entries)))
+        byte[] archive = zipOf(entries);
+
+        assertThatThrownBy(() -> read("a.zip", archive))
                 .isInstanceOf(ModuleTranslationRejectedException.class).hasMessageContaining("entries");
     }
 
@@ -123,7 +128,9 @@ class ModuleTranslationFilesTest {
 
     @Test
     void anEmptyArchiveIsRejected() throws IOException {
-        assertThatThrownBy(() -> read("a.zip", zipOf(Map.of())))
+        byte[] empty = zipOf(Map.of());
+
+        assertThatThrownBy(() -> read("a.zip", empty))
                 .isInstanceOf(ModuleTranslationRejectedException.class);
     }
 }

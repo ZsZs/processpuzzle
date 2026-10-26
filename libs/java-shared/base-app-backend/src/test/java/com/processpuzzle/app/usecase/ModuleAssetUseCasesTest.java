@@ -3,7 +3,6 @@ package com.processpuzzle.app.usecase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -244,7 +243,7 @@ class ModuleAssetUseCasesTest {
 
         assertThat(new String(read.content(), StandardCharsets.UTF_8)).isEqualTo("# Hello");
         assertThat(read.sha256()).isEqualTo(summary.sha256());
-        assertThat(content.find(ORG, MODULE, "a.md", Channel.DRAFT)).isEqualTo(summary);
+        assertThat(content.summaryOf(ORG, MODULE, "a.md", Channel.DRAFT)).isEqualTo(summary);
     }
 
     @Test
@@ -275,7 +274,7 @@ class ModuleAssetUseCasesTest {
         flush();
 
         assertThat(assets.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).isEmpty();
-        verify(sweeper).sweep(eq(ORG), eq(List.of(summary.sha256())));
+        verify(sweeper).sweep(ORG, List.of(summary.sha256()));
         assertThatThrownBy(() -> delete.execute(ORG, MODULE, "a.md")).isInstanceOf(ModuleAssetNotFoundException.class);
     }
 

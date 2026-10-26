@@ -24,11 +24,13 @@ class ModuleAssetPathsTest {
 
     @Test
     void rejectsAMissingOrBlankOrOverlongPath() {
+        String tooLong = "a".repeat(ModuleAssetPaths.MAX_LENGTH + 1);
+        String atLimit = "a".repeat(ModuleAssetPaths.MAX_LENGTH);
+
         assertThatThrownBy(() -> ModuleAssetPaths.require(null)).isInstanceOf(ModuleAssetRejectedException.class);
         assertThatThrownBy(() -> ModuleAssetPaths.require(" ")).isInstanceOf(ModuleAssetRejectedException.class);
-        assertThatThrownBy(() -> ModuleAssetPaths.require("a".repeat(ModuleAssetPaths.MAX_LENGTH + 1)))
-                .isInstanceOf(ModuleAssetRejectedException.class);
-        assertThat(ModuleAssetPaths.require("a".repeat(ModuleAssetPaths.MAX_LENGTH))).hasSize(ModuleAssetPaths.MAX_LENGTH);
+        assertThatThrownBy(() -> ModuleAssetPaths.require(tooLong)).isInstanceOf(ModuleAssetRejectedException.class);
+        assertThat(ModuleAssetPaths.require(atLimit)).hasSize(ModuleAssetPaths.MAX_LENGTH);
     }
 
     @Test

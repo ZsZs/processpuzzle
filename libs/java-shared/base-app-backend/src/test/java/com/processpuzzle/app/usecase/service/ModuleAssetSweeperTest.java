@@ -1,5 +1,6 @@
 package com.processpuzzle.app.usecase.service;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -49,8 +50,11 @@ class ModuleAssetSweeperTest {
 
     @Test
     void withNoStoreWiredThereIsNothingToSweep() {
-        sweeper(null).sweep("org", List.of("a"));
-        sweeper(null).eraseAll("org");
+        ModuleAssetSweeper unwired = sweeper(null);
+
+        assertThatCode(() -> unwired.sweep("org", List.of("a"))).doesNotThrowAnyException();
+        assertThatCode(() -> unwired.eraseAll("org")).doesNotThrowAnyException();
+        verify(assets, never()).existsByOrgKeyAndSha256(any(), any());
     }
 
     @Test

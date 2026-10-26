@@ -29,7 +29,7 @@ class ModuleAssetEndpointTest {
     private final ModuleAssetEndpoint endpoint = new ModuleAssetEndpoint(upload, list, content, delete);
 
     private void serving(String path, String mimeType, byte[] bytes) {
-        when(content.find("org", "claims", path, Channel.RELEASED)).thenReturn(new ModuleAssetSummary(path, mimeType, bytes.length, "abc"));
+        when(content.summaryOf("org", "claims", path, Channel.RELEASED)).thenReturn(new ModuleAssetSummary(path, mimeType, bytes.length, "abc"));
         when(content.execute("org", "claims", path, Channel.RELEASED)).thenReturn(new ModuleAssetContent(path, mimeType, "abc", bytes));
     }
 
@@ -40,7 +40,7 @@ class ModuleAssetEndpointTest {
         var response = endpoint.getModuleAssetContent("org", "claims", "docs/a.md", "released", null);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getHeaders().getContentType().toString()).isEqualTo("text/markdown");
+        assertThat(response.getHeaders().getContentType()).hasToString("text/markdown");
         assertThat(response.getHeaders().getETag()).isEqualTo("\"abc\"");
         assertThat(response.getHeaders().getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
         assertThat(response.getHeaders().getCacheControl()).contains("no-cache");
