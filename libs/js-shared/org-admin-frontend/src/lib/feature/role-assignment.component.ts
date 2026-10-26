@@ -1,10 +1,12 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { catchError, distinctUntilChanged, EMPTY, forkJoin, map, merge, Observable, of, Subject, switchMap, tap } from 'rxjs';
 import { OrganizationRole } from '../domain/organization-user';
 import { OrganizationRoleService } from '../domain/organization-user.service';
 
@@ -17,9 +19,12 @@ import { OrganizationRoleService } from '../domain/organization-user.service';
  * any name is not a role the realm declares, rather than minting one — a role created from a typo is
  * one that nothing in the platform ever matches.
  *
- * The roles come from the realm rather than from a fixed list, because beyond `org-admin` and
- * `org-member` they are the tenant's own and are what `NavNode.roles` and workflow role definitions
- * are matched against.
+ * **Editable only from a complete read.** The checkboxes are the authoritative baseline for a save,
+ * so the screen is either loading, failed (with a retry), or loaded. A failed read must never look
+ * like an empty set the administrator chose: saving that would revoke roles the user was never shown.
+ *
+ * **Follows the user in the URL.** The route can be reused for another user, so each change of the
+ * inherited id starts a fresh load and discards the answers still in flight for the previous user.
  *
  * A caveat worth showing the user: a grant lands in the person's token on **next login**. The API
  * answers immediately, but an already-issued token keeps the old roles until it is refreshed.
@@ -31,6 +36,14 @@ import { OrganizationRoleService } from '../domain/organization-user.service';
   template: `
     @if (loading()) {
       <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    } @else if (failed()) {
+      <section class="role-assignment">
+        <h3>Roles</h3>
+        <p class="role-assignment__error">The roles could not be read, so they cannot be changed yet.</p>
+        <div class="role-assignment__actions">
+          <button id="retry-roles" type="button" mat-raised-button color="primary" (click)="onRetry()">Try again</button>
+        </div>
+      </section>
     } @else {
       <section class="role-assignment">
         <h3>Roles</h3>
@@ -80,6 +93,10 @@ import { OrganizationRoleService } from '../domain/organization-user.service';
         opacity: 0.75;
       }
 
+      .role-assignment__error {
+        margin: 0;
+      }
+
       .role-assignment__actions {
         display: flex;
         column-gap: 8px;
@@ -92,22 +109,36 @@ export class RoleAssignmentComponent implements OnInit {
   readonly realmRoles = signal<OrganizationRole[]>([]);
   readonly selected = signal<Set<string>>(new Set());
   readonly loading = signal(true);
+  readonly failed = signal(false);
   readonly saving = signal(false);
 
   /** The user whose roles are edited, read from the `:entityId` segment of the details route. */
   userId: string | undefined;
 
   private held: string[] = [];
+  private readonly retries = new Subject<void>();
 
   private readonly route = inject(ActivatedRoute);
   private readonly roleService = inject(OrganizationRoleService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     // The id sits on an ancestor segment, not this route's own: the tab is a sibling of the details
     // route under `<entity>/<id>`, so the parameter is inherited rather than declared here.
-    this.userId = this.route.snapshot.paramMap.get('entityId') ?? this.route.parent?.snapshot.paramMap.get('entityId') ?? undefined;
-    this.reload();
+    const userIds = (this.route.parent ?? this.route).paramMap.pipe(
+      map((params) => params.get('entityId') ?? undefined),
+      distinctUntilChanged(),
+    );
+    merge(userIds, this.retries.pipe(map(() => this.userId)))
+      .pipe(
+        switchMap((userId) => {
+          this.userId = userId;
+          return this.load(userId);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   toggle(roleName: string): void {
@@ -121,8 +152,12 @@ export class RoleAssignmentComponent implements OnInit {
     this.selected.set(new Set(this.held));
   }
 
+  onRetry(): void {
+    this.retries.next();
+  }
+
   onSave(): void {
-    if (!this.userId) return;
+    if (!this.userId || this.loading() || this.failed()) return;
     this.saving.set(true);
     this.roleService.replace(this.userId, [...this.selected()]).subscribe({
       next: (roles) => {
@@ -140,25 +175,29 @@ export class RoleAssignmentComponent implements OnInit {
     });
   }
 
-  private reload(): void {
+  /**
+   * Both reads for one user. An unreadable user still lists the realm's roles, but nothing is checked
+   * and nothing can be saved: the baseline is unknown.
+   */
+  private load(userId: string | undefined): Observable<unknown> {
     this.loading.set(true);
-    this.roleService.findAll().subscribe({
-      next: (roles) => {
-        this.realmRoles.set(roles);
-        if (!this.userId) {
-          this.loading.set(false);
-          return;
-        }
-        this.roleService.findByUser(this.userId).subscribe({
-          next: (userRoles) => {
-            this.held = userRoles.map((role) => role.name);
-            this.selected.set(new Set(this.held));
-            this.loading.set(false);
-          },
-          error: () => this.loading.set(false),
-        });
-      },
-      error: () => this.loading.set(false),
-    });
+    this.failed.set(false);
+    return forkJoin({
+      realm: this.roleService.findAll(),
+      held: userId ? this.roleService.findByUser(userId) : of<OrganizationRole[]>([]),
+    }).pipe(
+      tap(({ realm, held }) => {
+        this.realmRoles.set(realm);
+        this.held = held.map((role) => role.name);
+        this.selected.set(new Set(this.held));
+        this.loading.set(false);
+      }),
+      catchError(() => {
+        this.failed.set(true);
+        this.loading.set(false);
+        // Left to the HTTP error interceptor for the message; the retry is the screen's own business.
+        return EMPTY;
+      }),
+    );
   }
 }
