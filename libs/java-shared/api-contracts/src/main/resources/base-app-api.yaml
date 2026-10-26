@@ -518,6 +518,124 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── Module assets ──
+  # The files a module brings along — markdown, images, anything its widgets point at — addressed by a path
+  # relative to the module, so a markdown file can link its images relatively. Uploaded one by one, never as
+  # an archive. Stored per channel like the module itself: an upload writes the draft, a release publishes it.
+  /organizations/{orgKey}/modules/{moduleKey}/assets:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+    get:
+      operationId: listModuleAssets
+      summary: The module's assets, without their content
+      description: >-
+        The `draft` list is the designer's read (design permission); the `released` one is what the running
+        application sees (membership of the organization).
+      tags:
+        - Base App Module Assets
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: The assets, ordered by path.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModuleAssetInfo"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: uploadModuleAsset
+      summary: Add or replace one asset of the module draft
+      description: >-
+        The file is stored under `path`, or under its own file name at the module root when no path is given.
+        An existing asset of that path is replaced. Requires a design permission.
+      tags:
+        - Base App Module Assets
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                path:
+                  type: string
+                  description: Path relative to the module, e.g. `docs/img/flow.png`.
+      responses:
+        "200":
+          description: The stored asset.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModuleAssetInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteModuleAsset
+      summary: Remove one asset from the module draft
+      tags:
+        - Base App Module Assets
+      parameters:
+        - $ref: "#/components/parameters/AssetPathParam"
+      responses:
+        "204":
+          description: Removed
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/modules/{moduleKey}/assets/content:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ModuleKeyParam"
+    get:
+      operationId: getModuleAssetContent
+      summary: The content of one asset
+      description: >-
+        Streamed through the backend rather than redirected to object storage, so relative links keep
+        working and one place checks access. Answered with an `ETag` (the content hash) and revalidated, not
+        cached blindly: the same path may hold other content after the next upload or release. Active
+        content (SVG, HTML) is served sandboxed.
+      tags:
+        - Base App Module Assets
+      parameters:
+        - $ref: "#/components/parameters/AssetPathParam"
+        - $ref: "#/components/parameters/RevisionParam"
+        - name: If-None-Match
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The file, with its stored content type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "304":
+          description: The caller already holds this content.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /organizations/{orgKey}/app-definitions/validate:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -669,6 +787,14 @@ paths:
 
 components:
   parameters:
+    AssetPathParam:
+      name: path
+      in: query
+      required: true
+      description: Path of the asset relative to the module, e.g. `docs/welcome.md`.
+      schema:
+        type: string
+        maxLength: 200
     ModuleKeyParam:
       name: moduleKey
       in: path
@@ -1178,6 +1304,24 @@ components:
           type: array
           items:
             type: string
+
+    ModuleAssetInfo:
+      type: object
+      required: [ path, mimeType, size, sha256 ]
+      properties:
+        path:
+          type: string
+          description: Relative to the module; segments of letters, digits, `.`, `_` and `-`.
+          example: docs/img/flow.png
+        mimeType:
+          type: string
+        size:
+          type: integer
+          format: int64
+          description: Bytes.
+        sha256:
+          type: string
+          description: Hex SHA-256 of the content; also the ETag.
 
     ModuleDefinition:
       allOf:
