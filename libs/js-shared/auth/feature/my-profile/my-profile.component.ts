@@ -13,7 +13,7 @@ import { AUTHENTICATION_SERVICE, isIdentityProviderRole, ROLE_DESCRIPTION_SOURCE
 import { catchError, Observable, of } from 'rxjs';
 
 /** The platform's own roles, described by auth's translations; the key is under `my_profile_form.platform_roles`. */
-const PLATFORM_ROLE_KEYS: Readonly<Record<string, string>> = { 'org-admin': 'org_admin', 'org-member': 'org_member' };
+const PLATFORM_ROLE_KEYS: Readonly<Record<string, string>> = { 'org-admin': 'org_admin', 'org-member': 'org_member', 'platform-admin': 'platform_admin' };
 
 interface DisplayedRole {
   id: string;
