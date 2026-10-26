@@ -6,6 +6,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ROUTER_OUTLET_DATA, RouterOutlet } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
+import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { BaseFormHostDirective } from './base-form-host.directive';
 import { MatCard, MatCardActions, MatCardContent } from '@angular/material/card';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
@@ -35,7 +37,19 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   entityId: InputSignal<string> = input.required<string>();
   isAbstract = computed(() => this.entityDescriptor().isAbstract);
   /** A preview of draft definitions over live objects: shown, never saved or deleted — see EntityPreviewMode. */
-  isReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  /** The entity-wide read-only state: a kind of row that is never edited, or the preview of a draft. */
+  entityReadOnly = computed(() => this.entityDescriptor().isReadOnly || this.previewMode.isReadOnly(this.entityDescriptor().entityName));
+  /** Whether the row being shown may be changed; a new entity always may. See {@link BaseEntityDescriptorOptions.isEditable}. */
+  rowEditable = computed(() => {
+    const isEditable = this.entityDescriptor().isEditable;
+    return this.isNewObject() || !isEditable || isEditable(this.entity());
+  });
+  /** Whether the row being shown may be deleted. See {@link BaseEntityDescriptorOptions.isDeletable}. */
+  rowDeletable = computed(() => {
+    const isDeletable = this.entityDescriptor().isDeletable;
+    return this.isNewObject() || !isDeletable || isDeletable(this.entity());
+  });
+  isReadOnly = computed(() => this.entityReadOnly() || !this.rowEditable());
   isNewObject = computed(() => this.entityId() === BaseUrlSegments.NewEntity);
   store: Signal<BaseEntityStoreApi<Entity>> = computed(() => this.entityDescriptor().store as BaseEntityStoreApi<Entity>);
   @ViewChild(BaseFormHostDirective, { static: true, read: BaseFormHostDirective }) componentHost!: BaseFormHostDirective;
@@ -209,6 +223,21 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     });
   }
 
+  /**
+   * A key chosen at creation is fixed once the entity exists. Disabled controls are left out of the save, so the
+   * key is not sent again, and the backend keeps the one it stored.
+   */
+  private disableCreateOnlyAttributes(): void {
+    if (this.isNewObject()) return;
+    const createOnly = (attrs: AbstractAttrDescriptor[]): string[] =>
+      attrs.flatMap((attr) => {
+        const nested = (attr as { attrDescriptors?: AbstractAttrDescriptor[] }).attrDescriptors ?? [];
+        const own = attr instanceof BaseEntityAttrDescriptor && attr.createOnly ? [attr.attrName] : [];
+        return [...own, ...createOnly(nested)];
+      });
+    createOnly(this.entityDescriptor().attrDescriptors).forEach((name) => this.baseEntityForm.get(name)?.disable({ emitEvent: false }));
+  }
+
   private registerEffects(): void {
     effect(() => {
       if (this.entityId() && this.entityDescriptor() && this.entity())
@@ -223,6 +252,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
             this.entityDescriptor().entityName,
             snapshot,
           );
+          this.disableCreateOnlyAttributes();
         });
     });
 
