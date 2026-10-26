@@ -1,5 +1,11 @@
 package com.processpuzzle.orgadmin.adapters.inbound;
 
+import com.processpuzzle.core.tenancy.RoleReference;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.InvalidRoleNameException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleAlreadyExistsException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleInUseException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleNotFoundException;
+import com.processpuzzle.orgadmin.usecases.inbound.exception.RoleNotManagedException;
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.DirectoryUnavailableException;
 import com.processpuzzle.orgadmin.usecases.inbound.exception.InvitationRecoveryRequiredException;
@@ -13,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -81,6 +89,62 @@ class OrgAdminApiExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getErrorId()).isEqualTo("role.unknown");
+    }
+
+    @Test
+    void aMalformedOrReservedRoleNameIs400() {
+        var response = handler.handleInvalidRoleName(new InvalidRoleNameException("Bad Name", "not a valid shape"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getErrorId()).isEqualTo("role.invalid-name");
+    }
+
+    @Test
+    void aRoleThatAlreadyExistsIs409() {
+        var response = handler.handleRoleExists(new RoleAlreadyExistsException("my-org", "accounting"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getErrorId()).isEqualTo("role.already-exists");
+    }
+
+    @Test
+    void aRoleTheOrganizationDoesNotDeclareIs404() {
+        var response = handler.handleRoleNotFound(new RoleNotFoundException("my-org", "ghost"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getErrorId()).isEqualTo("role.not-found");
+    }
+
+    @Test
+    void aRoleThePlatformOrTheDesignerOwnsIs403() {
+        var response = handler.handleRoleNotManaged(new RoleNotManagedException("org-admin", "ProcessPuzzle"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getErrorId()).isEqualTo("role.not-managed");
+    }
+
+    /** The body says what still uses the role, so the administrator knows what to release first. */
+    @Test
+    void aRoleStillInUseIs409WithWhatUsesIt() {
+        var in = new RoleInUseException("accounting", true,
+                List.of(new RoleReference("document", "reader-role", "doc-1", "Handbook")));
+
+        var response = handler.handleRoleInUse(in);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getErrorId()).isEqualTo("role.in-use");
+        assertThat(response.getBody().getHeld()).isTrue();
+        assertThat(response.getBody().getReferences()).singleElement().satisfies(reference -> {
+            assertThat(reference.getFeature()).isEqualTo("document");
+            assertThat(reference.getKind()).isEqualTo("reader-role");
+            assertThat(reference.getId()).isEqualTo("doc-1");
+            assertThat(reference.getTitle()).isEqualTo("Handbook");
+        });
     }
 
     @Test
