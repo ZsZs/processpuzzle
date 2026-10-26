@@ -70,10 +70,10 @@ export class SelfServiceRolesService {
   }
 }
 
-/** The organization-scoped `SELF_SERVICE_ROLES_SERVICE_ROOT`, without a trailing slash; empty when not configured. */
-export function organizationRoot(runtimeConfiguration: object | null): string {
+/** The organization-scoped root named by `key` (the self-service root by default), without a trailing slash; empty when not configured. */
+export function organizationRoot(runtimeConfiguration: object | null, key = 'SELF_SERVICE_ROLES_SERVICE_ROOT'): string {
   const base = runtimeConfiguration ? Reflect.get(runtimeConfiguration, 'BASE_CONFIGURATION') : undefined;
-  const root: string = (base && Reflect.get(base, 'SELF_SERVICE_ROLES_SERVICE_ROOT')) ?? '';
+  const root: string = (base && Reflect.get(base, key)) ?? '';
   return root.endsWith('/') ? root.slice(0, -1) : root;
 }
 

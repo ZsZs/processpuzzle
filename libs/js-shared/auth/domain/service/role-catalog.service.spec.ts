@@ -27,6 +27,18 @@ describe('RoleCatalogService', () => {
     expect(await result).toEqual([{ name: 'documentation-editor', description: 'Edits' }]);
   });
 
+  it('reads the catalog from its own root, without the self-service switch', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { ROLE_CATALOG_SERVICE_ROOT: ROOT } } }, provideRoleCatalogSuggestions()],
+    });
+    const http = TestBed.inject(HttpTestingController);
+
+    const result = firstValueFrom(TestBed.inject(RoleCatalogService).findAll());
+    http.expectOne(`${ROOT}/role-catalog`).flush([{ name: 'order-clerk' }]);
+
+    expect(await result).toEqual([{ name: 'order-clerk' }]);
+  });
+
   it('is empty without a configured root, and when the backend fails', async () => {
     expect(await firstValueFrom(setup().service.findAll())).toEqual([]);
 
