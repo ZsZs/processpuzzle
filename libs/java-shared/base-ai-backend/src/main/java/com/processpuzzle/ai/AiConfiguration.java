@@ -1,8 +1,17 @@
 package com.processpuzzle.ai;
 
 import com.processpuzzle.ai.adapter.outbound.HttpVisionServer;
+import com.processpuzzle.ai.assistant.AssistantAccess;
+import com.processpuzzle.ai.assistant.DefinitionDrafts;
+import com.processpuzzle.ai.assistant.DesignAssistant;
 import com.processpuzzle.ai.usecase.port.UnavailableVisionServer;
 import com.processpuzzle.ai.usecase.port.VisionServer;
+import com.processpuzzle.core.definition.DefinitionAuthoringParticipant;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,5 +36,26 @@ public class AiConfiguration {
     public VisionServer visionServer(AiProperties properties) {
         String baseUrl = properties.getVisionServer().getBaseUrl();
         return baseUrl == null || baseUrl.isBlank() ? new UnavailableVisionServer() : new HttpVisionServer(properties);
+    }
+
+    /**
+     * The design assistant, built only when enabled: the gateway's chat model is then built here rather than by Spring
+     * AI's auto-configuration, which would need a key even when the assistant is off. The application supplies the
+     * {@link AssistantAccess} and the authoring participants of its definition kinds.
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public DesignAssistant designAssistant(AiProperties properties, AssistantAccess access,
+                                           ObjectProvider<DefinitionAuthoringParticipant> participants) {
+        AiProperties.Assistant assistant = properties.getAssistant();
+        OpenAiChatModel model = OpenAiChatModel.builder()
+            .options(OpenAiChatOptions.builder()
+                .baseUrl(assistant.getBaseUrl())
+                .apiKey(assistant.getApiKey())
+                .model(assistant.getModel())
+                .build())
+            .build();
+        return new DesignAssistant(ChatClient.create(model),
+            new DefinitionDrafts(participants.orderedStream().toList()), access, assistant.getMaxToolCalls());
     }
 }
