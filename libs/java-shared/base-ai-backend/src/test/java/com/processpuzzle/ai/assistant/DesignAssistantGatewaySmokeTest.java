@@ -1,9 +1,11 @@
 package com.processpuzzle.ai.assistant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.concurrent.TimeUnit;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -15,6 +17,7 @@ import org.springframework.ai.openai.OpenAiChatOptions;
  * through the SSH tunnel described in {@link com.processpuzzle.ai.LlmGatewaySmokeTest}.
  */
 @EnabledIfEnvironmentVariable(named = "PP_LLM_GATEWAY_URL", matches = ".+")
+@Timeout(value = 3, unit = TimeUnit.MINUTES)
 class DesignAssistantGatewaySmokeTest {
 
     @Test
@@ -30,8 +33,8 @@ class DesignAssistantGatewaySmokeTest {
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
             new DefinitionDrafts(List.of(entities)), new AcmeDesigner(), 5);
 
-        String reply = assistant.respond("Define an entity 'invoice' with the key invoice and no attributes. "
-            + "Save it as a draft with the save_draft tool, then tell me what you saved.");
+        String reply = assistant.respond("Define the entity with key invoice and name Invoice, with no attributes. "
+            + "Follow the workflow: get_schema for kind entity, then save_draft with kind entity and key invoice.");
 
         System.out.println("model reply: " + reply);
         assertThat(entities.list("acme")).as("the model called save_draft").containsExactly("invoice");

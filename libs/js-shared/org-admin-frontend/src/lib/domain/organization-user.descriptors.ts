@@ -13,6 +13,8 @@ export const ORGANIZATION_USER_ENTITY_NAME = 'Organization User';
 function createOrganizationUserAttrDescriptors(): AbstractAttrDescriptor[] {
   const usernameAttr = new BaseEntityAttrDescriptor('username', FormControlType.TEXT_BOX, 'Username');
   usernameAttr.isHeading = true;
+  // The name opens the user, which is where the screens for one user begin.
+  usernameAttr.isLinkToDetails = true;
   usernameAttr.required = true;
   // Immutable even though the identity provider would allow a rename: it is what audit records name,
   // so the update payload has no field for it. Disabled rather than hidden — an administrator looking

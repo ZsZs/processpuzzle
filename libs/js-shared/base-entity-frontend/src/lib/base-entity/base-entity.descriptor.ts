@@ -54,6 +54,7 @@ export interface BaseEntityDescriptorOptions {
   entityName: string;
   entityTitle?: EntityTitle;
   extraFormActionsTemplate?: ExtraFormActionsTemplate;
+  extraListActionsTemplate?: ExtraFormActionsTemplate;
   /** Screens beyond List and Details. See {@link EntityTabDescriptor}. */
   extraTabs?: EntityTabDescriptor[];
   /**
@@ -110,6 +111,7 @@ export class BaseEntityDescriptor {
   entityName: string;
   entityTitle: EntityTitle;
   extraFormActionsTemplate?: ExtraFormActionsTemplate;
+  extraListActionsTemplate?: ExtraFormActionsTemplate;
   extraTabs: EntityTabDescriptor[];
   i18nScope?: string;
   titleKey?: string;
@@ -129,6 +131,7 @@ export class BaseEntityDescriptor {
     entityName,
     entityTitle,
     extraFormActionsTemplate,
+    extraListActionsTemplate,
     extraTabs,
     i18nScope,
     titleKey,
@@ -146,6 +149,7 @@ export class BaseEntityDescriptor {
     this.entityName = entityName;
     this.entityTitle = entityTitle ?? '';
     this.extraFormActionsTemplate = extraFormActionsTemplate;
+    this.extraListActionsTemplate = extraListActionsTemplate;
     this.extraTabs = extraTabs ?? [];
     this.i18nScope = i18nScope;
     this.titleKey = titleKey;
