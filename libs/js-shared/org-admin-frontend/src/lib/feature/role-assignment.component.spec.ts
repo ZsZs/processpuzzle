@@ -105,6 +105,7 @@ describe('RoleAssignmentComponent', () => {
     const host = load(['org-member']);
 
     fixture.componentInstance.toggle('accountant');
+    fixture.detectChanges();
     required<HTMLButtonElement>(host, '#save-roles').click();
 
     const request = controller.expectOne(userRolesUrl);
@@ -186,6 +187,29 @@ describe('RoleAssignmentComponent', () => {
     fixture.componentInstance.onRevert();
 
     expect(navigateBackStub.goBack).toHaveBeenCalledOnce();
+  });
+
+  /**
+   * Save and Revert only act on a difference. With nothing changed there is nothing to save or to discard,
+   * so both stay disabled until a checkbox differs from the roles the user holds, and again once it is back.
+   */
+  it('enables Save and Revert only while the checkboxes differ from the roles held', () => {
+    const host = load(['org-member']);
+    const saveButton = required<HTMLButtonElement>(host, '#save-roles');
+    const revertButton = required<HTMLButtonElement>(host, '#revert-roles');
+
+    expect(saveButton.disabled).toBe(true);
+    expect(revertButton.disabled).toBe(true);
+
+    fixture.componentInstance.toggle('accountant');
+    fixture.detectChanges();
+    expect(saveButton.disabled).toBe(false);
+    expect(revertButton.disabled).toBe(false);
+
+    fixture.componentInstance.toggle('accountant');
+    fixture.detectChanges();
+    expect(saveButton.disabled).toBe(true);
+    expect(revertButton.disabled).toBe(true);
   });
 
   it('reverts to the roles the user held', () => {

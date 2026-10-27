@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -66,8 +66,8 @@ import { OrganizationRoleService } from '../domain/organization-user.service';
         }
         <p class="role-assignment__note">A change takes effect in the user's token at their next sign-in.</p>
         <div class="role-assignment__actions">
-          <button id="save-roles" type="button" mat-raised-button color="primary" [disabled]="saving() || !userId" (click)="onSave()">Save roles</button>
-          <button id="revert-roles" type="button" mat-button [disabled]="saving()" (click)="onRevert()">Revert</button>
+          <button id="save-roles" type="button" mat-raised-button color="primary" [disabled]="saving() || !userId || !changed()" (click)="onSave()">Save roles</button>
+          <button id="revert-roles" type="button" mat-button [disabled]="saving() || !changed()" (click)="onRevert()">Revert</button>
         </div>
       </section>
     }
@@ -116,7 +116,14 @@ export class RoleAssignmentComponent implements OnInit {
   /** The user whose roles are edited, read from the `:entityId` segment of the details route. */
   userId: string | undefined;
 
-  private held: string[] = [];
+  /** The roles the user holds on the server: the baseline Revert returns to and `changed` compares with. */
+  private readonly held = signal<string[]>([]);
+  /** Whether the checkboxes differ from what the user holds, so there is something to save or to discard. */
+  readonly changed = computed(() => {
+    const selected = this.selected();
+    const held = this.held();
+    return selected.size !== held.length || held.some((role) => !selected.has(role));
+  });
   private readonly retries = new Subject<void>();
 
   private readonly route = inject(ActivatedRoute);
@@ -152,7 +159,7 @@ export class RoleAssignmentComponent implements OnInit {
   }
 
   onRevert(): void {
-    this.selected.set(new Set(this.held));
+    this.selected.set(new Set(this.held()));
     this.leave();
   }
 
@@ -169,8 +176,8 @@ export class RoleAssignmentComponent implements OnInit {
         // Adopt what the server reports rather than what was sent: a role revoked concurrently by
         // somebody else is absent from the response, and keeping the local set would show a grant
         // that no longer exists.
-        this.held = roles.map((role) => role.name);
-        this.selected.set(new Set(this.held));
+        this.held.set(roles.map((role) => role.name));
+        this.selected.set(new Set(this.held()));
         this.snackBar.open('Roles saved. They reach the user’s token at their next sign-in.', undefined, { duration: 6000 });
         this.leave();
       },
@@ -202,8 +209,8 @@ export class RoleAssignmentComponent implements OnInit {
     }).pipe(
       tap(({ realm, held }) => {
         this.realmRoles.set(realm);
-        this.held = held.map((role) => role.name);
-        this.selected.set(new Set(this.held));
+        this.held.set(held.map((role) => role.name));
+        this.selected.set(new Set(this.held()));
         this.loading.set(false);
       }),
       catchError(() => {
