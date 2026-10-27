@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, distinctUntilChanged, EMPTY, forkJoin, map, merge, Observable, of, Subject, switchMap, tap } from 'rxjs';
 import { OrganizationRole } from '../domain/organization-user';
 import { OrganizationRoleService } from '../domain/organization-user.service';
+import { OrganizationUserStore } from '../domain/organization-user.store';
 
 /**
  * The role-assignment screen: the realm's roles as a checkbox set, saved as a whole.
@@ -129,6 +130,7 @@ export class RoleAssignmentComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly navigateBack = inject(NavigateBackService);
+  private readonly userStore = inject(OrganizationUserStore);
   private readonly roleService = inject(OrganizationRoleService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
@@ -168,10 +170,11 @@ export class RoleAssignmentComponent implements OnInit {
   }
 
   onSave(): void {
-    if (!this.userId || this.loading() || this.failed()) return;
+    const userId = this.userId;
+    if (!userId || this.loading() || this.failed()) return;
     this.saving.set(true);
-    this.roleService.replace(this.userId, [...this.selected()]).subscribe({
-      next: (roles) => {
+    this.roleService.replace(userId, [...this.selected()]).subscribe({
+      next: async (roles) => {
         this.saving.set(false);
         // Adopt what the server reports rather than what was sent: a role revoked concurrently by
         // somebody else is absent from the response, and keeping the local set would show a grant
@@ -179,6 +182,9 @@ export class RoleAssignmentComponent implements OnInit {
         this.held.set(roles.map((role) => role.name));
         this.selected.set(new Set(this.held()));
         this.snackBar.open('Roles saved. They reach the user’s token at their next sign-in.', undefined, { duration: 6000 });
+        // The details screen shows the roles from the user the list holds, which still has the roles from before
+        // this save. Re-read the user first, so that the details show what was just saved.
+        await this.userStore.reload(userId);
         this.leave();
       },
       // Left to the HTTP error interceptor: it already opens a snackbar carrying the backend's
