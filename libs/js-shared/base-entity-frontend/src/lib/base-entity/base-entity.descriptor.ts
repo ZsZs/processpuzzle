@@ -77,6 +77,12 @@ export interface BaseEntityDescriptorOptions {
    */
   isReadOnly?: boolean;
   /**
+   * False for an entity whose rows come into being some other way than the generic New — the users of an
+   * organization, who are invited. The toolbar then does not offer New, while edit and delete stay as they
+   * are. Defaults to true.
+   */
+  isCreatable?: boolean;
+  /**
    * Whether one row may be changed, decided per entity. A row the server owns outright, an administrator's role
    * for instance, is shown and saved only where this answers true. The form then shows it read-only. Not a
    * kind of row: that is {@link isReadOnly}.
@@ -118,6 +124,7 @@ export class BaseEntityDescriptor {
   parentEntity: string | undefined;
   readonly isAbstract: boolean;
   readonly isReadOnly: boolean;
+  readonly isCreatable: boolean;
   readonly isEditable: ((entity: BaseEntity) => boolean) | undefined;
   readonly isDeletable: ((entity: BaseEntity) => boolean) | undefined;
   route: string | undefined;
@@ -137,6 +144,7 @@ export class BaseEntityDescriptor {
     titleKey,
     isAbstract,
     isReadOnly,
+    isCreatable,
     isEditable,
     isDeletable,
     parentEntity,
@@ -155,6 +163,7 @@ export class BaseEntityDescriptor {
     this.titleKey = titleKey;
     this.isAbstract = isAbstract ?? false;
     this.isReadOnly = isReadOnly ?? false;
+    this.isCreatable = isCreatable ?? true;
     this.isEditable = isEditable;
     this.isDeletable = isDeletable;
     this.parentEntity = parentEntity;
