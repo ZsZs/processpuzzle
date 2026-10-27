@@ -6,6 +6,7 @@ import { ORGANIZATION_USER_ENTITY_NAME } from './domain/organization-user.descri
 import { OrganizationUserContainerComponent } from './feature/organization-user-container.component';
 import { OrganizationUserFacade } from './feature/organization-user.facade';
 import { ROLE_ASSIGNMENT_TAB } from './feature/role-assignment-tab';
+import { OrganizationAdministrationComponent } from './feature/organization-administration.component';
 import { ORGANIZATION_ROLE_ENTITY_NAME } from './domain/organization-role.descriptors';
 import { OrganizationRoleContainerComponent } from './feature/organization-role-container.component';
 import { OrganizationRoleFacade } from './feature/organization-role.facade';
@@ -24,7 +25,9 @@ import { OrganizationRoleFacade } from './feature/organization-role.facade';
  * ({@link ROLE_ASSIGNMENT_TAB}) rather than as a screen with a list and a form that could create one.
  */
 export const ORG_ADMIN_ROUTES: Routes = [
-  { path: '', redirectTo: 'organization-user', pathMatch: 'full' },
+  // The branch root is the overview of what is administered, not the users: the sidenav's Administration entry
+  // lands here, and the cards choose the screen.
+  { path: '', pathMatch: 'full', component: OrganizationAdministrationComponent },
   {
     path: 'organization-user',
     title: 'ProcessPuzzle - Users',
