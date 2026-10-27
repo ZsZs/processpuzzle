@@ -52,11 +52,8 @@ public class DesignAssistant {
 
     private void audit(ChatResponse response, int toolCalls) {
         ChatResponseMetadata metadata = response.getMetadata();
-        Usage usage = metadata == null ? null : metadata.getUsage();
+        Usage usage = metadata.getUsage();
         audit.turn(new AssistantAuditLog.Turn(Instant.now(), access.principal(), access.currentOrganization(),
-            metadata == null ? null : metadata.getModel(),
-            usage == null ? null : usage.getPromptTokens(),
-            usage == null ? null : usage.getCompletionTokens(),
-            toolCalls));
+            metadata.getModel(), usage.getPromptTokens(), usage.getCompletionTokens(), toolCalls));
     }
 }

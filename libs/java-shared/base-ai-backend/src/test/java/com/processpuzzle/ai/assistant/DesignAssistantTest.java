@@ -30,10 +30,12 @@ class DesignAssistantTest {
             new FixedAccess(), 5, new AssistantAuditLog() {
                 @Override
                 public void toolCall(ToolCall call) {
+                    // Tool calls are not what this test checks.
                 }
 
                 @Override
                 public void turn(Turn turn) {
+                    // Turns are not what this test checks.
                 }
             });
 
@@ -57,6 +59,7 @@ class DesignAssistantTest {
         AssistantAuditLog audit = new AssistantAuditLog() {
             @Override
             public void toolCall(ToolCall call) {
+                // Tool calls are not what this test checks.
             }
 
             @Override

@@ -130,6 +130,7 @@ class DraftToolsTest {
 
         @Override
         public void turn(Turn turn) {
+            // Turns are audited by DesignAssistant, not by its tools.
         }
     }
 }
