@@ -96,5 +96,6 @@
   "under-construction_message": "Ez az oldal még nem érhető el. Térjen vissza később.",
   "release": "Kiadás",
   "assistant": "AI tervező",
+  "assistant_requirement": "Az asszisztens használatához a definition-designer szerep szükséges. A szervezet adminisztrátora a Szervezeti szerepkörök alatt hozza létre, és a Felhasználók alatt rendeli hozzá.",
   "assistant_toggle": "Tervezőasszisztens"
 }
