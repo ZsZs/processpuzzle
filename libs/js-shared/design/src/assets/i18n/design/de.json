@@ -96,5 +96,6 @@
   "under-construction_message": "Diese Seite ist noch nicht verfügbar. Bitte später wiederkommen.",
   "release": "Freigabe",
   "assistant": "KI-Designer",
+  "assistant_requirement": "Der Assistent braucht die Rolle definition-designer. Eine Organisationsadministration legt sie unter Organisationsrollen an und weist sie Ihnen unter Benutzer zu.",
   "assistant_toggle": "Design-Assistent"
 }

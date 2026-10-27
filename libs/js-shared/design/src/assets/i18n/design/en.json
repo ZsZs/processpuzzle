@@ -96,5 +96,6 @@
   "under-construction_message": "This page is not available yet. Come back later.",
   "release": "Release",
   "assistant": "AI Designer",
+  "assistant_requirement": "Using the assistant needs the definition-designer role. An organization administrator creates it under Organization roles and assigns it to you under Users.",
   "assistant_toggle": "Design assistant"
 }
