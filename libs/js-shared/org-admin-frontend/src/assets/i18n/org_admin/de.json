@@ -43,5 +43,17 @@
     "description": "Beschreibung",
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Ursprung"
-  }
+  },
+    "administration": {
+      "users": {
+        "title": "Benutzer",
+        "text": "Benutzer der Organisation anzeigen und bearbeiten sowie ihre Rollen zuweisen.",
+        "open": "Benutzer öffnen"
+      },
+      "roles": {
+        "title": "Rollen",
+        "text": "Rollen der Organisation anzeigen und bearbeiten. Rollen von ProcessPuzzle und aus Workflow-Definitionen sind schreibgeschützt.",
+        "open": "Rollen öffnen"
+      }
+    }
 }

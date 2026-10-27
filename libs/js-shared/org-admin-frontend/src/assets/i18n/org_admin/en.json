@@ -43,5 +43,17 @@
     "description": "Description",
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Origin"
-  }
+  },
+    "administration": {
+      "users": {
+        "title": "Users",
+        "text": "List and edit the users of the organization, and assign their roles.",
+        "open": "Open users"
+      },
+      "roles": {
+        "title": "Roles",
+        "text": "List and edit the roles of the organization. Roles of ProcessPuzzle and of workflow definitions are read-only.",
+        "open": "Open roles"
+      }
+    }
 }
