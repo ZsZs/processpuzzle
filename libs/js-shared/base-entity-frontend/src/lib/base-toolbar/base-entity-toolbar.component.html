@@ -35,6 +35,9 @@
       <button [attr.data-testid]="entityDescriptor().createTestId('new')" mat-button [disabled]="!isNewEnabled()" [matTooltip]="t('base_entity.toolbar.new_tooltip')" (click)="onAddEntity()"><mat-icon>add</mat-icon> New</button>
       <button [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-button [disabled]="!isDeleteEnabled()" [matTooltip]="t('base_entity.toolbar.delete_tooltip')" (click)="onDeleteEntities()"><mat-icon>delete</mat-icon> Delete</button>
     }
+    @if (entityDescriptor().extraListActionsTemplate?.(); as extraTpl) {
+      <ng-container [ngTemplateOutlet]="extraTpl"></ng-container>
+    }
     <!-- Export is always the last action: a button with room for it, a menu without (where Report will join PDF). -->
     @if (compact()) {
       <button [attr.data-testid]="entityDescriptor().createTestId('export-menu')" mat-icon-button [matMenuTriggerFor]="exportMenu" [attr.aria-label]="t('base_entity.toolbar.export_menu')" [matTooltip]="t('base_entity.toolbar.export_menu')"><mat-icon>download</mat-icon></button>

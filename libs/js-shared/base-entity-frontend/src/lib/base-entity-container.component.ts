@@ -73,6 +73,7 @@ export class BaseEntityContainerComponent implements OnDestroy, OnInit {
       const facadeDescriptor = facade.descriptor;
       if (input.entityTitle) facadeDescriptor.entityTitle = input.entityTitle;
       if (input.extraFormActionsTemplate) facadeDescriptor.extraFormActionsTemplate = input.extraFormActionsTemplate;
+      if (input.extraListActionsTemplate) facadeDescriptor.extraListActionsTemplate = input.extraListActionsTemplate;
     });
   }
 

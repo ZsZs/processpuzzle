@@ -1,3 +1,4 @@
+import { OrganizationAdministrationComponent } from './feature/organization-administration.component';
 import { ORGANIZATION_ROLE_ENTITY_NAME } from './domain/organization-role.descriptors';
 import { OrganizationRoleFacade } from './feature/organization-role.facade';
 import { describe, expect, it } from 'vitest';
@@ -12,9 +13,9 @@ import { RoleAssignmentComponent } from './feature/role-assignment.component';
 describe('ORG_ADMIN_ROUTES', () => {
   const userRoute = ORG_ADMIN_ROUTES.find((route) => route.path === 'organization-user');
 
-  it('mounts the users screen and redirects the branch root to it', () => {
+  it('mounts the users and the roles screens under an overview of the branch root', () => {
     expect(ORG_ADMIN_ROUTES.map((route) => route.path)).toEqual(['', 'organization-user', 'organization-role']);
-    expect(ORG_ADMIN_ROUTES[0].redirectTo).toBe('organization-user');
+    expect(ORG_ADMIN_ROUTES[0].component).toBe(OrganizationAdministrationComponent);
     expect(ORG_ADMIN_ROUTES[0].pathMatch).toBe('full');
   });
 
