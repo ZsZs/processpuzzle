@@ -6,7 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { NavigateBackService } from '@processpuzzle/util';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ADMIN_URL, provideOrgAdminTesting, REALM_ROLE_DTOS, required } from '../domain/test-organization-user';
+import { ADA_DTO, ADMIN_URL, GRACE_DTO, provideOrgAdminTesting, REALM_ROLE_DTOS, required, USERS_URL } from '../domain/test-organization-user';
 import { RoleAssignmentComponent } from './role-assignment.component';
 
 describe('RoleAssignmentComponent', () => {
@@ -57,6 +57,13 @@ describe('RoleAssignmentComponent', () => {
     });
     fixture = TestBed.createComponent(RoleAssignmentComponent);
     controller = TestBed.inject(HttpTestingController);
+    // The user store lists the users when it is created, which is not what these tests are about.
+    controller.match(USERS_URL).forEach((request) => request.flush([ADA_DTO, GRACE_DTO]));
+  }
+
+  /** The re-read of the user after a save: one user by id, carrying the roles the save just made. */
+  function refreshUser(roles: { name: string }[]) {
+    controller.expectOne(`${USERS_URL}/kc-1`).flush({ ...ADA_DTO, roles: roles.map((role) => role.name) });
   }
 
   function load(held: string[] = ['org-member', 'accountant']) {
@@ -147,15 +154,20 @@ describe('RoleAssignmentComponent', () => {
    * Save and Revert return the user to where they came from, which is the details after the tab. A page
    * opened directly has no such history, so the details are the destination.
    */
-  it('goes back to where the user came from after a save', () => {
+  it('goes back to where the user came from after a save', async () => {
     historySize = 2;
     load(['org-member']);
 
     fixture.componentInstance.toggle('accountant');
     fixture.componentInstance.onSave();
     controller.expectOne(userRolesUrl).flush([{ name: 'org-member' }, { name: 'accountant' }]);
+    await fixture.whenStable();
 
-    expect(navigateBackStub.goBack).toHaveBeenCalledOnce();
+    // Not before the user has been re-read: the details screen would otherwise show the roles from before the save.
+    expect(navigateBackStub.goBack).not.toHaveBeenCalled();
+    refreshUser([{ name: 'org-member' }, { name: 'accountant' }]);
+
+    await vi.waitFor(() => expect(navigateBackStub.goBack).toHaveBeenCalledOnce());
     expect(routerStub.navigate).not.toHaveBeenCalled();
   });
 
