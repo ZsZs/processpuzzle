@@ -2,8 +2,10 @@ package com.processpuzzle.ai;
 
 import com.processpuzzle.ai.adapter.outbound.HttpVisionServer;
 import com.processpuzzle.ai.assistant.AssistantAccess;
+import com.processpuzzle.ai.assistant.AssistantAuditLog;
 import com.processpuzzle.ai.assistant.DefinitionDrafts;
 import com.processpuzzle.ai.assistant.DesignAssistant;
+import com.processpuzzle.ai.assistant.LoggingAssistantAuditLog;
 import com.processpuzzle.ai.assistant.SecurityContextAssistantAccess;
 import com.processpuzzle.ai.usecase.port.UnavailableVisionServer;
 import com.processpuzzle.ai.usecase.port.VisionServer;
@@ -52,6 +54,14 @@ public class AiConfiguration {
         return new SecurityContextAssistantAccess(principal);
     }
 
+    /** The audit trail of the assistant, written to the log by default; an application may declare a durable one. */
+    @Bean
+    @ConditionalOnMissingBean(AssistantAuditLog.class)
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public AssistantAuditLog assistantAuditLog() {
+        return new LoggingAssistantAuditLog();
+    }
+
     /**
      * The design assistant, built only when enabled: the gateway's chat model is then built here rather than by Spring
      * AI's auto-configuration, which would need a key even when the assistant is off. Authorization comes from the
@@ -59,7 +69,7 @@ public class AiConfiguration {
      */
     @Bean
     @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
-    public DesignAssistant designAssistant(AiProperties properties, AssistantAccess access,
+    public DesignAssistant designAssistant(AiProperties properties, AssistantAccess access, AssistantAuditLog audit,
                                            ObjectProvider<DefinitionAuthoringParticipant> participants) {
         AiProperties.Assistant assistant = properties.getAssistant();
         OpenAiChatModel model = OpenAiChatModel.builder()
@@ -70,6 +80,6 @@ public class AiConfiguration {
                 .build())
             .build();
         return new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(participants.orderedStream().toList()), access, assistant.getMaxToolCalls());
+            new DefinitionDrafts(participants.orderedStream().toList()), access, assistant.getMaxToolCalls(), audit);
     }
 }

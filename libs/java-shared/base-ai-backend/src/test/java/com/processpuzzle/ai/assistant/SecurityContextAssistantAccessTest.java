@@ -46,6 +46,18 @@ class SecurityContextAssistantAccessTest {
         assertThat(access.mayDesign()).isFalse();
     }
 
+    @Test
+    void thePrincipalIsTheTokensSubjectWhenItNamesNoPerson() {
+        signIn("acme", "definition-designer");
+
+        assertThat(access.principal()).isEqualTo("user-1");
+    }
+
+    @Test
+    void theAnonymousCallerHasNoPrincipal() {
+        assertThat(access.principal()).isEmpty();
+    }
+
     /** Puts a Keycloak-shaped token for {@code realm} with the given realm roles into the security context. */
     private static void signIn(String realm, String... roles) {
         Instant now = Instant.now();

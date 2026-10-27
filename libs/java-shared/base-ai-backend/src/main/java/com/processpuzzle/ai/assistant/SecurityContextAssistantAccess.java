@@ -31,4 +31,10 @@ public class SecurityContextAssistantAccess implements AssistantAccess {
     public boolean mayDesign() {
         return !currentOrganization().isEmpty() && principal.authorities().contains(DESIGNER_ROLE);
     }
+
+    /** The caller's display name from the token, for the audit trail; empty when unauthenticated. */
+    @Override
+    public String principal() {
+        return principal.displayName().orElse("");
+    }
 }
