@@ -13,9 +13,15 @@ import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
+import { DesignWorkbenchComponent } from './workbench/design-workbench.component';
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
 
-export const DESIGN_ROUTES: Routes = [
+/**
+ * The sections of the designer, one per feature, in the order the sidenav lists them. Hosted by
+ * {@link DESIGN_ROUTES}' workbench, which is what puts the design assistant beside every one of them; a hosting
+ * application mounts DESIGN_ROUTES, and reads this list only to describe the sections.
+ */
+export const DESIGN_SECTIONS: Routes = [
   {
     path: '',
     pathMatch: 'full',
@@ -150,3 +156,10 @@ export const DESIGN_ROUTES: Routes = [
   // registers its own `base_release` scope. Last, because it acts on everything above.
   ...BASE_RELEASE_ROUTES,
 ];
+
+/**
+ * What a hosting application mounts under its `design` path: the workbench, with every section as a child. The
+ * workbench carries no path, title or menu title of its own, so the sections' URLs are what they were before it,
+ * and the sidenav lists the sections, not the workbench.
+ */
+export const DESIGN_ROUTES: Routes = [{ path: '', component: DesignWorkbenchComponent, children: DESIGN_SECTIONS }];
