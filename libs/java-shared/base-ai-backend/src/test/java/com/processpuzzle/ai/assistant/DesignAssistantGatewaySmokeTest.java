@@ -3,6 +3,9 @@ package com.processpuzzle.ai.assistant;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.concurrent.TimeUnit;
 
+import com.processpuzzle.core.security.CurrentPrincipal;
+import com.processpuzzle.core.security.SecurityProperties;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -10,6 +13,10 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 /**
  * Phase 2 step 1 of docs/ai/implementation-plan.md: the real model, through the gateway, calls the draft tools. A
@@ -31,7 +38,8 @@ class DesignAssistantGatewaySmokeTest {
                 .build())
             .build();
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(List.of(entities)), new AcmeDesigner(), 5);
+            new DefinitionDrafts(List.of(entities)), new SecurityContextAssistantAccess(new CurrentPrincipal(new SecurityProperties())), 5);
+        signInAsAcmeDesigner();
 
         String reply = assistant.respond("Define the entity with key invoice and name Invoice, with no attributes. "
             + "Follow the workflow: get_schema for kind entity, then save_draft with kind entity and key invoice.");
@@ -40,16 +48,13 @@ class DesignAssistantGatewaySmokeTest {
         assertThat(entities.list("acme")).as("the model called save_draft").containsExactly("invoice");
     }
 
-    private record AcmeDesigner() implements AssistantAccess {
-
-        @Override
-        public String currentOrganization() {
-            return "acme";
-        }
-
-        @Override
-        public boolean mayDesign() {
-            return true;
-        }
+    /** A designer token for realm acme in the security context, as the endpoint sees it for a real request. */
+    private static void signInAsAcmeDesigner() {
+        Instant now = Instant.now();
+        Jwt jwt = Jwt.withTokenValue("token").header("alg", "none")
+            .issuer("https://auth.example.com/realms/acme").subject("designer")
+            .issuedAt(now).expiresAt(now.plusSeconds(300)).build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt,
+            List.of(new SimpleGrantedAuthority("definition-designer"))));
     }
 }
