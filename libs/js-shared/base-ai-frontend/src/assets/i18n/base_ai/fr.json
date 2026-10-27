@@ -60,5 +60,22 @@
     "whoIsIt": "Pas sûr. Qui est-ce ?",
     "read": "Lu :",
     "cancel": "Annuler"
+  },
+  "assistant": {
+    "title": "Assistant de conception",
+    "designer": "Vous",
+    "assistant": "Assistant",
+    "empty": "Décrivez la définition souhaitée, par exemple une facture avec un numéro, une date et un client.",
+    "placeholder": "Décrivez ce qu’il faut définir ou modifier…",
+    "input": "Message à l’assistant de conception",
+    "send": "Envoyer",
+    "working": "En cours…",
+    "new": "Nouvelle conversation",
+    "failures": {
+      "quota": "La limite quotidienne de l’assistant de conception est atteinte pour cette organisation. Réessayez demain.",
+      "session-not-found": "Cette conversation a expiré. Renvoyez votre message pour en commencer une nouvelle.",
+      "forbidden": "Vous n’avez pas le rôle de conception requis pour utiliser l’assistant ici.",
+      "failed": "L’assistant n’a pas pu répondre. Réessayez dans un instant."
+    }
   }
 }

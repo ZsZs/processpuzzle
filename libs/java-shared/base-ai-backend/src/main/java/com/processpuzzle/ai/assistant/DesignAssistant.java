@@ -2,7 +2,9 @@ package com.processpuzzle.ai.assistant;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
@@ -15,7 +17,9 @@ import org.springframework.ai.chat.model.ChatResponse;
  * the model that answered and the tokens it used.
  *
  * <p>A turn belongs to a conversation: the model reads its recent messages first, and the exchange is kept in the
- * conversation afterwards. The tools are built fresh for each turn, so its tool-call caps start again.
+ * conversation afterwards. The answer is streamed: each piece of text is handed on as the model produces it, and the
+ * whole of it is what the conversation keeps. The tools are built fresh for each turn, with the caller read once at
+ * its start, so the caps start again and no tool depends on the thread it runs on.
  */
 public class DesignAssistant {
 
@@ -50,41 +54,74 @@ public class DesignAssistant {
         return sessions.open(access.currentOrganization(), access.subject());
     }
 
-    /**
-     * Runs one turn of the conversation and returns the assistant's reply.
-     *
-     * @throws AssistantSessionNotFoundException when the conversation is not the caller's in this organization
-     * @throws AssistantQuotaExceededException   before any model call when the organization is out of turns or tokens
-     */
+    /** Runs one turn and returns the whole reply; see {@link #respond(UUID, String, Consumer)}. */
     public String respond(UUID sessionId, String message) {
-        String organization = access.currentOrganization();
-        String subject = access.subject();
-        quota.checkTurnAllowed(organization);
-        List<Message> history = sessions.history(sessionId, organization, subject);
-        DraftTools tools = new DraftTools(drafts, access, limits.maxToolCalls(), limits.maxRepairRounds(), audit);
-        ChatResponse response = client.prompt()
+        return respond(sessionId, message, delta -> { });
+    }
+
+    /**
+     * Runs one turn of the conversation, handing each piece of the reply to {@code onDelta} as the model produces it,
+     * and returns the whole reply.
+     *
+     * @throws AssistantSessionNotFoundException before any model call, when the conversation is not the caller's
+     * @throws AssistantQuotaExceededException   before any model call, when the organization is out of turns or tokens
+     */
+    public String respond(UUID sessionId, String message, Consumer<String> onDelta) {
+        Caller caller = Caller.of(access);
+        quota.checkTurnAllowed(caller.organization());
+        List<Message> history = sessions.history(sessionId, caller.organization(), caller.subject());
+        DraftTools tools = new DraftTools(drafts, caller, limits.maxToolCalls(), limits.maxRepairRounds(), audit);
+
+        StringBuilder reply = new StringBuilder();
+        TurnMetadata metadata = new TurnMetadata();
+        Iterable<ChatResponse> chunks = client.prompt()
             .system(SYSTEM_PROMPT)
             .messages(history)
             .user(message)
             .tools(tools)
-            .call()
-            .chatResponse();
-        String reply = response.getResult() == null ? "" : response.getResult().getOutput().getText();
-        sessions.append(sessionId, organization, subject, message, reply);
-        audit(response, tools.toolCalls());
-        quota.recordTurn(organization, tokensOf(response));
-        return reply;
+            .stream()
+            .chatResponse()
+            .toIterable();
+        for (ChatResponse chunk : chunks) {
+            String text = textOf(chunk);
+            if (!text.isEmpty()) {
+                reply.append(text);
+                onDelta.accept(text);
+            }
+            metadata.take(chunk.getMetadata());
+        }
+
+        sessions.append(sessionId, caller.organization(), caller.subject(), message, reply.toString());
+        audit.turn(new AssistantAuditLog.Turn(Instant.now(), caller.principal(), caller.organization(),
+            metadata.model, metadata.promptTokens, metadata.completionTokens, tools.toolCalls()));
+        quota.recordTurn(caller.organization(), metadata.totalTokens);
+        return reply.toString();
     }
 
-    private void audit(ChatResponse response, int toolCalls) {
-        ChatResponseMetadata metadata = response.getMetadata();
-        Usage usage = metadata.getUsage();
-        audit.turn(new AssistantAuditLog.Turn(Instant.now(), access.principal(), access.currentOrganization(),
-            metadata.getModel(), usage.getPromptTokens(), usage.getCompletionTokens(), toolCalls));
+    private static String textOf(ChatResponse chunk) {
+        return chunk.getResult() == null ? "" : Objects.requireNonNullElse(chunk.getResult().getOutput().getText(), "");
     }
 
-    /** Prompt plus completion tokens, as the usage reports them. */
-    private static long tokensOf(ChatResponse response) {
-        return response.getMetadata().getUsage().getTotalTokens();
+    /**
+     * What the stream says about itself, gathered across its chunks: the model names itself on each, and the gateway
+     * reports the tokens on the last one only, so the last non-empty usage is the turn's.
+     */
+    private static final class TurnMetadata {
+        private String model;
+        private Integer promptTokens;
+        private Integer completionTokens;
+        private long totalTokens;
+
+        void take(ChatResponseMetadata chunk) {
+            if (chunk.getModel() != null && !chunk.getModel().isEmpty()) {
+                model = chunk.getModel();
+            }
+            Usage usage = chunk.getUsage();
+            if (usage.getTotalTokens() > 0) {
+                promptTokens = usage.getPromptTokens();
+                completionTokens = usage.getCompletionTokens();
+                totalTokens = usage.getTotalTokens();
+            }
+        }
     }
 }

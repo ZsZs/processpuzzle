@@ -3,7 +3,8 @@ import { ApplicationDesignerComponent } from './application-designer/application
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
 import { WORKFLOW_DESIGNER_TABS } from './workflow-designer/workflow-designer.tabs';
 import { APPLICATION_DESIGNER_TABS } from './application-designer/application-designer.tabs';
-import { DESIGN_ROUTES } from './design.routes';
+import { DESIGN_ROUTES, DESIGN_SECTIONS } from './design.routes';
+import { DesignWorkbenchComponent } from './workbench/design-workbench.component';
 import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
 import { CALCULATION_DESIGNER_TABS } from './calculation-designer/calculation-designer.tabs';
 import { ReleasePanelComponent } from '@processpuzzle/base-release';
@@ -12,11 +13,16 @@ import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
 
 describe('DESIGN_ROUTES', () => {
-  const applicationRoute = DESIGN_ROUTES.find((route) => route.path === 'application');
-  const workflowsRoute = DESIGN_ROUTES.find((route) => route.path === 'workflows');
-  const statesRoute = DESIGN_ROUTES.find((route) => route.path === 'states');
-  const entitiesRoute = DESIGN_ROUTES.find((route) => route.path === 'entities');
-  const calculationsRoute = DESIGN_ROUTES.find((route) => route.path === 'calculations');
+  /** The workbench is what puts the assistant beside every section; it must not change any section's URL. */
+  it('hosts every section in the workbench, under no path of its own', () => {
+    expect(DESIGN_ROUTES).toEqual([{ path: '', component: DesignWorkbenchComponent, children: DESIGN_SECTIONS }]);
+  });
+
+  const applicationRoute = DESIGN_SECTIONS.find((route) => route.path === 'application');
+  const workflowsRoute = DESIGN_SECTIONS.find((route) => route.path === 'workflows');
+  const statesRoute = DESIGN_SECTIONS.find((route) => route.path === 'states');
+  const entitiesRoute = DESIGN_SECTIONS.find((route) => route.path === 'entities');
+  const calculationsRoute = DESIGN_SECTIONS.find((route) => route.path === 'calculations');
 
   it('hosts the application section on the tabbed designer page', () => {
     expect(applicationRoute?.component).toBe(ApplicationDesignerComponent);
@@ -49,14 +55,14 @@ describe('DESIGN_ROUTES', () => {
   });
 
   it('no longer exposes the application entities as sections of their own', () => {
-    const sectionPaths = DESIGN_ROUTES.map((route) => route.path);
+    const sectionPaths = DESIGN_SECTIONS.map((route) => route.path);
 
     expect(sectionPaths).not.toContain('app-definition');
     expect(sectionPaths).not.toContain('module-definition');
   });
 
   it('ends with the Release section, the one place drafts reach the live application', () => {
-    const releaseRoute = DESIGN_ROUTES.at(-1);
+    const releaseRoute = DESIGN_SECTIONS.at(-1);
 
     expect(releaseRoute?.path).toBe('release');
     expect(releaseRoute?.component).toBe(ReleasePanelComponent);
@@ -93,7 +99,7 @@ describe('DESIGN_ROUTES', () => {
     });
 
     it('does not expose the state machine as a section of its own', () => {
-      expect(DESIGN_ROUTES.map((route) => route.path)).not.toContain('state-machine-definition');
+      expect(DESIGN_SECTIONS.map((route) => route.path)).not.toContain('state-machine-definition');
     });
   });
 
@@ -127,7 +133,7 @@ describe('DESIGN_ROUTES', () => {
     });
 
     it('does not expose the entity definition as a section of its own', () => {
-      expect(DESIGN_ROUTES.map((route) => route.path)).not.toContain('entity-definition');
+      expect(DESIGN_SECTIONS.map((route) => route.path)).not.toContain('entity-definition');
     });
   });
 
@@ -159,14 +165,14 @@ describe('DESIGN_ROUTES', () => {
     });
 
     it('sits between the States and the Workflows sections', () => {
-      const sectionPaths = DESIGN_ROUTES.map((route) => route.path);
+      const sectionPaths = DESIGN_SECTIONS.map((route) => route.path);
 
       expect(sectionPaths.indexOf('calculations')).toBe(sectionPaths.indexOf('states') + 1);
       expect(sectionPaths.indexOf('workflows')).toBe(sectionPaths.indexOf('calculations') + 1);
     });
 
     it('does not expose the calculation entities as sections of their own', () => {
-      const sectionPaths = DESIGN_ROUTES.map((route) => route.path);
+      const sectionPaths = DESIGN_SECTIONS.map((route) => route.path);
 
       expect(sectionPaths).not.toContain('calculation-definition');
       expect(sectionPaths).not.toContain('calculation-runs');
@@ -214,7 +220,7 @@ describe('DESIGN_ROUTES', () => {
     });
 
     it('no longer exposes the workflow entities as sections of their own', () => {
-      const sectionPaths = DESIGN_ROUTES.map((route) => route.path);
+      const sectionPaths = DESIGN_SECTIONS.map((route) => route.path);
 
       expect(sectionPaths).not.toContain('workflow');
       expect(sectionPaths).not.toContain('workflow-instance');

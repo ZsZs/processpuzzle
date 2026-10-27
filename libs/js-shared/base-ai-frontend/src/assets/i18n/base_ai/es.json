@@ -60,5 +60,22 @@
     "whoIsIt": "No es seguro. ¿Quién es?",
     "read": "Leído:",
     "cancel": "Cancelar"
+  },
+  "assistant": {
+    "title": "Asistente de diseño",
+    "designer": "Tú",
+    "assistant": "Asistente",
+    "empty": "Describa la definición que quiere, por ejemplo una factura con número, fecha y cliente.",
+    "placeholder": "Describa lo que quiere definir o cambiar…",
+    "input": "Mensaje para el asistente de diseño",
+    "send": "Enviar",
+    "working": "Trabajando…",
+    "new": "Nueva conversación",
+    "failures": {
+      "quota": "Se ha agotado el límite diario del asistente de diseño para esta organización. Inténtelo mañana.",
+      "session-not-found": "Esta conversación ha caducado. Envíe su mensaje de nuevo para empezar una nueva.",
+      "forbidden": "No tiene el rol de diseño necesario para usar el asistente aquí.",
+      "failed": "El asistente no pudo responder. Inténtelo de nuevo en un momento."
+    }
   }
 }

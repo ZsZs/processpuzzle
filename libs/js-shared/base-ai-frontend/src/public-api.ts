@@ -6,6 +6,7 @@ export {
   BASE_AI_TRANSLATION_SOURCE,
   BASE_AI_TRANSLOCO_SCOPE,
   ENTITY_ENROLLMENT_I18N_KEY,
+  ASSISTANT_I18N_SCOPE,
   ENTITY_ENROLLMENT_I18N_SCOPE,
   RECOGNITION_CAMERA_I18N_SCOPE,
   RECOGNITION_PROFILE_I18N_SCOPE,
@@ -35,3 +36,8 @@ export { ENROLLMENT_MAX_POLLS, ENROLLMENT_POLL_MS, EntityEnrollmentTabComponent 
 export { EntityEnrollmentTabContributor, provideEntityEnrollmentTab } from './lib/feature/enrollment/entity-enrollment-tab.contributor';
 export { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS } from './lib/base-ai.providers';
 export { BASE_AI_ROUTES } from './lib/base-ai.routes';
+
+export { AssistantPanelComponent } from './lib/feature/assistant/assistant-panel.component';
+export { AssistantPanelFacade, type AssistantLine } from './lib/feature/assistant/assistant-panel.facade';
+export { AssistantService, AssistantTurnError, type AssistantDeltaListener, type AssistantFailureKind } from './lib/domain/assistant/assistant.service';
+export { parseAssistantEvents, parseCompleteAssistantEvents, type AssistantEvent, type AssistantEventName, type AssistantTurn } from './lib/domain/assistant/assistant-turn';

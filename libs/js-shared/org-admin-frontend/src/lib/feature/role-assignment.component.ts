@@ -1,7 +1,8 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NavigateBackService } from '@processpuzzle/util';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -65,8 +66,8 @@ import { OrganizationRoleService } from '../domain/organization-user.service';
         }
         <p class="role-assignment__note">A change takes effect in the user's token at their next sign-in.</p>
         <div class="role-assignment__actions">
-          <button id="save-roles" type="button" mat-raised-button color="primary" [disabled]="saving() || !userId" (click)="onSave()">Save roles</button>
-          <button id="revert-roles" type="button" mat-button [disabled]="saving()" (click)="onRevert()">Revert</button>
+          <button id="save-roles" type="button" mat-raised-button color="primary" [disabled]="saving() || !userId || !changed()" (click)="onSave()">Save roles</button>
+          <button id="revert-roles" type="button" mat-button [disabled]="saving() || !changed()" (click)="onRevert()">Revert</button>
         </div>
       </section>
     }
@@ -115,18 +116,27 @@ export class RoleAssignmentComponent implements OnInit {
   /** The user whose roles are edited, read from the `:entityId` segment of the details route. */
   userId: string | undefined;
 
-  private held: string[] = [];
+  /** The roles the user holds on the server: the baseline Revert returns to and `changed` compares with. */
+  private readonly held = signal<string[]>([]);
+  /** Whether the checkboxes differ from what the user holds, so there is something to save or to discard. */
+  readonly changed = computed(() => {
+    const selected = this.selected();
+    const held = this.held();
+    return selected.size !== held.length || held.some((role) => !selected.has(role));
+  });
   private readonly retries = new Subject<void>();
 
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly navigateBack = inject(NavigateBackService);
   private readonly roleService = inject(OrganizationRoleService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    // The id sits on an ancestor segment, not this route's own: the tab is a sibling of the details
-    // route under `<entity>/<id>`, so the parameter is inherited rather than declared here.
-    const userIds = (this.route.parent ?? this.route).paramMap.pipe(
+    // The tab's own route is `:entityId/roles`, so the id is this route's parameter. Reading it from the
+    // parent finds nothing: the parent is the users route, which has no `entityId`, and Save stays disabled.
+    const userIds = this.route.paramMap.pipe(
       map((params) => params.get('entityId') ?? undefined),
       distinctUntilChanged(),
     );
@@ -149,7 +159,8 @@ export class RoleAssignmentComponent implements OnInit {
   }
 
   onRevert(): void {
-    this.selected.set(new Set(this.held));
+    this.selected.set(new Set(this.held()));
+    this.leave();
   }
 
   onRetry(): void {
@@ -165,14 +176,24 @@ export class RoleAssignmentComponent implements OnInit {
         // Adopt what the server reports rather than what was sent: a role revoked concurrently by
         // somebody else is absent from the response, and keeping the local set would show a grant
         // that no longer exists.
-        this.held = roles.map((role) => role.name);
-        this.selected.set(new Set(this.held));
+        this.held.set(roles.map((role) => role.name));
+        this.selected.set(new Set(this.held()));
         this.snackBar.open('Roles saved. They reach the user’s token at their next sign-in.', undefined, { duration: 6000 });
+        this.leave();
       },
       // Left to the HTTP error interceptor: it already opens a snackbar carrying the backend's
       // errorId, and a second one here would stack two messages for one failure.
       error: () => this.saving.set(false),
     });
+  }
+
+  /**
+   * Back to where the user came from, as NavigateBackService knows it. A page opened directly has no
+   * history to return to, so the user's details are the destination instead.
+   */
+  private leave(): void {
+    if (this.navigateBack.getRouteStack().size() > 1) this.navigateBack.goBack();
+    else void this.router.navigate(['../details'], { relativeTo: this.route });
   }
 
   /**
@@ -188,8 +209,8 @@ export class RoleAssignmentComponent implements OnInit {
     }).pipe(
       tap(({ realm, held }) => {
         this.realmRoles.set(realm);
-        this.held = held.map((role) => role.name);
-        this.selected.set(new Set(this.held));
+        this.held.set(held.map((role) => role.name));
+        this.selected.set(new Set(this.held()));
         this.loading.set(false);
       }),
       catchError(() => {

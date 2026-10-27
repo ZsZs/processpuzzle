@@ -19,6 +19,15 @@ describe('ORG_ADMIN_ROUTES', () => {
     expect(ORG_ADMIN_ROUTES[0].pathMatch).toBe('full');
   });
 
+  it('loads the org_admin scope on the overview itself, since a visitor may land there without the users or roles route', () => {
+    const providers = (ORG_ADMIN_ROUTES[0].providers?.flat() ?? []) as Array<{ useValue?: unknown }>;
+
+    expect(providers.map((provider) => provider.useValue)).toEqual([
+      { scope: 'base_entity', alias: 'base_entity' },
+      { scope: 'org_admin', alias: 'org_admin' },
+    ]);
+  });
+
   // The path is `snakeCaseName('Organization User')`. `BaseFormNavigatorSingletonStore` rebuilds the
   // details URL from the entity name, so any other segment stops the username column linking and Edit
   // navigating, with no error anywhere.

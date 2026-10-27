@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { DESIGN_ROUTE_PREFIX, LayoutService } from '@processpuzzle/util';
 import { NgClass } from '@angular/common';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
-import { DESIGN_ROUTES } from '../design.routes';
+import { DESIGN_SECTIONS } from '../design.routes';
 
 @Component({
   selector: 'pp-design-sidenav',
@@ -40,5 +40,5 @@ export class DesignSidenavComponent {
    * `title` is the browser's, and the deepest one wins, so the parent titles here are never displayed.
    * Children are not walked: the Application section's three entities are tabs of its own page.
    */
-  readonly routes = DESIGN_ROUTES.filter((item) => item.data?.['menuTitle'] !== undefined);
+  readonly routes = DESIGN_SECTIONS.filter((item) => item.data?.['menuTitle'] !== undefined);
 }

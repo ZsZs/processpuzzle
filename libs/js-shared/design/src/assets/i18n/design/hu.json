@@ -80,5 +80,6 @@
   "starters": "Kezdőcsomagok",
   "under-construction_title": "Fejlesztés alatt",
   "under-construction_message": "Ez az oldal még nem érhető el. Térjen vissza később.",
-  "release": "Kiadás"
+  "release": "Kiadás",
+  "assistant_toggle": "Tervezőasszisztens"
 }
