@@ -34,6 +34,9 @@ export const ENTITY_ENROLLMENT_I18N_KEY = `${ENTITY_ENROLLMENT_I18N_SCOPE}.tab`;
 /** The keys of the recognition camera widget. */
 export const RECOGNITION_CAMERA_I18N_SCOPE = `${BASE_AI_TRANSLOCO_SCOPE}.recognition_camera`;
 
+/** The keys of the design assistant panel. */
+export const ASSISTANT_I18N_SCOPE = `${BASE_AI_TRANSLOCO_SCOPE}.assistant`;
+
 /**
  * Where this library's bundles come from when the application ships without its assets: base-ai-backend's
  * own translations resource, `/organizations/{orgKey}/ai/translations/...`.
