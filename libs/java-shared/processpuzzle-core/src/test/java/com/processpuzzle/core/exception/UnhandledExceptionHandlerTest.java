@@ -18,6 +18,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UnhandledExceptionHandlerTest {
 
     private final UnhandledExceptionHandler handler = new UnhandledExceptionHandler();
+    private final MockHttpServletRequest request = new MockHttpServletRequest();
 
     private Logger logger;
     private ListAppender<ILoggingEvent> appender;
@@ -48,7 +51,7 @@ class UnhandledExceptionHandlerTest {
 
     @Test
     void anUnexpectedExceptionIs500WithAGenericTextSoNothingInternalLeaks() {
-        var response = handler.handleUnexpected(new RuntimeException("jdbc:postgresql://secret-host:5432/prod failed"));
+        var response = handler.handleUnexpected(new RuntimeException("jdbc:postgresql://secret-host:5432/prod failed"), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().errorId()).isEqualTo("internal-error");
@@ -58,11 +61,26 @@ class UnhandledExceptionHandlerTest {
 
     @Test
     void anUnexpectedExceptionIsStillLoggedInFullSoOperatorsLoseNothing() {
-        handler.handleUnexpected(new RuntimeException("jdbc:postgresql://secret-host:5432/prod failed"));
+        handler.handleUnexpected(new RuntimeException("jdbc:postgresql://secret-host:5432/prod failed"), request);
 
         assertThat(appender.list).hasSize(1);
         assertThat(appender.list.getFirst().getLevel()).isEqualTo(Level.ERROR);
         assertThat(appender.list.getFirst().getThrowableProxy().getMessage()).contains("secret-host");
+    }
+
+    /**
+     * The assistant streams its turn as {@code text/event-stream}, so a failure there must not try to write a JSON
+     * body: the status is what the caller needs, and a body would only replace it with a generic 404.
+     */
+    @Test
+    void aStatusReachingAStreamIsAnsweredWithItsStatusAndNoBody() {
+        var stream = new MockHttpServletRequest();
+        stream.addHeader("Accept", MediaType.TEXT_EVENT_STREAM_VALUE);
+
+        var response = handler.handleUnexpected(new ResponseStatusException(HttpStatus.FORBIDDEN, "The caller may not design"), stream);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(response.getBody()).isNull();
     }
 
     /**
@@ -73,7 +91,7 @@ class UnhandledExceptionHandlerTest {
     @Test
     void aMissingStaticResourceIs404NotAServerFault() {
         var response = handler.handleUnexpected(
-                new NoResourceFoundException(HttpMethod.GET, "favicon.svg", "/favicon.svg"));
+                new NoResourceFoundException(HttpMethod.GET, "favicon.svg", "/favicon.svg"), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody().errorId()).isEqualTo("request.not-found");
@@ -83,7 +101,7 @@ class UnhandledExceptionHandlerTest {
     @Test
     void aMissingStaticResourceDoesNotFillTheLogWithStackTraces() {
         handler.handleUnexpected(new NoResourceFoundException(
-                HttpMethod.GET, "assets/fonts/Inter-Regular.woff2", "/assets/fonts/Inter-Regular.woff2"));
+                HttpMethod.GET, "assets/fonts/Inter-Regular.woff2", "/assets/fonts/Inter-Regular.woff2"), request);
 
         assertThat(appender.list).noneMatch(event -> event.getLevel() == Level.ERROR);
     }
@@ -95,9 +113,9 @@ class UnhandledExceptionHandlerTest {
     @Test
     void anyExceptionDeclaringItsOwnStatusAnswersWithIt() {
         var notAllowed = handler.handleUnexpected(
-                new HttpRequestMethodNotSupportedException("TRACE", List.of("GET", "POST")));
+                new HttpRequestMethodNotSupportedException("TRACE", List.of("GET", "POST")), request);
         var unsupportedType = handler.handleUnexpected(
-                new HttpMediaTypeNotSupportedException(MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON)));
+                new HttpMediaTypeNotSupportedException(MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON)), request);
 
         assertThat(notAllowed.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
         assertThat(notAllowed.getBody().errorId()).isEqualTo("request.method-not-allowed");
@@ -108,7 +126,7 @@ class UnhandledExceptionHandlerTest {
     /** A 5xx that carries its own status is still a fault, so it keeps its stack trace. */
     @Test
     void aSelfDeclared5xxIsStillLoggedAsAnError() {
-        var response = handler.handleUnexpected(new AsyncRequestTimeoutException());
+        var response = handler.handleUnexpected(new AsyncRequestTimeoutException(), request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
         assertThat(appender.list).anyMatch(event -> event.getLevel() == Level.ERROR);
@@ -121,8 +139,8 @@ class UnhandledExceptionHandlerTest {
         var duringSerialization = new HttpMessageNotWritableException("Could not write JSON",
                 new RuntimeException(new AsyncRequestNotUsableException("ServletOutputStream failed to write")));
 
-        assertThat(handler.handleUnexpected(direct)).isNull();
-        assertThat(handler.handleUnexpected(duringSerialization)).isNull();
+        assertThat(handler.handleUnexpected(direct, request)).isNull();
+        assertThat(handler.handleUnexpected(duringSerialization, request)).isNull();
         assertThat(appender.list).noneMatch(event -> event.getLevel() == Level.ERROR);
     }
 

@@ -1,10 +1,13 @@
 package com.processpuzzle.core.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
@@ -58,16 +61,16 @@ public class UnhandledExceptionHandler {
      * load — noise loud enough to bury a real 500, reporting a routine miss as a server fault.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleUnexpected(Exception ex) {
+    public ResponseEntity<ApiError> handleUnexpected(Exception ex, HttpServletRequest request) {
         if (isClientDisconnect(ex)) {
             LOG.debug("Client went away before the response was written: {}", ex.getMessage());
             return null;
         }
         if (ex instanceof ErrorResponse errorResponse) {
-            return declaredStatus(ex, errorResponse);
+            return declaredStatus(ex, errorResponse, request);
         }
         LOG.error("Unhandled exception while serving a request", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError("internal-error", "Unexpected server error."));
+        return answer(request, HttpStatus.INTERNAL_SERVER_ERROR, new ApiError("internal-error", "Unexpected server error."));
     }
 
     /**
@@ -97,14 +100,38 @@ public class UnhandledExceptionHandler {
      * puts it in {@link ProblemDetail#getDetail()} precisely because it is meant for the client, and it
      * describes the request the caller made rather than anything about how this service is built.
      */
-    private ResponseEntity<ApiError> declaredStatus(Exception ex, ErrorResponse errorResponse) {
+    private ResponseEntity<ApiError> declaredStatus(Exception ex, ErrorResponse errorResponse, HttpServletRequest request) {
         HttpStatusCode statusCode = errorResponse.getStatusCode();
         if (statusCode.is4xxClientError()) {
             LOG.debug("Request rejected with {}: {}", statusCode, ex.getMessage());
         } else {
             LOG.error("Request failed with self-declared status {}", statusCode, ex);
         }
-        return ResponseEntity.status(statusCode).body(new ApiError(errorId(statusCode), detailOf(ex, errorResponse)));
+        return answer(request, statusCode, new ApiError(errorId(statusCode), detailOf(ex, errorResponse)));
+    }
+
+    /**
+     * Writes the body only when the caller accepts JSON.
+     *
+     * <p>An endpoint that streams declares {@code text/event-stream}, which cannot carry the JSON body. Answering
+     * with one there fails inside Spring, and the failure replaces the status with a generic 404, so the caller never
+     * learns the status the exception meant.
+     */
+    private static ResponseEntity<ApiError> answer(HttpServletRequest request, HttpStatusCode statusCode, ApiError error) {
+        if (!acceptsJson(request)) {
+            return ResponseEntity.status(statusCode).build();
+        }
+        return ResponseEntity.status(statusCode).body(error);
+    }
+
+    /** A request with no {@code Accept} header takes any type, so JSON is acceptable. */
+    private static boolean acceptsJson(HttpServletRequest request) {
+        String accept = request.getHeader(HttpHeaders.ACCEPT);
+        if (accept == null) {
+            return true;
+        }
+        return MediaType.parseMediaTypes(accept).stream()
+                .anyMatch(type -> type.isCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     /**
