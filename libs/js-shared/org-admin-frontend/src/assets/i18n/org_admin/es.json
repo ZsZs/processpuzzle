@@ -43,5 +43,17 @@
     "description": "Descripción",
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Origen"
-  }
+  },
+    "administration": {
+      "users": {
+        "title": "Usuarios",
+        "text": "Ver y editar los usuarios de la organización y asignarles sus roles.",
+        "open": "Abrir usuarios"
+      },
+      "roles": {
+        "title": "Roles",
+        "text": "Ver y editar los roles de la organización. Los roles de ProcessPuzzle y de las definiciones de flujo son de solo lectura.",
+        "open": "Abrir roles"
+      }
+    }
 }

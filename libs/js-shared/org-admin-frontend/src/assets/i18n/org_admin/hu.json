@@ -43,5 +43,17 @@
     "description": "Leírás",
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Eredet"
-  }
+  },
+    "administration": {
+      "users": {
+        "title": "Felhasználók",
+        "text": "A szervezet felhasználóinak listázása és szerkesztése, szerepköreik hozzárendelése.",
+        "open": "Felhasználók megnyitása"
+      },
+      "roles": {
+        "title": "Szerepkörök",
+        "text": "A szervezet szerepköreinek listázása és szerkesztése. A ProcessPuzzle és a munkafolyamat-definíciók szerepkörei csak olvashatók.",
+        "open": "Szerepkörök megnyitása"
+      }
+    }
 }
