@@ -97,6 +97,8 @@ public class AiConfiguration {
                 .baseUrl(assistant.getBaseUrl())
                 .apiKey(assistant.getApiKey())
                 .model(assistant.getModel())
+                // The gateway reports the tokens on the stream's last chunk only when asked to.
+                .streamUsage(true)
                 .build())
             .build();
         return new DesignAssistant(ChatClient.create(model),

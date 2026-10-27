@@ -39,5 +39,5 @@ export { BASE_AI_ROUTES } from './lib/base-ai.routes';
 
 export { AssistantPanelComponent } from './lib/feature/assistant/assistant-panel.component';
 export { AssistantPanelFacade, type AssistantLine } from './lib/feature/assistant/assistant-panel.facade';
-export { AssistantService, AssistantTurnError, type AssistantFailureKind } from './lib/domain/assistant/assistant.service';
-export { parseAssistantEvents, type AssistantEvent, type AssistantEventName, type AssistantTurn } from './lib/domain/assistant/assistant-turn';
+export { AssistantService, AssistantTurnError, type AssistantDeltaListener, type AssistantFailureKind } from './lib/domain/assistant/assistant.service';
+export { parseAssistantEvents, parseCompleteAssistantEvents, type AssistantEvent, type AssistantEventName, type AssistantTurn } from './lib/domain/assistant/assistant-turn';

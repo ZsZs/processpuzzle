@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -42,7 +43,12 @@ class AssistantEndpointTest {
 
     @Test
     void aTurnStreamsTheReplyThenDone() throws Exception {
-        when(assistant.respond(any(UUID.class), eq("Define invoice."))).thenReturn("Saved the draft.");
+        when(assistant.respond(any(UUID.class), eq("Define invoice."), any())).thenAnswer(invocation -> {
+            Consumer<String> onDelta = invocation.getArgument(2);
+            onDelta.accept("Saved ");
+            onDelta.accept("the draft.");
+            return "Saved the draft.";
+        });
 
         MvcResult result = mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"Define invoice.\"}"))
@@ -50,13 +56,15 @@ class AssistantEndpointTest {
             .andReturn();
         String body = mvc.perform(asyncDispatch(result)).andReturn().getResponse().getContentAsString();
 
-        assertThat(body).contains("event:session", "data:" + SESSION, "event:reply", "data:Saved the draft.", "event:done");
+        assertThat(body).contains("event:session", "data:" + SESSION, "event:delta", "data:Saved ", "data:the draft.",
+            "event:reply", "data:Saved the draft.", "event:done");
+        assertThat(body.indexOf("event:delta")).isLessThan(body.indexOf("event:reply"));
     }
 
     @Test
     void aTurnInAnExistingSessionContinuesItRatherThanOpeningAnother() throws Exception {
         UUID existing = UUID.randomUUID();
-        when(assistant.respond(eq(existing), anyString())).thenReturn("Renamed.");
+        when(assistant.respond(eq(existing), anyString(), any())).thenReturn("Renamed.");
 
         MvcResult result = mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"Rename it.\",\"sessionId\":\"" + existing + "\"}"))
@@ -71,7 +79,7 @@ class AssistantEndpointTest {
     @Test
     void aTurnInASessionThatIsNotTheCallersIsNotFound() throws Exception {
         UUID theirs = UUID.randomUUID();
-        when(assistant.respond(eq(theirs), anyString())).thenThrow(new AssistantSessionNotFoundException(theirs));
+        when(assistant.respond(eq(theirs), anyString(), any())).thenThrow(new AssistantSessionNotFoundException(theirs));
 
         mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"Rename it.\",\"sessionId\":\"" + theirs + "\"}"))
@@ -84,7 +92,7 @@ class AssistantEndpointTest {
 
         mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"Define invoice.\"}"))
             .andExpect(status().isForbidden());
-        verify(assistant, never()).respond(any(UUID.class), anyString());
+        verify(assistant, never()).respond(any(UUID.class), anyString(), any());
     }
 
     @Test
@@ -92,7 +100,7 @@ class AssistantEndpointTest {
         mvc.perform(post("/organizations/globex/assistant/turns").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"Define invoice.\"}"))
             .andExpect(status().isForbidden());
-        verify(assistant, never()).respond(any(UUID.class), anyString());
+        verify(assistant, never()).respond(any(UUID.class), anyString(), any());
     }
 
     @Test
@@ -102,12 +110,12 @@ class AssistantEndpointTest {
         mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"" + "x".repeat(AssistantEndpoint.MAX_MESSAGE_LENGTH + 1) + "\"}"))
             .andExpect(status().isBadRequest());
-        verify(assistant, never()).respond(any(UUID.class), anyString());
+        verify(assistant, never()).respond(any(UUID.class), anyString(), any());
     }
 
     @Test
     void aTurnOverTheOrganizationsDailyLimitIsTooManyRequests() throws Exception {
-        when(assistant.respond(any(UUID.class), anyString())).thenThrow(new AssistantQuotaExceededException("acme"));
+        when(assistant.respond(any(UUID.class), anyString(), any())).thenThrow(new AssistantQuotaExceededException("acme"));
 
         mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"Define invoice.\"}"))
             .andExpect(status().isTooManyRequests());
@@ -115,7 +123,7 @@ class AssistantEndpointTest {
 
     @Test
     void aFailingModelCallBecomesAnErrorEventNotABrokenStream() throws Exception {
-        when(assistant.respond(any(UUID.class), anyString())).thenThrow(new IllegalStateException("gateway down"));
+        when(assistant.respond(any(UUID.class), anyString(), any())).thenThrow(new IllegalStateException("gateway down"));
 
         MvcResult result = mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"message\":\"Define invoice.\"}"))

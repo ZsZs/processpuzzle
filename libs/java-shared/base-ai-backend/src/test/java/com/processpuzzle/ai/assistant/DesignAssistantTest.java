@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -20,11 +21,14 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
+import org.springframework.ai.chat.metadata.DefaultUsage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import reactor.core.publisher.Flux;
 
 class DesignAssistantTest {
 
@@ -40,10 +44,23 @@ class DesignAssistantTest {
 
         assertThat(reply).isEqualTo("Saved the invoice draft.");
         ArgumentCaptor<Prompt> prompt = ArgumentCaptor.forClass(Prompt.class);
-        verify(model).call(prompt.capture());
+        verify(model).stream(prompt.capture());
         assertThat(prompt.getValue().getContents())
             .contains(DesignAssistant.SYSTEM_PROMPT)
             .contains("Define an invoice entity.");
+    }
+
+    @Test
+    void theReplyIsHandedOnPieceByPieceAsTheModelProducesIt() {
+        ChatModel model = modelReplying("Saved ", "the invoice ", "draft.");
+        DesignAssistant assistant = assistant(model, sessionsWithHistory(List.of()), new RecordingAudit(),
+            new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000));
+        List<String> deltas = new ArrayList<>();
+
+        String reply = assistant.respond(SESSION, "Define an invoice entity.", deltas::add);
+
+        assertThat(deltas).containsExactly("Saved ", "the invoice ", "draft.");
+        assertThat(reply).isEqualTo("Saved the invoice draft.");
     }
 
     @Test
@@ -57,15 +74,15 @@ class DesignAssistantTest {
         assistant.respond(SESSION, "Rename it to bill.");
 
         ArgumentCaptor<Prompt> prompt = ArgumentCaptor.forClass(Prompt.class);
-        verify(model).call(prompt.capture());
+        verify(model).stream(prompt.capture());
         assertThat(prompt.getValue().getContents())
             .contains("Define an invoice entity.", "Saved the invoice draft.", "Rename it to bill.");
     }
 
     @Test
-    void aTurnExchangeIsKeptInTheSession() {
+    void theWholeReplyIsKeptInTheSession() {
         AssistantSessions sessions = sessionsWithHistory(List.of());
-        DesignAssistant assistant = assistant(modelReplying("Saved."), sessions, new RecordingAudit(),
+        DesignAssistant assistant = assistant(modelReplying("Saved", "."), sessions, new RecordingAudit(),
             new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000));
 
         assistant.respond(SESSION, "Define an invoice entity.");
@@ -74,9 +91,17 @@ class DesignAssistantTest {
     }
 
     @Test
-    void aFinishedTurnIsAuditedWithItsCallerAndTheToolCallsItMade() {
+    void aFinishedTurnIsAuditedWithItsCallerAndWhatTheLastChunkSaysAboutTheModel() {
+        ChatModel model = mock(ChatModel.class);
+        when(model.getOptions()).thenReturn(OpenAiChatOptions.builder().model("pp-designer").build());
+        when(model.stream(any(Prompt.class))).thenReturn(Flux.just(
+            chunk("Done."),
+            ChatResponse.builder()
+                .generations(List.of(new Generation(new AssistantMessage(""))))
+                .metadata(ChatResponseMetadata.builder().model("mistral-large-latest").usage(new DefaultUsage(73, 12)).build())
+                .build()));
         RecordingAudit audit = new RecordingAudit();
-        DesignAssistant assistant = assistant(modelReplying("Done."), sessionsWithHistory(List.of()), audit,
+        DesignAssistant assistant = assistant(model, sessionsWithHistory(List.of()), audit,
             new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000));
 
         assistant.respond(SESSION, "Define an invoice entity.");
@@ -84,6 +109,9 @@ class DesignAssistantTest {
         assertThat(audit.turns).singleElement().satisfies(turn -> {
             assertThat(turn.principal()).isEqualTo("Ada");
             assertThat(turn.organization()).isEqualTo("acme");
+            assertThat(turn.model()).isEqualTo("mistral-large-latest");
+            assertThat(turn.promptTokens()).isEqualTo(73);
+            assertThat(turn.completionTokens()).isEqualTo(12);
             assertThat(turn.toolCalls()).isZero();
         });
     }
@@ -107,14 +135,19 @@ class DesignAssistantTest {
 
         assertThatThrownBy(() -> assistant.respond(SESSION, "Define an invoice entity."))
             .isInstanceOf(AssistantQuotaExceededException.class);
-        verify(model, never()).call(any(Prompt.class));
+        verify(model, never()).stream(any(Prompt.class));
     }
 
-    private static ChatModel modelReplying(String reply) {
+    /** A model that answers in the given pieces, one chunk each, the way a streamed reply arrives. */
+    private static ChatModel modelReplying(String... pieces) {
         ChatModel model = mock(ChatModel.class);
         when(model.getOptions()).thenReturn(OpenAiChatOptions.builder().model("pp-designer").build());
-        when(model.call(any(Prompt.class))).thenReturn(new ChatResponse(List.of(new Generation(new AssistantMessage(reply)))));
+        when(model.stream(any(Prompt.class))).thenReturn(Flux.fromIterable(Arrays.stream(pieces).map(DesignAssistantTest::chunk).toList()));
         return model;
+    }
+
+    private static ChatResponse chunk(String text) {
+        return new ChatResponse(List.of(new Generation(new AssistantMessage(text))));
     }
 
     /** Sessions whose history is the given messages; the exchanges are recorded on the mock for the tests to check. */

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
-import { TranslocoPipe } from '@jsverse/transloco';
-import { ASSISTANT_I18N_SCOPE } from '../../base-ai.i18n';
+import { provideTranslocoScope, TranslocoPipe } from '@jsverse/transloco';
+import { ASSISTANT_I18N_SCOPE, BASE_AI_TRANSLOCO_SCOPE } from '../../base-ai.i18n';
 import { AssistantPanelFacade } from './assistant-panel.facade';
 
 /**
@@ -16,7 +16,8 @@ import { AssistantPanelFacade } from './assistant-panel.facade';
 @Component({
   selector: 'pp-assistant-panel',
   imports: [FormsModule, MatButton, TranslocoPipe],
-  providers: [AssistantPanelFacade],
+  // The alias is spelled out for the reason base-ai.i18n gives: transloco would otherwise camel-case the scope.
+  providers: [AssistantPanelFacade, provideTranslocoScope({ scope: BASE_AI_TRANSLOCO_SCOPE, alias: BASE_AI_TRANSLOCO_SCOPE })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="pp-assistant" [attr.aria-label]="scope + '.title' | transloco">

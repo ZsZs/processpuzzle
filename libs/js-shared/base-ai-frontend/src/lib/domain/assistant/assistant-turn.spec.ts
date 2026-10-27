@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseAssistantEvents } from './assistant-turn';
+import { parseAssistantEvents, parseCompleteAssistantEvents } from './assistant-turn';
 
 describe('parseAssistantEvents', () => {
   it('reads the events of a turn in order', () => {
@@ -32,5 +32,28 @@ describe('parseAssistantEvents', () => {
 
   it('reads an empty body as no events', () => {
     expect(parseAssistantEvents('')).toEqual([]);
+  });
+
+  it('knows the delta event, a piece of the answer on its way', () => {
+    expect(parseAssistantEvents('event:delta\ndata:Saved \n\n')).toEqual([{ name: 'delta', data: 'Saved ' }]);
+  });
+});
+
+describe('parseCompleteAssistantEvents', () => {
+  it('reads only the blocks whose ending blank line has arrived', () => {
+    const partial = 'event:session\ndata:s-1\n\nevent:delta\ndata:Saved \n\nevent:delta\ndata:the inv';
+
+    expect(parseCompleteAssistantEvents(partial)).toEqual([
+      { name: 'session', data: 's-1' },
+      { name: 'delta', data: 'Saved ' },
+    ]);
+  });
+
+  it('reads nothing from a body with no complete block yet', () => {
+    expect(parseCompleteAssistantEvents('event:session\ndata:s-')).toEqual([]);
+  });
+
+  it('reads everything from a body that ends on a blank line', () => {
+    expect(parseCompleteAssistantEvents('event:delta\ndata:a\n\nevent:delta\ndata:b\n\n')).toHaveLength(2);
   });
 });
