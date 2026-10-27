@@ -44,8 +44,13 @@ export class KeycloakAuthService extends AuthService {
     return this.keycloak.profile?.username || '';
   }
 
+  /**
+   * The realm roles, and the organization's own roles beside them. A tenant's roles are its organization's
+   * top-level groups, which the token carries under `organization`, so a role granted as a group is a role
+   * the person holds even though it is not in `realm_access`.
+   */
   getUserRoles(): string[] {
-    return this.keycloak.realmAccess?.roles || [];
+    return [...(this.keycloak.realmAccess?.roles || []), ...this.organizationGroupRoles()];
   }
 
   /**
@@ -106,6 +111,21 @@ export class KeycloakAuthService extends AuthService {
   // endregion
 
   // region protected, private helper methods
+  /**
+   * The top-level groups of the one organization the token names, without their leading slash. Nothing when
+   * it names none or several: the roles of two tenants must not merge into one list, so that case grants
+   * nothing from groups. Nested groups are structure rather than roles, and are skipped, as the backend does.
+   */
+  private organizationGroupRoles(): string[] {
+    const organizations = this.keycloak.tokenParsed?.['organization'] as Record<string, { groups?: unknown }> | undefined;
+    if (!organizations || Object.keys(organizations).length !== 1) return [];
+    const groups = Object.values(organizations)[0]?.groups;
+    if (!Array.isArray(groups)) return [];
+    return groups
+      .filter((path): path is string => typeof path === 'string' && path.length > 1 && path.startsWith('/') && path.indexOf('/', 1) < 0)
+      .map((path) => path.substring(1));
+  }
+
   private ensureInitialized(): Promise<void> {
     this.initPromise ??= this.initKeycloak();
     return this.initPromise;

@@ -6,6 +6,7 @@ type MockedKeycloak = {
   authenticated: boolean;
   profile?: { username?: string };
   realmAccess?: { roles: string[] };
+  tokenParsed?: Record<string, unknown>;
   init: ReturnType<typeof vi.fn>;
   login: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;
@@ -168,6 +169,34 @@ describe('KeycloakAuthService', () => {
     it('should return empty array if realmAccess is missing', () => {
       mockKeycloakInstance.realmAccess = undefined;
       expect(service.getUserRoles()).toEqual([]);
+    });
+
+    // A role granted as an organization group is in the token under `organization`, not in `realm_access`,
+    // so it has to be read from there or My profile would omit it.
+    describe('organization groups', () => {
+      it('adds the top-level groups of the one organization the token names, without their slash', () => {
+        mockKeycloakInstance.tokenParsed = { organization: { acme: { groups: ['/document-author', '/reviewer'] } } };
+
+        expect(service.getUserRoles()).toEqual(['user', 'admin', 'document-author', 'reviewer']);
+      });
+
+      it('skips nested groups, which are structure rather than roles', () => {
+        mockKeycloakInstance.tokenParsed = { organization: { acme: { groups: ['/reviewer', '/reviewer/senior'] } } };
+
+        expect(service.getUserRoles()).toEqual(['user', 'admin', 'reviewer']);
+      });
+
+      it('adds nothing from groups when the token names more than one organization', () => {
+        mockKeycloakInstance.tokenParsed = { organization: { acme: { groups: ['/reviewer'] }, beta: { groups: ['/approver'] } } };
+
+        expect(service.getUserRoles()).toEqual(['user', 'admin']);
+      });
+
+      it('adds nothing when the token names no organization', () => {
+        mockKeycloakInstance.tokenParsed = {};
+
+        expect(service.getUserRoles()).toEqual(['user', 'admin']);
+      });
     });
   });
 
