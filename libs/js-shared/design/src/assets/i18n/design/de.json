@@ -80,5 +80,6 @@
   "starters": "Starter",
   "under-construction_title": "Im Aufbau",
   "under-construction_message": "Diese Seite ist noch nicht verfügbar. Bitte später wiederkommen.",
-  "release": "Freigabe"
+  "release": "Freigabe",
+  "assistant_toggle": "Design-Assistent"
 }

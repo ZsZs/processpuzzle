@@ -1,0 +1,25 @@
+// The drawer's width, shared with the toggle so that an open drawer does not cover it.
+$assistant-width: min(28rem, 90vw);
+
+.pp-design-workbench {
+  min-height: 100%;
+}
+
+.pp-design-workbench__assistant {
+  width: $assistant-width;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+// Fixed, so the toggle stays within reach however far a long designer page scrolls.
+.pp-design-workbench__toggle {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 2;
+  transition: right 200ms ease;
+}
+
+.pp-design-workbench__toggle--open {
+  right: calc(#{$assistant-width} + 1.5rem);
+}

@@ -80,5 +80,6 @@
   "starters": "Starters",
   "under-construction_title": "En construction",
   "under-construction_message": "Cette page n'est pas encore disponible. Revenez plus tard.",
-  "release": "Publication"
+  "release": "Publication",
+  "assistant_toggle": "Assistant de conception"
 }
