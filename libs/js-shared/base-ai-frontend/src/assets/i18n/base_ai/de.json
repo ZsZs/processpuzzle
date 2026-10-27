@@ -60,5 +60,22 @@
     "whoIsIt": "Nicht sicher. Wer ist es?",
     "read": "Gelesen:",
     "cancel": "Abbrechen"
+  },
+  "assistant": {
+    "title": "Design-Assistent",
+    "designer": "Sie",
+    "assistant": "Assistent",
+    "empty": "Beschreiben Sie die gewünschte Definition, zum Beispiel eine Rechnung mit Nummer, Datum und Kunde.",
+    "placeholder": "Beschreiben Sie, was definiert oder geändert werden soll…",
+    "input": "Nachricht an den Design-Assistenten",
+    "send": "Senden",
+    "working": "Arbeitet…",
+    "new": "Neue Unterhaltung",
+    "failures": {
+      "quota": "Das Tageslimit des Design-Assistenten ist für diese Organisation aufgebraucht. Versuchen Sie es morgen erneut.",
+      "session-not-found": "Diese Unterhaltung ist abgelaufen. Senden Sie Ihre Nachricht erneut, um eine neue zu beginnen.",
+      "forbidden": "Sie haben nicht die Design-Rolle, die für den Assistenten hier nötig ist.",
+      "failed": "Der Assistent konnte nicht antworten. Versuchen Sie es gleich noch einmal."
+    }
   }
 }

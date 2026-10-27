@@ -60,5 +60,22 @@
     "whoIsIt": "Not sure. Who is it?",
     "read": "Read:",
     "cancel": "Cancel"
+  },
+  "assistant": {
+    "title": "Design assistant",
+    "designer": "You",
+    "assistant": "Assistant",
+    "empty": "Describe the definition you want, for example an invoice with a number, a date and a customer.",
+    "placeholder": "Describe what to define or change…",
+    "input": "Message to the design assistant",
+    "send": "Send",
+    "working": "Working…",
+    "new": "New conversation",
+    "failures": {
+      "quota": "The daily limit for the design assistant is used up for this organization. Try again tomorrow.",
+      "session-not-found": "This conversation has expired. Send your message again to start a new one.",
+      "forbidden": "You do not have the design role needed to use the assistant here.",
+      "failed": "The assistant could not answer. Try again in a moment."
+    }
   }
 }

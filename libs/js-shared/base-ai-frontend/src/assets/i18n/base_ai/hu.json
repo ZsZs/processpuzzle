@@ -60,5 +60,22 @@
     "whoIsIt": "Nem biztos. Ki az?",
     "read": "Kiolvasva:",
     "cancel": "Mégse"
+  },
+  "assistant": {
+    "title": "Tervezőasszisztens",
+    "designer": "Ön",
+    "assistant": "Asszisztens",
+    "empty": "Írja le a kívánt definíciót, például egy számlát számmal, dátummal és ügyféllel.",
+    "placeholder": "Írja le, mit kell definiálni vagy módosítani…",
+    "input": "Üzenet a tervezőasszisztensnek",
+    "send": "Küldés",
+    "working": "Dolgozik…",
+    "new": "Új beszélgetés",
+    "failures": {
+      "quota": "A tervezőasszisztens napi korlátja elfogyott ehhez a szervezethez. Próbálja újra holnap.",
+      "session-not-found": "Ez a beszélgetés lejárt. Küldje el újra az üzenetet egy új indításához.",
+      "forbidden": "Nincs meg a szükséges tervezői szerep az asszisztens használatához itt.",
+      "failed": "Az asszisztens nem tudott válaszolni. Próbálja újra egy pillanat múlva."
+    }
   }
 }
