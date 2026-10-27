@@ -13,7 +13,7 @@ class DraftToolsTest {
     @Test
     void aCallerWithoutTheDesignerRoleChangesNothing() {
         InMemoryAuthoringParticipant entities = new InMemoryAuthoringParticipant("entity");
-        DraftTools tools = tools(entities, new FixedAccess(ORG, false), 10, new RecordingAudit());
+        DraftTools tools = tools(entities, new Caller(ORG, "ada-subject", "Ada", false), 10, new RecordingAudit());
 
         assertThat(tools.saveDraft("entity", "invoice", "{}")).startsWith("Refused");
         assertThat(entities.list(ORG)).isEmpty();
@@ -21,7 +21,7 @@ class DraftToolsTest {
 
     @Test
     void aSavedDraftIsReportedAndAnRefusedOneReturnsItsIssues() {
-        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10, new RecordingAudit());
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 10, new RecordingAudit());
 
         assertThat(tools.saveDraft("entity", "invoice", "{}")).isEqualTo("Saved. No issues.");
         assertThat(tools.saveDraft("entity", "invoice", "refuse")).isEqualTo("ERROR: refused");
@@ -29,7 +29,7 @@ class DraftToolsTest {
 
     @Test
     void validatingAStoredDraftReportsNoIssues() {
-        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10, new RecordingAudit());
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 10, new RecordingAudit());
         tools.saveDraft("entity", "invoice", "{}");
 
         assertThat(tools.validateDraft("entity", "invoice")).isEqualTo("No issues.");
@@ -37,7 +37,7 @@ class DraftToolsTest {
 
     @Test
     void theTurnStopsAtItsCapAndSaysSo() {
-        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 2, new RecordingAudit());
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 2, new RecordingAudit());
 
         tools.listDefinitions("entity");
         tools.listDefinitions("entity");
@@ -47,7 +47,7 @@ class DraftToolsTest {
 
     @Test
     void anUnknownKindComesBackAsARefusalTheModelCanRepair() {
-        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10, new RecordingAudit());
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 10, new RecordingAudit());
 
         assertThat(tools.listDefinitions("rule")).startsWith("Refused: Unknown definition kind 'rule'");
     }
@@ -55,7 +55,7 @@ class DraftToolsTest {
     @Test
     void readsReturnTheStoredDraftOrSayWhyThereIsNone() {
         InMemoryAuthoringParticipant entities = new InMemoryAuthoringParticipant("entity");
-        DraftTools tools = tools(entities, new FixedAccess(ORG, true), 10, new RecordingAudit());
+        DraftTools tools = tools(entities, new Caller(ORG, "ada-subject", "Ada", true), 10, new RecordingAudit());
         tools.saveDraft("entity", "invoice", "{\"code\":\"invoice\"}");
 
         assertThat(tools.getDefinition("entity", "invoice")).isEqualTo("{\"code\":\"invoice\"}");
@@ -66,7 +66,7 @@ class DraftToolsTest {
     @Test
     void everyCallIsAuditedWithItsOutcomeAndNoRawArguments() {
         RecordingAudit audit = new RecordingAudit();
-        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10, audit);
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 10, audit);
 
         tools.saveDraft("entity", "invoice", "{\"secret\":\"do not log me\"}");
         tools.saveDraft("entity", "invoice", "refuse");
@@ -85,9 +85,9 @@ class DraftToolsTest {
     @Test
     void aRefusedRoleAndAStoppedTurnAreAuditedToo() {
         RecordingAudit audit = new RecordingAudit();
-        tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, false), 10, audit)
+        tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", false), 10, audit)
             .listDefinitions("entity");
-        DraftTools capped = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 1, audit);
+        DraftTools capped = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 1, audit);
         capped.listDefinitions("entity");
         capped.listDefinitions("entity");
 
@@ -99,7 +99,7 @@ class DraftToolsTest {
     @Test
     void aDraftReturnedWithIssuesTooOftenIsLeftForAPersonInThatTurn() {
         RecordingAudit audit = new RecordingAudit();
-        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10, audit);
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new Caller(ORG, "ada-subject", "Ada", true), 10, audit);
 
         for (int round = 0; round < 3; round++) {
             assertThat(tools.saveDraft("entity", "invoice", "refuse")).isEqualTo("ERROR: refused");
@@ -110,32 +110,9 @@ class DraftToolsTest {
         assertThat(audit.toolCalls.get(3).outcome()).isEqualTo("stopped-repairs");
     }
 
-    private static DraftTools tools(InMemoryAuthoringParticipant participant, AssistantAccess access, int maxCalls,
+    private static DraftTools tools(InMemoryAuthoringParticipant participant, Caller caller, int maxCalls,
                                     AssistantAuditLog audit) {
-        return new DraftTools(new DefinitionDrafts(List.of(participant)), access, maxCalls, 3, audit);
-    }
-
-    private record FixedAccess(String organization, boolean designer) implements AssistantAccess {
-
-        @Override
-        public String currentOrganization() {
-            return organization;
-        }
-
-        @Override
-        public boolean mayDesign() {
-            return designer;
-        }
-
-        @Override
-        public String principal() {
-            return "Ada";
-        }
-
-        @Override
-        public String subject() {
-            return "ada-subject";
-        }
+        return new DraftTools(new DefinitionDrafts(List.of(participant)), caller, maxCalls, 3, audit);
     }
 
     private static final class RecordingAudit implements AssistantAuditLog {

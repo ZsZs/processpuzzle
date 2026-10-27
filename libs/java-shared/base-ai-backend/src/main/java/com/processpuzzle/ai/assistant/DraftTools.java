@@ -18,23 +18,23 @@ import org.springframework.ai.tool.annotation.ToolParam;
  * <p>A draft the validators turn back may be repaired and saved again, up to the turn's repair limit; after that the
  * draft is left for a person, and the assistant must say so.
  *
- * <p>Instances are per turn, so the caps start again with each turn. Tool results and the customer's text are
- * untrusted input; nothing here does more than write a draft.
+ * <p>Instances are per turn, so the caps start again with each turn, and the {@link Caller} is the one the turn
+ * started with: nothing here reads the security context. Tool results and the customer's text are untrusted input;
+ * nothing here does more than write a draft.
  */
 public class DraftTools {
 
     private final DefinitionDrafts drafts;
-    private final AssistantAccess access;
+    private final Caller caller;
     private final int maxCalls;
     private final int maxRepairRounds;
     private final AssistantAuditLog audit;
     private final AtomicInteger calls = new AtomicInteger();
     private final Map<String, Integer> returnedWithIssues = new ConcurrentHashMap<>();
 
-    public DraftTools(DefinitionDrafts drafts, AssistantAccess access, int maxCalls, int maxRepairRounds,
-                      AssistantAuditLog audit) {
+    public DraftTools(DefinitionDrafts drafts, Caller caller, int maxCalls, int maxRepairRounds, AssistantAuditLog audit) {
         this.drafts = drafts;
-        this.access = access;
+        this.caller = caller;
         this.maxCalls = maxCalls;
         this.maxRepairRounds = maxRepairRounds;
         this.audit = audit;
@@ -47,14 +47,14 @@ public class DraftTools {
 
     @Tool(name = "list_definitions", description = "List the keys of the drafts of one definition kind.")
     public String listDefinitions(@ToolParam(description = "The definition kind, e.g. entity or state") String kind) {
-        return guarded("list_definitions", () -> Result.ok(drafts.list(access.currentOrganization(), kind).toString()), kind);
+        return guarded("list_definitions", () -> Result.ok(drafts.list(caller.organization(), kind).toString()), kind);
     }
 
     @Tool(name = "get_definition", description = "Read one draft as JSON in the shape get_schema describes.")
     public String getDefinition(@ToolParam(description = "The definition kind") String kind,
                                 @ToolParam(description = "The key of the draft") String key) {
         return guarded("get_definition", () -> Result.ok(
-            drafts.get(access.currentOrganization(), kind, key).orElse("No draft '" + key + "' of kind " + kind)),
+            drafts.get(caller.organization(), kind, key).orElse("No draft '" + key + "' of kind " + kind)),
             kind, key);
     }
 
@@ -74,7 +74,7 @@ public class DraftTools {
                 return new Result("Stop: this draft was returned with issues %d times in this turn. Report what is wrong instead of saving it again."
                     .formatted(maxRepairRounds), "stopped-repairs");
             }
-            List<AuthoringIssue> issues = drafts.save(access.currentOrganization(), kind, key, json);
+            List<AuthoringIssue> issues = drafts.save(caller.organization(), kind, key, json);
             if (issues.isEmpty()) {
                 return Result.ok("Saved. No issues.");
             }
@@ -87,7 +87,7 @@ public class DraftTools {
     public String validateDraft(@ToolParam(description = "The definition kind") String kind,
                                 @ToolParam(description = "The key of the draft") String key) {
         return guarded("validate_draft", () -> {
-            List<AuthoringIssue> issues = drafts.validate(access.currentOrganization(), kind, key);
+            List<AuthoringIssue> issues = drafts.validate(caller.organization(), kind, key);
             return issues.isEmpty() ? Result.ok("No issues.") : Result.issues(describe(issues));
         }, kind, key);
     }
@@ -98,7 +98,7 @@ public class DraftTools {
      */
     private String guarded(String tool, Action action, String... arguments) {
         String hash = ArgumentHash.of(arguments);
-        if (!access.mayDesign()) {
+        if (!caller.mayDesign()) {
             audit(tool, hash, "refused-role");
             return "Refused: the caller does not hold the definition-designer role.";
         }
@@ -117,8 +117,7 @@ public class DraftTools {
     }
 
     private void audit(String tool, String hash, String outcome) {
-        audit.toolCall(new AssistantAuditLog.ToolCall(Instant.now(), access.principal(), access.currentOrganization(),
-            tool, hash, outcome));
+        audit.toolCall(new AssistantAuditLog.ToolCall(Instant.now(), caller.principal(), caller.organization(), tool, hash, outcome));
     }
 
     private static String describe(List<AuthoringIssue> issues) {

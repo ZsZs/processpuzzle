@@ -1,12 +1,14 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpEventType, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AssistantService, AssistantTurnError } from './assistant.service';
 
 const ROOT = 'https://backend/organizations/acme';
 const TURNS = `${ROOT}/assistant/turns`;
+const SESSION = 'event:session\ndata:s-1\n\n';
+const DONE = 'event:done\ndata:\n\n';
 
 describe('AssistantService', () => {
   let service: AssistantService;
@@ -26,14 +28,15 @@ describe('AssistantService', () => {
 
   afterEach(() => http.verify());
 
-  it('posts the message to the organization\'s turns and reads the session and reply from the events', async () => {
+  it("posts the message to the organization's turns and reads the session and reply from the events", async () => {
     const turn = service.turn('Define an invoice.');
     const request = http.expectOne(TURNS);
 
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ message: 'Define an invoice.', sessionId: undefined });
     expect(request.request.headers.get('Accept')).toBe('text/event-stream');
-    request.flush('event:session\ndata:s-1\n\nevent:reply\ndata:Saved.\n\nevent:done\ndata:\n\n');
+    expect(request.request.reportProgress).toBe(true);
+    request.flush(`${SESSION}event:reply\ndata:Saved.\n\n${DONE}`);
 
     await expect(turn).resolves.toEqual({ sessionId: 's-1', reply: 'Saved.' });
   });
@@ -43,14 +46,43 @@ describe('AssistantService', () => {
     const request = http.expectOne(TURNS);
 
     expect(request.request.body).toEqual({ message: 'Rename it.', sessionId: 's-1' });
-    request.flush('event:session\ndata:s-1\n\nevent:reply\ndata:Renamed.\n\nevent:done\ndata:\n\n');
+    request.flush(`${SESSION}event:reply\ndata:Renamed.\n\n${DONE}`);
 
     await expect(turn).resolves.toEqual({ sessionId: 's-1', reply: 'Renamed.' });
   });
 
+  it('hands each piece of the answer on once, as the body arrives, however the arrival splits it', async () => {
+    const onDelta = vi.fn();
+    const turn = service.turn('Define an invoice.', undefined, onDelta);
+    const request = http.expectOne(TURNS);
+
+    // The first progress event ends mid-way through a delta's data line: that piece must wait for its blank line.
+    const first = `${SESSION}event:delta\ndata:Saved \n\nevent:delta\ndata:the inv`;
+    request.event({ type: HttpEventType.DownloadProgress, loaded: first.length, partialText: first });
+    expect(onDelta.mock.calls).toEqual([['Saved ']]);
+
+    const second = `${first}oice \n\nevent:delta\ndata:draft.\n\n`;
+    request.event({ type: HttpEventType.DownloadProgress, loaded: second.length, partialText: second });
+    expect(onDelta.mock.calls).toEqual([['Saved '], ['the invoice '], ['draft.']]);
+
+    request.flush(`${second}event:reply\ndata:Saved the invoice draft.\n\n${DONE}`);
+
+    await expect(turn).resolves.toEqual({ sessionId: 's-1', reply: 'Saved the invoice draft.' });
+    expect(onDelta).toHaveBeenCalledTimes(3);
+  });
+
+  it('still hands the pieces on when the whole body arrives at once', async () => {
+    const onDelta = vi.fn();
+    const turn = service.turn('Define an invoice.', undefined, onDelta);
+    http.expectOne(TURNS).flush(`${SESSION}event:delta\ndata:Saved.\n\nevent:reply\ndata:Saved.\n\n${DONE}`);
+
+    await expect(turn).resolves.toEqual({ sessionId: 's-1', reply: 'Saved.' });
+    expect(onDelta.mock.calls).toEqual([['Saved.']]);
+  });
+
   it('fails a turn whose body reports an error event', async () => {
     const turn = service.turn('Define an invoice.');
-    http.expectOne(TURNS).flush('event:session\ndata:s-1\n\nevent:error\ndata:The assistant could not complete this turn.\n\n');
+    http.expectOne(TURNS).flush(`${SESSION}event:error\ndata:The assistant could not complete this turn.\n\n`);
 
     await expect(turn).rejects.toMatchObject({ kind: 'failed' });
   });

@@ -22,8 +22,9 @@ export class AssistantPanelFacade {
   private sessionId: string | undefined;
 
   /**
-   * Sends the designer's message and appends the answer. Ignored while a turn is running or when the text is blank.
-   * A conversation the server no longer knows is started again on the next message.
+   * Sends the designer's message and shows the answer as it arrives: the assistant's line appears with the first
+   * piece and grows with each one, then settles on the whole reply. Ignored while a turn is running or when the text
+   * is blank. A conversation the server no longer knows is started again on the next message.
    */
   async send(text: string): Promise<void> {
     const message = text.trim();
@@ -32,10 +33,14 @@ export class AssistantPanelFacade {
     this.failure.set(undefined);
     this.busy.set(true);
     this.lines.update((lines) => [...lines, { role: 'designer', text: message }]);
+    let answering = false;
     try {
-      const turn = await this.assistant.turn(message, this.sessionId);
+      const turn = await this.assistant.turn(message, this.sessionId, (delta) => {
+        this.lines.update((lines) => (answering ? withLastText(lines, lastText(lines) + delta) : [...lines, { role: 'assistant', text: delta }]));
+        answering = true;
+      });
       this.sessionId = turn.sessionId;
-      this.lines.update((lines) => [...lines, { role: 'assistant', text: turn.reply }]);
+      this.lines.update((lines) => (answering ? withLastText(lines, turn.reply) : [...lines, { role: 'assistant', text: turn.reply }]));
     } catch (error) {
       const kind = error instanceof AssistantTurnError ? error.kind : 'failed';
       if (kind === 'session-not-found') this.sessionId = undefined;
@@ -51,4 +56,13 @@ export class AssistantPanelFacade {
     this.lines.set([]);
     this.failure.set(undefined);
   }
+}
+
+function lastText(lines: readonly AssistantLine[]): string {
+  return lines.at(-1)?.text ?? '';
+}
+
+function withLastText(lines: readonly AssistantLine[], text: string): readonly AssistantLine[] {
+  const last = lines.at(-1);
+  return last ? [...lines.slice(0, -1), { ...last, text }] : lines;
 }

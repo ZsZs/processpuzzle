@@ -11,7 +11,8 @@ info:
     A turn is one designer message, in a conversation. The answer streams back as server-sent events:
 
     - `session`: the conversation the turn belongs to. A turn without a `sessionId` opens a new one.
-    - `reply`: the assistant's answer for the turn, as text.
+    - `delta`: one piece of the answer, as the model produces it. The pieces concatenate to `reply`.
+    - `reply`: the whole answer for the turn, as text, once it is complete.
     - `done`: the turn finished; no more events follow.
     - `error`: the turn failed; no more events follow. The text is deliberately generic and carries no detail.
 
@@ -50,7 +51,8 @@ paths:
       responses:
         "200":
           description: >-
-            The turn's events, as server-sent events (text/event-stream): `session`, `reply`, then `done`; or `error`.
+            The turn's events, as server-sent events (text/event-stream): `session`, any number of `delta`, `reply`, then
+            `done`; or `error`.
           content:
             text/event-stream:
               schema:
