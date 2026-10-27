@@ -30,14 +30,24 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 @Timeout(value = 3, unit = TimeUnit.MINUTES)
 class DesignAssistantGatewaySmokeTest {
 
+    /** The shape of the real entity participant's input, cut down: enough for the model to write a draft that fits. */
+    private static final String ENTITY_SCHEMA = """
+        {"type":"object","required":["code","name","attributes"],"properties":{
+          "code":{"type":"string"},"name":{"type":"string"},"description":{"type":"string"},
+          "attributes":{"type":"array","items":{"type":"object","required":["code","name","valueKind"],
+            "properties":{"code":{"type":"string"},"name":{"type":"string"},
+              "valueKind":{"type":"string","enum":["TEXT","NUMBER","DATE","BOOLEAN"]}}}}}}""";
+
     @Test
     void theModelSavesADraftThroughTheToolAndTheTurnReportsIt() {
-        InMemoryAuthoringParticipant entities = new InMemoryAuthoringParticipant("entity");
+        InMemoryAuthoringParticipant entities = new InMemoryAuthoringParticipant("entity", ENTITY_SCHEMA);
         OpenAiChatModel model = OpenAiChatModel.builder()
             .options(OpenAiChatOptions.builder()
                 .baseUrl(System.getenv("PP_LLM_GATEWAY_URL"))
                 .apiKey(System.getenv().getOrDefault("PP_LLM_GATEWAY_KEY", "unset"))
                 .model(System.getenv().getOrDefault("PP_LLM_GATEWAY_MODEL", "pp-designer"))
+                // Repeatable: the test measures whether the tools are called, not how varied the prose is.
+                .temperature(0.0)
                 .build())
             .build();
         AssistantSessions sessions = Mockito.mock(AssistantSessions.class);
@@ -48,8 +58,9 @@ class DesignAssistantGatewaySmokeTest {
             new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000), sessions);
         signInAsAcmeDesigner();
 
-        String reply = assistant.respond(UUID.randomUUID(), "Define the entity with key invoice and name Invoice, with no attributes. "
-            + "Follow the workflow: get_schema for kind entity, then save_draft with kind entity and key invoice.");
+        String reply = assistant.respond(UUID.randomUUID(), "Define the entity with code invoice and name Invoice, with no attributes. "
+            + "Call get_schema for kind entity, then call save_draft with kind entity, key invoice and a JSON draft that follows "
+            + "the schema. Answer with what you saved, not with the schema.");
 
         System.out.println("model reply: " + reply);
         assertThat(entities.list("acme")).as("the model called save_draft").containsExactly("invoice");

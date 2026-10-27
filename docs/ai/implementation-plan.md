@@ -110,3 +110,18 @@ Done 2026-10-26 (steps 1-2):
   - Adding 10 EUR switches the account to pay-as-you-go, which lifts the limits. `mistral-large-latest` then returned OK, and the alias `pp-designer` is on `mistral-large-latest` on stage (verified in `/app/config.yaml` of the running container). The smoke test passed against it.
   - The data terms of the paid plan still need checking in the Mistral console before customer data goes through.
 - Not yet done: the stage `definition-designer` realm role in existing realms (the imports only apply to fresh realms); the `trusted_proxy_ranges` warning in LiteLLM (no effect while the gateway is not routed publicly).
+
+## Phase 2 findings
+
+Done 2026-10-27 (PRs #1128, #1135, #1136, #1138, #1143, #1148):
+
+- **Tool calls under streaming run on a Reactor thread.** The first streamed smoke run showed the `get_schema` call
+  executing on `boundedElastic-2`, not the request thread: Spring AI's stream executes tools inside the reactive
+  pipeline. A tool that read the security context there would see no caller. The tools therefore take a `Caller`
+  snapshot read once when the turn starts; the audit line of that run carried the right principal and organization.
+- **LiteLLM passes the stream's usage through.** With `streamUsage` on, the last chunk carried
+  `promptTokens=1350 completionTokens=398`, so the audit and the quota read real numbers under streaming.
+- **Model behavior, not mechanics, is what varies.** In that run the model called `get_schema`, got the test
+  double's marker `schema:entity`, and answered with a schema of its own instead of calling `save_draft`; the day
+  before, the same prompt without streaming led to a save. The smoke test now gives the model a real-looking schema,
+  runs at temperature 0 and asks for the saved result. Tool-calling reliability is Phase 6's measurement.
