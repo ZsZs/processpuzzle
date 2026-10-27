@@ -24,6 +24,11 @@ class AssistantConfigurationTest {
             public boolean mayDesign() {
                 return true;
             }
+
+            @Override
+            public String principal() {
+                return "Ada";
+            }
         });
 
     @Test

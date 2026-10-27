@@ -27,7 +27,15 @@ class DesignAssistantTest {
             new ChatResponse(List.of(new Generation(new AssistantMessage("Saved the invoice draft.")))));
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
             new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))),
-            new FixedAccess(), 5);
+            new FixedAccess(), 5, new AssistantAuditLog() {
+                @Override
+                public void toolCall(ToolCall call) {
+                }
+
+                @Override
+                public void turn(Turn turn) {
+                }
+            });
 
         String reply = assistant.respond("Define an invoice entity.");
 
@@ -37,6 +45,35 @@ class DesignAssistantTest {
         assertThat(prompt.getValue().getContents())
             .contains(DesignAssistant.SYSTEM_PROMPT)
             .contains("Define an invoice entity.");
+    }
+
+    @Test
+    void aFinishedTurnIsAuditedWithItsCallerAndTheToolCallsItMade() {
+        ChatModel model = mock(ChatModel.class);
+        when(model.getOptions()).thenReturn(OpenAiChatOptions.builder().model("pp-designer").build());
+        when(model.call(any(Prompt.class))).thenReturn(
+            new ChatResponse(List.of(new Generation(new AssistantMessage("Done.")))));
+        List<AssistantAuditLog.Turn> turns = new java.util.ArrayList<>();
+        AssistantAuditLog audit = new AssistantAuditLog() {
+            @Override
+            public void toolCall(ToolCall call) {
+            }
+
+            @Override
+            public void turn(Turn turn) {
+                turns.add(turn);
+            }
+        };
+        DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
+            new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))), new FixedAccess(), 5, audit);
+
+        assistant.respond("Define an invoice entity.");
+
+        assertThat(turns).singleElement().satisfies(turn -> {
+            assertThat(turn.principal()).isEqualTo("Ada");
+            assertThat(turn.organization()).isEqualTo("acme");
+            assertThat(turn.toolCalls()).isZero();
+        });
     }
 
     private record FixedAccess() implements AssistantAccess {
@@ -49,6 +86,11 @@ class DesignAssistantTest {
         @Override
         public boolean mayDesign() {
             return true;
+        }
+
+        @Override
+        public String principal() {
+            return "Ada";
         }
     }
 }

@@ -38,7 +38,8 @@ class DesignAssistantGatewaySmokeTest {
                 .build())
             .build();
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(List.of(entities)), new SecurityContextAssistantAccess(new CurrentPrincipal(new SecurityProperties())), 5);
+            new DefinitionDrafts(List.of(entities)), new SecurityContextAssistantAccess(new CurrentPrincipal(new SecurityProperties())), 5,
+            new LoggingAssistantAuditLog());
         signInAsAcmeDesigner();
 
         String reply = assistant.respond("Define the entity with key invoice and name Invoice, with no attributes. "

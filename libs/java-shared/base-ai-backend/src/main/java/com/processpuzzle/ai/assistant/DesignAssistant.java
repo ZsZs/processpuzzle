@@ -1,10 +1,15 @@
 package com.processpuzzle.ai.assistant;
 
+import java.time.Instant;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatResponse;
 
 /**
  * Answers one designer message with the model, letting it call the draft tools. The model is reached through the
- * gateway's alias; no vendor is named here, so switching vendor is a gateway change.
+ * gateway's alias; no vendor is named here, so switching vendor is a gateway change. Each finished turn is audited with
+ * the model that answered and the tokens it used.
  *
  * <p>One call is one turn: the tools are built for it, so its tool-call cap starts fresh. Conversation memory and
  * the chat endpoint come later.
@@ -22,20 +27,36 @@ public class DesignAssistant {
     private final DefinitionDrafts drafts;
     private final AssistantAccess access;
     private final int maxToolCalls;
+    private final AssistantAuditLog audit;
 
-    public DesignAssistant(ChatClient client, DefinitionDrafts drafts, AssistantAccess access, int maxToolCalls) {
+    public DesignAssistant(ChatClient client, DefinitionDrafts drafts, AssistantAccess access, int maxToolCalls,
+                           AssistantAuditLog audit) {
         this.client = client;
         this.drafts = drafts;
         this.access = access;
         this.maxToolCalls = maxToolCalls;
+        this.audit = audit;
     }
 
     public String respond(String message) {
-        return client.prompt()
+        DraftTools tools = new DraftTools(drafts, access, maxToolCalls, audit);
+        ChatResponse response = client.prompt()
             .system(SYSTEM_PROMPT)
             .user(message)
-            .tools(new DraftTools(drafts, access, maxToolCalls))
+            .tools(tools)
             .call()
-            .content();
+            .chatResponse();
+        audit(response, tools.toolCalls());
+        return response.getResult() == null ? "" : response.getResult().getOutput().getText();
+    }
+
+    private void audit(ChatResponse response, int toolCalls) {
+        ChatResponseMetadata metadata = response.getMetadata();
+        Usage usage = metadata == null ? null : metadata.getUsage();
+        audit.turn(new AssistantAuditLog.Turn(Instant.now(), access.principal(), access.currentOrganization(),
+            metadata == null ? null : metadata.getModel(),
+            usage == null ? null : usage.getPromptTokens(),
+            usage == null ? null : usage.getCompletionTokens(),
+            toolCalls));
     }
 }
