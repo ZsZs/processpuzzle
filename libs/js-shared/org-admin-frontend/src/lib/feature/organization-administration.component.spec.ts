@@ -1,24 +1,28 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
-import { provideOrgAdminTesting, required } from '../domain/test-organization-user';
-import { OrganizationAdministrationComponent } from './organization-administration.component';
+import { provideOrgAdminTesting } from '../domain/test-organization-user';
+import { ADMINISTRATION_TRANSLOCO_PREFIX, OrganizationAdministrationComponent } from './organization-administration.component';
 
 describe('OrganizationAdministrationComponent', () => {
-  function render(): HTMLElement {
+  function create() {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ imports: [OrganizationAdministrationComponent], providers: [...provideOrgAdminTesting(), provideRouter([])] });
-    const fixture = TestBed.createComponent(OrganizationAdministrationComponent);
-    fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    return TestBed.createComponent(OrganizationAdministrationComponent).componentInstance;
   }
 
-  it('offers the users and the roles, each as a card that opens its screen', () => {
-    const host = render();
+  it('offers the users and the roles, each on a card with its icon and a button that opens it', () => {
+    const { cards } = create();
 
-    expect(required(host, '#administration-users').textContent).toContain('assign their roles');
-    expect(required<HTMLAnchorElement>(host, '#administration-users a').getAttribute('href')).toBe('/my-org/admin/organization-user');
-    expect(required(host, '#administration-roles').textContent).toContain('read-only');
-    expect(required<HTMLAnchorElement>(host, '#administration-roles a').getAttribute('href')).toBe('/my-org/admin/organization-role');
+    expect(cards.map((card) => [card.title, card.icon, card.actions[0].link])).toEqual([
+      ['users.title', 'group', '/my-org/admin/organization-user'],
+      ['roles.title', 'badge', '/my-org/admin/organization-role'],
+    ]);
+  });
+
+  it('translates every card under the overview prefix', () => {
+    const { cards } = create();
+
+    expect(cards.every((card) => card.translocoPrefix === ADMINISTRATION_TRANSLOCO_PREFIX)).toBe(true);
   });
 });

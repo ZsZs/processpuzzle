@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Design Assistant API (assistant)
+  description: >-
+    The design assistant: a designer describes a definition in plain text, and the assistant drafts it through
+    the draft tools (see docs/ai/implementation-plan.md). The assistant writes DRAFTS only. Publishing is never
+    reachable from here; a person reviews and publishes in the release panel.
+
+    ## Turns
+
+    A turn is one designer message. The answer streams back as server-sent events:
+
+    - `reply`: the assistant's answer for the turn, as text.
+    - `done`: the turn finished; no more events follow.
+    - `error`: the turn failed; no more events follow. The text is deliberately generic and carries no detail.
+
+    A turn has no memory of earlier turns yet; session memory is a later addition.
+
+    ## Access
+
+    The caller must hold the `definition-designer` realm role, and the organization in the path must be the
+    organization the caller's token was issued for. Otherwise the turn is refused with 403, before any model call.
+
+  version: 0.1.0
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: Assistant
+    description: Designer turns with the design assistant
+
+paths:
+  /organizations/{orgKey}/assistant/turns:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    post:
+      operationId: createAssistantTurn
+      summary: Run one designer turn and stream the assistant's answer
+      tags: [ Assistant ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantTurnRequest"
+      responses:
+        "200":
+          description: >-
+            The turn's events, as server-sent events (text/event-stream): `reply`, then `done`; or `error`.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          description: The message is empty or longer than 4000 characters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The caller may not design in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      description: The organization the turn is for; must be the organization the caller's token was issued for
+      schema:
+        type: string
+
+  schemas:
+    AssistantTurnRequest:
+      type: object
+      required: [ message ]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: The designer's message for this turn
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string

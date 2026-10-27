@@ -11,4 +11,7 @@ public interface AssistantAccess {
 
     /** Whether the caller holds the {@code definition-designer} role. Checked before every draft operation. */
     boolean mayDesign();
+
+    /** The caller as a person reads it, for the audit trail. */
+    String principal();
 }
