@@ -5,8 +5,9 @@ on:
       - "release/base-ai-frontend/*"
     paths:
       - 'libs/js-shared/base-ai-frontend/**'
+      - '.github/workflows/release-base-ai-frontend.yml'
 permissions:
-  id-token: write
+  id-token: none
   contents: write
   pull-requests: write
   repository-projects: write
@@ -30,6 +31,10 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24.x
+          registry-url: https://registry.npmjs.org
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: false
 
       - name: Sets the base and head SHAs for the nx affected commands in CI
         uses: nrwl/nx-set-shas@v4
@@ -59,6 +64,9 @@ jobs:
         run: |
           npm install -g npm@latest
           npx nx release publish --projects=base-ai-frontend --access public --no-cloud
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: false
 
       - name: Create a Release
         uses: elgohr/Github-Release-Action@v5
