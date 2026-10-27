@@ -1,8 +1,9 @@
 import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { NavigateBackService } from '@processpuzzle/util';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ADMIN_URL, provideOrgAdminTesting, REALM_ROLE_DTOS, required } from '../domain/test-organization-user';
@@ -14,6 +15,10 @@ describe('RoleAssignmentComponent', () => {
   let controller: HttpTestingController;
   let snackBarStub: { open: ReturnType<typeof vi.fn> };
   let paramsOfRoute: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let routerStub: { navigate: ReturnType<typeof vi.fn> };
+  let navigateBackStub: { goBack: ReturnType<typeof vi.fn>; getRouteStack: ReturnType<typeof vi.fn> };
+  /** Entries in the navigation history: a page opened directly has none to go back to. */
+  let historySize: number;
 
   const render = (): HTMLElement => {
     fixture.detectChanges();
@@ -29,12 +34,17 @@ describe('RoleAssignmentComponent', () => {
   function configure(params: Record<string, string> | null = { entityId: 'kc-1' }) {
     snackBarStub = { open: vi.fn() };
     paramsOfRoute = new BehaviorSubject(convertToParamMap(params ?? {}));
+    historySize = 0;
+    routerStub = { navigate: vi.fn().mockResolvedValue(true) };
+    navigateBackStub = { goBack: vi.fn(), getRouteStack: vi.fn(() => ({ size: () => historySize })) };
     TestBed.configureTestingModule({
       imports: [RoleAssignmentComponent],
       providers: [
         ...provideOrgAdminTesting(),
         { provide: ANIMATION_MODULE_TYPE, useValue: 'NoopAnimations' },
         { provide: MatSnackBar, useValue: snackBarStub },
+        { provide: Router, useValue: routerStub },
+        { provide: NavigateBackService, useValue: navigateBackStub },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -95,6 +105,7 @@ describe('RoleAssignmentComponent', () => {
     const host = load(['org-member']);
 
     fixture.componentInstance.toggle('accountant');
+    fixture.detectChanges();
     required<HTMLButtonElement>(host, '#save-roles').click();
 
     const request = controller.expectOne(userRolesUrl);
@@ -130,6 +141,75 @@ describe('RoleAssignmentComponent', () => {
     controller.expectOne(userRolesUrl).flush([]);
 
     expect(snackBarStub.open.mock.calls[0][0]).toContain('next sign-in');
+  });
+
+  /**
+   * Save and Revert return the user to where they came from, which is the details after the tab. A page
+   * opened directly has no such history, so the details are the destination.
+   */
+  it('goes back to where the user came from after a save', () => {
+    historySize = 2;
+    load(['org-member']);
+
+    fixture.componentInstance.toggle('accountant');
+    fixture.componentInstance.onSave();
+    controller.expectOne(userRolesUrl).flush([{ name: 'org-member' }, { name: 'accountant' }]);
+
+    expect(navigateBackStub.goBack).toHaveBeenCalledOnce();
+    expect(routerStub.navigate).not.toHaveBeenCalled();
+  });
+
+  it('stays on the page when the save is refused, so the edit can be retried', () => {
+    historySize = 2;
+    load(['org-member']);
+
+    fixture.componentInstance.onSave();
+    controller.expectOne(userRolesUrl).flush({ errorId: 'roles.refused' }, { status: 500, statusText: 'Server Error' });
+
+    expect(navigateBackStub.goBack).not.toHaveBeenCalled();
+    expect(routerStub.navigate).not.toHaveBeenCalled();
+  });
+
+  it('returns to the details when Revert is pressed on a page opened directly', () => {
+    historySize = 1;
+    load(['accountant']);
+
+    fixture.componentInstance.onRevert();
+
+    expect(navigateBackStub.goBack).not.toHaveBeenCalled();
+    expect(routerStub.navigate).toHaveBeenCalledWith(['../details'], expect.objectContaining({ relativeTo: expect.anything() }));
+  });
+
+  it('goes back when Revert is pressed after arriving from the details', () => {
+    historySize = 2;
+    load(['accountant']);
+
+    fixture.componentInstance.onRevert();
+
+    expect(navigateBackStub.goBack).toHaveBeenCalledOnce();
+  });
+
+  /**
+   * Save and Revert only act on a difference. With nothing changed there is nothing to save or to discard,
+   * so both stay disabled until a checkbox differs from the roles the user holds, and again once it is back.
+   */
+  it('enables Save and Revert only while the checkboxes differ from the roles held', () => {
+    const host = load(['org-member']);
+    const saveButton = required<HTMLButtonElement>(host, '#save-roles');
+    const revertButton = required<HTMLButtonElement>(host, '#revert-roles');
+
+    expect(saveButton.disabled).toBe(true);
+    expect(revertButton.disabled).toBe(true);
+
+    fixture.componentInstance.toggle('accountant');
+    fixture.detectChanges();
+    expect(saveButton.disabled).toBe(false);
+    expect(revertButton.disabled).toBe(false);
+
+    fixture.componentInstance.toggle('accountant');
+    fixture.detectChanges();
+    expect(saveButton.disabled).toBe(true);
+    expect(revertButton.disabled).toBe(true);
   });
 
   it('reverts to the roles the user held', () => {
