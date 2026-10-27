@@ -9,6 +9,9 @@
     "emailVerified": "E-mail verified",
     "roleNames": "Roles",
     "createdAt": "Created",
+    "_tooltips": {
+      "roleNames": "Assigned in the Roles tab of this user."
+    },
     "actions": {
       "invite": "Invite user…"
     },

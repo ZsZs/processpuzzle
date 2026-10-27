@@ -9,6 +9,9 @@
     "emailVerified": "E-mail megerősítve",
     "roleNames": "Szerepek",
     "createdAt": "Létrehozva",
+    "_tooltips": {
+      "roleNames": "A felhasználó Szerepek fülén rendelhetők hozzá."
+    },
     "actions": {
       "invite": "Invite user…"
     },

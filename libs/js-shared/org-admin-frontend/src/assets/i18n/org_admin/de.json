@@ -9,6 +9,9 @@
     "emailVerified": "E-Mail bestätigt",
     "roleNames": "Rollen",
     "createdAt": "Erstellt",
+    "_tooltips": {
+      "roleNames": "Werden im Tab Rollen dieses Benutzers zugewiesen."
+    },
     "actions": {
       "invite": "Invite user…"
     },

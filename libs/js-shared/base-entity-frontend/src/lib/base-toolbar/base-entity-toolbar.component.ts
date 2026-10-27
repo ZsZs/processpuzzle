@@ -98,7 +98,7 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
       (this.store?.selectedEntities() ?? []).every((entity) => this.entityDescriptor().isDeletable?.(entity) ?? true),
   );
   isEditEnabled = computed(() => this.store?.selectedEntities().length == 1 && !this.entityDescriptor().isAbstract);
-  isNewEnabled = computed(() => !this.entityDescriptor().isAbstract && !this.isReadOnly());
+  isNewEnabled = computed(() => !this.entityDescriptor().isAbstract && this.entityDescriptor().isCreatable && !this.isReadOnly());
   isPdfExportEnabled = computed(() => (this.store?.entities().length ?? 0) > 0);
   /**
    * A medium or small screen: the query and filter labels move inside their fields, the controls get lower,
