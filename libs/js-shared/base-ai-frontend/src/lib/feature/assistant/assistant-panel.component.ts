@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { provideTranslocoScope, TranslocoPipe } from '@jsverse/transloco';
-import { MarkdownComponent } from 'ngx-markdown';
+import { MarkdownComponent, provideMarkdown } from 'ngx-markdown';
 import { ASSISTANT_I18N_SCOPE, BASE_AI_TRANSLOCO_SCOPE } from '../../base-ai.i18n';
 import { AssistantPanelFacade } from './assistant-panel.facade';
 
@@ -18,7 +18,12 @@ import { AssistantPanelFacade } from './assistant-panel.facade';
   selector: 'pp-assistant-panel',
   imports: [FormsModule, MatButton, MarkdownComponent, TranslocoPipe],
   // The alias is spelled out for the reason base-ai.i18n gives: transloco would otherwise camel-case the scope.
-  providers: [AssistantPanelFacade, provideTranslocoScope({ scope: BASE_AI_TRANSLOCO_SCOPE, alias: BASE_AI_TRANSLOCO_SCOPE })],
+  // provideMarkdown is the panel's own, not the host's: the panel renders replies as markdown wherever it is mounted.
+  providers: [
+    AssistantPanelFacade,
+    provideMarkdown(),
+    provideTranslocoScope({ scope: BASE_AI_TRANSLOCO_SCOPE, alias: BASE_AI_TRANSLOCO_SCOPE }),
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="pp-assistant" [attr.aria-label]="scope + '.title' | transloco">
