@@ -3,6 +3,8 @@ package com.processpuzzle.ai;
 import com.processpuzzle.ai.adapter.outbound.HttpVisionServer;
 import com.processpuzzle.ai.assistant.AssistantAccess;
 import com.processpuzzle.ai.assistant.AssistantAuditLog;
+import com.processpuzzle.ai.assistant.AssistantQuota;
+import com.processpuzzle.ai.assistant.InMemoryAssistantQuota;
 import com.processpuzzle.ai.assistant.DefinitionDrafts;
 import com.processpuzzle.ai.assistant.DesignAssistant;
 import com.processpuzzle.ai.assistant.LoggingAssistantAuditLog;
@@ -11,6 +13,7 @@ import com.processpuzzle.ai.usecase.port.UnavailableVisionServer;
 import com.processpuzzle.ai.usecase.port.VisionServer;
 import com.processpuzzle.core.definition.DefinitionAuthoringParticipant;
 import com.processpuzzle.core.security.CurrentPrincipal;
+import java.time.Clock;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -63,6 +66,18 @@ public class AiConfiguration {
     }
 
     /**
+     * The daily limits per organization, in process by default; an application running several instances declares a
+     * shared {@link AssistantQuota} bean.
+     */
+    @Bean
+    @ConditionalOnMissingBean(AssistantQuota.class)
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public AssistantQuota assistantQuota(AiProperties properties) {
+        AiProperties.Assistant assistant = properties.getAssistant();
+        return new InMemoryAssistantQuota(Clock.systemUTC(), assistant.getMaxTurnsPerDay(), assistant.getMaxTokensPerDay());
+    }
+
+    /**
      * The design assistant, built only when enabled: the gateway's chat model is then built here rather than by Spring
      * AI's auto-configuration, which would need a key even when the assistant is off. Authorization comes from the
      * application's {@link AssistantAccess} bean, or the default; the authoring participants come from the kinds it has.
@@ -70,7 +85,7 @@ public class AiConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
     public DesignAssistant designAssistant(AiProperties properties, AssistantAccess access, AssistantAuditLog audit,
-                                           ObjectProvider<DefinitionAuthoringParticipant> participants) {
+                                           AssistantQuota quota, ObjectProvider<DefinitionAuthoringParticipant> participants) {
         AiProperties.Assistant assistant = properties.getAssistant();
         OpenAiChatModel model = OpenAiChatModel.builder()
             .options(OpenAiChatOptions.builder()
@@ -80,6 +95,7 @@ public class AiConfiguration {
                 .build())
             .build();
         return new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(participants.orderedStream().toList()), access, assistant.getMaxToolCalls(), audit);
+            new DefinitionDrafts(participants.orderedStream().toList()), access, assistant.getMaxToolCalls(),
+            assistant.getMaxRepairRounds(), audit, quota);
     }
 }

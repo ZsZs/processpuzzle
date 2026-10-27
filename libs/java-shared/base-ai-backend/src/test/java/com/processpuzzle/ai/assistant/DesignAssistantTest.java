@@ -1,12 +1,15 @@
 package com.processpuzzle.ai.assistant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.time.Clock;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -27,7 +30,7 @@ class DesignAssistantTest {
             new ChatResponse(List.of(new Generation(new AssistantMessage("Saved the invoice draft.")))));
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
             new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))),
-            new FixedAccess(), 5, new AssistantAuditLog() {
+            new FixedAccess(), 5, 3, new AssistantAuditLog() {
                 @Override
                 public void toolCall(ToolCall call) {
                     // Tool calls are not what this test checks.
@@ -37,7 +40,7 @@ class DesignAssistantTest {
                 public void turn(Turn turn) {
                     // Turns are not what this test checks.
                 }
-            });
+            }, new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000));
 
         String reply = assistant.respond("Define an invoice entity.");
 
@@ -68,7 +71,7 @@ class DesignAssistantTest {
             }
         };
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))), new FixedAccess(), 5, audit);
+            new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))), new FixedAccess(), 5, 3, audit, new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000));
 
         assistant.respond("Define an invoice entity.");
 
@@ -77,6 +80,30 @@ class DesignAssistantTest {
             assertThat(turn.organization()).isEqualTo("acme");
             assertThat(turn.toolCalls()).isZero();
         });
+    }
+
+    @Test
+    void aTurnOverTheDailyLimitNeverReachesTheModel() {
+        ChatModel model = mock(ChatModel.class);
+        when(model.getOptions()).thenReturn(OpenAiChatOptions.builder().model("pp-designer").build());
+        AssistantQuota exhausted = new AssistantQuota() {
+            @Override
+            public void checkTurnAllowed(String organization) {
+                throw new AssistantQuotaExceededException(organization);
+            }
+
+            @Override
+            public void recordTurn(String organization, long tokens) {
+                // Nothing is recorded for a refused turn.
+            }
+        };
+        DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
+            new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))), new FixedAccess(), 5, 3,
+            new LoggingAssistantAuditLog(), exhausted);
+
+        assertThatThrownBy(() -> assistant.respond("Define an invoice entity."))
+            .isInstanceOf(AssistantQuotaExceededException.class);
+        verify(model, never()).call(any(Prompt.class));
     }
 
     private record FixedAccess() implements AssistantAccess {

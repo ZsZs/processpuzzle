@@ -3,6 +3,8 @@ package com.processpuzzle.ai.assistant;
 import com.processpuzzle.core.definition.AuthoringIssue;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.springframework.ai.tool.annotation.Tool;
@@ -13,7 +15,10 @@ import org.springframework.ai.tool.annotation.ToolParam;
  * turn's cap, and every result is text the model reads: a validation problem comes back as the issues to repair, so
  * the model can fix the draft and try again. Each call is written to the audit trail with its outcome.
  *
- * <p>Instances are per turn, so the cap starts again with each turn. Tool results and the customer's text are
+ * <p>A draft the validators turn back may be repaired and saved again, up to the turn's repair limit; after that the
+ * draft is left for a person, and the assistant must say so.
+ *
+ * <p>Instances are per turn, so the caps start again with each turn. Tool results and the customer's text are
  * untrusted input; nothing here does more than write a draft.
  */
 public class DraftTools {
@@ -21,13 +26,17 @@ public class DraftTools {
     private final DefinitionDrafts drafts;
     private final AssistantAccess access;
     private final int maxCalls;
+    private final int maxRepairRounds;
     private final AssistantAuditLog audit;
     private final AtomicInteger calls = new AtomicInteger();
+    private final Map<String, Integer> returnedWithIssues = new ConcurrentHashMap<>();
 
-    public DraftTools(DefinitionDrafts drafts, AssistantAccess access, int maxCalls, AssistantAuditLog audit) {
+    public DraftTools(DefinitionDrafts drafts, AssistantAccess access, int maxCalls, int maxRepairRounds,
+                      AssistantAuditLog audit) {
         this.drafts = drafts;
         this.access = access;
         this.maxCalls = maxCalls;
+        this.maxRepairRounds = maxRepairRounds;
         this.audit = audit;
     }
 
@@ -60,8 +69,17 @@ public class DraftTools {
                             @ToolParam(description = "The key of the draft; the JSON's own key must match") String key,
                             @ToolParam(description = "The draft as JSON in the shape get_schema describes") String json) {
         return guarded("save_draft", () -> {
+            String draft = kind + "/" + key;
+            if (returnedWithIssues.getOrDefault(draft, 0) >= maxRepairRounds) {
+                return new Result("Stop: this draft was returned with issues %d times in this turn. Report what is wrong instead of saving it again."
+                    .formatted(maxRepairRounds), "stopped-repairs");
+            }
             List<AuthoringIssue> issues = drafts.save(access.currentOrganization(), kind, key, json);
-            return issues.isEmpty() ? Result.ok("Saved. No issues.") : Result.issues(describe(issues));
+            if (issues.isEmpty()) {
+                return Result.ok("Saved. No issues.");
+            }
+            returnedWithIssues.merge(draft, 1, Integer::sum);
+            return Result.issues(describe(issues));
         }, kind, key, json);
     }
 

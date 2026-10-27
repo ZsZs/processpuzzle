@@ -76,6 +76,14 @@ class AssistantEndpointTest {
     }
 
     @Test
+    void aTurnOverTheOrganizationsDailyLimitIsTooManyRequests() throws Exception {
+        when(assistant.respond(anyString())).thenThrow(new AssistantQuotaExceededException("acme"));
+
+        mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"Define invoice.\"}"))
+            .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
     void aFailingModelCallBecomesAnErrorEventNotABrokenStream() throws Exception {
         when(assistant.respond(anyString())).thenThrow(new IllegalStateException("gateway down"));
 
