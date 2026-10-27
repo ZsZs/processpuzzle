@@ -13,7 +13,7 @@ describe('RoleAssignmentComponent', () => {
   let fixture: ComponentFixture<RoleAssignmentComponent>;
   let controller: HttpTestingController;
   let snackBarStub: { open: ReturnType<typeof vi.fn> };
-  let parentId: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let paramsOfRoute: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   const render = (): HTMLElement => {
     fixture.detectChanges();
@@ -21,15 +21,14 @@ describe('RoleAssignmentComponent', () => {
   };
 
   /**
-   * The tab is a *sibling* of the details route under `<entity>/<id>`, so `entityId` is inherited from
-   * the parent rather than declared on this route. The stub mirrors that: the own snapshot has no
-   * parameters at all and only the parent carries the id.
+   * The tab is declared as `:entityId/roles`, so `entityId` is a parameter of this route itself. The stub
+   * mirrors the router: the id arrives on the route's own paramMap, and the parent has none.
    */
   // `null` rather than `undefined` for the no-id case: a default parameter value applies to
-  // `undefined` too, so `configure(undefined)` would silently hand back the inherited `kc-1`.
-  function configure(parentParams: Record<string, string> | null = { entityId: 'kc-1' }) {
+  // `undefined` too, so `configure(undefined)` would silently hand back the default `kc-1`.
+  function configure(params: Record<string, string> | null = { entityId: 'kc-1' }) {
     snackBarStub = { open: vi.fn() };
-    parentId = new BehaviorSubject(convertToParamMap(parentParams ?? {}));
+    paramsOfRoute = new BehaviorSubject(convertToParamMap(params ?? {}));
     TestBed.configureTestingModule({
       imports: [RoleAssignmentComponent],
       providers: [
@@ -39,9 +38,9 @@ describe('RoleAssignmentComponent', () => {
         {
           provide: ActivatedRoute,
           useValue: {
-            snapshot: { paramMap: convertToParamMap({}) },
-            paramMap: of(convertToParamMap({})),
-            parent: parentParams ? { snapshot: { paramMap: convertToParamMap(parentParams) }, paramMap: parentId } : null,
+            snapshot: { paramMap: convertToParamMap(params ?? {}) },
+            paramMap: paramsOfRoute,
+            parent: { snapshot: { paramMap: convertToParamMap({}) }, paramMap: of(convertToParamMap({})) },
           },
         },
       ],
@@ -207,7 +206,7 @@ describe('RoleAssignmentComponent', () => {
     controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
     const previous = controller.expectOne(userRolesUrl);
 
-    parentId.next(convertToParamMap({ entityId: 'kc-2' }));
+    paramsOfRoute.next(convertToParamMap({ entityId: 'kc-2' }));
 
     expect(previous.cancelled).toBe(true);
     controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
