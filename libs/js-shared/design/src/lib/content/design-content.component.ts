@@ -84,11 +84,27 @@ export class DesignContentComponent {
       translocoPrefix: 'design',
     },
     {
+      icon: 'smart_toy',
+      title: 'base-ai_card_title',
+      subtitle: 'base-ai_card_subtitle',
+      content: ['base-ai_card_content', 'base-ai_card_content_1', 'base-ai_card_content_2', 'base-ai_card_content_3'],
+      actions: [{ link: `${this.prefix}/design/assistant`, caption: 'base-ai_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
+    {
       icon: 'inventory_2',
       title: 'base-starter_card_title',
       subtitle: 'base-starter_card_subtitle',
       content: ['base-starter_card_content', 'base-starter_card_content_1', 'base-starter_card_content_2', 'base-starter_card_content_3'],
       actions: [{ link: `${this.prefix}/design/starters`, caption: 'base-starter_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
+    {
+      icon: 'rocket_launch',
+      title: 'base-release_card_title',
+      subtitle: 'base-release_card_subtitle',
+      content: ['base-release_card_content', 'base-release_card_content_1', 'base-release_card_content_2', 'base-release_card_content_3'],
+      actions: [{ link: `${this.prefix}/design/release`, caption: 'base-release_card_button', colour: 'primary' }],
       translocoPrefix: 'design',
     },
   ];
