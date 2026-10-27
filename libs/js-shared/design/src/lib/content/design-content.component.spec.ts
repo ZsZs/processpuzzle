@@ -26,4 +26,11 @@ describe('ContentComponent', () => {
     const matCard = fixture.debugElement.query(By.css('mat-card')).nativeElement;
     expect(matCard).toBeTruthy();
   });
+
+  it('offers the AI Designer and Release sections as cards', () => {
+    const links = component.cards.flatMap((card) => card.actions?.map((action) => action.link) ?? []);
+
+    expect(links).toContain('/design/assistant');
+    expect(links).toContain('/design/release');
+  });
 });
