@@ -8,7 +8,9 @@ import com.processpuzzle.core.security.SecurityProperties;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.ai.chat.client.ChatClient;
@@ -38,12 +40,15 @@ class DesignAssistantGatewaySmokeTest {
                 .model(System.getenv().getOrDefault("PP_LLM_GATEWAY_MODEL", "pp-designer"))
                 .build())
             .build();
+        AssistantSessions sessions = Mockito.mock(AssistantSessions.class);
         DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(List.of(entities)), new SecurityContextAssistantAccess(new CurrentPrincipal(new SecurityProperties())), 5, 3,
-            new LoggingAssistantAuditLog(), new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000));
+            new DefinitionDrafts(List.of(entities)),
+            new SecurityContextAssistantAccess(new CurrentPrincipal(new SecurityProperties())),
+            new AssistantLimits(5, 3), new LoggingAssistantAuditLog(),
+            new InMemoryAssistantQuota(Clock.systemUTC(), 100, 1_000_000), sessions);
         signInAsAcmeDesigner();
 
-        String reply = assistant.respond("Define the entity with key invoice and name Invoice, with no attributes. "
+        String reply = assistant.respond(UUID.randomUUID(), "Define the entity with key invoice and name Invoice, with no attributes. "
             + "Follow the workflow: get_schema for kind entity, then save_draft with kind entity and key invoice.");
 
         System.out.println("model reply: " + reply);

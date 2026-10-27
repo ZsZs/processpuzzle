@@ -37,4 +37,10 @@ public class SecurityContextAssistantAccess implements AssistantAccess {
     public String principal() {
         return principal.displayName().orElse("");
     }
+
+    /** The token's subject, the designer's stable identifier; empty when unauthenticated. */
+    @Override
+    public String subject() {
+        return principal.subject().orElse("");
+    }
 }

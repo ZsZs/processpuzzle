@@ -131,6 +131,11 @@ class DraftToolsTest {
         public String principal() {
             return "Ada";
         }
+
+        @Override
+        public String subject() {
+            return "ada-subject";
+        }
     }
 
     private static final class RecordingAudit implements AssistantAuditLog {

@@ -1,7 +1,10 @@
 package com.processpuzzle.ai.assistant;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -11,8 +14,8 @@ import org.springframework.ai.chat.model.ChatResponse;
  * gateway's alias; no vendor is named here, so switching vendor is a gateway change. Each finished turn is audited with
  * the model that answered and the tokens it used.
  *
- * <p>One call is one turn: the tools are built for it, so its tool-call cap starts fresh. Conversation memory and
- * the chat endpoint come later.
+ * <p>A turn belongs to a conversation: the model reads its recent messages first, and the exchange is kept in the
+ * conversation afterwards. The tools are built fresh for each turn, so its tool-call caps start again.
  */
 public class DesignAssistant {
 
@@ -26,38 +29,51 @@ public class DesignAssistant {
     private final ChatClient client;
     private final DefinitionDrafts drafts;
     private final AssistantAccess access;
-    private final int maxToolCalls;
-    private final int maxRepairRounds;
+    private final AssistantLimits limits;
     private final AssistantAuditLog audit;
     private final AssistantQuota quota;
+    private final AssistantSessions sessions;
 
-    public DesignAssistant(ChatClient client, DefinitionDrafts drafts, AssistantAccess access, int maxToolCalls,
-                           int maxRepairRounds, AssistantAuditLog audit, AssistantQuota quota) {
+    public DesignAssistant(ChatClient client, DefinitionDrafts drafts, AssistantAccess access, AssistantLimits limits,
+                           AssistantAuditLog audit, AssistantQuota quota, AssistantSessions sessions) {
         this.client = client;
         this.drafts = drafts;
         this.access = access;
-        this.maxToolCalls = maxToolCalls;
-        this.maxRepairRounds = maxRepairRounds;
+        this.limits = limits;
         this.audit = audit;
         this.quota = quota;
+        this.sessions = sessions;
+    }
+
+    /** Opens a new conversation for the caller in their organization. */
+    public UUID openSession() {
+        return sessions.open(access.currentOrganization(), access.subject());
     }
 
     /**
-     * @throws AssistantQuotaExceededException before any model call when the organization is out of turns or tokens
+     * Runs one turn of the conversation and returns the assistant's reply.
+     *
+     * @throws AssistantSessionNotFoundException when the conversation is not the caller's in this organization
+     * @throws AssistantQuotaExceededException   before any model call when the organization is out of turns or tokens
      */
-    public String respond(String message) {
+    public String respond(UUID sessionId, String message) {
         String organization = access.currentOrganization();
+        String subject = access.subject();
         quota.checkTurnAllowed(organization);
-        DraftTools tools = new DraftTools(drafts, access, maxToolCalls, maxRepairRounds, audit);
+        List<Message> history = sessions.history(sessionId, organization, subject);
+        DraftTools tools = new DraftTools(drafts, access, limits.maxToolCalls(), limits.maxRepairRounds(), audit);
         ChatResponse response = client.prompt()
             .system(SYSTEM_PROMPT)
+            .messages(history)
             .user(message)
             .tools(tools)
             .call()
             .chatResponse();
+        String reply = response.getResult() == null ? "" : response.getResult().getOutput().getText();
+        sessions.append(sessionId, organization, subject, message, reply);
         audit(response, tools.toolCalls());
         quota.recordTurn(organization, tokensOf(response));
-        return response.getResult() == null ? "" : response.getResult().getOutput().getText();
+        return reply;
     }
 
     private void audit(ChatResponse response, int toolCalls) {

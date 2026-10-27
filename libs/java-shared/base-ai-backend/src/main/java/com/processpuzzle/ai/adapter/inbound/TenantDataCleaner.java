@@ -1,5 +1,6 @@
 package com.processpuzzle.ai.adapter.inbound;
 
+import com.processpuzzle.ai.domain.AssistantSessionRepository;
 import com.processpuzzle.ai.domain.EnrollmentPhotoRepository;
 import com.processpuzzle.ai.domain.MediaUploadRepository;
 import com.processpuzzle.ai.domain.RecognitionProfileRepository;
@@ -56,17 +57,20 @@ public class TenantDataCleaner {
     private final MediaUploadRepository uploads;
     private final VisionJobTicketRepository tickets;
     private final RecognitionProfileRepository profiles;
+    private final AssistantSessionRepository assistantSessions;
     private final MediaStores stores;
     private final VisionServer visionServer;
 
     public TenantDataCleaner(RecognitionRepository recognitions, EnrollmentPhotoRepository photos,
                              MediaUploadRepository uploads, VisionJobTicketRepository tickets,
-                             RecognitionProfileRepository profiles, MediaStores stores, VisionServer visionServer) {
+                             RecognitionProfileRepository profiles, AssistantSessionRepository assistantSessions,
+                             MediaStores stores, VisionServer visionServer) {
         this.recognitions = recognitions;
         this.photos = photos;
         this.uploads = uploads;
         this.tickets = tickets;
         this.profiles = profiles;
+        this.assistantSessions = assistantSessions;
         this.stores = stores;
         this.visionServer = visionServer;
     }
@@ -85,6 +89,8 @@ public class TenantDataCleaner {
         int erasedUploads = uploads.eraseByOrgKey(orgKey);
         int erasedTickets = tickets.eraseByOrgKey(orgKey);
         int erasedProfiles = profiles.eraseByOrgKey(orgKey);
+        assistantSessions.deleteMessagesOfOrganization(orgKey);
+        int erasedSessions = assistantSessions.deleteByOrganization(orgKey);
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -94,8 +100,8 @@ public class TenantDataCleaner {
             }
         });
         LOG.info("Organization '{}' erased: {} recognition(s), {} enrollment photo(s), {} upload(s), {} vision job "
-                        + "ticket(s) and {} recognition profile(s) deleted.", orgKey, erasedRecognitions, erasedPhotos,
-                erasedUploads, erasedTickets, erasedProfiles);
+                        + "ticket(s), {} recognition profile(s) and {} assistant session(s) deleted.", orgKey,
+                erasedRecognitions, erasedPhotos, erasedUploads, erasedTickets, erasedProfiles, erasedSessions);
     }
 
     private void deleteMedia(String orgKey) {
