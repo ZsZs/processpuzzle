@@ -27,19 +27,28 @@ public class DesignAssistant {
     private final DefinitionDrafts drafts;
     private final AssistantAccess access;
     private final int maxToolCalls;
+    private final int maxRepairRounds;
     private final AssistantAuditLog audit;
+    private final AssistantQuota quota;
 
     public DesignAssistant(ChatClient client, DefinitionDrafts drafts, AssistantAccess access, int maxToolCalls,
-                           AssistantAuditLog audit) {
+                           int maxRepairRounds, AssistantAuditLog audit, AssistantQuota quota) {
         this.client = client;
         this.drafts = drafts;
         this.access = access;
         this.maxToolCalls = maxToolCalls;
+        this.maxRepairRounds = maxRepairRounds;
         this.audit = audit;
+        this.quota = quota;
     }
 
+    /**
+     * @throws AssistantQuotaExceededException before any model call when the organization is out of turns or tokens
+     */
     public String respond(String message) {
-        DraftTools tools = new DraftTools(drafts, access, maxToolCalls, audit);
+        String organization = access.currentOrganization();
+        quota.checkTurnAllowed(organization);
+        DraftTools tools = new DraftTools(drafts, access, maxToolCalls, maxRepairRounds, audit);
         ChatResponse response = client.prompt()
             .system(SYSTEM_PROMPT)
             .user(message)
@@ -47,6 +56,7 @@ public class DesignAssistant {
             .call()
             .chatResponse();
         audit(response, tools.toolCalls());
+        quota.recordTurn(organization, tokensOf(response));
         return response.getResult() == null ? "" : response.getResult().getOutput().getText();
     }
 
@@ -55,5 +65,10 @@ public class DesignAssistant {
         Usage usage = metadata.getUsage();
         audit.turn(new AssistantAuditLog.Turn(Instant.now(), access.principal(), access.currentOrganization(),
             metadata.getModel(), usage.getPromptTokens(), usage.getCompletionTokens(), toolCalls));
+    }
+
+    /** Prompt plus completion tokens, as the usage reports them. */
+    private static long tokensOf(ChatResponse response) {
+        return response.getMetadata().getUsage().getTotalTokens();
     }
 }

@@ -80,5 +80,11 @@ public class AiProperties {
         private String model = "pp-designer";
         /** Tool calls one conversation turn may make before the assistant is told to stop and report. */
         private int maxToolCalls = 20;
+        /** Times one draft may be sent back with issues in one turn before the assistant must report instead. */
+        private int maxRepairRounds = 3;
+        /** Turns one organization may run per UTC day. */
+        private int maxTurnsPerDay = 100;
+        /** Tokens (prompt and completion) one organization may use per UTC day. */
+        private long maxTokensPerDay = 500_000;
     }
 }
