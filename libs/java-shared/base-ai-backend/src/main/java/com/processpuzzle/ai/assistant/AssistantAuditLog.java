@@ -9,7 +9,10 @@ import java.time.Instant;
  */
 public interface AssistantAuditLog {
 
-    /** A tool call and its outcome: {@code ok}, {@code issues}, {@code refused}, {@code refused-role} or {@code stopped-limit}. */
+    /**
+     * A tool call and its outcome: {@code ok}, {@code issues}, {@code refused}, {@code refused-role}, {@code stopped-limit}
+     * or {@code stopped-repairs}.
+     */
     void toolCall(ToolCall call);
 
     /** A finished turn, with the model that answered and the tokens it used, where the gateway reports them. */

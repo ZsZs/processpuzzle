@@ -50,8 +50,12 @@ public class AssistantEndpoint {
 
         SseEmitter emitter = new SseEmitter(TURN_TIMEOUT.toMillis());
         try {
-            emitter.send(SseEmitter.event().name("reply").data(assistant.respond(message)));
+            String reply = assistant.respond(message);
+            emitter.send(SseEmitter.event().name("reply").data(reply));
             emitter.send(SseEmitter.event().name("done").data(""));
+        } catch (AssistantQuotaExceededException e) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                "The organization has used up its design assistant limit for today");
         } catch (IOException e) {
             emitter.completeWithError(e);
             return emitter;

@@ -96,9 +96,23 @@ class DraftToolsTest {
         assertThat(capped.toolCalls()).isEqualTo(2);
     }
 
+    @Test
+    void aDraftReturnedWithIssuesTooOftenIsLeftForAPersonInThatTurn() {
+        RecordingAudit audit = new RecordingAudit();
+        DraftTools tools = tools(new InMemoryAuthoringParticipant("entity"), new FixedAccess(ORG, true), 10, audit);
+
+        for (int round = 0; round < 3; round++) {
+            assertThat(tools.saveDraft("entity", "invoice", "refuse")).isEqualTo("ERROR: refused");
+        }
+
+        assertThat(tools.saveDraft("entity", "invoice", "refuse"))
+            .startsWith("Stop: this draft was returned with issues 3 times in this turn");
+        assertThat(audit.toolCalls.get(3).outcome()).isEqualTo("stopped-repairs");
+    }
+
     private static DraftTools tools(InMemoryAuthoringParticipant participant, AssistantAccess access, int maxCalls,
                                     AssistantAuditLog audit) {
-        return new DraftTools(new DefinitionDrafts(List.of(participant)), access, maxCalls, audit);
+        return new DraftTools(new DefinitionDrafts(List.of(participant)), access, maxCalls, 3, audit);
     }
 
     private record FixedAccess(String organization, boolean designer) implements AssistantAccess {
