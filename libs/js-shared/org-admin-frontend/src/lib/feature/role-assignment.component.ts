@@ -124,9 +124,9 @@ export class RoleAssignmentComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    // The id sits on an ancestor segment, not this route's own: the tab is a sibling of the details
-    // route under `<entity>/<id>`, so the parameter is inherited rather than declared here.
-    const userIds = (this.route.parent ?? this.route).paramMap.pipe(
+    // The tab's own route is `:entityId/roles`, so the id is this route's parameter. Reading it from the
+    // parent finds nothing: the parent is the users route, which has no `entityId`, and Save stays disabled.
+    const userIds = this.route.paramMap.pipe(
       map((params) => params.get('entityId') ?? undefined),
       distinctUntilChanged(),
     );
