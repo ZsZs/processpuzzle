@@ -69,13 +69,8 @@ class UnhandledExceptionHandlerTest {
     }
 
     /**
-     * The case that motivated {@code ErrorResponse} being consulted at all: a browser asking for
-     * {@code /favicon.svg}, several times a page load, each one previously a {@code 500} plus a full
-     * stack trace at {@code ERROR}.
-     */
-    /**
-     * The assistant streams its turn as {@code text/event-stream}, so a failure there must not try to write a JSON body:
-     * the status is what the caller needs, and the body would only replace it with a generic 404.
+     * The assistant streams its turn as {@code text/event-stream}, so a failure there must not try to write a JSON
+     * body: the status is what the caller needs, and a body would only replace it with a generic 404.
      */
     @Test
     void aStatusReachingAStreamIsAnsweredWithItsStatusAndNoBody() {
@@ -88,6 +83,11 @@ class UnhandledExceptionHandlerTest {
         assertThat(response.getBody()).isNull();
     }
 
+    /**
+     * The case that motivated {@code ErrorResponse} being consulted at all: a browser asking for
+     * {@code /favicon.svg}, several times a page load, each one previously a {@code 500} plus a full
+     * stack trace at {@code ERROR}.
+     */
     @Test
     void aMissingStaticResourceIs404NotAServerFault() {
         var response = handler.handleUnexpected(

@@ -113,20 +113,26 @@ public class UnhandledExceptionHandler {
     /**
      * Writes the body only when the caller accepts JSON.
      *
-     * <p>An endpoint that streams declares {{@code text/event-stream}}, which cannot carry the JSON body. Answering with one there fails inside Spring, and the failure replaces the status with a generic 404, so the caller never learns the status the exception meant. The status alone is still the answer that matters: a 403, 404 or 429 is distinct from a 500 without any body.
+     * <p>An endpoint that streams declares {@code text/event-stream}, which cannot carry the JSON body. Answering
+     * with one there fails inside Spring, and the failure replaces the status with a generic 404, so the caller never
+     * learns the status the exception meant.
      */
-    private static ResponseEntity<ApiError> answer(HttpServletRequest request, HttpStatusCode statusCode, ApiError error) {{
-        if (!acceptsJson(request)) {{
+    private static ResponseEntity<ApiError> answer(HttpServletRequest request, HttpStatusCode statusCode, ApiError error) {
+        if (!acceptsJson(request)) {
             return ResponseEntity.status(statusCode).build();
-        }}
+        }
         return ResponseEntity.status(statusCode).body(error);
-    }}
+    }
 
-    /** A request with no {{@code Accept}} header takes any type, so JSON is acceptable. */
-    private static boolean acceptsJson(HttpServletRequest request) {{
+    /** A request with no {@code Accept} header takes any type, so JSON is acceptable. */
+    private static boolean acceptsJson(HttpServletRequest request) {
         String accept = request.getHeader(HttpHeaders.ACCEPT);
-        return accept == null || MediaType.parseMediaTypes(accept).stream().anyMatch(type -> type.isCompatibleWith(MediaType.APPLICATION_JSON));
-    }}
+        if (accept == null) {
+            return true;
+        }
+        return MediaType.parseMediaTypes(accept).stream()
+                .anyMatch(type -> type.isCompatibleWith(MediaType.APPLICATION_JSON));
+    }
 
     /**
      * A stable id derived from the status rather than a hand-kept table: {@code 404} becomes
