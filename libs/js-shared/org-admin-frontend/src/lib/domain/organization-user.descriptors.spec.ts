@@ -49,6 +49,14 @@ describe('createOrganizationUserDescriptor', () => {
     expect(attributesOf().get('enabled')?.disabled).toBe(false);
   });
 
+  it('offers no generic New, because users are invited', () => {
+    expect(createOrganizationUserDescriptor().isCreatable).toBe(false);
+  });
+
+  it('points the read-only roles field at the tab where they are assigned', () => {
+    expect(attributesOf().get('roleNames')?.description).toContain('Roles tab');
+  });
+
   it('requires a username and an e-mail address', () => {
     const attributes = attributesOf();
 

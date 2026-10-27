@@ -229,4 +229,22 @@ describe('BaseEntityToolbarComponent', () => {
       expect((component as BaseEntityToolbarComponent<TestEntity>).isDeleteEnabled()).toBe(true);
     });
   });
+
+  describe('creatable rule:', () => {
+    it('offers New by default', async () => {
+      const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent);
+
+      expect((component as BaseEntityToolbarComponent<TestEntity>).isNewEnabled()).toBe(true);
+    });
+
+    it('does not offer New for an entity created some other way, and still offers edit', async () => {
+      const { fixture, component } = await setupContainerComponentTest(BaseEntityToolbarComponent, {}, [], [], { isCreatable: false });
+      component.store.selectEntity('1');
+      fixture.detectChanges();
+
+      const toolbar = component as BaseEntityToolbarComponent<TestEntity>;
+      expect(toolbar.isNewEnabled()).toBe(false);
+      expect(toolbar.isEditEnabled()).toBe(true);
+    });
+  });
 });

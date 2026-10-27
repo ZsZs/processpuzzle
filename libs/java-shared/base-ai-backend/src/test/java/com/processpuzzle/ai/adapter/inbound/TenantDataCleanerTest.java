@@ -18,6 +18,8 @@ import com.processpuzzle.ai.domain.MediaUploadRepository;
 import com.processpuzzle.ai.domain.Recognition;
 import com.processpuzzle.ai.domain.RecognitionProfile;
 import com.processpuzzle.ai.domain.RecognitionProfileRepository;
+import com.processpuzzle.ai.domain.AssistantSession;
+import com.processpuzzle.ai.domain.AssistantSessionRepository;
 import com.processpuzzle.ai.domain.RecognitionRepository;
 import com.processpuzzle.ai.domain.VisionJobTicket;
 import com.processpuzzle.ai.domain.VisionJobTicketRepository;
@@ -104,6 +106,8 @@ class TenantDataCleanerTest {
     @Autowired
     private RecognitionProfileRepository profiles;
     @Autowired
+    private AssistantSessionRepository assistantSessions;
+    @Autowired
     private MediaStore mediaStore;
     @Autowired
     private VisionServer visionServer;
@@ -113,6 +117,22 @@ class TenantDataCleanerTest {
     private PlatformTransactionManager transactionManager;
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Test
+    void erasesTheAssistantSessionsOfTheTenantWithTheirMessagesAndKeepsTheOthers() {
+        givenAssistantSessionFor(ERASED);
+        givenAssistantSessionFor(KEPT);
+
+        erase(ERASED);
+
+        assertThat(assistantSessions.findAll()).extracting(AssistantSession::getOrgKey).containsExactly(KEPT);
+    }
+
+    private void givenAssistantSessionFor(String orgKey) {
+        AssistantSession session = new AssistantSession(orgKey, "ada-subject", Instant.now());
+        session.append("user", "Define an invoice.", Instant.now());
+        assistantSessions.save(session);
+    }
 
     @Test
     void erasesEveryRowOfTheTenantAndNothingOfAnother() {

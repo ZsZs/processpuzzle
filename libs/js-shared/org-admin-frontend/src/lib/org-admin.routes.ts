@@ -20,9 +20,8 @@ import { OrganizationRoleFacade } from './feature/organization-role.facade';
  * sit on this route and not one deeper, because `readEmbeddedBreadcrumb` takes a level's base URL
  * from the URL accumulated up to the route that declares the name.
  *
- * There is no route for roles of their own. They are not an entity a tenant administers — they are
- * the realm's list, read to populate a checkbox set — so they appear as a tab of a user
- * ({@link ROLE_ASSIGNMENT_TAB}) rather than as a screen with a list and a form that could create one.
+ * Roles appear twice: as the organization's catalog, a screen of its own, and as a tab of a user
+ * ({@link ROLE_ASSIGNMENT_TAB}), which is where they are assigned.
  */
 export const ORG_ADMIN_ROUTES: Routes = [
   // The branch root is the overview of what is administered, not the users: the sidenav's Administration entry
@@ -33,7 +32,10 @@ export const ORG_ADMIN_ROUTES: Routes = [
     title: 'ProcessPuzzle - Users',
     data: { icon: 'group', menuTitle: 'admin.users', entityName: ORGANIZATION_USER_ENTITY_NAME },
     component: OrganizationUserContainerComponent,
-    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrganizationUserFacade }, adminScopes()],
+    // No `ACTIVE_ENTITY_FACADE` here, unlike the roles: `BaseEntityContainerComponent` renders a bound
+    // facade's descriptor in preference to the one it is handed, and the container's is the one carrying
+    // the role-assignment tab. With the facade bound, the tab's route existed but no link led to it.
+    providers: [adminScopes()],
     children: baseEntityRoutes([], [ROLE_ASSIGNMENT_TAB]),
   },
   {

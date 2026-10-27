@@ -33,15 +33,15 @@ describe('ORG_ADMIN_ROUTES', () => {
     expect(userRoute?.component).toBe(OrganizationUserContainerComponent);
   });
 
-  it('binds the container to this feature facade and registers both transloco scopes', () => {
+  it('leaves the facade unbound, so the container descriptor with the tab is rendered, and registers both transloco scopes', () => {
     // base_entity is not inherited: the generic tabs resolve `base_entity.tabs.*` and a route that
     // declares TRANSLOCO_SCOPE replaces the inherited collection. The aliases are asserted too, because
     // left to transloco's default they would be camel-cased (`orgAdmin`) and no key would resolve.
     const providers = (userRoute?.providers?.flat() ?? []) as Array<{ useValue?: unknown; provide?: unknown; useExisting?: unknown }>;
 
-    expect(providers[0].provide).toBe(ACTIVE_ENTITY_FACADE);
-    expect(providers[0].useExisting).toBe(OrganizationUserFacade);
-    expect(providers.slice(1).map((provider) => provider.useValue)).toEqual([
+    // A bound facade's descriptor wins over the container's, and only the container's has the role tab.
+    expect(providers.some((provider) => provider.provide === ACTIVE_ENTITY_FACADE)).toBe(false);
+    expect(providers.map((provider) => provider.useValue)).toEqual([
       { scope: 'base_entity', alias: 'base_entity' },
       { scope: 'org_admin', alias: 'org_admin' },
     ]);
@@ -62,9 +62,6 @@ describe('ORG_ADMIN_ROUTES', () => {
     expect(roleRoute?.component).toBe(RoleAssignmentComponent);
   });
 
-  // Roles are the realm's list, read to populate a checkbox set — not something a tenant creates. A
-  // route of their own would give them a list and a form that could mint one, and a role minted from a
-  // typo is one nothing in the platform ever matches.
   // The catalog of roles is a screen of its own, beside the users. Its rules per row, which keep a platform or
   // workflow role read-only, are the descriptor's, so the route carries none of them.
   it('gives the role catalog a screen of its own, with its own entity name', () => {

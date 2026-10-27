@@ -37,9 +37,11 @@ function createOrganizationUserAttrDescriptors(): AbstractAttrDescriptor[] {
 
   // Read-only, and a string rather than the array: roles are assigned through their own endpoint,
   // because folding them into a profile edit would mean every name correction rewrote someone's
-  // permissions. The role-assignment screen is where they change.
+  // permissions. The role-assignment screen is where they change, and the tooltip says so: a disabled
+  // field named Roles, with no word about the tab beside Details, reads as "roles cannot be assigned".
   const rolesAttr = new BaseEntityAttrDescriptor('roleNames', FormControlType.TEXT_BOX, 'Roles');
   rolesAttr.disabled = true;
+  rolesAttr.description = 'Assigned in the Roles tab of this user.';
 
   const createdAtAttr = new BaseEntityAttrDescriptor('createdAt', FormControlType.TEXT_BOX, 'Created');
   createdAtAttr.disabled = true;
@@ -63,12 +65,16 @@ function createOrganizationUserAttrDescriptors(): AbstractAttrDescriptor[] {
  * `titleKey` is `username`: it is the one field that is both unique and stable, so it is what a status
  * bar should name. `entityTitle` is left unset, because a non-empty one beats `titleKey` there and
  * would show the words "Organization User" where the selected person belongs.
+ *
+ * Not creatable through the generic New: a user enters the organization by invitation, which the
+ * container offers as its own list action.
  */
 export function createOrganizationUserDescriptor(): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: ORGANIZATION_USER_ENTITY_NAME,
     i18nScope: ORGANIZATION_USER_I18N_SCOPE,
     titleKey: 'username',
+    isCreatable: false,
     attrDescriptors: createOrganizationUserAttrDescriptors(),
   });
 }

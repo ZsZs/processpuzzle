@@ -14,4 +14,7 @@ public interface AssistantAccess {
 
     /** The caller as a person reads it, for the audit trail. */
     String principal();
+
+    /** The caller's stable identifier, which owns the caller's design sessions. */
+    String subject();
 }
