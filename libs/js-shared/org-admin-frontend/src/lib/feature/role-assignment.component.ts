@@ -1,7 +1,8 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { NavigateBackService } from '@processpuzzle/util';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -119,6 +120,8 @@ export class RoleAssignmentComponent implements OnInit {
   private readonly retries = new Subject<void>();
 
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly navigateBack = inject(NavigateBackService);
   private readonly roleService = inject(OrganizationRoleService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
@@ -150,6 +153,7 @@ export class RoleAssignmentComponent implements OnInit {
 
   onRevert(): void {
     this.selected.set(new Set(this.held));
+    this.leave();
   }
 
   onRetry(): void {
@@ -168,11 +172,21 @@ export class RoleAssignmentComponent implements OnInit {
         this.held = roles.map((role) => role.name);
         this.selected.set(new Set(this.held));
         this.snackBar.open('Roles saved. They reach the user’s token at their next sign-in.', undefined, { duration: 6000 });
+        this.leave();
       },
       // Left to the HTTP error interceptor: it already opens a snackbar carrying the backend's
       // errorId, and a second one here would stack two messages for one failure.
       error: () => this.saving.set(false),
     });
+  }
+
+  /**
+   * Back to where the user came from, as NavigateBackService knows it. A page opened directly has no
+   * history to return to, so the user's details are the destination instead.
+   */
+  private leave(): void {
+    if (this.navigateBack.getRouteStack().size() > 1) this.navigateBack.goBack();
+    else void this.router.navigate(['../details'], { relativeTo: this.route });
   }
 
   /**
