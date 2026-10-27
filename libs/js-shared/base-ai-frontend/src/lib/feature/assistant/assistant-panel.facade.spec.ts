@@ -65,8 +65,10 @@ describe('AssistantPanelFacade', () => {
   });
 
   it('is busy while a turn runs, and ignores a message sent in the meantime', async () => {
-    let finish: (value: { sessionId: string; reply: string }) => void = () => undefined;
-    turn.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)));
+    let finish!: (value: { sessionId: string; reply: string }) => void;
+    turn.mockReturnValueOnce(new Promise((resolve) => {
+      finish = resolve;
+    }));
 
     const first = facade.send('Define an invoice.');
     expect(facade.busy()).toBe(true);

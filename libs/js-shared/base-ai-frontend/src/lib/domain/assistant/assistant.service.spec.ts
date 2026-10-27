@@ -5,7 +5,7 @@ import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AssistantService, AssistantTurnError } from './assistant.service';
 
-const ROOT = 'http://backend/organizations/acme';
+const ROOT = 'https://backend/organizations/acme';
 const TURNS = `${ROOT}/assistant/turns`;
 
 describe('AssistantService', () => {
