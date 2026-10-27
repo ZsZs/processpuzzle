@@ -12,10 +12,17 @@ import java.util.TreeMap;
 final class InMemoryAuthoringParticipant implements DefinitionAuthoringParticipant {
 
     private final String kind;
+    private final String schema;
     private final Map<String, String> drafts = new TreeMap<>();
 
     InMemoryAuthoringParticipant(String kind) {
+        this(kind, "schema:" + kind);
+    }
+
+    /** With a schema of its own, for a test whose model must have something to build a draft from. */
+    InMemoryAuthoringParticipant(String kind, String schema) {
         this.kind = kind;
+        this.schema = schema;
     }
 
     @Override
@@ -25,7 +32,7 @@ final class InMemoryAuthoringParticipant implements DefinitionAuthoringParticipa
 
     @Override
     public String schema() {
-        return "schema:" + kind;
+        return schema;
     }
 
     @Override
