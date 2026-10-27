@@ -67,10 +67,8 @@ public class DesignAssistant {
             metadata.getModel(), usage.getPromptTokens(), usage.getCompletionTokens(), toolCalls));
     }
 
-    /** Prompt plus completion tokens; a gateway that reports none counts as none. */
+    /** Prompt plus completion tokens, as the usage reports them. */
     private static long tokensOf(ChatResponse response) {
-        Usage usage = response.getMetadata().getUsage();
-        Integer total = usage.getTotalTokens();
-        return total == null ? 0 : total;
+        return response.getMetadata().getUsage().getTotalTokens();
     }
 }
