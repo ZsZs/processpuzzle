@@ -105,6 +105,20 @@ class CurrentPrincipalTest {
         assertThat(principal.realm()).contains("my-org");
     }
 
+    @Test
+    void theOrganizationsAreTheAliasesTheOrganizationClaimNames() {
+        authenticateWith(Map.of("organization", Map.of("zszs", Map.of("groups", List.of()))));
+
+        assertThat(principal.organizations()).containsExactly("zszs");
+    }
+
+    @Test
+    void noOrganizationClaimNamesNoOrganization() {
+        authenticateWith(Map.of());
+
+        assertThat(principal.organizations()).isEmpty();
+    }
+
     private static void authenticateWith(Map<String, Object> claims) {
         Jwt.Builder builder = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
