@@ -10,6 +10,7 @@ import { CALCULATION_DESIGNER_TABS } from './calculation-designer/calculation-de
 import { ReleasePanelComponent } from '@processpuzzle/base-release';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
+import { AiDesignerComponent } from './ai-designer/ai-designer.component';
 import { UnderConstructionComponent } from './under-construction/under-construction.component';
 
 describe('DESIGN_ROUTES', () => {
@@ -59,6 +60,14 @@ describe('DESIGN_ROUTES', () => {
 
     expect(sectionPaths).not.toContain('app-definition');
     expect(sectionPaths).not.toContain('module-definition');
+  });
+
+  it('hosts the AI Designer section on a page of its own, before the sections that act on what it drafts', () => {
+    const paths = DESIGN_SECTIONS.map((route) => route.path);
+
+    expect(DESIGN_SECTIONS.find((route) => route.path === 'assistant')?.component).toBe(AiDesignerComponent);
+    expect(DESIGN_SECTIONS.find((route) => route.path === 'assistant')?.data).toEqual({ icon: 'smart_toy', menuTitle: 'design.assistant' });
+    expect(paths.indexOf('assistant')).toBeLessThan(paths.indexOf('release'));
   });
 
   it('ends with the Release section, the one place drafts reach the live application', () => {

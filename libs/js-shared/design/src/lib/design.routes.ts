@@ -12,6 +12,7 @@ import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
 import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
+import { AiDesignerComponent } from './ai-designer/ai-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
 import { DesignWorkbenchComponent } from './workbench/design-workbench.component';
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
@@ -145,6 +146,14 @@ export const DESIGN_SECTIONS: Routes = [
     // nothing to the injectors the tabs' own screens resolve through. What those screens need —
     // `base_entity` and `base_app` — each tab's route declares for itself.
     children: [{ path: '', pathMatch: 'full', redirectTo: 'app-definition' }, ...BASE_APP_ROUTES, ...BASE_WIDGET_ROUTES],
+  },
+  // The AI Designer section: the design assistant on a page of its own. It drafts into the other sections, so it
+  // sits after them and before the starters and the release, which act on what they hold.
+  {
+    path: 'assistant',
+    title: 'ProcessPuzzle Design - AI Designer',
+    data: { icon: 'smart_toy', menuTitle: 'design.assistant' },
+    component: AiDesignerComponent,
   },
   // The Business Starters section: import a bundle of definitions into the organization. Spread at this
   // level like BASE_RULE_ROUTES — one screen, mounted at `starters`, with a `design.*` menu title — and it
