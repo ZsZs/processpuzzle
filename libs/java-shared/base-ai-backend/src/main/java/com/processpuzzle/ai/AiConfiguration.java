@@ -3,6 +3,10 @@ package com.processpuzzle.ai;
 import com.processpuzzle.ai.adapter.outbound.HttpVisionServer;
 import com.processpuzzle.ai.assistant.AssistantAccess;
 import com.processpuzzle.ai.assistant.AssistantAuditLog;
+import com.processpuzzle.ai.assistant.AssistantLimits;
+import com.processpuzzle.ai.assistant.AssistantSessionPurger;
+import com.processpuzzle.ai.assistant.AssistantSessions;
+import com.processpuzzle.ai.domain.AssistantSessionRepository;
 import com.processpuzzle.ai.assistant.AssistantQuota;
 import com.processpuzzle.ai.assistant.InMemoryAssistantQuota;
 import com.processpuzzle.ai.assistant.DefinitionDrafts;
@@ -85,7 +89,8 @@ public class AiConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
     public DesignAssistant designAssistant(AiProperties properties, AssistantAccess access, AssistantAuditLog audit,
-                                           AssistantQuota quota, ObjectProvider<DefinitionAuthoringParticipant> participants) {
+                                           AssistantQuota quota, AssistantSessions sessions,
+                                           ObjectProvider<DefinitionAuthoringParticipant> participants) {
         AiProperties.Assistant assistant = properties.getAssistant();
         OpenAiChatModel model = OpenAiChatModel.builder()
             .options(OpenAiChatOptions.builder()
@@ -95,7 +100,23 @@ public class AiConfiguration {
                 .build())
             .build();
         return new DesignAssistant(ChatClient.create(model),
-            new DefinitionDrafts(participants.orderedStream().toList()), access, assistant.getMaxToolCalls(),
-            assistant.getMaxRepairRounds(), audit, quota);
+            new DefinitionDrafts(participants.orderedStream().toList()), access,
+            new AssistantLimits(assistant.getMaxToolCalls(), assistant.getMaxRepairRounds()), audit, quota, sessions);
+    }
+
+    /** The design conversations, kept in this application's database and expired when idle. */
+    @Bean
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public AssistantSessions assistantSessions(AssistantSessionRepository repository, AiProperties properties) {
+        AiProperties.Assistant assistant = properties.getAssistant();
+        return new AssistantSessions(repository, Clock.systemUTC(), assistant.getSessionHistoryMessages(),
+            assistant.getSessionIdleTimeout());
+    }
+
+    /** Expires the idle conversations; see {@link AssistantSessionPurger}. */
+    @Bean
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public AssistantSessionPurger assistantSessionPurger(AssistantSessions sessions) {
+        return new AssistantSessionPurger(sessions);
     }
 }

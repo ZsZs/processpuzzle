@@ -86,5 +86,9 @@ public class AiProperties {
         private int maxTurnsPerDay = 100;
         /** Tokens (prompt and completion) one organization may use per UTC day. */
         private long maxTokensPerDay = 500_000;
+        /** How long a conversation may sit without a message before it is deleted. */
+        private Duration sessionIdleTimeout = Duration.ofHours(24);
+        /** The most recent messages of a conversation the model reads back on the next turn. */
+        private int sessionHistoryMessages = 20;
     }
 }

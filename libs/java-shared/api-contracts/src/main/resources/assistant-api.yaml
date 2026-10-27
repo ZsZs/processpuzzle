@@ -8,13 +8,16 @@ info:
 
     ## Turns
 
-    A turn is one designer message. The answer streams back as server-sent events:
+    A turn is one designer message, in a conversation. The answer streams back as server-sent events:
 
+    - `session`: the conversation the turn belongs to. A turn without a `sessionId` opens a new one.
     - `reply`: the assistant's answer for the turn, as text.
     - `done`: the turn finished; no more events follow.
     - `error`: the turn failed; no more events follow. The text is deliberately generic and carries no detail.
 
-    A turn has no memory of earlier turns yet; session memory is a later addition.
+    A conversation keeps its most recent messages, which the model reads on each turn. A conversation expires after
+    24 hours without a message, and is erased with its organization. A conversation belongs to the designer who
+    opened it: another designer's conversation is not found (404).
 
     ## Access
 
@@ -47,13 +50,25 @@ paths:
       responses:
         "200":
           description: >-
-            The turn's events, as server-sent events (text/event-stream): `reply`, then `done`; or `error`.
+            The turn's events, as server-sent events (text/event-stream): `session`, `reply`, then `done`; or `error`.
           content:
             text/event-stream:
               schema:
                 type: string
         "400":
           description: The message is empty or longer than 4000 characters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: The conversation is not one this designer opened in this organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: The organization has used up its design assistant limit for the day
           content:
             application/json:
               schema:
@@ -85,6 +100,10 @@ components:
           minLength: 1
           maxLength: 4000
           description: The designer's message for this turn
+        sessionId:
+          type: string
+          format: uuid
+          description: The conversation to continue; omitted to open a new one
 
     ErrorResponse:
       type: object
