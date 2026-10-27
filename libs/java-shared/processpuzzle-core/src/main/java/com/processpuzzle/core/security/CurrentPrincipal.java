@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class CurrentPrincipal {
 
     private static final List<String> DISPLAY_NAME_CLAIMS = List.of("name", "preferred_username", "email");
+    private static final String ORGANIZATION = "organization";
 
     private final SecurityProperties properties;
 
@@ -48,6 +50,18 @@ public class CurrentPrincipal {
         return jwt().map(Jwt::getIssuer)
                 .map(Object::toString)
                 .map(CurrentPrincipal::realmOf);
+    }
+
+    /**
+     * The organization aliases the token names in its {@code organization} claim, which a shared realm uses in place of
+     * one realm per tenant. Empty when the claim is absent or the caller is not a JWT principal.
+     */
+    public Set<String> organizations() {
+        return jwt().map(Jwt::getClaims)
+                .map(claims -> claims.get(ORGANIZATION))
+                .filter(Map.class::isInstance)
+                .map(organizations -> ((Map<?, ?>) organizations).keySet().stream().map(String::valueOf).collect(Collectors.toSet()))
+                .orElseGet(Set::of);
     }
 
     /**
