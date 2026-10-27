@@ -26,7 +26,9 @@ import { OrganizationRoleFacade } from './feature/organization-role.facade';
 export const ORG_ADMIN_ROUTES: Routes = [
   // The branch root is the overview of what is administered, not the users: the sidenav's Administration entry
   // lands here, and the cards choose the screen.
-  { path: '', pathMatch: 'full', component: OrganizationAdministrationComponent },
+  // Its own scopes, because it is the landing page: a visitor who opens the branch never passes the users or the
+  // roles route, and without `org_admin` loaded the cards would show their raw keys.
+  { path: '', pathMatch: 'full', component: OrganizationAdministrationComponent, providers: [adminScopes()] },
   {
     path: 'organization-user',
     title: 'ProcessPuzzle - Users',
