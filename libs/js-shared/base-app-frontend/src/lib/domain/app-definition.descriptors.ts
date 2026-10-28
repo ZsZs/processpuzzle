@@ -1,4 +1,6 @@
 import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { AppAssetsAttrDescriptor } from './app-assets-control.component';
+import { AppTranslationsAttrDescriptor } from './app-translations-control.component';
 import { APP_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
 import { AppDefinitionStatus, COLOR_SCHEMES, LAYOUT_PRESETS, MATERIAL_THEMES, SIDENAV_MODES } from './app-definition';
 import { APP_DEFINITION_ENTITY_NAME, APP_MODULE_MOUNT_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
@@ -104,6 +106,13 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   modulesAttr.hideInTable = true;
   // endregion
 
+  // The files the application brings along, named by widgets as app:<path>. Like the module's, not part of the saved
+  // application: the section talks to the application's own asset endpoints.
+  const assetsAttr = new AppAssetsAttrDescriptor();
+
+  // The texts of the application's own pages, uploaded per language. Not part of the saved application either.
+  const translationsAttr = new AppTranslationsAttrDescriptor();
+
   const identityRow = new FlexboxDescriptor([idAttr, nameAttr, translocoIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([statusAttr, versionAttr, publishedVersionAttr, updatedAtAttr], FlexDirection.ROW);
@@ -120,7 +129,7 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   graphRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor(
-    [identityRow, revisionRow, descriptionAttr, themeRow, brandingRow, tokenOverridesAttr, layoutRow, sidenavRow, graphRow],
+    [identityRow, revisionRow, descriptionAttr, themeRow, brandingRow, tokenOverridesAttr, layoutRow, sidenavRow, graphRow, translationsAttr, assetsAttr],
     FlexDirection.COLUMN,
   );
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };

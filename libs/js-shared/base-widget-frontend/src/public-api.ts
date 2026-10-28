@@ -66,8 +66,17 @@ export type { PhotoAlbumImage } from './photo-album/photo-album.component';
 export { LanguageSelectorComponent } from './language-selector/language-selector.component';
 export { LikeButtonComponent } from './like-button/like-button.component';
 export { MarkdownPageComponent } from './markdown-page/markdown-page.component';
-export { MODULE_ASSET_CONTEXT, MODULE_ASSET_SCHEME, moduleAssetPathOf, moduleAssetUrl, resolveAssetLink } from './module-asset/module-asset-context';
-export type { ModuleAssetContext } from './module-asset/module-asset-context';
+export {
+  APP_ASSET_CONTEXT,
+  APP_ASSET_SCHEME,
+  appAssetPathOf,
+  MODULE_ASSET_CONTEXT,
+  MODULE_ASSET_SCHEME,
+  moduleAssetPathOf,
+  moduleAssetUrl,
+  resolveAssetLink,
+} from './module-asset/module-asset-context';
+export type { AppAssetContext, ModuleAssetContext } from './module-asset/module-asset-context';
 export { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 export { provideAppPropertyStore } from './app-property/app-property-store.provider';
 export { ShareButtonComponent } from './share-button/share-button.component';

@@ -12,8 +12,8 @@ import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
  * `/` names no organization, so the user lands on a page that cannot tell who they are.
  *
  * **The requested URL goes to the provider directly.** With Keycloak, `login()` redirects the whole
- * document and never resolves. A provider without a hosted login page — Firebase — returns without
- * a session instead, and gets the application's own form.
+ * document and never resolves. A provider without a hosted login page returns without a session
+ * instead, and gets the application's own form.
  */
 export const loginRequiredGuard: CanActivateFn = async (_route, state) => {
   const authService = inject(AUTHENTICATION_SERVICE);

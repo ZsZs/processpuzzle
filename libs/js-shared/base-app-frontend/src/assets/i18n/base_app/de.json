@@ -25,6 +25,26 @@
     "tabs": {
       "preview": "{{ entity }} - Vorschau"
     },
+    "translations": "Übersetzungen",
+    "translations_panel": {
+      "hint": "Eine Datei je unterstützter Sprache enthält die Texte der eigenen Seiten der Anwendung. Tragen Sie die Werte unter den Schlüsseln ein, die Ihre Widgets nennen, und laden Sie das Zip (oder eine einzelne Datei) wieder hoch.",
+      "download": "Dateien herunterladen",
+      "upload": "Übersetzungen hochladen",
+      "save_first": "Speichern Sie zuerst die Anwendung; die Texte gehören zur gespeicherten Anwendung.",
+      "stored": "{{count}} Schlüssel gespeichert"
+    },
+    "assets": "Dateien",
+    "assets_panel": {
+      "hint": "Fügen Sie Dateien einzeln hinzu, etwa die Bilder der Anwendungsseiten. Widgets verweisen als app:<Pfad> auf eine Datei.",
+      "path": "Verweis",
+      "type": "Typ",
+      "size": "Größe",
+      "remove": "Entfernen",
+      "none": "Noch keine Dateien.",
+      "folder": "Ordner",
+      "upload": "Dateien hochladen",
+      "save_first": "Speichern Sie zuerst die Anwendung; Dateien gehören zur gespeicherten Anwendung."
+    },
     "_tooltips": {
       "id": "Eindeutig innerhalb Ihrer Organisation und unverändert in der URL der Anwendung verwendet. Kurz, kleingeschrieben und mit Bindestrichen, z. B. claims-app; ändern Sie sie später möglichst nicht. — Leitfaden: Anwendung",
       "name": "Der Name der Anwendung, wie Benutzer ihn sehen, z. B. im Widget app-title. — Leitfaden: Anwendung",
@@ -46,7 +66,9 @@
       "sidenavOpenByDefault": "Ob der Navigationsbereich anfangs geöffnet ist. — Leitfaden: Layout",
       "regions": "Der Rahmen um die Seiten: header, sidenav und footer, von jedem höchstens einer. — Leitfaden: Bereiche",
       "routes": "Die Seiten der Anwendung, eine Zeile pro Seite. Legen Sie sie vor den Navigationseinträgen an, die auf sie verweisen. — Leitfaden: Routen",
-      "modules": "Separat erstellte Teile der Anwendung, deren Routen unter einem Basispfad erscheinen. — Leitfaden: Module"
+      "modules": "Separat erstellte Teile der Anwendung, deren Routen unter einem Basispfad erscheinen. — Leitfaden: Module",
+      "assets": "Dateien, die die Anwendung mitbringt, etwa die Bilder ihrer Seiten. Ein Widget verweist als app:<Pfad> darauf. — Leitfaden: Anwendungen",
+      "translations": "Die Texte der eigenen Seiten der Anwendung, etwa der Karten ihrer Startseite, eine Datei je Sprache. Schlüssel sind die, die Widgets unter ihrem translocoPrefix nennen. — Leitfaden: Anwendungen"
     }
   },
   "app_region": {

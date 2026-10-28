@@ -51,7 +51,8 @@ processpuzzle-biz/
   business-starters/
     sail-race-organizer/
       manifest.yaml
-      entities/  states/  rules/  widgets/  documents/  workflows/  apps/
+      entities/  states/  rules/  widgets/  documents/  workflows/  modules/  apps/
+      translations/  assets/
       icons/
       migrations/   (placeholder)
 ```
@@ -129,7 +130,24 @@ Two callers, one per stack that installs:
 
 ## 7. Importer rules
 
-- **Order:** Entity, State, Rule, Widget, Document, Workflow, App.
+- **Order:** Entity, State, Rule, Widget, Document, Workflow, Module, Translation, App, Asset.
+- **Modules and the app:** a `modules/` file is a YAML document with a `moduleDefinitions:` list and an `apps/`
+  file one with an `appDefinitions:` list — the entries of the bundled default-apps files. Modules are released as
+  they are imported and the app is published, so the installed application is live at once. An organization has one
+  application and sign-up creates it empty, as `app`: a starter whose app is `app` replaces it, one with another id
+  removes the placeholder while it is untouched, and a starter without an app leaves a fresh empty one.
+- **Translations and assets:** the files a module or an app brings along are listed under `translations` and
+  `assets`, and the path says whose they are: `<dir>/modules/<module key>/<path>` or `<dir>/apps/<app id>/<path>`
+  (`assets/apps/app/cards/plan-race.svg` is the app file `app:cards/plan-race.svg`; `assets/modules/plan-race/docs/guide.md`
+  is `module:docs/guide.md`). They are written through the use cases a designer's upload uses, so the same path, size
+  and count rules hold, and the module's text rules too: a translation is `translations/modules/<key>/<locale>.json` and
+  holds only texts the module authors (its name and route titles) — any other key refuses the install rather than
+  being dropped. An application's texts are `translations/apps/<app id>/<locale>.json`: the texts of its own pages,
+  such as a home page's cards, under whatever keys its widgets name (letters, digits, `_`, `-` and `.`), so nothing is
+  checked against the definition. An owner the bundle does not define refuses the install as well. Each file is
+  released as it is stored, so the running application serves it at once. A bundle file is capped like every other
+  (`base-starter.bundle.max-file-bytes`, 1 MiB).
+  Reinstalling removes the previous files first, like every definition.
 - **Atomic:** schema and cross-reference validation before any write; all writes in one transaction.
 - **Replace, all or nothing:** installing a starter deletes the organization's existing definitions and
   imports the starter's. This is allowed **only while the organization holds no entity objects and no

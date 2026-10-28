@@ -39,10 +39,6 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-firebase-debug.log*
-firebase-debug.*.log*
-firestore-debug.log
-pubsub-debug.log*
 
 #MAVEN
 /**/pom.xml.tag
@@ -75,7 +71,6 @@ Thumbs.db
 .nx/workspace-data
 
 .angular
-.firebase
 apps/processpuzzle-testbed-frontend/src/run-time-conf/config.custom.json
 
 # Elastic Beanstalk Files
@@ -86,13 +81,7 @@ apps/processpuzzle-testbed-frontend/src/run-time-conf/config.custom.json
 /docs/Sicherungskopie_von_ProcessPuzzle Testbed.cdr
 /docs/processpuzzle-testbed.ldb
 
-apps/**/firebase-debug.log
-apps/**/firestore-debug.log
-apps/**/pubsub-debug.log
 tools/docker/cache
-tools/docker/**/firebase-debug.log
-tools/docker/**/firestore-debug.log
-tools/docker/**/pubsub-debug.log
 /unused-dependencies-report.md
 !/find-unused-dependencies.js
 /tools/docker/postgresql/data/

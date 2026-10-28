@@ -25,6 +25,26 @@
     "tabs": {
       "preview": "{{ entity }} - vista previa"
     },
+    "translations": "Traducciones",
+    "translations_panel": {
+      "hint": "Un archivo por idioma admitido contiene los textos de las páginas propias de la aplicación. Rellene los valores bajo las claves que nombran sus widgets y suba de nuevo el zip (o un solo archivo).",
+      "download": "Descargar archivos",
+      "upload": "Subir traducciones",
+      "save_first": "Guarde primero la aplicación; los textos pertenecen a la aplicación guardada.",
+      "stored": "{{count}} claves guardadas"
+    },
+    "assets": "Archivos",
+    "assets_panel": {
+      "hint": "Añada los archivos uno a uno, por ejemplo las imágenes de las páginas de la aplicación. Los widgets se refieren a un archivo como app:<ruta>.",
+      "path": "Referencia",
+      "type": "Tipo",
+      "size": "Tamaño",
+      "remove": "Quitar",
+      "none": "Aún no hay archivos.",
+      "folder": "Carpeta",
+      "upload": "Subir archivos",
+      "save_first": "Guarde primero la aplicación; los archivos pertenecen a la aplicación guardada."
+    },
     "_tooltips": {
       "id": "Único dentro de tu organización y se usa tal cual en la URL de la aplicación. Corto, en minúsculas y con guiones, p. ej. claims-app; evita cambiarlo más adelante. — Guía: Aplicación",
       "name": "El nombre de la aplicación tal como lo ven los usuarios, p. ej. en el widget app-title. — Guía: Aplicación",
@@ -46,7 +66,9 @@
       "sidenavOpenByDefault": "Si el panel de navegación empieza abierto. — Guía: Diseño",
       "regions": "El marco alrededor de las páginas: header, sidenav y footer, como máximo uno de cada. — Guía: Regiones",
       "routes": "Las páginas de la aplicación, una fila por página. Añádelas antes que los elementos de navegación que apuntan a ellas. — Guía: Rutas",
-      "modules": "Partes de la aplicación creadas por separado cuyas rutas aparecen bajo una ruta base. — Guía: Módulos"
+      "modules": "Partes de la aplicación creadas por separado cuyas rutas aparecen bajo una ruta base. — Guía: Módulos",
+      "assets": "Archivos que aporta la aplicación, como las imágenes de sus páginas. Un widget se refiere a uno como app:<ruta>. — Guía: Aplicaciones",
+      "translations": "Los textos de las páginas propias de la aplicación, como las tarjetas de su página de inicio, un archivo por idioma. Las claves son las que los widgets nombran bajo su translocoPrefix. — Guía: Aplicaciones"
     }
   },
   "app_region": {

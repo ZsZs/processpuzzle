@@ -24,7 +24,7 @@ npm install @processpuzzle/util
 | `ConfigurationService` | Angular service | Loads and merges JSON config files at startup. |
 | `RUNTIME_CONFIGURATION` | injection token | Provides the merged runtime configuration. |
 | `CONFIGURATION_OPTIONS`, `CONFIGURATION_TYPE`, `CONFIGURATION_APP_INITIALIZER` | injection tokens | Configuration hooks. |
-| `BaseConfiguration`, `FirebaseConfig` | types | Shared configuration shapes. |
+| `BaseConfiguration` | type | The shared configuration shape. |
 | `provideLocaleRouting` | provider | Puts the active language in the URL (`/hu/base-entity`). |
 | `LocaleUrlSerializer` | Angular service | The `UrlSerializer` behind it; parses and emits the locale prefix. |
 | `splitLocaleFromUrl`, `withLocale` / `LocalizedUrl` | functions / type | Take the locale prefix off a URL and put it back. |
@@ -119,7 +119,7 @@ The loaded value is then exposed to the rest of the app through the `RUNTIME_CON
 { provide: RUNTIME_CONFIGURATION, useValue: runtimeConfig }
 ```
 
-`BaseConfiguration` describes the minimum shape every application's configuration must satisfy (pipeline stage, backend provider, backend / object-store URLs and Firebase config). Extend it in your own `RuntimeConfiguration` type.
+`BaseConfiguration` describes the minimum shape every application's configuration must satisfy (pipeline stage, backend provider, backend / object-store URLs). Extend it in your own `RuntimeConfiguration` type.
 
 The other tokens — `CONFIGURATION_OPTIONS`, `CONFIGURATION_TYPE`, `CONFIGURATION_APP_INITIALIZER` — are reserved for downstream libraries that wire configuration into their own bootstrap hooks.
 

@@ -1,5 +1,7 @@
 package com.processpuzzle.app.adapter.inbound;
 
+import com.processpuzzle.app.domain.AppAssetRepository;
+import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
@@ -28,9 +30,12 @@ class TenantDataCleanerTest {
     private final AppTranslationRepository translationRepository = mock(AppTranslationRepository.class);
     private final ModuleTranslationRepository moduleTranslationRepository = mock(ModuleTranslationRepository.class);
     private final ModuleAssetRepository moduleAssetRepository = mock(ModuleAssetRepository.class);
+    private final AppAssetRepository appAssetRepository = mock(AppAssetRepository.class);
+    private final AppDefinitionTranslationRepository appTextRepository = mock(AppDefinitionTranslationRepository.class);
     private final ModuleAssetSweeper assetSweeper = mock(ModuleAssetSweeper.class);
     private final TenantDataCleaner cleaner = new TenantDataCleaner(appDefinitionRepository,
-            moduleDefinitionRepository, translationRepository, moduleTranslationRepository, moduleAssetRepository, assetSweeper);
+            moduleDefinitionRepository, translationRepository, moduleTranslationRepository, moduleAssetRepository, appAssetRepository,
+            appTextRepository, assetSweeper);
 
     @Test
     void deletesEveryOneOfThisFeaturesTenantScopedTables() {
@@ -41,6 +46,8 @@ class TenantDataCleanerTest {
         verify(translationRepository).eraseByOrgKey("my-org");
         verify(moduleTranslationRepository).eraseByOrgKey("my-org");
         verify(moduleAssetRepository).eraseByOrgKey("my-org");
+        verify(appAssetRepository).eraseByOrgKey("my-org");
+        verify(appTextRepository).eraseByOrgKey("my-org");
         verify(assetSweeper).eraseAll("my-org");
     }
 

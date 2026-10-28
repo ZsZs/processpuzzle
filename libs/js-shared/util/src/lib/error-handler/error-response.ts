@@ -42,8 +42,8 @@ export function httpErrorId(error: unknown): string | undefined {
  * Precedence, and why each step is there:
  *  1. `errorText` — our own services, the case that matters.
  *     Or `violations` — base-entity's 422: the messages of the failed checks and rules, joined.
- *  2. a string `message` on the body — errors from things that are not ours: Firebase Auth, a reverse
- *     proxy, Spring Boot's own `/error` when nothing handled the exception.
+ *  2. a string `message` on the body — errors from things that are not ours: a reverse proxy, Spring
+ *     Boot's own `/error` when nothing handled the exception.
  *  3. a plain string body — `text/plain` failures, which is what a proxy or a route stub returns.
  *  4. `HttpErrorResponse.message` — Angular's synthesized "Http failure response for …".
  *  5. `HTTP <status> <url>` — a transport failure has status 0 and an empty message.

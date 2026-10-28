@@ -1,6 +1,6 @@
 // Public API Surface of @processpuzzle/util
 
-export type { BaseConfiguration, FirebaseConfig } from './lib/runtime-configuration/base-configuration';
+export type { BaseConfiguration } from './lib/runtime-configuration/base-configuration';
 export { CONFIGURATION_APP_INITIALIZER, CONFIGURATION_OPTIONS, CONFIGURATION_TYPE, RUNTIME_CONFIGURATION } from './lib/runtime-configuration/configuration.injection-tokens';
 export type { ConfigurationOptions } from './lib/runtime-configuration/configuration.options';
 export { centralHttpErrorInterceptor, EXPECTED_ERROR_STATUSES } from './lib/error-handler/central-http-error.interceptor';

@@ -158,6 +158,8 @@ describe('WidgetPropsControlComponent', () => {
       'title',
       'subtitle',
       'icon',
+      'link',
+      'backgroundImage',
       'content',
       'actions',
       'menuItems',

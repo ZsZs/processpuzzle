@@ -31,7 +31,7 @@ The diagram below shows the main classes the library exposes:
 </a>
 
 - **BaseEntity** – interface your custom entity implements (only requires an `id`).
-- **BaseEntityRestService / BaseEntityFirestoreService** – concrete CRUD services to extend; both implement the `BaseEntityService` contract.
+- **BaseEntityRestService** – the concrete CRUD service to extend; it implements the `BaseEntityService` contract.
 - **BaseEntityMapper** – interface for translating between your DTO and your entity. `SimpleEntityMapper` covers the trivial case.
 - **BaseEntityStore** – `@ngrx/signals` store feature backing the generated components. Composes with `BaseEntityTabsStore`, `BaseEntityContainerStore`, and the singleton `BaseFormNavigatorStore`.
 - **BaseEntityFacade** – optional one-stop class that wires entity, mapper, service, store, and descriptor together.
@@ -102,7 +102,7 @@ export class TestEntityMapper implements BaseEntityMapper<TestEntity> {
 
 ### 3. Extend the data service
 
-Pick `BaseEntityRestService` for an HTTP backend or `BaseEntityFirestoreService` for Firestore. Pass the mapper, a configuration key that resolves to the root URL, and the resource path.
+Extend `BaseEntityRestService`. Pass the mapper, a configuration key that resolves to the root URL, and the resource path.
 
 The key is a `BaseConfiguration` property name, resolved through `serviceRootOf`. Use
 `BACKEND_SERVICE_ROOT` for a resource served by the platform's own backend — or the optional
@@ -452,7 +452,7 @@ new BaseEntityDescriptor({ entityName: 'Order Line', attrDescriptors, titleKey: 
 The list toolbar carries two independent search inputs:
 
 - **Filter** — a client-side, case-insensitive substring match over the rows already loaded into the Material table. Instant, but limited to the current page of data.
-- **Query** — a server-side [RSQL/FIQL](https://github.com/jirutka/rsql-parser) expression. On <kbd>Enter</kbd> (or the ▶ button) the toolbar calls `store.load({ query })`; the REST service forwards it to the backend as a `where=<rsql>` request parameter (`BaseEntityFirestoreService` applies the equivalent constraints). Clearing the query reloads the unfiltered list.
+- **Query** — a server-side [RSQL/FIQL](https://github.com/jirutka/rsql-parser) expression. On <kbd>Enter</kbd> (or the ▶ button) the toolbar calls `store.load({ query })`; the REST service forwards it to the backend as a `where=<rsql>` request parameter. Clearing the query reloads the unfiltered list.
 
 ### Query syntax
 

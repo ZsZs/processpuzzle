@@ -133,7 +133,7 @@
     "ci-cd_card_subtitle": "GitHub Actions-basierter kontinuierlicher Bereitstellungsprozess",
     "ci-cd_card_content": "Dies ist keine Bibliothek, sondern eine End-to-End-Lösung für kontinuierliche Bereitstellungspipelines, basierend auf GitHub Actions.\n            Es unterstützt mehrere Qualitätssicherungspraktiken und mehrere Entwicklungsstufen. Am Ende liefert es Inkremente automatisch in die Produktion.",
     "ci-cd_card_content_1": "Unterstützt Lint, Test und Build",
-    "ci-cd_card_content_2": "Unterstützt die Bereitstellung auf AWS oder Firebase",
+    "ci-cd_card_content_2": "Unterstützt die containerisierte Bereitstellung mit Docker Compose",
     "ci-cd_card_content_3": "Unterstützt die Veröffentlichung in der NPM-Registry",
     "ci-cd_card_button": "Siehe CI/CD-Pipeline..."
   },

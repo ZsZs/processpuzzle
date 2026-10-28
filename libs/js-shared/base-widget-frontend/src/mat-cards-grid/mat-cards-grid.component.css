@@ -52,3 +52,20 @@ mat-card-actions button {
     margin-top: -10px;
     margin-right: 10px;
 }
+
+.default-mat-card.has-link {
+    cursor: pointer;
+}
+
+/* The picture sits bottom-left and is smaller than the card, so the title keeps the top and the text the
+   right-hand side. */
+.default-mat-card.has-image {
+    min-height: 200px;
+    background-repeat: no-repeat;
+    background-position: left 12px bottom 12px;
+    background-size: auto 62%;
+}
+
+.default-mat-card.has-image mat-card-content {
+    margin-left: 40%;
+}

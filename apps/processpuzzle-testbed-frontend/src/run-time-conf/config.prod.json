@@ -6,8 +6,7 @@
     "BACKEND_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
     "SELF_SERVICE_ROLES_SERVICE_ROOT": "/api/organizations/processpuzzle-testbed",
     "THIRD_PARTY_ROOT": "https://testbed.processpuzzle.com/third-party",
-    "OBJECT_STORE_SERVICE_ROOT": "/api",
-    "FIREBASE_CONFIGURATION": {}
+    "OBJECT_STORE_SERVICE_ROOT": "/api"
   },
   "AUTHENTICATION_CONFIGURATION": {
     "AUTHENTICATION_PROVIDER": "keycloak",

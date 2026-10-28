@@ -96,5 +96,6 @@
   "under-construction_message": "Cette page n'est pas encore disponible. Revenez plus tard.",
   "release": "Publication",
   "assistant": "Concepteur IA",
+  "assistant_requirement": "L'utilisation de l'assistant requiert le rôle definition-designer. Un administrateur de l'organisation le crée dans Rôles de l'organisation et vous l'attribue dans Utilisateurs.",
   "assistant_toggle": "Assistant de conception"
 }

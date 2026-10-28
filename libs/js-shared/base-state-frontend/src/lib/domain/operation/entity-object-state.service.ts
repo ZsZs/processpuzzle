@@ -60,8 +60,8 @@ export class EntityObjectStateService {
 
 /**
  * The response as this library's shape. Defensive about the two required arrays and about absent fields,
- * because the same tab runs against the Spring backend, json-server and the Firebase functions, and only
- * the first of those is generated from the contract.
+ * because the same tab runs against the Spring backend and json-server, and only the first of those is
+ * generated from the contract.
  */
 function fromDto(response: unknown): EntityObjectState | undefined {
   if (!response || typeof response !== 'object') return undefined;

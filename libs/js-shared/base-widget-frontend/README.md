@@ -161,12 +161,11 @@ reporter.showErrorMessage('Something went wrong');
 ```
 
 ## Application Property Store
-The **ApplicationProperty** domain class and its NgRx Signals store persist simple name/value properties (such as the like count) to Firestore. `provideAppPropertyStore` wires up the store, service, and mapper.
+The **ApplicationProperty** domain class and its NgRx Signals store persist simple name/value properties (such as the like count) through `ApplicationPropertyService`, a `BaseEntityRestService` over the `application-properties` resource of `THIRD_PARTY_ROOT`. `provideAppPropertyStore` wires up the store, service, and mapper.
 
 ### Features
-- **Persistent Properties**: Stores name/value pairs backed by Firestore via `AngularFire`.
+- **Persistent Properties**: Stores name/value pairs over REST, at the root the runtime configuration names.
 - **Signal Store**: Exposes entities, error state, and CRUD operations (`add`, `update`, `resetErrorState`).
-- **Configurable Firestore Token**: Accepts a custom `Firestore` provider token for multi-database setups.
 
 ### Setup and Usage
 Provide the store where it is needed (e.g. in a route or component providers):
@@ -175,7 +174,7 @@ import { provideAppPropertyStore } from '@processpuzzle/widgets';
 
 providers: [provideAppPropertyStore()];
 ```
-`provideAppPropertyStore(firestoreToken?)` optionally accepts a custom `Firestore` provider token (defaults to `Firestore`).
+`provideAppPropertyStore()` takes no arguments; the one it once accepted is ignored and kept only so older call sites compile.
 
 ## Transloco Service Provider
 The **provideTranslocoService** helper configures Transloco for a `@processpuzzle` application from a `LanguageConfig`, using the bundled `TranslocoHttpLoader` to load translation files over HTTP.

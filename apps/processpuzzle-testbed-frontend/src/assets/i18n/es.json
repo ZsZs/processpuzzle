@@ -133,7 +133,7 @@
     "ci-cd_card_subtitle": "Proceso de entrega continua basado en GitHub Actions",
     "ci-cd_card_content": "Esto no es una biblioteca, sino una solución de extremo a extremo para el proceso de entrega continua, basada en GitHub Actions.\n            Soporta múltiples prácticas de garantía de calidad y múltiples etapas de desarrollo. Al final, entrega incrementos automáticamente a producción.",
     "ci-cd_card_content_1": "Soporta lint, pruebas y compilación",
-    "ci-cd_card_content_2": "Soporta despliegue en AWS o Firebase",
+    "ci-cd_card_content_2": "Soporta el despliegue en contenedores con Docker Compose",
     "ci-cd_card_content_3": "Soporta publicación en el registro NPM",
     "ci-cd_card_button": "Ver Pipeline de CI/CD..."
   },

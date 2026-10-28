@@ -5,6 +5,7 @@ import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.exception.AppNotPublishedException;
+import com.processpuzzle.app.usecase.exception.AppAssetNotFoundException;
 import com.processpuzzle.app.usecase.exception.ModuleAssetNotFoundException;
 import com.processpuzzle.app.usecase.exception.ModuleAssetRejectedException;
 import com.processpuzzle.app.usecase.exception.ModuleAssetStoreUnavailableException;
@@ -100,6 +101,11 @@ public class AppApiExceptionHandler {
     @ExceptionHandler(ModuleAssetNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAssetNotFound(ModuleAssetNotFoundException ex) {
         return error(HttpStatus.NOT_FOUND, "module.asset.not-found", ex.getMessage());
+    }
+
+    @ExceptionHandler(AppAssetNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAppAssetNotFound(AppAssetNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "app.asset.not-found", ex.getMessage());
     }
 
     /** 503: the feature is installed but the object store behind it is not wired. */

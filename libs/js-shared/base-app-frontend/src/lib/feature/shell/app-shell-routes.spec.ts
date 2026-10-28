@@ -11,13 +11,15 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
+import { AppAssetService } from '../../domain/app-asset.service';
 import { ModuleAssetService } from '../../domain/module-asset.service';
 import { ModuleTranslationService } from '../../domain/module-translation.service';
-import { MODULE_ASSET_CONTEXT } from '@processpuzzle/widgets';
+import { APP_ASSET_CONTEXT, MODULE_ASSET_CONTEXT } from '@processpuzzle/widgets';
 
 import { BaseEntityScreensComponent } from '@processpuzzle/base-entity';
 import { RouteWidgetsComponent } from '../route-widgets.component';
 import { AppShellRoutesFactory, appShellRoutesGuard } from './app-shell-routes';
+import { AppTranslationsLoader } from './app-translations.loader';
 
 function widgetsRoute(path: string): RouteDefinition {
   return new RouteDefinition({ path, title: path, kind: 'WIDGETS' });
@@ -36,6 +38,8 @@ describe('AppShellRoutesFactory', () => {
   const shippedTranslations = { getTranslation: vi.fn() };
   const moduleTranslations = { bundle: vi.fn() };
   const moduleAssets = { content: vi.fn() };
+  const appAssets = { content: vi.fn() };
+  const appTexts = { activate: vi.fn() };
 
   function factory(): AppShellRoutesFactory {
     TestBed.configureTestingModule({
@@ -48,6 +52,8 @@ describe('AppShellRoutesFactory', () => {
         { provide: TranslocoHttpLoader, useValue: shippedTranslations },
         { provide: ModuleTranslationService, useValue: moduleTranslations },
         { provide: ModuleAssetService, useValue: moduleAssets },
+        { provide: AppAssetService, useValue: appAssets },
+        { provide: AppTranslationsLoader, useValue: appTexts },
       ],
     });
     return TestBed.inject(AppShellRoutesFactory);
@@ -62,6 +68,7 @@ describe('AppShellRoutesFactory', () => {
     moduleService.findById.mockReturnValue(of(undefined));
     shippedTranslations.getTranslation.mockReturnValue(of({}));
     moduleTranslations.bundle.mockReturnValue(of({}));
+    appTexts.activate.mockResolvedValue(undefined);
   });
 
   it('renders one route per authored route, through AppRouteRenderer', async () => {
@@ -177,6 +184,56 @@ describe('AppShellRoutesFactory', () => {
       (await assetContextOf(released)).blob('docs/a.md');
 
       expect(moduleAssets.content).toHaveBeenCalledWith('order-admin', 'docs/a.md', 'released');
+    });
+
+    /** The asset context every top-level route provides, found on the application's own page or on a module mount. */
+    async function appAssetContextsOf(definition: AppDefinition, paths: string[]): Promise<Array<{ blob(path: string): unknown }>> {
+      const children = await factory().childrenFor(definition);
+      return paths.map((path) => appAssetContextIn(children, path));
+    }
+
+    function appAssetContextIn(children: Routes, path: string): { blob(path: string): unknown } {
+      const providers = ((children.find((route) => route.path === path) as Route).providers?.flat() ?? []) as Array<{ provide?: unknown; useFactory?: () => { blob(path: string): unknown } }>;
+      const provider = providers.find((candidate) => candidate.provide === APP_ASSET_CONTEXT);
+      return TestBed.runInInjectionContext(() => (provider as { useFactory: () => { blob(path: string): unknown } }).useFactory());
+    }
+
+    it('gives the application own pages and its module mounts the draft assets of the application in the Preview', async () => {
+      const preview = mountOf({ routes: [widgetsRoute('orders')] });
+      for (const context of await appAssetContextsOf(preview, ['orders', 'back-office'])) {
+        context.blob('cards/a.svg');
+      }
+
+      expect(appAssets.content).toHaveBeenCalledTimes(2);
+      expect(appAssets.content).toHaveBeenCalledWith(preview.id, 'cards/a.svg', 'draft');
+    });
+
+    it('gives them the released assets in a published layout', async () => {
+      const released = mountOf({ routes: [widgetsRoute('orders')], mountedModules: [new ModuleDefinition({ id: 'order-admin', routes: [widgetsRoute('lines')] })] });
+
+      (await appAssetContextsOf(released, ['orders']))[0].blob('cards/a.svg');
+
+      expect(appAssets.content).toHaveBeenCalledWith(released.id, 'cards/a.svg', 'released');
+    });
+
+    it('has the application\'s own texts merged from the draft in the Preview', async () => {
+      await factory().childrenFor(mountOf());
+
+      expect(appTexts.activate).toHaveBeenCalledWith('demo', 'draft');
+    });
+
+    it('has the application\'s own texts merged from the released channel in a published layout', async () => {
+      await factory().childrenFor(mountOf({ mountedModules: [new ModuleDefinition({ id: 'order-admin', routes: [widgetsRoute('lines')] })] }));
+
+      expect(appTexts.activate).toHaveBeenCalledWith('demo', 'released');
+    });
+
+    it('builds the routes all the same when the application\'s own texts cannot be had', async () => {
+      appTexts.activate.mockRejectedValue(new Error('boom'));
+
+      const children = await factory().childrenFor(mountOf({ routes: [widgetsRoute('orders')] }));
+
+      expect(children.map((route) => route.path)).toContain('orders');
     });
 
     it('keeps the titles readable when the uploaded translations cannot be read', async () => {

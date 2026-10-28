@@ -1,8 +1,7 @@
 {
   "BASE_CONFIGURATION": {
     "PIPELINE_STAGE": "dev",
-    "DEPLOYMENT_ENVIRONMENT": "docker",
-    "FIREBASE_CONFIGURATION": {}
+    "DEPLOYMENT_ENVIRONMENT": "docker"
   },
   "LOGGING_CONFIGURATION": {
     "level": "debug",

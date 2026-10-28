@@ -102,7 +102,7 @@ graph TD
     appBE --> contracts
   end
 
-  entityFE -. "REST / Firestore" .-> store
+  entityFE -. REST .-> store
   entityFE -. REST .-> entityBE
   ruleFE -. "REST: /rules" .-> ruleBE
   stateFE -. REST .-> stateBE
@@ -116,8 +116,8 @@ outside itself — does this tenant exist, what do its governance rules say — 
 outbound port in `app :: port`, and the deploying application supplies the adapter. `base-state` and
 `base-workflow` still carry a compile dependency on the features they adapt, though the calls
 themselves already go through their own ports. Note that the two layers mirror each other's shape but are **independently
-versioned and independently usable** — a `base-entity` application can run against plain REST, `json-server`
-or Firestore without any ProcessPuzzle backend at all.
+versioned and independently usable** — a `base-entity` application can run against plain REST or `json-server`
+without any ProcessPuzzle backend at all.
 
 On the backend those edges are not just Maven's business: each library is a **Spring Modulith application
 module** (`app`, `rule`, `basestate`, `workflow`, `store`, plus the open infrastructure modules `core` and
@@ -196,7 +196,7 @@ different stages:
 
 | Feature | Frontend | Backend |
 | --- | --- | --- |
-| `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST / Firestore) |
+| `base-entity` | production-ready | scaffold (entities served today by `processpuzzle-store` / REST) |
 | `base-rule` | production-ready (authoring UI + evaluator) | scaffold |
 | `base-state` | authoring UI for state machine definitions; operation layer not started | scaffold |
 | `base-workflow` | authoring UI for workflows and tools, with start / end, timer and boundary events in the modeler; read-only monitoring of instances, plus a task dashboard that drives them (claim / complete / skip) | endpoints, use cases and execution engine implemented; start events guard explicit starts, and TRIGGERING_EVENT, INPUT_ARTIFACT and TIME_BASED_PRECONDITION start events start the workflow on their own; intermediate throw / catch events raise and wait for catalogued events during a run; timers (duration, date, cycle) and interrupting / non-interrupting boundary events on tasks |
@@ -229,11 +229,11 @@ graph LR
   code["One codebase<br/>Angular libs + Spring Boot libs"] --> DC
 ```
 
-That the platform *can* run elsewhere is a property of its adapters rather than of a second deployment:
-`base-entity` binds `BaseEntityRestService` or `BaseEntityFirestoreService`, and `auth` binds Keycloak or
-Firebase Auth, all chosen at run time from `run-time-conf/config.<stage>.json`. The Firestore and Firebase-Auth
-adapters remain part of the framework for consumers who want them; ProcessPuzzle itself no longer deploys to
-Firebase, and nothing in this repository builds or configures a Firebase project.
+That the platform *could* run elsewhere is a property of its adapters rather than of a second deployment:
+`base-entity` binds its entity service and `auth` its identity provider at run time, from
+`run-time-conf/config.<stage>.json`. REST and Keycloak are the only adapters shipped today — the Firestore and
+Firebase-Auth ones were removed together with the Firebase dependencies, and nothing in this repository builds
+or configures a Firebase project.
 
 **Docker Compose** — two files, one per layer, and each is one Coolify Docker Compose resource:
 `tools/docker/docker-compose-infrastructure.yaml` (the shared services) and
@@ -331,7 +331,6 @@ Because the tokens cascade at runtime, no rebuild of the framework libraries is 
 - **Transloco** for internationalization
 - **FontAwesome** for icons
 - **Angular Auth OIDC Client** and **Keycloak** for authentication
-- **AngularFire** for Firebase integration
 - **ngx-markdown** with Prism.js for content rendering
 ### Front-end unit testing
 - **Vitest 4** with jsdom/happy-dom environments

@@ -8,16 +8,22 @@ import { CardsGridSpec } from './cards-spec';
 import { LayoutService } from '@processpuzzle/util';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { CardBackgroundDirective } from './card-background.directive';
 
 @Component({
   selector: 'pp-cards-grid',
   standalone: true,
-  imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass, MatIcon, MatMenuModule],
+  imports: [MatCardModule, MatButtonModule, RouterLink, TranslocoDirective, NgClass, MatIcon, MatMenuModule, CardBackgroundDirective],
   template: `
     <div [ngClass]="layoutService.layoutClass()">
       @for (card of cards(); track $index) {
         <ng-container *transloco="let t; prefix: card.translocoPrefix">
-          <mat-card class="default-mat-card">
+          <mat-card
+            class="default-mat-card"
+            [class.has-link]="!!card.link"
+            [class.has-image]="!!card.backgroundImage"
+            [routerLink]="card.link ?? null"
+            [ppCardBackground]="card.backgroundImage">
             <mat-card-header>
               @if (hasValue(card.title)) {
                 <mat-card-title>{{ t(card.title) }}</mat-card-title>
@@ -35,7 +41,7 @@ import { MatMenuModule } from '@angular/material/menu';
                 @if (!card.icon) {
                   <span class="toolbar-spacer"></span>
                 }
-                <button mat-icon-button [matMenuTriggerFor]="cardMenu" aria-label="Card menu">
+                <button mat-icon-button [matMenuTriggerFor]="cardMenu" aria-label="Card menu" (click)="$event.stopPropagation()">
                   <mat-icon class="icon-large material-symbols-outlined">more_vert</mat-icon>
                 </button>
                 <mat-menu #cardMenu="matMenu">
@@ -68,7 +74,7 @@ import { MatMenuModule } from '@angular/material/menu';
               <mat-card-actions>
                 @for (action of card.actions; track $index) {
                   <ng-container>
-                    <button [matButton]="action.buttonType ?? 'elevated'" [routerLink]="action.link">{{ t(action.caption) }}</button>
+                    <button [matButton]="action.buttonType ?? 'elevated'" [routerLink]="action.link" (click)="$event.stopPropagation()">{{ t(action.caption) }}</button>
                   </ng-container>
                 }
               </mat-card-actions>

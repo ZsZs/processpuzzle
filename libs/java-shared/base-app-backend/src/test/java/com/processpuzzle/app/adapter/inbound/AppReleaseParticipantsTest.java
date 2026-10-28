@@ -1,6 +1,10 @@
 package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
+import com.processpuzzle.app.domain.AppAsset;
+import com.processpuzzle.app.domain.AppAssetRepository;
+import com.processpuzzle.app.domain.AppDefinitionTranslation;
+import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
@@ -13,6 +17,8 @@ import com.processpuzzle.app.domain.ModuleMount;
 import com.processpuzzle.app.domain.ModuleTranslation;
 import com.processpuzzle.app.domain.ModuleTranslationRepository;
 import com.processpuzzle.app.domain.RouteTarget;
+import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionKinds;
@@ -32,8 +38,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 @DataJpaTest(showSql = false)
 @EntityScan("com.processpuzzle.app.domain")
@@ -57,6 +65,11 @@ class AppReleaseParticipantsTest {
     @Autowired
     private AppDefinitionRepository appRepository;
     @Autowired
+    private AppAssetRepository appAssetRepository;
+
+    @Autowired
+    private AppDefinitionTranslationRepository appTranslationRepository;
+    @Autowired
     private EntityManager entityManager;
 
     private ModuleAssetSweeper sweeper;
@@ -67,7 +80,8 @@ class AppReleaseParticipantsTest {
     void setUp() {
         sweeper = org.mockito.Mockito.mock(ModuleAssetSweeper.class);
         modules = new ModuleReleaseParticipant(moduleRepository, translationRepository, assetRepository, sweeper);
-        apps = new AppReleaseParticipant(appRepository, AppTestFixtures.structuralValidator(), new AppMapper());
+        apps = new AppReleaseParticipant(appRepository, AppTestFixtures.structuralValidator(), new AppMapper(),
+                new AppAssetReleases(appAssetRepository), new AppTranslationReleases(appTranslationRepository), sweeper);
     }
 
     // --- modules -------------------------------------------------------------------------
@@ -235,6 +249,109 @@ class AppReleaseParticipantsTest {
         appRepository.save(app);
 
         assertThat(apps.pending(ORG)).isEmpty();
+    }
+
+    @Test
+    void anUploadedAppAssetIsPendingOnAPublishedApp_andReleaseCopiesTheRecordNotTheContent() {
+        AppDefinition app = new AppDefinition(ORG, "app", "App", null, null, AppTestFixtures.validGraph());
+        app.publish();
+        appRepository.save(app);
+        flush();
+        assertThat(apps.pending(ORG)).isEmpty();
+
+        appAssetRepository.save(new AppAsset(ORG, "app", Channel.DRAFT, "cards/plan-race.svg", "h1", "image/svg+xml", 10));
+        flush();
+        assertThat(apps.pending(ORG)).extracting(PendingChange::change).containsExactly(PendingChange.Change.CHANGED);
+
+        apps.release(ORG);
+        flush();
+
+        assertThat(appAssetRepository.findByOrgKeyAndAppIdAndChannelOrderByPath(ORG, "app", Channel.RELEASED))
+                .singleElement().satisfies(asset -> {
+                    assertThat(asset.getPath()).isEqualTo("cards/plan-race.svg");
+                    assertThat(asset.getSha256()).isEqualTo("h1");
+                    assertThat(asset.getMimeType()).isEqualTo("image/svg+xml");
+                });
+        assertThat(apps.pending(ORG)).isEmpty();
+        verify(sweeper).sweep(ORG, Set.of());
+    }
+
+    @Test
+    void releasingReplacesAndDropsReleasedAppAssetRecordsAndHandsTheirContentToTheSweeper() {
+        AppDefinition app = new AppDefinition(ORG, "app", "App", null, null, AppTestFixtures.validGraph());
+        app.publish();
+        appRepository.save(app);
+        appAssetRepository.save(new AppAsset(ORG, "app", Channel.DRAFT, "a.svg", "h2", "image/svg+xml", 10));
+        appAssetRepository.save(new AppAsset(ORG, "app", Channel.RELEASED, "a.svg", "h1", "image/svg+xml", 10));
+        appAssetRepository.save(new AppAsset(ORG, "app", Channel.RELEASED, "gone.svg", "h9", "image/svg+xml", 10));
+        flush();
+
+        apps.release(ORG);
+        flush();
+
+        assertThat(appAssetRepository.findByOrgKeyAndAppIdAndChannelOrderByPath(ORG, "app", Channel.RELEASED))
+                .extracting(AppAsset::getPath, AppAsset::getSha256).containsExactly(org.assertj.core.groups.Tuple.tuple("a.svg", "h2"));
+        verify(sweeper).sweep(ORG, Set.of("h1", "h9"));
+    }
+
+    @Test
+    void anUploadedAppTranslationIsPendingOnAPublishedApp_andReleaseCopiesTheBundle() {
+        AppDefinition app = new AppDefinition(ORG, "app", "App", null, null, AppTestFixtures.validGraph());
+        app.publish();
+        appRepository.save(app);
+        flush();
+        assertThat(apps.pending(ORG)).isEmpty();
+
+        appTranslationRepository.save(new AppDefinitionTranslation(ORG, "app", Channel.DRAFT, "de", Map.of("home.title", "Start")));
+        flush();
+        assertThat(apps.pending(ORG)).extracting(PendingChange::change).containsExactly(PendingChange.Change.CHANGED);
+
+        apps.release(ORG);
+        flush();
+
+        assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannelAndLocale(ORG, "app", Channel.RELEASED, "de"))
+                .get().extracting(AppDefinitionTranslation::getMessages).isEqualTo(Map.of("home.title", "Start"));
+        assertThat(apps.pending(ORG)).isEmpty();
+    }
+
+    @Test
+    void aChangedTextIsPendingAgain_andADroppedLanguageIsReleasedAway() {
+        AppDefinition app = new AppDefinition(ORG, "app", "App", null, null, AppTestFixtures.validGraph());
+        app.publish();
+        appRepository.save(app);
+        appTranslationRepository.save(new AppDefinitionTranslation(ORG, "app", Channel.DRAFT, "de", Map.of("a", "2")));
+        appTranslationRepository.save(new AppDefinitionTranslation(ORG, "app", Channel.RELEASED, "de", Map.of("a", "1")));
+        appTranslationRepository.save(new AppDefinitionTranslation(ORG, "app", Channel.RELEASED, "fr", Map.of("a", "1")));
+        flush();
+        assertThat(apps.pending(ORG)).hasSize(1);
+
+        apps.release(ORG);
+        flush();
+
+        assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannel(ORG, "app", Channel.RELEASED))
+                .extracting(AppDefinitionTranslation::getLocale, translation -> translation.getMessages().get("a"))
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("de", "2"));
+        assertThat(apps.pending(ORG)).isEmpty();
+    }
+
+    @Test
+    void anAppWithoutTextsKeepsTheFingerprintItHadBeforeTheyExisted() {
+        AppGraph graph = AppTestFixtures.validGraph();
+
+        assertThat(AppReleaseParticipant.fingerprint(graph, null, Map.of())).isEqualTo(AppReleaseParticipant.fingerprint(graph, null));
+        assertThat(AppReleaseParticipant.fingerprint(graph, null, Map.of("de", "{a=1}"))).isNotEqualTo(AppReleaseParticipant.fingerprint(graph, null))
+                .isNotEqualTo(AppReleaseParticipant.fingerprint(graph, Map.of("a.svg", "h1:image/svg+xml"), null));
+        assertThat(AppReleaseParticipant.fingerprint(null, null, Map.of("de", "{a=1}"))).isNull();
+    }
+
+    @Test
+    void anAppWithoutAssetsKeepsTheFingerprintItHadBeforeTheyExisted() {
+        AppGraph graph = AppTestFixtures.validGraph();
+
+        assertThat(AppReleaseParticipant.fingerprint(graph, Map.of())).isEqualTo(AppReleaseParticipant.fingerprint(graph, null));
+        assertThat(AppReleaseParticipant.fingerprint(graph, Map.of("a.svg", "h1:image/svg+xml")))
+                .isNotEqualTo(AppReleaseParticipant.fingerprint(graph, null));
+        assertThat(AppReleaseParticipant.fingerprint(null, Map.of("a.svg", "h1:image/svg+xml"))).isNull();
     }
 
     @Test

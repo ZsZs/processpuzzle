@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.app.domain.AppAssetRepository;
 import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.usecase.port.ModuleAssetStore;
 import java.util.List;
@@ -20,13 +21,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 class ModuleAssetSweeperTest {
 
     private final ModuleAssetRepository assets = mock(ModuleAssetRepository.class);
+    private final AppAssetRepository appAssets = mock(AppAssetRepository.class);
     private final ModuleAssetStore store = mock(ModuleAssetStore.class);
 
     @SuppressWarnings("unchecked")
     private ModuleAssetSweeper sweeper(ModuleAssetStore target) {
         ObjectProvider<ModuleAssetStore> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(target);
-        return new ModuleAssetSweeper(assets, provider);
+        return new ModuleAssetSweeper(assets, appAssets, provider);
     }
 
     @Test
@@ -37,6 +39,16 @@ class ModuleAssetSweeperTest {
 
         verify(store).delete("org", "orphan");
         verify(store, never()).delete("org", "kept");
+    }
+
+    @Test
+    void keepsContentThatOnlyAnAppAssetStillNames() {
+        when(appAssets.existsByOrgKeyAndSha256("org", "card-image")).thenReturn(true);
+
+        sweeper(store).sweep("org", List.of("card-image", "orphan"));
+
+        verify(store).delete("org", "orphan");
+        verify(store, never()).delete("org", "card-image");
     }
 
     @Test

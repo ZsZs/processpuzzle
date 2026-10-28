@@ -31,7 +31,10 @@
       "widget": "Widget",
       "document": "Dokument",
       "workflow": "Workflow",
-      "app": "Anwendung"
+      "module": "Modul",
+      "app": "Anwendung",
+      "translation": "Übersetzung",
+      "asset": "Datei"
     },
     "catalogEmpty": "Der Katalog enthält noch keine Starter.",
     "version": "Version",

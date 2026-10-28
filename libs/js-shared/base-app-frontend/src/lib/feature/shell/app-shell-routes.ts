@@ -1,6 +1,7 @@
-import { inject, Injectable, Injector } from '@angular/core';
+import { inject, Injectable, Injector, Provider } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
 import { BaseUrlSegments } from '@processpuzzle/base-entity';
+import { APP_ASSET_CONTEXT } from '@processpuzzle/widgets';
 import { TranslocoService } from '@jsverse/transloco';
 import { TranslocoHttpLoader } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
@@ -10,12 +11,15 @@ import { AppDefinitionStore } from '../../domain/app-definition.store';
 import { ModuleDefinition } from '../../domain/module-definition';
 import { ModuleDefinitionService } from '../../domain/module-definition.service';
 import { ModuleDefinitionStore } from '../../domain/module-definition.store';
+import { appAssetContextOf } from '../../domain/app-asset-context';
+import { AppAssetService } from '../../domain/app-asset.service';
 import { moduleAssetContextOf } from '../../domain/module-asset-context';
 import { ModuleAssetService } from '../../domain/module-asset.service';
 import { ModuleTranslationBundle } from '../../domain/module-translation';
 import { ModuleTranslationService } from '../../domain/module-translation.service';
 import { buildAppRoutes, ModuleLoader, ModuleTranslationLoader } from '../app-route-builder';
 import { AppRouteRenderer } from '../app-route-renderer';
+import { AppTranslationsLoader } from './app-translations.loader';
 
 /**
  * Turns one `AppDefinition` into the `Routes` that render its screens — the missing consumer of
@@ -55,9 +59,15 @@ export class AppShellRoutesFactory {
     // ones too; a draft definition — the designer's Preview — reads the draft ones a user just uploaded.
     const revision = definition.mountedModules ? 'released' : 'draft';
     const loadTranslations = this.translationsOf(revision);
+    // The texts of the application's own pages, which no module's scope carries. A failed read leaves the keys as text.
+    await this.injector.get(AppTranslationsLoader).activate(definition.id, revision).catch(() => undefined);
     const moduleAssets = (moduleKey: string) => moduleAssetContextOf(this.injector.get(ModuleAssetService), moduleKey, revision);
     const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule, loadTranslations, moduleAssets }, this.renderRoute);
-    return built.length ? [indexRoute(definition, built), ...built] : built;
+    // Provided on every top-level route, the mounts included, so that an `app:` value is found on the application's
+    // own pages and below a module alike.
+    const appAssets: Provider = { provide: APP_ASSET_CONTEXT, useFactory: () => appAssetContextOf(this.injector.get(AppAssetService), definition.id, revision) };
+    const withAssets = built.map((route) => ({ ...route, providers: [...(route.providers ?? []), appAssets] }));
+    return withAssets.length ? [indexRoute(definition, withAssets), ...withAssets] : withAssets;
   }
 
   /**
