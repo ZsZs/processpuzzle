@@ -705,6 +705,15 @@ for realm in processpuzzle-testbed processpuzzle-biz processpuzzle-admin process
   # Same one-shot reason: the branded sign-in page (login-element) for realms imported before it existed.
   "$KCADM" update "realms/${realm}" -s 'loginTheme=processpuzzle' ||     echo "  WARNING: could not set the login theme of '${realm}'."
 
+  # The AI assistant requires `definition-designer`; the imports declare it, but only for realms
+  # created after it was added, so reconcile the role into existing ones.
+  if ! "$KCADM" get "roles/definition-designer" -r "${realm}" >/dev/null 2>&1; then
+    echo "Creating realm role 'definition-designer' in '${realm}' ..."
+    "$KCADM" create roles -r "${realm}" -s name=definition-designer \
+      -s 'description=May author definitions with the AI assistant (the assistant can only write drafts; publishing is separate).' || \
+      echo "  WARNING: could not create 'definition-designer' in '${realm}'."
+  fi
+
   # Realm imports are one-shot, so realms created before Direct Access Grants and the built-in
   # registration page were switched off keep them until reconciled here (docs/auth-feature-strategy.md).
   for app_client in processpuzzle-testbed processpuzzle-biz; do
