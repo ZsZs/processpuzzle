@@ -165,7 +165,6 @@ Every release workflow finishes by creating a tag and release via `elgohr/Github
 | --- | --- |
 | `GITHUB_TOKEN` | Automatic — checkout, releases, Sonar callback |
 | `SONAR_TOKEN` | SonarCloud scan |
-| `FIREBASE_TOKEN` | Injected as `FIREBASE_API_KEY` into the generated env file. Still required: the testbed container’s entrypoint fails fast on an unset one, and the Firebase-Auth / Firestore adapters read it when an application chooses them |
 | `CENTRAL_TOKEN_USERNAME`, `CENTRAL_TOKEN_PASSWORD` | Maven Central deploy |
 | `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE` | Signing Maven artifacts |
 

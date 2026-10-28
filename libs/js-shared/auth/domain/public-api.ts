@@ -4,7 +4,6 @@ export { authTokenInterceptor } from './service/auth-token.interceptor';
 export { authTokenInterceptorFor, provideAuthTokenInterceptor } from './service/provide-auth-token-interceptor';
 export { currentOrgKey, firstPathSegment, looksLikeOrgKey, resolveTenantRealm } from './service/tenant-realm.resolver';
 export { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, LOGOUT_REDIRECT_URL, type AuthenticationConfiguration, provideAuthenticationService } from './service/provide-authentication.service';
-export type { FirebaseAuthConfig } from './service/firebase-auth.config';
 export type { KeycloakAuthConfig } from './service/keycloak-auth.config';
 export { RegistrationError, RegistrationService, type RegistrationRequest } from './service/registration.service';
 export { User } from './user/user';

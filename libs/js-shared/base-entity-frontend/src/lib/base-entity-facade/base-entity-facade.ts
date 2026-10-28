@@ -8,18 +8,14 @@ import { entityNameFromType } from '../base-entity/base-entity-utility';
 import { BaseEntityMapper, SimpleEntityMapper } from '../base-entity.mapper';
 import { BaseEntityService } from '../base-entity-service/base-entity.service';
 import { BaseEntityRestService } from '../base-entity-service/base-entity-rest.service';
-import { BaseEntityFirestoreService } from '../base-entity-service/base-entity-firestore.service';
 import { BaseEntityStore } from '../base-entity-store/base-entity.store';
 import { BaseEntityTabsStore } from '../base-tabs/base-entity-tabs.store';
 import { BaseEntityContainerStore } from '../base-entity-container.store';
-
-export type EntityServiceKind = 'rest' | 'firestore';
 
 @Injectable()
 export abstract class BaseEntityFacade<Entity extends BaseEntity> {
   abstract readonly entityType: Type<Entity>;
 
-  protected readonly serviceKind: EntityServiceKind = 'rest';
   protected readonly endpoint?: string;
   protected readonly backendRoot?: string;
 
@@ -81,20 +77,10 @@ export abstract class BaseEntityFacade<Entity extends BaseEntity> {
 
   protected createService(mapper: BaseEntityMapper<Entity>): BaseEntityService<Entity> {
     return runInInjectionContext(this.injector, () => {
-      if (this.serviceKind === 'rest') {
-        if (!this.backendRoot || !this.endpoint) {
-          throw new Error(`${this.constructor.name}: REST facade requires backendRoot and endpoint`);
-        }
-        return new BaseEntityRestService<Entity>(mapper, this.backendRoot, this.endpoint);
+      if (!this.backendRoot || !this.endpoint) {
+        throw new Error(`${this.constructor.name}: REST facade requires backendRoot and endpoint`);
       }
-      if (!this.endpoint) {
-        throw new Error(`${this.constructor.name}: Firestore facade requires endpoint (collection name)`);
-      }
-      // Needs `FIRESTORE` bound in this injector, which `provideFirestoreToken()` does next to the
-      // application's own `provideFirestore(...)` call. Unbound, this line fails with NG0201 naming the
-      // token — the deliberate replacement for injecting `@angular/fire`'s class, whose identity a build
-      // or a test runner can split in two. See firestore.token.ts.
-      return new BaseEntityFirestoreService<Entity>(mapper, this.endpoint);
+      return new BaseEntityRestService<Entity>(mapper, this.backendRoot, this.endpoint);
     });
   }
 

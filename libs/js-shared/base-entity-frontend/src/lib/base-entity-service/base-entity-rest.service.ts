@@ -88,7 +88,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
   /**
    * Reads one entity by id. The `/%{id}` suffix is what makes this a single-entity read: without it the
    * URL is the collection's, and the response mapper then sees a list where it expects one record — the
-   * Firestore and embedded implementations of this interface address one document, and so does this one.
+   * embedded implementation of this interface addresses one document, and so does this one.
    */
   findById(id: string): Observable<void | PersistedEntity<Entity>> {
     const queryCondition: BaseEntityQueryCondition = { pathParams: new Map<string, string>([['id', String(id)]]) };

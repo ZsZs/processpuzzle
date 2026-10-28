@@ -13,7 +13,7 @@ describe('provideAuthenticationService', () => {
     AUTH_SERVICE_CONFIG: {
       realm: 'test-realm',
       clientId: 'test-client',
-      authServerUrl: 'http://test-auth-server',
+      authServerUrl: 'https://test-auth-server',
     },
   };
 
@@ -37,21 +37,6 @@ describe('provideAuthenticationService', () => {
 
     const service = TestBed.inject(AUTHENTICATION_SERVICE);
     expect(service).toBeInstanceOf(KeycloakAuthService);
-  });
-
-  it.skip('should provide service when provider is firebase-auth', () => {
-    // Skip this test because Firebase initialization requires complex setup
-    const authConfig: AuthenticationConfiguration = {
-      AUTHENTICATION_PROVIDER: 'firebase-auth',
-    };
-
-    setupTestBed({
-      BASE_CONFIGURATION: mockBaseConfig,
-      AUTHENTICATION_CONFIGURATION: authConfig,
-    });
-
-    const service = TestBed.inject(AUTHENTICATION_SERVICE);
-    expect(service).toBeDefined();
   });
 
   it('should throw error when provider is missing', () => {

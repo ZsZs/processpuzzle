@@ -190,7 +190,7 @@ The test walks the whole round trip and asserts at each point that the reference
 
 The payloads are built in memory by `createPngBuffer` / `createTextBuffer` and handed to `setInputFiles` as bytes, so nothing has to be resolved relative to whichever app runs the suite. The PNG is 320×240, larger than the 200 px thumbnail box in both directions, so the downscale is real.
 
-Both object-store adapters must pass this suite — `processpuzzle-store` over MinIO and the `objectStore` Cloud Function over Firebase Storage — which is what keeps them interchangeable. Where they legitimately differ the suite claims only what both do: a delete asserts the **object** is gone and says nothing about the thumbnail, because MinIO leaves it behind where the Cloud Function cascades to it.
+The suite is written against the object-store *contract* rather than against `processpuzzle-store` over MinIO, the one adapter implementing it today, so that a second adapter would have to pass it unchanged. It therefore claims only what the contract promises: a delete asserts the **object** is gone and says nothing about the thumbnail, which MinIO leaves behind.
 
 The link is opened with `window.open(…, 'noopener')`, so the new tab has no opener and arrives on the browser *context* rather than as a popup — `ArtifactFieldsetPO.openArtifact` waits on `context.waitForEvent('page')` accordingly.
 

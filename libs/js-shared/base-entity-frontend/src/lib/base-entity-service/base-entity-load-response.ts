@@ -1,11 +1,7 @@
 import { BaseEntity } from '../base-entity/base-entity';
-import { DocumentSnapshot, WhereFilterOp } from '@angular/fire/firestore';
 
-export interface WhereCondition<Entity extends BaseEntity> {
-  field: keyof Entity;
-  operator: WhereFilterOp;
-  value: Entity[keyof Entity];
-}
+/** The comparison operators a filter condition may use; `toRsql` maps each onto its RSQL/FIQL operator. */
+export type FilterOperator = '<' | '<=' | '==' | '!=' | '>=' | '>' | 'array-contains' | 'in' | 'array-contains-any' | 'not-in';
 
 export interface OrderByCondition<Entity extends BaseEntity> {
   field: keyof Entity;
@@ -14,7 +10,7 @@ export interface OrderByCondition<Entity extends BaseEntity> {
 
 export interface FilterCondition {
   property: string;
-  operator: WhereFilterOp;
+  operator: FilterOperator;
   value: string;
 }
 
@@ -55,16 +51,6 @@ export interface BaseEntityQueryCondition {
    * array answer has no pages and comes back as it is.
    */
   allPages?: boolean;
-}
-
-export interface FirestoreQuery<Entity extends BaseEntity> {
-  limit?: number;
-  startAt?: number | string | DocumentSnapshot<Entity>;
-  startAfter?: number | string | DocumentSnapshot<Entity> | null;
-  endAt?: number | DocumentSnapshot<Entity>;
-  endBefore?: number | DocumentSnapshot<Entity>;
-  orderBy?: OrderByCondition<Entity>[];
-  where?: WhereCondition<Entity>[];
 }
 
 export interface BaseEntityLoadResponse<Entity extends BaseEntity> {

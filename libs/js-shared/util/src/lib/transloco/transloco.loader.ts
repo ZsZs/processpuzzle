@@ -42,9 +42,9 @@ export class TranslocoHttpLoader implements TranslocoLoader {
   /**
    * Rejects anything that is not a JSON object, so the caller falls back.
    *
-   * The three deployments disagree about what a missing asset looks like. The Angular dev server 404s for
-   * a `.json` URL, but nginx (`tools/docker/processpuzzle-testbed-frontend/nginx.conf`) and Firebase Hosting (`firebase.json`)
-   * rewrite unknown paths to `index.html` and answer **200**. HttpClient turns that into an error by
+   * The two deployments disagree about what a missing asset looks like. The Angular dev server 404s for
+   * a `.json` URL, but nginx (`tools/docker/processpuzzle-testbed-frontend/nginx.conf`) rewrites unknown
+   * paths to `index.html` and answers **200**. HttpClient turns that into an error by
    * itself, because the HTML fails `JSON.parse` — but an *empty* 200 body parses to `null` and would sail
    * through. Hence a positive check rather than trusting the status.
    */

@@ -78,7 +78,7 @@ describe('TranslocoHttpLoader', () => {
     expect(result.value).toEqual({ home: 'Home' });
   });
 
-  // nginx and Firebase Hosting rewrite an unknown path to index.html and answer 200. HttpClient turns the
+  // nginx rewrites an unknown path to index.html and answers 200. HttpClient turns the
   // unparseable body into an error by itself, so the fallback still fires.
   it('treats an index.html rewrite as a miss rather than a bundle', () => {
     const result = load('order_admin/en', 'order_admin');
@@ -137,7 +137,7 @@ describe('TranslocoHttpLoader', () => {
       load('widgets/en', 'widgets');
       http.expectOne('assets/i18n/widgets/en.json').flush('', { status: 404, statusText: 'Not Found' });
 
-      http.expectOne(`${WIDGET_ROOT}/widget/translations/widgets/en`).flush({});
+      expect(http.expectOne(`${WIDGET_ROOT}/widget/translations/widgets/en`).request.method).toBe('GET');
     });
 
     // Unregistered scopes are the designer-authored ones, and modules are base-app's aggregate.
@@ -147,7 +147,7 @@ describe('TranslocoHttpLoader', () => {
       load('order_admin/en', 'order_admin');
       http.expectOne('assets/i18n/order_admin/en.json').flush('', { status: 404, statusText: 'Not Found' });
 
-      http.expectOne(`${APP_ROOT}/app/translations/order_admin/en`).flush({});
+      expect(http.expectOne(`${APP_ROOT}/app/translations/order_admin/en`).request.method).toBe('GET');
     });
 
     // The per-feature roots are optional; one host serves every feature today.
@@ -160,7 +160,7 @@ describe('TranslocoHttpLoader', () => {
       load('base_state/en', 'base_state');
       http.expectOne('assets/i18n/base_state/en.json').flush('', { status: 404, statusText: 'Not Found' });
 
-      http.expectOne(`${APP_ROOT}/state/translations/base_state/en`).flush({});
+      expect(http.expectOne(`${APP_ROOT}/state/translations/base_state/en`).request.method).toBe('GET');
     });
   });
 });
