@@ -131,6 +131,11 @@ services:
       # image ships (GC selection, -XX:+ExitOnOutOfMemoryError among them) instead of adding to them.
       JAVA_OPTS_APPEND: "-XX:MaxRAMPercentage=60"
 
+      # `json` on stage and prod: one JSON object per line, so a log collector reads `level`, `loggerName`
+      # and `message` as fields instead of guessing the severity from text. `default` (readable text) stays
+      # the value for ci and local development. A RUN-TIME option, so it works with `start --optimized`.
+      KC_LOG_CONSOLE_OUTPUT: ${KC_LOG_CONSOLE_OUTPUT:-default}
+
       # Database connection
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${KEYCLOAK_DB_NAME:-keycloak}
