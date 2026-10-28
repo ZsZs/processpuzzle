@@ -23,7 +23,7 @@ locales: [en, de, hu]               # languages the starter ships labels for
 
 # --- Contents (paths relative to the manifest) --------------------------
 # The importer always processes groups in this order:
-# entities -> states -> rules -> calculations -> widgets -> documents -> workflows -> modules -> apps
+# entities -> states -> rules -> calculations -> widgets -> documents -> workflows -> modules -> translations -> apps -> assets
 contents:
   entities:
     - entities/regatta.yaml
@@ -47,6 +47,13 @@ contents:
     - modules/race-planning.yaml         # `moduleDefinitions:` entries, as in default-apps files
   apps:
     - apps/race-office.yaml              # `appDefinitions:` entries; published on install
+  # What a module or an app brings along. The path says whose it is: <dir>/<apps|modules>/<owner>/<path>, and the
+  # owner must be a module or app of this starter. Both are released together with their owner.
+  translations:
+    - translations/modules/race-planning/de.json   # <locale>.json, flat or nested; only texts the module authors
+  assets:
+    - assets/apps/race-office/cards/plan-race.svg  # an app file, named by widgets as app:cards/plan-race.svg
+    - assets/modules/race-planning/docs/guide.md   # a module file, named as module:docs/guide.md
 
 # --- Migration (placeholder; format decided together with upgrades) ----
 migration: null

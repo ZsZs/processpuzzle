@@ -27,7 +27,12 @@ import { parse, stringify } from 'yaml';
 
 export const CATALOG_VERSION = 1;
 export const SUPPORTED_SCHEMA_VERSIONS = [1];
-const CONTENT_GROUPS = ['entities', 'states', 'rules', 'calculations', 'widgets', 'documents', 'workflows', 'modules', 'apps'];
+const CONTENT_GROUPS = [
+  'entities', 'states', 'rules', 'calculations', 'widgets', 'documents', 'workflows', 'modules', 'apps', 'translations', 'assets',
+];
+// What the files of the last two groups say about where they belong, as BundleOwnedPath in base-app-backend reads it.
+const OWNED_GROUPS = ['translations', 'assets'];
+const OWNER_KINDS = ['apps', 'modules'];
 const SAFE_PATH = /^[A-Za-z0-9_-][A-Za-z0-9._-]*(\/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$/;
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SEMVER = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/;
@@ -65,7 +70,38 @@ export function readStarter(folder) {
     if (!SAFE_PATH.test(path) || path.split('/').includes('..')) throw new StarterError(`${where}: unsafe path '${path}'`);
     if (!existsSync(join(folder, path))) throw new StarterError(`${where}: lists '${path}', which does not exist`);
   }
+  checkOwnedFiles(folder, contents, where);
   return { manifest, files: [...new Set([...files, ...extras])].sort() };
+}
+
+/**
+ * The files of `translations` and `assets` are `<group>/<apps|modules>/<owner>/<path>`, and the owner is a module or
+ * app the same starter defines: the importer refuses anything else, so it is refused here before it is published.
+ * A translation is `<locale>.json` straight under its module — an application has no translation store.
+ */
+function checkOwnedFiles(folder, contents, where) {
+  const defined = { apps: new Set(), modules: new Set() };
+  for (const path of contents.modules ?? []) {
+    for (const module of parse(readFileSync(join(folder, path), 'utf8'))?.moduleDefinitions ?? []) defined.modules.add(module?.key);
+  }
+  for (const path of contents.apps ?? []) {
+    for (const app of parse(readFileSync(join(folder, path), 'utf8'))?.appDefinitions ?? []) defined.apps.add(app?.id);
+  }
+  for (const group of OWNED_GROUPS) {
+    for (const path of contents[group] ?? []) {
+      const [, ownerKind, owner, ...rest] = path.split('/');
+      if (!OWNER_KINDS.includes(ownerKind) || !owner || rest.length === 0) {
+        throw new StarterError(`${where}: '${path}' must be <dir>/<apps|modules>/<owner>/<path>`);
+      }
+      if (!defined[ownerKind].has(owner)) {
+        throw new StarterError(`${where}: '${path}' belongs to ${ownerKind.slice(0, -1)} '${owner}', which the starter does not define`);
+      }
+      if (group === 'translations') {
+        if (ownerKind === 'apps') throw new StarterError(`${where}: '${path}': only a module's texts can be imported`);
+        if (rest.length !== 1 || !rest[0].endsWith('.json')) throw new StarterError(`${where}: '${path}' must be <dir>/modules/<module>/<locale>.json`);
+      }
+    }
+  }
 }
 
 /**

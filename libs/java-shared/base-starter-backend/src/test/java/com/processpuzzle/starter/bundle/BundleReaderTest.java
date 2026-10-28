@@ -117,6 +117,56 @@ class BundleReaderTest {
         }
     }
 
+    /** The same packager, on a starter whose modules and app bring translations and files along. */
+    @Test
+    void readsABundleThePackagerBuiltWithAssetsAndTranslations() throws IOException {
+        try (InputStream packaged = getClass().getResourceAsStream("/bundles/packaged-race-pages-1.0.0.zip")) {
+            StarterBundle bundle = reader.read(packaged);
+
+            assertThat(bundle.manifest().contents()).containsOnlyKeys("modules", "apps", "translations", "assets");
+            assertThat(bundle.files()).containsKeys("translations/modules/plan-race/de.json",
+                    "assets/apps/app/cards/plan-race.svg", "assets/modules/plan-race/docs/guide.md");
+            assertThat(bundle.manifest().integrity().files()).containsKey("assets/apps/app/cards/plan-race.svg");
+        }
+    }
+
+    @Test
+    void readsBinaryAssetsAndTranslationsAndChecksTheirHashes() {
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', 0, 1, 2, (byte) 0xFF};
+        Map<String, byte[]> files = new LinkedHashMap<>();
+        files.put("manifest.yaml", (TestBundles.MANIFEST
+                + "  assets:\n    - assets/apps/app/logo.png\n  translations:\n    - translations/modules/plan/de.json\n"
+                + "integrity:\n  algorithm: sha256\n  files:\n    assets/apps/app/logo.png: \"" + BundleReader.sha256(png) + "\"\n")
+                .getBytes(StandardCharsets.UTF_8));
+        files.put("entities/item.yaml", "entityDefinitions: []\n".getBytes(StandardCharsets.UTF_8));
+        files.put("rules/item-rules.yaml", "rules: []\n".getBytes(StandardCharsets.UTF_8));
+        files.put("assets/apps/app/logo.png", png);
+        files.put("translations/modules/plan/de.json", "{}".getBytes(StandardCharsets.UTF_8));
+
+        StarterBundle bundle = reader.read(new ByteArrayInputStream(TestBundles.zipBytes(files)));
+
+        assertThat(bundle.file("assets/apps/app/logo.png")).isEqualTo(png);
+        assertThat(bundle.manifest().contents().get("assets")).containsExactly("assets/apps/app/logo.png");
+
+        files.put("assets/apps/app/logo.png", new byte[] {1, 2, 3});
+        assertInvalid(() -> reader.read(new ByteArrayInputStream(TestBundles.zipBytes(files))), "does not match its integrity hash");
+    }
+
+    @Test
+    void rejectsAnAssetTheManifestDoesNotListOrWhosePathTraverses() {
+        Map<String, String> unlisted = TestBundles.inventory();
+        unlisted.put("assets/apps/app/logo.png", "x");
+        assertInvalid(() -> read(unlisted), "not listed");
+
+        Map<String, String> traversing = TestBundles.inventory();
+        traversing.put("manifest.yaml", TestBundles.MANIFEST + "  assets:\n    - assets/apps/../../evil.png\n");
+        assertInvalid(() -> read(traversing), "Unsafe path");
+
+        Map<String, String> missing = TestBundles.inventory();
+        missing.put("manifest.yaml", TestBundles.MANIFEST + "  translations:\n    - translations/modules/plan/de.json\n");
+        assertInvalid(() -> read(missing), "does not contain");
+    }
+
     @Test
     void carriesAuthorLicenseAndTheMigrationScript() {
         Map<String, String> files = TestBundles.inventory();

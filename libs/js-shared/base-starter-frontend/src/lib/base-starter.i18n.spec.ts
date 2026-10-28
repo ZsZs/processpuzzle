@@ -23,7 +23,7 @@ describe('base-starter translations', () => {
   });
 
   it('labels every definition kind, status and action the report can show', () => {
-    const kinds: DefinitionKind[] = ['entity', 'state', 'rule', 'widget', 'document', 'workflow', 'app'];
+    const kinds: DefinitionKind[] = ['entity', 'state', 'rule', 'widget', 'document', 'workflow', 'module', 'app', 'translation', 'asset'];
     for (const kind of kinds) expect(english).toContain(`import.kind.${kind}`);
     for (const status of ['applied', 'would-apply', 'rejected']) expect(english).toContain(`import.status.${status}`);
     for (const action of ['create', 'update', 'delete']) expect(english).toContain(`import.action.${action}`);

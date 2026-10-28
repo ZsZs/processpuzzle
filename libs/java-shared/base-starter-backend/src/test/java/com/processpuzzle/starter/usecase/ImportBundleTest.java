@@ -169,6 +169,23 @@ class ImportBundleTest {
         assertThat(calls).isEmpty();
     }
 
+    /** Assets and translations are kinds like the others: a deployment that hosts no participant for them refuses them. */
+    @Test
+    void rejectsAssetsAndTranslationsNoParticipantImports() {
+        String manifest = TestBundles.MANIFEST + "  assets:\n    - assets/apps/app/a.svg\n  translations:\n    - translations/modules/m/de.json\n";
+        Map<String, String> files = TestBundles.inventory();
+        files.put("manifest.yaml", manifest);
+        files.put("assets/apps/app/a.svg", "<svg/>");
+        files.put("translations/modules/m/de.json", "{}");
+
+        assertThatThrownBy(() -> importBundle.execute("acme", zip(files), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e ->
+                        assertThat(e.getReport().errors()).extracting(ImportReport.Error::message)
+                                .containsExactly("This platform cannot import 'assets' definitions yet.",
+                                        "This platform cannot import 'translations' definitions yet."));
+        assertThat(calls).isEmpty();
+    }
+
     @Test
     void rejectsAnUnknownGroup() {
         Map<String, String> files = TestBundles.inventory();

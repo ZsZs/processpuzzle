@@ -4,7 +4,12 @@ import com.processpuzzle.core.definition.Channel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.processpuzzle.app.usecase.GetAppAssetContent;
 import com.processpuzzle.app.usecase.GetAppLayout;
+import com.processpuzzle.app.usecase.GetModuleAssetContent;
+import com.processpuzzle.app.usecase.GetModuleTranslationBundle;
+import com.processpuzzle.app.usecase.ModuleAssetContent;
+import com.processpuzzle.app.usecase.port.ModuleAssetStore;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.rule.usecase.ImportRules;
@@ -26,12 +31,17 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.ClassPathResource;
 
 /**
@@ -52,11 +62,51 @@ class StarterImportIntegrationTest {
         "states/inventory-item-lifecycle.yaml",
         "rules/inventory-rules.yaml"};
 
+    /**
+     * Files of a starter's modules and app go to object storage, which this test has no server for: they are kept in
+     * memory instead of in the stack's bucket, under the same names.
+     */
+    @TestConfiguration
+    static class InMemoryAssetStoreConfiguration {
+        @Bean
+        @Primary
+        ModuleAssetStore inMemoryModuleAssetStore() {
+            Map<String, byte[]> objects = new ConcurrentHashMap<>();
+            return new ModuleAssetStore() {
+                @Override
+                public void put(String orgKey, String sha256, byte[] content, String mimeType) {
+                    objects.put(orgKey + "/" + sha256, content);
+                }
+
+                @Override
+                public Optional<byte[]> get(String orgKey, String sha256) {
+                    return Optional.ofNullable(objects.get(orgKey + "/" + sha256));
+                }
+
+                @Override
+                public void delete(String orgKey, String sha256) {
+                    objects.remove(orgKey + "/" + sha256);
+                }
+
+                @Override
+                public void deleteAll(String orgKey) {
+                    objects.keySet().removeIf(name -> name.startsWith(orgKey + "/"));
+                }
+            };
+        }
+    }
+
     @LocalServerPort
     private int port;
 
     @Autowired
+    private GetAppAssetContent getAppAssetContent;
+    @Autowired
     private GetAppLayout getAppLayout;
+    @Autowired
+    private GetModuleAssetContent getModuleAssetContent;
+    @Autowired
+    private GetModuleTranslationBundle getModuleTranslationBundle;
     @Autowired
     private ImportBundle importBundle;
     @Autowired
@@ -211,7 +261,8 @@ class StarterImportIntegrationTest {
 
         assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
         assertThat(report.items()).extracting(item -> item.kind() + ":" + item.key() + ":" + item.action())
-                .containsExactly("module:plan-race:CREATE", "app:app:CREATE");
+                .containsExactly("module:plan-race:CREATE", "translation:modules/plan-race/de:CREATE", "app:app:CREATE",
+                        "asset:apps/app/cards/plan-race.svg:CREATE", "asset:modules/plan-race/docs/guide.md:CREATE");
 
         // The published layout, which is what the runtime host reads: the app and the module it mounts.
         GetAppLayout.Result layout = getAppLayout.execute("race-pages-org", "app", false);
@@ -224,12 +275,40 @@ class StarterImportIntegrationTest {
     }
 
     @Test
+    void theAssetsAndTranslationsOfAStarterAreServedFromTheReleasedChannel() throws IOException {
+        importBundle.execute("race-pages-files-org", zip(racePages()), false, null);
+
+        ModuleAssetContent picture = getAppAssetContent.execute("race-pages-files-org", "app", "cards/plan-race.svg", Channel.RELEASED);
+        assertThat(picture.mimeType()).isEqualTo("image/svg+xml");
+        assertThat(new String(picture.content(), StandardCharsets.UTF_8)).contains("<svg");
+        ModuleAssetContent guide = getModuleAssetContent.execute("race-pages-files-org", "plan-race", "docs/guide.md", Channel.RELEASED);
+        assertThat(new String(guide.content(), StandardCharsets.UTF_8)).contains("Planning a race");
+        assertThat(getModuleTranslationBundle.execute("race-pages-files-org", "plan-race", "de", Channel.RELEASED))
+                .containsEntry("module.name", "Rennen planen").containsEntry("route.overview", "Übersicht");
+        assertThat(listInstalledStarters.execute("race-pages-files-org")).singleElement()
+                .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(0);
+    }
+
+    @Test
+    void aFileOfAnOwnerTheBundleDoesNotDefineRefusesTheWholeInstall() throws IOException {
+        Map<String, byte[]> files = racePages();
+        files.put("assets/apps/ghost/a.svg", "<svg/>".getBytes(StandardCharsets.UTF_8));
+        files.put("manifest.yaml", new String(files.get("manifest.yaml"), StandardCharsets.UTF_8)
+                .replace("  assets:\n", "  assets:\n    - assets/apps/ghost/a.svg\n").getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> importBundle.execute("race-pages-ghost-org", zip(files), false, null))
+                .isInstanceOf(ImportRejectedException.class)
+                .hasMessageContaining("assets/apps/ghost/a.svg");
+        assertThatThrownBy(() -> getAppLayout.execute("race-pages-ghost-org", "app", false)).isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
     void reinstallingAStarterWithAnAppReportsUpdatesAndStaysLive() throws IOException {
         importBundle.execute("race-pages-again-org", zip(racePages()), false, null);
 
         ImportReport again = importBundle.execute("race-pages-again-org", zip(racePages()), false, null);
 
-        assertThat(again.items()).hasSize(2).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
+        assertThat(again.items()).hasSize(5).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
         assertThat(getAppLayout.execute("race-pages-again-org", "app", false).modules()).hasSize(1);
         assertThat(listInstalledStarters.execute("race-pages-again-org")).singleElement()
                 .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(0);
@@ -240,7 +319,7 @@ class StarterImportIntegrationTest {
         ImportReport report = importBundle.execute("race-pages-dry-org", zip(racePages()), true, null);
 
         assertThat(report.status()).isEqualTo(ImportReport.Status.WOULD_APPLY);
-        assertThat(report.items()).hasSize(2);
+        assertThat(report.items()).hasSize(5);
         assertThatThrownBy(() -> getAppLayout.execute("race-pages-dry-org", "app", false)).isInstanceOf(RuntimeException.class);
     }
 
@@ -259,7 +338,8 @@ class StarterImportIntegrationTest {
 
     private Map<String, byte[]> racePages() throws IOException {
         Map<String, byte[]> files = new LinkedHashMap<>();
-        for (String file : new String[] {"manifest.yaml", "modules/plan-race.yaml", "apps/race-pages.yaml"}) {
+        for (String file : new String[] {"manifest.yaml", "modules/plan-race.yaml", "apps/race-pages.yaml",
+                "translations/modules/plan-race/de.json", "assets/apps/app/cards/plan-race.svg", "assets/modules/plan-race/docs/guide.md"}) {
             try (InputStream input = new ClassPathResource("starters/race-pages/" + file).getInputStream()) {
                 files.put(file, input.readAllBytes());
             }
