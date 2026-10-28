@@ -66,6 +66,15 @@
 # -- `docker compose config` with no env file is now a check rather than a no-op. Adding a variable
 # to the list above means adding it to tools/docker/env/*/.env.ci in the same commit, or CI breaks.
 
+# Log rotation lives here, in the compose file, so it travels with the stack to every host (stage, prod, a
+# moved or rebuilt server) instead of depending on /etc/docker/daemon.json having been edited by hand.
+# 3 x 10 MiB per container; the monitoring agent has shipped the lines to Loki long before they rotate out.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+
 networks:
   processpuzzle:
     # Named explicitly so a per-app Coolify Application resource can join it as `external`.
@@ -74,6 +83,7 @@ networks:
 
 services:
   json-server:
+    logging: *default-logging
     pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-json-server:${PP_IMAGE_TAG}
     container_name: json-server
@@ -96,6 +106,7 @@ services:
     restart: unless-stopped
 
   keycloak:
+    logging: *default-logging
     pull_policy: always
     container_name: processpuzzle-keycloak
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak:${PP_IMAGE_TAG}
@@ -226,6 +237,7 @@ services:
     restart: unless-stopped
 
   keycloak-init:
+    logging: *default-logging
     pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-keycloak-init:${PP_IMAGE_TAG}
     container_name: processpuzzle-keycloak-init
@@ -316,6 +328,7 @@ services:
     restart: "no"
 
   mailpit:
+    logging: *default-logging
     # The local SMTP sink, and the reason the `processpuzzle-custom` realm can send at all.
     #
     # Keycloak's execute-actions-email flow is what activates a new customer's account: the seed
@@ -358,6 +371,7 @@ services:
     restart: unless-stopped
 
   minio:
+    logging: *default-logging
     pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-minio:${PP_IMAGE_TAG}
     container_name: processpuzzle-minio
@@ -394,6 +408,7 @@ services:
     restart: unless-stopped
 
   pgweb:
+    logging: *default-logging
     # Not built: tools/docker/pgweb/Dockerfile was `FROM sosedoff/pgweb:latest` and added nothing, so
     # building and pushing a byte-identical image was waste. Pinned rather than `latest`, per
     # docs/build-deploy-strategy.md §2.
@@ -493,6 +508,7 @@ services:
     restart: unless-stopped
 
   postgres:
+    logging: *default-logging
     pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG}
     container_name: processpuzzle-postgres
@@ -567,6 +583,7 @@ services:
   # script also runs during PostgreSQL's first initialization; its idempotence makes this repeat
   # safe and avoids resetting Keycloak merely to add a stack.
   postgres-init:
+    logging: *default-logging
     pull_policy: always
     image: ${PP_IMAGE_REGISTRY:-ghcr.io/zszs}/processpuzzle-postgres:${PP_IMAGE_TAG}
     container_name: processpuzzle-postgres-init
@@ -586,6 +603,7 @@ services:
     restart: "no"
 
   vision-server:
+    logging: *default-logging
     # Object recognition's compute half (apps/vision-server): detection, tracking, OCR and embeddings,
     # CPU only. Shared by every stack's backend, like Keycloak and MinIO, because it holds no tenant
     # data — each job carries what it needs, and results live only until the backend fetches them. See
@@ -623,6 +641,7 @@ services:
       retries: 12
     restart: unless-stopped
   litellm:
+    logging: *default-logging
     # The LLM gateway behind the AI assistant (docs/ai/implementation-plan.md): one OpenAI-compatible
     # endpoint in front of whichever vendor the model aliases in litellm/config.yaml name. Shared by every
     # stack's backend, like Keycloak and MinIO, because it holds no tenant data; the provider key lives
