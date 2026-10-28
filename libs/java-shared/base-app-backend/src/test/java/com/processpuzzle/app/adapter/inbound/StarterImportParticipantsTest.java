@@ -2,6 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppAssetRepository;
+import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
@@ -16,6 +17,7 @@ import com.processpuzzle.app.usecase.ImportAppDefinitions;
 import com.processpuzzle.app.usecase.ImportModuleDefinitions;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.core.definition.DefinitionKinds;
@@ -103,6 +105,8 @@ class StarterImportParticipantsTest {
     @Autowired
     private AppAssetRepository appAssetRepository;
     @Autowired
+    private AppDefinitionTranslationRepository appTranslationRepository;
+    @Autowired
     private EntityManager entityManager;
 
     private ModuleImportParticipant modules;
@@ -118,14 +122,15 @@ class StarterImportParticipantsTest {
         ObjectProvider<com.processpuzzle.app.usecase.port.TenantDirectory> tenants = mock(ObjectProvider.class);
         when(tenants.getIfAvailable()).thenReturn(null);
         AppAssetReleases appAssets = new AppAssetReleases(appAssetRepository);
+        AppTranslationReleases appTexts = new AppTranslationReleases(appTranslationRepository);
 
         ModuleReleaseParticipant release = new ModuleReleaseParticipant(moduleRepository, translationRepository, assetRepository, sweeper);
         modules = new ModuleImportParticipant(new ImportModuleDefinitions(moduleRepository, tenants, validator, guard, mapper),
                 new DeleteModuleDefinition(moduleRepository, translationRepository, assetRepository, sweeper, guard),
                 moduleRepository, release);
         apps = new AppImportParticipant(new ImportAppDefinitions(appRepository, tenants, validator, guard, mapper),
-                new PublishAppDefinition(appRepository, validator, appAssets, sweeper, guard, mapper),
-                new DeleteAppDefinition(appRepository, appAssets, sweeper, guard), appRepository);
+                new PublishAppDefinition(appRepository, validator, appAssets, appTexts, sweeper, guard, mapper),
+                new DeleteAppDefinition(appRepository, appAssets, appTexts, sweeper, guard), appRepository);
     }
 
     @Test

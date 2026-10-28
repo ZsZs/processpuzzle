@@ -25,6 +25,14 @@
     "tabs": {
       "preview": "{{ entity }} - aperçu"
     },
+    "translations": "Traductions",
+    "translations_panel": {
+      "hint": "Un fichier par langue prise en charge contient les textes des pages propres à l’application. Renseignez les valeurs sous les clés que nomment vos widgets, puis renvoyez le zip (ou un seul fichier).",
+      "download": "Télécharger les fichiers",
+      "upload": "Envoyer les traductions",
+      "save_first": "Enregistrez d’abord l’application ; les textes appartiennent à l’application enregistrée.",
+      "stored": "{{count}} clés enregistrées"
+    },
     "assets": "Fichiers",
     "assets_panel": {
       "hint": "Ajoutez les fichiers un par un, par exemple les images des pages de l’application. Les widgets renvoient à un fichier par app:<chemin>.",
@@ -59,7 +67,8 @@
       "regions": "Le cadre autour des pages : header, sidenav et footer, au plus un de chaque. — Guide : Régions",
       "routes": "Les pages de l'application, une ligne par page. Ajoutez-les avant les éléments de navigation qui y renvoient. — Guide : Routes",
       "modules": "Parties de l'application conçues séparément, dont les routes apparaissent sous un chemin de base. — Guide : Modules",
-      "assets": "Fichiers que l’application apporte, comme les images de ses pages. Un widget y renvoie par app:<chemin>. — Guide : Applications"
+      "assets": "Fichiers que l’application apporte, comme les images de ses pages. Un widget y renvoie par app:<chemin>. — Guide : Applications",
+      "translations": "Les textes des pages propres à l’application, comme les cartes de sa page d’accueil, un fichier par langue. Les clés sont celles que les widgets nomment sous leur translocoPrefix. — Guide : Applications"
     }
   },
   "app_region": {

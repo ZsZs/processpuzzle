@@ -19,6 +19,7 @@ import { APP_ASSET_CONTEXT, MODULE_ASSET_CONTEXT } from '@processpuzzle/widgets'
 import { BaseEntityScreensComponent } from '@processpuzzle/base-entity';
 import { RouteWidgetsComponent } from '../route-widgets.component';
 import { AppShellRoutesFactory, appShellRoutesGuard } from './app-shell-routes';
+import { AppTranslationsLoader } from './app-translations.loader';
 
 function widgetsRoute(path: string): RouteDefinition {
   return new RouteDefinition({ path, title: path, kind: 'WIDGETS' });
@@ -38,6 +39,7 @@ describe('AppShellRoutesFactory', () => {
   const moduleTranslations = { bundle: vi.fn() };
   const moduleAssets = { content: vi.fn() };
   const appAssets = { content: vi.fn() };
+  const appTexts = { activate: vi.fn() };
 
   function factory(): AppShellRoutesFactory {
     TestBed.configureTestingModule({
@@ -51,6 +53,7 @@ describe('AppShellRoutesFactory', () => {
         { provide: ModuleTranslationService, useValue: moduleTranslations },
         { provide: ModuleAssetService, useValue: moduleAssets },
         { provide: AppAssetService, useValue: appAssets },
+        { provide: AppTranslationsLoader, useValue: appTexts },
       ],
     });
     return TestBed.inject(AppShellRoutesFactory);
@@ -65,6 +68,7 @@ describe('AppShellRoutesFactory', () => {
     moduleService.findById.mockReturnValue(of(undefined));
     shippedTranslations.getTranslation.mockReturnValue(of({}));
     moduleTranslations.bundle.mockReturnValue(of({}));
+    appTexts.activate.mockResolvedValue(undefined);
   });
 
   it('renders one route per authored route, through AppRouteRenderer', async () => {
@@ -210,6 +214,26 @@ describe('AppShellRoutesFactory', () => {
       (await appAssetContextsOf(released, ['orders']))[0].blob('cards/a.svg');
 
       expect(appAssets.content).toHaveBeenCalledWith(released.id, 'cards/a.svg', 'released');
+    });
+
+    it('has the application\'s own texts merged from the draft in the Preview', async () => {
+      await factory().childrenFor(mountOf());
+
+      expect(appTexts.activate).toHaveBeenCalledWith('demo', 'draft');
+    });
+
+    it('has the application\'s own texts merged from the released channel in a published layout', async () => {
+      await factory().childrenFor(mountOf({ mountedModules: [new ModuleDefinition({ id: 'order-admin', routes: [widgetsRoute('lines')] })] }));
+
+      expect(appTexts.activate).toHaveBeenCalledWith('demo', 'released');
+    });
+
+    it('builds the routes all the same when the application\'s own texts cannot be had', async () => {
+      appTexts.activate.mockRejectedValue(new Error('boom'));
+
+      const children = await factory().childrenFor(mountOf({ routes: [widgetsRoute('orders')] }));
+
+      expect(children.map((route) => route.path)).toContain('orders');
     });
 
     it('keeps the titles readable when the uploaded translations cannot be read', async () => {

@@ -753,6 +753,113 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ── App translations ──
+  # The texts of an application's own pages — the cards of its home page, say — which have no module to hang
+  # them on. One flat `key: text` bundle per language, free-form: the keys are whatever the app's widgets name
+  # (under their `translocoPrefix`), not derived from the definition as a module's are. Stored per channel like
+  # the app's assets: an upload writes the draft and publishing the app releases it. Distinct from
+  # `/app/translations/**` below, which serves the framework's own seeded bundles.
+  /organizations/{orgKey}/app-definitions/{appId}/translations:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/AppIdParam"
+    get:
+      operationId: downloadAppTranslations
+      summary: Download the app's translation files as a zip
+      description: >-
+        One `<locale>.json` per supported language, holding what the draft has stored for it (an empty object
+        for a language nothing is stored for yet), so the translator has the files to fill in. Requires a design
+        permission.
+      tags:
+        - Base App Definition Translations
+      responses:
+        "200":
+          description: A zip archive.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: uploadAppTranslations
+      summary: Upload translated files, as a zip or as one `<locale>.json`
+      description: >-
+        Replaces the draft bundle of every language the upload names. All-or-nothing: a malformed archive or
+        file, a non-string value, an entry outside the archive root, a language that is not supported, a key
+        outside the allowed characters (letters, digits, `_`, `-` and `.`) or a bundle over the size limits
+        rejects the whole upload with 400. Requires a design permission.
+      tags:
+        - Base App Definition Translations
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ file ]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: What was stored, per language.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppTranslationUploadReport"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/app-definitions/{appId}/translations/{locale}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/AppIdParam"
+      - $ref: "#/components/parameters/TranslationLocaleParam"
+    get:
+      operationId: getAppDefinitionTranslationBundle
+      summary: The stored bundle of one app and language
+      description: >-
+        What the running application merges into its translations: the stored texts only, flat. Answers 200 with
+        an empty object when nothing is stored. The `draft` is the designer's read (design permission); the
+        `released` one is the run-time read (membership of the organization).
+      tags:
+        - Base App Definition Translations
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: The bundle, empty when nothing is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslationBundle"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteAppTranslation
+      summary: Remove the draft bundle of one language
+      description: Requires a design permission. Publishing the app releases the removal.
+      tags:
+        - Base App Definition Translations
+      responses:
+        "204":
+          description: Removed
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /organizations/{orgKey}/app-definitions/validate:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -1403,6 +1510,25 @@ components:
             for the organization's default language.
           items:
             type: string
+
+    AppTranslationUploadReport:
+      type: object
+      required: [ languages ]
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppTranslationUploadLanguage"
+
+    AppTranslationUploadLanguage:
+      type: object
+      required: [ locale, storedKeys ]
+      properties:
+        locale:
+          type: string
+        storedKeys:
+          type: integer
+          description: How many keys were stored.
 
     ModuleTranslationCoverage:
       type: object

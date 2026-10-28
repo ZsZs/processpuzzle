@@ -11,8 +11,9 @@ package com.processpuzzle.core.definition;
  * artifacts and tools it names.
  *
  * <p>{@link #TRANSLATION} and {@link #ASSET} are not definitions but what a starter's modules and apps bring along:
- * the translated texts of a module, ahead of the app but after the module they belong to, and the files of a module or
- * an app, after both. They are only imported — a release carries them with the module or app that owns them.
+ * the translated texts of a module or an app, and the files of a module or an app, all after the apps (the texts last,
+ * because an app's texts need the app to exist). They are only imported — a release carries them with the module or
+ * app that owns them.
  *
  * <p>A {@link #CALCULATION} reads and writes entity attributes, so it comes after the entities; it is released
  * after the rules, which it does not name, and before the workflows, whose states may trigger it.
@@ -49,7 +50,7 @@ public final class DefinitionKinds {
     public static final int TASK_ORDER = 58;
     public static final int WORKFLOW_ORDER = 60;
     public static final int MODULE_ORDER = 65;
-    public static final int TRANSLATION_ORDER = 66;
+    public static final int TRANSLATION_ORDER = 76;
     public static final int APP_ORDER = 70;
     public static final int ASSET_ORDER = 75;
 

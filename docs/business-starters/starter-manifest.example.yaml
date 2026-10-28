@@ -51,6 +51,7 @@ contents:
   # owner must be a module or app of this starter. Both are released together with their owner.
   translations:
     - translations/modules/race-planning/de.json   # <locale>.json, flat or nested; only texts the module authors
+    - translations/apps/race-office/de.json        # the texts of the app's own pages, under any keys its widgets name
   assets:
     - assets/apps/race-office/cards/plan-race.svg  # an app file, named by widgets as app:cards/plan-race.svg
     - assets/modules/race-planning/docs/guide.md   # a module file, named as module:docs/guide.md

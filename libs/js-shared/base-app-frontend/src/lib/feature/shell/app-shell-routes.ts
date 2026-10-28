@@ -19,6 +19,7 @@ import { ModuleTranslationBundle } from '../../domain/module-translation';
 import { ModuleTranslationService } from '../../domain/module-translation.service';
 import { buildAppRoutes, ModuleLoader, ModuleTranslationLoader } from '../app-route-builder';
 import { AppRouteRenderer } from '../app-route-renderer';
+import { AppTranslationsLoader } from './app-translations.loader';
 
 /**
  * Turns one `AppDefinition` into the `Routes` that render its screens — the missing consumer of
@@ -58,6 +59,8 @@ export class AppShellRoutesFactory {
     // ones too; a draft definition — the designer's Preview — reads the draft ones a user just uploaded.
     const revision = definition.mountedModules ? 'released' : 'draft';
     const loadTranslations = this.translationsOf(revision);
+    // The texts of the application's own pages, which no module's scope carries. A failed read leaves the keys as text.
+    await this.injector.get(AppTranslationsLoader).activate(definition.id, revision).catch(() => undefined);
     const moduleAssets = (moduleKey: string) => moduleAssetContextOf(this.injector.get(ModuleAssetService), moduleKey, revision);
     const built = await buildAppRoutes({ routes: definition.routes, modules: definition.modules, loadModule, loadTranslations, moduleAssets }, this.renderRoute);
     // Provided on every top-level route, the mounts included, so that an `app:` value is found on the application's

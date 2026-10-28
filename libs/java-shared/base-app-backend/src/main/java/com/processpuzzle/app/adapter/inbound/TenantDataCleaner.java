@@ -2,6 +2,7 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppAssetRepository;
+import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleTranslationRepository;
@@ -49,6 +50,7 @@ public class TenantDataCleaner {
     private final ModuleTranslationRepository moduleTranslationRepository;
     private final ModuleAssetRepository moduleAssetRepository;
     private final AppAssetRepository appAssetRepository;
+    private final AppDefinitionTranslationRepository appDefinitionTranslationRepository;
     private final ModuleAssetSweeper assetSweeper;
 
     public TenantDataCleaner(AppDefinitionRepository appDefinitionRepository,
@@ -56,8 +58,10 @@ public class TenantDataCleaner {
                              AppTranslationRepository translationRepository,
                              ModuleTranslationRepository moduleTranslationRepository,
                              ModuleAssetRepository moduleAssetRepository, AppAssetRepository appAssetRepository,
+                             AppDefinitionTranslationRepository appDefinitionTranslationRepository,
                              ModuleAssetSweeper assetSweeper) {
         this.appAssetRepository = appAssetRepository;
+        this.appDefinitionTranslationRepository = appDefinitionTranslationRepository;
         this.moduleAssetRepository = moduleAssetRepository;
         this.assetSweeper = assetSweeper;
         this.moduleTranslationRepository = moduleTranslationRepository;
@@ -76,6 +80,7 @@ public class TenantDataCleaner {
         moduleTranslationRepository.eraseByOrgKey(event.orgKey());
         moduleAssetRepository.eraseByOrgKey(event.orgKey());
         appAssetRepository.eraseByOrgKey(event.orgKey());
+        appDefinitionTranslationRepository.eraseByOrgKey(event.orgKey());
         // After the commit, so that a tenant whose deletion rolled back keeps the files its rows still name.
         assetSweeper.eraseAll(event.orgKey());
     }

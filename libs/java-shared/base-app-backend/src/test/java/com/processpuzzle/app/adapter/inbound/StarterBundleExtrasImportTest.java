@@ -2,6 +2,8 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppAssetRepository;
+import com.processpuzzle.app.domain.AppDefinitionTranslation;
+import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
@@ -16,11 +18,13 @@ import com.processpuzzle.app.usecase.ImportModuleDefinitions;
 import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.UploadAppAsset;
 import com.processpuzzle.app.usecase.UploadModuleAsset;
+import com.processpuzzle.app.usecase.UploadAppTranslations;
 import com.processpuzzle.app.usecase.UploadModuleTranslations;
 import com.processpuzzle.app.usecase.port.ModuleAssetStore;
 import com.processpuzzle.app.usecase.port.SupportedLanguages;
 import com.processpuzzle.app.usecase.port.TenantDirectory;
 import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.app.usecase.service.ModuleTranslationLanguages;
@@ -142,6 +146,9 @@ class StarterBundleExtrasImportTest {
     private AppDefinitionRepository appRepository;
     @Autowired
     private AppAssetRepository appAssetRepository;
+
+    @Autowired
+    private AppDefinitionTranslationRepository appTranslationRepository;
     @Autowired
     private EntityManager entityManager;
 
@@ -165,20 +172,23 @@ class StarterBundleExtrasImportTest {
         ObjectProvider<ModuleAssetStore> objects = mock(ObjectProvider.class);
         when(objects.getIfAvailable()).thenReturn(store);
         AppAssetReleases appRelease = new AppAssetReleases(appAssetRepository);
+        AppTranslationReleases appTextRelease = new AppTranslationReleases(appTranslationRepository);
 
         ModuleReleaseParticipant moduleRelease = new ModuleReleaseParticipant(moduleRepository, translationRepository, moduleAssetRepository, sweeper);
         modules = new ModuleImportParticipant(new ImportModuleDefinitions(moduleRepository, tenants, validator, guard, mapper),
                 new DeleteModuleDefinition(moduleRepository, translationRepository, moduleAssetRepository, sweeper, guard),
                 moduleRepository, moduleRelease);
         apps = new AppImportParticipant(new ImportAppDefinitions(appRepository, tenants, validator, guard, mapper),
-                new PublishAppDefinition(appRepository, validator, appRelease, sweeper, guard, mapper),
-                new DeleteAppDefinition(appRepository, appRelease, sweeper, guard), appRepository);
+                new PublishAppDefinition(appRepository, validator, appRelease, appTextRelease, sweeper, guard, mapper),
+                new DeleteAppDefinition(appRepository, appRelease, appTextRelease, sweeper, guard), appRepository);
         assets = new AssetImportParticipant(new UploadModuleAsset(moduleRepository, moduleAssetRepository, objects, sweeper, guard),
                 new UploadAppAsset(appRepository, appAssetRepository, objects, sweeper, guard),
                 moduleAssetRepository, appAssetRepository, moduleRepository, appRepository, moduleRelease, appRelease, sweeper);
+        ModuleTranslationLanguages translationLanguages = new ModuleTranslationLanguages(languages, tenants);
         translations = new TranslationImportParticipant(
-                new UploadModuleTranslations(moduleRepository, translationRepository, new ModuleTranslationLanguages(languages, tenants), guard),
-                translationRepository, moduleRepository, moduleRelease);
+                new UploadModuleTranslations(moduleRepository, translationRepository, translationLanguages, guard),
+                new UploadAppTranslations(appRepository, appTranslationRepository, translationLanguages, guard),
+                translationRepository, appTranslationRepository, moduleRepository, appRepository, moduleRelease, appTextRelease);
 
         appRepository.saveAndFlush(new AppDefinition(ORG, APP_ID, "My Org", null, null, AppGraph.empty()));
         modules.apply(ORG, "modules/plan.yaml", bytes(MODULES));
@@ -190,7 +200,7 @@ class StarterBundleExtrasImportTest {
     void runAfterTheModulesAndTheAppsTheyBelongTo() {
         assertThat(assets.kind()).isEqualTo(DefinitionKinds.ASSET);
         assertThat(translations.kind()).isEqualTo(DefinitionKinds.TRANSLATION);
-        assertThat(translations.order()).isGreaterThan(modules.order()).isLessThan(apps.order());
+        assertThat(translations.order()).isGreaterThan(apps.order());
         assertThat(assets.order()).isGreaterThan(apps.order());
     }
 
@@ -350,9 +360,9 @@ class StarterBundleExtrasImportTest {
     }
 
     @Test
-    void aTranslationOfAnAppOrOfAModuleTheBundleDoesNotDefineOrOfABadNameIsRefused() {
-        assertThat(translations.apply(ORG, "translations/apps/app/de.json", bytes("{}")).errors())
-                .singleElement().asString().contains("only a module's texts");
+    void aTranslationOfAModuleOrAnAppTheBundleDoesNotDefineOrOfABadNameIsRefused() {
+        assertThat(translations.apply(ORG, "translations/apps/ghost/de.json", bytes("{}")).errors())
+                .singleElement().asString().contains("no app 'ghost'");
         assertThat(translations.apply(ORG, "translations/modules/ghost/de.json", bytes("{}")).errors())
                 .singleElement().asString().contains("no module 'ghost'");
         assertThat(translations.apply(ORG, "translations/modules/plan-race/de.txt", bytes("{}")).isRejected()).isTrue();
@@ -392,6 +402,78 @@ class StarterBundleExtrasImportTest {
         flushAndClear();
         assertThat(again.items()).extracting(ImportedItem::action).containsExactly(ImportedItem.Action.CREATE);
         assertThat(translationRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).hasSize(1);
+    }
+
+    // --- app translations ----------------------------------------------------------------
+
+    @Test
+    void anAppTranslationIsStoredAndReleasedAtOnce() {
+        ParticipantResult result = translations.apply(ORG, "translations/apps/app/de.json", bytes("""
+                { "home": { "cards": { "plan": { "title": "Rennen planen" } } }, "free_form-key": "Frei" }
+                """));
+        flushAndClear();
+
+        assertThat(result.isRejected()).isFalse();
+        assertThat(result.items()).containsExactly(new ImportedItem("apps/app/de", ImportedItem.Action.CREATE));
+        for (Channel channel : Channel.values()) {
+            assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannelAndLocale(ORG, APP_ID, channel, "de"))
+                    .get().extracting(AppDefinitionTranslation::getMessages)
+                    .isEqualTo(Map.of("home.cards.plan.title", "Rennen planen", "free_form-key", "Frei"));
+        }
+    }
+
+    @Test
+    void anAppTranslationAlreadyThereIsAnUpdateAndTheReleasedBundleFollows() {
+        translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"a\": \"A\"}"));
+        flushAndClear();
+
+        ParticipantResult result = translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"a\": \"B\"}"));
+        flushAndClear();
+
+        assertThat(result.items()).extracting(ImportedItem::action).containsExactly(ImportedItem.Action.UPDATE);
+        assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannelAndLocale(ORG, APP_ID, Channel.RELEASED, "de"))
+                .get().extracting(AppDefinitionTranslation::getMessages).isEqualTo(Map.of("a", "B"));
+    }
+
+    @Test
+    void anAppTranslationWithABadKeyOrTextIsRefusedWithTheFileName() {
+        ParticipantResult result = translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"bad key\": \"A\"}"));
+
+        assertThat(result.isRejected()).isTrue();
+        assertThat(result.errors()).singleElement().asString().startsWith("translations/apps/app/de.json: ").contains("'bad key'");
+        assertThat(appTranslationRepository.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).isEmpty();
+    }
+
+    @Test
+    void theFingerprintsOfModuleAndAppTranslationsAreKeptApart() {
+        translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"a\": \"A\"}"));
+        translations.apply(ORG, "translations/modules/plan-race/de.json", bytes("{\"module.name\": \"A\"}"));
+        flushAndClear();
+
+        Map<String, String> first = translations.fingerprints(ORG, Set.of("apps/app/de", "modules/plan-race/de", "missing"));
+        assertThat(first).containsOnlyKeys("apps/app/de", "modules/plan-race/de");
+
+        translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"a\": \"B\"}"));
+        flushAndClear();
+        Map<String, String> second = translations.fingerprints(ORG, Set.of("apps/app/de", "modules/plan-race/de"));
+        assertThat(second.get("apps/app/de")).isNotEqualTo(first.get("apps/app/de"));
+        assertThat(second.get("modules/plan-race/de")).isEqualTo(first.get("modules/plan-race/de"));
+    }
+
+    @Test
+    void removingAllTranslationsRemovesTheAppsToo() {
+        translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"a\": \"A\"}"));
+        translations.apply(ORG, "translations/modules/plan-race/de.json", bytes("{\"module.name\": \"A\"}"));
+        flushAndClear();
+
+        List<String> removed = translations.removeAll(ORG);
+        flushAndClear();
+
+        assertThat(removed).containsExactlyInAnyOrder("apps/app/de", "modules/plan-race/de");
+        assertThat(appTranslationRepository.findByOrgKeyAndChannel(ORG, Channel.DRAFT)).isEmpty();
+        assertThat(appTranslationRepository.findByOrgKeyAndChannel(ORG, Channel.RELEASED)).isEmpty();
+        ParticipantResult again = translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"a\": \"A\"}"));
+        assertThat(again.items()).extracting(ImportedItem::action).containsExactly(ImportedItem.Action.CREATE);
     }
 
     private void flushAndClear() {

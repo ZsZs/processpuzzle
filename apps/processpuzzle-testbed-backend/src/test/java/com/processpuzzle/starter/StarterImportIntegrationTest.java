@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.processpuzzle.app.usecase.GetAppAssetContent;
 import com.processpuzzle.app.usecase.GetAppLayout;
 import com.processpuzzle.app.usecase.GetModuleAssetContent;
+import com.processpuzzle.app.usecase.GetAppTranslationBundle;
 import com.processpuzzle.app.usecase.GetModuleTranslationBundle;
 import com.processpuzzle.app.usecase.ModuleAssetContent;
 import com.processpuzzle.app.usecase.port.ModuleAssetStore;
@@ -103,6 +104,8 @@ class StarterImportIntegrationTest {
     private GetAppAssetContent getAppAssetContent;
     @Autowired
     private GetAppLayout getAppLayout;
+    @Autowired
+    private GetAppTranslationBundle getAppTranslationBundle;
     @Autowired
     private GetModuleAssetContent getModuleAssetContent;
     @Autowired
@@ -261,8 +264,9 @@ class StarterImportIntegrationTest {
 
         assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
         assertThat(report.items()).extracting(item -> item.kind() + ":" + item.key() + ":" + item.action())
-                .containsExactly("module:plan-race:CREATE", "translation:modules/plan-race/de:CREATE", "app:app:CREATE",
-                        "asset:apps/app/cards/plan-race.svg:CREATE", "asset:modules/plan-race/docs/guide.md:CREATE");
+                .containsExactly("module:plan-race:CREATE", "app:app:CREATE", "asset:apps/app/cards/plan-race.svg:CREATE",
+                        "asset:modules/plan-race/docs/guide.md:CREATE", "translation:modules/plan-race/de:CREATE",
+                        "translation:apps/app/de:CREATE");
 
         // The published layout, which is what the runtime host reads: the app and the module it mounts.
         GetAppLayout.Result layout = getAppLayout.execute("race-pages-org", "app", false);
@@ -285,6 +289,9 @@ class StarterImportIntegrationTest {
         assertThat(new String(guide.content(), StandardCharsets.UTF_8)).contains("Planning a race");
         assertThat(getModuleTranslationBundle.execute("race-pages-files-org", "plan-race", "de", Channel.RELEASED))
                 .containsEntry("module.name", "Rennen planen").containsEntry("route.overview", "Übersicht");
+        assertThat(getAppTranslationBundle.execute("race-pages-files-org", "app", "de", Channel.RELEASED))
+                .containsEntry("home.cards.plan.title", "Rennen planen").containsEntry("home.welcome", "Willkommen");
+        assertThat(getAppTranslationBundle.execute("race-pages-files-org", "app", "en", Channel.RELEASED)).isEmpty();
         assertThat(listInstalledStarters.execute("race-pages-files-org")).singleElement()
                 .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(0);
     }
@@ -308,7 +315,7 @@ class StarterImportIntegrationTest {
 
         ImportReport again = importBundle.execute("race-pages-again-org", zip(racePages()), false, null);
 
-        assertThat(again.items()).hasSize(5).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
+        assertThat(again.items()).hasSize(6).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
         assertThat(getAppLayout.execute("race-pages-again-org", "app", false).modules()).hasSize(1);
         assertThat(listInstalledStarters.execute("race-pages-again-org")).singleElement()
                 .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(0);
@@ -319,7 +326,7 @@ class StarterImportIntegrationTest {
         ImportReport report = importBundle.execute("race-pages-dry-org", zip(racePages()), true, null);
 
         assertThat(report.status()).isEqualTo(ImportReport.Status.WOULD_APPLY);
-        assertThat(report.items()).hasSize(5);
+        assertThat(report.items()).hasSize(6);
         assertThatThrownBy(() -> getAppLayout.execute("race-pages-dry-org", "app", false)).isInstanceOf(RuntimeException.class);
     }
 
@@ -339,7 +346,7 @@ class StarterImportIntegrationTest {
     private Map<String, byte[]> racePages() throws IOException {
         Map<String, byte[]> files = new LinkedHashMap<>();
         for (String file : new String[] {"manifest.yaml", "modules/plan-race.yaml", "apps/race-pages.yaml",
-                "translations/modules/plan-race/de.json", "assets/apps/app/cards/plan-race.svg", "assets/modules/plan-race/docs/guide.md"}) {
+                "translations/modules/plan-race/de.json", "translations/apps/app/de.json", "assets/apps/app/cards/plan-race.svg", "assets/modules/plan-race/docs/guide.md"}) {
             try (InputStream input = new ClassPathResource("starters/race-pages/" + file).getInputStream()) {
                 files.put(file, input.readAllBytes());
             }
