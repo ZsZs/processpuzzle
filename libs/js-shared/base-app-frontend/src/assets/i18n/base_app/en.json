@@ -25,6 +25,18 @@
     "tabs": {
       "preview": "{{ entity }} - preview"
     },
+    "assets": "Assets",
+    "assets_panel": {
+      "hint": "Add files one by one; pictures and other files of the application itself. Widgets refer to a file as app:<path>.",
+      "path": "Reference",
+      "type": "Type",
+      "size": "Size",
+      "remove": "Remove",
+      "none": "No assets yet.",
+      "folder": "Folder",
+      "upload": "Upload files",
+      "save_first": "Save the application first; assets belong to the saved application."
+    },
     "_tooltips": {
       "id": "Unique within your organization and used verbatim in the application's URL. Short, lower-case and hyphenated, e.g. claims-app; avoid changing it later. — Guide: Application",
       "name": "The application's name as users see it, e.g. in the app-title widget. — Guide: Application",
@@ -46,7 +58,8 @@
       "sidenavOpenByDefault": "Whether the navigation panel starts open. — Guide: Layout",
       "regions": "The frame around the pages: header, sidenav and footer, at most one of each. — Guide: Regions",
       "routes": "The pages of the application, one row per page. Add them before the navigation items that point at them. — Guide: Routes",
-      "modules": "Separately authored parts of the application whose routes appear under a base path. — Guide: Modules"
+      "modules": "Separately authored parts of the application whose routes appear under a base path. — Guide: Modules",
+      "assets": "Files the application brings along, such as the pictures of its pages. A widget refers to one as app:<path>. — Guide: Applications"
     }
   },
   "app_region": {
