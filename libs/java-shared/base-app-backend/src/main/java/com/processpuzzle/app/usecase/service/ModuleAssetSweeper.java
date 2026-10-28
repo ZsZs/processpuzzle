@@ -1,5 +1,6 @@
 package com.processpuzzle.app.usecase.service;
 
+import com.processpuzzle.app.domain.AppAssetRepository;
 import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.usecase.port.ModuleAssetStore;
 import java.util.Collection;
@@ -13,11 +14,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /**
  * Removes content from the object store once nothing refers to it.
  *
- * <p>Content is shared — by two paths, and by a draft and a released row — so deleting an asset record says
- * nothing about its bytes; they go when the last record naming them is gone. It runs <em>after commit</em>: a
- * rolled-back transaction must not have deleted bytes its rows still name. Nothing here can fail the request
- * that triggered it: a failed removal leaves an unreferenced object behind, which wastes space and breaks
- * nothing.
+ * <p>Content is shared — by two paths, by a draft and a released row, and between the assets of modules and
+ * of apps — so deleting an asset record says nothing about its bytes; they go when the last record naming them
+ * is gone. It runs <em>after commit</em>: a rolled-back transaction must not have deleted bytes its rows still
+ * name. Nothing here can fail the request that triggered it: a failed removal leaves an unreferenced object
+ * behind, which wastes space and breaks nothing.
  */
 @Component
 public class ModuleAssetSweeper {
@@ -25,10 +26,12 @@ public class ModuleAssetSweeper {
     private static final Logger LOG = LoggerFactory.getLogger(ModuleAssetSweeper.class);
 
     private final ModuleAssetRepository assets;
+    private final AppAssetRepository appAssets;
     private final ObjectProvider<ModuleAssetStore> store;
 
-    public ModuleAssetSweeper(ModuleAssetRepository assets, ObjectProvider<ModuleAssetStore> store) {
+    public ModuleAssetSweeper(ModuleAssetRepository assets, AppAssetRepository appAssets, ObjectProvider<ModuleAssetStore> store) {
         this.assets = assets;
+        this.appAssets = appAssets;
         this.store = store;
     }
 
@@ -44,7 +47,7 @@ public class ModuleAssetSweeper {
             }
             for (String hash : hashes) {
                 try {
-                    if (!assets.existsByOrgKeyAndSha256(orgKey, hash)) {
+                    if (!assets.existsByOrgKeyAndSha256(orgKey, hash) && !appAssets.existsByOrgKeyAndSha256(orgKey, hash)) {
                         target.delete(orgKey, hash);
                     }
                 } catch (RuntimeException e) {

@@ -1,6 +1,7 @@
 package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinitionRepository;
+import com.processpuzzle.app.domain.AppAssetRepository;
 import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleTranslationRepository;
@@ -47,13 +48,16 @@ public class TenantDataCleaner {
     private final AppTranslationRepository translationRepository;
     private final ModuleTranslationRepository moduleTranslationRepository;
     private final ModuleAssetRepository moduleAssetRepository;
+    private final AppAssetRepository appAssetRepository;
     private final ModuleAssetSweeper assetSweeper;
 
     public TenantDataCleaner(AppDefinitionRepository appDefinitionRepository,
                              ModuleDefinitionRepository moduleDefinitionRepository,
                              AppTranslationRepository translationRepository,
                              ModuleTranslationRepository moduleTranslationRepository,
-                             ModuleAssetRepository moduleAssetRepository, ModuleAssetSweeper assetSweeper) {
+                             ModuleAssetRepository moduleAssetRepository, AppAssetRepository appAssetRepository,
+                             ModuleAssetSweeper assetSweeper) {
+        this.appAssetRepository = appAssetRepository;
         this.moduleAssetRepository = moduleAssetRepository;
         this.assetSweeper = assetSweeper;
         this.moduleTranslationRepository = moduleTranslationRepository;
@@ -71,6 +75,7 @@ public class TenantDataCleaner {
         translationRepository.eraseByOrgKey(event.orgKey());
         moduleTranslationRepository.eraseByOrgKey(event.orgKey());
         moduleAssetRepository.eraseByOrgKey(event.orgKey());
+        appAssetRepository.eraseByOrgKey(event.orgKey());
         // After the commit, so that a tenant whose deletion rolled back keeps the files its rows still name.
         assetSweeper.eraseAll(event.orgKey());
     }

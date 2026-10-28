@@ -3,19 +3,29 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
+import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
+import java.util.Set;
+import java.util.TreeSet;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Deletes both graphs of the app and the records of its assets, whose content the sweeper then removes if nothing else names it. */
 @Service
 @Transactional
 public class DeleteAppDefinition {
 
     private final AppDefinitionRepository repository;
+    private final AppAssetReleases assets;
+    private final ModuleAssetSweeper sweeper;
     private final OrganizationGuard guard;
 
-    public DeleteAppDefinition(AppDefinitionRepository repository, OrganizationGuard guard) {
+    public DeleteAppDefinition(AppDefinitionRepository repository, AppAssetReleases assets, ModuleAssetSweeper sweeper,
+                               OrganizationGuard guard) {
         this.repository = repository;
+        this.assets = assets;
+        this.sweeper = sweeper;
         this.guard = guard;
     }
 
@@ -24,5 +34,8 @@ public class DeleteAppDefinition {
         AppDefinition existing = repository.findByOrgKeyAndId(orgKey, appId)
                 .orElseThrow(() -> new AppDefinitionNotFoundException(orgKey, appId));
         repository.delete(existing);
+        Set<String> dropped = new TreeSet<>();
+        assets.removeAll(orgKey, appId, dropped);
+        sweeper.sweep(orgKey, dropped);
     }
 }
