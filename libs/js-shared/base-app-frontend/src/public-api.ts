@@ -34,6 +34,9 @@ export { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from '
 export type { ModuleTranslationBundle, ModuleTranslationCoverage, ModuleTranslationUploadLanguage, ModuleTranslationUploadReport } from './lib/domain/module-translation';
 export { ModuleTranslationService } from './lib/domain/module-translation.service';
 export { APP_ASSETS_I18N_SCOPE, AppAssetsControlComponent } from './lib/domain/app-assets-control.component';
+export type { AppTranslationBundle, AppTranslationUploadReport } from './lib/domain/app-translation';
+export { AppTranslationService } from './lib/domain/app-translation.service';
+export { APP_TRANSLATIONS_I18N_SCOPE, AppTranslationsControlComponent } from './lib/domain/app-translations-control.component';
 export type { AppAsset } from './lib/domain/app-asset';
 export { AppAssetService } from './lib/domain/app-asset.service';
 export type { ModuleAsset } from './lib/domain/module-asset';

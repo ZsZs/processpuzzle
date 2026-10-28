@@ -1,3 +1,4 @@
+import { AppTranslationsLoader } from './app-translations.loader';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, Routes } from '@angular/router';
@@ -39,6 +40,7 @@ describe('publishedAppRoutesGuard', () => {
         { provide: AppDefinitionStore, useValue: { loadById: vi.fn() } },
         { provide: ModuleDefinitionStore, useValue: { loadById: vi.fn() } },
         { provide: ModuleDefinitionService, useValue: { findById: vi.fn() } },
+        { provide: AppTranslationsLoader, useValue: { activate: () => Promise.resolve() } },
       ],
     });
   });
@@ -121,6 +123,7 @@ describe('publishedAppRoutesGuard', () => {
         { provide: AppDefinitionStore, useValue: { loadById: vi.fn() } },
         { provide: ModuleDefinitionStore, useValue: { loadById: vi.fn() } },
         { provide: ModuleDefinitionService, useValue: { findById: vi.fn() } },
+        { provide: AppTranslationsLoader, useValue: { activate: () => Promise.resolve() } },
       ],
     });
     const router = TestBed.inject(Router);

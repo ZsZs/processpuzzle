@@ -25,6 +25,14 @@
     "tabs": {
       "preview": "{{ entity }} - előnézet"
     },
+    "translations": "Fordítások",
+    "translations_panel": {
+      "hint": "Támogatott nyelvenként egy fájl tartalmazza az alkalmazás saját oldalainak szövegeit. Töltse ki az értékeket a widgetek által megnevezett kulcsok alatt, majd töltse fel újra a zipet (vagy egyetlen fájlt).",
+      "download": "Fájlok letöltése",
+      "upload": "Fordítások feltöltése",
+      "save_first": "Először mentse az alkalmazást; a szövegek a mentett alkalmazáshoz tartoznak.",
+      "stored": "{{count}} kulcs elmentve"
+    },
     "assets": "Fájlok",
     "assets_panel": {
       "hint": "Egyenként adjon hozzá fájlokat, például az alkalmazás oldalainak képeit. A widgetek app:<útvonal> alakban hivatkoznak egy fájlra.",
@@ -59,7 +67,8 @@
       "regions": "Az oldalak körüli keret: header, sidenav és footer, mindegyikből legfeljebb egy. — Útmutató: Régiók",
       "routes": "Az alkalmazás oldalai, oldalanként egy sor. Előbb vedd fel őket, mint a rájuk mutató navigációs elemeket. — Útmutató: Útvonalak",
       "modules": "Az alkalmazás külön elkészített részei, amelyek útvonalai egy alap útvonal alatt jelennek meg. — Útmutató: Modulok",
-      "assets": "Az alkalmazás által hozott fájlok, például oldalainak képei. A widget app:<útvonal> alakban hivatkozik rájuk. — Útmutató: Alkalmazások"
+      "assets": "Az alkalmazás által hozott fájlok, például oldalainak képei. A widget app:<útvonal> alakban hivatkozik rájuk. — Útmutató: Alkalmazások",
+      "translations": "Az alkalmazás saját oldalainak szövegei, például a kezdőlap kártyái, nyelvenként egy fájl. A kulcsok azok, amelyeket a widgetek a translocoPrefix alatt megnevezik. — Útmutató: Alkalmazások"
     }
   },
   "app_region": {

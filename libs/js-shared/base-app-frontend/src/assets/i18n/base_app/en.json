@@ -25,6 +25,14 @@
     "tabs": {
       "preview": "{{ entity }} - preview"
     },
+    "translations": "Translations",
+    "translations_panel": {
+      "hint": "One file per supported language holds the texts of the application's own pages. Fill in the values under the keys your widgets name, and upload the zip (or a single file) again.",
+      "download": "Download files",
+      "upload": "Upload translations",
+      "save_first": "Save the application first; the texts belong to the saved application.",
+      "stored": "{{count}} keys stored"
+    },
     "assets": "Assets",
     "assets_panel": {
       "hint": "Add files one by one; pictures and other files of the application itself. Widgets refer to a file as app:<path>.",
@@ -59,7 +67,8 @@
       "regions": "The frame around the pages: header, sidenav and footer, at most one of each. — Guide: Regions",
       "routes": "The pages of the application, one row per page. Add them before the navigation items that point at them. — Guide: Routes",
       "modules": "Separately authored parts of the application whose routes appear under a base path. — Guide: Modules",
-      "assets": "Files the application brings along, such as the pictures of its pages. A widget refers to one as app:<path>. — Guide: Applications"
+      "assets": "Files the application brings along, such as the pictures of its pages. A widget refers to one as app:<path>. — Guide: Applications",
+      "translations": "The texts of the application's own pages, such as the cards of its home page, one file per language. Keys are whatever the widgets name under their translocoPrefix. — Guide: Applications"
     }
   },
   "app_region": {
