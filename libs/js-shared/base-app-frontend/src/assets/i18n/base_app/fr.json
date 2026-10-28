@@ -25,6 +25,18 @@
     "tabs": {
       "preview": "{{ entity }} - aperçu"
     },
+    "assets": "Fichiers",
+    "assets_panel": {
+      "hint": "Ajoutez les fichiers un par un, par exemple les images des pages de l’application. Les widgets renvoient à un fichier par app:<chemin>.",
+      "path": "Référence",
+      "type": "Type",
+      "size": "Taille",
+      "remove": "Supprimer",
+      "none": "Aucun fichier pour l’instant.",
+      "folder": "Dossier",
+      "upload": "Envoyer des fichiers",
+      "save_first": "Enregistrez d’abord l’application ; les fichiers appartiennent à l’application enregistrée."
+    },
     "_tooltips": {
       "id": "Unique au sein de votre organisation et utilisé tel quel dans l'URL de l'application. Court, en minuscules et avec des tirets, p. ex. claims-app ; évitez de le modifier par la suite. — Guide : Application",
       "name": "Le nom de l'application tel que les utilisateurs le voient, p. ex. dans le widget app-title. — Guide : Application",
@@ -46,7 +58,8 @@
       "sidenavOpenByDefault": "Indique si le panneau de navigation est ouvert au démarrage. — Guide : Mise en page",
       "regions": "Le cadre autour des pages : header, sidenav et footer, au plus un de chaque. — Guide : Régions",
       "routes": "Les pages de l'application, une ligne par page. Ajoutez-les avant les éléments de navigation qui y renvoient. — Guide : Routes",
-      "modules": "Parties de l'application conçues séparément, dont les routes apparaissent sous un chemin de base. — Guide : Modules"
+      "modules": "Parties de l'application conçues séparément, dont les routes apparaissent sous un chemin de base. — Guide : Modules",
+      "assets": "Fichiers que l’application apporte, comme les images de ses pages. Un widget y renvoie par app:<chemin>. — Guide : Applications"
     }
   },
   "app_region": {

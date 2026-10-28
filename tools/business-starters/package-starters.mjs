@@ -27,7 +27,7 @@ import { parse, stringify } from 'yaml';
 
 export const CATALOG_VERSION = 1;
 export const SUPPORTED_SCHEMA_VERSIONS = [1];
-const CONTENT_GROUPS = ['entities', 'states', 'rules', 'widgets', 'documents', 'workflows', 'apps'];
+const CONTENT_GROUPS = ['entities', 'states', 'rules', 'calculations', 'widgets', 'documents', 'workflows', 'modules', 'apps'];
 const SAFE_PATH = /^[A-Za-z0-9_-][A-Za-z0-9._-]*(\/[A-Za-z0-9_-][A-Za-z0-9._-]*)*$/;
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SEMVER = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/;

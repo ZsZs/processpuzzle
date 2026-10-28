@@ -4,6 +4,7 @@ import com.processpuzzle.core.definition.Channel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.processpuzzle.app.usecase.GetAppLayout;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.rule.usecase.ImportRules;
@@ -54,6 +55,8 @@ class StarterImportIntegrationTest {
     @LocalServerPort
     private int port;
 
+    @Autowired
+    private GetAppLayout getAppLayout;
     @Autowired
     private ImportBundle importBundle;
     @Autowired
@@ -200,6 +203,68 @@ class StarterImportIntegrationTest {
 
         assertThat(response.statusCode()).isEqualTo(413);
         assertThat(response.body()).contains("\"status\":\"rejected\"");
+    }
+
+    @Test
+    void aStarterWithAModuleAndAnAppIsLiveOnceInstalled() throws IOException {
+        ImportReport report = importBundle.execute("race-pages-org", zip(racePages()), false, "alice");
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(report.items()).extracting(item -> item.kind() + ":" + item.key() + ":" + item.action())
+                .containsExactly("module:plan-race:CREATE", "app:app:CREATE");
+
+        // The published layout, which is what the runtime host reads: the app and the module it mounts.
+        GetAppLayout.Result layout = getAppLayout.execute("race-pages-org", "app", false);
+        assertThat(layout.graph().routes()).extracting(route -> route.path()).containsExactly("home");
+        assertThat(layout.modules()).extracting(module -> module.getKey()).containsExactly("plan-race");
+        assertThat(listInstalledStarters.execute("race-pages-org")).singleElement().satisfies(installed -> {
+            assertThat(installed.starterId()).isEqualTo("race-pages");
+            assertThat(installed.customizedDefinitions()).isZero();
+        });
+    }
+
+    @Test
+    void reinstallingAStarterWithAnAppReportsUpdatesAndStaysLive() throws IOException {
+        importBundle.execute("race-pages-again-org", zip(racePages()), false, null);
+
+        ImportReport again = importBundle.execute("race-pages-again-org", zip(racePages()), false, null);
+
+        assertThat(again.items()).hasSize(2).extracting(ImportReport.Item::action).containsOnly(ImportReport.Action.UPDATE);
+        assertThat(getAppLayout.execute("race-pages-again-org", "app", false).modules()).hasSize(1);
+        assertThat(listInstalledStarters.execute("race-pages-again-org")).singleElement()
+                .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(0);
+    }
+
+    @Test
+    void aDryRunOfAStarterWithAnAppWritesNothing() throws IOException {
+        ImportReport report = importBundle.execute("race-pages-dry-org", zip(racePages()), true, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.WOULD_APPLY);
+        assertThat(report.items()).hasSize(2);
+        assertThatThrownBy(() -> getAppLayout.execute("race-pages-dry-org", "app", false)).isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void definitionKindsWithoutAParticipantAreStillRefused() throws IOException {
+        Map<String, byte[]> files = racePages();
+        files.put("manifest.yaml", new String(files.get("manifest.yaml"), StandardCharsets.UTF_8)
+                .replace("contents:\n", "contents:\n  widgets:\n    - widgets/none.yaml\n")
+                .getBytes(StandardCharsets.UTF_8));
+        files.put("widgets/none.yaml", "widgetDefinitions: []".getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> importBundle.execute("race-pages-refused-org", zip(files), true, null))
+                .isInstanceOf(ImportRejectedException.class)
+                .hasMessageContaining("widgets");
+    }
+
+    private Map<String, byte[]> racePages() throws IOException {
+        Map<String, byte[]> files = new LinkedHashMap<>();
+        for (String file : new String[] {"manifest.yaml", "modules/plan-race.yaml", "apps/race-pages.yaml"}) {
+            try (InputStream input = new ClassPathResource("starters/race-pages/" + file).getInputStream()) {
+                files.put(file, input.readAllBytes());
+            }
+        }
+        return files;
     }
 
     private Map<String, byte[]> pilot() throws IOException {

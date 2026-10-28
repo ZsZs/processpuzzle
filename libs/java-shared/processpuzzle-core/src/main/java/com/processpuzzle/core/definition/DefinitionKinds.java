@@ -5,8 +5,8 @@ package com.processpuzzle.core.definition;
  * in. A later kind may validate against an earlier one — a state machine names an entity attribute, a
  * rule's context names an entity — so the order is part of the contract, not a convenience.
  *
- * <p>{@link #MODULE} is released but not imported: no bundle carries modules yet. Nor are {@link #EVENT} and the
- * workflow catalogue — {@link #ARTIFACT}, {@link #ROLE}, {@link #TOOL}, {@link #TASK} — imported on their own: a
+ * <p>{@link #MODULE} is imported with the app that mounts it, ahead of it, and released as it is imported. {@link #EVENT}
+ * and the workflow catalogue — {@link #ARTIFACT}, {@link #ROLE}, {@link #TOOL}, {@link #TASK} — are not imported on their own: a
  * workflow bundle carries its catalogue. They are released before the workflows that use them, a task after the roles,
  * artifacts and tools it names.
  *

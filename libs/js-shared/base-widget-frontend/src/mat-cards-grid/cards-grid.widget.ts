@@ -11,7 +11,7 @@ export const CARDS_GRID_WIDGET_REGISTRATION: WidgetRegistration = {
   definition: {
     name: 'Cards grid',
     translocoId: 'base_widget.cards_grid.name',
-    description: 'A responsive grid of Material cards, each with a title, optional subtitle and text, action buttons and a menu.',
+    description: 'A responsive grid of Material cards, each with a title, optional subtitle and text, a background image, action buttons and a menu.',
     category: 'Content',
     icon: 'grid_view',
     propsSchema: {
@@ -34,6 +34,16 @@ export const CARDS_GRID_WIDGET_REGISTRATION: WidgetRegistration = {
               icon: {
                 type: 'string',
                 title: 'Icon',
+              },
+              link: {
+                type: 'string',
+                title: 'Link',
+                description: 'Where clicking the card leads.',
+              },
+              backgroundImage: {
+                type: 'string',
+                title: 'Background image',
+                description: 'A URL or a module asset (module:path), drawn at the bottom left of the card.',
               },
               content: {
                 type: 'array',

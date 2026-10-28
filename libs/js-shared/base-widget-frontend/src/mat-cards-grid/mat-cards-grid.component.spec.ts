@@ -4,7 +4,7 @@ import { MatCardsGridComponent } from './mat-cards-grid.component';
 import { Component } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { setUpTranslocoTestBed } from '@processpuzzle/test-util';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Create a test host component to test the component with inputs
 @Component({
@@ -175,5 +175,72 @@ describe('MatCardsGridComponent with a menu card', () => {
     expect(menuItems).toHaveLength(2);
     expect(menuItems[0].textContent).toContain('First Item');
     expect(menuItems[1].textContent).toContain('Second Item');
+  });
+});
+
+// Host with a clickable image card next to one without, exercising `link` and `backgroundImage`.
+@Component({
+  template: ` <pp-cards-grid [cards]="cards"></pp-cards-grid>`,
+  standalone: true,
+  imports: [MatCardsGridComponent],
+})
+class ImageLinkHostComponent {
+  cards: CardsGridSpec[] = [
+    {
+      title: 'Image Card',
+      subtitle: '',
+      content: [],
+      actions: [{ link: '/button-target', caption: 'button' }],
+      link: '/card-target',
+      backgroundImage: '/assets/card.svg',
+      translocoPrefix: 'test1',
+    },
+    { title: 'Plain Card', subtitle: '', content: [], actions: [], translocoPrefix: 'test1' },
+  ];
+}
+
+describe('MatCardsGridComponent with an image and a link', () => {
+  async function render() {
+    const result = await setUpTranslocoTestBed(
+      ImageLinkHostComponent,
+      { translations: { en: { test1: { button: 'Open' } } } },
+      { providers: [provideRouter([{ path: '**', children: [] }])] },
+    );
+    return result;
+  }
+
+  it('should draw the background image only on the card that has one', async () => {
+    const { fixture } = await render();
+    fixture.detectChanges();
+    const cards = fixture.nativeElement.querySelectorAll('mat-card') as NodeListOf<HTMLElement>;
+    expect(cards[0].style.backgroundImage).toContain('/assets/card.svg');
+    expect(cards[0].classList).toContain('has-image');
+    expect(cards[1].style.backgroundImage).toBe('');
+    expect(cards[1].classList).not.toContain('has-image');
+  });
+
+  it('should make only the card with a link clickable', async () => {
+    const { fixture } = await render();
+    const cards = fixture.nativeElement.querySelectorAll('mat-card') as NodeListOf<HTMLElement>;
+    expect(cards[0].classList).toContain('has-link');
+    expect(cards[1].classList).not.toContain('has-link');
+  });
+
+  it('should navigate to the card link on a card click, and to the action link on a button click', async () => {
+    const { fixture } = await render();
+    const router = (await import('@angular/router')).Router;
+    const injected = fixture.debugElement.injector.get(router);
+    const urls: string[] = [];
+    const navigate = vi.spyOn(injected, 'navigateByUrl').mockImplementation(async (url) => {
+      urls.push(injected.serializeUrl(url as never));
+      return true;
+    });
+    const card = fixture.nativeElement.querySelector('mat-card') as HTMLElement;
+    card.click();
+    expect(urls).toEqual(['/card-target']);
+    urls.length = 0;
+    (fixture.nativeElement.querySelector('mat-card-actions button') as HTMLElement).click();
+    expect(urls).toEqual(['/button-target']);
+    navigate.mockRestore();
   });
 });

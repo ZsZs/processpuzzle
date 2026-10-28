@@ -4,6 +4,13 @@ import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.usecase.port.RuleEvaluator;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
+import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
+import java.util.Set;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
 import com.processpuzzle.app.domain.AppRoute;
@@ -47,6 +54,8 @@ class PublishAppDefinitionTest {
 
     private AppDefinitionRepository repository;
     private PublishAppDefinition publishAppDefinition;
+    private AppAssetReleases assetReleases;
+    private ModuleAssetSweeper sweeper;
     private UpdateAppDefinition updateAppDefinition;
     private AppMapper mapper;
     private ObjectProvider<RuleEvaluator> ruleEvaluatorProvider;
@@ -55,6 +64,8 @@ class PublishAppDefinitionTest {
     @SuppressWarnings("unchecked")
     void setUp() {
         repository = mock(AppDefinitionRepository.class);
+        assetReleases = mock(AppAssetReleases.class);
+        sweeper = mock(ModuleAssetSweeper.class);
         when(repository.save(any(AppDefinition.class))).thenAnswer(call -> call.getArgument(0));
 
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
@@ -70,7 +81,7 @@ class PublishAppDefinitionTest {
         OrganizationGuard guard = new OrganizationGuard(policyProvider);
         mapper = new AppMapper();
 
-        publishAppDefinition = new PublishAppDefinition(repository, validator, guard, mapper);
+        publishAppDefinition = new PublishAppDefinition(repository, validator, assetReleases, sweeper, guard, mapper);
         updateAppDefinition = new UpdateAppDefinition(repository, validator, guard, mapper);
     }
 
@@ -85,6 +96,19 @@ class PublishAppDefinitionTest {
         assertThat(published.getPublishedRevision()).isEqualTo(1L);
         assertThat(published.isPublished()).isTrue();
         assertThat(mapper.toModelStatus(published)).isEqualTo(AppDefinitionStatus.PUBLISHED);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void publish_releasesTheAppsAssetsAndSweepsWhatTheReleasedRecordsStoppedNaming() {
+        AppDefinition definition = stored(validGraph());
+        when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
+        doAnswer(call -> ((Set<String>) call.getArgument(2)).add("old-image")).when(assetReleases)
+                .release(eq("my-org"), eq("claims-app"), anySet());
+
+        publishAppDefinition.execute("my-org", "claims-app");
+
+        verify(sweeper).sweep("my-org", Set.of("old-image"));
     }
 
     @Test

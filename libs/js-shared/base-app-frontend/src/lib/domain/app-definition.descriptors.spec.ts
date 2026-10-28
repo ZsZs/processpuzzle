@@ -47,6 +47,7 @@ describe('createAppDefinitionDescriptor', () => {
       'regions',
       'routes',
       'modules',
+      'assets',
     ]);
   });
 

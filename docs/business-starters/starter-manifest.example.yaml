@@ -23,7 +23,7 @@ locales: [en, de, hu]               # languages the starter ships labels for
 
 # --- Contents (paths relative to the manifest) --------------------------
 # The importer always processes groups in this order:
-# entities -> states -> rules -> calculations -> widgets -> documents -> workflows -> apps
+# entities -> states -> rules -> calculations -> widgets -> documents -> workflows -> modules -> apps
 contents:
   entities:
     - entities/regatta.yaml
@@ -43,8 +43,10 @@ contents:
     - documents/results-sheet.yaml
   workflows:
     - workflows/regatta-organisation.yaml
+  modules:
+    - modules/race-planning.yaml         # `moduleDefinitions:` entries, as in default-apps files
   apps:
-    - apps/race-office.yaml
+    - apps/race-office.yaml              # `appDefinitions:` entries; published on install
 
 # --- Migration (placeholder; format decided together with upgrades) ----
 migration: null

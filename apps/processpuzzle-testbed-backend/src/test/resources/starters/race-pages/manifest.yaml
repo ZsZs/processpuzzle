@@ -1,0 +1,14 @@
+manifestVersion: 1
+id: race-pages
+name: Race pages
+version: 1.0.0
+description: An application with one home page and one module, to check that a starter can carry both.
+category: sports
+tags: [sailing]
+definitionSchemaVersion: 1
+locales: [en]
+contents:
+  modules:
+    - modules/plan-race.yaml
+  apps:
+    - apps/race-pages.yaml
