@@ -115,11 +115,6 @@ services:
       # What selects run-time-conf/config.<stage>.json out of the bundle, and therefore the one
       # variable that makes a promoted `sha-<commit>` behave like a stage or a prod deployment.
       PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
-      # Empty by default and empty everywhere: Firebase was removed in 1465575b / 7076cae2 and
-      # main.ts reads it as `env.FIREBASE_API_KEY ?? ''`. Kept only because the entrypoint still
-      # templates assets/runtime-env.json from it; a `${FIREBASE_API_KEY}` with no default would
-      # interpolate to nothing in Coolify, which is the same value, only reached by an error.
-      FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
     ports:
       - "${PP_TESTBED_FRONTEND_PUBLISH}"
     tty: true

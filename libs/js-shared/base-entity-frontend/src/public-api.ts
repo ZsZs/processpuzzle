@@ -64,11 +64,11 @@ export {
 } from './lib/base-entity/date-format';
 export { LocaleDateAdapter, provideLocaleDateAdapter } from './lib/base-form/datepicker/locale-date.adapter';
 export { BaseEntityListComponent, BASE_LIST_DESCRIPTORS } from './lib/base-list/base-entity-list.component';
-export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';
+export type { BaseEntityLoadResponse, BaseEntityQueryCondition, FilterCondition, FilterOperator, OrderByCondition } from './lib/base-entity-service/base-entity-load-response';
 export { OrderByDirection } from './lib/base-entity-service/base-entity-load-response';
 export { SimpleEntityMapper, getEnumKeyByValue, getEnumValueByKey } from './lib/base-entity.mapper';
 export type { BaseEntityMapper } from './lib/base-entity.mapper';
-export { BaseEntityFacade, type EntityServiceKind } from './lib/base-entity-facade/base-entity-facade';
+export { BaseEntityFacade } from './lib/base-entity-facade/base-entity-facade';
 export { ACTIVE_ENTITY_FACADE } from './lib/base-entity-facade/active-entity-facade.token';
 export { BaseEntityTabsStore } from './lib/base-tabs/base-entity-tabs.store';
 export { BASE_ENTITY_SERVICE } from './lib/base-entity-service/base-entity.service';
@@ -113,11 +113,6 @@ export { BaseFormNavigatorSingletonStore, BaseFormNavigatorStore, RouteSegments,
 export { NavigatorCommand, type NavigationPayload } from './lib/base-form-navigator/navigation-payload';
 export { EntityRouteRegistry, ENTITY_NAME_ROUTE_DATA_KEY, EMBEDDED_ENTITY_ROUTE_DATA_KEY } from './lib/base-form-navigator/entity-route.registry';
 export { provideEntityRouteRegistry } from './lib/base-form-navigator/entity-route-registry.providers';
-export { BaseEntityFirestoreService } from './lib/base-entity-service/base-entity-firestore.service';
-export { FIRESTORE } from './lib/base-entity-service/firestore.token';
-export { FIRESTORE_API } from './lib/base-entity-service/firestore-api';
-export type { FirestoreApi } from './lib/base-entity-service/firestore-api';
-export { provideFirestoreToken } from './lib/base-entity-service/provide-firestore-token';
 export { FlexboxDescriptor, FlexDirection } from './lib/base-entity/flexboxDescriptor';
 export { Entity, type EntityOptions, getEntityOptions, Id, getEntityIds } from './lib/base-entity/decorators/entity.decorator';
 export { BASE_ENTITY_ROUTES, baseEntityRoutes, type EmbeddedChildRoute } from './lib/base-entity.routes'; // With @angular/build:ng-packagr executor causes a problem

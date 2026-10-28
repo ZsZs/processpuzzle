@@ -49,7 +49,6 @@ jobs:
           nx_project: processpuzzle-testbed-frontend
           github_token: ${{ secrets.GITHUB_TOKEN }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
-          firebase_token: ${{ secrets.FIREBASE_API_KEY }}
           cicd_stage: 'prod'
 
       - name: Config Git

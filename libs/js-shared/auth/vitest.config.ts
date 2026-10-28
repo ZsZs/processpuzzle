@@ -4,11 +4,7 @@ import { join } from 'node:path';
 export default defineConfig({
   root: __dirname,
   test: {
-    exclude: [
-      ...configDefaults.exclude,
-      '**/domain/service/firebase-auth.service.spec.ts',
-      '**/domain/service/provide-firebase-auth-service.spec.ts',
-    ],
+    exclude: [...configDefaults.exclude],
     coverage: {
       enabled: true,
       reportsDirectory: join(__dirname, 'reports/coverage'),
@@ -17,8 +13,6 @@ export default defineConfig({
       exclude: [
         'libs/js-shared/!(auth)/**',
         'libs/js-shared/auth/feature/test-form/**',
-        'libs/js-shared/auth/domain/service/firebase-auth.service.ts',
-        'libs/js-shared/auth/domain/service/provide-firebase-auth-service.ts',
       ],
     },
   },

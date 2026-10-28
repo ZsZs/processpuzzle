@@ -35,9 +35,9 @@ export function createGlobalSetup(options: CreateGlobalSetupOptions): (config: F
     console.log(`[global-setup] Navigating to entity registry at ${baseURL}${registryUrl}`);
     // `domcontentloaded` rather than the default `load`: the registry page's contract is the `<pre>` waited for
     // on the next line, and `load` additionally waits out everything the application shell starts on the side —
-    // the Firestore listen stream, and the hidden session-status iframe the OIDC client mounts against the
-    // identity provider. Neither has anything to do with the descriptors, and either can outlive the timeout on
-    // a loaded machine, failing the whole run before a single test is registered.
+    // the hidden session-status iframe the OIDC client mounts against the identity provider. It has nothing to
+    // do with the descriptors, and it can outlive the timeout on a loaded machine, failing the whole run before
+    // a single test is registered.
     await page.goto(`${baseURL}${registryUrl}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('pre');
 

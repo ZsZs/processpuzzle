@@ -22,7 +22,7 @@ export abstract class AuthService {
    * The bearer token to attach to API calls, or `undefined` when this provider has none.
    *
    * Defaults to `undefined` rather than being abstract so that an implementation which does not
-   * issue bearer tokens — the local and Firebase ones — needs no change, and
+   * issue bearer tokens — the local one — needs no change, and
    * {@link authTokenInterceptor} simply sends the request unauthenticated. Making it abstract would
    * have forced every implementation to declare that it has no token.
    */

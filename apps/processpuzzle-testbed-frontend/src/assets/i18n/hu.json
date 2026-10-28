@@ -133,7 +133,7 @@
     "ci-cd_card_subtitle": "GitHub Actions alapú folyamatos szállítási folyamat",
     "ci-cd_card_content": "Ez nem egy könyvtár, hanem egy végponttól végpontig terjedő megoldás a folyamatos szállítási folyamathoz, GitHub Actions alapon. Támogatja a többféle minőségbiztosítási gyakorlatot és a többszörös fejlesztési szakaszokat. Végül automatikusan szállítja a növekményeket a produkcióba.",
     "ci-cd_card_content_1": "Támogatja a lint, teszt és build folyamatokat",
-    "ci-cd_card_content_2": "Támogatja az AWS-re vagy Firebase-re történő telepítést",
+    "ci-cd_card_content_2": "Támogatja a konténerizált telepítést Docker Compose-zal",
     "ci-cd_card_content_3": "Támogatja az NPM regisztrációba történő publikálást",
     "ci-cd_card_button": "Lásd a CI/CD folyamatot..."
   },

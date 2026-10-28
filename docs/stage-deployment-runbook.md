@@ -300,9 +300,8 @@ Plus, marked **secret**: `PROCESSPUZZLE_DB_PASSWORD`, `MINIO_SERVICE_PASSWORD`,
 credentials the infrastructure *created*; if they disagree the backend cannot log in to PostgreSQL or
 MinIO.
 
-Two you can **omit**, because their compose defaults are already right:
+One you can **omit**, because its compose default is already right:
 
-- `FIREBASE_API_KEY` — defaults to empty; Firebase was removed and `main.ts` reads it as `?? ''`
 - `PROCESSPUZZLE_SECURITY_JWKS_BASE_URL` — defaults to `http://keycloak:8080`, which is correct.
   It must **not** be the public issuer URL: that origin does not resolve inside the container, and
   reading the signing keys from it is what once made every authenticated request answer 500
@@ -909,5 +908,4 @@ traffic, needs a bigger box or one stack moved off it.
   log `No services to build` and exit 0. Images come from GHCR, built by CI.
 - **A second compose file for stage.** One definition per layer serves `ci`, `stage` and `prod`; what
   differs is the environment.
-- **`FIREBASE_API_KEY`.** See §4.
 - **Anything for prod yet.** `.env.prod` still names unverified `.com` hosts.

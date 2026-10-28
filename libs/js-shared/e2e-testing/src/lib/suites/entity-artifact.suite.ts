@@ -51,8 +51,8 @@ const TEXT_MIME_ICON = 'article';
  * - **A multi-valued attribute accumulates**: two uploads give two rows that survive Save and reload, and
  *   deleting one leaves the other.
  *
- * Every one of those holds for both object-store adapters — `processpuzzle-store` over MinIO and the
- * `objectStore` Cloud Function over Firebase Storage — so the same suite is what keeps the two interchangeable.
+ * Every one of those is a claim about the object-store contract rather than about `processpuzzle-store` over
+ * MinIO, the one adapter implementing it today — so a second adapter would have to pass this same suite.
  */
 export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOptions): void {
   const registry: BaseEntityDescriptor[] = JSON.parse(fs.readFileSync(options.registryPath, 'utf-8'));
@@ -81,8 +81,9 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
 
         test('ARTIFACT', async ({ page }, testInfo) => {
           const excluded = options.excludedArtifacts?.find((entry) => entry.entityName === descriptor.entityName && entry.attrName === tester.attr.attrName);
-          test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
-          test.skip(identificationAttr(descriptor) === undefined, `[${descriptor.entityName}] has no identification attr`);
+          // Conditional skips, decided per descriptor at run time from the application's own options.
+          testInfo.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
+          testInfo.skip(identificationAttr(descriptor) === undefined, `[${descriptor.entityName}] has no identification attr`);
 
           const entitySegment = descriptor.entityName.replace(/\s+/g, '-').toLowerCase();
           const suffix = `e2e-${Date.now().toString(36)}-${entitySegment}-${tester.attr.attrName}-r${testInfo.retry}`;
@@ -136,7 +137,7 @@ async function exerciseImageArtifact(
   expect(uri, 'the artifact link opened a tab with no resolved URI').toMatch(/^https?:\/\//);
   const served = await page.request.get(uri);
   expect(served.status(), `the artifact URI did not serve the object: ${uri}`).toBe(200);
-  expect((await served.body()).length).toBe(image.buffer.length);
+  expect(await served.body()).toHaveLength(image.buffer.length);
 
   // Delete reaches the store before it clears the reference, so the URI stops serving. Only the object is
   // asserted: `processpuzzle-store` leaves the thumbnail behind, where the Cloud Function cascades to it, and a

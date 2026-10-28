@@ -3,7 +3,7 @@
  *
  * A static list rather than a seeded entity: the codes are a standard, not tenant data, and the browser
  * already knows every country's name in every language through `Intl.DisplayNames` — so the lookup needs no
- * backend, works the same against REST, json-server and Firestore, and is translated for free.
+ * backend, works the same against REST and json-server, and is translated for free.
  */
 export const COUNTRY_CODES: readonly string[] = [
   'AD',

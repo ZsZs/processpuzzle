@@ -1,5 +1,4 @@
-import { WhereFilterOp } from '@angular/fire/firestore';
-import { FilterCondition, FilterGroup, isFilterGroup } from './base-entity-load-response';
+import { FilterCondition, FilterGroup, FilterOperator, isFilterGroup } from './base-entity-load-response';
 
 const OP_MAP: Record<string, string> = {
   '==': '==',
@@ -32,13 +31,13 @@ function conditionToRsql(condition: FilterCondition): string {
   return `${condition.property}${rsqlOp}${encodeValue(condition.value, condition.operator)}`;
 }
 
-function mapOperator(operator: WhereFilterOp): string {
+function mapOperator(operator: FilterOperator): string {
   const mapped = OP_MAP[operator as string];
   if (!mapped) throw new Error(`Unsupported filter operator for RSQL translation: ${operator}`);
   return mapped;
 }
 
-function encodeValue(value: unknown, operator: WhereFilterOp): string {
+function encodeValue(value: unknown, operator: FilterOperator): string {
   if (operator === 'in' || operator === 'not-in' || operator === 'array-contains-any') {
     const items = Array.isArray(value) ? value : [value];
     return `(${items.map(encodeScalar).join(',')})`;
@@ -54,7 +53,8 @@ function encodeScalar(value: unknown): string {
   if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return String(value);
   const asString = typeof value === 'string' ? value : JSON.stringify(value);
   if (/[\s,;()"'=<>!]/.test(asString)) {
-    return `"${asString.replaceAll('"', String.raw`\"`)}"`;
+    const escaped = asString.replaceAll('"', String.raw`\"`);
+    return `"${escaped}"`;
   }
   return asString;
 }

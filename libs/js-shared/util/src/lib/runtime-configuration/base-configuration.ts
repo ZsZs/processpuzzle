@@ -1,22 +1,12 @@
-export interface FirebaseConfig {
-  apiKey?: string;
-  FIRESTORE_EMULATOR_HOST?: string;
-  FIRESTORE_EMULATOR_PORT?: number;
-  FIREBASE_AUTH_EMULATOR_HOST?: string;
-  FIREBASE_AUTH_EMULATOR_PORT?: number;
-}
 export interface BaseConfiguration {
   readonly PIPELINE_STAGE: 'dev' | 'ci' | 'stage' | 'prod';
   readonly APPLICATION_VERSION: string;
   /**
    * The topology the stack is deployed onto. Docker Compose is the only one built today — `'k8s'` is
-   * kept because the key's purpose is to survive a second one, and a `'firebase'` member was dropped
-   * when Firebase deployment was (2026-08-30). The Firestore and Firebase-Auth *adapters* are
-   * unaffected: an adapter is chosen by `BACKEND_SERVICE_PROVIDER` and by the auth configuration, not
-   * by a deployment target.
+   * kept because the key's purpose is to survive a second one.
    */
   readonly DEPLOYMENT_ENVIRONMENT: 'docker' | 'k8s';
-  readonly BACKEND_SERVICE_PROVIDER: 'rest' | 'firestore';
+  readonly BACKEND_SERVICE_PROVIDER: 'rest';
   /**
    * Organization-scoped root of the platform's own backend: `<host>/organizations/<orgKey>`. One Spring
    * Boot Modulith serves every feature and there is one deployment per application stack, so this is
@@ -83,5 +73,4 @@ export interface BaseConfiguration {
    * `SELF_SERVICE_ROLES_SERVICE_ROOT`, so the Testbed needs no change.
    */
   readonly ROLE_CATALOG_SERVICE_ROOT?: string;
-  readonly FIREBASE_CONFIGURATION: FirebaseConfig;
 }

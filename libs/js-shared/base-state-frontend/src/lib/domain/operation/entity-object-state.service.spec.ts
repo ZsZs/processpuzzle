@@ -58,7 +58,7 @@ describe('EntityObjectStateService', () => {
     await expect(pending).rejects.toBeDefined();
   });
 
-  /** json-server and the Firebase functions are not generated from the contract; only Spring is. */
+  /** json-server is not generated from the contract; only Spring is. */
   it('defaults the optional fields of a partial response and reports a stateless one as absent', async () => {
     const partial = firstValueFrom(service.findState('order', objectId));
     controller.expectOne(stateUrl).flush({ currentStateKey: 'DRAFT' });
@@ -75,7 +75,7 @@ describe('EntityObjectStateService', () => {
     const request = controller.expectOne(`${serviceRoot}/entities/special%20order/a%2Fb/state`);
     request.flush({ currentStateKey: 'DRAFT' });
 
-    await pending;
+    expect(await pending).toMatchObject({ currentStateKey: 'DRAFT' });
   });
 
   describe('fireTransition()', () => {

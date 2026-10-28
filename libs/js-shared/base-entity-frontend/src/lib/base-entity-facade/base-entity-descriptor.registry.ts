@@ -15,7 +15,7 @@ import { BASE_ENTITY_FACADE_REGISTRY } from './base-entity-facade-registry';
  * changed, and none of them can tell the difference.
  *
  * Compile-time first. A host application that registered a facade did so on purpose — it may carry extra
- * tabs, a hand-tuned layout or a Firestore repository — and a definition of the same name does not
+ * tabs, a hand-tuned layout or a repository of its own — and a definition of the same name does not
  * override that decision. The dynamic side is a fallback, in both senses.
  *
  * The synthesized side is read out of a cache rather than from the registry that builds it, so that this

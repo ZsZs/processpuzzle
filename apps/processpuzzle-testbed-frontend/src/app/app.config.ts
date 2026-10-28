@@ -69,11 +69,6 @@ export function createDocumentAccessContext(): DocumentAccessContext {
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
     providers: [
-      // No `provideFirebaseApp` / `provideFirestore` here. The testbed binds `BaseEntityRestService`
-      // (`BACKEND_SERVICE_PROVIDER: 'rest'`) and Keycloak, so nothing in it reaches Firestore — and
-      // `FIREBASE_CONFIGURATION` is now empty, which makes `initializeApp` throw
-      // `"projectId" not provided` the moment anything constructs the app. The Firestore adapters stay in
-      // the framework for consumers who deploy on them; a consumer that does adds these providers itself.
       provideAuthenticationService(runtimeConfiguration),
       provideZonelessChangeDetection(),
       // The backend validates a bearer token whenever one is sent, and signing a document needs one. Only the

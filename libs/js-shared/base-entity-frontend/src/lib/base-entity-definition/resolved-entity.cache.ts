@@ -13,7 +13,7 @@ interface ResolvedEntry {
  *
  * **A cache with no dependencies, on purpose.** The lookup surface has to be able to answer for a
  * metadata-defined entity, but it must not drag in the machinery that *builds* one: a facade pulls in the
- * REST and Firestore repositories, and the descriptor registry is injected by half the library — including
+ * REST repository, and the descriptor registry is injected by half the library — including
  * `EmbeddedAggregateAccessor`, which every embedded form control reaches. Publishing into a plain map keeps
  * that edge from existing at all, and keeps the direction of the dependency the honest one: the registry
  * that builds entities knows about the registry that looks them up, not the reverse.

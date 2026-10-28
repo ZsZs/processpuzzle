@@ -6,7 +6,6 @@
     "SELF_SERVICE_ROLES_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "THIRD_PARTY_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
-    "FIREBASE_CONFIGURATION": {},
     "APPLICATION_VERSION": "1.4.0"
   },
   "LANGUAGE_CONFIGURATION": {

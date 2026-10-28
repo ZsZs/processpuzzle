@@ -133,7 +133,7 @@
     "ci-cd_card_subtitle": "GitHub Actions base continuous delivery process",
     "ci-cd_card_content": "This isn't a library, but an end-to-end solutions for continuos delivery pipeline, base on GitHub Actions.\n            It supports multiple quality assurance practices und multiple development stages. At the end delivers increments automatically to production.",
     "ci-cd_card_content_1": "Supports lint, test and build",
-    "ci-cd_card_content_2": "Supports deploy to AWS or Firebase",
+    "ci-cd_card_content_2": "Supports containerized deployment with Docker Compose",
     "ci-cd_card_content_3": "Supports to publish to NPM registry",
     "ci-cd_card_button": "See CI/CD Pipeline..."
   },

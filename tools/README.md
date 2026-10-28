@@ -73,7 +73,7 @@ name with `docker compose`.
 | infra | `minio` | `processpuzzle-minio` | `ghcr.io/zszs/processpuzzle-minio` | `7000 → 9000` (S3), `7001 → 9001` (console) | S3-compatible object store; volume `minio-data`. Buckets are `<stack-prefix>-<purpose>`, and `init-minio.sh` still creates every stack's prefix. |
 | infra | `json-server` | `json-server` | `ghcr.io/zszs/processpuzzle-json-server` | `3000 → 3000` | REST mock for the *third-party* sources an application integrates with, never for a ProcessPuzzle feature; seeded from `tools/mock-backend/db.json` (see `tools/mock-backend/README.md`). |
 
-> **Port note.** pgweb takes host `8082` and still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb` — the offset dates from the Firestore emulator owning host `8081`, and is kept so existing bookmarks and the `--prefix=/pgweb` mount keep working. Host ports `9091`/`9092`, `4201`/`4202` and `8083` are now unused here: they belonged to the staff and tenant applications and their backend, which moved to the private `processpuzzle-biz` repository — see [Extracting platform-admin](../docs/platform-admin-extraction.md). The testbed backend keeps `8080` because the Playwright suite and the testbed runtime configuration name it.
+> **Port note.** pgweb takes host `8082` and still listens on `8081` inside the container, reached via `http://localhost:8082/pgweb` — the offset dates from a since-removed emulator owning host `8081`, and is kept so existing bookmarks and the `--prefix=/pgweb` mount keep working. Host ports `9091`/`9092`, `4201`/`4202` and `8083` are now unused here: they belonged to the staff and tenant applications and their backend, which moved to the private `processpuzzle-biz` repository — see [Extracting platform-admin](../docs/platform-admin-extraction.md). The testbed backend keeps `8080` because the Playwright suite and the testbed runtime configuration name it.
 
 > **First start.** `tools/docker/postgresql/10-init-db.sh` creates the two application databases, and Keycloak's `--import-realm` imports a realm only if it does not already exist — both run against a *fresh* `postgres_data` volume only. After changing either, reset with `npm run stack-clean`.
 
@@ -142,7 +142,6 @@ The flow:
    ```yaml
    environment:
      PIPELINE_STAGE: ${PIPELINE_STAGE:-ci}
-     FIREBASE_API_KEY: ${FIREBASE_API_KEY:-}
    ```
    The `${VAR}` on the right side is compose's substitution, expanded from the shell or a `.env` file next to the compose file.
 3. **`docker-entrypoint.sh`** (baked into the image) runs `envsubst` against
@@ -152,12 +151,7 @@ The flow:
    `run-time-conf/config.common.json` plus `run-time-conf/config.<stage>.json` — both of which the
    Angular build already baked into the image.
 
-`envsubst`'s whitelist argument (`'${PIPELINE_STAGE} ${FIREBASE_API_KEY}'`) limits which placeholders get expanded — any other `$` in the template survives literally.
-
-`FIREBASE_API_KEY` is the vestige of the removed Firebase adapters (1465575b / 7076cae2). It defaults
-to empty everywhere and `main.ts` reads it as `?? ''`; nothing has to supply it. It used to be
-`:?`-guarded in the entrypoint, which made every deployment invent a placeholder for a feature that
-no longer exists.
+`envsubst`'s whitelist argument (`'${PIPELINE_STAGE}'`) limits which placeholders get expanded — any other `$` in the template survives literally.
 
 **Build-time vs. runtime — don't mix them up:**
 - `ARG` in a Dockerfile and `build.args:` in compose → build time only. Use for things that decide what goes *into* the image (which stage's template to copy).
@@ -198,7 +192,7 @@ convention. They are what make one compose definition serve three environments:
 | Directory | Feeds | Holds |
 | --- | --- | --- |
 | `infrastructure/` | `docker-compose-infrastructure.yaml` | `PP_PGWEB_VERSION`, the six infra `PP_*_PUBLISH` port maps, the `KEYCLOAK_DB_*` / `POSTGRES_PASSWORD` / `PGWEB_DATABASE` database settings, `KC_HOSTNAME`, `KC_HOSTNAME_STRICT`, `KEYCLOAK_ADMIN_*` and `MINIO_ROOT_*` |
-| `testbed/` | `docker-compose-apps.yaml` | `PP_TESTBED_{FRONTEND,BACKEND}_PUBLISH`, `PIPELINE_STAGE`, `FIREBASE_API_KEY`, the `SPRING_*` and `PROCESSPUZZLE_SECURITY_*` settings, `MINIO_BUCKET_PREFIX`, `MINIO_ENDPOINT`, `MINIO_PUBLIC_ENDPOINT` and `APP_CORS_ALLOWED_ORIGINS` |
+| `testbed/` | `docker-compose-apps.yaml` | `PP_TESTBED_{FRONTEND,BACKEND}_PUBLISH`, `PIPELINE_STAGE`, the `SPRING_*` and `PROCESSPUZZLE_SECURITY_*` settings, `MINIO_BUCKET_PREFIX`, `MINIO_ENDPOINT`, `MINIO_PUBLIC_ENDPOINT` and `APP_CORS_ALLOWED_ORIGINS` |
 
 A future `biz/` and `admin/` set sit beside `testbed/` — one per application stack. Inside each
 directory:
@@ -241,8 +235,7 @@ npm run stack-clean        # down, including volumes — the only way to re-run 
 ```
 
 `testbed/.env.ci` supplies `PIPELINE_STAGE`, so it needs no exporting; an exported value still wins, because
-the shell takes precedence over `--env-file`. `FIREBASE_API_KEY` needs nothing at all — it defaults
-to empty and the entrypoint no longer guards it.
+the shell takes precedence over `--env-file`.
 
 **Verify the deployable file separately.** `docker-compose-apps.yaml` has to render *on its own*,
 because that is how Coolify reads it — no overlay, no infrastructure file:

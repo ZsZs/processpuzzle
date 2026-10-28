@@ -105,7 +105,7 @@ describe('CentralErrorHandler', () => {
     expect(reporter.showErrorMessage).toHaveBeenCalledWith("Block 'text-1' is still referenced by: [grid-1]", error);
   });
 
-  /** Kept as the documented fallback for errors that are not ours: Firebase, a proxy, Boot's own `/error`. */
+  /** Kept as the documented fallback for errors that are not ours: a proxy, Boot's own `/error`. */
   it('shows HTTP response body messages when available', () => {
     const reporter: ErrorMessageReporter = { showErrorMessage: vi.fn() };
     const error = new HttpErrorResponse({

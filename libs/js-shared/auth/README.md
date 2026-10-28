@@ -80,7 +80,7 @@ The `LoginComponent` provides a user-friendly interface for authentication, allo
 
 ### Features
 - Clean, responsive login form with Material Design styling
-- Email and password authentication with Firebase
+- Email and password authentication through the configured `AuthService`
 - Google sign-in integration
 - Real-time form validation with error messages
 - Password visibility toggle
@@ -125,7 +125,6 @@ Or create a link in your template:
 - `AuthService` - Used for authentication operations
 - Angular Material components (MatFormField, MatInput, MatButton, etc.)
 - Angular Reactive Forms - For form handling and validation
-- Firebase Authentication - For authentication operations
 
 #### Properties
 - `loginForm` - FormGroup that manages the login form state and validation
@@ -136,7 +135,7 @@ Or create a link in your template:
 #### Methods
 - `onSubmit()` - Handles form submission for email/password login
 - `signInWithGoogle()` - Initiates Google authentication
-- `getErrorMessage(errorCode: string)` - Converts Firebase error codes to user-friendly messages
+- `getErrorMessage(errorCode: string)` - Converts provider error codes to user-friendly messages
 
 ### Styling
 The component uses Angular Material styling with custom CSS for layout. You can target the component with CSS using the `.login-container` class:
@@ -226,7 +225,7 @@ The `RegistrationComponent` provides a user-friendly interface for creating a ne
 ### Features
 
 - Clean, responsive registration form with Material Design styling
-- Email and password registration with Firebase
+- Email and password registration through `RegistrationService`
 - Real-time form validation with error messages
 - Password visibility toggle for both password fields
 - Password confirmation with matching validation
@@ -271,7 +270,7 @@ The component is typically accessed through the `AuthButtonComponent` menu when 
 `pp-registration`
 
 #### Dependencies
-- `Auth` from Firebase - Used for user registration
+- `RegistrationService` - Used for user registration
 - `NavigateBackService` - Used for navigation after registration
 - `MatSnackBar` - Used for displaying error messages
 - Angular Material components (MatFormField, MatInput, MatButton, etc.)
@@ -286,7 +285,7 @@ The component is typically accessed through the `AuthButtonComponent` menu when 
 
 #### Methods
 - `onSubmit()` - Handles form submission for registration
-- `getErrorMessage(errorCode: string)` - Converts Firebase error codes to user-friendly messages
+- `getErrorMessage(errorCode: string)` - Converts provider error codes to user-friendly messages
 - `passwordMatchValidator()` - Custom validator to ensure password and confirm password match
 
 ### Styling
@@ -398,11 +397,11 @@ The profile view is designed to be clean and user-friendly, presenting user info
 
 ## Authentication Service
 
-The `AuthService` provides core authentication functionality for the application, leveraging Firebase Authentication. It manages user authentication state and provides methods for common authentication operations.
+`AuthService` is the abstract contract every identity-provider adapter implements; `KeycloakAuthService` is the one shipped. It manages user authentication state and provides methods for common authentication operations.
 
 ### Features
 
-- Firebase Authentication integration
+- Provider-agnostic: the application picks the adapter through `AUTHENTICATION_CONFIGURATION`
 - Reactive authentication state management using Angular signals
 - Simple API for checking authentication status
 - Methods for signing out and retrieving the current user
@@ -441,16 +440,15 @@ export class ExampleComponent {
 ### API Reference
 
 #### Dependencies
-- `Auth` from Firebase - Used for authentication operations
 - Angular's dependency injection system
 
 #### Properties
-- `user` - A signal that provides the current Firebase User object or null if not authenticated
+- `user` - A signal that provides the current `User` or null if not authenticated
 - `isAuthenticated` - A computed signal that returns true if a user is logged in, false otherwise
 
 #### Methods
 - `signOut()` - Asynchronous method that signs out the current user
-- `getCurrentUser()` - Synchronous method that returns the current Firebase User object or null
+- `getCurrentUser()` - Synchronous method that returns the current `User` or null
 
 ### Integration with Components
 
