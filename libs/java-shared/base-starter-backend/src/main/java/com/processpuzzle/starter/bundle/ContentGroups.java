@@ -15,6 +15,7 @@ public final class ContentGroups {
             "widgets", DefinitionKinds.WIDGET,
             "documents", DefinitionKinds.DOCUMENT,
             "workflows", DefinitionKinds.WORKFLOW,
+            "modules", DefinitionKinds.MODULE,
             "apps", DefinitionKinds.APP);
 
     private ContentGroups() {

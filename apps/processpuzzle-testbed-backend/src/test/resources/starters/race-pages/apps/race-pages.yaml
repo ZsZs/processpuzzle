@@ -1,0 +1,14 @@
+appDefinitions:
+  - id: app
+    name: Race pages
+    modules:
+      - moduleKey: plan-race
+        basePath: plan-race
+    routes:
+      - path: home
+        title: Home
+        target:
+          kind: WIDGETS
+          widgets:
+            - id: home-cards
+              type: cards-grid

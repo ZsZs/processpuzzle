@@ -1,0 +1,11 @@
+moduleDefinitions:
+  - key: plan-race
+    name: Plan Race
+    routes:
+      - path: overview
+        title: Overview
+        target:
+          kind: WIDGETS
+          widgets:
+            - id: overview-text
+              type: markdown-page

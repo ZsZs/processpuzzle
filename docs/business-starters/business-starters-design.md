@@ -51,7 +51,7 @@ processpuzzle-biz/
   business-starters/
     sail-race-organizer/
       manifest.yaml
-      entities/  states/  rules/  widgets/  documents/  workflows/  apps/
+      entities/  states/  rules/  widgets/  documents/  workflows/  modules/  apps/
       icons/
       migrations/   (placeholder)
 ```
@@ -129,7 +129,12 @@ Two callers, one per stack that installs:
 
 ## 7. Importer rules
 
-- **Order:** Entity, State, Rule, Widget, Document, Workflow, App.
+- **Order:** Entity, State, Rule, Widget, Document, Workflow, Module, App.
+- **Modules and the app:** a `modules/` file is a YAML document with a `moduleDefinitions:` list and an `apps/`
+  file one with an `appDefinitions:` list — the entries of the bundled default-apps files. Modules are released as
+  they are imported and the app is published, so the installed application is live at once. An organization has one
+  application and sign-up creates it empty, as `app`: a starter whose app is `app` replaces it, one with another id
+  removes the placeholder while it is untouched, and a starter without an app leaves a fresh empty one.
 - **Atomic:** schema and cross-reference validation before any write; all writes in one transaction.
 - **Replace, all or nothing:** installing a starter deletes the organization's existing definitions and
   imports the starter's. This is allowed **only while the organization holds no entity objects and no
