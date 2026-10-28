@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MODULE_ASSET_CONTEXT, moduleAssetPathOf, moduleAssetUrl, resolveAssetLink } from './module-asset-context';
+import { APP_ASSET_CONTEXT, appAssetPathOf, MODULE_ASSET_CONTEXT, moduleAssetPathOf, moduleAssetUrl, resolveAssetLink } from './module-asset-context';
 
 describe('moduleAssetPathOf', () => {
   it('names the module path of a module: value', () => {
@@ -17,6 +17,19 @@ describe('moduleAssetPathOf', () => {
     expect(moduleAssetPathOf('https://example.org/a.md')).toBeUndefined();
     expect(moduleAssetPathOf(undefined)).toBeUndefined();
     expect(moduleAssetPathOf(null)).toBeUndefined();
+  });
+});
+
+describe('appAssetPathOf', () => {
+  it('names the application path of an app: value', () => {
+    expect(appAssetPathOf('app:cards/plan.svg')).toBe('cards/plan.svg');
+    expect(appAssetPathOf('app:/cards/plan.svg')).toBe('cards/plan.svg');
+  });
+
+  it('leaves module values and every other value alone', () => {
+    expect(appAssetPathOf('module:cards/plan.svg')).toBeUndefined();
+    expect(appAssetPathOf('assets/plan.svg')).toBeUndefined();
+    expect(appAssetPathOf(undefined)).toBeUndefined();
   });
 });
 
@@ -125,5 +138,48 @@ describe('moduleAssetUrl', () => {
 
     fixture.destroy();
     expect(revoked).toEqual(['blob:0', 'blob:1']);
+  });
+
+  describe('an application asset', () => {
+    const appBlob = vi.fn<(path: string) => Observable<Blob>>();
+
+    function appProbe(src: string, contexts: { app?: boolean; module?: boolean }) {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          ...(contexts.app ? [{ provide: APP_ASSET_CONTEXT, useValue: { blob: appBlob } }] : []),
+          ...(contexts.module ? [{ provide: MODULE_ASSET_CONTEXT, useValue: { blob } }] : []),
+        ],
+      });
+      const fixture = TestBed.createComponent(AssetProbeComponent);
+      fixture.componentRef.setInput('src', src);
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('is asked of the application context, never of the module one', () => {
+      appBlob.mockReset();
+      appBlob.mockReturnValue(of(new Blob(['x'])));
+
+      const fixture = appProbe('app:cards/plan.svg', { app: true, module: true });
+
+      expect(appBlob).toHaveBeenCalledWith('cards/plan.svg');
+      expect(blob).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.url()).toBe('blob:0');
+    });
+
+    it('is not asked of the application context for a module asset', () => {
+      appBlob.mockReset();
+      blob.mockReturnValue(of(new Blob(['x'])));
+
+      appProbe('module:a.png', { app: true, module: true });
+
+      expect(blob).toHaveBeenCalledWith('a.png');
+      expect(appBlob).not.toHaveBeenCalled();
+    });
+
+    it('has none outside an application context', () => {
+      expect(appProbe('app:a.png', { module: true }).componentInstance.url()).toBeUndefined();
+    });
   });
 });

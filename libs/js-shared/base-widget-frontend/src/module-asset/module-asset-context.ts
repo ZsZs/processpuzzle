@@ -27,6 +27,29 @@ export function moduleAssetPathOf(src: string | undefined | null): string | unde
   return src?.startsWith(MODULE_ASSET_SCHEME) ? src.slice(MODULE_ASSET_SCHEME.length).replace(/^\/+/, '') : undefined;
 }
 
+/**
+ * Prefix of a widget property that names an asset of the application, rather than of a module: `app:cards/plan.svg`.
+ * Unlike a `module:` value it resolves wherever the widget is rendered, on the application's own pages as well
+ * as below a module mount — which is what a page of the application itself, such as its home page, needs.
+ */
+export const APP_ASSET_SCHEME = 'app:';
+
+/**
+ * What a widget needs to show a file its application brought along. Provided once for the application's routes by
+ * base-app, so every widget below them finds it; content comes as a `Blob` for the reason given on
+ * {@link ModuleAssetContext}.
+ */
+export interface AppAssetContext {
+  blob(path: string): Observable<Blob>;
+}
+
+export const APP_ASSET_CONTEXT = new InjectionToken<AppAssetContext>('APP_ASSET_CONTEXT');
+
+/** The application path a property value names, or `undefined` when it is not an `app:` value. */
+export function appAssetPathOf(src: string | undefined | null): string | undefined {
+  return src?.startsWith(APP_ASSET_SCHEME) ? src.slice(APP_ASSET_SCHEME.length).replace(/^\/+/, '') : undefined;
+}
+
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
 /**
@@ -57,14 +80,15 @@ export function resolveAssetLink(fromPath: string, link: string | null | undefin
 }
 
 /**
- * A URL a widget can put in an `<img>`: `src` itself when it is an ordinary URL, and for a `module:` value an
- * object URL of the asset, fetched with the caller's credentials. Revoked when the value changes and when the
+ * A URL a widget can put in an `<img>`: `src` itself when it is an ordinary URL, and for a `module:` or `app:` value
+ * an object URL of the asset, fetched with the caller's credentials. Revoked when the value changes and when the
  * widget goes. `undefined` until the asset has arrived, and for one that cannot be had.
  *
  * Call it in an injection context, as the field initializer of a component.
  */
 export function moduleAssetUrl(src: () => string | undefined): Signal<string | undefined> {
-  const context = inject(MODULE_ASSET_CONTEXT, { optional: true });
+  const moduleContext = inject(MODULE_ASSET_CONTEXT, { optional: true });
+  const appContext = inject(APP_ASSET_CONTEXT, { optional: true });
   const url = signal<string | undefined>(undefined);
   let objectUrl: string | undefined;
   const revoke = () => {
@@ -74,14 +98,16 @@ export function moduleAssetUrl(src: () => string | undefined): Signal<string | u
 
   effect((onCleanup) => {
     const value = src();
-    const path = moduleAssetPathOf(value);
-    if (path === undefined) {
+    const modulePath = moduleAssetPathOf(value);
+    const appPath = appAssetPathOf(value);
+    if (modulePath === undefined && appPath === undefined) {
       url.set(value);
       return;
     }
     url.set(undefined);
+    const context = modulePath === undefined ? appContext : moduleContext;
     if (!context) return;
-    const subscription = context.blob(path).subscribe({
+    const subscription = context.blob((modulePath ?? appPath) as string).subscribe({
       next: (blob) => {
         revoke();
         objectUrl = URL.createObjectURL(blob);
