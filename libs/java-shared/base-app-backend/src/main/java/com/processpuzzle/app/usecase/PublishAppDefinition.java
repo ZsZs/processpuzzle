@@ -6,6 +6,7 @@ import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.app.usecase.exception.AppDefinitionNotFoundException;
 import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
@@ -28,7 +29,7 @@ import java.util.TreeSet;
  * decision belongs in the rule record, not in a second threshold here.
  *
  * <p>The app's assets are published with it: their records are copied from the draft channel to the released
- * one, and content a released record stops naming is handed to the sweeper.
+ * one, and content a released record stops naming is handed to the sweeper. So are its translations.
  *
  * <p>Publishing an already-published, unedited definition is a no-op rather than an error: it is
  * idempotent, which is the friendlier behaviour for a designer's Publish button.
@@ -40,6 +41,7 @@ public class PublishAppDefinition {
     private final AppDefinitionRepository repository;
     private final AppDefinitionValidator validator;
     private final AppAssetReleases assets;
+    private final AppTranslationReleases translations;
     private final ModuleAssetSweeper sweeper;
     private final OrganizationGuard guard;
     private final AppMapper mapper;
@@ -47,12 +49,14 @@ public class PublishAppDefinition {
     public PublishAppDefinition(AppDefinitionRepository repository,
                                 AppDefinitionValidator validator,
                                 AppAssetReleases assets,
+                                AppTranslationReleases translations,
                                 ModuleAssetSweeper sweeper,
                                 OrganizationGuard guard,
                                 AppMapper mapper) {
         this.repository = repository;
         this.validator = validator;
         this.assets = assets;
+        this.translations = translations;
         this.sweeper = sweeper;
         this.guard = guard;
         this.mapper = mapper;
@@ -72,6 +76,7 @@ public class PublishAppDefinition {
         existing.publish();
         Set<String> dropped = new TreeSet<>();
         assets.release(orgKey, appId, dropped);
+        translations.release(orgKey, appId);
         sweeper.sweep(orgKey, dropped);
         return repository.save(existing);
     }

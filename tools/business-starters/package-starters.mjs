@@ -97,8 +97,9 @@ function checkOwnedFiles(folder, contents, where) {
         throw new StarterError(`${where}: '${path}' belongs to ${ownerKind.slice(0, -1)} '${owner}', which the starter does not define`);
       }
       if (group === 'translations') {
-        if (ownerKind === 'apps') throw new StarterError(`${where}: '${path}': only a module's texts can be imported`);
-        if (rest.length !== 1 || !rest[0].endsWith('.json')) throw new StarterError(`${where}: '${path}' must be <dir>/modules/<module>/<locale>.json`);
+        if (rest.length !== 1 || !rest[0].endsWith('.json')) {
+          throw new StarterError(`${where}: '${path}' must be <dir>/${ownerKind}/${owner}/<locale>.json`);
+        }
       }
     }
   }

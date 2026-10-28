@@ -14,6 +14,7 @@ contents:
     - apps/race-pages.yaml
   translations:
     - translations/modules/plan-race/de.json
+    - translations/apps/app/de.json
   assets:
     - assets/apps/app/cards/plan-race.svg
     - assets/modules/plan-race/docs/guide.md

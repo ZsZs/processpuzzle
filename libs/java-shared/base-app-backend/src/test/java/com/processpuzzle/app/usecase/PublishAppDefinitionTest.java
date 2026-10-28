@@ -5,6 +5,7 @@ import com.processpuzzle.app.usecase.port.RuleEvaluator;
 import com.processpuzzle.app.adapter.inbound.AppMapper;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import java.util.Set;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -55,6 +56,7 @@ class PublishAppDefinitionTest {
     private AppDefinitionRepository repository;
     private PublishAppDefinition publishAppDefinition;
     private AppAssetReleases assetReleases;
+    private AppTranslationReleases textReleases;
     private ModuleAssetSweeper sweeper;
     private UpdateAppDefinition updateAppDefinition;
     private AppMapper mapper;
@@ -65,6 +67,7 @@ class PublishAppDefinitionTest {
     void setUp() {
         repository = mock(AppDefinitionRepository.class);
         assetReleases = mock(AppAssetReleases.class);
+        textReleases = mock(AppTranslationReleases.class);
         sweeper = mock(ModuleAssetSweeper.class);
         when(repository.save(any(AppDefinition.class))).thenAnswer(call -> call.getArgument(0));
 
@@ -81,7 +84,7 @@ class PublishAppDefinitionTest {
         OrganizationGuard guard = new OrganizationGuard(policyProvider);
         mapper = new AppMapper();
 
-        publishAppDefinition = new PublishAppDefinition(repository, validator, assetReleases, sweeper, guard, mapper);
+        publishAppDefinition = new PublishAppDefinition(repository, validator, assetReleases, textReleases, sweeper, guard, mapper);
         updateAppDefinition = new UpdateAppDefinition(repository, validator, guard, mapper);
     }
 
@@ -109,6 +112,16 @@ class PublishAppDefinitionTest {
         publishAppDefinition.execute("my-org", "claims-app");
 
         verify(sweeper).sweep("my-org", Set.of("old-image"));
+    }
+
+    @Test
+    void publish_releasesTheAppsTranslationsToo() {
+        AppDefinition definition = stored(validGraph());
+        when(repository.findByOrgKeyAndId("my-org", "claims-app")).thenReturn(Optional.of(definition));
+
+        publishAppDefinition.execute("my-org", "claims-app");
+
+        verify(textReleases).release("my-org", "claims-app");
     }
 
     @Test

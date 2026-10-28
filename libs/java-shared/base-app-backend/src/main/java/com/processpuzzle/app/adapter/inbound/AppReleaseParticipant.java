@@ -6,6 +6,7 @@ import com.processpuzzle.app.domain.AppGraph;
 import com.processpuzzle.app.domain.ModuleMount;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.AppDefinitionValidator;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.core.definition.CanonicalJson;
@@ -36,8 +37,9 @@ import org.springframework.stereotype.Component;
  * the same validation a save applies, and only its errors refuse the release, as they refuse a save.
  * Deleting an app deletes both graphs, so there is never a removal to release.
  *
- * <p>The app's assets are released with it and are part of what is pending: an app whose graph is unchanged but
- * whose files are not still has something to release. Only the records are copied, never the files.
+ * <p>The app's assets and translations are released with it and are part of what is pending: an app whose graph is
+ * unchanged but whose files or texts are not still has something to release. Only the records are copied, never the
+ * files.
  */
 @Component
 public class AppReleaseParticipant implements ReleaseParticipant {
@@ -46,14 +48,16 @@ public class AppReleaseParticipant implements ReleaseParticipant {
     private final AppDefinitionValidator validator;
     private final AppMapper mapper;
     private final AppAssetReleases assets;
+    private final AppTranslationReleases translations;
     private final ModuleAssetSweeper sweeper;
 
     public AppReleaseParticipant(AppDefinitionRepository repository, AppDefinitionValidator validator, AppMapper mapper,
-                                 AppAssetReleases assets, ModuleAssetSweeper sweeper) {
+                                 AppAssetReleases assets, AppTranslationReleases translations, ModuleAssetSweeper sweeper) {
         this.repository = repository;
         this.validator = validator;
         this.mapper = mapper;
         this.assets = assets;
+        this.translations = translations;
         this.sweeper = sweeper;
     }
 
@@ -76,10 +80,12 @@ public class AppReleaseParticipant implements ReleaseParticipant {
     public List<PendingChange> pending(String orgKey) {
         Map<String, Map<String, String>> draftAssets = assets.byApp(orgKey, Channel.DRAFT);
         Map<String, Map<String, String>> releasedAssets = assets.byApp(orgKey, Channel.RELEASED);
+        Map<String, Map<String, String>> draftTexts = translations.byApp(orgKey, Channel.DRAFT);
+        Map<String, Map<String, String>> releasedTexts = translations.byApp(orgKey, Channel.RELEASED);
         return apps(orgKey).stream()
                 .map(app -> PendingChange.between(kind(), app.getId(),
-                        fingerprint(app.getDraftGraph(), draftAssets.get(app.getId())),
-                        fingerprint(app.getPublishedGraph(), releasedAssets.get(app.getId()))))
+                        fingerprint(app.getDraftGraph(), draftAssets.get(app.getId()), draftTexts.get(app.getId())),
+                        fingerprint(app.getPublishedGraph(), releasedAssets.get(app.getId()), releasedTexts.get(app.getId()))))
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -119,6 +125,7 @@ public class AppReleaseParticipant implements ReleaseParticipant {
         for (AppDefinition app : changedApps(orgKey)) {
             app.publish();
             assets.release(orgKey, app.getId(), dropped);
+            translations.release(orgKey, app.getId());
         }
         sweeper.sweep(orgKey, dropped);
     }
@@ -126,9 +133,11 @@ public class AppReleaseParticipant implements ReleaseParticipant {
     private List<AppDefinition> changedApps(String orgKey) {
         Map<String, Map<String, String>> draftAssets = assets.byApp(orgKey, Channel.DRAFT);
         Map<String, Map<String, String>> releasedAssets = assets.byApp(orgKey, Channel.RELEASED);
+        Map<String, Map<String, String>> draftTexts = translations.byApp(orgKey, Channel.DRAFT);
+        Map<String, Map<String, String>> releasedTexts = translations.byApp(orgKey, Channel.RELEASED);
         return apps(orgKey).stream()
-                .filter(app -> !Objects.equals(fingerprint(app.getDraftGraph(), draftAssets.get(app.getId())),
-                        fingerprint(app.getPublishedGraph(), releasedAssets.get(app.getId()))))
+                .filter(app -> !Objects.equals(fingerprint(app.getDraftGraph(), draftAssets.get(app.getId()), draftTexts.get(app.getId())),
+                        fingerprint(app.getPublishedGraph(), releasedAssets.get(app.getId()), releasedTexts.get(app.getId()))))
                 .toList();
     }
 
@@ -136,17 +145,31 @@ public class AppReleaseParticipant implements ReleaseParticipant {
         return repository.findByOrgKey(orgKey).stream().sorted(Comparator.comparing(AppDefinition::getId)).toList();
     }
 
-    /** The graph alone when the app has no assets, so that an app that never had any keeps the fingerprint it had before they existed. */
     static String fingerprint(AppGraph graph, Map<String, String> assetHashes) {
+        return fingerprint(graph, assetHashes, null);
+    }
+
+    /**
+     * The graph alone when the app has no assets and no translations, so that an app that never had any keeps the
+     * fingerprint it had before they existed; each part joins in only when it is there, for the same reason.
+     */
+    static String fingerprint(AppGraph graph, Map<String, String> assetHashes, Map<String, String> texts) {
         if (graph == null) {
             return null;
         }
-        if (assetHashes == null || assetHashes.isEmpty()) {
+        boolean hasAssets = assetHashes != null && !assetHashes.isEmpty();
+        boolean hasTexts = texts != null && !texts.isEmpty();
+        if (!hasAssets && !hasTexts) {
             return CanonicalJson.of(graph, Set.of());
         }
         Map<String, Object> content = new TreeMap<>();
         content.put("graph", graph);
-        content.put("assets", assetHashes);
+        if (hasAssets) {
+            content.put("assets", assetHashes);
+        }
+        if (hasTexts) {
+            content.put("translations", texts);
+        }
         return CanonicalJson.of(content, Set.of());
     }
 }

@@ -3,6 +3,7 @@ package com.processpuzzle.app.usecase;
 import com.processpuzzle.app.AppTestFixtures;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.usecase.service.AppAssetReleases;
+import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import java.util.Collection;
 import java.util.Set;
@@ -41,6 +42,7 @@ class AppDefinitionCrudTest {
     private FindAppDefinition findAppDefinition;
     private DeleteAppDefinition deleteAppDefinition;
     private AppAssetReleases assetReleases;
+    private AppTranslationReleases textReleases;
     private ModuleAssetSweeper sweeper;
     private ValidateAppDefinition validateAppDefinition;
 
@@ -48,9 +50,10 @@ class AppDefinitionCrudTest {
     void setUp() {
         repository = mock(AppDefinitionRepository.class);
         assetReleases = mock(AppAssetReleases.class);
+        textReleases = mock(AppTranslationReleases.class);
         sweeper = mock(ModuleAssetSweeper.class);
         findAppDefinition = new FindAppDefinition(repository, AppTestFixtures.permissiveGuard());
-        deleteAppDefinition = new DeleteAppDefinition(repository, assetReleases, sweeper, AppTestFixtures.permissiveGuard());
+        deleteAppDefinition = new DeleteAppDefinition(repository, assetReleases, textReleases, sweeper, AppTestFixtures.permissiveGuard());
         validateAppDefinition = new ValidateAppDefinition(AppTestFixtures.structuralValidator(),
                 AppTestFixtures.permissiveGuard());
     }
@@ -99,6 +102,16 @@ class AppDefinitionCrudTest {
     }
 
     @Test
+    void deleteAlsoRemovesTheAppsTranslations() {
+        AppDefinition stored = AppTestFixtures.storedDefinition();
+        when(repository.findByOrgKeyAndId(ORG_KEY, APP_ID)).thenReturn(Optional.of(stored));
+
+        deleteAppDefinition.execute(ORG_KEY, APP_ID);
+
+        verify(textReleases).removeAll(ORG_KEY, APP_ID);
+    }
+
+    @Test
     void deletingAnUnknownDefinition_is404RatherThanASilentNoOp() {
         when(repository.findByOrgKeyAndId(ORG_KEY, "nope")).thenReturn(Optional.empty());
 
@@ -134,7 +147,7 @@ class AppDefinitionCrudTest {
 
         assertThatThrownBy(() -> new FindAppDefinition(untouched, AppTestFixtures.denyingGuard())
                 .execute(ORG_KEY, APP_ID)).isInstanceOf(OrganizationAccessDeniedException.class);
-        assertThatThrownBy(() -> new DeleteAppDefinition(untouched, assetReleases, sweeper, AppTestFixtures.denyingGuard())
+        assertThatThrownBy(() -> new DeleteAppDefinition(untouched, assetReleases, textReleases, sweeper, AppTestFixtures.denyingGuard())
                 .execute(ORG_KEY, APP_ID)).isInstanceOf(OrganizationAccessDeniedException.class);
         assertThatThrownBy(() -> new ValidateAppDefinition(AppTestFixtures.structuralValidator(),
                 AppTestFixtures.denyingGuard()).execute(ORG_KEY, AppTestFixtures.validInput(APP_ID)))
