@@ -14,6 +14,12 @@ class ContentGroupsTest {
     }
 
     @Test
+    void translationsAndAssetsAreGroupsOfTheirOwnKinds() {
+        assertThat(ContentGroups.kindOf("translations")).contains(DefinitionKinds.TRANSLATION);
+        assertThat(ContentGroups.kindOf("assets")).contains(DefinitionKinds.ASSET);
+    }
+
+    @Test
     void anUnknownGroupHasNoKind() {
         assertThat(ContentGroups.kindOf("themes")).isEmpty();
     }

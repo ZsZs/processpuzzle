@@ -10,6 +10,10 @@ package com.processpuzzle.core.definition;
  * workflow bundle carries its catalogue. They are released before the workflows that use them, a task after the roles,
  * artifacts and tools it names.
  *
+ * <p>{@link #TRANSLATION} and {@link #ASSET} are not definitions but what a starter's modules and apps bring along:
+ * the translated texts of a module, ahead of the app but after the module they belong to, and the files of a module or
+ * an app, after both. They are only imported — a release carries them with the module or app that owns them.
+ *
  * <p>A {@link #CALCULATION} reads and writes entity attributes, so it comes after the entities; it is released
  * after the rules, which it does not name, and before the workflows, whose states may trigger it.
  */
@@ -29,6 +33,8 @@ public final class DefinitionKinds {
     public static final String WORKFLOW = "workflow";
     public static final String MODULE = "module";
     public static final String APP = "app";
+    public static final String TRANSLATION = "translation";
+    public static final String ASSET = "asset";
 
     public static final int ENTITY_ORDER = 10;
     public static final int STATE_ORDER = 20;
@@ -43,7 +49,9 @@ public final class DefinitionKinds {
     public static final int TASK_ORDER = 58;
     public static final int WORKFLOW_ORDER = 60;
     public static final int MODULE_ORDER = 65;
+    public static final int TRANSLATION_ORDER = 66;
     public static final int APP_ORDER = 70;
+    public static final int ASSET_ORDER = 75;
 
     private DefinitionKinds() {
     }

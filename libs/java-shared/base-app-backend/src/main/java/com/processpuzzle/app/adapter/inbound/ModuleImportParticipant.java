@@ -31,7 +31,8 @@ import org.springframework.stereotype.Component;
  * <p>A starter's modules are released as they are imported, through {@link ModuleReleaseParticipant} — the one
  * way a module goes live — so the application the same bundle publishes mounts released modules and its layout
  * carries them. That releases every draft of the organization, which at this point are the starter's own: the
- * importer has removed the rest. A module's uploaded translations and assets are not part of the file.
+ * importer has removed the rest. A module's translations and assets are not part of the file; they are imported after it, by
+ * {@link TranslationImportParticipant} and {@link AssetImportParticipant}, which release the module again.
  */
 @Component
 public class ModuleImportParticipant implements DefinitionImportParticipant {

@@ -31,7 +31,10 @@
       "widget": "Widget",
       "document": "Dokumentum",
       "workflow": "Munkafolyamat",
-      "app": "Alkalmazás"
+      "module": "Modul",
+      "app": "Alkalmazás",
+      "translation": "Fordítás",
+      "asset": "Fájl"
     },
     "catalogEmpty": "A katalógusban még nincs starter.",
     "version": "Verzió",
