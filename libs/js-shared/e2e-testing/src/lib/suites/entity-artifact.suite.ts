@@ -82,10 +82,8 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
         test('ARTIFACT', async ({ page }, testInfo) => {
           const excluded = options.excludedArtifacts?.find((entry) => entry.entityName === descriptor.entityName && entry.attrName === tester.attr.attrName);
           // Conditional skips, decided per descriptor at run time from the application's own options.
-          // eslint-disable-next-line sonarjs/no-skipped-tests
-          test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
-          // eslint-disable-next-line sonarjs/no-skipped-tests
-          test.skip(identificationAttr(descriptor) === undefined, `[${descriptor.entityName}] has no identification attr`);
+          testInfo.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
+          testInfo.skip(identificationAttr(descriptor) === undefined, `[${descriptor.entityName}] has no identification attr`);
 
           const entitySegment = descriptor.entityName.replace(/\s+/g, '-').toLowerCase();
           const suffix = `e2e-${Date.now().toString(36)}-${entitySegment}-${tester.attr.attrName}-r${testInfo.retry}`;
