@@ -4,7 +4,23 @@
  */
 
 /** The definition kinds the importer knows, in import order. */
-export type DefinitionKind = 'entity' | 'state' | 'rule' | 'widget' | 'document' | 'workflow' | 'module' | 'app' | 'translation' | 'asset';
+export type DefinitionKind =
+  | 'entity'
+  | 'state'
+  | 'rule'
+  | 'calculation'
+  | 'widget'
+  | 'document'
+  | 'event'
+  | 'artifact'
+  | 'role'
+  | 'tool'
+  | 'task'
+  | 'workflow'
+  | 'module'
+  | 'app'
+  | 'translation'
+  | 'asset';
 
 export type ImportStatus = 'applied' | 'would-apply' | 'rejected';
 
