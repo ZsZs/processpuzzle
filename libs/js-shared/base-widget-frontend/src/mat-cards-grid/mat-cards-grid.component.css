@@ -57,13 +57,18 @@ mat-card-actions button {
     cursor: pointer;
 }
 
-/* The picture sits bottom-left and is smaller than the card, so the title keeps the top and the text the
-   right-hand side. */
+/* The picture is the card's background, edge to edge, with the title, subtitle and text drawn on it. The text keeps
+   to the right of the picture's drawing (which sits bottom-left), and takes dark colours of its own because the
+   pictures are light whatever the theme is. */
 .default-mat-card.has-image {
+    aspect-ratio: 8 / 5;
     min-height: 200px;
     background-repeat: no-repeat;
-    background-position: left 12px bottom 12px;
-    background-size: auto 62%;
+    background-position: center;
+    background-size: cover;
+    color: #0f172a;
+    --mat-card-title-text-color: #0f172a;
+    --mat-card-subtitle-text-color: #475569;
 }
 
 .default-mat-card.has-image mat-card-content {
