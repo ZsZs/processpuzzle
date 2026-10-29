@@ -216,7 +216,7 @@ components:
     DefinitionKind:
       type: string
       description: The kinds the importer knows; a bundle naming any other is rejected.
-      enum: [ entity, state, rule, widget, document, workflow, app ]
+      enum: [ entity, state, rule, calculation, widget, document, event, artifact, role, tool, task, workflow, module, app, translation, asset ]
 
     ImportReport:
       type: object
