@@ -3,14 +3,18 @@ package com.processpuzzle.starter.adapter.inbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 
+import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.starter.model.CatalogStarterVersion;
 import com.processpuzzle.starter.model.DefinitionKind;
 import com.processpuzzle.starter.model.ImportReportItem;
 import com.processpuzzle.starter.registry.StarterCatalog;
 import com.processpuzzle.starter.usecase.ImportReport;
 import com.processpuzzle.starter.usecase.ListInstalledStarters;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -115,5 +119,34 @@ class StarterMapperTest {
         assertThat(model.getInstalledAt()).isEqualTo(OffsetDateTime.parse("2026-10-06T10:00:00Z"));
         assertThat(model.getInstalledBy()).isEqualTo("alice");
         assertThat(model.getCustomizedDefinitions()).isEqualTo(2);
+    }
+
+    /**
+     * The contract's DefinitionKind enum is what a report's items are mapped through, and a generated enum throws
+     * on any value it does not list: a kind added to {@link DefinitionKinds} but not to base-starter-api.yaml makes
+     * the REST answer a 400 for every import that carries one, however well the import itself went.
+     */
+    @Test
+    void everyKindTheImporterKnowsIsInTheContract() {
+        List<String> kinds = Arrays.stream(DefinitionKinds.class.getDeclaredFields())
+                .filter(field -> Modifier.isStatic(field.getModifiers()) && field.getType() == String.class)
+                .map(StarterMapperTest::valueOf)
+                .toList();
+
+        assertThat(kinds).isNotEmpty();
+        for (String kind : kinds) {
+            ImportReport report = new ImportReport(true, ImportReport.Status.WOULD_APPLY, "s", "1.0.0",
+                    List.of(new ImportReport.Item(kind, "key", ImportReport.Action.CREATE)), null);
+
+            assertThat(mapper.toModel(report).getItems()).as(kind).extracting(item -> item.getKind().getValue()).containsExactly(kind);
+        }
+    }
+
+    private static String valueOf(Field field) {
+        try {
+            return (String) field.get(null);
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
