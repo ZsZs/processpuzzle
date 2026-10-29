@@ -13,11 +13,13 @@ export { APP_DEFINITION_ENTITY_NAME };
 const statusSelectables = toSelectables(Object.keys(AppDefinitionStatus));
 
 function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
-  const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id');
+  // The id is what opens the application from the list: it is the one value of the row that is unique and never empty,
+  // where the name is free text. The name stays the heading of the form.
+  const idAttr = new BaseEntityAttrDescriptor('id', FormControlType.TEXT_BOX, 'Id', undefined, true);
   idAttr.required = true;
   idAttr.placeholder = 'Unique within the organization, e.g. claims-app';
 
-  const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
+  const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name');
   nameAttr.required = true;
   nameAttr.isHeading = true;
 
@@ -137,5 +139,6 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 }
 
 export function createAppDefinitionDescriptor(): BaseEntityDescriptor {
-  return new BaseEntityDescriptor({ entityName: APP_DEFINITION_ENTITY_NAME, attrDescriptors: createAppDefinitionAttrDescriptors(), i18nScope: APP_DEFINITION_I18N_SCOPE });
+  // `titleKey`: the id is the link of the list, but the status bar names the application it is open on.
+  return new BaseEntityDescriptor({ entityName: APP_DEFINITION_ENTITY_NAME, attrDescriptors: createAppDefinitionAttrDescriptors(), i18nScope: APP_DEFINITION_I18N_SCOPE, titleKey: 'name' });
 }

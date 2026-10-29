@@ -57,9 +57,11 @@ describe('createAppDefinitionDescriptor', () => {
     expect(byName('name')?.required).toBe(true);
   });
 
-  it('links to the details form from the name column', () => {
-    expect(byName('name')?.isLinkToDetails).toBe(true);
-    expect(descriptor.componentIdentification()).toBe('name');
+  it('links to the details form from the id column, and titles the form with the name', () => {
+    expect(byName('id')?.isLinkToDetails).toBe(true);
+    expect(byName('name')?.isLinkToDetails).toBeFalsy();
+    expect(descriptor.componentIdentification()).toBe('id');
+    expect(descriptor.titleKey).toBe('name');
   });
 
   it('disables the server-assigned attributes', () => {
