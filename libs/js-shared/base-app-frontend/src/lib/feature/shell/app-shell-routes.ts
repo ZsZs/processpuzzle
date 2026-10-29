@@ -86,13 +86,23 @@ export class AppShellRoutesFactory {
         return languages();
       },
       load: async (moduleKey, scope, locale) => {
-        const [shipped, uploaded] = await Promise.all([
-          firstValueFrom(this.injector.get(TranslocoHttpLoader).getTranslation(`${scope}/${locale}`, { scope })),
-          this.uploaded(moduleKey, locale, revision),
-        ]);
+        const [shipped, uploaded] = await Promise.all([this.shipped(scope, locale), this.uploaded(moduleKey, locale, revision)]);
         return { ...shipped, ...uploaded };
       },
     };
+  }
+
+  /**
+   * The bundle the application ships for the scope, if it ships one. A module a Business Starter brought has only
+   * the texts it uploaded, so there is no `assets/i18n/<scope>/<locale>.json` and the request answers 404 — which
+   * must not fail the whole load, or the uploaded texts would never reach the module.
+   */
+  private async shipped(scope: string, locale: string): Promise<Record<string, string>> {
+    try {
+      return (await firstValueFrom(this.injector.get(TranslocoHttpLoader).getTranslation(`${scope}/${locale}`, { scope }))) as Record<string, string>;
+    } catch {
+      return {};
+    }
   }
 
   private async uploaded(moduleKey: string, locale: string, revision: 'draft' | 'released'): Promise<ModuleTranslationBundle> {
