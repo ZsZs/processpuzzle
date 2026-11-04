@@ -265,7 +265,7 @@
     "@nx/esbuild": "24.0.2",
     "@nx/eslint": "24.0.2",
     "@nx/eslint-plugin": "24.0.2",
-    "@nx/js": "^24.0.2",
+    "@nx/js": "^24.0.3",
     "@nx/playwright": "^24.0.2",
     "@nx/web": "24.0.2",
     "@nx/workspace": "24.0.2",
