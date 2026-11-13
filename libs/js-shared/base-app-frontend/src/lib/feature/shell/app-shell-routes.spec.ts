@@ -236,6 +236,15 @@ describe('AppShellRoutesFactory', () => {
       expect(children.map((route) => route.path)).toContain('orders');
     });
 
+    // A module a Business Starter brought has only the texts it uploaded: nothing is shipped for its scope, and the
+    // request for assets/i18n/<scope>/<locale>.json answers 404.
+    it('still loads the uploaded translations of a module that ships no bundle of its own', async () => {
+      shippedTranslations.getTranslation.mockReturnValue(throwError(() => new Error('404')));
+      moduleTranslations.bundle.mockReturnValue(of({ 'module.name': 'Auftragsverwaltung' }));
+
+      expect(await (await loadersOf(mountOf()))['de']()).toEqual({ 'module.name': 'Auftragsverwaltung' });
+    });
+
     it('keeps the titles readable when the uploaded translations cannot be read', async () => {
       shippedTranslations.getTranslation.mockReturnValue(of({ 'module.name': 'Auftragsverwaltung' }));
       moduleTranslations.bundle.mockReturnValue(throwError(() => new Error('boom')));
