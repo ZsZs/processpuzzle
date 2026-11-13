@@ -7,7 +7,7 @@ import { ActivatedRoute, convertToParamMap, Router, ROUTER_OUTLET_DATA } from '@
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { BehaviorSubject, of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BlockKind, Document, DocumentInputPort, DocumentKind, DocumentStatus, DocumentTranslationSummary, PortType } from '../../domain/base-document';
 import { BaseDocumentService } from '../../domain/base-document.service';
 import { BaseDocumentStore } from '../../domain/base-document.store';
@@ -64,6 +64,11 @@ describe('DocumentReportViewComponent', () => {
     fixture.componentRef.setInput('inputPorts', [ORDER_PORT, new DocumentInputPort('note', PortType.STRING)]);
     fixture.componentRef.setInput('portValues', { order: 'o-1' });
     fixture.componentRef.setInput('title', 'Invoice');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    window.document.querySelectorAll('iframe').forEach((frame) => frame.remove());
   });
 
   it('binds the ports to their values and renders the content', async () => {
