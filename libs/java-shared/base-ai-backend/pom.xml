@@ -77,6 +77,11 @@
       <artifactId>spring-ai-starter-model-openai</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp-jvm</artifactId>
+    </dependency>
+
     <!-- YAML parsing, for the bundled default-recognition-profiles files DefaultProfileLoader reads -->
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
