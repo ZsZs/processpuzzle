@@ -1,7 +1,7 @@
 package com.processpuzzle.store.usecases.outbound;
 
 import io.minio.*;
-import io.minio.messages.Bucket;
+import io.minio.messages.ListAllMyBucketsResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -74,7 +74,7 @@ class MinioFileStorageServiceTest {
 
     @Test
     void listBuckets_shouldReturnNames() throws Exception {
-        Bucket bucket = mock(Bucket.class);
+        ListAllMyBucketsResult.Bucket bucket = mock(ListAllMyBucketsResult.Bucket.class);
         when(bucket.name()).thenReturn("test-bucket");
         when(minioClient.listBuckets()).thenReturn(Collections.singletonList(bucket));
 
@@ -103,7 +103,7 @@ class MinioFileStorageServiceTest {
         StatObjectResponse mockStat = mock(StatObjectResponse.class);
         when(minioClient.getObject(any(GetObjectArgs.class))).thenReturn(mockResponse);
         when(minioClient.statObject(any(StatObjectArgs.class))).thenReturn(mockStat);
-        when(mockStat.userMetadata()).thenReturn(Map.of("custom", "value"));
+        when(mockStat.userMetadata()).thenReturn(new io.minio.Http.Headers(Map.of("custom", "value")));
         when(mockStat.contentType()).thenReturn("application/pdf");
 
         StoredObject storedObject = fileStorageService.getObject("test-bucket", "test-object");
@@ -139,7 +139,7 @@ class MinioFileStorageServiceTest {
         assertEquals("http://public/put", url);
         ArgumentCaptor<GetPresignedObjectUrlArgs> args = ArgumentCaptor.forClass(GetPresignedObjectUrlArgs.class);
         verify(minioPresignClient).getPresignedObjectUrl(args.capture());
-        assertEquals(io.minio.http.Method.PUT, args.getValue().method());
+        assertEquals(io.minio.Http.Method.PUT, args.getValue().method());
         assertEquals("test-bucket", args.getValue().bucket());
         assertEquals("o", args.getValue().object());
         assertEquals(Collections.singleton("video/mp4"), args.getValue().extraHeaders().get("Content-Type"));
@@ -149,7 +149,7 @@ class MinioFileStorageServiceTest {
 
     @Test
     void getUploadUri_whenSigningFails_shouldPreserveCauseAndObjectContext() throws Exception {
-        IOException cause = new IOException("signing failed");
+        io.minio.errors.MinioException cause = new io.minio.errors.MinioException("signing failed");
         Duration expiry = Duration.ofMinutes(30);
         when(minioPresignClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(cause);
 
@@ -170,7 +170,7 @@ class MinioFileStorageServiceTest {
         assertEquals("http://minio:9000/get", url);
         ArgumentCaptor<GetPresignedObjectUrlArgs> args = ArgumentCaptor.forClass(GetPresignedObjectUrlArgs.class);
         verify(minioClient).getPresignedObjectUrl(args.capture());
-        assertEquals(io.minio.http.Method.GET, args.getValue().method());
+        assertEquals(io.minio.Http.Method.GET, args.getValue().method());
         assertEquals("test-bucket", args.getValue().bucket());
         assertEquals("o", args.getValue().object());
         assertEquals(7200, args.getValue().expiry());
@@ -179,7 +179,7 @@ class MinioFileStorageServiceTest {
 
     @Test
     void getInternalObjectUri_whenSigningFails_shouldPreserveCauseAndObjectContext() throws Exception {
-        IOException cause = new IOException("signing failed");
+        io.minio.errors.MinioException cause = new io.minio.errors.MinioException("signing failed");
         Duration expiry = Duration.ofHours(2);
         when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class))).thenThrow(cause);
 
@@ -212,7 +212,7 @@ class MinioFileStorageServiceTest {
     @Test
     void deleteObjects_shouldRaiseTheFirstReportedError() throws Exception {
         when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
-        io.minio.messages.DeleteError error = mock(io.minio.messages.DeleteError.class);
+        io.minio.messages.DeleteResult.Error error = mock(io.minio.messages.DeleteResult.Error.class);
         when(error.objectName()).thenReturn("object-1");
         when(minioClient.removeObjects(any(RemoveObjectsArgs.class))).thenReturn(List.of(new Result<>(error)));
 

@@ -74,8 +74,8 @@
     <java.version>25</java.version>
     <maven.compiler.source>25</maven.compiler.source>
     <maven.compiler.target>25</maven.compiler.target>
-    <minio.version>8.6.0</minio.version>
-    <okhttp.version>4.12.0</okhttp.version>
+    <minio.version>9.0.4</minio.version>
+    <okhttp.version>5.5.1</okhttp.version>
     <rsql-parser.version>2.1.0</rsql-parser.version>
     <feel-engine.version>1.22.1</feel-engine.version>
     <!-- Spring Boot's BOM does not manage Spring Modulith, so spring-modulith-bom is imported
@@ -103,7 +103,7 @@
          tools/scripts/release-java-lib.mjs bumps to the next version (per the increment
          flag) on release; flatten-maven-plugin resolves the reference at publish time. -->
     <base-ai-backend.version>0.8.1</base-ai-backend.version>
-    <api-contracts.version>1.19.0</api-contracts.version>
+    <api-contracts.version>1.19.1</api-contracts.version>
     <base-app-backend.version>1.10.0</base-app-backend.version>
     <base-document-backend.version>1.5.0</base-document-backend.version>
     <base-entity-backend.version>1.10.0</base-entity-backend.version>
@@ -246,6 +246,12 @@
       </dependency>
 
       <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
+        <version>3.0.3</version>
+      </dependency>
+
+      <dependency>
         <groupId>org.openapitools</groupId>
         <artifactId>jackson-databind-nullable</artifactId>
         <version>0.2.6</version>
@@ -260,6 +266,12 @@
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
+        <version>${okhttp.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp-jvm</artifactId>
         <version>${okhttp.version}</version>
       </dependency>
 
@@ -449,7 +461,7 @@
         <plugin>
           <groupId>org.sonatype.central</groupId>
           <artifactId>central-publishing-maven-plugin</artifactId>
-          <version>0.8.0</version>
+          <version>0.12.0</version>
           <extensions>true</extensions>
           <configuration>
             <!-- Must match <server><id>central</id> in settings.xml. -->
@@ -464,6 +476,13 @@
                  root itself inherits. -->
             <waitUntil>validated</waitUntil>
           </configuration>
+        </plugin>
+
+        <!-- OpenAPI Generator plugin -->
+        <plugin>
+          <groupId>org.openapitools</groupId>
+          <artifactId>openapi-generator-maven-plugin</artifactId>
+          <version>7.12.0</version>
         </plugin>
 
         <!-- Versions plugin — used by tools/scripts/release-java-lib.mjs to bump

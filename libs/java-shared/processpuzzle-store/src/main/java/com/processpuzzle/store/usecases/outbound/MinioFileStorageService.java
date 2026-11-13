@@ -2,11 +2,10 @@ package com.processpuzzle.store.usecases.outbound;
 
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
-import io.minio.http.Method;
-import io.minio.messages.Bucket;
-import io.minio.messages.DeleteError;
-import io.minio.messages.DeleteObject;
+import io.minio.messages.DeleteRequest;
+import io.minio.messages.DeleteResult;
 import io.minio.messages.Item;
+import io.minio.messages.ListAllMyBucketsResult;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +67,7 @@ public class MinioFileStorageService implements FileStorageService {
     public List<String> listBuckets() {
         try {
             return minioClient.listBuckets().stream()
-                    .map(Bucket::name)
+                    .map(ListAllMyBucketsResult.Bucket::name)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error listing buckets", e);
@@ -84,7 +83,7 @@ public class MinioFileStorageService implements FileStorageService {
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(objectName)
-                            .stream(new ByteArrayInputStream(payload), payload.length, -1)
+                            .stream(new ByteArrayInputStream(payload), (long) payload.length, -1L)
                             .contentType(contentType)
                             .userMetadata(metadata)
                             .build());
@@ -108,7 +107,13 @@ public class MinioFileStorageService implements FileStorageService {
                             .object(objectName)
                             .build());
 
-            Map<String, String> metadata = new java.util.HashMap<>(stat.userMetadata());
+            Map<String, String> metadata = new java.util.HashMap<>();
+            if (stat.userMetadata() != null) {
+                stat.userMetadata().forEach(entry -> {
+                    metadata.put(entry.getKey(), entry.getValue());
+                    metadata.put(entry.getKey().toLowerCase(java.util.Locale.ROOT), entry.getValue());
+                });
+            }
             metadata.put("Content-Type", stat.contentType());
             metadata.put("X-Object-Name", objectName);
             metadata.put("X-Object-Bucket", bucketName);
@@ -124,7 +129,7 @@ public class MinioFileStorageService implements FileStorageService {
         try {
             return minioPresignClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
+                            .method(Http.Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
                             .expiry(1, TimeUnit.HOURS)
@@ -139,7 +144,7 @@ public class MinioFileStorageService implements FileStorageService {
         try {
             return minioPresignClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
-                            .method(Method.PUT)
+                            .method(Http.Method.PUT)
                             .bucket(bucketName)
                             .object(objectName)
                             .extraHeaders(Map.of("Content-Type", contentType))
@@ -155,7 +160,7 @@ public class MinioFileStorageService implements FileStorageService {
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
-                            .method(Method.GET)
+                            .method(Http.Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
                             .expiry((int) expiry.toSeconds(), TimeUnit.SECONDS)
@@ -200,8 +205,8 @@ public class MinioFileStorageService implements FileStorageService {
         }
         List<String> names = List.copyOf(objectNames);
         for (int from = 0; from < names.size(); from += DELETE_BATCH_SIZE) {
-            List<DeleteObject> batch = names.subList(from, Math.min(from + DELETE_BATCH_SIZE, names.size()))
-                    .stream().map(DeleteObject::new).toList();
+            List<DeleteRequest.Object> batch = names.subList(from, Math.min(from + DELETE_BATCH_SIZE, names.size()))
+                    .stream().map(DeleteRequest.Object::new).toList();
             removeAll(bucketName, batch);
         }
     }
@@ -232,12 +237,12 @@ public class MinioFileStorageService implements FileStorageService {
      * individual failure is reported only as one of them. So every result is read, and the first
      * error is raised.
      */
-    private void removeAll(String bucketName, List<DeleteObject> batch) {
-        DeleteError firstError = null;
+    private void removeAll(String bucketName, List<DeleteRequest.Object> batch) {
+        DeleteResult.Error firstError = null;
         try {
-            for (Result<DeleteError> result : minioClient.removeObjects(RemoveObjectsArgs.builder()
+            for (Result<DeleteResult.Error> result : minioClient.removeObjects(RemoveObjectsArgs.builder()
                     .bucket(bucketName).objects(batch).build())) {
-                DeleteError error = result.get();
+                DeleteResult.Error error = result.get();
                 if (firstError == null) {
                     firstError = error;
                 }

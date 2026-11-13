@@ -10,6 +10,7 @@
 export function printElement(element: HTMLElement, title: string): void {
   const frame = document.createElement('iframe');
   frame.setAttribute('aria-hidden', 'true');
+  frame.srcdoc = '';
   frame.style.position = 'fixed';
   frame.style.width = '0';
   frame.style.height = '0';
