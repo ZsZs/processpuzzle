@@ -178,7 +178,6 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
-            <version>3.0.2</version>
         </dependency>
 
         <!-- The runtime datasource for every deployment. One PostgreSQL database per application
