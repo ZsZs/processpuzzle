@@ -110,7 +110,7 @@
     <base-rule-backend.version>1.5.3</base-rule-backend.version>
     <base-starter-backend.version>0.4.0</base-starter-backend.version>
     <base-release-backend.version>0.6.0</base-release-backend.version>
-    <base-event-backend.version>0.4.0</base-event-backend.version>
+    <base-event-backend.version>0.4.1</base-event-backend.version>
     <base-calculation-backend.version>0.3.1</base-calculation-backend.version>
     <base-state-backend.version>1.8.1</base-state-backend.version>
     <base-workflow-backend.version>1.8.0</base-workflow-backend.version>
