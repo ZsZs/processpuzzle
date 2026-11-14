@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { MatMiniFabButton } from '@angular/material/button';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { RouterOutlet } from '@angular/router';
-import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective } from '@jsverse/transloco';
 import { AssistantPanelComponent } from '@processpuzzle/base-ai';
 import { DESIGN_ASSISTANT_ENABLED } from './design-assistant.provider';
 
@@ -19,14 +19,13 @@ import { DESIGN_ASSISTANT_ENABLED } from './design-assistant.provider';
 @Component({
   selector: 'pp-design-workbench',
   imports: [AssistantPanelComponent, MatMiniFabButton, MatSidenav, MatSidenavContainer, MatSidenavContent, RouterOutlet, TranslocoDirective],
-  providers: [provideTranslocoScope({ scope: 'design' })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <mat-sidenav-container class="pp-design-workbench" [hasBackdrop]="false">
       <mat-sidenav-content class="pp-design-workbench__content">
         <router-outlet />
         @if (assistantEnabled) {
-          <ng-container *transloco="let t; prefix: 'design'">
+          <ng-container *transloco="let t; scope: 'design'; prefix: 'design'">
             <button
               matMiniFab
               type="button"
