@@ -1933,8 +1933,9 @@ components:
       type: string
       description: >-
         Repeat of shared-api.yaml's canonical TranslationScope. Transloco scope a bundle loads under,
-        and the directory segment its asset equivalent would have had.
-      pattern: '^[a-z0-9]+(_[a-z0-9]+)*$'
+        and the directory segment its asset equivalent would have had. Unlike the canonical schema this also
+        accepts kebab-case: a module's scope defaults to its key (`plan-race`), and module keys are kebab-case.
+      pattern: '^[a-z0-9]+([_-][a-z0-9]+)*$'
       minLength: 1
       maxLength: 64
       example: base_app
