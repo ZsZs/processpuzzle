@@ -107,6 +107,9 @@
   "spacer": {
     "name": "Espaceur"
   },
+  "sidenav_toggle": {
+    "name": "Bouton du menu latéral"
+  },
   "themes_button": {
     "name": "Bouton de thèmes"
   },

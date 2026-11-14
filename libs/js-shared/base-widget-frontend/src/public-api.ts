@@ -23,6 +23,7 @@ export {
   NAVIGATE_BACK_WIDGET,
   PHOTO_ALBUM_WIDGET,
   SHARE_BUTTON_WIDGET,
+  SIDENAV_TOGGLE_WIDGET,
   SPACER_WIDGET,
   TASK_DASHBOARD_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
@@ -44,6 +45,7 @@ export {
   provideNavigateBackWidget,
   providePhotoAlbumWidget,
   provideShareButtonWidget,
+  provideSidenavToggleWidget,
   provideSpacerWidget,
   provideTaskDashboardButtonWidget,
   provideThemesButtonWidget,
@@ -99,6 +101,9 @@ export {
 } from './themes-button/theme-presets';
 export type { ThemeColorScheme, ThemePreset, ThemeSelection } from './themes-button/theme-presets';
 export { DOCUMENT_THEME_STORAGE_KEY, ThemeService } from './themes-button/theme.service';
+export { SIDENAV_CONTROL } from './sidenav-toggle/sidenav-control';
+export type { SidenavControl } from './sidenav-toggle/sidenav-control';
+export { SidenavToggleComponent } from './sidenav-toggle/sidenav-toggle.component';
 export { ThemesButtonComponent } from './themes-button/themes-button.component';
 export { VersionButtonComponent } from './version-button/version-button.component';
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-registry/widget-instance';

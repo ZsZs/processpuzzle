@@ -107,6 +107,9 @@
   "spacer": {
     "name": "Spacer"
   },
+  "sidenav_toggle": {
+    "name": "Sidenav toggle"
+  },
   "themes_button": {
     "name": "Themes button"
   },

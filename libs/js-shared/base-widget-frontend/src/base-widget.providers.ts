@@ -18,6 +18,7 @@ import { PHOTO_ALBUM_WIDGET_REGISTRATION } from './photo-album/photo-album.widge
 import { SHARE_BUTTON_WIDGET_REGISTRATION } from './share-button/share-button.widget';
 import { SPACER_WIDGET_REGISTRATION } from './spacer/spacer.widget';
 import { TASK_DASHBOARD_BUTTON_WIDGET_REGISTRATION } from './task-dashboard-button/task-dashboard-button.widget';
+import { SIDENAV_TOGGLE_WIDGET_REGISTRATION } from './sidenav-toggle/sidenav-toggle.widget';
 import { THEMES_BUTTON_WIDGET_REGISTRATION } from './themes-button/themes-button.widget';
 import { VERSION_BUTTON_WIDGET_REGISTRATION } from './version-button/version-button.widget';
 import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
@@ -44,6 +45,7 @@ export { PHOTO_ALBUM_WIDGET } from './photo-album/photo-album.widget';
 export { SHARE_BUTTON_WIDGET } from './share-button/share-button.widget';
 export { SPACER_WIDGET } from './spacer/spacer.widget';
 export { TASK_DASHBOARD_BUTTON_WIDGET } from './task-dashboard-button/task-dashboard-button.widget';
+export { SIDENAV_TOGGLE_WIDGET } from './sidenav-toggle/sidenav-toggle.widget';
 export { THEMES_BUTTON_WIDGET } from './themes-button/themes-button.widget';
 export { VERSION_BUTTON_WIDGET } from './version-button/version-button.widget';
 
@@ -132,6 +134,10 @@ export function provideShareButtonWidget(): Provider[] {
   return provideWidget(SHARE_BUTTON_WIDGET_REGISTRATION);
 }
 
+export function provideSidenavToggleWidget(): Provider[] {
+  return provideWidget(SIDENAV_TOGGLE_WIDGET_REGISTRATION);
+}
+
 export function provideSpacerWidget(): Provider[] {
   return provideWidget(SPACER_WIDGET_REGISTRATION);
 }
@@ -166,6 +172,7 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   NAVIGATE_BACK_WIDGET_REGISTRATION,
   PHOTO_ALBUM_WIDGET_REGISTRATION,
   SHARE_BUTTON_WIDGET_REGISTRATION,
+  SIDENAV_TOGGLE_WIDGET_REGISTRATION,
   SPACER_WIDGET_REGISTRATION,
   TASK_DASHBOARD_BUTTON_WIDGET_REGISTRATION,
   THEMES_BUTTON_WIDGET_REGISTRATION,

@@ -107,6 +107,9 @@
   "spacer": {
     "name": "Abstandhalter"
   },
+  "sidenav_toggle": {
+    "name": "Seitenleisten-Schalter"
+  },
   "themes_button": {
     "name": "Design-Auswahl"
   },
