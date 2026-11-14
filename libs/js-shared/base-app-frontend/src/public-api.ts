@@ -86,6 +86,7 @@ export { AppPreviewComponent } from './lib/feature/app-preview.component';
 export { AppShellComponent, ShellActionsDirective } from './lib/feature/shell/app-shell.component';
 export { AppShellRoutesFactory, appShellRoutesGuard } from './lib/feature/shell/app-shell-routes';
 export { PublishedAppStore, publishedAppRoutesGuard, type AppIdResolver } from './lib/feature/shell/published-app-routes';
+export { PublishedAppThemeDirective } from './lib/feature/shell/published-app-theme.directive';
 export { AppRegionRenderer, type RegionView } from './lib/feature/shell/app-region.renderer';
 export { layoutOf, themeVarsOf, type ResolvedLayout } from './lib/feature/shell/app-shell.model';
 export { RegionFooterComponent } from './lib/feature/shell/region-footer.component';
