@@ -471,6 +471,17 @@ widgetDefinitions:
     - name: themeChange
       type: OBJECT
       description: The selection, preset and colour scheme, after every change the user makes.
+  - key: sidenav-toggle
+    name: Sidenav toggle
+    translocoId: base_widget.sidenav_toggle.name
+    description: >-
+      Shows or hides the application's sidenav. Renders nothing when the application has no sidenav.
+    category: Navigation
+    icon: menu
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
   - key: like-button
     name: Like button
     translocoId: base_widget.like_button.name

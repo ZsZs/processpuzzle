@@ -107,6 +107,9 @@
   "spacer": {
     "name": "Térköz"
   },
+  "sidenav_toggle": {
+    "name": "Oldalsáv-kapcsoló"
+  },
   "themes_button": {
     "name": "Témaválasztó gomb"
   },

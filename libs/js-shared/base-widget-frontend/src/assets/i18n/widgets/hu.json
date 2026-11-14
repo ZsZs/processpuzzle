@@ -29,5 +29,9 @@
   "sidenav_content": {
     "show_menu": "Menü megjelenítése",
     "show_content": "Tartalom megjelenítése"
+  },
+  "sidenav_toggle": {
+    "hide": "Menü elrejtése",
+    "show": "Menü megjelenítése"
   }
 }

@@ -6,12 +6,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { RouterOutlet } from '@angular/router';
 import { LayoutService } from '@processpuzzle/util';
-import { APPLICATION_CONTEXT, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
+import { APPLICATION_CONTEXT, SIDENAV_CONTROL, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
 import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
 import { NavOrientation } from './region-nav.component';
 import { ShellApplicationContext } from './shell-application-context';
+import { ShellSidenavControl } from './shell-sidenav-control';
 import { ShellOverlayContainer } from './shell-overlay-container';
 
 /**
@@ -75,6 +76,8 @@ export class ShellActionsDirective {}
     ThemeService,
     ShellApplicationContext,
     { provide: APPLICATION_CONTEXT, useExisting: ShellApplicationContext },
+    ShellSidenavControl,
+    { provide: SIDENAV_CONTROL, useExisting: ShellSidenavControl },
     { provide: OverlayContainer, useClass: ShellOverlayContainer },
     Dialog,
     MatDialog,
@@ -102,7 +105,8 @@ export class ShellActionsDirective {}
           class="pp-app-shell__sidenav"
           ppSidenavAutosize
           [mode]="layout().sidenavMode"
-          [opened]="layout().sidenavOpened && !layoutService.isSidenavHidden()"
+          [opened]="sidenavControl.opened() && !layoutService.isSidenavHidden()"
+          (openedChange)="onSidenavOpenedChange($event)"
           [position]="layout().sidenavPosition"
         >
           <!-- A page such as a content book may take the sidenav over; the outlet keeps the nav one click away. -->
@@ -143,6 +147,7 @@ export class AppShellComponent {
   private readonly theme = inject(ThemeService);
   private readonly applicationContext = inject(ShellApplicationContext);
   protected readonly layoutService = inject(LayoutService);
+  protected readonly sidenavControl = inject(ShellSidenavControl);
 
   /** Controls the host projected into the top row; the row is rendered for them alone if need be. */
   protected readonly hostActions = contentChild(ShellActionsDirective);
@@ -159,6 +164,9 @@ export class AppShellComponent {
     this.theme.persistUnder(this.persistTheme() && definition?.id ? `pp-theme:${definition.id}` : null);
     this.applicationContext.definition.set(definition);
   });
+
+  // The definition's default re-applies on every edit, like the theme: a toggle in the Preview is only tried out.
+  private readonly applySidenavDefault = effect(() => this.sidenavControl.opened.set(this.layout().sidenavOpened));
 
   private readonly regionViews = computed(() =>
     (this.definition()?.regions ?? []).map((region) => this.regionRenderer.render(region, this.definition())).filter((view): view is RegionView => view !== undefined),
@@ -200,6 +208,13 @@ export class AppShellComponent {
   // rows are what narrow it to a rail. See SidenavAutosizeDirective for how the content margin follows.
   protected readonly sidenavInputs = computed(() => ({ ...this.navInputsOf(this.sidenavView(), 'vertical'), compact: this.layoutService.isMediumDevice() }));
   protected readonly topNavInputs = computed(() => this.navInputsOf(this.topNavView(), 'horizontal'));
+
+  private readonly syncSidenavAvailability = effect(() => this.sidenavControl.available.set(this.sidenavView() !== undefined && !this.layoutService.isSidenavHidden()));
+
+  /** A backdrop click or Escape closes an over-mode drawer; a hide request from a page is not the user's choice. */
+  protected onSidenavOpenedChange(opened: boolean): void {
+    if (!this.layoutService.isSidenavHidden()) this.sidenavControl.opened.set(opened);
+  }
 
   private navInputsOf(view: RegionView | undefined, orientation: NavOrientation): Record<string, unknown> {
     return { ...view?.inputs, orientation };

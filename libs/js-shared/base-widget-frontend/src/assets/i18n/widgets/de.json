@@ -29,5 +29,9 @@
   "sidenav_content": {
     "show_menu": "Menü anzeigen",
     "show_content": "Inhalt anzeigen"
+  },
+  "sidenav_toggle": {
+    "hide": "Menü ausblenden",
+    "show": "Menü einblenden"
   }
 }

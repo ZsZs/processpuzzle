@@ -55,6 +55,9 @@ Provide the application property store (see [Application Property Store](#applic
 <pp-like-button></pp-like-button>
 ```
 
+## Sidenav Toggle Widget
+The **sidenav-toggle** widget (`pp-sidenav-toggle`, no props) is an icon button for an application's header or footer that shows or hides the application's sidenav. It talks to the nearest `SIDENAV_CONTROL` (`available`, `opened`, `toggle()`), which `base-app`'s `AppShellComponent` provides; outside a shell, or in an application without a sidenav, it renders nothing. The definition's `sidenavOpenByDefault` is the initial state.
+
 ## Navigate Back Button Component
 The **NavigateBack** (`pp-navigate-back`) is an icon button that returns the user to the previously visited route. It relies on the `NavigateBackService`, which maintains a stack of visited routes by listening to router navigation events.
 
