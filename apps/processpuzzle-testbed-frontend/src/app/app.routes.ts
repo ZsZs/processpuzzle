@@ -8,6 +8,7 @@ import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embed
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { DYNAMIC_ENTITY_NAME, DYNAMIC_ENTITY_PATH, dynamicEntityScreenRoutes } from './content/base-forms/dynamic-entity/dynamic-entity.routes';
+import { contextObjectRoutes } from './content/base-forms/context-object/context-object.routes';
 import { ORDER_NAME, ORDER_PATH, orderScreenRoutes, SPECIAL_ORDER_NAME, SPECIAL_ORDER_PATH, specialOrderScreenRoutes } from './content/base-rules/rule-sample.routes';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
@@ -170,6 +171,14 @@ export const appRoutes: Route[] = [
             loadChildren: dynamicEntityScreenRoutes,
           },
         ],
+      },
+      {
+        // The Context Object demonstration: a page of its own, apart from the samples, because it is about one
+        // feature rather than about the form controls. Its three entities exist only as metadata, so its screens are
+        // contributed as routes at run time, as the Dynamic Entity sample's are.
+        path: 'context-object',
+        loadComponent: () => import('./content/base-forms/context-object/context-object.component').then((comp) => comp.ContextObjectComponent),
+        loadChildren: contextObjectRoutes,
       },
     ],
   },

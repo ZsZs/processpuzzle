@@ -125,11 +125,17 @@ The edit dialog (`ContextCollectionItemDialog`) can then be retired, or kept for
 
 ## Trying it
 
-The testbed seeds an app, **order-desk**, over its existing Order entity (embedded lines, state machine, calculated total). It needs no new entities.
+### The Context Object page
 
-1. Start the testbed (the app is created on startup if it is missing).
-2. In the designer, open Application → App Definition → **order-desk**, then its **Preview** tab.
-3. Orders → create or open a few orders (the generated forms), then **Set as active** on a row.
-4. The status bar shows the order with its state and customer; its menu switches, opens or clears it.
-5. **Lines** lists that order's lines. **Add** and a row open the line's form below the order and return to the list.
-6. The header's **context-actions** buttons and the status bar's menu offer the order's transitions.
+The testbed has a page for exactly this: **base-entity › Context Object**. It uses three entities that exist only for it (metadata, seeded by base-entity): a **Demo Root** and two kinds of part it embeds, **Demo Component One** and **Demo Component Two**. The page explains the feature and has three buttons:
+
+1. **Aggregate Root** shows the ordinary list of roots. Click **Set as active** on a row: that root is the context object and you land on the first part.
+2. **Embedded Component One** / **Two** list that kind of part of the selected root. **Add**, or the edit button of a row, opens the part's own form below the root; saving writes that part alone, and you never go through the root.
+3. The status bar above the buttons shows the context object, with a menu to switch, open or clear it.
+4. In a root's details the parts are listed too, as before. The arrow next to a list's name hides a long list; it changes only what is shown.
+
+The selected root is in the address (`…/context-object/ctx/demo-root/<id>/…`), so a refresh or a second browser tab shows the same root. The last selection is remembered on the device: the part buttons use it when the address names none.
+
+### The order-desk app
+
+The same mechanism, declared as an application instead of coded in a page: the testbed also seeds an **order-desk** app over its Order and Order Line entities (designer › Application › App Definition › order-desk › Preview).

@@ -148,7 +148,10 @@
   "embedded_components": {
     "save_owner_first": "Mentse ezt a rekordot, mielőtt {{ entity }} elemet ad hozzá — a beágyazott komponens ebben tárolódik.",
     "move_up": "Feljebb",
-    "move_down": "Lejjebb"
+    "move_down": "Lejjebb",
+    "hide_list": "Lista elrejtése",
+    "show_list": "Lista megjelenítése",
+    "hidden_count": "{{ count }} elrejtve"
   },
   "rich_text": {
     "toolbar": {

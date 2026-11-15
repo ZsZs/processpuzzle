@@ -118,6 +118,63 @@ describe('EmbeddedComponentsListComponent', () => {
     });
   });
 
+  describe('folding the list away', () => {
+    const rowsOf = (fixture: { nativeElement: HTMLElement }) => fixture.nativeElement.querySelectorAll('ul li');
+    const toggle = (fixture: { nativeElement: HTMLElement }) => fixture.nativeElement.querySelector('[data-testid$="-toggle-list"]') as HTMLButtonElement;
+
+    it('lists the rows by default', async () => {
+      const { fixture, component } = await setupList({
+        store: makeEmbeddedStore([
+          { id: 'a', name: 'first' },
+          { id: 'b', name: 'second' },
+        ]),
+      });
+
+      expect(component.listVisible()).toBe(true);
+      expect(rowsOf(fixture)).toHaveLength(2);
+      expect(toggle(fixture).getAttribute('aria-expanded')).toBe('true');
+    });
+
+    it('hides the rows, and shows a hint in their place, when the user folds the list away', async () => {
+      const { fixture } = await setupList({
+        store: makeEmbeddedStore([
+          { id: 'a', name: 'first' },
+          { id: 'b', name: 'second' },
+        ]),
+      });
+
+      toggle(fixture).click();
+      fixture.detectChanges();
+
+      expect(rowsOf(fixture)).toHaveLength(0);
+      expect(toggle(fixture).getAttribute('aria-expanded')).toBe('false');
+      // What the hint says is a translated text with the count as a parameter; here it is enough that it stands in for the rows.
+      expect(fixture.nativeElement.querySelector('[data-testid$="-hidden-count"]')).not.toBeNull();
+    });
+
+    it('shows the rows again, and keeps the add button available while they are hidden', async () => {
+      const { fixture, component } = await setupList({ store: makeEmbeddedStore([{ id: 'a', name: 'first' }]) });
+
+      toggle(fixture).click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('button.base-entity-form-focus-action')).not.toBeNull();
+
+      toggle(fixture).click();
+      fixture.detectChanges();
+
+      expect(component.listVisible()).toBe(true);
+      expect(rowsOf(fixture)).toHaveLength(1);
+    });
+
+    it('leaves the rows in the component while they are hidden: only the display changes', async () => {
+      const { fixture, component } = await setupList({ store: makeEmbeddedStore([{ id: 'a', name: 'first' }]) });
+
+      toggle(fixture).click();
+
+      expect(component.rows()).toEqual([{ id: 'a', name: 'first' }]);
+    });
+  });
+
   describe('rows()', () => {
     /**
      * The child's store is already scoped to this owner — it resolves the rows out of the containing

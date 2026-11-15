@@ -148,7 +148,10 @@
   "embedded_components": {
     "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert.",
     "move_up": "Nach oben",
-    "move_down": "Nach unten"
+    "move_down": "Nach unten",
+    "hide_list": "Liste ausblenden",
+    "show_list": "Liste anzeigen",
+    "hidden_count": "{{ count }} ausgeblendet"
   },
   "rich_text": {
     "toolbar": {

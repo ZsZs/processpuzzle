@@ -141,7 +141,9 @@
     "overview_tab_label": "Übersicht",
     "samples_tab_label": "Beispiele",
     "samples_desc_1": "Die Beispielentitäten zur Demonstration der Funktionalität dieser Bibliothek sind wie folgt:",
-    "samples_desc_2": "Die unten stehenden Tabellen und Formulare werden zur Laufzeit aus den Entitäten und ihren Attributbeschreibungen generiert."
+    "samples_desc_2": "Die unten stehenden Tabellen und Formulare werden zur Laufzeit aus den Entitäten und ihren Attributbeschreibungen generiert.",
+    "context_object_tab_label": "Kontextobjekt",
+    "context_object_no_context": "Es ist noch keine Aggregatwurzel ausgewählt. Öffnen Sie „Aggregate Root“ und klicken Sie in einer Zeile auf „Als aktiv setzen“."
   },
   "base-rules": {
     "overview_tab_label": "Übersicht",

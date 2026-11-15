@@ -38,24 +38,44 @@ import { EmbeddedComponentRefComponent } from './embedded-component-ref.componen
     @if (config().visible) {
       <div class="row">
         <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
-          <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
-          <ul [id]="config().attrName" class="base-entity-form-list" cdkDropList [cdkDropListDisabled]="!reorderable()" (cdkDropListDropped)="dropComponent($event)">
-            @for (row of rows(); track rowKey(row); let index = $index, first = $first, last = $last) {
-              <li cdkDrag cdkDragLockAxis="y">
-                <app-embedded-component-ref
-                  [displayName]="displayName(row, index)"
-                  [disabled]="config().disabled"
-                  [ordered]="reorderable()"
-                  [first]="first"
-                  [last]="last"
-                  (openRequested)="openComponent(row)"
-                  (deleteRequested)="deleteComponent(row)"
-                  (moveUpRequested)="moveComponent(row, index - 1)"
-                  (moveDownRequested)="moveComponent(row, index + 1)"
-                />
-              </li>
-            }
-          </ul>
+          <legend [ngClass]="config().labelClass">
+            {{ config().i18nKey() | ppLabel: config().label }}
+            <!-- A long list can be folded away: the rows stay in the document, only their display is hidden. -->
+            <button
+              type="button"
+              mat-icon-button
+              class="embedded-list-toggle"
+              [attr.data-testid]="config().attrName + '-toggle-list'"
+              [attr.aria-expanded]="listVisible()"
+              [attr.aria-label]="(listVisible() ? 'base_entity.embedded_components.hide_list' : 'base_entity.embedded_components.show_list') | transloco"
+              [title]="(listVisible() ? 'base_entity.embedded_components.hide_list' : 'base_entity.embedded_components.show_list') | transloco"
+              (click)="toggleList()"
+            >
+              <mat-icon>{{ listVisible() ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+          </legend>
+          @if (!listVisible()) {
+            <p class="base-entity-form-hint" [attr.data-testid]="config().attrName + '-hidden-count'">{{ 'base_entity.embedded_components.hidden_count' | transloco: { count: rows().length } }}</p>
+          }
+          @if (listVisible()) {
+            <ul [id]="config().attrName" class="base-entity-form-list" cdkDropList [cdkDropListDisabled]="!reorderable()" (cdkDropListDropped)="dropComponent($event)">
+              @for (row of rows(); track rowKey(row); let index = $index, first = $first, last = $last) {
+                <li cdkDrag cdkDragLockAxis="y">
+                  <app-embedded-component-ref
+                    [displayName]="displayName(row, index)"
+                    [disabled]="config().disabled"
+                    [ordered]="reorderable()"
+                    [first]="first"
+                    [last]="last"
+                    (openRequested)="openComponent(row)"
+                    (deleteRequested)="deleteComponent(row)"
+                    (moveUpRequested)="moveComponent(row, index - 1)"
+                    (moveDownRequested)="moveComponent(row, index + 1)"
+                  />
+                </li>
+              }
+            </ul>
+          }
           @if (!config().disabled) {
             @if (ownerIsPersisted()) {
               <button type="button" mat-button class="base-entity-form-focus-action" [title]="addComponentTitle()" [attr.aria-label]="addComponentTitle()" (click)="addComponent()">
@@ -101,6 +121,13 @@ export class EmbeddedComponentsListComponent<Entity extends BaseEntity> extends 
   });
 
   /** Only an `ordered` attribute of an editable form offers reordering, and only once there is something to order. */
+  /** Whether the rows are listed. Shown by default; the user may fold a long list away, which changes nothing but the display. */
+  readonly listVisible = signal(true);
+
+  toggleList(): void {
+    this.listVisible.update((visible) => !visible);
+  }
+
   readonly reorderable = computed(() => this.config().ordered && !this.config().disabled && this.rows().length > 1);
 
   constructor() {

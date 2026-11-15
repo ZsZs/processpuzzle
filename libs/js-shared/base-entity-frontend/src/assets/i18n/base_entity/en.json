@@ -148,7 +148,10 @@
   "embedded_components": {
     "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it.",
     "move_up": "Move up",
-    "move_down": "Move down"
+    "move_down": "Move down",
+    "hide_list": "Hide the list",
+    "show_list": "Show the list",
+    "hidden_count": "{{ count }} hidden"
   },
   "rich_text": {
     "toolbar": {
