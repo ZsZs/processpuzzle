@@ -81,6 +81,16 @@ export class KeycloakAuthService extends AuthService {
   }
 
   /**
+   * Drops the cached user and the token. `authenticate()` and `isAuthenticated` answer from the user signal,
+   * which is filled once at init and would otherwise keep saying "signed in" after the SSO session ended;
+   * `clearToken()` also stops keycloak-js sending (and refreshing) a token the server has rejected.
+   */
+  override clearSession(): void {
+    this._user.set(undefined);
+    this.keycloak.clearToken();
+  }
+
+  /**
    * Roles are read from the token once, at init, so a role granted afterwards stays invisible until the
    * token is replaced. `updateToken(-1)` forces that replacement; the user is then rebuilt from the new
    * token with the profile it already had. A failed refresh leaves the user as it was.
