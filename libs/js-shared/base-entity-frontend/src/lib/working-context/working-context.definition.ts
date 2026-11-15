@@ -27,11 +27,11 @@ export interface WorkingContextDefinition {
    * may be a list of alternatives. `{ state: 'Running' }`.
    */
   confirmSwitchWhen?: Record<string, unknown>;
-  /** `url+localStorage` (default) restores the last context when a context view is opened without one. */
+  /** `url-local-storage` (default) restores the last context when a context view is opened without one. */
   persist?: WorkingContextPersistence;
 }
 
-export type WorkingContextPersistence = 'url' | 'url+localStorage';
+export type WorkingContextPersistence = 'url' | 'url-local-storage';
 
 export interface WorkingContextPicker {
   /** Attributes the picker's search matches against; the entity's title attribute when omitted. */

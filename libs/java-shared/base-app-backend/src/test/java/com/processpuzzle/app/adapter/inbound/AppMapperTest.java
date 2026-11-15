@@ -43,6 +43,39 @@ class AppMapperTest {
     private final AppMapper mapper = new AppMapper();
 
     @Test
+    void workingContextsAndRequiresContext_roundTripThroughTheGraph() {
+        com.processpuzzle.app.model.WorkingContextDefinition race = new com.processpuzzle.app.model.WorkingContextDefinition("race", "Race");
+        race.setParent("regatta");
+        race.setBasePath("/conduct");
+        race.setPicker(new com.processpuzzle.app.model.WorkingContextPicker().searchFields(List.of("name", "date")).recent(5));
+        race.setDisplay(new com.processpuzzle.app.model.WorkingContextDisplay().label("{{name}}").badge("state").extra("round {{round}}"));
+        race.setConfirmSwitchWhen(Map.of("state", "Running"));
+        race.setPersist(com.processpuzzle.app.model.WorkingContextDefinition.PersistEnum.URL);
+        AppDefinitionInput input = fullInput();
+        input.setContexts(List.of(race));
+        input.getRoutes().get(0).setRequiresContext("race");
+
+        AppGraph graph = mapper.toDomainGraph(input);
+
+        assertThat(graph.routes().get(0).requiresContext()).isEqualTo("race");
+        assertThat(graph.contexts()).singleElement().satisfies(context -> {
+            assertThat(context.parent()).isEqualTo("regatta");
+            assertThat(context.picker().recent()).isEqualTo(5);
+            assertThat(context.persist()).isEqualTo("url");
+        });
+        com.processpuzzle.app.domain.AppDefinition stored = new com.processpuzzle.app.domain.AppDefinition("my-org", "app", "App", null, null, graph);
+        com.processpuzzle.app.model.AppDefinition model = mapper.toModel(stored);
+        assertThat(model.getRoutes().get(0).getRequiresContext()).isEqualTo("race");
+        assertThat(model.getContexts()).singleElement().satisfies(context -> {
+            assertThat(context.getName()).isEqualTo("race");
+            assertThat(context.getPicker().getSearchFields()).containsExactly("name", "date");
+            assertThat(context.getDisplay().getBadge()).isEqualTo("state");
+            assertThat(context.getConfirmSwitchWhen()).containsEntry("state", "Running");
+            assertThat(context.getPersist()).isEqualTo(com.processpuzzle.app.model.WorkingContextDefinition.PersistEnum.URL);
+        });
+    }
+
+    @Test
     void inputToDomainAndBack_preservesTheWholeGraph() {
         AppGraph graph = mapper.toDomainGraph(fullInput());
 

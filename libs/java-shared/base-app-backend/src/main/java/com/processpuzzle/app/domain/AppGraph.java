@@ -26,18 +26,26 @@ import java.util.List;
  * @param regions declared shell regions; empty on a freshly provisioned app
  * @param routes the app's own routes, flat; empty on a freshly provisioned app
  * @param modules modules this app mounts, and where
+ * @param contexts working contexts routes may require; empty when the app has none
  */
 public record AppGraph(
         Theme theme,
         Layout layout,
         List<Region> regions,
         List<AppRoute> routes,
-        List<ModuleMount> modules) {
+        List<ModuleMount> modules,
+        List<WorkingContext> contexts) {
 
     public AppGraph {
+        contexts = contexts == null ? List.of() : List.copyOf(contexts);
         regions = regions == null ? List.of() : List.copyOf(regions);
         routes = routes == null ? List.of() : List.copyOf(routes);
         modules = modules == null ? List.of() : List.copyOf(modules);
+    }
+
+    /** A graph without working contexts. */
+    public AppGraph(Theme theme, Layout layout, List<Region> regions, List<AppRoute> routes, List<ModuleMount> modules) {
+        this(theme, layout, regions, routes, modules, List.of());
     }
 
     /** The graph of a freshly provisioned application: no theme, layout, regions, routes or mounts. */
@@ -47,12 +55,12 @@ public record AppGraph(
 
     /** Returns a copy of this graph with {@code regions} replaced — used by role filtering. */
     public AppGraph withRegions(List<Region> replacement) {
-        return new AppGraph(theme, layout, replacement, routes, modules);
+        return new AppGraph(theme, layout, replacement, routes, modules, contexts);
     }
 
     /** Returns a copy of this graph with {@code routes} replaced — used by role filtering. */
     public AppGraph withRoutes(List<AppRoute> replacement) {
-        return new AppGraph(theme, layout, regions, replacement, modules);
+        return new AppGraph(theme, layout, regions, replacement, modules, contexts);
     }
 
     /**
