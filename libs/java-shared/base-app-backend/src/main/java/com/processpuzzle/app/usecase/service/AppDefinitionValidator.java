@@ -235,30 +235,46 @@ public class AppDefinitionValidator {
             return names;
         }
         Map<String, String> parents = new HashMap<>();
-        EntityNameRegistry registry = entityRegistryProvider.getIfAvailable();
         for (int i = 0; i < contexts.size(); i++) {
-            WorkingContextDefinition context = contexts.get(i);
-            String path = "/contexts/" + i;
-            if (context == null || isBlank(context.getName())) {
-                problems.add(new AppValidationProblem(path + "/name", "app.validation.missing-context-name",
-                        "A working context needs a name; it is its URL segment."));
-                continue;
-            }
-            if (!names.add(context.getName())) {
-                problems.add(new AppValidationProblem(path + "/name", "app.validation.duplicate-context-name",
-                        "More than one context is named '" + context.getName() + "'."));
-            }
-            if (isBlank(context.getEntityName())) {
-                problems.add(new AppValidationProblem(path + "/entityName", "app.validation.missing-context-entity",
-                        "The context '" + context.getName() + "' needs an entity type."));
-            } else if (registry != null && !registry.isKnownEntity(orgKey, context.getEntityName())) {
-                problems.add(new AppValidationProblem(path + "/entityName", "app.validation.unknown-entity-name",
-                        "No entity descriptor named '" + context.getEntityName() + "' is registered for this organization."));
-            }
-            if (!isBlank(context.getParent())) {
-                parents.put(context.getName(), context.getParent());
-            }
+            validateContext(orgKey, contexts.get(i), "/contexts/" + i, names, parents, problems);
         }
+        validateContextParents(names, parents, problems);
+        return names;
+    }
+
+    private void validateContext(String orgKey, WorkingContextDefinition context, String path, Set<String> names,
+                                 Map<String, String> parents, List<AppValidationProblem> problems) {
+        if (context == null || isBlank(context.getName())) {
+            problems.add(new AppValidationProblem(path + "/name", "app.validation.missing-context-name",
+                    "A working context needs a name; it is its URL segment."));
+            return;
+        }
+        if (!names.add(context.getName())) {
+            problems.add(new AppValidationProblem(path + "/name", "app.validation.duplicate-context-name",
+                    "More than one context is named '" + context.getName() + "'."));
+        }
+        validateContextEntity(orgKey, context, path, problems);
+        if (!isBlank(context.getParent())) {
+            parents.put(context.getName(), context.getParent());
+        }
+    }
+
+    private void validateContextEntity(String orgKey, WorkingContextDefinition context, String path,
+                                       List<AppValidationProblem> problems) {
+        if (isBlank(context.getEntityName())) {
+            problems.add(new AppValidationProblem(path + "/entityName", "app.validation.missing-context-entity",
+                    "The context '" + context.getName() + "' needs an entity type."));
+            return;
+        }
+        EntityNameRegistry registry = entityRegistryProvider.getIfAvailable();
+        if (registry != null && !registry.isKnownEntity(orgKey, context.getEntityName())) {
+            problems.add(new AppValidationProblem(path + "/entityName", "app.validation.unknown-entity-name",
+                    "No entity descriptor named '" + context.getEntityName() + "' is registered for this organization."));
+        }
+    }
+
+    private void validateContextParents(Set<String> names, Map<String, String> parents,
+                                        List<AppValidationProblem> problems) {
         parents.forEach((name, parent) -> {
             if (!names.contains(parent)) {
                 problems.add(new AppValidationProblem("/contexts", "app.validation.unknown-context-parent",
@@ -268,7 +284,6 @@ public class AppDefinitionValidator {
                         "The context '" + name + "' is its own ancestor."));
             }
         });
-        return names;
     }
 
     private static boolean leadsBackTo(String name, Map<String, String> parents) {
