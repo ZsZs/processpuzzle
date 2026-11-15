@@ -220,11 +220,13 @@ describe('AppDefinitionMapper', () => {
       expect(mapper.toDto(entity).contexts).toEqual([{ name: 'race', entityName: 'Race' }]);
     });
 
-    it('carries requiresContext of a route both ways', () => {
-      const entity = mapper.fromDto({ ...dto, routes: [{ path: 'rounds', title: 'Rounds', requiresContext: 'race', target: { kind: 'WIDGETS' } }] });
+    it('carries requiresContext and contextPath of a route both ways', () => {
+      const entity = mapper.fromDto({ ...dto, routes: [{ path: 'rounds', title: 'Rounds', requiresContext: 'race', target: { kind: 'ENTITY', entityName: 'Round', contextPath: 'rounds' } }] });
 
       expect(entity.routes?.[0].requiresContext).toBe('race');
+      expect(entity.routes?.[0].contextPath).toBe('rounds');
       expect(mapper.toDto(entity).routes?.[0].requiresContext).toBe('race');
+      expect(mapper.toDto(entity).routes?.[0].target?.contextPath).toBe('rounds');
     });
 
     it('leaves requiresContext out of a route that has none, rather than sending an empty string', () => {

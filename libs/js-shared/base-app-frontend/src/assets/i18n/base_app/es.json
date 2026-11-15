@@ -109,9 +109,11 @@
       "entityName": "Solo ENTITY: el nombre de una entidad definida en Entidades; su lista y su formulario se generan automáticamente. — Guía: Entidades",
       "entityMode": "Solo ENTITY: abrir en la lista o en los detalles de un registro. Se guarda, pero aún no se aplica. — Guía: Entidades",
       "rsqlFilter": "Solo ENTITY + LIST: un filtro previo como status==OPEN. Se guarda, pero aún no se aplica. — Guía: Entidades",
-      "requiresContext": "Nombre de un contexto de esta aplicación. La página se sirve entonces bajo ctx/<nombre>/<id> y muestra «Seleccione …» mientras no haya ninguno activo."
+      "requiresContext": "Nombre de un contexto de esta aplicación. La página se sirve entonces bajo ctx/<nombre>/<id> y muestra «Seleccione …» mientras no haya ninguno activo.",
+      "contextPath": "El atributo de la entidad del contexto cuya colección lista esta página, p. ej. rounds. Requiere contexto; el nombre de entidad es entonces el tipo de los elementos."
     },
-    "requiresContext": "Requiere contexto"
+    "requiresContext": "Requiere contexto",
+    "contextPath": "Ruta del contexto"
   },
   "app_module_mount": {
     "_self": "Montaje de módulo",

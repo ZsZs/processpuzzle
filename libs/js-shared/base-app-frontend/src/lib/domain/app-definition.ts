@@ -154,6 +154,8 @@ export interface RouteTarget {
   entityMode?: EntityMode;
   /** ENTITY + LIST only. */
   rsqlFilter?: string;
+  /** ENTITY only, with `requiresContext`: see {@link RouteDefinition.contextPath}. */
+  contextPath?: string;
 }
 
 /**
@@ -197,6 +199,12 @@ export class RouteDefinition implements BaseEntity {
   entityName?: string;
   entityMode?: EntityMode;
   rsqlFilter?: string;
+  /**
+   * With `requiresContext` on an ENTITY route: the attribute of the context's entity whose embedded collection the
+   * route lists, `entityName` being the items' type. Adding, editing and removing an item then acts on the **active**
+   * entity of the context — no selection, and no form of the whole entity.
+   */
+  contextPath?: string;
   // endregion
   /** The object the flattened fields came from, preserved so a save cannot drop a future field. */
   target?: RouteTarget;
@@ -214,6 +222,7 @@ export class RouteDefinition implements BaseEntity {
     this.entityName = init.entityName;
     this.entityMode = init.entityMode;
     this.rsqlFilter = init.rsqlFilter;
+    this.contextPath = init.contextPath;
     this.target = init.target;
   }
 }

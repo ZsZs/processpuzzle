@@ -230,5 +230,16 @@
       "cancel_button": "Maradok",
       "confirm_button": "Elhagyom"
     }
+  },
+  "context_collection": {
+    "add": "Hozzáadás",
+    "edit": "Szerkesztés",
+    "delete": "Törlés",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "empty": "Még nincs itt semmi.",
+    "delete_title": "Törli ezt az elemet?",
+    "delete_content": "Ez nem vonható vissza.",
+    "conflict": "Valaki más egy időben módosította. A lista a mentett állapotot mutatja — próbálja újra."
   }
 }

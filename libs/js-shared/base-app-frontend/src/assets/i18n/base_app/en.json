@@ -109,9 +109,11 @@
       "entityName": "ENTITY only: the name of an entity defined under Entities; its list and form are generated for you. — Guide: Entities",
       "entityMode": "ENTITY only: open on the list or on a record's details. Stored, not applied yet. — Guide: Entities",
       "rsqlFilter": "ENTITY + LIST only: a pre-filter such as status==OPEN. Stored, not applied yet. — Guide: Entities",
-      "requiresContext": "Name of a context of this application. The page is then served below ctx/<name>/<id> and shows a \"Select a …\" prompt while none is active."
+      "requiresContext": "Name of a context of this application. The page is then served below ctx/<name>/<id> and shows a \"Select a …\" prompt while none is active.",
+      "contextPath": "The attribute of the context's entity whose collection this page lists, e.g. rounds. Needs Requires Context; the entity name is then the type of the items."
     },
-    "requiresContext": "Requires Context"
+    "requiresContext": "Requires Context",
+    "contextPath": "Context Path"
   },
   "app_module_mount": {
     "_self": "Module Mount",

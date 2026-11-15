@@ -230,5 +230,16 @@
       "cancel_button": "Rester",
       "confirm_button": "Quitter"
     }
+  },
+  "context_collection": {
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "empty": "Rien pour le moment.",
+    "delete_title": "Supprimer cet élément ?",
+    "delete_content": "Cette action est irréversible.",
+    "conflict": "Quelqu'un d'autre l'a modifié en même temps. La liste montre l'état enregistré — réessayez."
   }
 }

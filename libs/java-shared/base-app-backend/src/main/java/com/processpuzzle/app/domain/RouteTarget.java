@@ -30,7 +30,13 @@ public record RouteTarget(
         String documentSlug,
         String entityName,
         EntityMode entityMode,
-        String rsqlFilter) {
+        String rsqlFilter,
+        String contextPath) {
+
+    /** A target without a context-bound collection. */
+    public RouteTarget(Kind kind, List<Widget> widgets, String documentSlug, String entityName, EntityMode entityMode, String rsqlFilter) {
+        this(kind, widgets, documentSlug, entityName, entityMode, rsqlFilter, null);
+    }
 
     public RouteTarget {
         widgets = widgets == null ? List.of() : List.copyOf(widgets);

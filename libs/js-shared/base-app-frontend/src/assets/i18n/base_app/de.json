@@ -109,9 +109,11 @@
       "entityName": "Nur ENTITY: der Name einer unter Entitäten definierten Entität; Liste und Formular werden für Sie generiert. — Leitfaden: Entitäten",
       "entityMode": "Nur ENTITY: mit der Liste oder den Details eines Datensatzes öffnen. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
       "rsqlFilter": "Nur ENTITY + LIST: ein Vorfilter wie status==OPEN. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
-      "requiresContext": "Name eines Kontexts dieser Anwendung. Die Seite liegt dann unter ctx/<name>/<id> und zeigt „Auswählen …“, solange keiner aktiv ist."
+      "requiresContext": "Name eines Kontexts dieser Anwendung. Die Seite liegt dann unter ctx/<name>/<id> und zeigt „Auswählen …“, solange keiner aktiv ist.",
+      "contextPath": "Das Attribut der Kontext-Entität, deren Sammlung diese Seite auflistet, z. B. rounds. Braucht „Kontext erforderlich“; der Entitätsname ist dann der Typ der Einträge."
     },
-    "requiresContext": "Kontext erforderlich"
+    "requiresContext": "Kontext erforderlich",
+    "contextPath": "Kontextpfad"
   },
   "app_module_mount": {
     "_self": "Modul-Einbindung",

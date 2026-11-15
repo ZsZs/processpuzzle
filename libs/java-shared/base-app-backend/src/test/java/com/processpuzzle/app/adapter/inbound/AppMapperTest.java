@@ -54,8 +54,10 @@ class AppMapperTest {
         AppDefinitionInput input = fullInput();
         input.setContexts(List.of(race));
         input.getRoutes().get(0).setRequiresContext("race");
+        input.getRoutes().get(0).getTarget().setContextPath("rounds");
 
         AppGraph graph = mapper.toDomainGraph(input);
+        assertThat(graph.routes().get(0).target().contextPath()).isEqualTo("rounds");
 
         assertThat(graph.routes().get(0).requiresContext()).isEqualTo("race");
         assertThat(graph.contexts()).singleElement().satisfies(context -> {
@@ -66,6 +68,7 @@ class AppMapperTest {
         com.processpuzzle.app.domain.AppDefinition stored = new com.processpuzzle.app.domain.AppDefinition("my-org", "app", "App", null, null, graph);
         com.processpuzzle.app.model.AppDefinition model = mapper.toModel(stored);
         assertThat(model.getRoutes().get(0).getRequiresContext()).isEqualTo("race");
+        assertThat(model.getRoutes().get(0).getTarget().getContextPath()).isEqualTo("rounds");
         assertThat(model.getContexts()).singleElement().satisfies(context -> {
             assertThat(context.getName()).isEqualTo("race");
             assertThat(context.getPicker().getSearchFields()).containsExactly("name", "date");

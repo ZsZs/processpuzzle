@@ -45,6 +45,10 @@
 
 - **1a – done:** `WorkingContextService`, `workingContextRoutes`, picker / drawer / empty state, "Set as active", context crumbs in the status bar.
 - **1b – done:** `contexts` on `AppDefinition`, `requiresContext` on routes and `statusbar` region (contract, backend graph, validation, designer form, route builder, shell). Contexts are declared on the app; the routes of its mounted modules may name them. A module cannot declare contexts of its own (yet).
-- Next: phase 2 (path API and `dataSource` binding).
+- **2 – done:**
+  - Backend: `GET/POST …/{id}/{attr}` and `PATCH/DELETE …/{id}/{attr}/{itemId}` (one level), items identified by `id` (assigned on append). The write is the existing update use case with one item changed, so validation, managed attributes and events stay in one place; the object `version` is the only version (`ETag` on every answer, optional `If-Match`). Calls naming no version are retried when another write wins the race, so concurrent appends both succeed. Deliberately **not** `jsonb_set`, which would write around validation and events.
+  - Frontend: `EmbeddedCollectionService`, and `ContextCollectionComponent` — the list of an embedded collection of the **active** entity with add / edit / remove through a dialog built by the entity form builder. A route opts in with `requiresContext` + `contextPath` (the attribute) + an ENTITY target naming the item type.
+  - Edit and delete send no `If-Match` for now: with one version per object, a second writer's unrelated change would make every other edit a 409. A patch is a merge of the changed members only. Per-item versions (phase 4) bring `If-Match` back.
+- Next: phase 3 (state actions: badge and transitions of the context entity).
 
 Libraries are released one at a time, per phase.

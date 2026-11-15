@@ -1388,6 +1388,14 @@ components:
           nullable: true
           description: ENTITY + LIST only. RSQL applied to the backing search.
           example: "status!=CLOSED"
+        contextPath:
+          type: string
+          nullable: true
+          description: >-
+            ENTITY only, on a route that `requiresContext`. The EMBEDDED_COMPONENTS attribute of the context's
+            entity whose items the route lists, and `entityName` names the items' type: the route then shows the
+            collection of the **active** entity, and adding, editing or removing an item acts on that entity alone.
+          example: rounds
 
     RouteDefinition:
       type: object

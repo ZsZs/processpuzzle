@@ -109,9 +109,11 @@
       "entityName": "ENTITY uniquement : le nom d'une entité définie sous Entités ; sa liste et son formulaire sont générés pour vous. — Guide : Entités",
       "entityMode": "ENTITY uniquement : ouvrir sur la liste ou sur le détail d'un enregistrement. Enregistré, pas encore appliqué. — Guide : Entités",
       "rsqlFilter": "ENTITY + LIST uniquement : un pré-filtre tel que status==OPEN. Enregistré, pas encore appliqué. — Guide : Entités",
-      "requiresContext": "Nom d'un contexte de cette application. La page est alors servie sous ctx/<nom>/<id> et affiche « Sélectionnez … » tant qu'aucun n'est actif."
+      "requiresContext": "Nom d'un contexte de cette application. La page est alors servie sous ctx/<nom>/<id> et affiche « Sélectionnez … » tant qu'aucun n'est actif.",
+      "contextPath": "L'attribut de l'entité du contexte dont cette page liste la collection, p. ex. rounds. Exige un contexte ; le nom d'entité est alors le type des éléments."
     },
-    "requiresContext": "Exige un contexte"
+    "requiresContext": "Exige un contexte",
+    "contextPath": "Chemin du contexte"
   },
   "app_module_mount": {
     "_self": "Montage de module",

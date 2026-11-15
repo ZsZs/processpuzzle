@@ -324,12 +324,32 @@ public class AppDefinitionValidator {
                 problems.add(new AppValidationProblem(path + "/requiresContext", "app.validation.unknown-context",
                         "The route requires the context '" + route.getRequiresContext() + "', which the app does not declare."));
             }
+            validateContextPath(route, path, problems);
             // Widgets live on the target now, and only a WIDGETS target has any.
             if (route.getTarget() != null) {
                 validateWidgets(orgKey, route.getTarget().getWidgets(), path + "/target" + WIDGETS, problems);
             }
         }
         return routePaths;
+    }
+
+    /**
+     * A route that lists the collection of a context's entity ({@code contextPath}) needs that context, and an entity
+     * type for the items — without either the screen would have nothing to read or to render.
+     */
+    private void validateContextPath(RouteDefinition route, String path, List<AppValidationProblem> problems) {
+        var target = route.getTarget();
+        if (target == null || isBlank(target.getContextPath())) {
+            return;
+        }
+        if (isBlank(route.getRequiresContext())) {
+            problems.add(new AppValidationProblem(path + "/target/contextPath", "app.validation.context-path-without-context",
+                    "The route lists a collection of a context's entity, so it has to require that context."));
+        }
+        if (target.getKind() != com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY || isBlank(target.getEntityName())) {
+            problems.add(new AppValidationProblem(path + "/target/contextPath", "app.validation.context-path-needs-entity",
+                    "A route that lists a collection must be an ENTITY route naming the type of the items."));
+        }
     }
 
     /**

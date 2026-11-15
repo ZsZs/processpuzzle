@@ -221,6 +221,41 @@ class AppDefinitionValidatorTest {
     }
 
     @Test
+    void routeListingAContextCollection_isAcceptedWhenItRequiresTheContextAndNamesTheItems() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.setRequiresContext("race");
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Round");
+        route.getTarget().setContextPath("rounds");
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void contextPathWithoutARequiredContext_isReported() {
+        AppDefinitionInput input = validInput();
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Round");
+        route.getTarget().setContextPath("rounds");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.context-path-without-context");
+    }
+
+    @Test
+    void contextPathOnARouteThatIsNoEntityRoute_isReported() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.setRequiresContext("race");
+        route.getTarget().setContextPath("rounds");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.context-path-needs-entity");
+    }
+
+    @Test
     void duplicateContextNames_areReported() {
         AppDefinitionInput input = validInput();
         input.setContexts(List.of(new WorkingContextDefinition("race", "Race"), new WorkingContextDefinition("race", "Regatta")));

@@ -230,5 +230,16 @@
       "cancel_button": "Quedarse",
       "confirm_button": "Salir"
     }
+  },
+  "context_collection": {
+    "add": "Añadir",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "empty": "Todavía no hay nada.",
+    "delete_title": "¿Eliminar este elemento?",
+    "delete_content": "Esta acción no se puede deshacer.",
+    "conflict": "Otra persona lo cambió al mismo tiempo. La lista muestra lo guardado — inténtelo de nuevo."
   }
 }

@@ -152,3 +152,5 @@ export { WorkingContextEmptyStateComponent } from './lib/working-context/working
 export { WorkingContextPickerDialog, WORKING_CONTEXT_DRAWER_CONFIG, type WorkingContextPickerDialogData } from './lib/working-context/working-context-picker.dialog';
 export { WorkingContextCrumbsComponent } from './lib/working-context/working-context-crumbs.component';
 export { WorkingContextStatusbarComponent } from './lib/working-context/working-context-statusbar.component';
+export { EmbeddedCollectionService, mergePatch, type CollectionItem, type CollectionRead } from './lib/working-context/embedded-collection.service';
+export { ContextCollectionComponent, CONTEXT_COLLECTION_CONTEXT_KEY, CONTEXT_COLLECTION_PATH_KEY, CONTEXT_COLLECTION_ENTITY_KEY } from './lib/working-context/context-collection.component';

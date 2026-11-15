@@ -32,7 +32,7 @@ describe('createRouteDefinitionDescriptor', () => {
   });
 
   it('describes the identity, the presentation and the flattened target', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['path', 'title', 'translocoId', 'icon', 'kind', 'requiresContext', 'roles', 'documentSlug', 'entityName', 'entityMode', 'rsqlFilter', 'widgets']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual(['path', 'title', 'translocoId', 'icon', 'kind', 'requiresContext', 'roles', 'documentSlug', 'entityName', 'entityMode', 'rsqlFilter', 'contextPath', 'widgets']);
   });
 
   it('declares no children, nesting being derived from the paths rather than authored', () => {

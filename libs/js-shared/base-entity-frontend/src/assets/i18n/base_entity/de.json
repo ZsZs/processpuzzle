@@ -230,5 +230,16 @@
       "cancel_button": "Bleiben",
       "confirm_button": "Verlassen"
     }
+  },
+  "context_collection": {
+    "add": "Hinzufügen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "empty": "Noch nichts vorhanden.",
+    "delete_title": "Diesen Eintrag löschen?",
+    "delete_content": "Das lässt sich nicht rückgängig machen.",
+    "conflict": "Jemand anderes hat dies gleichzeitig geändert. Die Liste zeigt den gespeicherten Stand — bitte erneut versuchen."
   }
 }

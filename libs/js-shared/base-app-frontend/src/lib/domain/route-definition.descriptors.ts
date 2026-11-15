@@ -84,6 +84,9 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   const rsqlFilterAttr = new BaseEntityAttrDescriptor('rsqlFilter', FormControlType.TEXT_BOX, 'Rsql Filter');
   rsqlFilterAttr.placeholder = 'ENTITY + LIST only: RSQL the list is pre-filtered with';
   rsqlFilterAttr.hideInTable = true;
+  const contextPathAttr = new BaseEntityAttrDescriptor('contextPath', FormControlType.TEXT_BOX, 'Context Path');
+  contextPathAttr.placeholder = 'ENTITY + requires context: the context entity\'s collection to list, e.g. rounds';
+  contextPathAttr.hideInTable = true;
   // endregion
 
   const identityRow = new FlexboxDescriptor([pathAttr, titleAttr, translocoIdAttr], FlexDirection.ROW);
@@ -92,7 +95,7 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   presentationRow.style = { 'column-gap': '10px' };
   const documentRow = new FlexboxDescriptor([documentSlugAttr], FlexDirection.ROW);
   documentRow.style = { 'column-gap': '10px' };
-  const entityRow = new FlexboxDescriptor([entityNameAttr, entityModeAttr, rsqlFilterAttr], FlexDirection.ROW);
+  const entityRow = new FlexboxDescriptor([entityNameAttr, entityModeAttr, rsqlFilterAttr, contextPathAttr], FlexDirection.ROW);
   entityRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor([identityRow, presentationRow, rolesAttr, documentRow, entityRow, widgetsAttr], FlexDirection.COLUMN);

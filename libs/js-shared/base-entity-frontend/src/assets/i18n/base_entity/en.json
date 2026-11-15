@@ -230,5 +230,16 @@
       "cancel_button": "Stay",
       "confirm_button": "Leave"
     }
+  },
+  "context_collection": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "empty": "Nothing here yet.",
+    "delete_title": "Delete this item?",
+    "delete_content": "This cannot be undone.",
+    "conflict": "Someone else changed this at the same time. The list shows what is stored now — please try again."
   }
 }
