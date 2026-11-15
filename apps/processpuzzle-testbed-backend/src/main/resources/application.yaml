@@ -168,6 +168,11 @@ base-calculation:
   loadDefaultCalculations: yes
   loadDefaultTranslations: yes
 
+base-chat:
+  # The chat definitions the testbed ships. The import upserts and releases what it writes, so an edited
+  # seed file reaches an already-seeded stack.
+  loadDefaultChatDefinitions: yes
+
 base-event:
   # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an
   # edited seed file reaches an already-seeded stack.

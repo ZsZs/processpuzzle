@@ -7,6 +7,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +81,15 @@ public class CurrentPrincipal {
     /** The token's subject — for a Keycloak token, the user's id — or empty when unauthenticated. */
     public Optional<String> subject() {
         return jwt().map(Jwt::getSubject);
+    }
+
+    /**
+     * When the current token stops being valid, or empty when unauthenticated or the token names no expiry. A
+     * connection that outlives a request — a server-sent event stream — has to end by then: nothing re-checks the
+     * token while it is open.
+     */
+    public Optional<Instant> tokenExpiresAt() {
+        return jwt().map(Jwt::getExpiresAt);
     }
 
     /** Whether the principal is ProcessPuzzle staff. */

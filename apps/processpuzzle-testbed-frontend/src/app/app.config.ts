@@ -13,6 +13,7 @@ import {
   TRANSLATION_SOURCE_REGISTRY,
 } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
+import { CHAT_IDENTITY, type ChatIdentity, provideChatWidgets, provideChatWorkingContextSubject } from '@processpuzzle/base-chat';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
@@ -63,6 +64,26 @@ import { provideTestbedApplicationContext } from './testbed-application-context'
 export function createDocumentAccessContext(): DocumentAccessContext {
   const auth = inject(AUTHENTICATION_SERVICE);
   return { roles: computed(() => auth.currentUser()?.roles ?? []), authenticated: computed(() => auth.currentUser() !== undefined) };
+}
+
+/**
+ * Who is chatting, for base-chat: the live stream is read with `fetch`, which the HTTP interceptors do not see, so the
+ * library asks the application for the token — refreshed first when it is about to expire — and for the user's id,
+ * which is what a message carries as its author. base-chat does not know the auth library; this is where the two meet.
+ */
+export function createChatIdentity(): ChatIdentity {
+  const auth = inject(AUTHENTICATION_SERVICE);
+  return {
+    accessToken: async () => {
+      try {
+        await auth.refreshAccessToken(60);
+      } catch {
+        // A token that could not be refreshed is still the best one there is; the server decides.
+      }
+      return auth.getAccessToken();
+    },
+    userId: () => auth.currentUser()?.id,
+  };
 }
 
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
@@ -147,6 +168,11 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideBaseWidgets(),
       // base-document's one widget, registered by base-document because it reads documents.
       provideContentBookWidget(),
+      // base-chat's two widgets — the chat panel and the unread badge — and the active working context as the record a
+      // panel placed without one chats about.
+      ...provideChatWidgets(),
+      provideChatWorkingContextSubject(),
+      { provide: CHAT_IDENTITY, useFactory: createChatIdentity },
       // Which document and book actions to offer, from the signed-in user's roles. base-document does not
       // know the auth library, so the application bridges the two; the backend still decides.
       {

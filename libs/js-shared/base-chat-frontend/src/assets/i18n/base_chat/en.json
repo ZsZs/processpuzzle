@@ -1,0 +1,33 @@
+{
+  "panel": {
+    "title": "Chat",
+    "no_subject": "Select an item to chat about it.",
+    "loading": "Loading the conversation…",
+    "error": "The conversation could not be loaded.",
+    "reload": "Try again",
+    "no_chat": "This item has no chat.",
+    "start": "Start a chat",
+    "starting": "Starting…",
+    "start_failed": "The chat could not be started.",
+    "start_forbidden": "You are not allowed to start a chat here.",
+    "empty": "No messages yet.",
+    "load_earlier": "Load earlier messages",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "sending": "Sending…",
+    "failed": "Not sent.",
+    "failed_forbidden": "Not sent: you may not post here.",
+    "failed_conflict": "Not sent: the conversation is closed.",
+    "retry": "Retry",
+    "discard": "Discard",
+    "read_only": "You can read this conversation but not write in it.",
+    "reconnecting": "Reconnecting — new messages may be delayed."
+  },
+  "badge": {
+    "label": "{{count}} unread chat messages"
+  },
+  "widgets": {
+    "chat_panel": "Chat panel",
+    "unread_badge": "Unread chat messages"
+  }
+}

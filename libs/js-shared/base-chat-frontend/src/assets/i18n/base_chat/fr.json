@@ -1,0 +1,33 @@
+{
+  "panel": {
+    "title": "Discussion",
+    "no_subject": "Sélectionnez un élément pour en discuter.",
+    "loading": "Chargement de la conversation…",
+    "error": "La conversation n’a pas pu être chargée.",
+    "reload": "Réessayer",
+    "no_chat": "Cet élément n’a pas de discussion.",
+    "start": "Démarrer une discussion",
+    "starting": "Démarrage…",
+    "start_failed": "La discussion n’a pas pu être démarrée.",
+    "start_forbidden": "Vous n’êtes pas autorisé à démarrer une discussion ici.",
+    "empty": "Aucun message pour l’instant.",
+    "load_earlier": "Charger les messages précédents",
+    "placeholder": "Écrire un message…",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "failed": "Non envoyé.",
+    "failed_forbidden": "Non envoyé : vous ne pouvez pas écrire ici.",
+    "failed_conflict": "Non envoyé : la conversation est fermée.",
+    "retry": "Réessayer",
+    "discard": "Abandonner",
+    "read_only": "Vous pouvez lire cette conversation mais pas y écrire.",
+    "reconnecting": "Reconnexion — les nouveaux messages peuvent être retardés."
+  },
+  "badge": {
+    "label": "{{count}} messages de discussion non lus"
+  },
+  "widgets": {
+    "chat_panel": "Panneau de discussion",
+    "unread_badge": "Messages de discussion non lus"
+  }
+}

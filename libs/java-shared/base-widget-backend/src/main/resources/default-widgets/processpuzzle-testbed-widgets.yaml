@@ -622,3 +622,48 @@ widgetDefinitions:
     - name: documentSelected
       type: STRING
       description: Slug of the document the reader opens.
+  # Registered by base-chat-frontend rather than base-widget-frontend — a widget that talks to the chat API
+  # would make the widget library depend on a feature library. chat-widgets.contract.spec.ts holds these two
+  # copies to their registrations.
+  - key: chat-panel
+    name: Chat panel
+    translocoId: base_chat.widgets.chat_panel
+    description: >-
+      The conversation of one record — an order, say — live, with a message box. Left without a record it
+      follows the active working context.
+    category: Social
+    icon: forum
+    propsSchema:
+      type: object
+      properties:
+        subjectId:
+          type: string
+          title: Record
+          description: Id of the record to chat about; the active working context when left empty.
+        definitionKey:
+          type: string
+          title: Chat definition
+          description: Key of the chat definition to show, and to start from when the record has no conversation yet.
+      additionalProperties: false
+    inputPorts:
+    - name: subjectId
+      type: STRING
+      required: false
+      description: Id of the record to chat about.
+  - key: chat-unread-badge
+    name: Unread chat messages
+    translocoId: base_chat.widgets.unread_badge
+    description: >-
+      A small number showing how many chat messages the user has not read yet, across every conversation they
+      follow. Nothing is shown when there are none.
+    category: Social
+    icon: mark_chat_unread
+    propsSchema:
+      type: object
+      properties:
+        max:
+          type: number
+          title: Largest number shown
+          description: More unread messages than this show as, for example, 99+.
+          default: 99
+      additionalProperties: false

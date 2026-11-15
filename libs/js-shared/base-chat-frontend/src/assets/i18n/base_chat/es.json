@@ -1,0 +1,33 @@
+{
+  "panel": {
+    "title": "Chat",
+    "no_subject": "Seleccione un elemento para chatear sobre él.",
+    "loading": "Cargando la conversación…",
+    "error": "No se pudo cargar la conversación.",
+    "reload": "Reintentar",
+    "no_chat": "Este elemento no tiene chat.",
+    "start": "Iniciar un chat",
+    "starting": "Iniciando…",
+    "start_failed": "No se pudo iniciar el chat.",
+    "start_forbidden": "No tiene permiso para iniciar un chat aquí.",
+    "empty": "Aún no hay mensajes.",
+    "load_earlier": "Cargar mensajes anteriores",
+    "placeholder": "Escriba un mensaje…",
+    "send": "Enviar",
+    "sending": "Enviando…",
+    "failed": "No enviado.",
+    "failed_forbidden": "No enviado: no puede escribir aquí.",
+    "failed_conflict": "No enviado: la conversación está cerrada.",
+    "retry": "Reintentar",
+    "discard": "Descartar",
+    "read_only": "Puede leer esta conversación pero no escribir en ella.",
+    "reconnecting": "Reconectando — los mensajes nuevos pueden retrasarse."
+  },
+  "badge": {
+    "label": "{{count}} mensajes de chat sin leer"
+  },
+  "widgets": {
+    "chat_panel": "Panel de chat",
+    "unread_badge": "Mensajes de chat sin leer"
+  }
+}
