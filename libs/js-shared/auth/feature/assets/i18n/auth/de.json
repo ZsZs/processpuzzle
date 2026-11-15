@@ -23,6 +23,12 @@
     "cancel_button": "Abbrechen",
     "logout_button": "Abmelden"
   },
+  "session_expired": {
+    "title": "Ihre Sitzung ist beendet",
+    "message": "Sie wurden abgemeldet, zum Beispiel wegen längerer Inaktivität oder weil Ihre Sitzung anderswo beendet wurde. Melden Sie sich erneut an, um dort weiterzumachen, wo Sie aufgehört haben.",
+    "sign_in_button": "Erneut anmelden",
+    "home_button": "Zur Startseite"
+  },
   "registration_form": {
     "title": "Konto erstellen",
     "email_label": "E-Mail",

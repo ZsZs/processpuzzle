@@ -23,6 +23,12 @@
     "cancel_button": "Mégsem",
     "logout_button": "Kijelentkezés"
   },
+  "session_expired": {
+    "title": "A munkamenet véget ért",
+    "message": "Kijelentkeztettük, például hosszabb inaktivitás miatt, vagy mert a munkamenetét máshol megszüntették. Jelentkezzen be újra, hogy ott folytathassa, ahol abbahagyta.",
+    "sign_in_button": "Jelentkezzen be újra",
+    "home_button": "Ugrás a kezdőlapra"
+  },
   "registration_form": {
     "title": "Fiók létrehozása",
     "email_label": "Email",

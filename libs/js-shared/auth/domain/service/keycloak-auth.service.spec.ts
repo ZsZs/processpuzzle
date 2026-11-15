@@ -12,6 +12,7 @@ type MockedKeycloak = {
   logout: ReturnType<typeof vi.fn>;
   loadUserProfile: ReturnType<typeof vi.fn>;
   updateToken?: ReturnType<typeof vi.fn>;
+  clearToken: ReturnType<typeof vi.fn>;
 };
 
 // Save original location
@@ -35,6 +36,7 @@ describe('KeycloakAuthService', () => {
       init: vi.fn().mockResolvedValue(true),
       login: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn().mockResolvedValue(undefined),
+      clearToken: vi.fn().mockResolvedValue(undefined),
       loadUserProfile: vi.fn().mockResolvedValue({
         id: '123',
         firstName: 'John',
@@ -234,6 +236,41 @@ describe('KeycloakAuthService', () => {
       await service.reloadUser();
 
       expect(mockKeycloakInstance.updateToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('clearSession', () => {
+    it('should not let a failed token clear stop the sign-in', async () => {
+      mockKeycloakInstance.clearToken.mockRejectedValueOnce(new Error('token flush failed'));
+      mockKeycloakInstance.authenticated = true;
+      await service.authenticate();
+
+      expect(() => service.clearSession()).not.toThrow();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(service.getCurrentUser()).toBeUndefined();
+    });
+
+    it('should forget the user and the token, so authenticate() stops answering from a dead session', async () => {
+      mockKeycloakInstance.authenticated = true;
+      await service.authenticate();
+
+      service.clearSession();
+
+      expect(service.getCurrentUser()).toBeUndefined();
+      expect(service.isAuthenticated()).toBe(false);
+      expect(mockKeycloakInstance.clearToken).toHaveBeenCalled();
+      expect(await service.authenticate()).toBe(false);
+    });
+
+    it('should let login() go to Keycloak instead of returning the cached user', async () => {
+      mockKeycloakInstance.authenticated = true;
+      await service.authenticate();
+
+      service.clearSession();
+      await service.login('orders');
+
+      expect(mockKeycloakInstance.login).toHaveBeenCalledWith({ redirectUri: new URL('orders', document.baseURI).href });
     });
   });
 
