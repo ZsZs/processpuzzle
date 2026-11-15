@@ -1,4 +1,13 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, REALM_ROLE_SUGGESTIONS, toSelectables } from '@processpuzzle/base-entity';
+import {
+  AbstractAttrDescriptor,
+  BaseEntityAttrDescriptor,
+  BaseEntityDescriptor,
+  FlexboxDescriptor,
+  FlexDirection,
+  FormControlType,
+  REALM_ROLE_SUGGESTIONS,
+  toSelectables,
+} from '@processpuzzle/base-entity';
 import { APP_ROUTE_I18N_SCOPE } from '../base-app.i18n';
 import { ENTITY_MODES, ROUTE_TARGET_KINDS } from './app-definition';
 import { APP_DEFINITION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME, APP_WIDGET_ENTITY_NAME, MODULE_DEFINITION_ENTITY_NAME } from './app-entity-names';
@@ -43,6 +52,10 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   rolesAttr.hideInTable = true;
   rolesAttr.tagSuggestions = REALM_ROLE_SUGGESTIONS;
 
+  const requiresContextAttr = new BaseEntityAttrDescriptor('requiresContext', FormControlType.TEXT_BOX, 'Requires Context');
+  requiresContextAttr.placeholder = 'Name of a context of the app; the page then lives below ctx/<name>/<id>';
+  requiresContextAttr.hideInTable = true;
+
   // region flattened target — re-nested into `target` by AppDefinitionMapper
   // Which of the fields below is meaningful follows from `kind`; all of them are offered, and the
   // backend validator — not the form — is what rejects a combination that makes no sense. The generic
@@ -75,7 +88,7 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
 
   const identityRow = new FlexboxDescriptor([pathAttr, titleAttr, translocoIdAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const presentationRow = new FlexboxDescriptor([iconAttr, kindAttr], FlexDirection.ROW);
+  const presentationRow = new FlexboxDescriptor([iconAttr, kindAttr, requiresContextAttr], FlexDirection.ROW);
   presentationRow.style = { 'column-gap': '10px' };
   const documentRow = new FlexboxDescriptor([documentSlugAttr], FlexDirection.ROW);
   documentRow.style = { 'column-gap': '10px' };

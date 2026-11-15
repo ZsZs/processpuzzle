@@ -21,7 +21,8 @@ import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY, WORKING_CONTE
  */
 export function workingContextRoutes(contextName: string, routes: Routes): Routes {
   const viewSegments = routes.map((route) => firstSegment(route.path)).filter((segment): segment is string => !!segment);
-  const landing = viewSegments[0];
+  // A nested context's own `ctx` branch is not a view the user lands on.
+  const landing = viewSegments.find((segment) => segment !== WORKING_CONTEXT_SEGMENT);
   const data = { [WORKING_CONTEXT_ROUTE_DATA_KEY]: contextName };
   return [
     {

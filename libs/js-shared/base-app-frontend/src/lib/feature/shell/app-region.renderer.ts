@@ -1,9 +1,10 @@
 import { Injectable, Type } from '@angular/core';
 import { AppDefinition, RegionDefinition, RegionType } from '../../domain/app-definition';
-import { knownRoutePathsOf } from './app-shell.model';
+import { contextLinksOf, knownRoutePathsOf } from './app-shell.model';
 import { RegionFooterComponent } from './region-footer.component';
 import { RegionHeaderComponent } from './region-header.component';
 import { RegionNavComponent } from './region-nav.component';
+import { WorkingContextStatusbarComponent } from '@processpuzzle/base-entity';
 
 /**
  * One region resolved to something renderable: which slot it fills, the component that fills it and
@@ -40,12 +41,15 @@ export class AppRegionRenderer {
         return { slot: 'header', component: RegionHeaderComponent, inputs: { widgets: region.widgets ?? [] } };
       case 'footer':
         return { slot: 'footer', component: RegionFooterComponent, inputs: { widgets: region.widgets ?? [] } };
+      case 'statusbar':
+        // No inputs: it shows whatever working contexts the URL names, which is not the region's to say.
+        return { slot: 'statusbar', component: WorkingContextStatusbarComponent, inputs: {} };
       case 'sidenav':
         // `orientation` is left at the component's own default; the shell overrides it for `top-nav`,
         // because the axis follows the layout preset rather than anything authored on the region.
         // `knownPaths` comes from the definition rather than the region: whether a nav entry resolves is a
         // question about the *application's* routes, which only this function can see from here.
-        return { slot: 'sidenav', component: RegionNavComponent, inputs: { navItems: region.navItems ?? [], knownPaths: knownRoutePathsOf(definition) } };
+        return { slot: 'sidenav', component: RegionNavComponent, inputs: { navItems: region.navItems ?? [], knownPaths: knownRoutePathsOf(definition), contextLinks: contextLinksOf(definition) } };
       default:
         // A region whose `type` the designer has not chosen yet. `RegionDefinition.type` is
         // `RegionType | undefined` precisely because a row exists before its dropdown is touched, and

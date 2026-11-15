@@ -5,6 +5,16 @@ import { ModuleMount, RouteDefinition } from '../domain/app-definition';
 import { MODULE_ASSET_CONTEXT, ModuleAssetContext } from '@processpuzzle/widgets';
 import { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from '../domain/module-definition';
 import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-app.i18n';
+import { workingContextRoutes } from '@processpuzzle/base-entity';
+
+/** What the builder needs to know of a context: its name, and the one it is nested in. */
+export interface ContextRef {
+  name: string;
+  parent?: string;
+}
+
+/** Route data naming the context a route requires; set by {@link emitNode}, read by {@link groupContextRoutes}. */
+const REQUIRES_CONTEXT_DATA_KEY = 'requiresContext';
 
 /**
  * What the run-time shell registers routes from. `routes` and `modules` are the app definition's own
@@ -24,6 +34,8 @@ import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-a
 export interface AppRouteSource {
   routes?: RouteDefinition[];
   modules?: ModuleMount[];
+  /** The app's working contexts. A route naming one is served below `ctx/<name>/:id/`; see {@link groupContextRoutes}. */
+  contexts?: ContextRef[];
   moduleRoutes?: Record<string, RouteDefinition[] | undefined>;
   loadModule?: ModuleLoader;
   loadTranslations?: ModuleTranslationLoader;
@@ -93,7 +105,7 @@ interface TrieNode {
  * rejects as an error, so it should never arrive — keeps its first occurrence.
  */
 export async function buildAppRoutes(source: AppRouteSource, renderRoute: RouteRenderer): Promise<Routes> {
-  const appRoutes = await emitLevel(trieOf(source.routes), [], renderRoute);
+  const appRoutes = await emitLevel(trieOf(source.routes), [], renderRoute, source.contexts ?? []);
   return [...appRoutes, ...(await moduleRoutesOf(source, renderRoute))];
 }
 
@@ -103,9 +115,9 @@ async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer
     if (!mount.basePath) continue;
     const routes = source.moduleRoutes?.[mount.moduleKey];
     if (routes) {
-      if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute) });
+      if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute, source.contexts ?? []) });
     } else if (source.loadModule) {
-      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations, source.moduleAssets));
+      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations, source.moduleAssets, source.contexts ?? []));
     }
   }
   return mounted;
@@ -147,6 +159,7 @@ function lazyMount(
   renderRoute: RouteRenderer,
   translations?: ModuleTranslationLoader,
   assets?: (moduleKey: string) => ModuleAssetContext,
+  contexts: ContextRef[] = [],
 ): Route {
   return {
     path: basePath,
@@ -157,7 +170,7 @@ function lazyMount(
       // Every title is translated under a key from here on, authored or derived, so that a module whose
       // designer never typed a `translocoId` can still be translated from the files it downloads.
       const routes = definition.routes?.map((route) => ({ ...route, translocoId: moduleRouteTranslocoId(scope, route) }));
-      const children = await emitLevel(trieOf(routes), [], renderRoute);
+      const children = await emitLevel(trieOf(routes), [], renderRoute, contexts);
       if (!children.length) return [];
       const providers: Array<Provider | EnvironmentProviders> = [
         provideTranslocoScope(
@@ -204,18 +217,56 @@ function trieOf(routes: RouteDefinition[] | undefined): TrieNode[] {
  * The routes of one level. An authored node becomes a `Route` whose children are emitted below it; an
  * unauthored one contributes its segment to the paths of its descendants instead of a route of its own.
  */
-async function emitLevel(nodes: TrieNode[], prefix: string[], renderRoute: RouteRenderer): Promise<Routes> {
-  const routes = (await Promise.all(nodes.map((node) => emitNode(node, prefix, renderRoute)))).flat();
-  return routes.sort((left, right) => staticDepthOf(right.path) - staticDepthOf(left.path));
+async function emitLevel(nodes: TrieNode[], prefix: string[], renderRoute: RouteRenderer, contexts: ContextRef[]): Promise<Routes> {
+  const routes = (await Promise.all(nodes.map((node) => emitNode(node, prefix, renderRoute, contexts)))).flat();
+  return groupContextRoutes(
+    routes.sort((left, right) => staticDepthOf(right.path) - staticDepthOf(left.path)),
+    contexts,
+  );
 }
 
-async function emitNode(node: TrieNode, prefix: string[], renderRoute: RouteRenderer): Promise<Routes> {
-  const path = [...prefix, node.segment];
-  if (!node.definition) return (await Promise.all(node.children.map((child) => emitNode(child, path, renderRoute)))).flat();
+/**
+ * Moves the routes that require a working context below it. `workingContextRoutes` mounts the views of one
+ * context twice — `ctx/<name>/:id/<view>` with the entity resolved, and `ctx/<name>/<view>` as the empty state
+ * with the picker — so the authored path of a route becomes its path *inside* the context.
+ *
+ * A context nested in another (`parent`) is grouped inside its parent's, whose own group is created even when
+ * no route names the parent directly: `ctx/race/:id/ctx/heat/:id/scores`. A route whose context the app does
+ * not declare is grouped all the same, and shows an empty state with nothing to pick — the backend rejects
+ * such a definition, so the only way to see it is one that bypassed validation.
+ *
+ * Context routes come first: they begin with a static `ctx` segment, and a parameterized sibling must not
+ * shadow them.
+ */
+function groupContextRoutes(routes: Routes, contexts: ContextRef[]): Routes {
+  const bound = routes.filter((route) => contextOf(route) !== undefined);
+  if (bound.length === 0) return routes;
 
-  const authoredChildren = await emitLevel(node.children, [], renderRoute);
+  const own = new Map<string, Routes>();
+  for (const route of bound) own.set(contextOf(route) as string, [...(own.get(contextOf(route) as string) ?? []), route]);
+
+  const parentOf = (name: string) => contexts.find((context) => context.name === name && context.parent && contexts.some((candidate) => candidate.name === context.parent))?.parent;
+  const names = new Set(own.keys());
+  for (const name of [...names]) for (let parent = parentOf(name); parent && !names.has(parent); parent = parentOf(parent)) names.add(parent);
+
+  const build = (name: string): Routes => workingContextRoutes(name, [...(own.get(name) ?? []), ...[...names].filter((child) => parentOf(child) === name).flatMap(build)]);
+  const roots = [...names].filter((name) => parentOf(name) === undefined);
+  return [...roots.flatMap(build), ...routes.filter((route) => contextOf(route) === undefined)];
+}
+
+function contextOf(route: Route): string | undefined {
+  const name = route.data?.[REQUIRES_CONTEXT_DATA_KEY];
+  return typeof name === 'string' && name.length > 0 ? name : undefined;
+}
+
+async function emitNode(node: TrieNode, prefix: string[], renderRoute: RouteRenderer, contexts: ContextRef[]): Promise<Routes> {
+  const path = [...prefix, node.segment];
+  if (!node.definition) return (await Promise.all(node.children.map((child) => emitNode(child, path, renderRoute, contexts)))).flat();
+
+  const authoredChildren = await emitLevel(node.children, [], renderRoute, contexts);
   const rendered = await renderRoute(node.definition);
   const route: Route = { ...rendered, path: path.join('/') };
+  if (node.definition.requiresContext) route.data = { ...rendered.data, [REQUIRES_CONTEXT_DATA_KEY]: node.definition.requiresContext };
   // The renderer's own children come first and the authored ones after, rather than the authored ones
   // replacing them. An `ENTITY` route contributes the List and Details routes of its entity *and* may be
   // the path prefix of other authored routes; overwriting would silently drop whichever of the two the

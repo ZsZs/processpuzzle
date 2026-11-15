@@ -41,4 +41,10 @@
 4. **Hardening:** per-item `id` / `version` + migration; nested contexts; `context: optional` with filter toggle (RSQL on embedded paths); e2e context scenario modelled on the living-docs harness.
 5. **Starter:** Race context in the SailRC starter (processpuzzle-biz); a Warehouse fixture in the testbed proves "metadata only".
 
+## Status
+
+- **1a – done:** `WorkingContextService`, `workingContextRoutes`, picker / drawer / empty state, "Set as active", context crumbs in the status bar.
+- **1b – done:** `contexts` on `AppDefinition`, `requiresContext` on routes and `statusbar` region (contract, backend graph, validation, designer form, route builder, shell). Contexts are declared on the app; the routes of its mounted modules may name them. A module cannot declare contexts of its own (yet).
+- Next: phase 2 (path API and `dataSource` binding).
+
 Libraries are released one at a time, per phase.

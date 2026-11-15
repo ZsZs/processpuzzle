@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppDefinition } from '../../domain/app-definition';
-import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, resolveContextLink, themeDefaultsOf, themeVarsOf, trimSlashes } from './app-shell.model';
 
 describe('layoutOf', () => {
   it('defaults an app that declares no layout to a left sidenav, open, in side mode', () => {
@@ -108,5 +108,38 @@ describe('themeVarsOf', () => {
     );
 
     expect(vars).toEqual({ '--pp-surface-header': '#eeeeee', '--pp-surface-card': '#222222' });
+  });
+});
+
+describe('resolveContextLink', () => {
+  const links = [
+    { base: '', path: 'rounds', context: 'race' },
+    { base: 'conduct', path: 'participants', context: 'race' },
+  ];
+
+  it('leaves a path that is bound to no context alone', () => {
+    expect(resolveContextLink('home', links, {})).toBe('home');
+  });
+
+  it('leads a bound page to its empty state while no entity is active', () => {
+    expect(resolveContextLink('rounds', links, {})).toBe('ctx/race/rounds');
+  });
+
+  it('leads a bound page into the active entity, below its module mount where it has one', () => {
+    expect(resolveContextLink('rounds', links, { race: 'r1' })).toBe('ctx/race/r1/rounds');
+    expect(resolveContextLink('conduct/participants', links, { race: 'r1' })).toBe('conduct/ctx/race/r1/participants');
+  });
+
+  it('keeps what follows the bound route, and does not mistake a longer name for it', () => {
+    expect(resolveContextLink('rounds/open', links, { race: 'r1' })).toBe('ctx/race/r1/rounds/open');
+    expect(resolveContextLink('rounds-archive', links, { race: 'r1' })).toBe('rounds-archive');
+  });
+});
+
+describe('trimSlashes', () => {
+  it('drops surrounding slashes, however many, and nothing inside', () => {
+    expect(trimSlashes('//conduct/rounds///')).toBe('conduct/rounds');
+    expect(trimSlashes('/')).toBe('');
+    expect(trimSlashes('rounds')).toBe('rounds');
   });
 });

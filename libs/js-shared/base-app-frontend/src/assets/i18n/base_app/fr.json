@@ -68,8 +68,10 @@
       "routes": "Les pages de l'application, une ligne par page. Ajoutez-les avant les éléments de navigation qui y renvoient. — Guide : Routes",
       "modules": "Parties de l'application conçues séparément, dont les routes apparaissent sous un chemin de base. — Guide : Modules",
       "assets": "Fichiers que l’application apporte, comme les images de ses pages. Un widget y renvoie par app:<chemin>. — Guide : Applications",
-      "translations": "Les textes des pages propres à l’application, comme les cartes de sa page d’accueil, un fichier par langue. Les clés sont celles que les widgets nomment sous leur translocoPrefix. — Guide : Applications"
-    }
+      "translations": "Les textes des pages propres à l’application, comme les cartes de sa page d’accueil, un fichier par langue. Les clés sont celles que les widgets nomment sous leur translocoPrefix. — Guide : Applications",
+      "contexts": "Entités que l'on choisit une fois et dans lesquelles on travaille ensuite. Une page y adhère avec Exige un contexte."
+    },
+    "contexts": "Contextes"
   },
   "app_region": {
     "_self": "Région",
@@ -77,7 +79,7 @@
     "navItems": "Éléments de navigation",
     "widgets": "Widgets",
     "_tooltips": {
-      "type": "header (haut), sidenav (panneau de navigation) ou footer (bas). Chaque type ne peut être utilisé qu'une fois. — Guide : Régions",
+      "type": "header (haut), sidenav (panneau de navigation) ou footer (bas). Chaque type ne peut être utilisé qu'une fois. Statusbar (sous l'en-tête) affiche les contextes actifs. — Guide : Régions",
       "navItems": "Les entrées du menu latéral. Utilisé uniquement par la région sidenav. — Guide : Éléments de navigation",
       "widgets": "Les widgets de l'en-tête ou du pied de page, disposés sur une ligne dans cet ordre. Utilisez un spacer pour pousser les suivants vers la droite. — Guide : En-tête (header)"
     }
@@ -106,8 +108,10 @@
       "documentSlug": "DOCUMENT uniquement : le slug du document à afficher. Pas encore rendu. — Guide : Documents",
       "entityName": "ENTITY uniquement : le nom d'une entité définie sous Entités ; sa liste et son formulaire sont générés pour vous. — Guide : Entités",
       "entityMode": "ENTITY uniquement : ouvrir sur la liste ou sur le détail d'un enregistrement. Enregistré, pas encore appliqué. — Guide : Entités",
-      "rsqlFilter": "ENTITY + LIST uniquement : un pré-filtre tel que status==OPEN. Enregistré, pas encore appliqué. — Guide : Entités"
-    }
+      "rsqlFilter": "ENTITY + LIST uniquement : un pré-filtre tel que status==OPEN. Enregistré, pas encore appliqué. — Guide : Entités",
+      "requiresContext": "Nom d'un contexte de cette application. La page est alors servie sous ctx/<nom>/<id> et affiche « Sélectionnez … » tant qu'aucun n'est actif."
+    },
+    "requiresContext": "Exige un contexte"
   },
   "app_module_mount": {
     "_self": "Montage de module",
@@ -260,6 +264,33 @@
     "lifecycle": {
       "title": "Enregistrer, prévisualiser et publier",
       "body": "<p>Une nouvelle application commence comme <b>brouillon</b>. <b>Enregistrer</b> conserve vos modifications ; l'onglet <b>Aperçu</b> affiche alors la définition enregistrée exactement comme l'application en cours d'exécution la rend, thème compris — vérifiez-la là avant d'aller plus loin. Les utilisateurs n'en voient encore rien : l'application en cours d'exécution n'utilise que des définitions <b>publiées</b>. Ouvrez la section <b>Publication</b> du concepteur pour voir tout ce que vous avez modifié — cette application, ses modules et les autres définitions qu'elle utilise — et <b>publiez</b> le tout ensemble ; la version enregistrée devient la <b>version publiée</b>. Vous pouvez ensuite continuer à modifier et à enregistrer ; les utilisateurs ne verront les changements qu'à la prochaine publication.</p>"
+    }
+  },
+  "app_context": {
+    "_self": "Contexte",
+    "name": "Nom",
+    "entityName": "Nom de l'entité",
+    "parent": "Parent",
+    "basePath": "Chemin de base",
+    "persist": "Mémoriser",
+    "pickerSearchFields": "Champs de recherche",
+    "pickerRecent": "Récents proposés",
+    "displayLabel": "Libellé affiché",
+    "displayBadge": "Badge affiché",
+    "displayExtra": "Texte complémentaire",
+    "confirmSwitchStates": "États avec confirmation",
+    "_tooltips": {
+      "name": "Nom et segment d'URL du contexte : ses pages sont servies sous ctx/<nom>/<id>.",
+      "entityName": "Le type d'entité choisi une fois, dans lequel on travaille ensuite, p. ex. Race.",
+      "parent": "Le contexte dans lequel celui-ci est imbriqué. Choisir un autre parent efface celui-ci.",
+      "basePath": "Le chemin sous lequel les pages du contexte sont montées, p. ex. /conduct. Vide : la racine de l'application.",
+      "persist": "url garde le choix dans l'adresse seulement ; url-local-storage retient aussi le dernier sur cet appareil.",
+      "pickerSearchFields": "Les attributs que le sélecteur parcourt. Vide : l'attribut de titre.",
+      "pickerRecent": "Combien d'entrées récentes le sélecteur propose en tête. 3 par défaut.",
+      "displayLabel": "Le texte de la barre d'état, avec des {{attribut}}. Vide : l'attribut de titre.",
+      "displayBadge": "Un attribut affiché en badge ; state désigne l'attribut d'état.",
+      "displayExtra": "Un second texte, plus discret, avec des {{attribut}}.",
+      "confirmSwitchStates": "États dans lesquels quitter l'entité demande d'abord confirmation."
     }
   }
 }

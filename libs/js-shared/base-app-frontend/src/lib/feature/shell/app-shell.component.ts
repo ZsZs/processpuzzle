@@ -4,12 +4,14 @@ import { NgComponentOutlet } from '@angular/common';
 import { Component, computed, contentChild, Directive, effect, inject, input } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
-import { RouterOutlet } from '@angular/router';
+import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { WorkingContextService } from '@processpuzzle/base-entity';
+import { nestWorkingContext } from '../../domain/working-context-row.mapper';
 import { LayoutService } from '@processpuzzle/util';
 import { APPLICATION_CONTEXT, SIDENAV_CONTROL, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
-import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, themeDefaultsOf, themeVarsOf, trimSlashes } from './app-shell.model';
 import { NavOrientation } from './region-nav.component';
 import { ShellApplicationContext } from './shell-application-context';
 import { ShellSidenavControl } from './shell-sidenav-control';
@@ -99,6 +101,10 @@ export class ShellActionsDirective {}
       </div>
     }
 
+    @if (statusbarView(); as view) {
+      <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
+    }
+
     <mat-sidenav-container class="pp-app-shell__body">
       @if (sidenavView(); as view) {
         <mat-sidenav
@@ -146,6 +152,8 @@ export class AppShellComponent {
   private readonly regionRenderer = inject(AppRegionRenderer);
   private readonly theme = inject(ThemeService);
   private readonly applicationContext = inject(ShellApplicationContext);
+  private readonly workingContext = inject(WorkingContextService);
+  private readonly hostRoute = inject(ActivatedRoute);
   protected readonly layoutService = inject(LayoutService);
   protected readonly sidenavControl = inject(ShellSidenavControl);
 
@@ -165,6 +173,19 @@ export class AppShellComponent {
     this.applicationContext.definition.set(definition);
   });
 
+  /**
+   * Hands the definition's working contexts to the service, with the URL the shell is mounted at in front of
+   * each `basePath` — what lets "Set as active" on an entity's list reach the context's pages from outside them.
+   * Re-run on every edit, and undone on destroy, so a previewed definition's contexts never outlive its preview.
+   */
+  private readonly registerWorkingContexts = effect((onCleanup) => {
+    const contexts = this.definition()?.contexts;
+    if (!contexts?.length) return;
+    const mountedAt = '/' + this.hostRoute.pathFromRoot.flatMap((route) => route.snapshot.url.map((segment) => segment.path)).join('/');
+    const prefix = mountedAt === '/' ? '' : mountedAt;
+    onCleanup(this.workingContext.register(contexts.map((row) => ({ ...nestWorkingContext(row), basePath: prefix + '/' + trimSlashes(row.basePath ?? '') }))));
+  });
+
   // The definition's default re-applies on every edit, like the theme: a toggle in the Preview is only tried out.
   private readonly applySidenavDefault = effect(() => this.sidenavControl.opened.set(this.layout().sidenavOpened));
 
@@ -174,6 +195,7 @@ export class AppShellComponent {
 
   protected readonly headerView = computed(() => this.viewOf('header'));
   protected readonly footerView = computed(() => this.viewOf('footer'));
+  protected readonly statusbarView = computed(() => this.viewOf('statusbar'));
 
   /**
    * The nav in the sidenav, for the two sidenav presets. Split from {@link topNavView} rather than

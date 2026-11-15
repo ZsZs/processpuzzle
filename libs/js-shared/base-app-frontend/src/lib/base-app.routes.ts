@@ -4,15 +4,17 @@ import { baseEntityRoutes, type EmbeddedChildRoute } from '@processpuzzle/base-e
 import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from './base-app.i18n';
 import { APP_DEFINITION_ENTITY_NAME } from './domain/app-definition.descriptors';
 import {
+  APP_CONTEXT_ENTITY_NAME,
   APP_MODULE_MOUNT_ENTITY_NAME,
   APP_NAV_ITEM_ENTITY_NAME,
   APP_REGION_ENTITY_NAME,
   APP_ROUTE_ENTITY_NAME,
   APP_WIDGET_ENTITY_NAME,
-  MODULE_DEFINITION_ENTITY_NAME
+  MODULE_DEFINITION_ENTITY_NAME,
 } from './domain/app-entity-names';
 import { AppDefinitionContainerComponent } from './feature/app-definition-container.component';
 import { APP_PREVIEW_TAB } from './feature/app-preview-tab';
+import { AppContextFacade } from './feature/app-context.facade';
 import { AppModuleMountFacade } from './feature/app-module-mount.facade';
 import { AppNavItemFacade } from './feature/app-nav-item.facade';
 import { AppRegionFacade } from './feature/app-region.facade';
@@ -84,6 +86,7 @@ function embeddedDefinitionRoutes(): EmbeddedChildRoute[] {
     { entityName: APP_REGION_ENTITY_NAME, facade: AppRegionFacade, children: () => [navItemRoute(), widgetRoute()] },
     routeRoute(),
     { entityName: APP_MODULE_MOUNT_ENTITY_NAME, facade: AppModuleMountFacade },
+    { entityName: APP_CONTEXT_ENTITY_NAME, facade: AppContextFacade },
   ];
 }
 

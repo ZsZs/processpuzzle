@@ -68,8 +68,10 @@
       "routes": "The pages of the application, one row per page. Add them before the navigation items that point at them. — Guide: Routes",
       "modules": "Separately authored parts of the application whose routes appear under a base path. — Guide: Modules",
       "assets": "Files the application brings along, such as the pictures of its pages. A widget refers to one as app:<path>. — Guide: Applications",
-      "translations": "The texts of the application's own pages, such as the cards of its home page, one file per language. Keys are whatever the widgets name under their translocoPrefix. — Guide: Applications"
-    }
+      "translations": "The texts of the application's own pages, such as the cards of its home page, one file per language. Keys are whatever the widgets name under their translocoPrefix. — Guide: Applications",
+      "contexts": "Entities the user selects once and then works inside. A page opts in with Requires Context."
+    },
+    "contexts": "Contexts"
   },
   "app_region": {
     "_self": "Region",
@@ -77,7 +79,7 @@
     "navItems": "Nav Items",
     "widgets": "Widgets",
     "_tooltips": {
-      "type": "header (top), sidenav (navigation panel) or footer (bottom). Each type can be used once. — Guide: Regions",
+      "type": "header (top), sidenav (navigation panel) or footer (bottom). Each type can be used once. Statusbar (below the header) shows the active contexts. — Guide: Regions",
       "navItems": "The menu entries of the sidenav. Used only by the sidenav region. — Guide: Navigation items",
       "widgets": "The widgets of the header or footer, laid out in one row in this order. Use a spacer to push the following ones to the right. — Guide: Header"
     }
@@ -106,8 +108,10 @@
       "documentSlug": "DOCUMENT only: the slug of the document to show. Not rendered yet. — Guide: Documents",
       "entityName": "ENTITY only: the name of an entity defined under Entities; its list and form are generated for you. — Guide: Entities",
       "entityMode": "ENTITY only: open on the list or on a record's details. Stored, not applied yet. — Guide: Entities",
-      "rsqlFilter": "ENTITY + LIST only: a pre-filter such as status==OPEN. Stored, not applied yet. — Guide: Entities"
-    }
+      "rsqlFilter": "ENTITY + LIST only: a pre-filter such as status==OPEN. Stored, not applied yet. — Guide: Entities",
+      "requiresContext": "Name of a context of this application. The page is then served below ctx/<name>/<id> and shows a \"Select a …\" prompt while none is active."
+    },
+    "requiresContext": "Requires Context"
   },
   "app_module_mount": {
     "_self": "Module Mount",
@@ -260,6 +264,33 @@
     "lifecycle": {
       "title": "Save, preview and release",
       "body": "<p>A new application starts as a <b>Draft</b>. <b>Save</b> stores your changes; the <b>Preview</b> tab then shows the saved definition exactly as the running application renders it, theme included — check it there before going further. Users get none of it yet: the running application uses only <b>released</b> definitions. Open the designer's <b>Release</b> section to see everything you changed — this application, its modules and the other definitions it uses — and <b>Publish</b> them together; the saved version becomes the <b>Published Version</b>. You can keep editing and saving afterwards; users see the changes only once you release again.</p>"
+    }
+  },
+  "app_context": {
+    "_self": "Context",
+    "name": "Name",
+    "entityName": "Entity Name",
+    "parent": "Parent",
+    "basePath": "Base Path",
+    "persist": "Persist",
+    "pickerSearchFields": "Picker Search Fields",
+    "pickerRecent": "Picker Recent",
+    "displayLabel": "Display Label",
+    "displayBadge": "Display Badge",
+    "displayExtra": "Display Extra",
+    "confirmSwitchStates": "Confirm Switch States",
+    "_tooltips": {
+      "name": "The context's name and URL segment: its pages are served below ctx/<name>/<id>.",
+      "entityName": "The entity type the user picks once and then works inside, e.g. Race.",
+      "parent": "The context this one is nested in. Choosing another parent clears this context.",
+      "basePath": "The path the context's pages are mounted under, e.g. /conduct. Empty means the application root.",
+      "persist": "url keeps the choice in the address only; url-local-storage also remembers the last one on this device.",
+      "pickerSearchFields": "The attributes the picker searches. Empty means the title attribute.",
+      "pickerRecent": "How many recently used entries the picker offers on top. Default 3.",
+      "displayLabel": "The text shown in the status bar, with {{attribute}} placeholders. Empty means the title attribute.",
+      "displayBadge": "An attribute shown as a badge next to it; state stands for the state attribute.",
+      "displayExtra": "A second, quieter text, with {{attribute}} placeholders.",
+      "confirmSwitchStates": "States in which leaving the entity asks for confirmation first."
     }
   }
 }

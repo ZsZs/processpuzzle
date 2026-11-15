@@ -150,3 +150,5 @@ export { WORKING_CONTEXT_SEGMENT, WORKING_CONTEXT_ROUTE_DATA_KEY, WORKING_CONTEX
 export { WorkingContextPickerComponent } from './lib/working-context/working-context-picker.component';
 export { WorkingContextEmptyStateComponent } from './lib/working-context/working-context-empty-state.component';
 export { WorkingContextPickerDialog, WORKING_CONTEXT_DRAWER_CONFIG, type WorkingContextPickerDialogData } from './lib/working-context/working-context-picker.dialog';
+export { WorkingContextCrumbsComponent } from './lib/working-context/working-context-crumbs.component';
+export { WorkingContextStatusbarComponent } from './lib/working-context/working-context-statusbar.component';

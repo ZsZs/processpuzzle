@@ -42,6 +42,12 @@ export class WorkingContextService {
   private readonly registered = signal<WorkingContextDefinition[]>([]);
   private readonly levels = signal<WorkingContextRouteLevel[]>([]);
 
+  /**
+   * True while an application shell shows the contexts in a status bar of its own. The status bar inside the
+   * entity tabs then leaves them out rather than showing them a second time.
+   */
+  readonly statusbarHostedByShell = signal(false);
+
   /** Every declared context. A later registration of a name replaces an earlier one. */
   readonly definitions: Signal<WorkingContextDefinition[]> = computed(() => {
     const byName = new Map<string, WorkingContextDefinition>();

@@ -1,8 +1,9 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@angular/material/list';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { EntityLabelPipe } from '@processpuzzle/base-entity';
+import { EntityLabelPipe, WorkingContextService } from '@processpuzzle/base-entity';
+import { ContextLink, resolveContextLink, trimSlashes } from './app-shell.model';
 import { NavItem } from '../../domain/app-definition';
 
 /** Which way the list runs. The shell decides it from `layout.preset`, not the region definition. */
@@ -63,10 +64,7 @@ export function toNavRows(items: NavItem[] | undefined, knownPaths: string[]): N
  * Whitespace-only counts as absent — an item mid-authoring is a group node, not a broken link.
  */
 function normalize(routePath: string | undefined): string | undefined {
-  const trimmed = routePath
-    ?.trim()
-    .replace(/^\/+|\/+$/g, '')
-    .trim();
+  const trimmed = trimSlashes(routePath?.trim() ?? '').trim();
   return trimmed ? trimmed : undefined;
 }
 
@@ -242,5 +240,18 @@ export class RegionNavComponent {
   /** Route paths the definition accounts for, supplied by `AppRegionRenderer`. See {@link toNavRows}. */
   readonly knownPaths = input<string[]>([]);
 
-  protected readonly rows = computed(() => toNavRows(this.navItems(), this.knownPaths()));
+  /** Routes bound to a working context, supplied by `AppRegionRenderer`: their nav entries lead into the context. */
+  readonly contextLinks = input<ContextLink[]>([]);
+
+  private readonly workingContext = inject(WorkingContextService);
+  private readonly activeIds = computed(() => Object.fromEntries(this.workingContext.active().map((context) => [context.name, context.id])));
+
+  protected readonly rows = computed(() => this.withContextLinks(toNavRows(this.navItems(), this.knownPaths())));
+
+  private withContextLinks(rows: NavRow[]): NavRow[] {
+    const links = this.contextLinks();
+    if (links.length === 0) return rows;
+    const activeIds = this.activeIds();
+    return rows.map((row) => ({ ...row, ...(row.routePath ? { routePath: resolveContextLink(row.routePath, links, activeIds) } : {}), children: this.withContextLinks(row.children) }));
+  }
 }

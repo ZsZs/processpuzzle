@@ -1,4 +1,4 @@
-import { BaseEntity } from '@processpuzzle/base-entity';
+import { BaseEntity, WorkingContextDefinition, WorkingContextPersistence } from '@processpuzzle/base-entity';
 import { THEME_COLOR_SCHEMES, THEME_PRESETS, ThemeColorScheme, ThemePreset, WidgetInstance } from '@processpuzzle/widgets';
 import type { ModuleDefinition } from './module-definition';
 
@@ -43,11 +43,13 @@ export const SIDENAV_MODES = ['side', 'over', 'push'] as const;
 export type SidenavMode = (typeof SIDENAV_MODES)[number];
 
 /**
+ * `statusbar` carries neither `navItems` nor `widgets`: the shell fills it with the active working contexts.
+ *
  * No `content`: once routes own the content area it *is* the router outlet, so a content region would
  * have no field of its own — `widgets` is header/footer-only and `navItems` sidenav-only. Its sizing
  * lives in {@link LayoutDefinition.contentMaxWidth}.
  */
-export const REGION_TYPES = ['header', 'sidenav', 'footer'] as const;
+export const REGION_TYPES = ['header', 'sidenav', 'footer', 'statusbar'] as const;
 export type RegionType = (typeof REGION_TYPES)[number];
 
 /**
@@ -178,6 +180,11 @@ export class RouteDefinition implements BaseEntity {
   icon?: string;
   /** Empty or absent means any authenticated member of the organization, as on {@link NavItem.roles}. */
   roles?: string[];
+  /**
+   * Name of a {@link WorkingContextRow} the route needs. The route is then served below `ctx/<name>/<id>/` and,
+   * opened without an active entity, shows a "Select a …" empty state with the picker instead of the screen.
+   */
+  requiresContext?: string;
   // region flattened target — re-nested into `target` by AppDefinitionMapper
   /**
    * Required by the contract, but undefined while a route is being created — the dropdown is declared
@@ -200,6 +207,7 @@ export class RouteDefinition implements BaseEntity {
     this.translocoId = init.translocoId;
     this.icon = init.icon;
     this.roles = init.roles;
+    this.requiresContext = init.requiresContext;
     this.kind = init.kind;
     this.widgets = init.widgets ?? [];
     this.documentSlug = init.documentSlug;
@@ -207,6 +215,49 @@ export class RouteDefinition implements BaseEntity {
     this.entityMode = init.entityMode;
     this.rsqlFilter = init.rsqlFilter;
     this.target = init.target;
+  }
+}
+
+/**
+ * One working context of the app, as the form edits it: `picker` and `display` flattened onto the row, because a
+ * descriptor addresses one property rather than a path, and `confirmSwitchWhen` reduced to the one condition the
+ * form offers — the states that make leaving the entity ask first. {@link source} keeps the object the row came
+ * from, so a save cannot drop what no control writes.
+ *
+ * A class rather than an interface for the reason {@link NavItem} is one: the `Add` action mints a blank row.
+ */
+export class WorkingContextRow implements BaseEntity {
+  /** The contract gives a context no `id`: `name` identifies it, as `moduleKey` does a mount. */
+  declare readonly id?: string;
+
+  name: string;
+  entityName: string;
+  parent?: string;
+  basePath?: string;
+  persist?: WorkingContextPersistence;
+  // region flattened picker / display / confirmSwitchWhen — re-nested by the mapper
+  pickerSearchFields?: string[];
+  pickerRecent?: number;
+  displayLabel?: string;
+  displayBadge?: string;
+  displayExtra?: string;
+  confirmSwitchStates?: string[];
+  // endregion
+  source?: WorkingContextDefinition;
+
+  constructor(init: Partial<WorkingContextRow> = {}) {
+    this.name = init.name ?? '';
+    this.entityName = init.entityName ?? '';
+    this.parent = init.parent;
+    this.basePath = init.basePath;
+    this.persist = init.persist;
+    this.pickerSearchFields = init.pickerSearchFields;
+    this.pickerRecent = init.pickerRecent;
+    this.displayLabel = init.displayLabel;
+    this.displayBadge = init.displayBadge;
+    this.displayExtra = init.displayExtra;
+    this.confirmSwitchStates = init.confirmSwitchStates;
+    this.source = init.source;
   }
 }
 
@@ -257,6 +308,8 @@ export class AppDefinition implements BaseEntity {
   regions: RegionDefinition[] | undefined;
   routes: RouteDefinition[] | undefined;
   modules: ModuleMount[] | undefined;
+  /** Working contexts routes may require, with `picker` / `display` flattened for the form. */
+  contexts: WorkingContextRow[] | undefined;
   /**
    * The mounted modules themselves, as the `/layout` read carries them: the released rows with the published
    * revision, the drafts with the draft. Read-only, never saved, and `undefined` on the designer's own read —
@@ -292,6 +345,7 @@ export class AppDefinition implements BaseEntity {
     this.regions = init.regions;
     this.routes = init.routes;
     this.modules = init.modules;
+    this.contexts = init.contexts;
     this.mountedModules = init.mountedModules;
     this.orgKey = init.orgKey;
     this.status = init.status;

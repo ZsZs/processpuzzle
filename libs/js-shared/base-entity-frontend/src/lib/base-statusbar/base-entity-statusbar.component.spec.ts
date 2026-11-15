@@ -168,7 +168,7 @@ describe('BaseStatusbarComponent', () => {
       entity: { id: 'r1', name: 'Spring Cup', status: 'Running', round: 3 },
       url: '/ctx/race/r1',
     };
-    const workingContextStub = { active: signal([activeRace]), clear: vi.fn(async () => true) };
+    const workingContextStub = { active: signal([activeRace]), clear: vi.fn(async () => true), statusbarHostedByShell: signal(false) };
 
     it('renders the active context as the root crumb, with its badge and extra field, even with no entity selected', async () => {
       const { fixture } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [{ provide: WorkingContextService, useValue: workingContextStub }]);
@@ -179,6 +179,14 @@ describe('BaseStatusbarComponent', () => {
       expect(crumb?.textContent).toContain('Spring Cup');
       expect(crumb?.textContent).toContain('round 3');
       expect(host.querySelector('[data-testid="race-context-crumb-badge"]')?.textContent?.trim()).toBe('Running');
+    });
+
+    it('leaves the contexts to the shell when it shows them in a status bar of its own', async () => {
+      const hosted = { ...workingContextStub, statusbarHostedByShell: signal(true) };
+      const { fixture } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [{ provide: WorkingContextService, useValue: hosted }]);
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="race-context-crumb"]')).toBeNull();
     });
 
     it('clears the context from its menu', async () => {
