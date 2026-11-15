@@ -265,13 +265,24 @@ describe('GenericEntityFormComponent', () => {
       expect(open).not.toHaveBeenCalled();
     });
 
-    it('still asks when the values were kept for another form', async () => {
+    it('still asks when this form has typed edits and the values were kept for another form', async () => {
       const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
       component.baseEntityForm.markAsDirty();
       formNavigator.captureFormSnapshot({}, 'some-other-entity');
       vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(false) } as never);
 
       expect(await component.confirmLeave()).toBe(false);
+    });
+
+    it('does not ask a form with only staged edits while another form is left for a list to choose from', async () => {
+      const { component, formNavigator, store } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      formNavigator.captureFormSnapshot({}, 'some-other-entity');
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
     });
 
     it('does not ask after Cancel, which discards on purpose', async () => {

@@ -171,6 +171,9 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     // A round trip to a list to choose from keeps this form's values: they were captured for it just before the
     // navigation and are given back when it is shown again, so going loses nothing and there is nothing to ask.
     if (this.formNavigator.hasFormSnapshotFor(this.entityDescriptor().entityName)) return true;
+    // Another form's round trip is under way and this form has no typed edits of its own: whatever it shows was staged
+    // by that round trip, which keeps it. Typed edits here would be lost, so they still ask.
+    if (this.formNavigator.hasFormSnapshot() && !this.baseEntityForm.dirty) return true;
 
     const dialogData: DeleteConfirmationDialogData = {
       titleKey: 'base_entity.unsaved_changes_dialog.title',
