@@ -181,6 +181,11 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       return snapshot;
     }
 
+    /** Whether {@link captureFormSnapshot} kept values, i.e. a round trip to a list to choose from is under way. */
+    function hasFormSnapshot(): boolean {
+      return store.formSnapshot() !== undefined;
+    }
+
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
       const currentUrl = determineCurrentUrl();
@@ -523,6 +528,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       destroyNavigationTracking,
       initializeNavigationTracking,
       popFormSnapshot,
+      hasFormSnapshot,
       popRequestPayload,
       popResponsePayload,
       pushResponsePayload,

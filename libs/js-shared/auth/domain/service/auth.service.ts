@@ -40,6 +40,18 @@ export abstract class AuthService {
   }
 
   /**
+   * Forgets the signed-in user and any token, because the identity provider no longer honours them — the
+   * server answered 401 to a request that carried (or should have carried) the session. {@link currentUser}
+   * becomes `undefined`, so `login` no longer short-circuits on an "already signed in" that is not true.
+   *
+   * The default does nothing, for the same reason as {@link getAccessToken}: a provider with no session
+   * that can die underneath it needs no change.
+   */
+  clearSession(): void {
+    // Nothing to forget by default.
+  }
+
+  /**
    * Re-reads the signed-in user from the provider, so a change made on the server — a role the user
    * just picked for themselves — shows without signing in again. {@link currentUser} updates.
    *

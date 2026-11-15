@@ -1,4 +1,5 @@
 import { AppTranslationsLoader } from './app-translations.loader';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, Routes } from '@angular/router';
@@ -72,6 +73,26 @@ describe('publishedAppRoutesGuard', () => {
     await router.navigateByUrl('/acme');
 
     expect(router.url).toBe('/acme/home');
+  });
+
+  it('does not mistake a 401 for nothing published: the store stays unloaded and the error reaches the caller', async () => {
+    const unauthorized = new HttpErrorResponse({ status: 401, url: '/api/app-definitions/app/layout' });
+    findPublished.mockReturnValue(throwError(() => unauthorized));
+    const store = TestBed.inject(PublishedAppStore);
+
+    await expect(store.load('app')).rejects.toBe(unauthorized);
+
+    expect(store.loaded()).toBe(false);
+    expect(store.published()).toBeUndefined();
+  });
+
+  it('still treats a server error other than 401 as not published', async () => {
+    findPublished.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    const store = TestBed.inject(PublishedAppStore);
+
+    await expect(store.load('app')).resolves.toBeUndefined();
+
+    expect(store.loaded()).toBe(true);
   });
 
   it('renders the fallback for a published revision without routes, rather than never settling', async () => {

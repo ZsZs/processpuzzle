@@ -5,6 +5,9 @@ import { authTokenInterceptor } from './auth-token.interceptor';
 /**
  * Registers {@link authTokenInterceptor} for this application.
  *
+ * @deprecated Applications use `providePlatformHttp`, which registers this interceptor in the one standard chain.
+ * Calling this next to it would create a second `provideHttpClient`, and only one chain survives.
+ *
  * Opt-in rather than automatic: an interceptor that attached credentials merely by being on the
  * classpath would send this platform's tokens from every application that happens to depend on
  * `@processpuzzle/auth`.
@@ -22,6 +25,9 @@ export function provideAuthTokenInterceptor(apiRoots: readonly string[] = [], wi
 }
 
 /**
+ * @internal Applications use `providePlatformHttp`, which fixes the order of the whole chain; this stays exported
+ * only for code that already composes its own chain.
+ *
  * The interceptor alone, for an application that already calls `provideHttpClient(withInterceptors(...))`
  * itself and wants to add this to its own list rather than have a second `provideHttpClient` compete
  * with it.

@@ -23,6 +23,12 @@
     "cancel_button": "Cancel",
     "logout_button": "Logout"
   },
+  "session_expired": {
+    "title": "Your session has ended",
+    "message": "You were signed out, for example because you were inactive for a while or your session was ended elsewhere. Sign in again to carry on where you left off.",
+    "sign_in_button": "Sign in again",
+    "home_button": "Go to the start page"
+  },
   "registration_form": {
     "title": "Create Account",
     "email_label": "Email",

@@ -23,6 +23,12 @@
     "cancel_button": "Cancelar",
     "logout_button": "Cerrar sesión"
   },
+  "session_expired": {
+    "title": "Tu sesión ha terminado",
+    "message": "Se ha cerrado tu sesión, por ejemplo por inactividad prolongada o porque se terminó en otro lugar. Inicia sesión de nuevo para continuar donde lo dejaste.",
+    "sign_in_button": "Iniciar sesión de nuevo",
+    "home_button": "Ir a la página de inicio"
+  },
   "registration_form": {
     "title": "Crear cuenta",
     "email_label": "Correo electrónico",
