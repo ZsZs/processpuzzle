@@ -1394,7 +1394,7 @@ components:
           description: >-
             ENTITY + LIST only. Name of a working context of the app. The route does not require it: the list offers a toggle
             "only the active …" that narrows the rows to the context's active entity, by the attribute named after the context.
-          example: race
+          example: warehouse
         contextPath:
           type: string
           nullable: true
@@ -1402,7 +1402,7 @@ components:
             ENTITY only, on a route that `requiresContext`. The EMBEDDED_COMPONENTS attribute of the context's
             entity whose items the route lists, and `entityName` names the items' type: the route then shows the
             collection of the **active** entity, and adding, editing or removing an item acts on that entity alone.
-          example: rounds
+          example: zones
 
     RouteDefinition:
       type: object
@@ -1453,7 +1453,7 @@ components:
             Name of a `WorkingContextDefinition` (see `AppDefinition.contexts`) the route needs. The route
             is then served below `ctx/<name>/<id>/`, and — opened without an active entity — shows a
             "Select a ..." empty state with the picker instead of the screen. It never redirects.
-          example: race
+          example: warehouse
         target:
           $ref: "#/components/schemas/RouteTarget"
 
@@ -1786,11 +1786,11 @@ components:
           type: string
           description: The context's name and its URL segment — `ctx/<name>/<id>/...`. Unique within the app.
           pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
-          example: race
+          example: warehouse
         entityName:
           type: string
           description: Entity type acting as the context root (`BaseEntityDescriptor.entityName`).
-          example: Race
+          example: Warehouse
         parent:
           type: string
           nullable: true
@@ -1844,7 +1844,7 @@ components:
           description: Attribute rendered as a badge; `state` stands for the STATE attribute.
         extra:
           type: string
-          example: "round {{currentRound}}"
+          example: "zone {{currentZone}}"
 
     AppDefinition:
       description: A persisted app definition.

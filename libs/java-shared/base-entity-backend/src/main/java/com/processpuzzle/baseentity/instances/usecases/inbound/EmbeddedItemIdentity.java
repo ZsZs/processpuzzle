@@ -19,7 +19,7 @@ import java.util.function.Function;
  * them by. Nothing is backfilled in bulk: an object that is never saved keeps its items as they are, and the item
  * endpoints assign identity on the first change they make.
  *
- * <p>The walk follows the definitions all the way down: a collection nested in an item (the results of a round) gets the
+ * <p>The walk follows the definitions all the way down: a collection nested in an item (the shelves of a zone) gets the
  * same identity as a top-level one, the definition of each level being looked up by the component type it links to.
  */
 public final class EmbeddedItemIdentity {

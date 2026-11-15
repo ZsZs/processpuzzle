@@ -406,13 +406,13 @@ paths:
 
   # ── Embedded collections ──
   # One level of an aggregate: the embedded components an entity instance carries in an
-  # EMBEDDED_COMPONENTS attribute, addressed on their own so that "add a round" never sends the
-  # whole Race. An item is identified by its `id` member, which the server assigns on append.
+  # EMBEDDED_COMPONENTS attribute, addressed on their own so that "add a zone" never sends the
+  # whole Warehouse. An item is identified by its `id` member, which the server assigns on append.
   #
   # Concurrency. Each item carries an `itemVersion` the server counts, starting at 1 and bumped by every PATCH of that
   # item; the item endpoints answer it as the `ETag` of the item, and PATCH and DELETE take it back as `If-Match`
   # (optional — without it the change applies to the stored item). A stale `If-Match` is a 409 for that item only, so two
-  # people editing different rounds of one race do not conflict. The object's `version` is the GET list's `ETag`, and the
+  # people editing different zones of one warehouse do not conflict. The object's `version` is the GET list's `ETag`, and the
   # object-level check still applies underneath every change: a change that loses that race is read and applied again.
   # Items stored before this had no `itemVersion`; the first write of their object gives them one (and an `id`).
   /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}:
@@ -567,7 +567,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
   # ── Nested embedded collections ──
-  # The collection held by an attribute of an item of another collection — the results of one round, say. The same
+  # The collection held by an attribute of an item of another collection — the shelves of one zone, say. The same
   # operations as above, one level down; the item of the outer collection is named by its `id`. The versioning is the
   # same: each item has its own `itemVersion`, and an item of the nested collection is changed against that.
   /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}/{childAttributeCode}:

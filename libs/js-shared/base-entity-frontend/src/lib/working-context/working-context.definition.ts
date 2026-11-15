@@ -2,8 +2,8 @@ import { type EnvironmentProviders, InjectionToken, makeEnvironmentProviders } f
 
 /**
  * Metadata of a **working context**: an entity the user picks once and then works inside, instead of passing
- * through List → Form on every visit. Nothing in the platform knows what the entity is — a Race, a Customer, a
- * Warehouse — it only reads this declaration.
+ * through List → Form on every visit. Nothing in the platform knows what the entity is — a Customer, a Warehouse,
+ * an Order — it only reads this declaration.
  *
  * See `docs/active-entity-concept/working-context-spec.md`.
  */
@@ -46,7 +46,7 @@ export interface WorkingContextDisplay {
   label?: string;
   /** Attribute rendered as a badge; `state` names the STATE attribute, as in {@link WorkingContextDefinition.confirmSwitchWhen}. */
   badge?: string;
-  /** A second, quieter piece of text after the label — the current round, say. */
+  /** A second, quieter piece of text after the label — the current step, say. */
   extra?: string;
 }
 

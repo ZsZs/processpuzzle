@@ -14,14 +14,14 @@ function createContextAttrDescriptors(): AbstractAttrDescriptor[] {
   const nameAttr = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true);
   nameAttr.required = true;
   nameAttr.isHeading = true;
-  nameAttr.placeholder = "The context's URL segment, e.g. race";
+  nameAttr.placeholder = "The context's URL segment, e.g. warehouse";
   // The contract's own pattern; see the note on the module mount's key.
   nameAttr.pattern = '^[a-z0-9]+(-[a-z0-9]+)*$';
 
   // A plain text box, as for a route's entity name: whether the entity exists is the backend validator's call.
   const entityNameAttr = new BaseEntityAttrDescriptor('entityName', FormControlType.TEXT_BOX, 'Entity Name');
   entityNameAttr.required = true;
-  entityNameAttr.placeholder = 'The entity type the user picks, e.g. Race';
+  entityNameAttr.placeholder = 'The entity type the user picks, e.g. Warehouse';
 
   const parentAttr = new BaseEntityAttrDescriptor('parent', FormControlType.TEXT_BOX, 'Parent');
   parentAttr.placeholder = 'Name of the context this one is nested in';
@@ -51,7 +51,7 @@ function createContextAttrDescriptors(): AbstractAttrDescriptor[] {
   displayBadgeAttr.hideInTable = true;
 
   const displayExtraAttr = new BaseEntityAttrDescriptor('displayExtra', FormControlType.TEXT_BOX, 'Display Extra');
-  displayExtraAttr.placeholder = 'A second text, e.g. round {{currentRound}}';
+  displayExtraAttr.placeholder = 'A second text, e.g. zone {{currentZone}}';
   displayExtraAttr.hideInTable = true;
 
   const confirmSwitchStatesAttr = new BaseEntityAttrDescriptor('confirmSwitchStates', FormControlType.TAGS, 'Confirm Switch States');

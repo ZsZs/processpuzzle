@@ -4,8 +4,8 @@ import { createTestId } from '../base-entity/base-entity-utility';
 import { WorkingContextService } from './working-context.service';
 
 /**
- * The transitions the **active** entity of a working context can take — Start race, Finish race — as buttons. Placed on
- * a page that declares them, so the officer acts on the race without reaching for the status bar's menu.
+ * The transitions the **active** entity of a working context can take — Open, Close — as buttons. Placed on
+ * a page that declares them, so the user acts on the entity without reaching for the status bar's menu.
  *
  * It shows nothing without an active context, and nothing for an entity no state machine governs. `triggers` narrows the
  * offer to the named triggers, in that order; without it every transition the entity can take is offered. A transition a

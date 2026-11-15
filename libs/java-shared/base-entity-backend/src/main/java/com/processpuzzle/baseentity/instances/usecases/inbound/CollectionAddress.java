@@ -6,9 +6,9 @@ import java.util.List;
  * Where an embedded collection is, inside an entity instance: the attribute holding it at the top, and — for a collection
  * nested in the items of another — the id of each item it is reached through.
  *
- * <p>{@code of("rounds")} is the top-level collection of rounds. {@code of("rounds").within(roundId, "results")} is the
- * results of one round. The path is as deep as the containment of the definitions, though the endpoints address two
- * levels: a round's results, not a result's own collections.
+ * <p>{@code of("rounds")} is the top-level collection of zones. {@code of("zones").within(zoneId, "shelves")} is the
+ * shelves of one zone. The path is as deep as the containment of the definitions, though the endpoints address two
+ * levels: a zone's shelves, not a shelf's own collections.
  *
  * @param attributes the attribute at each level, outermost first; never empty
  * @param ownerIds the id of the item each level but the last is reached through; one shorter than {@code attributes}

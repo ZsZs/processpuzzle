@@ -21,8 +21,8 @@ import static com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedIt
 
 /**
  * Reads and changes <em>one item</em> of an embedded collection — the components an entity instance carries in a
- * multi-valued EMBEDDED_COMPONENTS attribute — so that a caller adding a round to a race sends the round, not the race.
- * A collection nested in an item (the results of a round) is addressed the same way, through its {@link CollectionAddress}.
+ * multi-valued EMBEDDED_COMPONENTS attribute — so that a caller adding a zone to a warehouse sends the zone, not the warehouse.
+ * A collection nested in an item (the shelves of a zone) is addressed the same way, through its {@link CollectionAddress}.
  *
  * <p>An item is identified by its {@code id} member, assigned here on append. The write itself is the
  * {@link UpdateEntityInstanceUseCase update} of the whole payload with the one item changed, so an item change is
@@ -33,7 +33,7 @@ import static com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedIt
  * to that item; a caller that names the item version it last saw gets an {@link ItemVersionConflictException} when someone
  * else changed the item since, while the rest of the collection stays open to it. The object's own version is what the
  * update underneath checks: a caller that names none is applying its change to <em>whatever is stored</em>, and is retried
- * when another write wins that race — which is what makes appends conflict-free: two devices adding a round at the same
+ * when another write wins that race — which is what makes appends conflict-free: two devices adding a zone at the same
  * moment both succeed.
  *
  * <p>Deliberately not a {@code jsonb_set}: that would write around validation, the managed-attribute guard and the events

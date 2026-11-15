@@ -11,7 +11,7 @@ export const CONTEXT_ACTIONS_WIDGET_REGISTRATION: WidgetRegistration = {
   definition: {
     name: 'Context actions',
     translocoId: 'base_widget.context_actions.name',
-    description: 'Buttons for the transitions the active entity of a working context can take, such as Start race and Finish race. Renders nothing without an active context.',
+    description: 'Buttons for the transitions the active entity of a working context can take, such as Open and Close. Renders nothing without an active context.',
     category: 'Navigation',
     icon: 'play_arrow',
     propsSchema: {

@@ -14,10 +14,10 @@ import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY, WORKING_CONTE
  *   entity first when the context persists to localStorage.
  *
  * The id branch refuses an id that equals the first segment of one of the views, which is what keeps
- * `ctx/race/participants` the empty state rather than a race called `participants`.
+ * `ctx/warehouse/zones` the empty state rather than a warehouse called `zones`.
  *
  * Nest a child context by calling this again inside `routes`; its URL then reads
- * `ctx/regatta/<id>/ctx/race/<id>/...`.
+ * `ctx/site/<id>/ctx/warehouse/<id>/...`.
  */
 export function workingContextRoutes(contextName: string, routes: Routes): Routes {
   const viewSegments = routes.map((route) => firstSegment(route.path)).filter((segment): segment is string => !!segment);

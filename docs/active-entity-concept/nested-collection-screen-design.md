@@ -1,89 +1,112 @@
-# Nested collection screen – design
+# Nested collections inside a working context – design
 
 2026-11-15 · part of phase 4, slice 3 (see [working-context-plan.md](working-context-plan.md))
 
-## Problem
+Examples use a neutral domain: a **Warehouse** (the context entity) that embeds **Zones**, each of which embeds
+**Shelves**. Nothing here is specific to any customer's domain; the platform reads descriptors and metadata only.
 
-The backend now addresses a collection nested in an item, such as the results of one round:
-`…/{id}/rounds/{roundId}/results`. The screen that shows it has to know which round it is for. Today
-`contextPath` on a route names one top-level collection (`rounds`), so the screen has nothing to pick the round by.
+## The question, and what was missing from it
 
-## Options
+Phase 2 added item-level endpoints for embedded collections, and a screen (`ContextCollectionComponent`) that lists
+one top-level collection of the active entity (the Warehouse's zones). Phase 4 then added the same endpoints one level
+down (a zone's shelves), and the open question was how a screen gets from a zone to its shelves.
 
-| | A. Master / detail on one page | B. Owner in the URL (recommended) | C. Owner in a query parameter |
-| --- | --- | --- | --- |
-| Shape | Rounds list on the left, results of the selected round on the right | `ctx/race/:id/rounds/:roundId/results` | `ctx/race/:id/results?round=<id>` |
-| Source of truth | Component state | URL | URL |
-| Deep link, refresh, second device | Needs extra code for the selection | Works with no extra code (same as the context itself) | Works, but the parameter is easy to drop |
-| Route metadata | One route, plus a second list bound to the owner | One route with a path parameter; the owner list is an ordinary route | One route; the parameter name is not in the route definition |
-| Fits the spec | Adds a second screen mode | Yes: `/ctx/:contextName/:id/...` already carries parameters | Partly |
+That question should not exist. **Embedded entities already have owner-in-the-URL addressing, to any depth.** In the
+authoring routes an embedded row's screen is
 
-**Recommendation: B.** It follows the rule the working context already uses (the URL is the source of truth),
-needs no selection state, and reuses routes that already exist: the owner list is `rounds`, and each row links to
-`rounds/<id>/results`.
+`warehouse/<id>/details/zone/<zoneId>/details/shelf/<shelfId>/details`
 
-## Design of B
+and the machinery behind it is generic and already in `base-entity-frontend`:
 
-### Metadata
+| Piece | What it does |
+| --- | --- |
+| `readEmbeddedRouteChain` / `readEmbeddedBreadcrumb` | Reads the chain of entities (and ids) the URL walks through |
+| `embeddedAggregateGuard` | Loads the root entity from the first level, resolves every row of the chain by key, redirects to the owner when a row is gone |
+| `EmbeddedEntityHostComponent` | Hosts the child screens below the owner |
+| `EmbeddedRouteContext` | Gives the hops from the root to the owner, the attribute and the row key |
+| `EntityScreenResolver.embeddedChildrenOf` | Derives the child routes from the descriptors (containment is declared once, in the descriptors) |
+| `EMBEDDED_COMPONENTS` control | Lists nested rows inside a form and navigates deeper in the URL on add or open |
 
-An ENTITY route can already carry a path with `:name` parameters (the contract allows them, and the route builder
-orders static segments before parameters). The nested route declares:
+The context's standalone collection screen (phase 2) bypassed all of this, so it had no URL chain and no way to go
+deeper. The earlier proposal in this document (`contextPath` as an alternating path, parameter names in route
+metadata) would have re-created, per route, what descriptors and routes already express. That was the wrong direction.
 
-- `path`: `rounds/:roundId/results`
-- `requiresContext`: `race`
-- `contextPath`: `rounds/results` (the outer collection, then the nested one)
-- `entityName`: `Result` (the items' type)
+## What is actually different in a context
 
-`contextPath` becomes a path: an alternating list of attributes, with the owner's id taken from the route parameter
-of the same position. The first level is the active entity's collection, the second is the item named by
-`:roundId`. The route parameter names are not part of the contract, only their position is.
+Two things, and only these:
 
-### Screen
+1. **Where the chain starts.** The root level of an authoring URL is the entity's own route (`warehouse/<id>`). In a
+   context the root is `ctx/<name>/<contextId>`. The chain reader and the guard recognise a level by route data
+   (`entityName`) and `:entityId`; a context level declares `workingContext` and `:contextId` instead.
+2. **How changes are saved.** `EmbeddedEntityService` implements the same `BaseEntityService` contract as every other
+   store service, but its `add`, `update` and `delete` end in `accessor.stageRoot(...)`: the whole root document is
+   staged and the **root form's Save** persists it. A context has no root form. Its point (spec, phase 2) is that a change
+   sends the item, not the whole Warehouse, under item versions and without a document-wide save.
 
-`ContextCollectionComponent` already lists a top-level collection, and gets add, edit and remove through the item
-dialog. For a nested route it:
+## Proposed design
 
-1. reads the owner ids from the route parameters, in order;
-2. calls the nested service methods (`listNested`, `appendNested`, `patchNested`, `removeNested`) instead of the
-   top-level ones;
-3. shows the owner in its header, using the owner's title attribute from the outer list, so the user sees which round.
+### 1. The context level is an aggregate root in the chain
 
-The owner's own version is not needed: the nested operations check the nested item's `itemVersion` and the
-object-level race is handled by the backend.
+`readEmbeddedBreadcrumb` (and `declaredEntityName` / `declaresEntityId` next to it) learn that a route carrying
+`workingContext` data and a `:contextId` parameter is a level `{ entityName: <the context's entity>, entityId }`. The
+context's entity name comes from the context definition, which `WorkingContextService` already holds.
 
-### Linking from the owner list
+Nothing else in the chain changes: the guard loads the root by `levels[0]`, resolves the rest from the root payload,
+and redirects to the owner (the context's landing view) when a row is missing.
 
-The `rounds` list is a context collection too. Its rows need a way to open their nested collection. Proposal: a
-route-level `rowLink` template, for example `results` (the child route under the current route), applied as a link
-on the row's title. Without it the owner list shows rows and nothing else, which is also acceptable for a first slice.
+### 2. Embedded child routes under the context routes
 
-### States
+`workingContextRoutes(name, routes)` already mounts the views twice (with the entity, and as the empty state). It also
+mounts the embedded child branches of the context's entity, the way `baseEntityRoutes` mounts them under an entity's
+details route: derived from the descriptor (`embeddedChildrenOf`), not authored per route. A route that opts in needs
+no nested metadata; containment is already in the descriptors.
+
+### 3. A direct persistence variant
+
+`DirectEmbeddedEntityService` implements `BaseEntityService` exactly like `EmbeddedEntityService`, with one change: the
+commit calls the item endpoints (phase 2 and slice 3) instead of staging the root.
+
+- The address is derived from the resolved `EmbeddedRouteContext`: `path` (hops, each an attribute and a row index) is
+  turned into row ids with `rowId`, and `attrName` is the innermost collection. The result is a `CollectionAddress`.
+- `add` appends the row; `update` sends a merge patch of the changed members (`mergePatch`) with the row's
+  `itemVersion` as `If-Match`; `delete` removes it. After each call the root is reloaded, so the screens show what is
+  stored.
+- It is used where the aggregate root is a working context; everywhere else `EmbeddedEntityService` stays.
+
+### 4. The collection screen
+
+`ContextCollectionComponent` stays as the list of a context's top-level collection, but a row opens the existing embedded
+form route below the context instead of an edit dialog. Add opens the form at `…/<child>/new/details`. The form's
+`EMBEDDED_COMPONENTS` controls then list the nested rows and navigate deeper, exactly as in the authoring screens, so
+**nested collections need no code of their own**.
+
+The edit dialog (`ContextCollectionItemDialog`) can then be retired, or kept for a quick edit of a flat row. Open question 2.
+
+## States
 
 | Situation | Behaviour |
 | --- | --- |
-| No active context | The route's empty state with the picker (already how context routes behave) |
-| Owner item does not exist (deleted, or a stale link) | An empty state "No round '<id>'" with a link back to the owner list; not a redirect |
-| Owner exists, nested collection empty | The empty text of the collection screen |
-| Conflict on an edit of a nested item | The existing conflict message, and a reload |
-
-### Context switch
-
-Switching the active race from inside `rounds/:roundId/results` follows the existing switch rule: the view stays,
-and the owner id cannot be carried over. The switch lands on the first view of the new race, as it does today.
+| No active context | The route's empty state with the picker (unchanged) |
+| A row in the URL was deleted by someone else | The guard redirects to its owner, as in the authoring screens; no separate empty state |
+| Conflict on a row | The existing conflict message, then a reload |
+| Switching the context from inside a nested screen | The view stays; a chain below the old entity cannot be carried over, so the switch lands on the first view (existing rule) |
 
 ## Work
 
-1. Frontend route: `contextPath` as a path; the renderer passes the parameter names through route data.
-2. `ContextCollectionComponent`: owner ids from route params, nested service calls, owner header, owner-not-found state.
-3. Owner list: optional `rowLink`.
-4. Tests: component tests for the nested calls and the owner-not-found state; renderer test for the path; validator
-   check that every `:param` of the route path appears in `contextPath`'s order.
+1. `readEmbeddedBreadcrumb` and the guard treat a context level as a root. Tests in `embedded-route-context.spec.ts`
+   and the guard spec.
+2. `workingContextRoutes` mounts the embedded child branches. Route spec.
+3. `DirectEmbeddedEntityService` and the choice of service in the embedded facade when the root is a context. Unit tests,
+   including the id-addressing of nested paths and the `If-Match` of an update.
+4. `ContextCollectionComponent` row and add navigation. Component tests.
 5. E2E: part of the context scenario (phase 4, last item).
 
 ## Open questions
 
-1. Should `contextPath` stay a single attribute name for top-level collections, and become a path only when nested?
-   Proposed: yes, a single name is a path of one.
-2. Is `rowLink` needed for this slice, or can the owner list stay as it is and the user reach a nested screen by URL?
-   Proposed: include it; without it the nested screen is hard to find.
-3. Should the validator check that the route path's parameters match `contextPath`? Proposed: yes, as a warning first.
+1. **Immediate or staged in a context?** Proposed: immediate (item endpoints), since a context has no root form. The
+   alternative, staging and a "Save" in the status bar, would reintroduce the whole-document write that phase 2 removed.
+2. **Keep the edit dialog?** Proposed: retire it once rows open the form, so one editing experience exists. It can stay
+   for a first slice.
+3. **Row key addressing:** `EmbeddedRouteContext` addresses rows by index inside a document, the item endpoints by `id`.
+   Rows stored before ids existed have none until their object is saved once. Proposed: the direct service refuses to
+   address such a row and asks to save the owner first; or the backend assigns ids on read. Needs a decision.

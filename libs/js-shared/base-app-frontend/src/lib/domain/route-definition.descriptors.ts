@@ -85,7 +85,7 @@ function createRouteDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   rsqlFilterAttr.placeholder = 'ENTITY + LIST only: RSQL the list is pre-filtered with';
   rsqlFilterAttr.hideInTable = true;
   const contextPathAttr = new BaseEntityAttrDescriptor('contextPath', FormControlType.TEXT_BOX, 'Context Path');
-  contextPathAttr.placeholder = "ENTITY + requires context: the context entity's collection to list, e.g. rounds";
+  contextPathAttr.placeholder = "ENTITY + requires context: the context entity's collection to list, e.g. zones";
   contextPathAttr.hideInTable = true;
 
   const filterByContextAttr = new BaseEntityAttrDescriptor('filterByContext', FormControlType.TEXT_BOX, 'Filter By Context');

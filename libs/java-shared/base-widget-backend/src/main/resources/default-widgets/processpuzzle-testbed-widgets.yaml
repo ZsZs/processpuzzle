@@ -486,7 +486,7 @@ widgetDefinitions:
     name: Context actions
     translocoId: base_widget.context_actions.name
     description: >-
-      Buttons for the transitions the active entity of a working context can take, such as Start race and Finish race.
+      Buttons for the transitions the active entity of a working context can take, such as Open and Close.
       Renders nothing without an active context.
     category: Navigation
     icon: play_arrow

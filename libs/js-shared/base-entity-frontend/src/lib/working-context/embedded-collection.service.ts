@@ -28,7 +28,7 @@ export interface CollectionRead {
 
 /**
  * Reads and changes **one item** of an embedded collection of an entity instance — `entities/<type>/<id>/<attr>[/<itemId>]`
- * — so that adding a round to a race sends the round, not the race.
+ * — so that adding a zone to a warehouse sends the zone, not the warehouse.
  *
  * The object's version travels as an `ETag`: every answer carries it, and a change that names it back as `If-Match` is
  * refused with a 409 when someone else saved in between. A change that names none applies to whatever is stored.

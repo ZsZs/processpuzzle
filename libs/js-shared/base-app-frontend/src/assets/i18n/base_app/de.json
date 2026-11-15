@@ -110,7 +110,7 @@
       "entityMode": "Nur ENTITY: mit der Liste oder den Details eines Datensatzes öffnen. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
       "rsqlFilter": "Nur ENTITY + LIST: ein Vorfilter wie status==OPEN. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
       "requiresContext": "Name eines Kontexts dieser Anwendung. Die Seite liegt dann unter ctx/<name>/<id> und zeigt „Auswählen …“, solange keiner aktiv ist.",
-      "contextPath": "Das Attribut der Kontext-Entität, deren Sammlung diese Seite auflistet, z. B. rounds. Braucht „Kontext erforderlich“; der Entitätsname ist dann der Typ der Einträge.",
+      "contextPath": "Das Attribut der Kontext-Entität, deren Sammlung diese Seite auflistet, z. B. zones. Braucht „Kontext erforderlich“; der Entitätsname ist dann der Typ der Einträge.",
       "filterByContext": "Zeigt nur die Zeilen der aktiven Entität dieses Kontexts, mit einem Schalter für alle. Das Feld „Kontext erforderlich“ bleibt leer: die Seite funktioniert ohne Kontext."
     },
     "requiresContext": "Kontext erforderlich",
