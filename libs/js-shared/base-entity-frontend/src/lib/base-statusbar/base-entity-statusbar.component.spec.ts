@@ -9,7 +9,7 @@ import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-f
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { UnsavedChangesRegistry } from '../base-form/unsaved-changes/unsaved-changes.registry';
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
-import { setupContainerComponentTest } from '../../test-setup';
+import { DummyComponent, setupContainerComponentTest } from '../../test-setup';
 import { BaseEntityStatusbarComponent } from './base-entity-statusbar.component';
 import { WorkingContextService } from '../working-context/working-context.service';
 import { vi } from 'vitest';
@@ -179,6 +179,24 @@ describe('BaseStatusbarComponent', () => {
       expect(crumb?.textContent).toContain('Spring Cup');
       expect(crumb?.textContent).toContain('round 3');
       expect(host.querySelector('[data-testid="race-context-crumb-badge"]')?.textContent?.trim()).toBe('Running');
+    });
+
+    it('does not repeat, as a crumb of the breadcrumb, the working context the URL starts with', async () => {
+      const { fixture, router } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [...EMBEDDED_FACADE_PROVIDERS, { provide: WorkingContextService, useValue: workingContextStub }]);
+      TestBed.inject(Router).resetConfig([
+        {
+          path: 'ctx/warehouse/:contextId',
+          data: { workingContext: 'warehouse', entityName: 'TestEntity' },
+          children: [{ path: 'embedded-component', data: { entityName: 'Embedded Component', embeddedEntity: true }, children: [{ path: ':entityId/details', component: DummyComponent }] }],
+        },
+      ]);
+      await router.navigateByUrl('/ctx/warehouse/W1/embedded-component/embedded_1_1/details');
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      // The context crumb in front already says which warehouse; the breadcrumb continues with the row alone.
+      expect(host.querySelector('[data-testid="race-context-crumb"]')).not.toBeNull();
+      expect(Array.from(host.querySelectorAll('.crumb')).map((crumb) => crumb.textContent?.trim())).toEqual(['first part']);
     });
 
     it('leaves the contexts to the shell when it shows them in a status bar of its own', async () => {

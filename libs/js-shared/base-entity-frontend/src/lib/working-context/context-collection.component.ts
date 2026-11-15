@@ -10,6 +10,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { httpErrorMessage, injectActiveLang } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
 import { createTestId } from '../base-entity/base-entity-utility';
+import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { effectiveDateFormat, formatDateValue } from '../base-entity/date-format';
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
@@ -17,8 +18,9 @@ import { filterAttributeDescriptors } from '../base-entity/filter-attr-descripto
 import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-descriptor.registry';
 import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../dialogs/delete-confirmation.dialog';
 import { EntityLabelPipe } from '../i18n/entity-label.pipe';
-import { ContextCollectionItemDialog, ContextCollectionItemDialogData } from './context-collection-item.dialog';
-import { CollectionItem, EmbeddedCollectionService, itemVersionOf, mergePatch } from './embedded-collection.service';
+import { BaseFormNavigatorSingletonStore, snakeCaseName } from '../base-form-navigator/base-form-navigator.store';
+import { rowId } from '../base-entity-embedded/embedded-aggregate';
+import { CollectionItem, EmbeddedCollectionService, itemVersionOf } from './embedded-collection.service';
 import { WorkingContextService } from './working-context.service';
 
 /** Route data: the context the collection belongs to. */
@@ -126,6 +128,7 @@ export class ContextCollectionComponent {
   private readonly workingContext = inject(WorkingContextService);
   private readonly descriptorRegistry = inject(BaseEntityDescriptorRegistry);
   private readonly dialog = inject(MatDialog);
+  private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = injectActiveLang();
 
@@ -146,17 +149,14 @@ export class ContextCollectionComponent {
   });
 
   // region event handling methods
+  /** Opens a new row's form below the context; it saves the row on its own and returns here. */
   protected async onAdd(): Promise<void> {
-    const item = await this.askForItem();
-    if (item) await this.change((id) => this.service.append(this.rootEntityName(), id, this.attrName, item));
+    await this.openForm(BaseUrlSegments.NewEntity);
   }
 
+  /** Opens the row's own form — the screen its entity type has everywhere — below the context, with the owner in the URL. */
   protected async onEdit(row: CollectionItem): Promise<void> {
-    const edited = await this.askForItem(row);
-    if (!edited) return;
-    const patch = mergePatch(row, edited);
-    if (Object.keys(patch).length === 0) return;
-    await this.change((id) => this.service.patch(this.rootEntityName(), id, this.attrName, String(row['id']), patch, itemVersionOf(row)));
+    await this.openForm(this.rowKey(row));
   }
 
   protected async onDelete(row: CollectionItem): Promise<void> {
@@ -188,11 +188,20 @@ export class ContextCollectionComponent {
     return this.context()?.definition.entityName ?? '';
   }
 
-  private async askForItem(item?: CollectionItem): Promise<CollectionItem | undefined> {
-    const descriptor = this.descriptor();
-    if (!descriptor) return undefined;
-    const data: ContextCollectionItemDialogData = { descriptor, item, store: this.descriptorRegistry.getStore(this.entityName) };
-    return (await firstValueFrom(this.dialog.open(ContextCollectionItemDialog, { data, width: '640px', maxWidth: '100vw' }).afterClosed())) as CollectionItem | undefined;
+  /**
+   * The embedded form of a row: `<context url>/<item type>/<key>/details`, the URL chain the embedded screens read their
+   * aggregate from. The navigator keeps the list's URL as where to return to.
+   */
+  private async openForm(key: string): Promise<void> {
+    const contextUrl = this.context()?.url;
+    if (!contextUrl || !key) return;
+    await this.formNavigator.navigateToUrl(`${contextUrl}/${snakeCaseName(this.entityName)}/${encodeURIComponent(key)}/${BaseUrlSegments.DetailsForm}`);
+  }
+
+  /** The key the URL addresses a row by: the attribute the owner's descriptor says identifies it, `id` otherwise. */
+  private rowKey(row: CollectionItem): string {
+    const owner = this.descriptorRegistry.getDescriptor(this.rootEntityName());
+    return rowId(row, owner?.embeddedAttrFor(this.entityName)?.referenceIdField);
   }
 
   /** Runs one change against the active entity, then shows what is stored now — the server's answer is the truth, also after a conflict. */

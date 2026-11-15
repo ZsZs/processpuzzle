@@ -205,7 +205,7 @@ export class BaseEntityStatusbarComponent implements OnInit {
 
   // region event handling methods
   async onNavigateToCrumb(index: number): Promise<void> {
-    await this.formNavigator.navigateToBreadcrumbLevel(index);
+    await this.formNavigator.navigateToBreadcrumbLevel(index + this.contextLevelCount());
   }
 
   // endregion
@@ -217,16 +217,25 @@ export class BaseEntityStatusbarComponent implements OnInit {
    */
   private resolveCrumbs(): EntityCrumb[] {
     const own = this.entityDescriptor();
-    const levels = this.formNavigator.breadcrumb();
+    // The working contexts the URL starts with are shown by the context crumb in front of these, so they are not crumbs here.
+    const hidden = this.contextLevelCount();
+    const levels = this.formNavigator.breadcrumb().slice(hidden);
     if (levels.length === 0) return [this.crumb(own.entityName, this.resolveTitle(), own)];
 
-    let ownerDescriptor: BaseEntityDescriptor | undefined;
+    let ownerDescriptor: BaseEntityDescriptor | undefined = hidden > 0 ? this.descriptorOf(this.formNavigator.breadcrumb()[hidden - 1].entityName) : undefined;
     return levels.map((level) => {
       const descriptor = this.descriptorOf(level.entityName);
       const crumb = this.crumb(level.entityName, this.resolveLevelTitle(level, descriptor, ownerDescriptor), descriptor);
       ownerDescriptor = descriptor;
       return crumb;
     });
+  }
+
+  /** How many of the levels the URL starts with are working contexts. */
+  private contextLevelCount(): number {
+    const levels = this.formNavigator.breadcrumb();
+    const firstOther = levels.findIndex((level) => level.workingContext === undefined);
+    return firstOther < 0 ? levels.length : firstOther;
   }
 
   /** The own descriptor wins for its own entity: it is the instance this status bar was configured with. */

@@ -65,6 +65,8 @@ import static org.mockito.Mockito.when;
 class DefaultAppLoaderTest {
 
     private static final String TESTBED_KEY = "processpuzzle-testbed";
+    /** What the bundled file creates: the demo app and the order desk. */
+    private static final int BUNDLED_APPS = 2;
     private static final String TESTBED_FILE = "processpuzzle-testbed-apps.yaml";
 
     /**
@@ -114,7 +116,7 @@ class DefaultAppLoaderTest {
     void loadsTheDefinitionsIntoTheTenantNamedByTheFile() {
         loader.loadDefaults();
 
-        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+        verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
     /**
@@ -143,7 +145,7 @@ class DefaultAppLoaderTest {
 
         loader.loadDefaults();
 
-        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+        verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
     @Test
@@ -159,6 +161,7 @@ class DefaultAppLoaderTest {
     @Test
     void aDefinitionAlreadyInTheRepository_neverReachesTheEndpoint() {
         when(appRepository.existsByOrgKeyAndId(TESTBED_KEY, "demo")).thenReturn(true);
+        when(appRepository.existsByOrgKeyAndId(TESTBED_KEY, "order-desk")).thenReturn(true);
         when(moduleRepository.existsByOrgKeyAndKeyAndChannel(TESTBED_KEY, "order-admin", Channel.DRAFT)).thenReturn(true);
 
         loader.loadDefaults();
@@ -192,6 +195,22 @@ class DefaultAppLoaderTest {
         loader.loadDefaults();
 
         verify(endpoint).createAppDefinition(eq("other-org"), any(AppDefinitionInput.class));
+    }
+
+    @Test
+    void theBundledOrderDeskDeclaresAWorkingContextAndTheRoutesThatUseIt() {
+        loader.loadDefaults();
+
+        AppDefinitionInput desk = capturedDefinition("order-desk");
+        assertThat(desk.getContexts()).singleElement().satisfies(context -> {
+            assertThat(context.getName()).isEqualTo("order");
+            assertThat(context.getEntityName()).isEqualTo("Order");
+        });
+        assertThat(desk.getRegions()).extracting(region -> region.getType().getValue()).contains("statusbar", "header", "sidenav");
+        assertThat(desk.getRoutes()).filteredOn(route -> "lines".equals(route.getPath())).singleElement().satisfies(route -> {
+            assertThat(route.getRequiresContext()).isEqualTo("order");
+            assertThat(route.getTarget().getContextPath()).isEqualTo("lineItems");
+        });
     }
 
     @Test
@@ -252,7 +271,7 @@ class DefaultAppLoaderTest {
 
         InOrder order = inOrder(endpoint);
         order.verify(endpoint).createModuleDefinition(eq(TESTBED_KEY), any(ModuleDefinitionInput.class));
-        order.verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+        order.verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
 
         ModuleDefinitionInput module = capturedModule();
         assertThat(module.getKey()).isEqualTo("order-admin");
@@ -273,7 +292,7 @@ class DefaultAppLoaderTest {
 
         loader.loadDefaults();
 
-        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+        verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
     /** A rejected module leaves a dangling mount, which is a warning — so the apps still load. */
@@ -285,7 +304,7 @@ class DefaultAppLoaderTest {
 
         loader.loadDefaults();
 
-        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+        verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
     @Test
@@ -295,7 +314,7 @@ class DefaultAppLoaderTest {
 
         assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
 
-        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
+        verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), any(AppDefinitionInput.class));
     }
 
     /** The revision is only logged, so an answer without one must not become an exception. */
@@ -426,10 +445,15 @@ class DefaultAppLoaderTest {
 
     // --- helpers -----------------------------------------------------------------------------
 
-    private AppDefinitionInput capturedDefinition() {
+    /** The bundled app of the given id, among everything the loader created. */
+    private AppDefinitionInput capturedDefinition(String id) {
         ArgumentCaptor<AppDefinitionInput> definition = ArgumentCaptor.forClass(AppDefinitionInput.class);
-        verify(endpoint).createAppDefinition(eq(TESTBED_KEY), definition.capture());
-        return definition.getValue();
+        verify(endpoint, times(BUNDLED_APPS)).createAppDefinition(eq(TESTBED_KEY), definition.capture());
+        return definition.getAllValues().stream().filter(app -> id.equals(app.getId())).findFirst().orElseThrow();
+    }
+
+    private AppDefinitionInput capturedDefinition() {
+        return capturedDefinition("demo");
     }
 
     private ModuleDefinitionInput capturedModule() {

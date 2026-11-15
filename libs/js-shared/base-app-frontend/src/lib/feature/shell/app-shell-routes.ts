@@ -1,6 +1,6 @@
 import { inject, Injectable, Injector, Provider } from '@angular/core';
 import { CanMatchFn, Routes } from '@angular/router';
-import { BaseUrlSegments } from '@processpuzzle/base-entity';
+import { BaseUrlSegments, EntityScreenResolver } from '@processpuzzle/base-entity';
 import { APP_ASSET_CONTEXT } from '@processpuzzle/widgets';
 import { TranslocoService } from '@jsverse/transloco';
 import { TranslocoHttpLoader } from '@processpuzzle/util';
@@ -38,6 +38,7 @@ export class AppShellRoutesFactory {
   private readonly appService = inject(AppDefinitionService);
   private readonly moduleService = inject(ModuleDefinitionService);
   private readonly renderRoute = inject(AppRouteRenderer).render;
+  private readonly entityScreens = inject(EntityScreenResolver);
 
   async childrenOf(appId: string): Promise<Routes> {
     const definition = await this.definitionOf(appId);
@@ -66,7 +67,15 @@ export class AppShellRoutesFactory {
       .catch(() => undefined);
     const moduleAssets = (moduleKey: string) => moduleAssetContextOf(this.injector.get(ModuleAssetService), moduleKey, revision);
     const built = await buildAppRoutes(
-      { routes: definition.routes, modules: definition.modules, contexts: definition.contexts?.map(({ name, parent }) => ({ name, parent })), loadModule, loadTranslations, moduleAssets },
+      {
+        routes: definition.routes,
+        modules: definition.modules,
+        contexts: definition.contexts?.map(({ name, parent, entityName }) => ({ name, parent, entityName })),
+        contextChildren: async (entityName) => (await this.entityScreens.resolve(entityName))?.embeddedChildren ?? [],
+        loadModule,
+        loadTranslations,
+        moduleAssets,
+      },
       this.renderRoute,
     );
     // Provided on every top-level route, the mounts included, so that an `app:` value is found on the application's

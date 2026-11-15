@@ -109,7 +109,7 @@ describe('WorkingContextService — state', () => {
     await activate();
     confirmAnswer = false;
 
-    // Without the machine's word the \`state\` condition could not be resolved on this descriptor, and no question would be asked.
+    // Without the machine's word the `state` condition could not be resolved on this descriptor, and no question would be asked.
     expect(await service().select('race', 'other')).toBe(false);
     expect(TestBed.inject(MatDialog).open).toHaveBeenCalledTimes(1);
   });
