@@ -145,7 +145,7 @@ export { EntityAttributeFacade, EntityDefinitionFacade } from './lib/base-entity
 export { EntityDefinitionContainerComponent } from './lib/base-entity-authoring/entity-definition-container.component';
 export { provideWorkingContexts, WORKING_CONTEXT_DEFINITIONS, DEFAULT_RECENT_CONTEXTS, type WorkingContextDefinition, type WorkingContextDisplay, type WorkingContextPicker, type WorkingContextPersistence } from './lib/working-context/working-context.definition';
 export { WorkingContextService, type ActiveWorkingContext } from './lib/working-context/working-context.service';
-export { workingContextRoutes, workingContextGuard, restoreWorkingContextGuard } from './lib/working-context/working-context.routes';
+export { workingContextRoutes, workingContextGuard, restoreWorkingContextGuard, type WorkingContextAggregate } from './lib/working-context/working-context.routes';
 export { WORKING_CONTEXT_SEGMENT, WORKING_CONTEXT_ROUTE_DATA_KEY, WORKING_CONTEXT_ID_PARAM, readWorkingContextLevels, type WorkingContextRouteLevel } from './lib/working-context/working-context.url';
 export { WorkingContextPickerComponent } from './lib/working-context/working-context-picker.component';
 export { WorkingContextEmptyStateComponent } from './lib/working-context/working-context-empty-state.component';

@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { buildUrl } from 'build-url-ts';
 import { firstValueFrom } from 'rxjs';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
+import { EntityDefinitionRegistry } from '../base-entity-definition/entity-definition.registry';
 import { ENTITY_SERVICE_ROOT_KEY } from '../base-entity-definition/entity-definition.service';
 
 /**
@@ -36,16 +37,17 @@ export interface CollectionRead {
 @Injectable({ providedIn: 'root' })
 export class EmbeddedCollectionService {
   private readonly http = inject(HttpClient);
+  private readonly definitions = inject(EntityDefinitionRegistry);
   private readonly root = serviceRootOf(inject(RUNTIME_CONFIGURATION), ENTITY_SERVICE_ROOT_KEY);
 
   async list(entityName: string, id: string, attrName: string): Promise<CollectionRead> {
-    const response = await firstValueFrom(this.http.get<CollectionItem[]>(this.url(entityName, id, attrName), { observe: 'response' }));
+    const response = await firstValueFrom(this.http.get<CollectionItem[]>(await this.url(entityName, id, attrName), { observe: 'response' }));
     return { items: response.body ?? [], version: versionOf(response) };
   }
 
   /** The item as stored — with the `id` the server assigned. */
   async append(entityName: string, id: string, attrName: string, item: CollectionItem): Promise<CollectionItem> {
-    return (await firstValueFrom(this.http.post<CollectionItem>(this.url(entityName, id, attrName), item))) ?? item;
+    return (await firstValueFrom(this.http.post<CollectionItem>(await this.url(entityName, id, attrName), item))) ?? item;
   }
 
   /**
@@ -54,12 +56,12 @@ export class EmbeddedCollectionService {
    */
   async patch(entityName: string, id: string, attrName: string, itemId: string, patch: CollectionItem, version?: string): Promise<CollectionItem> {
     const headers = version ? { 'If-Match': version } : undefined;
-    return (await firstValueFrom(this.http.patch<CollectionItem>(this.url(entityName, id, attrName, itemId), patch, { headers }))) ?? patch;
+    return (await firstValueFrom(this.http.patch<CollectionItem>(await this.url(entityName, id, attrName, itemId), patch, { headers }))) ?? patch;
   }
 
   async remove(entityName: string, id: string, attrName: string, itemId: string, version?: string): Promise<void> {
     const headers = version ? { 'If-Match': version } : undefined;
-    await firstValueFrom(this.http.delete<void>(this.url(entityName, id, attrName, itemId), { headers }));
+    await firstValueFrom(this.http.delete<void>(await this.url(entityName, id, attrName, itemId), { headers }));
   }
 
   /**
@@ -67,27 +69,30 @@ export class EmbeddedCollectionService {
    * operations as above, one level down.
    */
   async listNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string): Promise<CollectionRead> {
-    const response = await firstValueFrom(this.http.get<CollectionItem[]>(this.url(entityName, id, attrName, itemId, childAttrName), { observe: 'response' }));
+    const response = await firstValueFrom(this.http.get<CollectionItem[]>(await this.url(entityName, id, attrName, itemId, childAttrName), { observe: 'response' }));
     return { items: response.body ?? [], version: versionOf(response) };
   }
 
   async appendNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string, item: CollectionItem): Promise<CollectionItem> {
-    return (await firstValueFrom(this.http.post<CollectionItem>(this.url(entityName, id, attrName, itemId, childAttrName), item))) ?? item;
+    return (await firstValueFrom(this.http.post<CollectionItem>(await this.url(entityName, id, attrName, itemId, childAttrName), item))) ?? item;
   }
 
   async patchNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string, childItemId: string, patch: CollectionItem, version?: string): Promise<CollectionItem> {
     const headers = version ? { 'If-Match': version } : undefined;
-    return (await firstValueFrom(this.http.patch<CollectionItem>(this.url(entityName, id, attrName, itemId, childAttrName, childItemId), patch, { headers }))) ?? patch;
+    return (await firstValueFrom(this.http.patch<CollectionItem>(await this.url(entityName, id, attrName, itemId, childAttrName, childItemId), patch, { headers }))) ?? patch;
   }
 
   async removeNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string, childItemId: string, version?: string): Promise<void> {
     const headers = version ? { 'If-Match': version } : undefined;
-    await firstValueFrom(this.http.delete<void>(this.url(entityName, id, attrName, itemId, childAttrName, childItemId), { headers }));
+    await firstValueFrom(this.http.delete<void>(await this.url(entityName, id, attrName, itemId, childAttrName, childItemId), { headers }));
   }
 
   /** The URL of the collection or item at the given path: `attrName`, then alternately an item id and an attribute. */
-  private url(entityName: string, id: string, ...path: string[]): string {
-    const segments = ['entities', entityName, id, ...path].map(encodeURIComponent);
+  private async url(entityName: string, id: string, ...path: string[]): Promise<string> {
+    // A metadata entity is addressed by its definition's code, as `DynamicEntityService` does; the name is what the rest of the
+    // screens carry. An entity no definition answers to — a compile-time one — keeps the name it was given.
+    const code = (await this.definitions.byName(entityName))?.code ?? entityName;
+    const segments = ['entities', code, id, ...path].map(encodeURIComponent);
     return buildUrl(this.root, { path: segments.join('/') });
   }
 }

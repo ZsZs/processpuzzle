@@ -12,6 +12,7 @@ import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-descriptor.registry';
 import { ContextCollectionComponent, CONTEXT_COLLECTION_CONTEXT_KEY, CONTEXT_COLLECTION_ENTITY_KEY, CONTEXT_COLLECTION_PATH_KEY } from './context-collection.component';
 import { EmbeddedCollectionService } from './embedded-collection.service';
+import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { WorkingContextService } from './working-context.service';
 
 const roundDescriptor = new BaseEntityDescriptor({
@@ -19,14 +20,26 @@ const roundDescriptor = new BaseEntityDescriptor({
   attrDescriptors: [new BaseEntityAttrDescriptor('number', FormControlType.TEXT_BOX, 'Number'), new BaseEntityAttrDescriptor('label', FormControlType.TEXT_BOX, 'Label')],
 });
 
+/** A `Race` whose `rounds` attribute says its rows are identified by `identifyingField`. */
+function ownerDescriptor(identifyingField: string): BaseEntityDescriptor {
+  const rounds = new BaseEntityAttrDescriptor('rounds', FormControlType.EMBEDDED_COMPONENTS);
+  rounds.linkedEntityType = 'Round';
+  rounds.referenceIdField = identifyingField;
+  return new BaseEntityDescriptor({ entityName: 'Race', attrDescriptors: [rounds] });
+}
+
 describe('ContextCollectionComponent', () => {
   const activeId = signal<string | undefined>('r1');
   let dialogAnswer: unknown;
+  const navigator = { navigateToUrl: vi.fn(async () => undefined) };
+  let descriptors: Record<string, BaseEntityDescriptor>;
   let service: { list: ReturnType<typeof vi.fn>; append: ReturnType<typeof vi.fn>; patch: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     activeId.set('r1');
     dialogAnswer = undefined;
+    navigator.navigateToUrl.mockClear();
+    descriptors = {};
     service = {
       list: vi.fn(async () => ({ items: [{ id: 'a', number: 1, label: 'first', itemVersion: 1 }], version: '"5"' })),
       append: vi.fn(async () => ({})),
@@ -38,8 +51,9 @@ describe('ContextCollectionComponent', () => {
         provideTranslocoTesting({ translations: {} }),
         { provide: ActivatedRoute, useValue: { snapshot: { data: { [CONTEXT_COLLECTION_CONTEXT_KEY]: 'race', [CONTEXT_COLLECTION_PATH_KEY]: 'rounds', [CONTEXT_COLLECTION_ENTITY_KEY]: 'Round' } } } },
         { provide: EmbeddedCollectionService, useValue: service },
-        { provide: WorkingContextService, useValue: { current: () => (activeId() ? { name: 'race', id: activeId(), definition: { name: 'race', entityName: 'Race' } } : undefined) } },
-        { provide: BaseEntityDescriptorRegistry, useValue: { getDescriptor: () => roundDescriptor, getStore: () => undefined } },
+        { provide: WorkingContextService, useValue: { current: () => (activeId() ? { name: 'race', id: activeId(), url: `/ctx/race/${activeId()}`, definition: { name: 'race', entityName: 'Race' } } : undefined) } },
+        { provide: BaseFormNavigatorSingletonStore, useValue: navigator },
+        { provide: BaseEntityDescriptorRegistry, useValue: { getDescriptor: (name: string) => descriptors[name] ?? roundDescriptor, getStore: () => undefined } },
         { provide: MatDialog, useValue: { open: vi.fn(() => ({ afterClosed: () => of(dialogAnswer) })) } },
       ],
     });
@@ -67,35 +81,30 @@ describe('ContextCollectionComponent', () => {
     expect(host.querySelector('tr.mat-mdc-row')?.textContent).toContain('first');
   });
 
-  it('adds an item to the active entity, without any selection of it, and shows what is stored then', async () => {
-    const { fixture, host } = await setup();
-    dialogAnswer = { number: 2, label: 'second' };
-
-    await click(fixture, host.querySelector('[data-testid="round-context-collection-add"]'));
-
-    expect(service.append).toHaveBeenCalledWith('Race', 'r1', 'rounds', { number: 2, label: 'second' });
-    expect(service.list).toHaveBeenCalledTimes(2);
-  });
-
-  it('does nothing when the add dialog is cancelled', async () => {
+  it('opens a new row\'s form below the context, which saves it on its own and returns here', async () => {
     const { fixture, host } = await setup();
 
     await click(fixture, host.querySelector('[data-testid="round-context-collection-add"]'));
 
-    expect(service.append).not.toHaveBeenCalled();
+    expect(navigator.navigateToUrl).toHaveBeenCalledWith('/ctx/race/r1/round/new/details');
   });
 
-  it('sends only what changed when an item is edited, and nothing when nothing did', async () => {
+  it('opens a row\'s own form below the context, with the owner in the URL', async () => {
     const { fixture, host } = await setup();
 
-    dialogAnswer = { id: 'a', number: 1, label: 'renamed' };
     await click(fixture, host.querySelector('[data-testid="round-context-collection-edit"]'));
-    expect(service.patch).toHaveBeenCalledWith('Race', 'r1', 'rounds', 'a', { label: 'renamed' }, '1');
 
-    service.patch.mockClear();
-    dialogAnswer = { id: 'a', number: 1, label: 'first' };
+    expect(navigator.navigateToUrl).toHaveBeenCalledWith('/ctx/race/r1/round/a/details');
+  });
+
+  it('addresses a row by the attribute the owner\'s descriptor says identifies it', async () => {
+    service.list.mockResolvedValue({ items: [{ id: 'x', code: 'R-7', itemVersion: 1 }], version: undefined });
+    descriptors['Race'] = ownerDescriptor('code');
+    const { fixture, host } = await setup();
+
     await click(fixture, host.querySelector('[data-testid="round-context-collection-edit"]'));
-    expect(service.patch).not.toHaveBeenCalled();
+
+    expect(navigator.navigateToUrl).toHaveBeenCalledWith('/ctx/race/r1/round/R-7/details');
   });
 
   it('removes an item once the user confirms', async () => {
@@ -112,10 +121,10 @@ describe('ContextCollectionComponent', () => {
 
   it('says so on a conflict, and reloads rather than trusting what it had', async () => {
     const { fixture, host } = await setup();
-    service.append.mockRejectedValue(new HttpErrorResponse({ status: 409 }));
-    dialogAnswer = { number: 3 };
+    service.remove.mockRejectedValue(new HttpErrorResponse({ status: 409 }));
+    dialogAnswer = true;
 
-    await click(fixture, host.querySelector('[data-testid="round-context-collection-add"]'));
+    await click(fixture, host.querySelector('[data-testid="round-context-collection-delete"]'));
 
     expect(host.querySelector('[data-testid="round-context-collection-error"]')).not.toBeNull();
     expect(service.list).toHaveBeenCalledTimes(2);

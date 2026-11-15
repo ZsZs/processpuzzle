@@ -141,7 +141,9 @@
     "overview_tab_label": "Visión general",
     "samples_tab_label": "Ejemplos",
     "samples_desc_1": "Las entidades de ejemplo, para demostrar la funcionalidad de esta biblioteca son las siguientes:",
-    "samples_desc_2": "Las tablas y formularios a continuación se generan a partir de las entidades y sus descriptores de atributos, en tiempo de ejecución."
+    "samples_desc_2": "Las tablas y formularios a continuación se generan a partir de las entidades y sus descriptores de atributos, en tiempo de ejecución.",
+    "context_object_tab_label": "Objeto de contexto",
+    "context_object_no_context": "Todavía no hay una raíz de agregado seleccionada. Abra «Aggregate Root» y pulse «Establecer como activo» en una fila."
   },
   "base-rules": {
     "overview_tab_label": "Visión general",

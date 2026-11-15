@@ -141,7 +141,9 @@
     "overview_tab_label": "Aperçu",
     "samples_tab_label": "Exemples",
     "samples_desc_1": "Les entités d'exemple, pour démontrer la fonctionnalité de cette bibliothèque sont les suivantes:",
-    "samples_desc_2": "Les tableaux et formulaires ci-dessous sont générés à partir des entités et de leurs descripteurs d'attributs, en temps réel."
+    "samples_desc_2": "Les tableaux et formulaires ci-dessous sont générés à partir des entités et de leurs descripteurs d'attributs, en temps réel.",
+    "context_object_tab_label": "Objet de contexte",
+    "context_object_no_context": "Aucune racine d'agrégat n'est encore sélectionnée. Ouvrez « Aggregate Root » et cliquez sur « Définir comme actif » sur une ligne."
   },
   "base-rules": {
     "overview_tab_label": "Aperçu",

@@ -148,7 +148,10 @@
   "embedded_components": {
     "save_owner_first": "Guarde este registro antes de añadir {{ entity }}: un componente incrustado se almacena dentro de él.",
     "move_up": "Subir",
-    "move_down": "Bajar"
+    "move_down": "Bajar",
+    "hide_list": "Ocultar la lista",
+    "show_list": "Mostrar la lista",
+    "hidden_count": "{{ count }} oculto(s)"
   },
   "rich_text": {
     "toolbar": {

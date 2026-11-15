@@ -148,7 +148,10 @@
   "embedded_components": {
     "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké.",
     "move_up": "Monter",
-    "move_down": "Descendre"
+    "move_down": "Descendre",
+    "hide_list": "Masquer la liste",
+    "show_list": "Afficher la liste",
+    "hidden_count": "{{ count }} masqué(s)"
   },
   "rich_text": {
     "toolbar": {

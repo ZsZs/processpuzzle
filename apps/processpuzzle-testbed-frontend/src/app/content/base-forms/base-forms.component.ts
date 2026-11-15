@@ -17,6 +17,9 @@ import { TranslocoDirective } from '@jsverse/transloco';
         <a mat-tab-link routerLink="samples" routerLinkActive #rla2="routerLinkActive" [active]="rla2.isActive">
           {{ t('samples_tab_label') }}
         </a>
+        <a mat-tab-link routerLink="context-object" routerLinkActive #rla3="routerLinkActive" [active]="rla3.isActive" data-testid="base-entity-context-object-tab">
+          {{ t('context_object_tab_label') }}
+        </a>
       </nav>
       <mat-tab-nav-panel #tabPanel>
         <router-outlet></router-outlet>
