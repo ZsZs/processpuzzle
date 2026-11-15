@@ -287,6 +287,18 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'base-chat',
+    title: 'ProcessPuzzle Testbed - Base Chat',
+    data: { icon: 'forum', menuTitle: 'base-chat' },
+    loadComponent: () => import('./content/base-chat/base-chat.component').then((comp) => comp.BaseChatComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-chat/overview.component').then((comp) => comp.OverviewComponent) },
+      { path: 'samples', loadComponent: () => import('./content/base-chat/samples.component').then((comp) => comp.SamplesComponent) },
+    ],
+  },
+  {
     path: 'base-calculation',
     title: 'ProcessPuzzle Testbed - Base Calculation',
     data: { icon: 'calculate', menuTitle: 'base-calculation' },
