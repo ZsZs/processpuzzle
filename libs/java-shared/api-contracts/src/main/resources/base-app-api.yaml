@@ -1239,11 +1239,15 @@ components:
         in `regions`, so omitting `footer` is how an app has no footer. `sidenav` carries
         `navItems`, and `header` and `footer` carry static `widgets`.
 
+        `statusbar` is the strip below the header that shows the active working context (see
+        `AppDefinition.contexts`) and the record hierarchy; it carries neither `navItems` nor
+        `widgets`. Declare it only when the app has contexts — the shell shows nothing in it otherwise.
+
         `content` is deliberately **not** a region: once routes own content, the content area *is*
         the router outlet. The old `content` member carried no field of its own — `widgets` was
         header/footer-only and `navItems` sidenav-only — so it was already vestigial. Sizing of the
         outlet lives in `LayoutDefinition.contentMaxWidth`.
-      enum: [ header, sidenav, footer ]
+      enum: [ header, sidenav, footer, statusbar ]
       example: sidenav
 
     # Canonical definition in shared-api.yaml — local duplicate for the same reason as
@@ -1384,6 +1388,14 @@ components:
           nullable: true
           description: ENTITY + LIST only. RSQL applied to the backing search.
           example: "status!=CLOSED"
+        contextPath:
+          type: string
+          nullable: true
+          description: >-
+            ENTITY only, on a route that `requiresContext`. The EMBEDDED_COMPONENTS attribute of the context's
+            entity whose items the route lists, and `entityName` names the items' type: the route then shows the
+            collection of the **active** entity, and adding, editing or removing an item acts on that entity alone.
+          example: rounds
 
     RouteDefinition:
       type: object
@@ -1427,6 +1439,14 @@ components:
             the organization". Same convention as `NavItem.roles`.
           items:
             type: string
+        requiresContext:
+          type: string
+          nullable: true
+          description: >-
+            Name of a `WorkingContextDefinition` (see `AppDefinition.contexts`) the route needs. The route
+            is then served below `ctx/<name>/<id>/`, and — opened without an active entity — shows a
+            "Select a ..." empty state with the picker instead of the screen. It never redirects.
+          example: race
         target:
           $ref: "#/components/schemas/RouteTarget"
 
@@ -1732,6 +1752,14 @@ components:
             repeated here — they live in their `ModuleDefinition` and are composed in at runtime.
           items:
             $ref: "#/components/schemas/RouteDefinition"
+        contexts:
+          type: array
+          description: >-
+            Working contexts: entities the user selects once and then works inside. Routes opt in with
+            `requiresContext` — including the routes of mounted modules, which may name a context of
+            the app that mounts them.
+          items:
+            $ref: "#/components/schemas/WorkingContextDefinition"
         modules:
           type: array
           description: >-
@@ -1739,6 +1767,77 @@ components:
             short route list plus a handful of module mounts, rather than one deep tree.
           items:
             $ref: "#/components/schemas/ModuleMount"
+
+    WorkingContextDefinition:
+      type: object
+      description: >-
+        A working context: an entity type the user picks once, shows in the status bar and works inside.
+        Nothing in the platform knows what the entity is; routes opt in with `RouteDefinition.requiresContext`.
+      required: [ name, entityName ]
+      properties:
+        name:
+          type: string
+          description: The context's name and its URL segment — `ctx/<name>/<id>/...`. Unique within the app.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          example: race
+        entityName:
+          type: string
+          description: Entity type acting as the context root (`BaseEntityDescriptor.entityName`).
+          example: Race
+        parent:
+          type: string
+          nullable: true
+          description: Name of the parent context. Selecting another parent clears this context.
+        basePath:
+          type: string
+          nullable: true
+          description: >-
+            Absolute path the context's routes are mounted under, for selecting from outside them (the
+            entity's own list). Defaults to the app root.
+        picker:
+          $ref: "#/components/schemas/WorkingContextPicker"
+        display:
+          $ref: "#/components/schemas/WorkingContextDisplay"
+        confirmSwitchWhen:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: >-
+            Conditions on the active entity that make switching away from it, or clearing it, ask first.
+            Keys are attribute names (`state` stands for the STATE attribute); an array value lists alternatives.
+          example: { state: Running }
+        persist:
+          type: string
+          nullable: true
+          enum: [ url, url-local-storage ]
+          description: "`url-local-storage` (default) restores the last context when a context view is opened without one."
+
+    WorkingContextPicker:
+      type: object
+      properties:
+        searchFields:
+          type: array
+          items:
+            type: string
+          description: Attributes the picker's search matches; the title attribute when omitted.
+        recent:
+          type: integer
+          minimum: 0
+          description: How many recently active entities the picker offers on top. Default 3.
+
+    WorkingContextDisplay:
+      type: object
+      description: What the status bar shows of the active entity. Templates use `{{attr}}` placeholders.
+      properties:
+        label:
+          type: string
+          example: "{{name}}"
+        badge:
+          type: string
+          description: Attribute rendered as a badge; `state` stands for the STATE attribute.
+        extra:
+          type: string
+          example: "round {{currentRound}}"
 
     AppDefinition:
       description: A persisted app definition.
@@ -1808,6 +1907,11 @@ components:
           description: The app's own routes the principal may reach, as a flat list.
           items:
             $ref: "#/components/schemas/RouteDefinition"
+        contexts:
+          type: array
+          description: Working contexts the routes may require.
+          items:
+            $ref: "#/components/schemas/WorkingContextDefinition"
         modules:
           type: array
           description: Modules this application mounts, and where.

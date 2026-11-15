@@ -12,11 +12,13 @@ import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
+import com.processpuzzle.app.model.WorkingContextDefinition;
 import com.processpuzzle.app.usecase.Severity;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -85,7 +87,7 @@ public class AppDefinitionValidator {
                     "No app definition was supplied."));
         }
         List<AppValidationProblem> problems = validateParts(orgKey, input.getId(), input.getName(),
-                input.getTheme(), input.getRegions(), input.getRoutes(), input.getModules());
+                input.getTheme(), input.getRegions(), input.getRoutes(), input.getModules(), input.getContexts());
         problems.addAll(ruleValidator.validate(orgKey, input));
         return problems;
     }
@@ -104,7 +106,7 @@ public class AppDefinitionValidator {
                     "No app definition was supplied."));
         }
         List<AppValidationProblem> problems = validateParts(orgKey, definition.getId(),
-                definition.getName(), definition.getTheme(), definition.getRegions(), definition.getRoutes(), definition.getModules());
+                definition.getName(), definition.getTheme(), definition.getRegions(), definition.getRoutes(), definition.getModules(), definition.getContexts());
         problems.addAll(ruleValidator.validate(orgKey, definition));
         return problems;
     }
@@ -132,13 +134,15 @@ public class AppDefinitionValidator {
             problems.add(new AppValidationProblem("/name", "module.validation.missing-name",
                     "A module needs a name."));
         }
-        validateRoutes(orgKey, input.getRoutes(), problems);
+        // A module's routes may require a context of the app that mounts it, which this aggregate cannot see.
+        validateRoutes(orgKey, input.getRoutes(), null, problems);
         return problems;
     }
 
     private List<AppValidationProblem> validateParts(String orgKey, String id, String name,
                                                      ThemeDefinition theme, List<RegionDefinition> regions,
-                                                     List<RouteDefinition> routes, List<ModuleMount> modules) {
+                                                     List<RouteDefinition> routes, List<ModuleMount> modules,
+                                                     List<WorkingContextDefinition> contexts) {
         List<AppValidationProblem> problems = new ArrayList<>();
 
         if (isBlank(id)) {
@@ -151,7 +155,8 @@ public class AppDefinitionValidator {
         }
 
         validateTheme(theme, problems);
-        Set<String> routePaths = validateRoutes(orgKey, routes, problems);
+        Set<String> contextNames = validateContexts(orgKey, contexts, problems);
+        Set<String> routePaths = validateRoutes(orgKey, routes, contextNames, problems);
         validateModuleMounts(modules, routePaths, problems);
         Set<String> referencedRoutePaths = validateRegions(orgKey, regions, routePaths, problems);
         reportOrphanRoutes(routes, referencedRoutePaths, problems);
@@ -218,7 +223,80 @@ public class AppDefinitionValidator {
         }
     }
 
-    private Set<String> validateRoutes(String orgKey, List<RouteDefinition> routes,
+    /**
+     * Working contexts: unique names, a known entity type, and a parent that exists and does not lead back
+     * to the context itself. Returns the declared names, which a route's {@code requiresContext} is checked
+     * against.
+     */
+    private Set<String> validateContexts(String orgKey, List<WorkingContextDefinition> contexts,
+                                         List<AppValidationProblem> problems) {
+        Set<String> names = new LinkedHashSet<>();
+        if (contexts == null) {
+            return names;
+        }
+        Map<String, String> parents = new HashMap<>();
+        for (int i = 0; i < contexts.size(); i++) {
+            validateContext(orgKey, contexts.get(i), "/contexts/" + i, names, parents, problems);
+        }
+        validateContextParents(names, parents, problems);
+        return names;
+    }
+
+    private void validateContext(String orgKey, WorkingContextDefinition context, String path, Set<String> names,
+                                 Map<String, String> parents, List<AppValidationProblem> problems) {
+        if (context == null || isBlank(context.getName())) {
+            problems.add(new AppValidationProblem(path + "/name", "app.validation.missing-context-name",
+                    "A working context needs a name; it is its URL segment."));
+            return;
+        }
+        if (!names.add(context.getName())) {
+            problems.add(new AppValidationProblem(path + "/name", "app.validation.duplicate-context-name",
+                    "More than one context is named '" + context.getName() + "'."));
+        }
+        validateContextEntity(orgKey, context, path, problems);
+        if (!isBlank(context.getParent())) {
+            parents.put(context.getName(), context.getParent());
+        }
+    }
+
+    private void validateContextEntity(String orgKey, WorkingContextDefinition context, String path,
+                                       List<AppValidationProblem> problems) {
+        if (isBlank(context.getEntityName())) {
+            problems.add(new AppValidationProblem(path + "/entityName", "app.validation.missing-context-entity",
+                    "The context '" + context.getName() + "' needs an entity type."));
+            return;
+        }
+        EntityNameRegistry registry = entityRegistryProvider.getIfAvailable();
+        if (registry != null && !registry.isKnownEntity(orgKey, context.getEntityName())) {
+            problems.add(new AppValidationProblem(path + "/entityName", "app.validation.unknown-entity-name",
+                    "No entity descriptor named '" + context.getEntityName() + "' is registered for this organization."));
+        }
+    }
+
+    private void validateContextParents(Set<String> names, Map<String, String> parents,
+                                        List<AppValidationProblem> problems) {
+        parents.forEach((name, parent) -> {
+            if (!names.contains(parent)) {
+                problems.add(new AppValidationProblem("/contexts", "app.validation.unknown-context-parent",
+                        "The context '" + name + "' names the parent '" + parent + "', which the app does not declare."));
+            } else if (leadsBackTo(name, parents)) {
+                problems.add(new AppValidationProblem("/contexts", "app.validation.context-parent-cycle",
+                        "The context '" + name + "' is its own ancestor."));
+            }
+        });
+    }
+
+    private static boolean leadsBackTo(String name, Map<String, String> parents) {
+        Set<String> seen = new HashSet<>();
+        for (String current = parents.get(name); current != null && seen.add(current); current = parents.get(current)) {
+            if (current.equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<String> validateRoutes(String orgKey, List<RouteDefinition> routes, Set<String> contextNames,
                                       List<AppValidationProblem> problems) {
         Set<String> routePaths = new LinkedHashSet<>();
         if (routes == null) {
@@ -242,12 +320,36 @@ public class AppDefinitionValidator {
                 problems.add(new AppValidationProblem(path + "/title", "app.validation.missing-route-title",
                         "A route needs a title."));
             }
+            if (contextNames != null && !isBlank(route.getRequiresContext()) && !contextNames.contains(route.getRequiresContext())) {
+                problems.add(new AppValidationProblem(path + "/requiresContext", "app.validation.unknown-context",
+                        "The route requires the context '" + route.getRequiresContext() + "', which the app does not declare."));
+            }
+            validateContextPath(route, path, problems);
             // Widgets live on the target now, and only a WIDGETS target has any.
             if (route.getTarget() != null) {
                 validateWidgets(orgKey, route.getTarget().getWidgets(), path + "/target" + WIDGETS, problems);
             }
         }
         return routePaths;
+    }
+
+    /**
+     * A route that lists the collection of a context's entity ({@code contextPath}) needs that context, and an entity
+     * type for the items — without either the screen would have nothing to read or to render.
+     */
+    private void validateContextPath(RouteDefinition route, String path, List<AppValidationProblem> problems) {
+        var target = route.getTarget();
+        if (target == null || isBlank(target.getContextPath())) {
+            return;
+        }
+        if (isBlank(route.getRequiresContext())) {
+            problems.add(new AppValidationProblem(path + "/target/contextPath", "app.validation.context-path-without-context",
+                    "The route lists a collection of a context's entity, so it has to require that context."));
+        }
+        if (target.getKind() != com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY || isBlank(target.getEntityName())) {
+            problems.add(new AppValidationProblem(path + "/target/contextPath", "app.validation.context-path-needs-entity",
+                    "A route that lists a collection must be an ENTITY route naming the type of the items."));
+        }
     }
 
     /**

@@ -171,7 +171,7 @@ describe('ComponentsListComponent', () => {
       const formNavigator = TestBed.inject(BaseFormNavigatorSingletonStore);
       vi.spyOn(formNavigator, 'determineCurrentUrl').mockReturnValue('/parents/parent-1/details');
       vi.spyOn(formNavigator, 'navigateToRelatedList').mockResolvedValue(undefined);
-      const captureSpy = vi.spyOn(formNavigator, 'captureFormSnapshot');
+      const captureSpy = vi.spyOn(formNavigator, 'beginRoundTrip');
 
       component.navigateToComponentList();
 

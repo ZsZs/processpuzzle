@@ -49,6 +49,7 @@ export { EntityStateMachineTabComponent } from './lib/feature/definition/entity-
 export { EntityStateMachineTabContributor, provideEntityStateMachineTab } from './lib/feature/definition/entity-state-machine-tab.contributor';
 export { EntityStateControlComponent } from './lib/feature/operation/entity-state-control.component';
 export { BaseStateEntityStateControl, provideEntityStateControl } from './lib/feature/operation/entity-state-control.provider';
+export { BaseStateEntityStateActions } from './lib/feature/operation/entity-state-actions.provider';
 export { STATE_MODELER_TAB } from './lib/feature/definition/state-modeler-tab';
 export { StateModelerTabComponent } from './lib/feature/definition/state-modeler-tab.component';
 export {

@@ -255,6 +255,29 @@ describe('GenericEntityFormComponent', () => {
       expect(await component.confirmLeave()).toBe(true);
     });
 
+    it('keeps its values under its own entity, and does not ask, while a round trip is under way', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      formNavigator.beginRoundTrip();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+      expect(formNavigator.popFormSnapshot(component.entityDescriptor().entityName)).toEqual(component.baseEntityForm.getRawValue());
+    });
+
+    it('keeps the values of a form with only staged edits during a round trip, without asking', async () => {
+      const { component, formNavigator, store } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      formNavigator.beginRoundTrip();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+      expect(formNavigator.popFormSnapshot(component.entityDescriptor().entityName)).toBeDefined();
+    });
+
     it('does not ask after Cancel, which discards on purpose', async () => {
       const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
       vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);

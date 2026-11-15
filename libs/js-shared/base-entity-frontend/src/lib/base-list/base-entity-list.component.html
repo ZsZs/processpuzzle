@@ -17,7 +17,7 @@
       @for (colDescriptor of columnDescriptors(); track colDescriptor.attrName; let i = $index) {
         <ng-container [matColumnDef]="colDescriptor.attrName">
           <th mat-header-cell *matHeaderCellDef mat-sort-header [class.pp-col-autosize]="colDescriptor.autosizeColumn">{{ colDescriptor.i18nKey() | ppLabel: colDescriptor.label }}</th>
-          <td mat-cell [class.pp-col-autosize]="colDescriptor.autosizeColumn" (click)="onRowClick(element)" (keydown.enter)="onRowClick(element)" tabindex="0" role="button" *matCellDef="let element">
+          <td mat-cell [class.pp-col-autosize]="colDescriptor.autosizeColumn" (click)="onRowClick(element)" (dblclick)="onRowDoubleClick(element)" (keydown.enter)="onRowEnter(element)" tabindex="0" role="button" *matCellDef="let element">
             <span class="pp-cell-content">
               @if (colDescriptor.isLinkToDetails) {
                 <a class="link-to-details" (click)="onNavigateToDetails(element)">{{
@@ -46,6 +46,25 @@
                 {{ element[colDescriptor.attrName] }}
               }
             </span>
+          </td>
+        </ng-container>
+      }
+      @if (workingContexts().length > 0) {
+        <ng-container matColumnDef="workingContextActions">
+          <th mat-header-cell *matHeaderCellDef class="pp-col-autosize"></th>
+          <td mat-cell *matCellDef="let element" class="pp-col-autosize">
+            @for (definition of workingContexts(); track definition.name) {
+              <button
+                type="button"
+                mat-stroked-button
+                class="set-active-context"
+                [attr.data-testid]="entityDescriptor().createTestId('set-active-context')"
+                [disabled]="isActiveContext(definition, element)"
+                (click)="onSetActive(definition, element, $event)"
+              >
+                {{ (isActiveContext(definition, element) ? 'base_entity.working_context.is_active' : 'base_entity.working_context.set_active') | transloco }}
+              </button>
+            }
           </td>
         </ng-container>
       }

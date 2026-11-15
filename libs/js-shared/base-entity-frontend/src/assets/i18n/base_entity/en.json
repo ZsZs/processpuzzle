@@ -210,5 +210,36 @@
       "TIMEOUT": "Reading the location took too long. Try again.",
       "UNAVAILABLE": "This browser cannot tell your location."
     }
+  },
+  "working_context": {
+    "search": "Search",
+    "recent": "Recent",
+    "all": "All",
+    "no_match": "Nothing matches",
+    "empty_state": "Select a {{ entity }}",
+    "switch_title": "Switch {{ entity }}",
+    "menu": "Context actions",
+    "switch": "Switch",
+    "open": "Open for editing",
+    "clear": "Clear context",
+    "set_active": "Set as active",
+    "is_active": "Active",
+    "confirm_switch": {
+      "title": "Leave the active context?",
+      "content": "{{ entity }} is still in progress. Do you really want to leave it?",
+      "cancel_button": "Stay",
+      "confirm_button": "Leave"
+    }
+  },
+  "context_collection": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "empty": "Nothing here yet.",
+    "delete_title": "Delete this item?",
+    "delete_content": "This cannot be undone.",
+    "conflict": "Someone else changed this at the same time. The list shows what is stored now — please try again."
   }
 }

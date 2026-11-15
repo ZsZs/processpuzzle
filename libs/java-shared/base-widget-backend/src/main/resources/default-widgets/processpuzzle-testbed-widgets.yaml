@@ -482,6 +482,30 @@ widgetDefinitions:
       type: object
       properties: {}
       additionalProperties: false
+  - key: context-actions
+    name: Context actions
+    translocoId: base_widget.context_actions.name
+    description: >-
+      Buttons for the transitions the active entity of a working context can take, such as Start race and Finish race.
+      Renders nothing without an active context.
+    category: Navigation
+    icon: play_arrow
+    propsSchema:
+      type: object
+      properties:
+        context:
+          type: string
+          title: Context
+          description: Name of the working context whose active entity the buttons act on.
+        triggers:
+          type: array
+          title: Triggers
+          description: The transitions to offer, by trigger, in this order. All available transitions when empty.
+          items:
+            type: string
+      required:
+        - context
+      additionalProperties: false
   - key: like-button
     name: Like button
     translocoId: base_widget.like_button.name

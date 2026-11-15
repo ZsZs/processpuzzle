@@ -210,5 +210,36 @@
       "TIMEOUT": "La lecture de la position a pris trop de temps. Réessayez.",
       "UNAVAILABLE": "Ce navigateur ne peut pas déterminer votre position."
     }
+  },
+  "working_context": {
+    "search": "Rechercher",
+    "recent": "Récents",
+    "all": "Tous",
+    "no_match": "Aucun résultat",
+    "empty_state": "Sélectionnez : {{ entity }}",
+    "switch_title": "Changer : {{ entity }}",
+    "menu": "Actions du contexte",
+    "switch": "Changer",
+    "open": "Ouvrir pour modifier",
+    "clear": "Effacer le contexte",
+    "set_active": "Définir comme actif",
+    "is_active": "Actif",
+    "confirm_switch": {
+      "title": "Quitter le contexte actif ?",
+      "content": "{{ entity }} est toujours en cours. Voulez-vous vraiment le quitter ?",
+      "cancel_button": "Rester",
+      "confirm_button": "Quitter"
+    }
+  },
+  "context_collection": {
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "empty": "Rien pour le moment.",
+    "delete_title": "Supprimer cet élément ?",
+    "delete_content": "Cette action est irréversible.",
+    "conflict": "Quelqu'un d'autre l'a modifié en même temps. La liste montre l'état enregistré — réessayez."
   }
 }

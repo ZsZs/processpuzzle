@@ -1,7 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { ResolveFn, Route } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
-import { entityScreenRoute, EntityScreenResolver, translateLabel } from '@processpuzzle/base-entity';
+import {
+  CONTEXT_COLLECTION_CONTEXT_KEY,
+  CONTEXT_COLLECTION_ENTITY_KEY,
+  CONTEXT_COLLECTION_PATH_KEY,
+  ContextCollectionComponent,
+  entityScreenRoute,
+  EntityScreenResolver,
+  translateLabel,
+} from '@processpuzzle/base-entity';
 import { RouteDefinition } from '../domain/app-definition';
 import { RouteWidgetsComponent } from './route-widgets.component';
 import { RouteUnsupportedComponent } from './route-unsupported.component';
@@ -80,6 +88,20 @@ export class AppRouteRenderer {
    * and `rsqlFilter` rather than guessed at.
    */
   private async entityRoute(definition: RouteDefinition): Promise<Route> {
+    // A collection of the active context's entity is its own screen: it reads and writes through the item-level
+    // endpoints of that entity, which the generic list and form — bound to an entity type of their own — cannot do.
+    if (definition.requiresContext && definition.contextPath && definition.entityName) {
+      return {
+        component: ContextCollectionComponent,
+        title: titleOf(definition),
+        data: {
+          [CONTEXT_COLLECTION_CONTEXT_KEY]: definition.requiresContext,
+          [CONTEXT_COLLECTION_PATH_KEY]: definition.contextPath,
+          [CONTEXT_COLLECTION_ENTITY_KEY]: definition.entityName,
+        },
+      };
+    }
+
     const screens = await this.entityScreens.resolve(definition.entityName);
     const route = entityScreenRoute({
       entityName: definition.entityName,

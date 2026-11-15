@@ -1,9 +1,8 @@
 import { ApplicationConfig, computed, inject, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {
-  centralHttpErrorInterceptor,
   LayoutService,
   provideCentralErrorHandler,
   provideErrorSnackbar,
@@ -17,7 +16,7 @@ import { RuntimeConfiguration } from './runtime-configuration';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
-import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, authTokenInterceptorFor, provideAuthenticationService, provideRoleCatalogSuggestions, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, provideAuthenticationService, providePlatformHttp, provideRoleCatalogSuggestions, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
@@ -74,15 +73,10 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // The backend validates a bearer token whenever one is sent, and signing a document needs one. Only the
       // platform's own roots are named, and the third-party root (json-server) is withheld explicitly: deployed, it
       // is published under the application's own origin, so the same-origin rule would otherwise send it the token.
-      provideHttpClient(
-        withInterceptors([
-          authTokenInterceptorFor(
-            [runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT],
-            [runtimeConfiguration.BASE_CONFIGURATION.THIRD_PARTY_ROOT],
-          ),
-          centralHttpErrorInterceptor,
-        ]),
-      ),
+      providePlatformHttp({
+        apiRoots: [runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT],
+        withheldRoots: [runtimeConfiguration.BASE_CONFIGURATION.THIRD_PARTY_ROOT],
+      }),
       provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
       provideCentralErrorHandler(),
       provideAppPropertyStore(),

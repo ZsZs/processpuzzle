@@ -40,6 +40,9 @@ export class PublishedAppThemeDirective {
     const resolver = this.appIdResolver();
     void runInInjectionContext(this.injector, resolver)
       .then((appId) => (appId ? this.store.load(appId) : this.store.clear()))
+      // A refused read (401: the session ended) leaves the store unloaded and is acted on by the session-expired
+      // interceptor and the host's guard; it is not this directive's to report, and must not escape as an unhandled rejection.
+      .catch(() => undefined)
       .finally(() => (this.loading = false));
   });
 

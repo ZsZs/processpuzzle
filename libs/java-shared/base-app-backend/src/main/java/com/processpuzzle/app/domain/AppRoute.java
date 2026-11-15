@@ -19,6 +19,7 @@ import java.util.List;
  * @param translocoId translation key preferred over {@code title} by the frontend
  * @param icon icon name, used where the route is surfaced directly
  * @param roles roles allowed to reach this route; empty means any authenticated member
+ * @param requiresContext name of the working context the route needs, or {@code null}
  * @param target what this route renders
  */
 public record AppRoute(
@@ -27,9 +28,15 @@ public record AppRoute(
         String translocoId,
         String icon,
         List<String> roles,
+        String requiresContext,
         RouteTarget target) {
 
     public AppRoute {
         roles = roles == null ? List.of() : List.copyOf(roles);
+    }
+
+    /** A route that needs no working context. */
+    public AppRoute(String path, String title, String translocoId, String icon, List<String> roles, RouteTarget target) {
+        this(path, title, translocoId, icon, roles, null, target);
     }
 }

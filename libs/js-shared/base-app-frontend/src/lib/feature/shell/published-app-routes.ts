@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { ActivatedRouteSnapshot, CanMatchFn, Route, Router, Routes } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -27,12 +28,18 @@ export class PublishedAppStore {
   /**
    * Reads the published revision afresh. A transport failure is treated like "not published": the host then
    * renders its fallback rather than a dead URL, and the error itself has been reported by the interceptor.
+   *
+   * A 401 is the exception: it says the session ended, not that nothing is published, and answering it with
+   * the fallback would show the user a working-looking application that fails on every call. It is rethrown
+   * and the store is left as it was — neither `published` nor `loaded` changes — while the session-expired
+   * interceptor sends the user to sign in again.
    */
   async load(appId: string): Promise<AppDefinition | undefined> {
     let definition: AppDefinition | undefined;
     try {
       definition = await firstValueFrom(this.appService.findPublished(appId));
-    } catch {
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 401) throw error;
       definition = undefined;
     }
     this._published.set(definition);

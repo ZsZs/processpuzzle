@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  CONTEXT_COLLECTION_CONTEXT_KEY,
+  CONTEXT_COLLECTION_ENTITY_KEY,
+  CONTEXT_COLLECTION_PATH_KEY,
+  ContextCollectionComponent,
   BaseEntityAttrDescriptor,
   BaseEntityDescriptor,
   BaseEntityScreensComponent,
@@ -120,6 +124,24 @@ describe('AppRouteRenderer', () => {
       expect(route.component).toBe(BaseEntityScreensComponent);
       expect(route.children).toBeUndefined();
       expect(route.data?.[REQUESTED_ENTITY_ROUTE_DATA_KEY]).toBe('Gone');
+    });
+  });
+
+  describe('a collection of the active context\'s entity', () => {
+    const rounds = () => new RouteDefinition({ path: 'rounds', title: 'Rounds', kind: 'ENTITY', entityName: 'Round', requiresContext: 'race', contextPath: 'rounds' });
+
+    it('renders the context collection screen, told which context, attribute and item type', async () => {
+      const route = await renderer().render(rounds());
+
+      expect(route.component).toBe(ContextCollectionComponent);
+      expect(route.data).toEqual({ [CONTEXT_COLLECTION_CONTEXT_KEY]: 'race', [CONTEXT_COLLECTION_PATH_KEY]: 'rounds', [CONTEXT_COLLECTION_ENTITY_KEY]: 'Round' });
+      expect(entityScreens.resolve).not.toHaveBeenCalled();
+    });
+
+    it('is the generic entity screens without a context to read the collection from', async () => {
+      const route = await renderer().render(new RouteDefinition({ path: 'rounds', title: 'Rounds', kind: 'ENTITY', entityName: 'Round', contextPath: 'rounds' }));
+
+      expect(route.component).toBe(BaseEntityScreensComponent);
     });
   });
 });

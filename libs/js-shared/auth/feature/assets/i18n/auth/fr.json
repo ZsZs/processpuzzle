@@ -23,6 +23,12 @@
     "cancel_button": "Annuler",
     "logout_button": "Déconnexion"
   },
+  "session_expired": {
+    "title": "Votre session est terminée",
+    "message": "Vous avez été déconnecté, par exemple après une période d'inactivité ou parce que votre session a été fermée ailleurs. Reconnectez-vous pour reprendre là où vous en étiez.",
+    "sign_in_button": "Se reconnecter",
+    "home_button": "Aller à la page d'accueil"
+  },
   "registration_form": {
     "title": "Créer un compte",
     "email_label": "Email",

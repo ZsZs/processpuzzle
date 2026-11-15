@@ -168,6 +168,12 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   /** The route's `canDeactivate` question: asks the user before unsaved changes are thrown away. */
   async confirmLeave(): Promise<boolean> {
     if (this.leaveWithoutAsking || !this.hasUnsavedChanges()) return true;
+    // A round trip to a list to choose from is under way: this form keeps its values under its own entity, to be given
+    // back when it is shown again. Nothing is lost by going, so there is nothing to ask.
+    if (this.formNavigator.hasRoundTrip()) {
+      this.formNavigator.keepFormSnapshot(this.entityDescriptor().entityName, this.baseEntityForm.getRawValue());
+      return true;
+    }
 
     const dialogData: DeleteConfirmationDialogData = {
       titleKey: 'base_entity.unsaved_changes_dialog.title',

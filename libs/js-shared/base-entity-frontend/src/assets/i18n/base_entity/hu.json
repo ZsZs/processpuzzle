@@ -210,5 +210,36 @@
       "TIMEOUT": "A helymeghatározás túl sokáig tartott. Próbálja újra.",
       "UNAVAILABLE": "A böngésző nem tudja meghatározni a helyzetét."
     }
+  },
+  "working_context": {
+    "search": "Keresés",
+    "recent": "Legutóbbiak",
+    "all": "Összes",
+    "no_match": "Nincs találat",
+    "empty_state": "Válasszon: {{ entity }}",
+    "switch_title": "Váltás: {{ entity }}",
+    "menu": "Kontextus műveletek",
+    "switch": "Váltás",
+    "open": "Megnyitás szerkesztésre",
+    "clear": "Kontextus törlése",
+    "set_active": "Aktívvá tétel",
+    "is_active": "Aktív",
+    "confirm_switch": {
+      "title": "Elhagyja az aktív kontextust?",
+      "content": "{{ entity }} még folyamatban van. Biztosan elhagyja?",
+      "cancel_button": "Maradok",
+      "confirm_button": "Elhagyom"
+    }
+  },
+  "context_collection": {
+    "add": "Hozzáadás",
+    "edit": "Szerkesztés",
+    "delete": "Törlés",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "empty": "Még nincs itt semmi.",
+    "delete_title": "Törli ezt az elemet?",
+    "delete_content": "Ez nem vonható vissza.",
+    "conflict": "Valaki más egy időben módosította. A lista a mentett állapotot mutatja — próbálja újra."
   }
 }

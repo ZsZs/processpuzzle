@@ -404,6 +404,166 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
 
+  # ── Embedded collections ──
+  # One level of an aggregate: the embedded components an entity instance carries in an
+  # EMBEDDED_COMPONENTS attribute, addressed on their own so that "add a round" never sends the
+  # whole Race. An item is identified by its `id` member, which the server assigns on append.
+  #
+  # Concurrency: the parent object's `version` is the only version there is for now. Every answer
+  # carries it as an `ETag`; PATCH and DELETE take it back as `If-Match` (optional — without it the
+  # change applies to whatever is stored). An append needs none: it is applied to the stored object, and
+  # two appends racing for the same version are serialized rather than rejected.
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the entity.
+        schema:
+          type: string
+    get:
+      operationId: listEmbeddedItems
+      tags: [ Base Entities ]
+      summary: List the items of an embedded collection
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    post:
+      operationId: appendEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Append an item to an embedded collection
+      description: The server assigns `id` when the item brings none. The whole object is validated as it would be after the append.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '201':
+          description: Appended; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        description: The item's `id` member.
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        required: false
+        description: The object version the caller last saw, as an ETag. A different stored version is a 409.
+        schema:
+          type: string
+    patch:
+      operationId: patchEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Partially update one item of an embedded collection
+      description: >
+        Merge patch of the item: members present in the body replace the stored ones, a `null` member is
+        removed, the rest stay. `id` cannot be changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '200':
+          description: OK; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Remove one item from an embedded collection
+      responses:
+        '204':
+          description: Removed
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
   # ── Translations ──
   # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
   # templates rather than one with an optional segment: 4 vs 5 segments is what makes them
@@ -519,6 +679,12 @@ components:
         minimum: 1
         maximum: 200
         default: 20
+
+  headers:
+    ObjectVersion:
+      description: The version of the object the answer was read from or produced, as a quoted ETag (`"3"`).
+      schema:
+        type: string
 
   responses:
     NotFound:
@@ -948,6 +1114,11 @@ components:
             definition's attributes (recursively, for embedded components) and
             against base-rule constraints before persistence.
           additionalProperties: true
+
+    EmbeddedItem:
+      type: object
+      description: One item of an embedded collection. Free-form, as the payload is; `id` identifies it.
+      additionalProperties: true
 
     EntityObjectUpdate:
       type: object
