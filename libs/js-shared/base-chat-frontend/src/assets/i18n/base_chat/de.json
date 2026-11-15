@@ -1,5 +1,33 @@
 {
   "panel": {
-    "title": "Chat"
+    "title": "Chat",
+    "no_subject": "Wählen Sie einen Eintrag, um darüber zu chatten.",
+    "loading": "Konversation wird geladen …",
+    "error": "Die Konversation konnte nicht geladen werden.",
+    "reload": "Erneut versuchen",
+    "no_chat": "Für diesen Eintrag gibt es keinen Chat.",
+    "start": "Chat starten",
+    "starting": "Wird gestartet …",
+    "start_failed": "Der Chat konnte nicht gestartet werden.",
+    "start_forbidden": "Sie dürfen hier keinen Chat starten.",
+    "empty": "Noch keine Nachrichten.",
+    "load_earlier": "Frühere Nachrichten laden",
+    "placeholder": "Nachricht schreiben …",
+    "send": "Senden",
+    "sending": "Wird gesendet …",
+    "failed": "Nicht gesendet.",
+    "failed_forbidden": "Nicht gesendet: Sie dürfen hier nicht schreiben.",
+    "failed_conflict": "Nicht gesendet: Die Konversation ist geschlossen.",
+    "retry": "Erneut senden",
+    "discard": "Verwerfen",
+    "read_only": "Sie können diese Konversation lesen, aber nicht darin schreiben.",
+    "reconnecting": "Verbindung wird wiederhergestellt — neue Nachrichten kommen möglicherweise verspätet."
+  },
+  "badge": {
+    "label": "{{count}} ungelesene Chat-Nachrichten"
+  },
+  "widgets": {
+    "chat_panel": "Chat-Bereich",
+    "unread_badge": "Ungelesene Chat-Nachrichten"
   }
 }

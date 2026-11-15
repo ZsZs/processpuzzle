@@ -1,5 +1,33 @@
 {
   "panel": {
-    "title": "Csevegés"
+    "title": "Csevegés",
+    "no_subject": "Válasszon ki egy elemet, hogy beszélgethessen róla.",
+    "loading": "A beszélgetés betöltése…",
+    "error": "A beszélgetést nem sikerült betölteni.",
+    "reload": "Újra",
+    "no_chat": "Ehhez az elemhez nincs csevegés.",
+    "start": "Csevegés indítása",
+    "starting": "Indítás…",
+    "start_failed": "A csevegést nem sikerült elindítani.",
+    "start_forbidden": "Itt nem indíthat csevegést.",
+    "empty": "Még nincs üzenet.",
+    "load_earlier": "Korábbi üzenetek betöltése",
+    "placeholder": "Írjon üzenetet…",
+    "send": "Küldés",
+    "sending": "Küldés…",
+    "failed": "Nem lett elküldve.",
+    "failed_forbidden": "Nem lett elküldve: itt nem írhat.",
+    "failed_conflict": "Nem lett elküldve: a beszélgetés lezárult.",
+    "retry": "Újra",
+    "discard": "Elvetés",
+    "read_only": "Ezt a beszélgetést olvashatja, de nem írhat bele.",
+    "reconnecting": "Újracsatlakozás — az új üzenetek késhetnek."
+  },
+  "badge": {
+    "label": "{{count}} olvasatlan csevegőüzenet"
+  },
+  "widgets": {
+    "chat_panel": "Csevegőpanel",
+    "unread_badge": "Olvasatlan csevegőüzenetek"
   }
 }
