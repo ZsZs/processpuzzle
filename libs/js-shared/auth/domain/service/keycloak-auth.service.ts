@@ -87,7 +87,9 @@ export class KeycloakAuthService extends AuthService {
    */
   override clearSession(): void {
     this._user.set(undefined);
-    this.keycloak.clearToken();
+    // keycloak-js returns a promise. Nothing waits for it: the sign-in that follows replaces the document, and a failure to
+    // clear the token must not stop that.
+    this.keycloak.clearToken().catch(() => undefined);
   }
 
   /**

@@ -36,7 +36,7 @@ describe('KeycloakAuthService', () => {
       init: vi.fn().mockResolvedValue(true),
       login: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn().mockResolvedValue(undefined),
-      clearToken: vi.fn(),
+      clearToken: vi.fn().mockResolvedValue(undefined),
       loadUserProfile: vi.fn().mockResolvedValue({
         id: '123',
         firstName: 'John',
@@ -240,6 +240,17 @@ describe('KeycloakAuthService', () => {
   });
 
   describe('clearSession', () => {
+    it('should not let a failed token clear stop the sign-in', async () => {
+      mockKeycloakInstance.clearToken.mockRejectedValueOnce(new Error('token flush failed'));
+      mockKeycloakInstance.authenticated = true;
+      await service.authenticate();
+
+      expect(() => service.clearSession()).not.toThrow();
+      await new Promise((resolve) => setTimeout(resolve));
+
+      expect(service.getCurrentUser()).toBeUndefined();
+    });
+
     it('should forget the user and the token, so authenticate() stops answering from a dead session', async () => {
       mockKeycloakInstance.authenticated = true;
       await service.authenticate();
