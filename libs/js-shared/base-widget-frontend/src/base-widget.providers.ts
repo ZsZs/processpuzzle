@@ -6,6 +6,7 @@ import { NAV_BAR_WIDGET_REGISTRATION } from './nav-bar/nav-bar.widget';
 import { NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
 import { NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
 import { CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
+import { CONTEXT_ACTIONS_WIDGET_REGISTRATION } from './context-actions/context-actions.widget';
 import { COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
 import { DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
 import { ENTITY_FORM_WIDGET_REGISTRATION } from './entity-form/entity-form.widget';
@@ -30,6 +31,7 @@ import { provideWidget, WidgetRegistration } from './widget-registry/widget-regi
 export { APP_LOGO_WIDGET } from './app-logo/app-logo.widget';
 export { APP_TITLE_WIDGET } from './app-title/app-title.widget';
 export { CARDS_GRID_WIDGET } from './mat-cards-grid/cards-grid.widget';
+export { CONTEXT_ACTIONS_WIDGET } from './context-actions/context-actions.widget';
 export { COPYRIGHT_WIDGET } from './copyright/copyright.widget';
 export { DESIGN_BUTTON_WIDGET } from './design-button/design-button.widget';
 export { ENTITY_FORM_WIDGET } from './entity-form/entity-form.widget';
@@ -134,6 +136,10 @@ export function provideShareButtonWidget(): Provider[] {
   return provideWidget(SHARE_BUTTON_WIDGET_REGISTRATION);
 }
 
+export function provideContextActionsWidget(): Provider[] {
+  return provideWidget(CONTEXT_ACTIONS_WIDGET_REGISTRATION);
+}
+
 export function provideSidenavToggleWidget(): Provider[] {
   return provideWidget(SIDENAV_TOGGLE_WIDGET_REGISTRATION);
 }
@@ -173,6 +179,7 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   PHOTO_ALBUM_WIDGET_REGISTRATION,
   SHARE_BUTTON_WIDGET_REGISTRATION,
   SIDENAV_TOGGLE_WIDGET_REGISTRATION,
+  CONTEXT_ACTIONS_WIDGET_REGISTRATION,
   SPACER_WIDGET_REGISTRATION,
   TASK_DASHBOARD_BUTTON_WIDGET_REGISTRATION,
   THEMES_BUTTON_WIDGET_REGISTRATION,

@@ -83,6 +83,24 @@ defineEntityRelationshipSuite({
   ],
   fixtureOverrides: [
     {
+      // Routes of a module, and of an app, that name a context. The generator fills every field, and the backend rejects
+      // a contextPath on a route that is not an ENTITY route (app.validation.context-path-needs-entity), while a generated
+      // route is WIDGETS. The collection path is optional, so it is left empty.
+      entityName: 'App Route',
+      create: { contextPath: '' },
+      update: { contextPath: '' },
+      reason: 'contextPath is only meaningful on an ENTITY route, and the generated route takes the first kind, WIDGETS',
+    },
+    {
+      // Working contexts of the app. The generator fills their optional references, and a generated parent names no
+      // declared context, which the backend rejects with app.validation.unknown-context-parent. The count is pinned to a
+      // whole number, which a generated text would not be.
+      entityName: 'App Context',
+      create: { parent: '', basePath: '', pickerRecent: '3' },
+      update: { parent: '', basePath: '', pickerRecent: '3' },
+      reason: 'a parent must name a declared context, and the picker count is a whole number; both are optional',
+    },
+    {
       // Reached through [Entity Definition] attributes. The generator would pick the first Value Kind, TEXT
       // (NUMBER on update), and the authoring mapper drops Date Style / Time Style for any kind but DATE /
       // DATE_TIME, so the read-back would find them empty. Both styles are pinned too: the first option of

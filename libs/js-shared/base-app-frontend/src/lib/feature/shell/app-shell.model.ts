@@ -102,6 +102,50 @@ export function knownRoutePathsOf(definition: AppDefinition | undefined): string
  * for whatever the definition leaves unset. Those fallbacks are the contract's defaults too, so the server
  * fills the same values in on save.
  */
+/** The path without surrounding slashes. A loop rather than a regular expression: those backtrack on long runs of slashes. */
+export function trimSlashes(path: string): string {
+  let start = 0;
+  let end = path.length;
+  while (start < end && path[start] === '/') start++;
+  while (end > start && path[end - 1] === '/') end--;
+  return path.slice(start, end);
+}
+
+/**
+ * A route that requires a working context, by where the shell serves it: `base` is the module mount's path (empty
+ * for the app's own routes), `path` the route's own. Its pages live at `<base>/ctx/<context>/[<id>/]<path>`.
+ */
+export interface ContextLink {
+  base: string;
+  path: string;
+  context: string;
+}
+
+/** The routes of the app and of its mounted modules that name a context. The modules are the ones the layout carried. */
+export function contextLinksOf(definition: AppDefinition | undefined): ContextLink[] {
+  const own = (definition?.routes ?? []).filter((route) => route.requiresContext).map((route) => ({ base: '', path: route.path, context: route.requiresContext as string }));
+  const mounted = (definition?.modules ?? []).flatMap((mount) => {
+    const module = definition?.mountedModules?.find((candidate) => candidate.id === mount.moduleKey);
+    return (module?.routes ?? []).filter((route) => route.requiresContext).map((route) => ({ base: mount.basePath, path: route.path, context: route.requiresContext as string }));
+  });
+  return [...own, ...mounted].filter((link) => !!link.path);
+}
+
+/**
+ * Where a nav entry's `routePath` leads when the route it names is bound to a context: into the context with the
+ * entity that is active now, or — with none — to the page's empty state, which restores the last one.
+ * `activeIds` maps a context name to its active entity's id.
+ */
+export function resolveContextLink(routePath: string, links: ContextLink[], activeIds: Record<string, string | undefined>): string {
+  for (const { base, path, context } of links) {
+    const full = [base, path].filter(Boolean).join('/');
+    if (routePath !== full && !routePath.startsWith(full + '/')) continue;
+    const id = activeIds[context];
+    return [base, 'ctx', context, id, path, routePath.slice(full.length + 1)].filter(Boolean).join('/');
+  }
+  return routePath;
+}
+
 export function themeDefaultsOf(definition: AppDefinition | undefined): Partial<ThemeSelection> {
   const preset = definition?.materialTheme ?? definition?.theme?.materialTheme;
   const scheme = definition?.colorScheme ?? definition?.theme?.colorScheme;

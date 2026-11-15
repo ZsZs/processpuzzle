@@ -19,6 +19,8 @@ import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { translateLabel } from '../i18n/entity-label.pipe';
 import { UnsavedChangesRegistry } from '../base-form/unsaved-changes/unsaved-changes.registry';
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
+import { WorkingContextService } from '../working-context/working-context.service';
+import { WorkingContextCrumbsComponent } from '../working-context/working-context-crumbs.component';
 
 /** One step of the hierarchy as it is rendered: what to show, and what it is. */
 interface EntityCrumb {
@@ -43,10 +45,16 @@ interface EntityCrumb {
 @Component({
   selector: 'base-entity-statusbar',
   standalone: true,
-  imports: [CommonModule, MatToolbar, MatIcon, TranslocoPipe],
+  imports: [CommonModule, MatToolbar, MatIcon, TranslocoPipe, WorkingContextCrumbsComponent],
   template: `
     <mat-toolbar *ngIf="isVisible()">
       <nav class="breadcrumb" [attr.aria-label]="'base_entity.statusbar.breadcrumb_label' | transloco">
+        @if (showsContexts()) {
+          <pp-working-context-crumbs />
+          @if (crumbs().length > 0) {
+            <mat-icon class="crumb-separator">chevron_right</mat-icon>
+          }
+        }
         @for (crumb of crumbs(); track $index; let index = $index; let isLast = $last) {
           @if (isLast) {
             <span class="crumb crumb-current" [attr.data-testid]="crumb.testId" [title]="crumb.label">{{ crumb.title }}</span>
@@ -167,9 +175,14 @@ export class BaseEntityStatusbarComponent implements OnInit {
   crumbs: Signal<EntityCrumb[]> = computed<EntityCrumb[]>(() => this.resolveCrumbs());
   // More than one crumb means an embedded form is open, which is a record by itself — the own store's
   // selection, the only thing to go by otherwise, belongs to the outermost entity.
-  isVisible: Signal<boolean> = computed(() => this.crumbs().length > 1 || (this.store != null && (this.store.currentEntity() !== undefined || this.store.selectedEntities().length === 1)));
+  /** The active contexts are the root of the breadcrumb — unless the shell shows them in a status bar of its own. */
+  showsContexts: Signal<boolean> = computed(() => this.workingContext.active().length > 0 && !this.workingContext.statusbarHostedByShell());
+  isVisible: Signal<boolean> = computed(
+    () => this.showsContexts() || this.crumbs().length > 1 || (this.store != null && (this.store.currentEntity() !== undefined || this.store.selectedEntities().length === 1)),
+  );
 
   private readonly descriptorRegistry = inject(BaseEntityDescriptorRegistry);
+  private readonly workingContext = inject(WorkingContextService);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = injectActiveLang();
@@ -179,7 +192,9 @@ export class BaseEntityStatusbarComponent implements OnInit {
   warningCount = this.violationsStore.warningCount;
   infoCount = this.violationsStore.infoCount;
   /** The violations of the form the user is actually on, which at depth is the deepest crumb's. */
-  showViolationSummary: Signal<boolean> = computed(() => this.violationsStore.entityName() === (this.crumbs().at(-1)?.entityName ?? this.entityDescriptor().entityName) && this.violationsStore.hasViolations());
+  showViolationSummary: Signal<boolean> = computed(
+    () => this.violationsStore.entityName() === (this.crumbs().at(-1)?.entityName ?? this.entityDescriptor().entityName) && this.violationsStore.hasViolations(),
+  );
 
   // region Angular lifecycle hooks
   ngOnInit(): void {

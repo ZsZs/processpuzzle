@@ -49,13 +49,13 @@ describe('BASE_APP_ROUTES', () => {
     expect(APP_PREVIEW_TAB.segment).toBe('preview');
   });
 
-  it('hangs the regions, the routes and the module mounts below the definition being edited', async () => {
+  it('hangs the regions, the routes, the module mounts and the contexts below the definition being edited', async () => {
     const branches = await embeddedBranchesOf(detailsRoute);
 
     // Below the details route, not beside it: an embedded row has no id to be looked up by, so the
     // owner's segments are what address it — and what make it unreachable except through the owner.
-    expect(branches.map((branch) => branch.path)).toEqual(['app-region', 'app-route', 'app-module-mount']);
-    expect(branches.map((branch) => branch.data?.['entityName'])).toEqual(['App Region', 'App Route', 'App Module Mount']);
+    expect(branches.map((branch) => branch.path)).toEqual(['app-region', 'app-route', 'app-module-mount', 'app-context']);
+    expect(branches.map((branch) => branch.data?.['entityName'])).toEqual(['App Region', 'App Route', 'App Module Mount', 'App Context']);
     branches.forEach((branch) => expect(branch.data?.['embeddedEntity']).toBe(true));
   });
 

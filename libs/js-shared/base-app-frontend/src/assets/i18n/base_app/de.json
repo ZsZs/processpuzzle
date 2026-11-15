@@ -68,8 +68,10 @@
       "routes": "Die Seiten der Anwendung, eine Zeile pro Seite. Legen Sie sie vor den Navigationseinträgen an, die auf sie verweisen. — Leitfaden: Routen",
       "modules": "Separat erstellte Teile der Anwendung, deren Routen unter einem Basispfad erscheinen. — Leitfaden: Module",
       "assets": "Dateien, die die Anwendung mitbringt, etwa die Bilder ihrer Seiten. Ein Widget verweist als app:<Pfad> darauf. — Leitfaden: Anwendungen",
-      "translations": "Die Texte der eigenen Seiten der Anwendung, etwa der Karten ihrer Startseite, eine Datei je Sprache. Schlüssel sind die, die Widgets unter ihrem translocoPrefix nennen. — Leitfaden: Anwendungen"
-    }
+      "translations": "Die Texte der eigenen Seiten der Anwendung, etwa der Karten ihrer Startseite, eine Datei je Sprache. Schlüssel sind die, die Widgets unter ihrem translocoPrefix nennen. — Leitfaden: Anwendungen",
+      "contexts": "Entitäten, die man einmal wählt und in denen man dann arbeitet. Eine Seite nimmt per Kontext erforderlich teil."
+    },
+    "contexts": "Kontexte"
   },
   "app_region": {
     "_self": "Bereich",
@@ -77,7 +79,7 @@
     "navItems": "Navigationseinträge",
     "widgets": "Widgets",
     "_tooltips": {
-      "type": "header (oben), sidenav (Navigationsbereich) oder footer (unten). Jeder Typ kann einmal verwendet werden. — Leitfaden: Bereiche",
+      "type": "header (oben), sidenav (Navigationsbereich) oder footer (unten). Jeder Typ kann einmal verwendet werden. Statusbar (unter der Kopfzeile) zeigt die aktiven Kontexte. — Leitfaden: Bereiche",
       "navItems": "Die Menüeinträge der Seitennavigation. Nur vom Bereich sidenav verwendet. — Leitfaden: Navigationseinträge",
       "widgets": "Die Widgets der Kopf- oder Fußzeile, in dieser Reihenfolge in einer Zeile angeordnet. Mit einem spacer schieben Sie die folgenden nach rechts. — Leitfaden: Kopfzeile (header)"
     }
@@ -106,8 +108,12 @@
       "documentSlug": "Nur DOCUMENT: der Slug des anzuzeigenden Dokuments. Wird noch nicht dargestellt. — Leitfaden: Dokumente",
       "entityName": "Nur ENTITY: der Name einer unter Entitäten definierten Entität; Liste und Formular werden für Sie generiert. — Leitfaden: Entitäten",
       "entityMode": "Nur ENTITY: mit der Liste oder den Details eines Datensatzes öffnen. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
-      "rsqlFilter": "Nur ENTITY + LIST: ein Vorfilter wie status==OPEN. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten"
-    }
+      "rsqlFilter": "Nur ENTITY + LIST: ein Vorfilter wie status==OPEN. Gespeichert, aber noch nicht angewendet. — Leitfaden: Entitäten",
+      "requiresContext": "Name eines Kontexts dieser Anwendung. Die Seite liegt dann unter ctx/<name>/<id> und zeigt „Auswählen …“, solange keiner aktiv ist.",
+      "contextPath": "Das Attribut der Kontext-Entität, deren Sammlung diese Seite auflistet, z. B. rounds. Braucht „Kontext erforderlich“; der Entitätsname ist dann der Typ der Einträge."
+    },
+    "requiresContext": "Kontext erforderlich",
+    "contextPath": "Kontextpfad"
   },
   "app_module_mount": {
     "_self": "Modul-Einbindung",
@@ -260,6 +266,33 @@
     "lifecycle": {
       "title": "Speichern, Vorschau und Freigabe",
       "body": "<p>Eine neue Anwendung beginnt als <b>Entwurf</b>. <b>Speichern</b> sichert Ihre Änderungen; der Reiter <b>Vorschau</b> zeigt dann die gespeicherte Definition genau so, wie die laufende Anwendung sie darstellt, einschließlich Theme – prüfen Sie sie dort, bevor Sie weitermachen. Die Benutzer sehen davon noch nichts: Die laufende Anwendung verwendet nur <b>freigegebene</b> Definitionen. Öffnen Sie den Bereich <b>Freigabe</b> des Designers, um alles zu sehen, was Sie geändert haben – diese Anwendung, ihre Module und die anderen Definitionen, die sie verwendet –, und <b>veröffentlichen</b> Sie alles zusammen; die gespeicherte Version wird zur <b>veröffentlichten Version</b>. Sie können danach weiter bearbeiten und speichern; die Benutzer sehen die Änderungen erst nach der nächsten Freigabe.</p>"
+    }
+  },
+  "app_context": {
+    "_self": "Kontext",
+    "name": "Name",
+    "entityName": "Entitätsname",
+    "parent": "Übergeordnet",
+    "basePath": "Basispfad",
+    "persist": "Merken",
+    "pickerSearchFields": "Suchfelder der Auswahl",
+    "pickerRecent": "Zuletzt in der Auswahl",
+    "displayLabel": "Anzeigetext",
+    "displayBadge": "Anzeige-Badge",
+    "displayExtra": "Zusatztext",
+    "confirmSwitchStates": "Zustände mit Rückfrage",
+    "_tooltips": {
+      "name": "Name und URL-Segment des Kontexts: Seiten liegen unter ctx/<name>/<id>.",
+      "entityName": "Der Entitätstyp, den man einmal wählt und in dem man dann arbeitet, z. B. Race.",
+      "parent": "Der Kontext, in dem dieser verschachtelt ist. Ein anderer Elternkontext hebt diesen auf.",
+      "basePath": "Pfad, unter dem die Seiten des Kontexts liegen, z. B. /conduct. Leer bedeutet Wurzel der Anwendung.",
+      "persist": "url merkt die Wahl nur in der Adresse; url-local-storage merkt sich zusätzlich den letzten auf diesem Gerät.",
+      "pickerSearchFields": "Die Attribute, die die Auswahl durchsucht. Leer bedeutet Titelattribut.",
+      "pickerRecent": "Wie viele zuletzt verwendete Einträge oben angeboten werden. Standard 3.",
+      "displayLabel": "Der Text in der Statusleiste mit {{Attribut}}-Platzhaltern. Leer bedeutet Titelattribut.",
+      "displayBadge": "Ein Attribut als Badge daneben; state steht für das Zustandsattribut.",
+      "displayExtra": "Ein zweiter, dezenter Text mit {{Attribut}}-Platzhaltern.",
+      "confirmSwitchStates": "Zustände, in denen das Verlassen der Entität erst nachfragt."
     }
   }
 }

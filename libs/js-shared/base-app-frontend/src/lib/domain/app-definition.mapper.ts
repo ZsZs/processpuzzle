@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BaseEntityMapper } from '@processpuzzle/base-entity';
 import { AppDefinition, AppDefinitionStatus, ColorScheme, LayoutDefinition, LayoutPreset, MaterialTheme, SidenavMode, ThemeDefinition } from './app-definition';
 import { ModuleDefinitionMapper } from './module-definition.mapper';
+import { flattenWorkingContext, nestWorkingContext } from './working-context-row.mapper';
 import { flattenRouteTarget, nestRouteTarget, RouteDefinitionDto } from './route-definition.mapper';
 
 interface AppDefinitionDto {
@@ -14,6 +15,7 @@ interface AppDefinitionDto {
   regions?: AppDefinition['regions'];
   routes?: RouteDefinitionDto[];
   modules?: AppDefinition['modules'];
+  contexts?: Parameters<typeof flattenWorkingContext>[0][];
   /** `/layout` only. */
   mountedModules?: unknown[];
   orgKey?: string;
@@ -71,6 +73,7 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       regions: source.regions,
       routes: source.routes?.map(flattenRouteTarget),
       modules: source.modules,
+      contexts: source.contexts?.map(flattenWorkingContext),
       mountedModules: source.mountedModules?.map((module) => this.moduleMapper.fromDto(module)),
       orgKey: source.orgKey,
       status: source.status,
@@ -93,6 +96,7 @@ export class AppDefinitionMapper implements BaseEntityMapper<AppDefinition> {
       regions: entity.regions,
       routes: entity.routes?.map(nestRouteTarget),
       modules: entity.modules,
+      contexts: entity.contexts?.map(nestWorkingContext),
       orgKey: entity.orgKey,
       status: entity.status,
       version: entity.version,

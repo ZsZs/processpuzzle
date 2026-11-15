@@ -22,6 +22,10 @@ import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.PageOfAppDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
+import com.processpuzzle.app.model.WorkingContextDefinition;
+import com.processpuzzle.app.model.WorkingContextDisplay;
+import com.processpuzzle.app.model.WorkingContextPicker;
+import com.processpuzzle.app.domain.WorkingContext;
 import com.processpuzzle.app.model.Severity;
 import com.processpuzzle.app.model.SidenavMode;
 import com.processpuzzle.app.model.ThemeDefinition;
@@ -63,7 +67,28 @@ public class AppMapper {
                 toDomainLayout(input.getLayout()),
                 toDomainRegions(input.getRegions()),
                 toDomainRoutes(input.getRoutes()),
-                toDomainMounts(input.getModules()));
+                toDomainMounts(input.getModules()),
+                toDomainContexts(input.getContexts()));
+    }
+
+    private List<WorkingContext> toDomainContexts(List<WorkingContextDefinition> contexts) {
+        if (contexts == null) {
+            return List.of();
+        }
+        return contexts.stream().filter(Objects::nonNull)
+                .map(context -> new WorkingContext(
+                        context.getName(),
+                        context.getEntityName(),
+                        context.getParent(),
+                        context.getBasePath(),
+                        context.getPicker() == null ? null
+                                : new WorkingContext.Picker(context.getPicker().getSearchFields(), context.getPicker().getRecent()),
+                        context.getDisplay() == null ? null
+                                : new WorkingContext.Display(context.getDisplay().getLabel(), context.getDisplay().getBadge(),
+                                        context.getDisplay().getExtra()),
+                        context.getConfirmSwitchWhen(),
+                        context.getPersist() == null ? null : context.getPersist().getValue()))
+                .toList();
     }
 
     private Theme toDomainTheme(ThemeDefinition theme) {
@@ -146,6 +171,7 @@ public class AppMapper {
                         route.getTranslocoId(),
                         route.getIcon(),
                         route.getRoles(),
+                        route.getRequiresContext(),
                         toDomainTarget(route.getTarget())))
                 .toList();
     }
@@ -165,7 +191,8 @@ public class AppMapper {
                 target.getDocumentSlug(),
                 target.getEntityName(),
                 target.getEntityMode() == null ? null : RouteTarget.EntityMode.valueOf(target.getEntityMode().name()),
-                target.getRsqlFilter());
+                target.getRsqlFilter(),
+                target.getContextPath());
     }
 
     private List<ModuleMount> toDomainMounts(List<com.processpuzzle.app.model.ModuleMount> mounts) {
@@ -198,6 +225,7 @@ public class AppMapper {
             model.setRegions(toModelRegions(graph.regions()));
             model.setRoutes(toModelRoutes(graph.routes()));
             model.setModules(toModelMounts(graph.modules()));
+            model.setContexts(toModelContexts(graph.contexts()));
         }
         return model;
     }
@@ -259,6 +287,7 @@ public class AppMapper {
             layout.setLayout(toModelLayout(graph.layout()));
             layout.setRoutes(toModelRoutes(graph.routes()));
             layout.setModules(toModelMounts(graph.modules()));
+            layout.setContexts(toModelContexts(graph.contexts()));
             layout.setMountedModules(mountedModules.stream().map(this::toModel).toList());
         }
         return layout;
@@ -354,7 +383,35 @@ public class AppMapper {
         model.setTranslocoId(route.translocoId());
         model.setIcon(route.icon());
         model.setRoles(route.roles());
+        model.setRequiresContext(route.requiresContext());
         return model;
+    }
+
+    private List<WorkingContextDefinition> toModelContexts(List<WorkingContext> contexts) {
+        if (contexts == null) {
+            return List.of();
+        }
+        return contexts.stream().map(context -> {
+            WorkingContextDefinition model = new WorkingContextDefinition(context.name(), context.entityName());
+            model.setParent(context.parent());
+            model.setBasePath(context.basePath());
+            if (context.picker() != null) {
+                model.setPicker(new WorkingContextPicker()
+                        .searchFields(context.picker().searchFields().isEmpty() ? null : context.picker().searchFields())
+                        .recent(context.picker().recent()));
+            }
+            if (context.display() != null) {
+                model.setDisplay(new WorkingContextDisplay()
+                        .label(context.display().label())
+                        .badge(context.display().badge())
+                        .extra(context.display().extra()));
+            }
+            model.setConfirmSwitchWhen(context.confirmSwitchWhen());
+            if (context.persist() != null) {
+                model.setPersist(WorkingContextDefinition.PersistEnum.fromValue(context.persist()));
+            }
+            return model;
+        }).toList();
     }
 
     private com.processpuzzle.app.model.RouteTarget toModelTarget(RouteTarget target) {
@@ -370,6 +427,7 @@ public class AppMapper {
             model.setEntityMode(com.processpuzzle.app.model.RouteTarget.EntityModeEnum.fromValue(target.entityMode().name()));
         }
         model.setRsqlFilter(target.rsqlFilter());
+        model.setContextPath(target.contextPath());
         return model;
     }
 

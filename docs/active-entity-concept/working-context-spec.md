@@ -72,7 +72,7 @@ contexts:
       extra: "{{currentRound}}"
     confirmSwitchWhen:
       state: Running
-    persist: url                  # url | url+localStorage
+    persist: url                  # url | url-local-storage
 
 views:
   - name: participants-list
