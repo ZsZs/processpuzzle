@@ -45,7 +45,7 @@ public class CreateEntityInstanceUseCase {
                     .formatted(entityDefinitionCode));
         }
 
-        payload = EmbeddedItemIdentity.withIdentities(definition, payload);
+        payload = EmbeddedItemIdentity.withIdentities(definition, payload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, payload);
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()

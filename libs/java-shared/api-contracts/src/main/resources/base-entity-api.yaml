@@ -566,6 +566,180 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  # ── Nested embedded collections ──
+  # The collection held by an attribute of an item of another collection — the results of one round, say. The same
+  # operations as above, one level down; the item of the outer collection is named by its `id`. The versioning is the
+  # same: each item has its own `itemVersion`, and an item of the nested collection is changed against that.
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}/{childAttributeCode}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the entity.
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        description: The `id` of the item of `attributeCode` the collection is nested in.
+        schema:
+          type: string
+      - name: childAttributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the item's component type.
+        schema:
+          type: string
+    get:
+      operationId: listNestedEmbeddedItems
+      tags: [ Base Entities ]
+      summary: List the items of a collection nested in an item
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    post:
+      operationId: appendNestedEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Append an item to a collection nested in an item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '201':
+          description: Appended; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}/{childAttributeCode}/{childItemId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the entity.
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        description: The `id` of the item of `attributeCode` the collection is nested in.
+        schema:
+          type: string
+      - name: childAttributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the item's component type.
+        schema:
+          type: string
+      - name: childItemId
+        in: path
+        required: true
+        description: The `id` of the item of `childAttributeCode`.
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        required: false
+        description: The item's version the caller last saw, as its ETag. A different stored item version is a 409.
+        schema:
+          type: string
+    patch:
+      operationId: patchNestedEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Partially update one item of a collection nested in an item
+      description: Merge patch of the item, as for a top-level item. `id` cannot be changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '200':
+          description: OK; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteNestedEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Remove one item of a collection nested in an item
+      responses:
+        '204':
+          description: Removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
   # ── Translations ──
   # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
   # templates rather than one with an optional segment: 4 vs 5 segments is what makes them

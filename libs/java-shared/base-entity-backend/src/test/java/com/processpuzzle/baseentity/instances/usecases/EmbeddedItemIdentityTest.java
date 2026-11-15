@@ -66,4 +66,35 @@ class EmbeddedItemIdentityTest {
         assertThat(EmbeddedItemIdentity.withIdentities(null, Map.of("rounds", List.of(Map.of()))).get("rounds")).isEqualTo(List.of(Map.of()));
         assertThat(EmbeddedItemIdentity.withIdentities(race, null)).isNull();
     }
+
+    @Test
+    void itemsNestedInItemsGetIdentityAtEveryLevel() {
+        EntityDefinitionView round = new EntityDefinitionView("Round", true, List.of(
+            new EntityAttributeView("number", ValueKindView.NUMBER, false, false, null, false),
+            new EntityAttributeView("results", ValueKindView.TEXT, true, true, "Result", false)));
+        EntityDefinitionView result = new EntityDefinitionView("Result", true, List.of(new EntityAttributeView("score", ValueKindView.NUMBER, false, false, null, false)));
+        EntityDefinitionView race = new EntityDefinitionView("race", false, List.of(new EntityAttributeView("rounds", ValueKindView.TEXT, true, true, "Round", false)));
+        Map<String, Object> payload = Map.of("rounds", List.of(Map.of("number", 1, "results", List.of(Map.of("score", 5)))));
+
+        Map<String, Object> result2 = EmbeddedItemIdentity.withIdentities(race, payload, code -> java.util.Optional.of(
+            code.equals("Round") ? round : result));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> roundItem = ((List<Map<String, Object>>) result2.get("rounds")).get(0);
+        assertThat(roundItem.get("id")).isNotNull();
+        assertThat(roundItem).containsEntry("itemVersion", 1);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resultItem = ((List<Map<String, Object>>) roundItem.get("results")).get(0);
+        assertThat(resultItem.get("id")).isNotNull();
+        assertThat(resultItem).containsEntry("itemVersion", 1).containsEntry("score", 5);
+    }
+
+    @Test
+    void aNestedLevelThatIsAlreadyIdentifiedIsKeptAsItIs() {
+        EntityDefinitionView round = new EntityDefinitionView("Round", true, List.of(new EntityAttributeView("results", ValueKindView.TEXT, true, true, "Result", false)));
+        EntityDefinitionView race = new EntityDefinitionView("race", false, List.of(new EntityAttributeView("rounds", ValueKindView.TEXT, true, true, "Round", false)));
+        Map<String, Object> payload = Map.of("rounds", List.of(Map.of("id", "r1", "itemVersion", 2, "results", List.of())));
+
+        assertThat(EmbeddedItemIdentity.withIdentities(race, payload, code -> java.util.Optional.of(round))).isSameAs(payload);
+    }
 }

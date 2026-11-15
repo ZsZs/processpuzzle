@@ -6,6 +6,7 @@ import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CollectionAddress;
 import com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedCollectionUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase;
@@ -276,5 +277,24 @@ class EntityObjectEndpointTest {
 
         mockMvc.perform(delete("/organizations/test-org/entities/race/{id}/rounds/r1", id))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void nestedEmbeddedItems_listAndPatchAddressTheCollectionInsideTheItem() throws Exception {
+        UUID id = UUID.randomUUID();
+        CollectionAddress results = CollectionAddress.of("rounds").within("r1", "results");
+        when(embeddedUseCase.list(ORG, "race", id, results)).thenReturn(new EmbeddedCollectionUseCase.Items(List.of(Map.of("id", "x1")), 5L));
+        when(embeddedUseCase.patch(ORG, "race", id, results, "x1", 2L, Map.of("score", 3)))
+                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "x1", "score", 3), 3L, 6L));
+
+        mockMvc.perform(get("/organizations/test-org/entities/race/{id}/rounds/r1/results", id))
+                .andExpect(status().isOk())
+                .andExpect(header().string("ETag", "\"5\""))
+                .andExpect(jsonPath("$[0].id").value("x1"));
+
+        mockMvc.perform(patch("/organizations/test-org/entities/race/{id}/rounds/r1/results/x1", id).header("If-Match", "\"2\"")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"score\":3}"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("ETag", "\"3\""));
     }
 }

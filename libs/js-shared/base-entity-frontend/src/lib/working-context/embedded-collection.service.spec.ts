@@ -89,3 +89,41 @@ describe('itemVersionOf', () => {
     expect(itemVersionOf({ id: 'a' })).toBeUndefined();
   });
 });
+
+describe('EmbeddedCollectionService — nested collections', () => {
+  let http: HttpTestingController;
+  let service: EmbeddedCollectionService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { ENTITY_SERVICE_ROOT: 'https://api/organizations/acme' } } }],
+    });
+    http = TestBed.inject(HttpTestingController);
+    service = TestBed.inject(EmbeddedCollectionService);
+  });
+
+  it('lists the collection nested in an item, under the item of the outer collection', async () => {
+    const result = service.listNested('Race', 'r-1', 'rounds', 'round-1', 'results');
+    const request = http.expectOne('https://api/organizations/acme/entities/Race/r-1/rounds/round-1/results');
+    request.flush([{ id: 'x' }], { headers: { ETag: '"5"' } });
+
+    expect(await result).toEqual({ items: [{ id: 'x' }], version: '"5"' });
+  });
+
+  it('appends, patches and removes a nested item, naming its own version on a change', async () => {
+    const appended = service.appendNested('Race', 'r-1', 'rounds', 'round-1', 'results', { score: 1 });
+    http.expectOne('https://api/organizations/acme/entities/Race/r-1/rounds/round-1/results').flush({ id: 'x', score: 1 });
+    await appended;
+
+    const patched = service.patchNested('Race', 'r-1', 'rounds', 'round-1', 'results', 'x', { score: 2 }, '2');
+    const patch = http.expectOne('https://api/organizations/acme/entities/Race/r-1/rounds/round-1/results/x');
+    expect(patch.request.method).toBe('PATCH');
+    expect(patch.request.headers.get('If-Match')).toBe('2');
+    patch.flush({ id: 'x', score: 2 });
+    await patched;
+
+    const removed = service.removeNested('Race', 'r-1', 'rounds', 'round-1', 'results', 'x');
+    http.expectOne('https://api/organizations/acme/entities/Race/r-1/rounds/round-1/results/x').flush(null, { status: 204, statusText: 'No Content' });
+    await expect(removed).resolves.toBeUndefined();
+  });
+});

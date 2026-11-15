@@ -3,6 +3,7 @@ package com.processpuzzle.baseentity.instances.adapters.inbound;
 import com.processpuzzle.baseentity.api.BaseEntitiesApi;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CollectionAddress;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
@@ -148,5 +149,42 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("If-Match must carry an object version, e.g. \"3\"");
         }
+    }
+
+    @Override
+    public ResponseEntity<List<Map<String, Object>>> listNestedEmbeddedItems(String orgKey, String entityDefinitionCode, UUID id,
+                                                                            String attributeCode, String itemId, String childAttributeCode) {
+        var items = embeddedUseCase.list(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode));
+        return ResponseEntity.ok().eTag(etag(items.version())).body(items.items());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> appendNestedEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id,
+                                                                        String attributeCode, String itemId, String childAttributeCode,
+                                                                        Map<String, Object> body) {
+        var result = embeddedUseCase.append(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode), body);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{childItemId}").buildAndExpand(result.item().get("id")).toUri();
+        return ResponseEntity.created(location).eTag(etag(result.itemVersion())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> patchNestedEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id,
+                                                                       String attributeCode, String itemId, String childAttributeCode,
+                                                                       String childItemId, Map<String, Object> body, String ifMatch) {
+        var result = embeddedUseCase.patch(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode),
+            childItemId, versionOf(ifMatch), body);
+        return ResponseEntity.ok().eTag(etag(result.itemVersion())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteNestedEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode,
+                                                         String itemId, String childAttributeCode, String childItemId, String ifMatch) {
+        embeddedUseCase.remove(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode), childItemId, versionOf(ifMatch));
+        return ResponseEntity.noContent().build();
+    }
+
+    /** The collection of {@code childAttributeCode} inside the item {@code itemId} of {@code attributeCode}. */
+    private static CollectionAddress nested(String attributeCode, String itemId, String childAttributeCode) {
+        return CollectionAddress.of(attributeCode).within(itemId, childAttributeCode);
     }
 }

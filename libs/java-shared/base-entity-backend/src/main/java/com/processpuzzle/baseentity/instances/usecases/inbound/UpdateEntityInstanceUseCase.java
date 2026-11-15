@@ -70,7 +70,7 @@ public class UpdateEntityInstanceUseCase {
         Map<String, Object> effectivePayload = keepManagedAttributes(orgKey, entityObject, payload);
         // Before setPayload: the stored payload is still the old one here, which is what the history is checked against.
         effectivePayload = CommentHistoryGuard.guard(definition, entityObject.getPayload(), effectivePayload);
-        effectivePayload = EmbeddedItemIdentity.withIdentities(definition, effectivePayload);
+        effectivePayload = EmbeddedItemIdentity.withIdentities(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, effectivePayload);
 
         entityObject.setPayload(effectivePayload);
