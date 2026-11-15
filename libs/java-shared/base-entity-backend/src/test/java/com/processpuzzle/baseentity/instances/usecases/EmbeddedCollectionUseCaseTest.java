@@ -95,6 +95,7 @@ class EmbeddedCollectionUseCaseTest {
         assertThat(result.item().get("id")).asString().isNotBlank();
         assertThat(result.item()).containsEntry("number", 2);
         assertThat(result.version()).isEqualTo(6L);
+        assertThat(result.itemVersion()).isEqualTo(1L);
         assertThat(storedRounds()).hasSize(2);
         assertThat(race.getPayload()).containsEntry("name", "Spring Cup");
         verify(payloadValidatorPort).validate(any(), any(), any());
@@ -139,15 +140,30 @@ class EmbeddedCollectionUseCaseTest {
     }
 
     @Test
-    void patch_withAStaleVersion_isAConflict_andIsNotRetried() {
+    void patch_withAStaleItemVersion_isAConflict_andIsNotRetried() {
         assertThatThrownBy(() -> useCase.patch(ORG, "race", id, "rounds", "r1", 4L, Map.of("number", 9)))
-                .isInstanceOf(ConflictException.class);
+                .isInstanceOf(EmbeddedCollectionUseCase.ItemVersionConflictException.class);
         verify(repository, never()).saveAndFlush(any());
     }
 
     @Test
-    void patch_withTheCurrentVersion_succeeds() {
-        assertThat(useCase.patch(ORG, "race", id, "rounds", "r1", 5L, Map.of("number", 9)).version()).isEqualTo(6L);
+    void patch_withTheCurrentItemVersion_succeeds_andCountsTheChange() {
+        var result = useCase.patch(ORG, "race", id, "rounds", "r1", 1L, Map.of("number", 9));
+
+        assertThat(result.itemVersion()).isEqualTo(2L);
+        assertThat(result.item()).containsEntry("itemVersion", 2L);
+        assertThat(result.version()).isEqualTo(6L);
+    }
+
+    @Test
+    void patch_ignoresAnItemVersionTheCallerSends() {
+        assertThat(useCase.patch(ORG, "race", id, "rounds", "r1", null, Map.of("itemVersion", 99)).itemVersion()).isEqualTo(2L);
+    }
+
+    @Test
+    void remove_withAStaleItemVersion_isAConflict() {
+        assertThatThrownBy(() -> useCase.remove(ORG, "race", id, "rounds", "r1", 7L)).isInstanceOf(ConflictException.class);
+        assertThat(storedRounds()).hasSize(1);
     }
 
     @Test

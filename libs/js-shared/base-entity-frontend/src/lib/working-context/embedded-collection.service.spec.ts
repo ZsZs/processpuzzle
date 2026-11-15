@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EmbeddedCollectionService, mergePatch } from './embedded-collection.service';
+import { EmbeddedCollectionService, itemVersionOf, mergePatch } from './embedded-collection.service';
 
 describe('EmbeddedCollectionService', () => {
   let http: HttpTestingController;
@@ -78,7 +78,14 @@ describe('mergePatch', () => {
     expect(mergePatch({ id: 'a', tags: ['x'] }, { id: 'a', tags: ['x', 'y'] })).toEqual({ tags: ['x', 'y'] });
   });
 
-  it('never carries the id', () => {
-    expect(mergePatch({ id: 'a' }, { id: 'b' })).toEqual({});
+  it('never carries the id, nor the item version the server counts', () => {
+    expect(mergePatch({ id: 'a', itemVersion: 2, number: 1 }, { id: 'b', itemVersion: 9, number: 2 })).toEqual({ number: 2 });
+  });
+});
+
+describe('itemVersionOf', () => {
+  it('reads the item version as an If-Match value, and names none for an item stored before versions', () => {
+    expect(itemVersionOf({ id: 'a', itemVersion: 3 })).toBe('3');
+    expect(itemVersionOf({ id: 'a' })).toBeUndefined();
   });
 });

@@ -54,6 +54,10 @@
   - `WorkingContextService` follows the active entities' state (re-read when the entity's version changes) and fires transitions, then reloads the entity.
   - The crumb's badge (`display.badge: state`) shows the state machine's name of the state; its menu lists the transitions, a refused one disabled with the reason. `state` in `confirmSwitchWhen` / `display` resolves through the machine's own state attribute, no longer through a guess from the descriptor.
   - "Views that declare them": the **context-actions** widget (`context`, optional `triggers`) puts the transitions as buttons on any page — no contract change, a widget on a route is how a view declares them.
-- Next: phase 4 (hardening: per-item versions, `context: optional` views, e2e scenarios).
+- **4 – in progress**
+  - **Slice 1 (done):** per-item versions. Every item of a multi-valued embedded collection gets an `id` and an `itemVersion` on the first save of its object (no bulk migration: the write path is the backfill). Item PATCH and DELETE check `If-Match` against the item's own version, so two people editing different rounds of one race no longer conflict; the object-level race is still retried. Edit and delete in the collection screen now send the item version. Item ETags carry the item version; the list keeps the object version.
+  - **Slice 2:** `context: optional` views with the filter toggle.
+  - **Slice 3:** nested paths (`rounds/{id}/results`), and the e2e context scenario.
+
 
 Libraries are released one at a time, per phase.

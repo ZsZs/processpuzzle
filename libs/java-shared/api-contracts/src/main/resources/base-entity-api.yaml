@@ -409,10 +409,12 @@ paths:
   # EMBEDDED_COMPONENTS attribute, addressed on their own so that "add a round" never sends the
   # whole Race. An item is identified by its `id` member, which the server assigns on append.
   #
-  # Concurrency: the parent object's `version` is the only version there is for now. Every answer
-  # carries it as an `ETag`; PATCH and DELETE take it back as `If-Match` (optional — without it the
-  # change applies to whatever is stored). An append needs none: it is applied to the stored object, and
-  # two appends racing for the same version are serialized rather than rejected.
+  # Concurrency. Each item carries an `itemVersion` the server counts, starting at 1 and bumped by every PATCH of that
+  # item; the item endpoints answer it as the `ETag` of the item, and PATCH and DELETE take it back as `If-Match`
+  # (optional — without it the change applies to the stored item). A stale `If-Match` is a 409 for that item only, so two
+  # people editing different rounds of one race do not conflict. The object's `version` is the GET list's `ETag`, and the
+  # object-level check still applies underneath every change: a change that loses that race is read and applied again.
+  # Items stored before this had no `itemVersion`; the first write of their object gives them one (and an `id`).
   /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}:
     parameters:
       - $ref: '#/components/parameters/OrgKeyParam'
@@ -507,7 +509,7 @@ paths:
       - name: If-Match
         in: header
         required: false
-        description: The object version the caller last saw, as an ETag. A different stored version is a 409.
+        description: The item's version the caller last saw, as the ETag of the item. A different stored item version is a 409.
         schema:
           type: string
     patch:
@@ -682,7 +684,7 @@ components:
 
   headers:
     ObjectVersion:
-      description: The version of the object the answer was read from or produced, as a quoted ETag (`"3"`).
+      description: The version the ETag names, as a quoted value (`"3"`). On the list, the object version; on an item answer, that item's itemVersion.
       schema:
         type: string
 

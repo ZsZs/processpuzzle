@@ -28,7 +28,7 @@ describe('ContextCollectionComponent', () => {
     activeId.set('r1');
     dialogAnswer = undefined;
     service = {
-      list: vi.fn(async () => ({ items: [{ id: 'a', number: 1, label: 'first' }], version: '"5"' })),
+      list: vi.fn(async () => ({ items: [{ id: 'a', number: 1, label: 'first', itemVersion: 1 }], version: '"5"' })),
       append: vi.fn(async () => ({})),
       patch: vi.fn(async () => ({})),
       remove: vi.fn(async () => undefined),
@@ -90,7 +90,7 @@ describe('ContextCollectionComponent', () => {
 
     dialogAnswer = { id: 'a', number: 1, label: 'renamed' };
     await click(fixture, host.querySelector('[data-testid="round-context-collection-edit"]'));
-    expect(service.patch).toHaveBeenCalledWith('Race', 'r1', 'rounds', 'a', { label: 'renamed' });
+    expect(service.patch).toHaveBeenCalledWith('Race', 'r1', 'rounds', 'a', { label: 'renamed' }, '1');
 
     service.patch.mockClear();
     dialogAnswer = { id: 'a', number: 1, label: 'first' };
@@ -107,7 +107,7 @@ describe('ContextCollectionComponent', () => {
 
     dialogAnswer = true;
     await click(fixture, host.querySelector('[data-testid="round-context-collection-delete"]'));
-    expect(service.remove).toHaveBeenCalledWith('Race', 'r1', 'rounds', 'a');
+    expect(service.remove).toHaveBeenCalledWith('Race', 'r1', 'rounds', 'a', '1');
   });
 
   it('says so on a conflict, and reloads rather than trusting what it had', async () => {

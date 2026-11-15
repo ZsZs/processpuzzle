@@ -232,11 +232,11 @@ class EntityObjectEndpointTest {
     void embeddedItems_appendAnswers201WithTheItemAndTheNewVersion() throws Exception {
         UUID id = UUID.randomUUID();
         when(embeddedUseCase.append(ORG, "race", id, "rounds", Map.of("number", 2)))
-                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "r2", "number", 2), 6L));
+                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "r2", "number", 2), 1L, 6L));
 
         mockMvc.perform(post("/organizations/test-org/entities/race/{id}/rounds", id).contentType(MediaType.APPLICATION_JSON).content("{\"number\":2}"))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("ETag", "\"6\""))
+                .andExpect(header().string("ETag", "\"1\""))
                 .andExpect(header().string("Location", org.hamcrest.Matchers.endsWith("/rounds/r2")))
                 .andExpect(jsonPath("$.id").value("r2"));
     }
@@ -244,12 +244,12 @@ class EntityObjectEndpointTest {
     @Test
     void embeddedItems_patchTakesTheVersionFromIfMatch() throws Exception {
         UUID id = UUID.randomUUID();
-        when(embeddedUseCase.patch(ORG, "race", id, "rounds", "r1", 5L, Map.of("number", 3)))
-                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "r1", "number", 3), 6L));
+        when(embeddedUseCase.patch(ORG, "race", id, "rounds", "r1", 1L, Map.of("number", 3)))
+                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "r1", "number", 3), 2L, 6L));
 
-        mockMvc.perform(patch("/organizations/test-org/entities/race/{id}/rounds/r1", id).header("If-Match", "\"5\"").contentType(MediaType.APPLICATION_JSON).content("{\"number\":3}"))
+        mockMvc.perform(patch("/organizations/test-org/entities/race/{id}/rounds/r1", id).header("If-Match", "\"1\"").contentType(MediaType.APPLICATION_JSON).content("{\"number\":3}"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("ETag", "\"6\""))
+                .andExpect(header().string("ETag", "\"2\""))
                 .andExpect(jsonPath("$.number").value(3));
     }
 
@@ -257,7 +257,7 @@ class EntityObjectEndpointTest {
     void embeddedItems_patchWithoutIfMatchAppliesToWhatIsStored() throws Exception {
         UUID id = UUID.randomUUID();
         when(embeddedUseCase.patch(ORG, "race", id, "rounds", "r1", null, Map.of("number", 3)))
-                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "r1"), 7L));
+                .thenReturn(new EmbeddedCollectionUseCase.ItemResult(Map.of("id", "r1"), 3L, 7L));
 
         mockMvc.perform(patch("/organizations/test-org/entities/race/{id}/rounds/r1", id).contentType(MediaType.APPLICATION_JSON).content("{\"number\":3}"))
                 .andExpect(status().isOk());
@@ -272,10 +272,9 @@ class EntityObjectEndpointTest {
     @Test
     void embeddedItems_deleteAnswers204() throws Exception {
         UUID id = UUID.randomUUID();
-        when(embeddedUseCase.remove(ORG, "race", id, "rounds", "r1", null)).thenReturn(new EmbeddedCollectionUseCase.ItemResult(null, 6L));
+        when(embeddedUseCase.remove(ORG, "race", id, "rounds", "r1", null)).thenReturn(new EmbeddedCollectionUseCase.ItemResult(null, null, 6L));
 
         mockMvc.perform(delete("/organizations/test-org/entities/race/{id}/rounds/r1", id))
-                .andExpect(status().isNoContent())
-                .andExpect(header().string("ETag", "\"6\""));
+                .andExpect(status().isNoContent());
     }
 }
