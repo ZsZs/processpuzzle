@@ -435,6 +435,17 @@ The tab captions take the resolved entity name as a parameter, so translators co
 }
 ```
 
+## Unsaved changes
+An embedded child or a relationship is saved by its **container's** Save, which is easy to forget once the
+child's own form is closed. Every `base-form` therefore reports whether it holds unsaved edits — its own
+changes, or changes staged in its document by an embedded child — to `UnsavedChangesRegistry`:
+- the status bar shows an "Unsaved changes" chip on its right while any open form has some;
+- the form's details routes carry `unsavedChangesGuard` (`canDeactivate`), which asks for confirmation before
+  the user navigates elsewhere. Cancel, Delete and a successful Save leave without asking. Drilling down into
+  an embedded child keeps the owner's route active, so it is not interrupted.
+
+A hand-written details route can reuse the guard by implementing `HasUnsavedChanges` on its component.
+
 ## Status-bar title
 
 The status bar labels the selected entity with the value of one identifying attribute. That attribute

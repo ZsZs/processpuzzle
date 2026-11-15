@@ -100,7 +100,15 @@
     "delete_button": "Eliminar"
   },
   "statusbar": {
-    "breadcrumb_label": "Jerarquía de registros"
+    "breadcrumb_label": "Jerarquía de registros",
+    "unsaved_changes": "Cambios sin guardar",
+    "unsaved_changes_hint": "Guarde {{ entity }} para conservar estos cambios"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Cambios sin guardar",
+    "content": "Hay cambios sin guardar. Si abandona esta página, se perderán.",
+    "cancel_button": "Quedarse",
+    "leave_button": "Salir"
   },
   "tabs": {
     "list": "{{ entity }} - lista",

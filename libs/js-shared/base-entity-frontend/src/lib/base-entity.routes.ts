@@ -7,6 +7,7 @@ import { BaseEntityFacade } from './base-entity-facade/base-entity-facade';
 import { embeddedAggregateGuard } from './base-entity-embedded/embedded-aggregate.guard';
 import { EmbeddedEntityHostComponent } from './base-entity-embedded/embedded-entity-host.component';
 import { BaseEntityFormComponent } from './base-form/base-entity-form.component';
+import { unsavedChangesGuard } from './base-form/unsaved-changes/unsaved-changes.guard';
 import { BaseUrlSegments } from './base-form-navigator/base-url-segments';
 import { snakeCaseName } from './base-form-navigator/base-form-navigator.store';
 import { EMBEDDED_ENTITY_ROUTE_DATA_KEY, ENTITY_NAME_ROUTE_DATA_KEY } from './base-form-navigator/entity-route.registry';
@@ -48,6 +49,7 @@ export function baseEntityRoutes(embeddedChildren: EmbeddedChildRoute[] = [], ex
     {
       path: ':' + BaseUrlSegments.EntityID + '/' + BaseUrlSegments.DetailsForm,
       component: BaseEntityFormComponent,
+      canDeactivate: [unsavedChangesGuard],
       ...(embeddedChildren.length > 0 ? { loadChildren: () => embeddedChildren.map(embeddedChildRoute) } : {}),
     },
     // Siblings of the details route rather than children of it: an extra tab is another screen *of the
@@ -103,6 +105,7 @@ function embeddedEntityRoutes(embeddedChildren: EmbeddedChildRoute[]): Routes {
       // Guarded again here, not only on the branch above it: this is the route that names the row, so it is
       // the first place a link to a row that no longer exists can be told apart from a valid one.
       canActivate: [embeddedAggregateGuard],
+      canDeactivate: [unsavedChangesGuard],
       ...(embeddedChildren.length > 0 ? { loadChildren: () => embeddedChildren.map(embeddedChildRoute) } : {}),
     },
   ];

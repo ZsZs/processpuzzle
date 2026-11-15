@@ -100,7 +100,15 @@
     "delete_button": "Löschen"
   },
   "statusbar": {
-    "breadcrumb_label": "Datensatz-Hierarchie"
+    "breadcrumb_label": "Datensatz-Hierarchie",
+    "unsaved_changes": "Ungespeicherte Änderungen",
+    "unsaved_changes_hint": "Speichern Sie {{ entity }}, um diese Änderungen zu behalten"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Ungespeicherte Änderungen",
+    "content": "Es gibt ungespeicherte Änderungen. Wenn Sie diese Seite verlassen, gehen sie verloren.",
+    "cancel_button": "Bleiben",
+    "leave_button": "Verlassen"
   },
   "tabs": {
     "list": "{{ entity }} - Liste",
