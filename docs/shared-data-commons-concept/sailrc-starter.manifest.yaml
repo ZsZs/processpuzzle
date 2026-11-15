@@ -1,0 +1,141 @@
+# =============================================================================
+# ProcessPuzzle Business Starter manifest: example for SailRC
+# Draft v0.1: proposal for the "common" block and the per-entity sharing policy.
+# Stored in the processpuzzle-biz repo next to the starter's definition YAMLs.
+# =============================================================================
+apiVersion: processpuzzle/v1
+kind: BusinessStarter
+
+metadata:
+  key: sailrc                      # unique starter key; also the data-space domain
+  name: SailRC Regatta Management
+  version: 1.0.0
+
+spec:
+  # ---------------------------------------------------------------------------
+  # Existing part: definition bundles imported into the customer org (keyed by orgKey)
+  # ---------------------------------------------------------------------------
+  definitions:
+    entities:  [ entities/*.yaml ]
+    states:    [ states/*.yaml ]
+    rules:     [ rules/*.yaml ]
+    documents: [ documents/*.yaml ]
+    workflows: [ workflows/*.yaml ]
+    apps:      [ apps/*.yaml ]
+
+  # ---------------------------------------------------------------------------
+  # New part: the common (shared data space). Optional; omit for starters
+  # that have no shared data (for example inventory, billing).
+  # ---------------------------------------------------------------------------
+  common:
+    key: sailrc-common             # orgKey of the COMMON org; must be globally unique
+    displayName: SailRC Common Data
+
+    # Who administers the common. Reassigning this later is a role change, not a data migration.
+    administration:
+      organisation: null           # orgKey of a real organisation, or null while the platform owner administers
+      administrators: []           # initial admin user subjects (for example the platform owner's account)
+
+    # How subscribers are connected to the common.
+    membership:
+      joinOn: SUBSCRIPTION         # SUBSCRIPTION = automatic at provisioning (customer seed step)
+      memberRole: COMMON_MEMBER    # role granted to the subscribing org in the common
+      leaveBehaviour: KEEP_CONTRIBUTIONS   # records an org created stay in the common after it unsubscribes
+
+    # Shared entities. `ref` points to an entity definition in spec.definitions.
+    entities:
+
+      # --- Curated reference data -------------------------------------------
+      - ref: BoatClass
+        coreVersion: 1             # core definition is versioned and shipped via definition releases
+        sharing:
+          write: COMMON_ADMIN      # COMMON_ADMIN | OWNER_ORG | SELF
+          visibility: PUBLIC       # PUBLIC | OWNER_ONLY | CONSENT
+        extensions: NONE           # NONE | ALLOWED: may clubs add local attributes via an overlay?
+        contribution:              # how non-admins can influence the data
+          mode: PROPOSAL           # NONE | PROPOSAL
+          workflow: BoatClassProposalWorkflow   # approval runs in the common org
+        identifiers:               # matching keys for duplicate detection
+          - [ name ]
+
+      # --- Self-maintained organisation profile -----------------------------
+      - ref: YachtClub
+        coreVersion: 1
+        sharing:
+          write: OWNER_ORG         # only the club's own org may edit its record
+          visibility: PUBLIC
+        extensions: ALLOWED
+        ownerBinding:
+          kind: ORG                # record is created automatically for the subscribing org
+          createOn: SUBSCRIPTION
+        identifiers:
+          - [ country, name ]
+          - [ externalId.nationalAuthority ]
+
+      # --- Event data with a publication lifecycle --------------------------
+      - ref: Race
+        coreVersion: 1
+        sharing:
+          write: OWNER_ORG         # the organising club
+          visibility: PUBLIC
+          visibleWhen:             # drafts stay private; the rule references the race state machine
+            state: [ PUBLISHED, IN_PROGRESS, COMPLETED ]
+        extensions: ALLOWED
+        ownerBinding:
+          kind: ORG
+
+      # --- Boat registry ----------------------------------------------------
+      - ref: Boat
+        coreVersion: 1
+        sharing:
+          write: OWNER_ORG         # may later move to SELF once the owner claims the record
+          visibility: PUBLIC
+        extensions: ALLOWED
+        identifiers:
+          - [ boatClass, sailNumber ]
+          - [ externalId.worldSailing ]
+        claim:                     # a sailor can later claim a boat
+          by: USER
+          via: INVITE
+
+      # --- Person record: owned by the sailor -------------------------------
+      - ref: Sailor
+        coreVersion: 1
+        sharing:
+          write: SELF             # only the person the record describes
+          visibility: CONSENT     # per attribute, see attributes below
+        extensions: ALLOWED        # clubs keep membership data in an overlay in their own org
+        ownerBinding:
+          kind: USER               # owner is a Keycloak user subject, not an org
+          claim:
+            via: INVITE            # a club creates a stub; the sailor claims it by invite link
+            stub:
+              allowed: true
+              visibleTo: CREATING_ORG   # unclaimed stubs are visible only to the creating club
+              requiredAttributes: [ displayName ]
+        attributes:                # attribute-level visibility for CONSENT entities
+          displayName:  { visibility: PUBLIC }
+          nationality:  { visibility: PUBLIC }
+          sailNumber:   { visibility: PUBLIC }
+          birthYear:    { visibility: CONSENT }
+          email:        { visibility: OWNER_ONLY }
+        identifiers:
+          - [ externalId.worldSailing ]
+
+  # ---------------------------------------------------------------------------
+  # How tenant entities refer to common records. Defined on the attribute in the
+  # tenant entity definition, shown here for illustration only.
+  # ---------------------------------------------------------------------------
+  # entities/Result.yaml (excerpt)
+  #   attributes:
+  #     - name: boat
+  #       type: COMMON_REFERENCE        # stored as (commonOrgKey, id); resolved at the application layer
+  #       target: { common: sailrc-common, entity: Boat }
+  #     - name: helmsman
+  #       type: COMMON_REFERENCE
+  #       target: { common: sailrc-common, entity: Sailor }
+  #
+  # Overlay (local extension) of a common record, stored in the tenant org:
+  #   entities/ClubSailorProfile.yaml
+  #     extends: { common: sailrc-common, entity: Sailor }   # keyed by (commonOrgKey, sailorId)
+  #     attributes: [ membershipStatus, internalNotes ]
