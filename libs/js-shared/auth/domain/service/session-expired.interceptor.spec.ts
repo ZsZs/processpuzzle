@@ -253,13 +253,19 @@ describe('sessionExpiredInterceptor', () => {
     });
 
     it('does not risk a redirect it could not record', async () => {
-      const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      // A storage that accepts reads and refuses every write, replacing the global so the interceptor sees it.
+      const setItem = vi.fn(() => {
         throw new Error('quota');
       });
+      vi.stubGlobal('sessionStorage', { getItem: () => null, setItem, removeItem: () => undefined, clear: () => undefined });
       const call = setup();
 
-      await expect(firstValueFrom(call('/api/things', throwError(() => error(401))))).rejects.toBeDefined();
-      setItem.mockRestore();
+      try {
+        await expect(firstValueFrom(call('/api/things', throwError(() => error(401))))).rejects.toBeDefined();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+      expect(setItem, 'the interceptor tried to record the redirect').toHaveBeenCalledTimes(1);
 
       expect(auth.login).not.toHaveBeenCalled();
       expect(reporter.showErrorMessage).toHaveBeenCalledWith(SESSION_EXPIRED_MESSAGE, expect.anything());
