@@ -119,6 +119,18 @@ class CurrentPrincipalTest {
         assertThat(principal.organizations()).isEmpty();
     }
 
+    @Test
+    void theTokenExpiryIsWhenTheTokenStopsBeingValid() {
+        assertThat(principal.tokenExpiresAt()).isEmpty();
+
+        SecurityTestTokens.authenticateAs("my-org", "ada");
+        assertThat(principal.tokenExpiresAt()).hasValueSatisfying(
+                expiry -> assertThat(expiry).isAfter(java.time.Instant.now()).isBefore(java.time.Instant.now().plusSeconds(301)));
+
+        authenticateWith(Map.of());
+        assertThat(principal.tokenExpiresAt()).isEmpty();
+    }
+
     private static void authenticateWith(Map<String, Object> claims) {
         Jwt.Builder builder = Jwt.withTokenValue("token")
                 .header("alg", "RS256")
