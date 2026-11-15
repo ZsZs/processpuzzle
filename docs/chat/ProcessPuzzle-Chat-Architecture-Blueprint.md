@@ -2,6 +2,15 @@
 
 2026-11-15
 
+> **Amended 2026-11-15.** The review in [base-chat-design-plan.md](base-chat-design-plan.md) supersedes this
+> blueprint where they differ; the plan is the source of truth for implementation. Main changes: no
+> subject-less chats in v1 and `TOPIC` scope replaced by `multiplicity: MANY` on a subject binding;
+> per-conversation `seq` instead of a global message id; one multiplexed SSE stream per user with
+> token-expiry reconnect; unread counts through a follow model; paths scoped under
+> `/organizations/{orgKey}/chat`; `org_key` instead of `tenant_id`; `ddl-auto` instead of Flyway; subject
+> adapters in the composition root; only `PlatformEvent` consumed from other features; one frontend library
+> with `domain/` and `feature/` layers; `MediaSessionPort` introduced with calls, not before.
+
 ## Goals and non-goals
 
 Chat becomes a generic platform capability: a designer binds a conversation to almost any platform object or opens ad-hoc topic chats on a route, and role-based policies decide who takes part. Version 1 is text only, but the design must not block voice and video later.
