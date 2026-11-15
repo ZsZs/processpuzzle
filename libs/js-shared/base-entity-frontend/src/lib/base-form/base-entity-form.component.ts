@@ -3,7 +3,7 @@ import { EntityPreviewMode } from '../base-entity-definition/entity-preview-mode
 import { Component, computed, effect, inject, input, InputSignal, OnDestroy, OnInit, signal, Signal, untracked, ViewChild, WritableSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ROUTER_OUTLET_DATA, RouterOutlet } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
@@ -173,7 +173,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     if (this.formNavigator.hasFormSnapshotFor(this.entityDescriptor().entityName)) return true;
     // Another form's round trip is under way and this form has no typed edits of its own: whatever it shows was staged
     // by that round trip, which keeps it. Typed edits here would be lost, so they still ask.
-    if (this.formNavigator.hasFormSnapshot() && !this.baseEntityForm.dirty) return true;
+    if (this.formNavigator.hasFormSnapshot() && !this.hasOwnTypedEdits()) return true;
 
     const dialogData: DeleteConfirmationDialogData = {
       titleKey: 'base_entity.unsaved_changes_dialog.title',
@@ -278,6 +278,14 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
         return [...own, ...createOnly(nested)];
       });
     createOnly(this.entityDescriptor().attrDescriptors).forEach((name) => this.baseEntityForm.get(name)?.disable({ emitEvent: false }));
+  }
+
+  /**
+   * Whether the user has edited a field of this form itself. An embedded child's edits live in a nested group of this
+   * form, which marks this form dirty too, so the form's own flag would count a child's edits as the user's.
+   */
+  private hasOwnTypedEdits(): boolean {
+    return Object.values(this.baseEntityForm.controls).some((control) => control instanceof FormControl && control.dirty);
   }
 
   private registerEffects(): void {
