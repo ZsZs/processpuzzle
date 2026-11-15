@@ -216,7 +216,7 @@ other way round.
 | 1 Scaffold | Lib pair from `base-state-*` (13 registration files: tsconfig paths, nx release, package.json scripts, release scripts, workflows, root pom property and module, testbed pom + `implicitDependencies`), `@ApplicationModule`, `ModularityTests`, `arch-unit-maven-plugin` + `HexagonalLayerRules`, frontend `domain`/`feature` skeleton + import-direction lint, Sonar projects | CI green; module appears in `writesModuleStructureToTheLog`; a planted layer violation fails `mvn verify` |
 | 2 Core (built) | Contract `base-chat-api.yaml` (openapi 3.0.3), definitions (seeded YAML, no release yet), conversations, messages with `seq`, access checks, entity subject adapter | API tests: open / post / page / 404-403-409 rules, idempotent post, concurrent posts give a gap-free `seq` |
 | 3 Live (backend built) | Multiplexed stream, follow / read markers, unread, token-expiry close, heartbeat | Two browsers exchange messages; badges correct after reconnect; stream survives nginx for more than 60 s idle on stage |
-| 4 Frontend | Store, stream service, panel + badge widgets, working-context fallback; testbed page on an entity | Playwright: two contexts chat on one Order |
+| 4 Frontend (built, no e2e) | Store, stream service, panel + badge widgets, working-context fallback; testbed page on an entity | Playwright: two contexts chat on one Order |
 | 5 Definitions | Release + import participants, `RolesReferenced`, authoring through a metadata entity screen (or editor), starter support | Designer adds a chat to Order without code; release refuses a dangling reference |
 | 6 Topics & lifecycle | MANY multiplicity + topics widget; STATE_BOUND; workflow-instance adapter (needs base-workflow `PlatformEvent` on completion) | Protest topics under a Race in SailRC; workflow chat turns read-only on completion |
 | 7 Hardening | Rate limit (in-memory token bucket), retention / erasure job, soft-delete moderation, Micrometer metrics, `LISTEN/NOTIFY` broadcaster if needed, load test | Metrics on stage; erasure removes body and name |
@@ -262,11 +262,14 @@ contract: `PUT …/conversations/{id}/read`, `DELETE …/conversations/{id}/foll
 - **Following is the marker.** A `ReadMarker` row `(conversation, user, lastReadSeq)` is the follow record, as
   planned (C2). Opening, posting and `PUT …/read` follow; `DELETE …/follow` unfollows. Unread is
   `lastSeq - lastReadSeq` — exact, because `seq` has no gaps — so there is no count query. A poster who was up to
-  date moves to their own message; one who was behind stays behind. The marker only moves forward, and the
-  statement computes the maximum itself: a `where last_read_seq < :seq` guard lost a higher number to a lower one
-  under H2 when two statements waited on one row, where PostgreSQL would have re-checked (found by
-  `ReadMarkersConcurrencyTest`). Two tabs following at once are safe: the insert runs in its own transaction
-  (`ReadMarkerInsert`, `REQUIRES_NEW`), so the loser of the race for the key loses only that insert.
+  date moves to their own message; one who was behind stays behind. The marker only moves forward: it is created
+  with one `insert … on conflict do nothing` and moved by locking its row (`select … for update`), comparing, and
+  only then writing, so two tabs following at once need neither an exception nor a second transaction.
+  An earlier version got this wrong twice, and `ReadMarkersConcurrencyTest` found both: it inserted with
+  `repository.save`, which for an assigned composite key *merges* — a loser whose winner had already committed was
+  told it had succeeded while the database kept the winner's lower number — and it inserted in a `REQUIRES_NEW`
+  transaction, which holds a second connection while the first is still held, so a burst of first-time follows on
+  a small pool starves itself (the test took 25 s instead of 1.5 s).
 - **No `MessageBroadcastPort`.** The plan's port is replaced by two in-process events published by the use cases:
   `MessagePostedEvent` and `ReadMarkerChangedEvent`. `ChatStreamRegistry` (an inbound adapter, the owner of the
   connections) observes them with `@TransactionalEventListener(AFTER_COMMIT)`, so nobody is told of a message
@@ -292,6 +295,52 @@ contract: `PUT …/conversations/{id}/read`, `DELETE …/conversations/{id}/foll
 - **Still to verify on stage:** the 60 s nginx read timeout against the 25 s heartbeat, and that events are not
   buffered. `nginx.conf` talks HTTP/1.0 to the backend (no `proxy_http_version`); streaming still works that way
   but it is worth setting 1.1 and an empty `Connection` header for `location /api/` when this is deployed.
+
+### Phase 4 as built (2026-11-16)
+
+`@processpuzzle/base-chat` now has its two layers filled: `domain/` (types, `ChatService`, `ChatStreamService`,
+`ChatStore`, the identity port) and `feature/` (`pp-chat-panel`, `pp-chat-unread-badge`, their widget
+registrations, the working-context bridge). The testbed has a Base Chat section whose Samples tab places the panel
+on an order the visitor names.
+
+Where the build differs from the plan, and why:
+
+- **No dependency on the auth library.** The stream is read with `fetch`, which the HTTP interceptors do not see,
+  so it needs the token itself. The library declares a `CHAT_IDENTITY` port (`accessToken()`, `userId()`) and the
+  application supplies it where it is composed (`createChatIdentity()` in the testbed's `app.config.ts`, over the
+  auth service), as it does for documents. `CHAT_FETCH` makes `fetch` replaceable in tests.
+- **`ChatStore` is plain signals, not an NgRx `signalStore`**: one shared service holding two maps, with methods
+  that are mostly async. It is `providedIn: 'root'` and shared by every panel and badge.
+- **No CDK virtual scroll.** A page is 50 messages and the log scrolls; "Load earlier messages" prepends the next
+  page. Virtualizing a log that is anchored to its bottom and grows at both ends is more machinery than a
+  conversation of this size needs; revisit if a conversation is ever kept open across thousands of messages.
+- **The SSE reader is ours** (`SseParser` + `fetch`) because `EventSource` cannot send `Authorization`. It
+  reconnects at once when the server ends a healthy stream — which it does at the token's expiry — with a fresh
+  token, and with jittered exponential backoff (1 s to 30 s) after a refusal or a network failure. A 70 s
+  watchdog drops a connection that has gone silent although the server heartbeats every 25 s. Each (re)connect
+  sends `after=` for the conversations whose messages are loaded.
+- **Sending is optimistic and idempotent.** A message shows at once as pending; the answer or the same message on
+  the stream replaces it by `clientMessageId`; a failed one stays, and retrying reuses the id, so a post that
+  arrived but whose answer was lost is not stored twice.
+- **History reloads replace, they do not merge.** Merging the newest page with messages held from an earlier visit
+  left a gap between them; a reload keeps only what arrived on the stream meanwhile and is newer than the page.
+- **The panel marks a conversation read when it is shown**, and for every message that arrives while it is. It
+  does not look at tab visibility: a panel in a background tab reads as read.
+- **Context fallback** is `CHAT_ACTIVE_SUBJECT`, provided by `provideChatWorkingContextSubject()` (the innermost
+  active working context). It lives in `feature/` so that the panel and the whole domain layer stay free of
+  base-entity; the panel injects the token optionally.
+- **Two widgets, not three.** `chat-panel` and `chat-unread-badge` are registered in this library
+  (`provideChatWidgets()`) and copied into the widget seed catalogue (category `Social`);
+  `chat-widgets.contract.spec.ts` holds each copy to its registration, and `DefaultWidgetLoaderTest` lists the two
+  keys. The topics widget comes with phase 6.
+
+Not done, and why:
+
+- **The Playwright check "two browsers chat on one Order"** — it needs the full stack with Keycloak, which was not
+  run here. Everything it would exercise is covered below that level (the stream against a fake `fetch` with a
+  real `ReadableStream`; the panel against a store; the backend's delivery to followers after commit), but the
+  seam between a real browser, nginx and the stream is unverified. See `docs/e2e-plan.md`.
+- **Designer authoring of chat definitions** is phase 5.
 
 ### Decisions (2026-11-15)
 
