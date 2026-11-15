@@ -7,6 +7,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BASE_ENTITY_FACADE_REGISTRY } from '../base-entity-facade/base-entity-facade-registry';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
+import { UnsavedChangesRegistry } from '../base-form/unsaved-changes/unsaved-changes.registry';
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
 import { setupContainerComponentTest } from '../../test-setup';
 import { BaseEntityStatusbarComponent } from './base-entity-statusbar.component';
@@ -46,6 +47,21 @@ describe('BaseStatusbarComponent', () => {
     const toolbar = (fixture.nativeElement as HTMLElement).querySelector('mat-toolbar');
     if (!toolbar) throw new Error('mat-toolbar was not rendered');
     expect(toolbar.textContent).toContain('Test Entity');
+  });
+
+  it('shows an indicator while any form holds unsaved changes', async () => {
+    const { fixture, store } = await setupContainerComponentTest(BaseEntityStatusbarComponent);
+    store.setCurrentEntity('1');
+    const unsaved = signal(false);
+    TestBed.inject(UnsavedChangesRegistry).register(unsaved);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[data-testid="unsaved-changes-indicator"]')).toBeNull();
+
+    unsaved.set(true);
+    fixture.detectChanges();
+
+    expect(host.querySelector('[data-testid="unsaved-changes-indicator"]')).not.toBeNull();
   });
 
   it('renders severity chips summarising violations for the current entity', async () => {

@@ -100,7 +100,15 @@
     "delete_button": "Supprimer"
   },
   "statusbar": {
-    "breadcrumb_label": "Hiérarchie des enregistrements"
+    "breadcrumb_label": "Hiérarchie des enregistrements",
+    "unsaved_changes": "Modifications non enregistrées",
+    "unsaved_changes_hint": "Enregistrez {{ entity }} pour conserver ces modifications"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Modifications non enregistrées",
+    "content": "Des modifications ne sont pas enregistrées. Si vous quittez cette page, elles seront perdues.",
+    "cancel_button": "Rester",
+    "leave_button": "Quitter"
   },
   "tabs": {
     "list": "{{ entity }} - liste",

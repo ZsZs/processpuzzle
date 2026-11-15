@@ -8,6 +8,8 @@ import { RULE_ENGINE, RuleEngine, RuleEvaluationResult } from '../rule-engine/ru
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
 import { setupFormComponentTest } from '../../test-setup';
 import { describe, expect, it, vi } from 'vitest';
+import { MatDialog } from '@angular/material/dialog';
+import { UnsavedChangesRegistry } from './unsaved-changes/unsaved-changes.registry';
 
 describe('GenericEntityFormComponent', () => {
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
@@ -211,6 +213,99 @@ describe('GenericEntityFormComponent', () => {
 
       expect(deleteSpy).toHaveBeenCalledWith(testEntity.id);
       expect(navSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('unsaved changes:', () => {
+    it('lets the user leave a form with nothing to lose, without asking', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('counts a changed form, and a document with changes staged by an embedded child, as unsaved', async () => {
+      const { fixture, component, store } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(component.hasUnsavedChanges()).toBe(false);
+
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      component.baseEntityForm.markAsDirty();
+      component.baseEntityForm.markAsPristine();
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(TestBed.inject(UnsavedChangesRegistry).hasUnsavedChanges()).toBe(true);
+    });
+
+    it('asks before leaving with unsaved changes, and stays when the user declines', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(false) } as never);
+
+      expect(await component.confirmLeave()).toBe(false);
+      expect(open).toHaveBeenCalled();
+    });
+
+    it('leaves when the user confirms', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(true) } as never);
+
+      expect(await component.confirmLeave()).toBe(true);
+    });
+
+    it('does not ask when the form is left for a list to choose from, which keeps its values', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      formNavigator.captureFormSnapshot(component.baseEntityForm.getRawValue(), component.entityDescriptor().entityName);
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('does not ask while the values of another form are kept for a round trip', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      Object.values(component.baseEntityForm.controls)[0].markAsDirty();
+      formNavigator.captureFormSnapshot({}, 'some-other-entity');
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('does not ask a form whose only edits are in a nested child while another form is left for a list to choose from', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      formNavigator.captureFormSnapshot({}, 'some-other-entity');
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('does not ask a form with only staged edits while another form is left for a list to choose from', async () => {
+      const { component, formNavigator, store } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      formNavigator.captureFormSnapshot({}, 'some-other-entity');
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('does not ask after Cancel, which discards on purpose', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+      component.baseEntityForm.markAsDirty();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      await component.onCancel();
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
     });
   });
 

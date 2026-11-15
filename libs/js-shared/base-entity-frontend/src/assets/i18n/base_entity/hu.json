@@ -100,7 +100,15 @@
     "delete_button": "Törlés"
   },
   "statusbar": {
-    "breadcrumb_label": "Rekordok hierarchiája"
+    "breadcrumb_label": "Rekordok hierarchiája",
+    "unsaved_changes": "Nem mentett módosítások",
+    "unsaved_changes_hint": "Mentse a(z) {{ entity }} rekordot a módosítások megtartásához"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Nem mentett módosítások",
+    "content": "Nem mentett módosítások vannak. Ha elhagyja az oldalt, elvesznek.",
+    "cancel_button": "Maradok",
+    "leave_button": "Elhagyom"
   },
   "tabs": {
     "list": "{{ entity }} - lista",

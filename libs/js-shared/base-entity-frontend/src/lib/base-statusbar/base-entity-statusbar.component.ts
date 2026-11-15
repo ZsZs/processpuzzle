@@ -17,6 +17,7 @@ import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-form-navigator.store';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { translateLabel } from '../i18n/entity-label.pipe';
+import { UnsavedChangesRegistry } from '../base-form/unsaved-changes/unsaved-changes.registry';
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
 
 /** One step of the hierarchy as it is rendered: what to show, and what it is. */
@@ -56,6 +57,12 @@ interface EntityCrumb {
         }
       </nav>
       <span class="statusbar-spacer"></span>
+      @if (hasUnsavedChanges()) {
+        <span class="chip unsaved-changes" data-testid="unsaved-changes-indicator" role="status" [title]="'base_entity.statusbar.unsaved_changes_hint' | transloco: { entity: crumbs()[0].label }">
+          <mat-icon>edit_note</mat-icon>
+          <span>{{ 'base_entity.statusbar.unsaved_changes' | transloco }}</span>
+        </span>
+      }
       <div class="rule-summary" *ngIf="showViolationSummary()">
         <span class="chip severity-error" *ngIf="errorCount() > 0">
           <mat-icon>error</mat-icon>
@@ -141,6 +148,11 @@ interface EntityCrumb {
         background-color: rgba(245, 124, 0, 0.15);
         color: #b26a00;
       }
+      .chip.unsaved-changes {
+        margin-right: 8px;
+        background-color: rgba(245, 124, 0, 0.15);
+        color: #b26a00;
+      }
       .chip.severity-info {
         background-color: rgba(25, 118, 210, 0.15);
         color: #0d47a1;
@@ -162,6 +174,7 @@ export class BaseEntityStatusbarComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = injectActiveLang();
   private readonly violationsStore = inject(RuleViolationsSingletonStore);
+  readonly hasUnsavedChanges = inject(UnsavedChangesRegistry).hasUnsavedChanges;
   errorCount = this.violationsStore.errorCount;
   warningCount = this.violationsStore.warningCount;
   infoCount = this.violationsStore.infoCount;

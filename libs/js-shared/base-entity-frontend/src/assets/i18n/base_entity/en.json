@@ -100,7 +100,15 @@
     "delete_button": "Delete"
   },
   "statusbar": {
-    "breadcrumb_label": "Record hierarchy"
+    "breadcrumb_label": "Record hierarchy",
+    "unsaved_changes": "Unsaved changes",
+    "unsaved_changes_hint": "Save the {{ entity }} to keep these changes"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Unsaved changes",
+    "content": "You have unsaved changes. If you leave this page, they will be lost.",
+    "cancel_button": "Stay",
+    "leave_button": "Leave"
   },
   "tabs": {
     "list": "{{ entity }} - list",
