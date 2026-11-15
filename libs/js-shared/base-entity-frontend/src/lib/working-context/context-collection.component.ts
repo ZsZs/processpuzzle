@@ -29,9 +29,9 @@ export const CONTEXT_COLLECTION_PATH_KEY = 'collectionPath';
 export const CONTEXT_COLLECTION_ENTITY_KEY = 'collectionEntity';
 
 /**
- * A list of the embedded collection of the **active** entity of a working context — the participants of the active
- * race — with add, edit and remove acting on that entity alone: the user never selects a race here, and a change sends
- * the item rather than the race (see {@link EmbeddedCollectionService}).
+ * A list of the embedded collection of the **active** entity of a working context — the zones of the active
+ * warehouse — with add, edit and remove acting on that entity alone: the user never selects a warehouse here, and a change sends
+ * the item rather than the warehouse (see {@link EmbeddedCollectionService}).
  *
  * Everything comes from metadata: the route data names the context, the attribute and the item type, and the item
  * type's descriptor gives the columns and, in the dialog, the form. Without an active context the route never gets here —

@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * The identity every item of a multi-valued embedded collection carries: an {@code id}, assigned once, and an
@@ -17,8 +19,8 @@ import java.util.UUID;
  * them by. Nothing is backfilled in bulk: an object that is never saved keeps its items as they are, and the item
  * endpoints assign identity on the first change they make.
  *
- * <p>Only the top level of an object's payload is walked. The collections of an embedded row are not reached here;
- * the item endpoints address the top-level collections of the entity they are called on.
+ * <p>The walk follows the definitions all the way down: a collection nested in an item (the shelves of a zone) gets the
+ * same identity as a top-level one, the definition of each level being looked up by the component type it links to.
  */
 public final class EmbeddedItemIdentity {
 
@@ -35,10 +37,13 @@ public final class EmbeddedItemIdentity {
     }
 
     /**
-     * The payload with every item of its multi-valued embedded collections carrying an id and an item version. The input
-     * is not changed; a payload with nothing to add is returned as it is.
+     * The payload with every item of its multi-valued embedded collections carrying an id and an item version, at every
+     * level the definitions reach. The input is not changed; a payload with nothing to add is returned as it is.
+     *
+     * @param definitions the definition of a component type, by its code; a level it cannot find is left as it is
      */
-    public static Map<String, Object> withIdentities(EntityDefinitionView definition, Map<String, Object> payload) {
+    public static Map<String, Object> withIdentities(EntityDefinitionView definition, Map<String, Object> payload,
+                                                     Function<String, Optional<EntityDefinitionView>> definitions) {
         if (payload == null || definition == null) {
             return payload;
         }
@@ -47,7 +52,7 @@ public final class EmbeddedItemIdentity {
             if (!attribute.embeddedComponent() || !attribute.multiValued() || !(payload.get(attribute.code()) instanceof List<?> items)) {
                 continue;
             }
-            List<Object> identified = identifyAll(items);
+            List<Object> identified = identifyAll(items, componentOf(attribute, definitions), definitions);
             if (identified != null) {
                 if (result == null) {
                     result = new LinkedHashMap<>(payload);
@@ -58,15 +63,28 @@ public final class EmbeddedItemIdentity {
         return result == null ? payload : result;
     }
 
-    /** The items with identity added, or {@code null} when every item already had it. */
-    private static List<Object> identifyAll(List<?> items) {
+    /** The top level only: the collections nested in an item are left as they are. */
+    public static Map<String, Object> withIdentities(EntityDefinitionView definition, Map<String, Object> payload) {
+        return withIdentities(definition, payload, code -> Optional.empty());
+    }
+
+    private static EntityDefinitionView componentOf(EntityAttributeView attribute, Function<String, Optional<EntityDefinitionView>> definitions) {
+        return attribute.linkedEntityType() == null ? null : definitions.apply(attribute.linkedEntityType()).orElse(null);
+    }
+
+    /** The items with identity added, at every level below them, or {@code null} when nothing had to change. */
+    @SuppressWarnings("unchecked")
+    private static List<Object> identifyAll(List<?> items, EntityDefinitionView component, Function<String, Optional<EntityDefinitionView>> definitions) {
         List<Object> identified = new ArrayList<>(items.size());
         boolean changed = false;
         for (Object item : items) {
             if (item instanceof Map<?, ?> map) {
-                Map<String, Object> withIdentity = identify(map);
-                changed |= withIdentity != null;
-                identified.add(withIdentity == null ? map : withIdentity);
+                Map<String, Object> itemMap = (Map<String, Object>) map;
+                Map<String, Object> withIdentity = identify(itemMap);
+                Map<String, Object> base = withIdentity == null ? itemMap : withIdentity;
+                Map<String, Object> deeper = withIdentities(component, base, definitions);
+                changed |= deeper != itemMap;
+                identified.add(deeper);
             } else {
                 identified.add(item);
             }

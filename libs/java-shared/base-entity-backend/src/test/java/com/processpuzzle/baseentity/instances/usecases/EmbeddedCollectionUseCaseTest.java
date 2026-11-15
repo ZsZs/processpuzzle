@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CollectionAddress;
 import com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedCollectionUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
@@ -58,7 +59,11 @@ class EmbeddedCollectionUseCaseTest {
         useCase = new EmbeddedCollectionUseCase(scope, definitionLookupPort, update);
 
         List<Map<String, Object>> rounds = new ArrayList<>();
-        rounds.add(new java.util.LinkedHashMap<>(Map.of("id", "r1", "number", 1, "label", "first")));
+        List<Map<String, Object>> results = new ArrayList<>();
+        results.add(new java.util.LinkedHashMap<>(Map.of("id", "x1", "score", 5, "itemVersion", 1)));
+        Map<String, Object> round = new java.util.LinkedHashMap<>(Map.of("id", "r1", "number", 1, "label", "first"));
+        round.put("results", results);
+        rounds.add(round);
         race = EntityObject.builder().id(id).entityDefinitionCode("race").version(5L)
                 .payload(new java.util.LinkedHashMap<>(Map.of("name", "Spring Cup", "rounds", rounds))).build();
         // Lenient: the other-organization test never gets as far as the definition.
@@ -67,6 +72,11 @@ class EmbeddedCollectionUseCaseTest {
                 new EntityAttributeView("name", ValueKindView.TEXT, false, false, null, true),
                 new EntityAttributeView("rounds", ValueKindView.TEXT, true, true, "Round", false),
                 new EntityAttributeView("field", ValueKindView.TEXT, false, true, "Field", false)))));
+        org.mockito.Mockito.lenient().when(definitionLookupPort.findByCode(ORG, "Round")).thenReturn(Optional.of(new EntityDefinitionView("Round", true, List.of(
+                new EntityAttributeView("number", ValueKindView.NUMBER, false, false, null, false),
+                new EntityAttributeView("results", ValueKindView.TEXT, true, true, "Result", false)))));
+        org.mockito.Mockito.lenient().when(definitionLookupPort.findByCode(ORG, "Result")).thenReturn(Optional.of(new EntityDefinitionView("Result", true, List.of(
+                new EntityAttributeView("score", ValueKindView.NUMBER, false, false, null, false)))));
         // What the database does: the saved object has the next version.
         org.mockito.Mockito.lenient().when(repository.saveAndFlush(any())).thenAnswer(invocation -> {
             EntityObject saved = invocation.getArgument(0);
@@ -197,4 +207,55 @@ class EmbeddedCollectionUseCaseTest {
 
         assertThatThrownBy(() -> useCase.list("other", "race", id, "rounds")).isInstanceOf(NotFoundException.class);
     }
+
+    // region nested collections
+    private static final CollectionAddress RESULTS_OF_R1 = CollectionAddress.of("rounds").within("r1", "results");
+
+    @Test
+    void nested_listReadsTheCollectionOfTheItemItIsNestedIn() {
+        var items = useCase.list(ORG, "race", id, RESULTS_OF_R1);
+
+        assertThat(items.items()).extracting(item -> item.get("id")).containsExactly("x1");
+        assertThat(items.version()).isEqualTo(5L);
+    }
+
+    @Test
+    void nested_appendChangesOnlyTheNestedCollectionAndBumpsTheObject() {
+        var result = useCase.append(ORG, "race", id, RESULTS_OF_R1, Map.of("score", 9));
+
+        assertThat(result.item()).containsEntry("score", 9).containsEntry("itemVersion", 1);
+        assertThat(result.version()).isEqualTo(6L);
+        assertThat(storedRounds().get(0).get("results")).asList().hasSize(2);
+        assertThat(storedRounds().get(0)).containsEntry("label", "first");
+    }
+
+    @Test
+    void nested_patchCountsTheItemVersionOfTheNestedItem() {
+        var result = useCase.patch(ORG, "race", id, RESULTS_OF_R1, "x1", 1L, Map.of("score", 7));
+
+        assertThat(result.itemVersion()).isEqualTo(2L);
+        assertThatThrownBy(() -> useCase.patch(ORG, "race", id, RESULTS_OF_R1, "x1", 1L, Map.of("score", 8)))
+                .isInstanceOf(EmbeddedCollectionUseCase.ItemVersionConflictException.class);
+    }
+
+    @Test
+    void nested_removeTakesOutOnlyTheNestedItem() {
+        useCase.remove(ORG, "race", id, RESULTS_OF_R1, "x1", null);
+
+        assertThat(storedRounds().get(0).get("results")).asList().isEmpty();
+        assertThat(storedRounds()).hasSize(1);
+    }
+
+    @Test
+    void nested_anUnknownOwnerItemIsNotFound() {
+        assertThatThrownBy(() -> useCase.list(ORG, "race", id, CollectionAddress.of("rounds").within("nope", "results")))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void nested_anAttributeThatIsNotAnEmbeddedCollectionOfTheComponent_isNotFound() {
+        assertThatThrownBy(() -> useCase.list(ORG, "race", id, CollectionAddress.of("rounds").within("r1", "score")))
+                .isInstanceOf(NotFoundException.class);
+    }
+    // endregion
 }

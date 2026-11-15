@@ -28,7 +28,7 @@ export interface CollectionRead {
 
 /**
  * Reads and changes **one item** of an embedded collection of an entity instance — `entities/<type>/<id>/<attr>[/<itemId>]`
- * — so that adding a round to a race sends the round, not the race.
+ * — so that adding a zone to a warehouse sends the zone, not the warehouse.
  *
  * The object's version travels as an `ETag`: every answer carries it, and a change that names it back as `If-Match` is
  * refused with a 409 when someone else saved in between. A change that names none applies to whatever is stored.
@@ -62,8 +62,32 @@ export class EmbeddedCollectionService {
     await firstValueFrom(this.http.delete<void>(this.url(entityName, id, attrName, itemId), { headers }));
   }
 
-  private url(entityName: string, id: string, attrName: string, itemId?: string): string {
-    const segments = ['entities', entityName, id, attrName, ...(itemId === undefined ? [] : [itemId])].map(encodeURIComponent);
+  /**
+   * A collection nested in an item of another: the `childAttrName` collection of the item `itemId` of `attrName`. The same
+   * operations as above, one level down.
+   */
+  async listNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string): Promise<CollectionRead> {
+    const response = await firstValueFrom(this.http.get<CollectionItem[]>(this.url(entityName, id, attrName, itemId, childAttrName), { observe: 'response' }));
+    return { items: response.body ?? [], version: versionOf(response) };
+  }
+
+  async appendNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string, item: CollectionItem): Promise<CollectionItem> {
+    return (await firstValueFrom(this.http.post<CollectionItem>(this.url(entityName, id, attrName, itemId, childAttrName), item))) ?? item;
+  }
+
+  async patchNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string, childItemId: string, patch: CollectionItem, version?: string): Promise<CollectionItem> {
+    const headers = version ? { 'If-Match': version } : undefined;
+    return (await firstValueFrom(this.http.patch<CollectionItem>(this.url(entityName, id, attrName, itemId, childAttrName, childItemId), patch, { headers }))) ?? patch;
+  }
+
+  async removeNested(entityName: string, id: string, attrName: string, itemId: string, childAttrName: string, childItemId: string, version?: string): Promise<void> {
+    const headers = version ? { 'If-Match': version } : undefined;
+    await firstValueFrom(this.http.delete<void>(this.url(entityName, id, attrName, itemId, childAttrName, childItemId), { headers }));
+  }
+
+  /** The URL of the collection or item at the given path: `attrName`, then alternately an item id and an attribute. */
+  private url(entityName: string, id: string, ...path: string[]): string {
+    const segments = ['entities', entityName, id, ...path].map(encodeURIComponent);
     return buildUrl(this.root, { path: segments.join('/') });
   }
 }
