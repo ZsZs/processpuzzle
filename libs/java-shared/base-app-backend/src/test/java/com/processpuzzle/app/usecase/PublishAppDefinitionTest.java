@@ -80,7 +80,7 @@ class PublishAppDefinitionTest {
         ruleEvaluatorProvider = AppTestFixtures.noRuleEvaluator();
 
         AppDefinitionValidator validator = new AppDefinitionValidator(
-                entityRegistryProvider, new AppRuleValidator(ruleEvaluatorProvider));
+                entityRegistryProvider, AppTestFixtures.noAttributeRegistry(), new AppRuleValidator(ruleEvaluatorProvider));
         OrganizationGuard guard = new OrganizationGuard(policyProvider);
         mapper = new AppMapper();
 

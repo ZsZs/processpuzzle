@@ -11,6 +11,7 @@ import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ThemeDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
+import com.processpuzzle.app.usecase.port.EntityAttributeRegistry;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
 import com.processpuzzle.app.model.WorkingContextDefinition;
 import com.processpuzzle.app.usecase.Severity;
@@ -69,11 +70,14 @@ public class AppDefinitionValidator {
     private static final String CHILD_IDS = "childIds";
 
     private final ObjectProvider<EntityNameRegistry> entityRegistryProvider;
+    private final ObjectProvider<EntityAttributeRegistry> attributeRegistryProvider;
     private final AppRuleValidator ruleValidator;
 
     public AppDefinitionValidator(ObjectProvider<EntityNameRegistry> entityRegistryProvider,
+                                  ObjectProvider<EntityAttributeRegistry> attributeRegistryProvider,
                                   AppRuleValidator ruleValidator) {
         this.entityRegistryProvider = entityRegistryProvider;
+        this.attributeRegistryProvider = attributeRegistryProvider;
         this.ruleValidator = ruleValidator;
     }
 
@@ -300,7 +304,7 @@ public class AppDefinitionValidator {
      * A list narrowed by a context names one the app declares, and is an ENTITY route — the list is what it filters. It
      * does not need the context to be required: the view stays reachable without one.
      */
-    private void validateFilterByContext(RouteDefinition route, String path, Set<String> contextNames, List<AppValidationProblem> problems) {
+    private void validateFilterByContext(String orgKey, RouteDefinition route, String path, Set<String> contextNames, List<AppValidationProblem> problems) {
         var target = route.getTarget();
         if (target == null || isBlank(target.getFilterByContext())) {
             return;
@@ -313,6 +317,25 @@ public class AppDefinitionValidator {
             problems.add(new AppValidationProblem(path + "/target/filterByContext", "app.validation.unknown-context",
                     "The route filters by the context '" + target.getFilterByContext() + "', which the app does not declare."));
         }
+        validateFilterAttribute(orgKey, route, path, problems);
+    }
+
+    /**
+     * The list is filtered on the attribute named after the context, so the entity it lists must have one. Skipped when
+     * the answer is not known — see {@link EntityAttributeRegistry}.
+     */
+    private void validateFilterAttribute(String orgKey, RouteDefinition route, String path, List<AppValidationProblem> problems) {
+        EntityAttributeRegistry registry = attributeRegistryProvider.getIfAvailable();
+        String context = route.getTarget().getFilterByContext();
+        String entityName = route.getTarget().getEntityName();
+        if (registry == null || isBlank(entityName)) {
+            return;
+        }
+        if (registry.hasAttribute(orgKey, entityName, context).orElse(true)) {
+            return;
+        }
+        problems.add(new AppValidationProblem(path + "/target/filterByContext", "app.validation.filter-attribute-missing",
+                "The entity '" + entityName + "' has no attribute '" + context + "' to hold the active " + context + ", so the list cannot be narrowed by it."));
     }
 
     private Set<String> validateRoutes(String orgKey, List<RouteDefinition> routes, Set<String> contextNames,
@@ -344,7 +367,7 @@ public class AppDefinitionValidator {
                         "The route requires the context '" + route.getRequiresContext() + "', which the app does not declare."));
             }
             validateContextPath(route, path, problems);
-            validateFilterByContext(route, path, contextNames, problems);
+            validateFilterByContext(orgKey, route, path, contextNames, problems);
             // Widgets live on the target now, and only a WIDGETS target has any.
             if (route.getTarget() != null) {
                 validateWidgets(orgKey, route.getTarget().getWidgets(), path + "/target" + WIDGETS, problems);

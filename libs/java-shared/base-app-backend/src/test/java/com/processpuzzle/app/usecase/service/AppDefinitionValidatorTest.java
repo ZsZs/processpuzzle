@@ -32,6 +32,7 @@ class AppDefinitionValidatorTest {
     private AppDefinitionValidator validator;
     private ObjectProvider<EntityNameRegistry> entityRegistryProvider;
     private ObjectProvider<RuleEvaluator> ruleEvaluatorProvider;
+    private ObjectProvider<com.processpuzzle.app.usecase.port.EntityAttributeRegistry> attributeRegistryProvider;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -39,7 +40,8 @@ class AppDefinitionValidatorTest {
         entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
         ruleEvaluatorProvider = AppTestFixtures.noRuleEvaluator();
-        validator = new AppDefinitionValidator(entityRegistryProvider,
+        attributeRegistryProvider = AppTestFixtures.noAttributeRegistry();
+        validator = new AppDefinitionValidator(entityRegistryProvider, attributeRegistryProvider,
                 new AppRuleValidator(ruleEvaluatorProvider));
     }
 
@@ -285,6 +287,48 @@ class AppDefinitionValidatorTest {
         input.getRoutes().get(0).getTarget().setFilterByContext("race");
 
         assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.filter-by-context-needs-entity");
+    }
+
+    @Test
+    void filterAttributeThatTheEntityHas_isAccepted() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+        com.processpuzzle.app.usecase.port.EntityAttributeRegistry attributes = mock(com.processpuzzle.app.usecase.port.EntityAttributeRegistry.class);
+        when(attributes.hasAttribute("my-org", "Result", "race")).thenReturn(java.util.Optional.of(true));
+        when(attributeRegistryProvider.getIfAvailable()).thenReturn(attributes);
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void filterAttributeThatTheEntityLacks_isReported() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+        com.processpuzzle.app.usecase.port.EntityAttributeRegistry attributes = mock(com.processpuzzle.app.usecase.port.EntityAttributeRegistry.class);
+        when(attributes.hasAttribute("my-org", "Result", "race")).thenReturn(java.util.Optional.of(false));
+        when(attributeRegistryProvider.getIfAvailable()).thenReturn(attributes);
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.filter-attribute-missing");
+    }
+
+    @Test
+    void anUnknownFilterAttributeAnswer_makesNoClaim() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
     }
 
     @Test

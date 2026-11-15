@@ -50,12 +50,19 @@ public final class AppTestFixtures {
     private AppTestFixtures() {
     }
 
-    /** The real structural validator, with no entity registry and no rule engine wired. */
+    /** A provider with no attribute registry wired: the validator makes no claim about filter attributes. */
     @SuppressWarnings("unchecked")
+    public static org.springframework.beans.factory.ObjectProvider<com.processpuzzle.app.usecase.port.EntityAttributeRegistry> noAttributeRegistry() {
+        org.springframework.beans.factory.ObjectProvider<com.processpuzzle.app.usecase.port.EntityAttributeRegistry> provider = org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+        org.mockito.Mockito.when(provider.getIfAvailable()).thenReturn(null);
+        return provider;
+    }
+
+    /** The real structural validator, with no entity registry and no rule engine wired. */
     public static AppDefinitionValidator structuralValidator() {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
-        return new AppDefinitionValidator(entityRegistryProvider, new AppRuleValidator(noRuleEvaluator()));
+        return new AppDefinitionValidator(entityRegistryProvider, noAttributeRegistry(), new AppRuleValidator(noRuleEvaluator()));
     }
 
     /**

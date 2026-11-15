@@ -459,7 +459,7 @@ class DefaultAppLoaderTest {
     private static AppDefinitionValidator structuralValidator() {
         ObjectProvider<EntityNameRegistry> entityRegistryProvider = mock(ObjectProvider.class);
         when(entityRegistryProvider.getIfAvailable()).thenReturn(null);
-        return new AppDefinitionValidator(entityRegistryProvider,
+        return new AppDefinitionValidator(entityRegistryProvider, AppTestFixtures.noAttributeRegistry(),
                 new AppRuleValidator(AppTestFixtures.noRuleEvaluator()));
     }
 
