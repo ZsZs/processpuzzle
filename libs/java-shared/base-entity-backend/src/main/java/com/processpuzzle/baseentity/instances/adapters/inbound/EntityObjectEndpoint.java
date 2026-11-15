@@ -116,22 +116,23 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     public ResponseEntity<Map<String, Object>> appendEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, Map<String, Object> body) {
         var result = embeddedUseCase.append(orgKey, entityDefinitionCode, id, attributeCode, body);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{itemId}").buildAndExpand(result.item().get("id")).toUri();
-        return ResponseEntity.created(location).eTag(etag(result.version())).body(result.item());
+        return ResponseEntity.created(location).eTag(etag(result.itemVersion())).body(result.item());
     }
 
     @Override
     public ResponseEntity<Map<String, Object>> patchEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, String itemId,
                                                                 Map<String, Object> body, String ifMatch) {
         var result = embeddedUseCase.patch(orgKey, entityDefinitionCode, id, attributeCode, itemId, versionOf(ifMatch), body);
-        return ResponseEntity.ok().eTag(etag(result.version())).body(result.item());
+        return ResponseEntity.ok().eTag(etag(result.itemVersion())).body(result.item());
     }
 
     @Override
     public ResponseEntity<Void> deleteEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, String itemId, String ifMatch) {
         var result = embeddedUseCase.remove(orgKey, entityDefinitionCode, id, attributeCode, itemId, versionOf(ifMatch));
-        return ResponseEntity.noContent().eTag(etag(result.version())).build();
+        return ResponseEntity.noContent().build();
     }
 
+    /** An item's ETag is the item's own version, which is what its If-Match names. */
     private static String etag(long version) {
         return "\"" + version + "\"";
     }

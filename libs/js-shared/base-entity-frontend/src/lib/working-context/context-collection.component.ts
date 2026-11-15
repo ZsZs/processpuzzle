@@ -18,7 +18,7 @@ import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-
 import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../dialogs/delete-confirmation.dialog';
 import { EntityLabelPipe } from '../i18n/entity-label.pipe';
 import { ContextCollectionItemDialog, ContextCollectionItemDialogData } from './context-collection-item.dialog';
-import { CollectionItem, EmbeddedCollectionService, mergePatch } from './embedded-collection.service';
+import { CollectionItem, EmbeddedCollectionService, itemVersionOf, mergePatch } from './embedded-collection.service';
 import { WorkingContextService } from './working-context.service';
 
 /** Route data: the context the collection belongs to. */
@@ -156,7 +156,7 @@ export class ContextCollectionComponent {
     if (!edited) return;
     const patch = mergePatch(row, edited);
     if (Object.keys(patch).length === 0) return;
-    await this.change((id) => this.service.patch(this.rootEntityName(), id, this.attrName, String(row['id']), patch));
+    await this.change((id) => this.service.patch(this.rootEntityName(), id, this.attrName, String(row['id']), patch, itemVersionOf(row)));
   }
 
   protected async onDelete(row: CollectionItem): Promise<void> {
@@ -167,7 +167,7 @@ export class ContextCollectionComponent {
       confirmButtonKey: 'base_entity.context_collection.delete',
     };
     const confirmed = await firstValueFrom(this.dialog.open(DeleteConfirmationDialog, { data }).afterClosed());
-    if (confirmed === true) await this.change((id) => this.service.remove(this.rootEntityName(), id, this.attrName, String(row['id'])));
+    if (confirmed === true) await this.change((id) => this.service.remove(this.rootEntityName(), id, this.attrName, String(row['id']), itemVersionOf(row)));
   }
   // endregion
 

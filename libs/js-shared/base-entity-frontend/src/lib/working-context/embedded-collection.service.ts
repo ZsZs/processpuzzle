@@ -5,8 +5,19 @@ import { firstValueFrom } from 'rxjs';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { ENTITY_SERVICE_ROOT_KEY } from '../base-entity-definition/entity-definition.service';
 
-/** One item of an embedded collection. Free-form, as the entity's payload is; `id` identifies it. */
+/**
+ * One item of an embedded collection. Free-form, as the entity's payload is. `id` identifies it, and `itemVersion` counts
+ * the changes made through the item endpoints — the server keeps both, so neither is sent back as a change.
+ */
 export type CollectionItem = Record<string, unknown>;
+
+/** The members the server keeps on an item; a merge patch never carries them. */
+const SERVER_MEMBERS = new Set(['id', 'itemVersion']);
+
+/** The item's version as an `If-Match` value, or `undefined` for an item stored before versions existed. */
+export function itemVersionOf(item: CollectionItem): string | undefined {
+  return typeof item['itemVersion'] === 'number' ? String(item['itemVersion']) : undefined;
+}
 
 /** What a read answers: the items, and the version of the object they were read from. */
 export interface CollectionRead {
@@ -37,7 +48,10 @@ export class EmbeddedCollectionService {
     return (await firstValueFrom(this.http.post<CollectionItem>(this.url(entityName, id, attrName), item))) ?? item;
   }
 
-  /** A merge patch: members present replace the stored ones, a `null` member is removed. */
+  /**
+   * A merge patch: members present replace the stored ones, a `null` member is removed. `version` is the item's own version
+   * as last read; the server refuses the change with a 409 when the item has changed since.
+   */
   async patch(entityName: string, id: string, attrName: string, itemId: string, patch: CollectionItem, version?: string): Promise<CollectionItem> {
     const headers = version ? { 'If-Match': version } : undefined;
     return (await firstValueFrom(this.http.patch<CollectionItem>(this.url(entityName, id, attrName, itemId), patch, { headers }))) ?? patch;
@@ -65,10 +79,10 @@ function versionOf(response: HttpResponse<unknown>): string | undefined {
 export function mergePatch(before: CollectionItem, after: CollectionItem): CollectionItem {
   const patch: CollectionItem = {};
   for (const [key, value] of Object.entries(after)) {
-    if (key !== 'id' && JSON.stringify(value) !== JSON.stringify(before[key])) patch[key] = value;
+    if (!SERVER_MEMBERS.has(key) && JSON.stringify(value) !== JSON.stringify(before[key])) patch[key] = value;
   }
   for (const key of Object.keys(before)) {
-    if (key !== 'id' && !(key in after)) patch[key] = null;
+    if (!SERVER_MEMBERS.has(key) && !(key in after)) patch[key] = null;
   }
   return patch;
 }
