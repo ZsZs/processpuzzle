@@ -1,4 +1,5 @@
 import { Component, computed, inject, Signal } from '@angular/core';
+import { MatDivider } from '@angular/material/divider';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
@@ -9,6 +10,7 @@ import { EntityRouteRegistry } from '../base-form-navigator/entity-route.registr
 import { translateLabel } from '../i18n/entity-label.pipe';
 import { contextLabel, renderTemplate, valueAt } from './working-context-attributes';
 import { WORKING_CONTEXT_DRAWER_CONFIG, WorkingContextPickerDialog, WorkingContextPickerDialogData } from './working-context-picker.dialog';
+import { EntityStateSnapshot, EntityStateTransition } from './entity-state-actions';
 import { ActiveWorkingContext, WorkingContextService } from './working-context.service';
 
 /** An active working context as it is rendered: one crumb, with its badge and its extra text. */
@@ -19,6 +21,8 @@ interface ContextCrumb {
   label: string;
   badge: string | undefined;
   extra: string | undefined;
+  /** What the entity can do next, from its state machine; empty when none governs it. */
+  transitions: EntityStateTransition[];
   testId: string;
 }
 
@@ -33,7 +37,7 @@ interface ContextCrumb {
 @Component({
   selector: 'pp-working-context-crumbs',
   standalone: true,
-  imports: [MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
+  imports: [MatDivider, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
   template: `
     @for (crumb of crumbs(); track crumb.context.name; let isLast = $last) {
       <span class="context-crumb" [attr.data-testid]="crumb.testId">
@@ -56,6 +60,20 @@ interface ContextCrumb {
           <mat-icon>arrow_drop_down</mat-icon>
         </button>
         <mat-menu #contextMenu="matMenu">
+          @for (transition of crumb.transitions; track transition.key) {
+            <button
+              mat-menu-item
+              [attr.data-testid]="crumb.testId + '-menu-transition-' + transition.key"
+              [disabled]="!transition.enabled || firing()"
+              [title]="transition.blockedReason ?? ''"
+              (click)="onFire(crumb, transition)"
+            >
+              <mat-icon>play_arrow</mat-icon><span>{{ transition.label }}</span>
+            </button>
+          }
+          @if (crumb.transitions.length > 0) {
+            <mat-divider />
+          }
           <button mat-menu-item [attr.data-testid]="crumb.testId + '-menu-switch'" (click)="onSwitch(crumb)">
             <mat-icon>swap_horiz</mat-icon><span>{{ 'base_entity.working_context.switch' | transloco }}</span>
           </button>
@@ -132,6 +150,7 @@ export class WorkingContextCrumbsComponent {
   readonly crumbs: Signal<ContextCrumb[]> = computed(() => this.workingContext.active().map((context) => this.crumbOf(context)));
 
   private readonly workingContext = inject(WorkingContextService);
+  protected readonly firing = this.workingContext.firing;
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly entityRouteRegistry = inject(EntityRouteRegistry);
@@ -149,20 +168,35 @@ export class WorkingContextCrumbsComponent {
     if (url) await this.router.navigateByUrl(url);
   }
 
+  protected async onFire(crumb: ContextCrumb, transition: EntityStateTransition): Promise<void> {
+    await this.workingContext.fire(crumb.context.name, transition.key);
+  }
+
   protected async onClear(crumb: ContextCrumb): Promise<void> {
     await this.workingContext.clear(crumb.context.name);
   }
 
+  /** `badge: state` shows the state's name — "Running", not the key a machine stores — when the machine is known. */
+  private badgeOf(context: ActiveWorkingContext, snapshot: EntityStateSnapshot | undefined, stateAttr: string | undefined): unknown {
+    const badge = context.definition.display?.badge;
+    if (!badge) return undefined;
+    if (badge === 'state' && snapshot) return snapshot.currentLabel;
+    return valueAt(context.entity, badge, context.descriptor, stateAttr);
+  }
+
   private crumbOf(context: ActiveWorkingContext): ContextCrumb {
     const { definition, descriptor, entity, id } = context;
-    const badgeValue = definition.display?.badge ? valueAt(entity, definition.display.badge, descriptor) : undefined;
-    const extra = definition.display?.extra && entity ? renderTemplate(definition.display.extra, entity, descriptor) : undefined;
+    const stateAttr = this.workingContext.stateAttributeOf(context);
+    const snapshot = this.workingContext.stateOf(context.name);
+    const badgeValue = this.badgeOf(context, snapshot, stateAttr);
+    const extra = definition.display?.extra && entity ? renderTemplate(definition.display.extra, entity, descriptor, stateAttr) : undefined;
     return {
       context,
       title: contextLabel(definition.display?.label, entity, descriptor, id),
       label: descriptor ? translateLabel(this.transloco, descriptor.i18nKey(), descriptor.entityName) : definition.entityName,
       badge: badgeValue == null || badgeValue === '' ? undefined : String(badgeValue),
       extra: extra && extra.length > 0 ? extra : undefined,
+      transitions: snapshot?.transitions ?? [],
       testId: createTestId(definition.entityName, 'context-crumb'),
     };
   }

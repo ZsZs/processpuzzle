@@ -18,7 +18,7 @@ const raceContext = {
 };
 
 function setup(active: unknown[]) {
-  const service = { active: signal(active), statusbarHostedByShell: signal(false), clear: vi.fn() };
+  const service = { active: signal(active), statusbarHostedByShell: signal(false), clear: vi.fn(), stateAttributeOf: () => undefined, stateOf: () => undefined, firing: signal(false) };
   TestBed.configureTestingModule({
     providers: [provideRouter([]), provideTranslocoTesting({ translations: {} }), { provide: WorkingContextService, useValue: service }, { provide: MatDialog, useValue: { open: vi.fn() } }],
   });

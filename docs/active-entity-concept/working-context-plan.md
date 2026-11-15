@@ -49,6 +49,11 @@
   - Backend: `GET/POST …/{id}/{attr}` and `PATCH/DELETE …/{id}/{attr}/{itemId}` (one level), items identified by `id` (assigned on append). The write is the existing update use case with one item changed, so validation, managed attributes and events stay in one place; the object `version` is the only version (`ETag` on every answer, optional `If-Match`). Calls naming no version are retried when another write wins the race, so concurrent appends both succeed. Deliberately **not** `jsonb_set`, which would write around validation and events.
   - Frontend: `EmbeddedCollectionService`, and `ContextCollectionComponent` — the list of an embedded collection of the **active** entity with add / edit / remove through a dialog built by the entity form builder. A route opts in with `requiresContext` + `contextPath` (the attribute) + an ENTITY target naming the item type.
   - Edit and delete send no `If-Match` for now: with one version per object, a second writer's unrelated change would make every other edit a 409. A patch is a merge of the changed members only. Per-item versions (phase 4) bring `If-Match` back.
-- Next: phase 3 (state actions: badge and transitions of the context entity).
+- **3 – done:**
+  - base-entity declares `ENTITY_STATE_ACTIONS` (state of an entity, transitions it can take, fire one); base-state implements it behind the same `provideEntityStateControl()` the forms use, so base-entity stays free of a base-state dependency and an app without it simply has no state to show.
+  - `WorkingContextService` follows the active entities' state (re-read when the entity's version changes) and fires transitions, then reloads the entity.
+  - The crumb's badge (`display.badge: state`) shows the state machine's name of the state; its menu lists the transitions, a refused one disabled with the reason. `state` in `confirmSwitchWhen` / `display` resolves through the machine's own state attribute, no longer through a guess from the descriptor.
+  - "Views that declare them": the **context-actions** widget (`context`, optional `triggers`) puts the transitions as buttons on any page — no contract change, a widget on a route is how a view declares them.
+- Next: phase 4 (hardening: per-item versions, `context: optional` views, e2e scenarios).
 
 Libraries are released one at a time, per phase.

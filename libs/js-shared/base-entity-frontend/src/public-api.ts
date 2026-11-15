@@ -154,3 +154,5 @@ export { WorkingContextCrumbsComponent } from './lib/working-context/working-con
 export { WorkingContextStatusbarComponent } from './lib/working-context/working-context-statusbar.component';
 export { EmbeddedCollectionService, mergePatch, type CollectionItem, type CollectionRead } from './lib/working-context/embedded-collection.service';
 export { ContextCollectionComponent, CONTEXT_COLLECTION_CONTEXT_KEY, CONTEXT_COLLECTION_PATH_KEY, CONTEXT_COLLECTION_ENTITY_KEY } from './lib/working-context/context-collection.component';
+export { ENTITY_STATE_ACTIONS, type EntityStateActions, type EntityStateFireResult, type EntityStateSnapshot, type EntityStateTransition } from './lib/working-context/entity-state-actions';
+export { WorkingContextActionsComponent } from './lib/working-context/working-context-actions.component';

@@ -1,8 +1,9 @@
 import { inject, Injectable, Provider } from '@angular/core';
 import { provideTranslocoScope } from '@jsverse/transloco';
-import { ENTITY_STATE_CONTROL, type BaseEntityDescriptor, type EntityStateControl } from '@processpuzzle/base-entity';
+import { ENTITY_STATE_ACTIONS, ENTITY_STATE_CONTROL, type BaseEntityDescriptor, type EntityStateControl } from '@processpuzzle/base-entity';
 import { BASE_STATE_TRANSLOCO_SCOPE } from '../../base-state.i18n';
 import { GovernedEntityRegistry } from '../../domain/definition/governed-entity.registry';
+import { BaseStateEntityStateActions } from './entity-state-actions.provider';
 import { EntityStateControlComponent } from './entity-state-control.component';
 
 /**
@@ -27,6 +28,8 @@ export class BaseStateEntityStateControl implements EntityStateControl {
 export function provideEntityStateControl(): Provider[] {
   return [
     { provide: ENTITY_STATE_CONTROL, useExisting: BaseStateEntityStateControl },
+    // The same wiring serves the working context: where the active entity is, and what it can do next.
+    { provide: ENTITY_STATE_ACTIONS, useExisting: BaseStateEntityStateActions },
     provideTranslocoScope({ scope: BASE_STATE_TRANSLOCO_SCOPE, alias: BASE_STATE_TRANSLOCO_SCOPE }),
   ];
 }

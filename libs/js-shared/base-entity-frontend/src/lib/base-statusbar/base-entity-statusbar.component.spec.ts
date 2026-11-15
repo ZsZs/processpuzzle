@@ -168,7 +168,7 @@ describe('BaseStatusbarComponent', () => {
       entity: { id: 'r1', name: 'Spring Cup', status: 'Running', round: 3 },
       url: '/ctx/race/r1',
     };
-    const workingContextStub = { active: signal([activeRace]), clear: vi.fn(async () => true), statusbarHostedByShell: signal(false) };
+    const workingContextStub = { active: signal([activeRace]), clear: vi.fn(async () => true), statusbarHostedByShell: signal(false), stateAttributeOf: () => undefined, stateOf: () => undefined, firing: signal(false) };
 
     it('renders the active context as the root crumb, with its badge and extra field, even with no entity selected', async () => {
       const { fixture } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [{ provide: WorkingContextService, useValue: workingContextStub }]);
@@ -187,6 +187,28 @@ describe('BaseStatusbarComponent', () => {
       fixture.detectChanges();
 
       expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="race-context-crumb"]')).toBeNull();
+    });
+
+    it('shows the state machine\'s name of the state as the badge, and offers its transitions in the menu', async () => {
+      const fire = vi.fn(async () => true);
+      const stateful = {
+        ...workingContextStub,
+        stateOf: () => ({ currentKey: 'RUNNING', currentLabel: 'Running now', transitions: [{ key: 'finish', label: 'Finish race', enabled: true }, { key: 'pause', label: 'Pause', enabled: false, blockedReason: 'Not yet' }] }),
+        fire,
+      };
+      const { fixture } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [{ provide: WorkingContextService, useValue: stateful }]);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelector('[data-testid="race-context-crumb-badge"]')?.textContent?.trim()).toBe('Running now');
+
+      (host.querySelector('[data-testid="race-context-crumb-menu"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      const finish = document.querySelector('[data-testid="race-context-crumb-menu-transition-finish"]') as HTMLButtonElement;
+      const pause = document.querySelector('[data-testid="race-context-crumb-menu-transition-pause"]') as HTMLButtonElement;
+      expect(pause.disabled).toBe(true);
+      finish.click();
+
+      expect(fire).toHaveBeenCalledWith('race', 'finish');
     });
 
     it('clears the context from its menu', async () => {

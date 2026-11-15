@@ -73,7 +73,7 @@ class DefaultWidgetLoaderTest {
         // an app is previewed. See the file header.
         assertThat(capturedDefinitions()).extracting(WidgetDefinitionInput::getKey)
                 .containsExactly("cards-grid", "markdown-page", "entity-table", "entity-form", "image-zoom", "photo-album", "app-logo", "app-title", "nav-bar",
-                        "nav-menu", "spacer", "navigate-back", "language-selector", "themes-button", "sidenav-toggle", "like-button", "share-button", "version-button",
+                        "nav-menu", "spacer", "navigate-back", "language-selector", "themes-button", "sidenav-toggle", "context-actions", "like-button", "share-button", "version-button",
                         "design-button", "task-dashboard-button", "copyright", "content-book");
     }
 

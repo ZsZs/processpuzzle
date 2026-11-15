@@ -1,6 +1,7 @@
-import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, Signal, signal, untracked } from '@angular/core';
 import { ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -8,6 +9,7 @@ import { BaseEntityDescriptorRegistry } from '../base-entity-facade/base-entity-
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../dialogs/delete-confirmation.dialog';
 import { DEFAULT_RECENT_CONTEXTS, WORKING_CONTEXT_DEFINITIONS, WorkingContextDefinition } from './working-context.definition';
+import { ENTITY_STATE_ACTIONS, EntityStateSnapshot } from './entity-state-actions';
 import { matchesConditions } from './working-context-attributes';
 import { readWorkingContextLevels, WORKING_CONTEXT_SEGMENT, WorkingContextRouteLevel } from './working-context.url';
 
@@ -41,6 +43,14 @@ export class WorkingContextService {
   private readonly declared = inject(WORKING_CONTEXT_DEFINITIONS).flat();
   private readonly registered = signal<WorkingContextDefinition[]>([]);
   private readonly levels = signal<WorkingContextRouteLevel[]>([]);
+  private readonly stateActions = inject(ENTITY_STATE_ACTIONS, { optional: true });
+  private readonly snackBar = inject(MatSnackBar);
+  /** What is known of each active entity's state, by `<entity>/<id>`, with the entity version it was read at. */
+  private readonly snapshots = signal<Record<string, { version: unknown; snapshot: EntityStateSnapshot | undefined }>>({});
+  private readonly snapshotsLoading = new Set<string>();
+
+  /** True while a transition is being fired, so a second click does not fire another. */
+  readonly firing = signal(false);
 
   /**
    * True while an application shell shows the contexts in a status bar of its own. The status bar inside the
@@ -74,6 +84,10 @@ export class WorkingContextService {
     });
     inject(DestroyRef).onDestroy(() => subscription.unsubscribe());
     this.readUrl();
+    // Follows the active entities, and their saved changes: a new version is a new question to the state machine.
+    effect(() => {
+      for (const context of this.active()) untracked(() => void this.loadState(context));
+    });
   }
 
   // region definitions
@@ -141,7 +155,40 @@ export class WorkingContextService {
 
   /** Whether leaving the active entity of the context should be confirmed first — see `confirmSwitchWhen`. */
   needsConfirmation(context: ActiveWorkingContext): boolean {
-    return matchesConditions(context.entity, context.definition.confirmSwitchWhen, context.descriptor);
+    return matchesConditions(context.entity, context.definition.confirmSwitchWhen, context.descriptor, this.stateAttributeOf(context));
+  }
+  // endregion
+
+  // region state
+  /** The active entity's state and the transitions it can take; `undefined` until known, or when no state machine governs it. */
+  stateOf(name: string): EntityStateSnapshot | undefined {
+    const context = this.current(name);
+    return context ? this.snapshots()[this.stateKey(context)]?.snapshot : undefined;
+  }
+
+  /** The attribute holding the entity's state, as its state machine names it — what `state` in a declaration means. */
+  stateAttributeOf(context: ActiveWorkingContext): string | undefined {
+    return this.snapshots()[this.stateKey(context)]?.snapshot?.stateAttribute;
+  }
+
+  /**
+   * Fires a transition of the active entity of the context, tells the user what came of it and reloads the entity —
+   * which refreshes the badge and the transitions on offer, since both follow the entity's version.
+   * Resolves `true` when the transition ran.
+   */
+  async fire(name: string, triggerKey: string): Promise<boolean> {
+    const context = this.current(name);
+    if (!context || !this.stateActions || this.firing()) return false;
+    this.firing.set(true);
+    try {
+      const version = Number((context.entity as { version?: number } | undefined)?.version ?? 0);
+      const result = await this.stateActions.fire(context.definition.entityName, context.id, triggerKey, version);
+      this.snackBar.open(result.message, undefined, { duration: 4000 });
+      await this.storeOf(context.definition)?.reload(context.id);
+      return result.success;
+    } finally {
+      this.firing.set(false);
+    }
   }
   // endregion
 
@@ -176,6 +223,26 @@ export class WorkingContextService {
   // endregion
 
   // region private helper methods
+  private stateKey(context: ActiveWorkingContext): string {
+    return `${context.definition.entityName}/${context.id}`;
+  }
+
+  private async loadState(context: ActiveWorkingContext): Promise<void> {
+    if (!this.stateActions || !context.entity) return;
+    const key = this.stateKey(context);
+    const version = (context.entity as { version?: unknown }).version;
+    const loadKey = `${key}@${String(version)}`;
+    if (this.snapshots()[key]?.version === version || this.snapshotsLoading.has(loadKey)) return;
+
+    this.snapshotsLoading.add(loadKey);
+    try {
+      const snapshot = await this.stateActions.stateOf(context.definition.entityName, context.id).catch(() => undefined);
+      this.snapshots.update((current) => ({ ...current, [key]: { version, snapshot } }));
+    } finally {
+      this.snapshotsLoading.delete(loadKey);
+    }
+  }
+
   private readUrl(): void {
     let snapshot: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
     while (snapshot?.firstChild) snapshot = snapshot.firstChild;

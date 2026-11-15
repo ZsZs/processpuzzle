@@ -110,6 +110,9 @@
   "sidenav_toggle": {
     "name": "Seitenleisten-Schalter"
   },
+  "context_actions": {
+    "name": "Kontextaktionen"
+  },
   "themes_button": {
     "name": "Design-Auswahl"
   },
