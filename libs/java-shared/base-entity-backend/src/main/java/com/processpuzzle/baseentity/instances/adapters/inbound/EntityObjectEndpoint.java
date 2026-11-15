@@ -12,6 +12,7 @@ import com.processpuzzle.baseentity.model.Page;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.core.rsql.SortParser;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     private final com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase searchUseCase;
     private final com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase updateUseCase;
     private final DeleteEntityInstanceUseCase deleteUseCase;
+    private final com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedCollectionUseCase embeddedUseCase;
     private final EntityObjectMapper mapper;
 
     @Override
@@ -102,5 +104,48 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     public ResponseEntity<Void> deleteEntity(String orgKey, String entityDefinitionCode, UUID id, Boolean cascade) {
         deleteUseCase.delete(orgKey, entityDefinitionCode, id, Boolean.TRUE.equals(cascade));
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<List<Map<String, Object>>> listEmbeddedItems(String orgKey, String entityDefinitionCode, UUID id, String attributeCode) {
+        var items = embeddedUseCase.list(orgKey, entityDefinitionCode, id, attributeCode);
+        return ResponseEntity.ok().eTag(etag(items.version())).body(items.items());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> appendEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, Map<String, Object> body) {
+        var result = embeddedUseCase.append(orgKey, entityDefinitionCode, id, attributeCode, body);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{itemId}").buildAndExpand(result.item().get("id")).toUri();
+        return ResponseEntity.created(location).eTag(etag(result.version())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> patchEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, String itemId,
+                                                                Map<String, Object> body, String ifMatch) {
+        var result = embeddedUseCase.patch(orgKey, entityDefinitionCode, id, attributeCode, itemId, versionOf(ifMatch), body);
+        return ResponseEntity.ok().eTag(etag(result.version())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, String itemId, String ifMatch) {
+        var result = embeddedUseCase.remove(orgKey, entityDefinitionCode, id, attributeCode, itemId, versionOf(ifMatch));
+        return ResponseEntity.noContent().eTag(etag(result.version())).build();
+    }
+
+    private static String etag(long version) {
+        return "\"" + version + "\"";
+    }
+
+    /** The version an {@code If-Match} header names — `"3"`, `W/"3"` or a bare `3` — or {@code null} when it names none. */
+    private static Long versionOf(String ifMatch) {
+        if (ifMatch == null || ifMatch.isBlank() || "*".equals(ifMatch.trim())) {
+            return null;
+        }
+        String token = ifMatch.trim().replaceFirst("^W/", "").replace("\"", "");
+        try {
+            return Long.valueOf(token);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("If-Match must carry an object version, e.g. \"3\"");
+        }
     }
 }
