@@ -1,0 +1,10 @@
+# Chat definitions the testbed ships. Imported on startup when base-chat.loadDefaultChatDefinitions is on;
+# the import upserts and releases what it writes.
+chat-definitions:
+  - key: order-discussion
+    name: Order discussion
+    description: One conversation per order, for everyone who works on it.
+    subjectType: ENTITY
+    subjectDefinition: order
+    multiplicity: SINGLE
+    lifecycle: ON_DEMAND
