@@ -166,15 +166,17 @@ class ResolveAccessTest {
     @Test
     void aConversationWhoseDefinitionIsNoLongerReleasedIsNotFound() {
         when(definitions.released(ORG, "order-discussion")).thenReturn(Optional.empty());
+        Conversation stored = conversation();
 
-        assertThatThrownBy(() -> access.of(conversation())).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> access.of(stored)).isInstanceOf(ConversationNotFoundException.class);
     }
 
     @Test
     void aConversationWhoseSubjectIsGoneIsNotFound() {
         when(subjects.resolve(ORG, definition.getSubjectType(), "order", conversation().getSubjectId())).thenReturn(Optional.empty());
+        Conversation stored = conversation();
 
-        assertThatThrownBy(() -> access.of(conversation())).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> access.of(stored)).isInstanceOf(ConversationNotFoundException.class);
     }
 
     @Test

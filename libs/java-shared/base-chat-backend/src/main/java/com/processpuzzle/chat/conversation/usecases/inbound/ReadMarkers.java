@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +19,25 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Every change is announced with a {@link ReadMarkerChangedEvent}, which the user's open streams observe
  * after the transaction commits.
+ *
+ * <p><b>Concurrency.</b> Two tabs of one user follow the same conversation at once, and a marker is moved by
+ * whichever finishes last unless something stops it. Creating a marker is one {@code insert … on conflict do
+ * nothing}: atomic, it needs neither a second transaction — whose connection a burst of followers on a small pool
+ * would starve each other of — nor an exception to catch. Moving one takes the row's lock first and compares
+ * after, so the number it compares with is the one it overwrites.
  */
 @Service
 @Transactional
 public class ReadMarkers {
 
+    /** Insert, then lock: a marker removed between the two — an unfollow in another tab — is simply created again. */
+    private static final int ATTEMPTS = 3;
+
     private final ReadMarkerRepository markers;
-    private final ReadMarkerInsert inserter;
     private final ApplicationEventPublisher events;
 
-    public ReadMarkers(ReadMarkerRepository markers, ReadMarkerInsert inserter, ApplicationEventPublisher events) {
+    public ReadMarkers(ReadMarkerRepository markers, ApplicationEventPublisher events) {
         this.markers = markers;
-        this.inserter = inserter;
         this.events = events;
     }
 
@@ -80,22 +86,20 @@ public class ReadMarkers {
     }
 
     private long move(String orgKey, UUID conversationId, String userSub, long seq) {
-        Optional<Long> standing = markers.lastReadOf(conversationId, userSub);
-        if (standing.isPresent()) {
-            return standing.get() >= seq ? standing.get() : advance(conversationId, userSub, seq);
+        for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
+            if (markers.insertIfAbsent(conversationId, userSub, orgKey, seq, Instant.now()) == 1) {
+                return seq;
+            }
+            Optional<ReadMarker> held = markers.lockByConversationIdAndUserSub(conversationId, userSub);
+            if (held.isPresent()) {
+                long standing = held.get().getLastReadSeq();
+                if (standing >= seq) {
+                    return standing;
+                }
+                markers.advance(conversationId, userSub, seq, Instant.now());
+                return seq;
+            }
         }
-        try {
-            inserter.insert(ReadMarker.builder().conversationId(conversationId).userSub(userSub).orgKey(orgKey)
-                    .lastReadSeq(seq).updatedAt(Instant.now()).build());
-            return seq;
-        } catch (DataIntegrityViolationException e) {
-            // Another session of the same user followed first; their marker stands unless ours is further.
-            return advance(conversationId, userSub, seq);
-        }
-    }
-
-    private long advance(UUID conversationId, String userSub, long seq) {
-        markers.advance(conversationId, userSub, seq, Instant.now());
-        return markers.lastReadOf(conversationId, userSub).orElse(seq);
+        throw new IllegalStateException("The read marker of %s in %s keeps appearing and disappearing".formatted(userSub, conversationId));
     }
 }

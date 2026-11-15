@@ -109,14 +109,16 @@ class ReadStateUseCasesTest {
     @Test
     void markingReadRefusesTheUnreadableTheNegativeAndTheAnonymous() {
         MarkRead markRead = new MarkRead(conversations, access, markers, guard, principal);
+        UUID id = conversation.getId();
+        UUID unknown = UUID.randomUUID();
 
         when(access.of(conversation)).thenReturn(HIDDEN);
-        assertThatThrownBy(() -> markRead.markRead(ORG, conversation.getId(), 1)).isInstanceOf(ConversationNotFoundException.class);
-        assertThatThrownBy(() -> markRead.markRead(ORG, UUID.randomUUID(), 1)).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> markRead.markRead(ORG, id, 1)).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> markRead.markRead(ORG, unknown, 1)).isInstanceOf(ConversationNotFoundException.class);
         when(access.of(conversation)).thenReturn(ALLOWED);
-        assertThatThrownBy(() -> markRead.markRead(ORG, conversation.getId(), -1)).isInstanceOf(InvalidChatRequestException.class);
+        assertThatThrownBy(() -> markRead.markRead(ORG, id, -1)).isInstanceOf(InvalidChatRequestException.class);
         when(principal.subject()).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> markRead.markRead(ORG, conversation.getId(), 1)).isInstanceOf(ChatAccessDeniedException.class);
+        assertThatThrownBy(() -> markRead.markRead(ORG, id, 1)).isInstanceOf(ChatAccessDeniedException.class);
 
         verify(markers, never()).advanceTo(any(), any(), any(), anyLong());
     }
@@ -134,12 +136,13 @@ class ReadStateUseCasesTest {
     @Test
     void unfollowingNeedsMembershipAndASignedInUser() {
         Unfollow unfollow = new Unfollow(markers, guard, principal);
+        UUID id = conversation.getId();
         when(principal.subject()).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> unfollow.unfollow(ORG, conversation.getId())).isInstanceOf(ChatAccessDeniedException.class);
+        assertThatThrownBy(() -> unfollow.unfollow(ORG, id)).isInstanceOf(ChatAccessDeniedException.class);
 
         when(principal.subject()).thenReturn(Optional.of(USER));
         doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
-        assertThatThrownBy(() -> unfollow.unfollow(ORG, conversation.getId())).isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThatThrownBy(() -> unfollow.unfollow(ORG, id)).isInstanceOf(OrganizationAccessDeniedException.class);
     }
 
     // --- ListUnread
@@ -260,11 +263,13 @@ class ReadStateUseCasesTest {
 
     @Test
     void aStreamNeedsMembershipAndASignedInUser() {
+        OpenChatStream opening = stream(15);
+        Map<UUID, Long> noPositions = Map.of();
         when(principal.subject()).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> stream(15).open(ORG, Map.of())).isInstanceOf(ChatAccessDeniedException.class);
+        assertThatThrownBy(() -> opening.open(ORG, noPositions)).isInstanceOf(ChatAccessDeniedException.class);
 
         when(principal.subject()).thenReturn(Optional.of(USER));
         doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
-        assertThatThrownBy(() -> stream(15).open(ORG, Map.of())).isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThatThrownBy(() -> opening.open(ORG, noPositions)).isInstanceOf(OrganizationAccessDeniedException.class);
     }
 }

@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,6 +50,7 @@ class PostMessageTest {
     private ApplicationEventPublisher events;
     private PostMessage post;
     private Conversation conversation;
+    private UUID conversationId;
     private final UUID clientId = UUID.randomUUID();
 
     @BeforeEach
@@ -63,6 +65,7 @@ class PostMessageTest {
         post = new PostMessage(conversations, messages, access, guard, principal, markers, events, 50);
 
         conversation = conversation();
+        conversationId = conversation.getId();
         when(conversations.findByIdAndOrgKey(conversation.getId(), ORG)).thenReturn(Optional.of(conversation));
         when(access.of(conversation)).thenReturn(new ConversationAccess(true, true, true, true));
         when(principal.subject()).thenReturn(Optional.of("sub-author"));
@@ -122,7 +125,7 @@ class PostMessageTest {
     void aRefusedPostAnnouncesNothing() {
         when(access.of(conversation)).thenReturn(new ConversationAccess(true, false, true, true));
 
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(ChatAccessDeniedException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(ChatAccessDeniedException.class);
 
         verify(events, never()).publishEvent(any(Object.class));
         verify(markers, never()).followAfterPosting(any(), any(), any(), org.mockito.ArgumentMatchers.anyLong());
@@ -146,7 +149,7 @@ class PostMessageTest {
     void aCallerWhoMayNotReadItIsToldTheConversationDoesNotExist() {
         when(access.of(conversation)).thenReturn(new ConversationAccess(false, false, false, true));
 
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(ConversationNotFoundException.class);
         verify(conversations, never()).lockIfStatus(any(), any(), any());
     }
 
@@ -154,7 +157,7 @@ class PostMessageTest {
     void aReaderWithoutAWriteRoleIsRefused() {
         when(access.of(conversation)).thenReturn(new ConversationAccess(true, false, true, true));
 
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(ChatAccessDeniedException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(ChatAccessDeniedException.class);
         verify(messages, never()).save(any());
     }
 
@@ -162,7 +165,7 @@ class PostMessageTest {
     void aConversationThatIsNotWritableRightNowIsAConflict() {
         when(access.of(conversation)).thenReturn(new ConversationAccess(true, true, true, false));
 
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(ConversationNotWritableException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(ConversationNotWritableException.class);
         verify(conversations, never()).lockIfStatus(any(), any(), any());
     }
 
@@ -170,7 +173,7 @@ class PostMessageTest {
     void aConversationClosedWhileWeWereDecidingIsAConflictToo() {
         when(conversations.lockIfStatus(conversation.getId(), ORG, ConversationStatus.OPEN)).thenReturn(0);
 
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(ConversationNotWritableException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(ConversationNotWritableException.class);
         verify(messages, never()).save(any());
     }
 
@@ -184,10 +187,11 @@ class PostMessageTest {
 
     @Test
     void validatesTheRequestBeforeTouchingTheConversation() {
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), null, "Hi")).isInstanceOf(InvalidChatRequestException.class);
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, null)).isInstanceOf(InvalidChatRequestException.class);
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "   ")).isInstanceOf(InvalidChatRequestException.class);
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "x".repeat(51)))
+        String tooLong = "x".repeat(51);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, null, "Hi")).isInstanceOf(InvalidChatRequestException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, null)).isInstanceOf(InvalidChatRequestException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "   ")).isInstanceOf(InvalidChatRequestException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, tooLong))
                 .isInstanceOf(InvalidChatRequestException.class).hasMessageContaining("50");
         verify(conversations, never()).findByIdAndOrgKey(any(), any());
 
@@ -198,18 +202,20 @@ class PostMessageTest {
     void theConfiguredLimitCannotExceedWhatTheColumnHolds() {
         PostMessage generous = new PostMessage(conversations, messages, access, guard, principal, markers, events, Integer.MAX_VALUE);
 
-        assertThatThrownBy(() -> generous.post(ORG, conversation.getId(), clientId, "x".repeat(10_001)))
+        String beyondTheColumn = "x".repeat(10_001);
+
+        assertThatThrownBy(() -> generous.post(ORG, conversationId, clientId, beyondTheColumn))
                 .isInstanceOf(InvalidChatRequestException.class).hasMessageContaining("10000");
     }
 
     @Test
     void needsASignedInUserAndMembershipOfTheOrganization() {
         when(principal.subject()).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(ChatAccessDeniedException.class);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(ChatAccessDeniedException.class);
 
         when(principal.subject()).thenReturn(Optional.of("sub-author"));
-        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
-        assertThatThrownBy(() -> post.post(ORG, conversation.getId(), clientId, "Hi")).isInstanceOf(OrganizationAccessDeniedException.class);
+        doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
+        assertThatThrownBy(() -> post.post(ORG, conversationId, clientId, "Hi")).isInstanceOf(OrganizationAccessDeniedException.class);
     }
 
     @Test

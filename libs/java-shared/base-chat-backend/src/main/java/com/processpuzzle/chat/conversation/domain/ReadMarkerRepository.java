@@ -1,5 +1,6 @@
 package com.processpuzzle.chat.conversation.domain;
 
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,20 +28,41 @@ public interface ReadMarkerRepository extends JpaRepository<ReadMarker, ReadMark
     List<ReadMarker> findByUserSubAndConversationIdIn(String userSub, Collection<UUID> conversationIds);
 
     /**
-     * Moves the marker forward to {@code seq}; never back, and not at all when it is already there.
+     * Creates the marker unless the user already has one, in one atomic statement — no exception to catch, no
+     * second transaction. When another transaction is inserting the same marker this waits for it to finish and
+     * then does nothing, so a refusal always means the row is there to be locked.
      *
-     * <p>The maximum is computed in the statement, from the row as it is when the statement writes, rather than
-     * guarded by a {@code where last_read_seq < :seq}: when two statements wait on one row, PostgreSQL re-checks
-     * the condition after the first commits but not every database does, and a stale pass would write a lower
-     * number over a higher one.
+     * <p>Native, because JPA has no insert-if-absent; {@code on conflict do nothing} is PostgreSQL's, and H2 in
+     * its PostgreSQL mode, which the tests run in, understands it too.
      *
-     * @return 1 when the user follows the conversation — whether or not the marker moved
+     * @return 1 when the marker was created, 0 when there already was one
      */
     @Modifying(flushAutomatically = true)
-    @Query("update ReadMarker m set "
-            + "m.updatedAt = case when m.lastReadSeq < :seq then :now else m.updatedAt end, "
-            + "m.lastReadSeq = case when m.lastReadSeq < :seq then :seq else m.lastReadSeq end "
-            + "where m.conversationId = :conversationId and m.userSub = :userSub")
+    @Query(value = "insert into chat_read_marker (conversation_id, user_sub, org_key, last_read_seq, updated_at) "
+            + "values (:conversationId, :userSub, :orgKey, :seq, :now) on conflict do nothing", nativeQuery = true)
+    int insertIfAbsent(@Param("conversationId") UUID conversationId, @Param("userSub") String userSub,
+                       @Param("orgKey") String orgKey, @Param("seq") long seq, @Param("now") Instant now);
+
+    /**
+     * The marker, locked for writing until the transaction ends, so that what is read of it is what it is when this
+     * transaction writes. Moving a marker takes it before comparing: read-then-write under READ COMMITTED lets two
+     * writers both compare with the old number, and the lower one land last. With the lock the second writer waits
+     * here and compares with what the first one wrote.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from ReadMarker m where m.conversationId = :conversationId and m.userSub = :userSub")
+    Optional<ReadMarker> lockByConversationIdAndUserSub(@Param("conversationId") UUID conversationId, @Param("userSub") String userSub);
+
+    /**
+     * Moves the marker forward to {@code seq}; never back, and not at all when it is already there. The guard is
+     * only exact after {@link #lockByConversationIdAndUserSub}, which is what keeps another writer from changing
+     * the row between the comparison and the write.
+     *
+     * @return 1 when it moved
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("update ReadMarker m set m.lastReadSeq = :seq, m.updatedAt = :now "
+            + "where m.conversationId = :conversationId and m.userSub = :userSub and m.lastReadSeq < :seq")
     int advance(@Param("conversationId") UUID conversationId, @Param("userSub") String userSub,
                 @Param("seq") long seq, @Param("now") Instant now);
 

@@ -14,7 +14,6 @@ import com.processpuzzle.chat.conversation.domain.MessageRepository;
 import com.processpuzzle.chat.conversation.domain.PostedMessage;
 import com.processpuzzle.chat.conversation.domain.ReadMarkerRepository;
 import com.processpuzzle.chat.conversation.usecases.inbound.PostMessage;
-import com.processpuzzle.chat.conversation.usecases.inbound.ReadMarkerInsert;
 import com.processpuzzle.chat.conversation.usecases.inbound.ReadMarkers;
 import com.processpuzzle.chat.conversation.usecases.inbound.ResolveAccess;
 import com.processpuzzle.core.security.CurrentPrincipal;
@@ -72,13 +71,8 @@ class PostMessageConcurrencyTest {
     static class TestConfig {
 
         @Bean
-        ReadMarkerInsert readMarkerInsert(ReadMarkerRepository markers) {
-            return new ReadMarkerInsert(markers);
-        }
-
-        @Bean
-        ReadMarkers readMarkers(ReadMarkerRepository markers, ReadMarkerInsert inserter, ApplicationEventPublisher events) {
-            return new ReadMarkers(markers, inserter, events);
+        ReadMarkers readMarkers(ReadMarkerRepository markers, ApplicationEventPublisher events) {
+            return new ReadMarkers(markers, events);
         }
 
         @Bean

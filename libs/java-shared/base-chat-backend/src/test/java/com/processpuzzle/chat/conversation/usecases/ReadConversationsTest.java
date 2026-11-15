@@ -8,7 +8,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,8 +97,11 @@ class ReadConversationsTest {
         when(access.of(conversation)).thenReturn(HIDDEN);
 
         GetConversation get = new GetConversation(conversations, access, guard, markers, principal);
-        assertThatThrownBy(() -> get.get(ORG, conversation.getId())).isInstanceOf(ConversationNotFoundException.class);
-        assertThatThrownBy(() -> get.get(ORG, UUID.randomUUID())).isInstanceOf(ConversationNotFoundException.class);
+        UUID id = conversation.getId();
+        UUID unknown = UUID.randomUUID();
+
+        assertThatThrownBy(() -> get.get(ORG, id)).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> get.get(ORG, unknown)).isInstanceOf(ConversationNotFoundException.class);
     }
 
     // --- FindConversations
@@ -151,7 +156,7 @@ class ReadConversationsTest {
 
     @Test
     void aNonMemberFindsNothingButAnError() {
-        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
+        doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
 
         assertThatThrownBy(() -> new FindConversations(conversations, access, guard, markers, principal).find(ORG, SubjectType.ENTITY, SUBJECT_ID, null, null))
                 .isInstanceOf(OrganizationAccessDeniedException.class);
@@ -181,7 +186,7 @@ class ReadConversationsTest {
 
         list.list(ORG, conversation.getId(), 40L, 1000);
         list.list(ORG, conversation.getId(), 40L, 0);
-        verify(messages, org.mockito.Mockito.times(2)).findByConversationIdAndSeqLessThanOrderBySeqDesc(
+        verify(messages, times(2)).findByConversationIdAndSeqLessThanOrderBySeqDesc(
                 org.mockito.ArgumentMatchers.eq(conversation.getId()), org.mockito.ArgumentMatchers.eq(40L), pageable.capture());
 
         assertThat(pageable.getAllValues()).extracting(Pageable::getPageSize).containsExactly(200, 1);
@@ -192,7 +197,10 @@ class ReadConversationsTest {
         when(access.of(conversation)).thenReturn(HIDDEN);
         ListMessages list = new ListMessages(conversations, messages, access, guard);
 
-        assertThatThrownBy(() -> list.list(ORG, conversation.getId(), null, null)).isInstanceOf(ConversationNotFoundException.class);
-        assertThatThrownBy(() -> list.list(ORG, UUID.randomUUID(), null, null)).isInstanceOf(ConversationNotFoundException.class);
+        UUID id = conversation.getId();
+        UUID unknown = UUID.randomUUID();
+
+        assertThatThrownBy(() -> list.list(ORG, id, null, null)).isInstanceOf(ConversationNotFoundException.class);
+        assertThatThrownBy(() -> list.list(ORG, unknown, null, null)).isInstanceOf(ConversationNotFoundException.class);
     }
 }

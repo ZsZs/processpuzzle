@@ -75,10 +75,39 @@ class ReadMarkerPersistenceTest {
         refresh();
         ReadMarker duplicate = marker(id, "ann", 2);
 
-        assertThatThrownBy(() -> {
-            entityManager.persist(duplicate);
-            entityManager.flush();
-        }).isInstanceOfAny(DataIntegrityViolationException.class, jakarta.persistence.PersistenceException.class);
+        entityManager.persist(duplicate);
+
+        assertThatThrownBy(entityManager::flush)
+                .isInstanceOfAny(DataIntegrityViolationException.class, jakarta.persistence.PersistenceException.class);
+    }
+
+    @Test
+    void createsAMarkerOnceAndLeavesAnExistingOneAlone() {
+        UUID id = UUID.randomUUID();
+        Instant now = Instant.parse("2026-11-16T10:00:00Z");
+
+        assertThat(markers.insertIfAbsent(id, "ann", ORG, 4, now)).isEqualTo(1);
+        assertThat(markers.insertIfAbsent(id, "ann", ORG, 9, now)).as("there is one already").isZero();
+        assertThat(markers.insertIfAbsent(id, "bob", ORG, 2, now)).as("another user's is another marker").isEqualTo(1);
+        refresh();
+
+        ReadMarker created = markers.findByConversationIdAndUserSub(id, "ann").orElseThrow();
+        assertThat(created.getLastReadSeq()).as("the first number stands").isEqualTo(4);
+        assertThat(created.getOrgKey()).isEqualTo(ORG);
+        assertThat(created.getUpdatedAt()).isEqualTo(now);
+        assertThat(markers.lastReadOf(id, "bob")).contains(2L);
+    }
+
+    @Test
+    void locksTheMarkerOfOneUserInOneConversationAndNoOtherOne() {
+        UUID id = UUID.randomUUID();
+        markers.saveAndFlush(marker(id, "ann", 4));
+        markers.saveAndFlush(marker(id, "bob", 9));
+        refresh();
+
+        assertThat(markers.lockByConversationIdAndUserSub(id, "ann")).get().extracting(ReadMarker::getLastReadSeq).isEqualTo(4L);
+        assertThat(markers.lockByConversationIdAndUserSub(id, "nobody")).isEmpty();
+        assertThat(markers.lockByConversationIdAndUserSub(UUID.randomUUID(), "ann")).isEmpty();
     }
 
     @Test
@@ -88,8 +117,8 @@ class ReadMarkerPersistenceTest {
 
         Instant later = Instant.parse("2026-11-16T10:00:00Z");
 
-        markers.advance(id, "ann", 3, later);
-        markers.advance(id, "ann", 5, later);
+        assertThat(markers.advance(id, "ann", 3, later)).as("behind it").isZero();
+        assertThat(markers.advance(id, "ann", 5, later)).as("where it is").isZero();
         refresh();
         ReadMarker unmoved = markers.findByConversationIdAndUserSub(id, "ann").orElseThrow();
         assertThat(unmoved.getLastReadSeq()).as("a lower or equal number changes nothing").isEqualTo(5);

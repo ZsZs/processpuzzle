@@ -3,7 +3,6 @@ package com.processpuzzle.chat.definition.usecases;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -70,7 +69,7 @@ class SaveChatDefinitionTest {
 
         save.save("org-1", "order-discussion", desired());
 
-        verify(guard).declareRoles(eq("org-1"), eq("chat definition 'order-discussion'"), eq(Set.of("sailor", "dispatcher")));
+        verify(guard).declareRoles("org-1", "chat definition 'order-discussion'", Set.of("sailor", "dispatcher"));
     }
 
     @Test
@@ -120,7 +119,9 @@ class SaveChatDefinitionTest {
     void refusesAMalformedKeyFromThePath() {
         when(repository.findByOrgKeyAndDefinitionKeyAndChannel(any(), any(), any())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> save.save("org-1", "Order Discussion", desired()))
+        ChatDefinition input = desired();
+
+        assertThatThrownBy(() -> save.save("org-1", "Order Discussion", input))
                 .isInstanceOf(InvalidChatDefinitionException.class).hasMessageContaining("'key'");
     }
 

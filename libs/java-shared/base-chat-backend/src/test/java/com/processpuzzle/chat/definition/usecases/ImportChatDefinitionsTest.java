@@ -3,6 +3,7 @@ package com.processpuzzle.chat.definition.usecases;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,7 +67,7 @@ class ImportChatDefinitionsTest {
         assertThat(outcome.updated()).isZero();
         assertThat(outcome.written()).containsExactly("order-discussion", "race-protests");
         ArgumentCaptor<ChatDefinition> saved = ArgumentCaptor.forClass(ChatDefinition.class);
-        verify(repository, org.mockito.Mockito.times(2)).save(saved.capture());
+        verify(repository, times(2)).save(saved.capture());
         ChatDefinition order = saved.getAllValues().get(0);
         assertThat(order.getChannel()).isEqualTo(Channel.DRAFT);
         assertThat(order.getMultiplicity()).isEqualTo(Multiplicity.SINGLE);
@@ -85,7 +86,7 @@ class ImportChatDefinitionsTest {
         run(TWO, true);
 
         ArgumentCaptor<ChatDefinition> saved = ArgumentCaptor.forClass(ChatDefinition.class);
-        verify(repository, org.mockito.Mockito.times(4)).save(saved.capture());
+        verify(repository, times(4)).save(saved.capture());
         assertThat(saved.getAllValues()).extracting(ChatDefinition::getChannel)
                 .containsExactly(Channel.DRAFT, Channel.RELEASED, Channel.DRAFT, Channel.RELEASED);
     }

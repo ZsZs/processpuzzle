@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -97,7 +98,7 @@ class ChatStreamEndpointTest {
         mvc.perform(get(URL).param("after", "not-a-pair").accept("application/json")).andExpect(status().isBadRequest());
         mvc.perform(get(URL).param("after", UUID.randomUUID() + ":-1").accept("application/json")).andExpect(status().isBadRequest());
         mvc.perform(get(URL).param("after", "nope:3").accept("application/json")).andExpect(status().isBadRequest());
-        verify(open, org.mockito.Mockito.never()).open(any(), any());
+        verify(open, never()).open(any(), any());
     }
 
     @Test

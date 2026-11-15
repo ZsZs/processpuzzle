@@ -242,7 +242,7 @@ class ConversationEndpointTest {
 
     @Test
     void theNewestPageNeedsNoCursorAndTheLimitIsBoundByTheContract() throws Exception {
-        when(list.list(eq(ORG), eq(conversation.getId()), eq(null), eq(50))).thenReturn(List.of());
+        when(list.list(ORG, conversation.getId(), null, 50)).thenReturn(List.of());
 
         mvc.perform(get(BASE + "/" + conversation.getId() + "/messages")).andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(0)));
         verify(list).list(ORG, conversation.getId(), null, 50);

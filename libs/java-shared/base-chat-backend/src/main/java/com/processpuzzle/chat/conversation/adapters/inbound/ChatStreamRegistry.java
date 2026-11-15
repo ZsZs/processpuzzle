@@ -224,7 +224,7 @@ public class ChatStreamRegistry {
 
         private void markDead(Exception cause) {
             dead = true;
-            LOG.debug("A chat stream is gone: {}", cause.toString());
+            LOG.debug("A chat stream is gone", cause);
         }
     }
 }

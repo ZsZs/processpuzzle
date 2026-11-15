@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.processpuzzle.chat.conversation.domain.ReadMarkerRepository;
 import com.processpuzzle.chat.conversation.events.ReadMarkerChangedEvent;
-import com.processpuzzle.chat.conversation.usecases.inbound.ReadMarkerInsert;
 import com.processpuzzle.chat.conversation.usecases.inbound.ReadMarkers;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,13 +54,8 @@ class ReadMarkersConcurrencyTest {
     static class TestConfig {
 
         @Bean
-        ReadMarkerInsert readMarkerInsert(ReadMarkerRepository markers) {
-            return new ReadMarkerInsert(markers);
-        }
-
-        @Bean
-        ReadMarkers readMarkers(ReadMarkerRepository markers, ReadMarkerInsert inserter, ApplicationEventPublisher events) {
-            return new ReadMarkers(markers, inserter, events);
+        ReadMarkers readMarkers(ReadMarkerRepository markers, ApplicationEventPublisher events) {
+            return new ReadMarkers(markers, events);
         }
 
         @Bean
@@ -99,7 +93,7 @@ class ReadMarkersConcurrencyTest {
         List<Long> standings = runTogether(tabs);
 
         assertThat(repository.lastReadOf(id, "ann")).contains(TABS * 10L);
-        assertThat(standings).allSatisfy(standing -> assertThat(standing).isBetween(10L, TABS * 10L));
+        assertThat(standings).hasSize(TABS).allSatisfy(standing -> assertThat(standing).isBetween(10L, TABS * 10L));
         assertThat(repository.findByConversationIdAndUserSub(id, "ann")).isPresent();
         assertThat(recorded.events).filteredOn(event -> event.conversationId().equals(id)).hasSize(TABS)
                 .allSatisfy(event -> assertThat(event.following()).isTrue());

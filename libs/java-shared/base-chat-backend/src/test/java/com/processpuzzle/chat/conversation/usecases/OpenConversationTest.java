@@ -7,6 +7,7 @@ import static com.processpuzzle.chat.conversation.ConversationFixtures.provider;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -133,7 +134,8 @@ class OpenConversationTest {
                 .isInstanceOf(InvalidChatRequestException.class).hasMessageContaining("title");
         assertThatThrownBy(() -> open.open(ORG, DEFINITION_KEY, SUBJECT_ID, null))
                 .isInstanceOf(InvalidChatRequestException.class);
-        assertThatThrownBy(() -> open.open(ORG, DEFINITION_KEY, SUBJECT_ID, "x".repeat(201)))
+        String tooLong = "x".repeat(201);
+        assertThatThrownBy(() -> open.open(ORG, DEFINITION_KEY, SUBJECT_ID, tooLong))
                 .isInstanceOf(InvalidChatRequestException.class).hasMessageContaining("200");
         verify(conversations, never()).saveAndFlush(any());
     }
@@ -198,7 +200,7 @@ class OpenConversationTest {
 
     @Test
     void aNonMemberOfTheOrganizationIsRefusedBeforeAnythingIsLookedUp() {
-        org.mockito.Mockito.doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
+        doThrow(new OrganizationAccessDeniedException(ORG)).when(guard).requireAccess(ORG);
 
         assertThatThrownBy(() -> open.open(ORG, DEFINITION_KEY, SUBJECT_ID, null)).isInstanceOf(OrganizationAccessDeniedException.class);
         verify(definitions, never()).released(any(), any());
