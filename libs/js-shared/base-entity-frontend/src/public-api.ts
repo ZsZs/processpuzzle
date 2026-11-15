@@ -122,6 +122,8 @@ export { BaseUrlSegments } from './lib/base-form-navigator/base-url-segments';
 export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';
 export { RuleViolationsSingletonStore } from './lib/rule-engine/rule-violations.store';
 export type { LookupTable } from './lib/base-form/lookup/lookup-table';
+export { unsavedChangesGuard, type HasUnsavedChanges } from './lib/base-form/unsaved-changes/unsaved-changes.guard';
+export { UnsavedChangesRegistry } from './lib/base-form/unsaved-changes/unsaved-changes.registry';
 export { PdfExportService } from './lib/pdf-service/pdf-export.service';
 export type { PdfColumnDefinition, PdfExportOptions, PdfExportResult } from './lib/pdf-service/pdf-export.types';
 export { entityDescriptorToPdfColumns } from './lib/pdf-service/entity-descriptor-to-pdf-columns';
