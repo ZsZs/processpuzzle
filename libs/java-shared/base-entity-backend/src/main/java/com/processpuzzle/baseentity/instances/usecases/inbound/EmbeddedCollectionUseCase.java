@@ -118,7 +118,7 @@ public class EmbeddedCollectionUseCase {
                     merged.put(key, value);
                 }
             });
-            merged.put(ITEM_VERSION, versionOf(current) + 1);
+            merged.put(ITEM_VERSION, (int) (versionOf(current) + 1));
             items.set(index, merged);
             return merged;
         });

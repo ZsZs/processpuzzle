@@ -151,7 +151,7 @@ class EmbeddedCollectionUseCaseTest {
         var result = useCase.patch(ORG, "race", id, "rounds", "r1", 1L, Map.of("number", 9));
 
         assertThat(result.itemVersion()).isEqualTo(2L);
-        assertThat(result.item()).containsEntry("itemVersion", 2L);
+        assertThat(result.item()).containsEntry("itemVersion", 2);
         assertThat(result.version()).isEqualTo(6L);
     }
 

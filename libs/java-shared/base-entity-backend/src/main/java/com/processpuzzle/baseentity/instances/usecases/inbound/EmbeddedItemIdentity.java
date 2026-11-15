@@ -24,8 +24,12 @@ public final class EmbeddedItemIdentity {
 
     public static final String ITEM_ID = "id";
     public static final String ITEM_VERSION = "itemVersion";
-    /** The version a new item starts at. */
-    public static final long FIRST_VERSION = 1L;
+    /**
+     * The version a new item starts at. An {@code int}, deliberately: the payload is JSON, and a stored whole number reads
+     * back as an Integer. A Long here would compare unequal to its own stored copy, so every flush of the object would
+     * rewrite it and bump its version.
+     */
+    public static final int FIRST_VERSION = 1;
 
     private EmbeddedItemIdentity() {
     }

@@ -24,7 +24,7 @@ class EmbeddedItemIdentityTest {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> item = ((List<Map<String, Object>>) result.get("rounds")).get(0);
-        assertThat(item).containsEntry("number", 1).containsEntry("itemVersion", 1L);
+        assertThat(item).containsEntry("number", 1).containsEntry("itemVersion", 1);
         assertThat(item.get("id")).asString().isNotBlank();
     }
 
@@ -41,7 +41,7 @@ class EmbeddedItemIdentityTest {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> item = ((List<Map<String, Object>>) result.get("rounds")).get(0);
-        assertThat(item).containsEntry("id", "r1").containsEntry("itemVersion", 1L);
+        assertThat(item).containsEntry("id", "r1").containsEntry("itemVersion", 1);
     }
 
     @Test
