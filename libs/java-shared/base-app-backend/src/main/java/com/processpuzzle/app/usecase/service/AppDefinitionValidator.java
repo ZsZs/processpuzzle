@@ -296,6 +296,25 @@ public class AppDefinitionValidator {
         return false;
     }
 
+    /**
+     * A list narrowed by a context names one the app declares, and is an ENTITY route — the list is what it filters. It
+     * does not need the context to be required: the view stays reachable without one.
+     */
+    private void validateFilterByContext(RouteDefinition route, String path, Set<String> contextNames, List<AppValidationProblem> problems) {
+        var target = route.getTarget();
+        if (target == null || isBlank(target.getFilterByContext())) {
+            return;
+        }
+        if (target.getKind() != com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY) {
+            problems.add(new AppValidationProblem(path + "/target/filterByContext", "app.validation.filter-by-context-needs-entity",
+                    "Only an ENTITY route has a list to filter by a context."));
+        }
+        if (contextNames != null && !contextNames.contains(target.getFilterByContext())) {
+            problems.add(new AppValidationProblem(path + "/target/filterByContext", "app.validation.unknown-context",
+                    "The route filters by the context '" + target.getFilterByContext() + "', which the app does not declare."));
+        }
+    }
+
     private Set<String> validateRoutes(String orgKey, List<RouteDefinition> routes, Set<String> contextNames,
                                       List<AppValidationProblem> problems) {
         Set<String> routePaths = new LinkedHashSet<>();
@@ -325,6 +344,7 @@ public class AppDefinitionValidator {
                         "The route requires the context '" + route.getRequiresContext() + "', which the app does not declare."));
             }
             validateContextPath(route, path, problems);
+            validateFilterByContext(route, path, contextNames, problems);
             // Widgets live on the target now, and only a WIDGETS target has any.
             if (route.getTarget() != null) {
                 validateWidgets(orgKey, route.getTarget().getWidgets(), path + "/target" + WIDGETS, problems);

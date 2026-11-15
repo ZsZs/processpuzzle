@@ -1,6 +1,13 @@
 @if (store.isLoading()) {
   <mat-progress-bar mode="query"></mat-progress-bar>
 }
+@if (showsContextToggle()) {
+  <div class="base-entity-list-context-filter">
+    <mat-slide-toggle [checked]="onlyActiveContext()" (change)="onToggleContextFilter($event.checked)" [attr.data-testid]="entityDescriptor().createTestId('only-active-context')">
+      {{ 'base_entity.working_context.only_active' | transloco: { context: routeFilter.filterByContext } }}
+    </mat-slide-toggle>
+  </div>
+}
 <div class="base-entity-list mat-elevation-z8">
   <div class="base-entity-list-scroll">
     <table mat-table [dataSource]="dataSource" matSort aria-describedby="base-entity-list">

@@ -229,7 +229,8 @@
       "content": "{{ entity }} est toujours en cours. Voulez-vous vraiment le quitter ?",
       "cancel_button": "Rester",
       "confirm_button": "Quitter"
-    }
+    },
+    "only_active": "Seulement le {{context}} actif"
   },
   "context_collection": {
     "add": "Ajouter",

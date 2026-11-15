@@ -2,9 +2,11 @@ import { Component, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BaseEntityContainerComponent } from '../base-entity-container.component';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { ENTITY_DESCRIPTOR_ROUTE_DATA_KEY, REQUESTED_ENTITY_ROUTE_DATA_KEY } from './entity-screen-route-data';
+
+export { ENTITY_DESCRIPTOR_ROUTE_DATA_KEY, REQUESTED_ENTITY_ROUTE_DATA_KEY };
 
 /** Route `data` key under which {@link entityScreenRoute} puts the descriptor to render. */
-export const ENTITY_DESCRIPTOR_ROUTE_DATA_KEY = 'entityDescriptor';
 
 /**
  * Route `data` key naming the entity the route *asked* for — which is all this component needs, and needs
@@ -14,7 +16,6 @@ export const ENTITY_DESCRIPTOR_ROUTE_DATA_KEY = 'entityDescriptor';
  * and everything that reads it — `readEmbeddedBreadcrumb`, `EntityRouteRegistry` — would take this route to
  * be that one. See the note in {@link entityScreenRoute}.
  */
-export const REQUESTED_ENTITY_ROUTE_DATA_KEY = 'requestedEntityName';
 
 /**
  * Hosts one entity's generated screens at a route: List and Details, with the tab bar, toolbar and status

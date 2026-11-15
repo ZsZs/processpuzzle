@@ -239,6 +239,13 @@ describe('AppDefinitionMapper', () => {
       expect(mapper.toDto(entity).routes?.[0].target?.contextPath).toBe('rounds');
     });
 
+    it('carries filterByContext of a route both ways', () => {
+      const entity = mapper.fromDto({ ...dto, routes: [{ path: 'results', title: 'Results', target: { kind: 'ENTITY', entityName: 'Result', entityMode: 'LIST', filterByContext: 'race' } }] });
+
+      expect(entity.routes?.[0].filterByContext).toBe('race');
+      expect(mapper.toDto(entity).routes?.[0].target?.filterByContext).toBe('race');
+    });
+
     it('leaves requiresContext out of a route that has none, rather than sending an empty string', () => {
       const entity = mapper.fromDto({ ...dto, routes: [{ path: 'home', title: 'Home', target: { kind: 'WIDGETS' } }] });
       Object.assign(entity.routes?.[0] ?? {}, { requiresContext: '' });

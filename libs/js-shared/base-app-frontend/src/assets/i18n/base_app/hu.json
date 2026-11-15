@@ -110,10 +110,12 @@
       "entityMode": "Csak ENTITY: a listán vagy egy rekord részletein nyíljon meg. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások",
       "rsqlFilter": "Csak ENTITY + LIST: előszűrő, pl. status==OPEN. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások",
       "requiresContext": "Az alkalmazás egy kontextusának neve. Az oldal ekkor a ctx/<név>/<id> alatt érhető el, és „Válasszon …” felületet mutat, amíg egy sincs aktív.",
-      "contextPath": "A kontextus entitásának az az attribútuma, amelynek gyűjteményét ez az oldal listázza, pl. rounds. Kontextust igényel; az entitás neve ilyenkor az elemek típusa."
+      "contextPath": "A kontextus entitásának az az attribútuma, amelynek gyűjteményét ez az oldal listázza, pl. rounds. Kontextust igényel; az entitás neve ilyenkor az elemek típusa.",
+      "filterByContext": "Csak a kontextus aktív entitásának sorait mutatja, kapcsolóval az összes megjelenítéséhez. A „Kontextust igényel” mezőt hagyja üresen: az oldal kontextus nélkül is működik."
     },
     "requiresContext": "Kontextust igényel",
-    "contextPath": "Kontextus útvonal"
+    "contextPath": "Kontextus útvonal",
+    "filterByContext": "Szűrés kontextus szerint"
   },
   "app_module_mount": {
     "_self": "Modul beépítés",

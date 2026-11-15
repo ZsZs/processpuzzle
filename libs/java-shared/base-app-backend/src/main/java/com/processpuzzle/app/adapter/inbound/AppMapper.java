@@ -192,7 +192,8 @@ public class AppMapper {
                 target.getEntityName(),
                 target.getEntityMode() == null ? null : RouteTarget.EntityMode.valueOf(target.getEntityMode().name()),
                 target.getRsqlFilter(),
-                target.getContextPath());
+                target.getContextPath(),
+                target.getFilterByContext());
     }
 
     private List<ModuleMount> toDomainMounts(List<com.processpuzzle.app.model.ModuleMount> mounts) {
@@ -428,6 +429,7 @@ public class AppMapper {
         }
         model.setRsqlFilter(target.rsqlFilter());
         model.setContextPath(target.contextPath());
+        model.setFilterByContext(target.filterByContext());
         return model;
     }
 

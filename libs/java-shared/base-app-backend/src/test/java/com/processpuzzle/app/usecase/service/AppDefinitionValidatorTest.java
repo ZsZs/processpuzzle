@@ -256,6 +256,38 @@ class AppDefinitionValidatorTest {
     }
 
     @Test
+    void entityListFilteredByADeclaredContext_isAccepted() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void filterByAnUndeclaredContext_isReported() {
+        AppDefinitionInput input = validInput();
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.unknown-context");
+    }
+
+    @Test
+    void filterByOnARouteThatIsNoEntityList_isReported() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        input.getRoutes().get(0).getTarget().setFilterByContext("race");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.filter-by-context-needs-entity");
+    }
+
+    @Test
     void duplicateContextNames_areReported() {
         AppDefinitionInput input = validInput();
         input.setContexts(List.of(new WorkingContextDefinition("race", "Race"), new WorkingContextDefinition("race", "Regatta")));

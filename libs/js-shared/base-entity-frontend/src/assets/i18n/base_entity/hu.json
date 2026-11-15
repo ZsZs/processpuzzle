@@ -229,7 +229,8 @@
       "content": "{{ entity }} még folyamatban van. Biztosan elhagyja?",
       "cancel_button": "Maradok",
       "confirm_button": "Elhagyom"
-    }
+    },
+    "only_active": "Csak az aktív {{context}}"
   },
   "context_collection": {
     "add": "Hozzáadás",

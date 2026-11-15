@@ -87,9 +87,9 @@ defineEntityRelationshipSuite({
       // a contextPath on a route that is not an ENTITY route (app.validation.context-path-needs-entity), while a generated
       // route is WIDGETS. The collection path is optional, so it is left empty.
       entityName: 'App Route',
-      create: { contextPath: '' },
-      update: { contextPath: '' },
-      reason: 'contextPath is only meaningful on an ENTITY route, and the generated route takes the first kind, WIDGETS',
+      create: { contextPath: '', filterByContext: '' },
+      update: { contextPath: '', filterByContext: '' },
+      reason: 'contextPath and filterByContext are only meaningful on an ENTITY route, and the generated route takes the first kind, WIDGETS',
     },
     {
       // Working contexts of the app. The generator fills their optional references, and a generated parent names no

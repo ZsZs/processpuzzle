@@ -229,7 +229,8 @@
       "content": "{{ entity }} sigue en curso. ¿Seguro que desea salir?",
       "cancel_button": "Quedarse",
       "confirm_button": "Salir"
-    }
+    },
+    "only_active": "Solo el {{context}} activo"
   },
   "context_collection": {
     "add": "Añadir",

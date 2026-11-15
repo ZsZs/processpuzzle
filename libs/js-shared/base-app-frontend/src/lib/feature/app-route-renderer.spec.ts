@@ -127,7 +127,7 @@ describe('AppRouteRenderer', () => {
     });
   });
 
-  describe('a collection of the active context\'s entity', () => {
+  describe("a collection of the active context's entity", () => {
     const rounds = () => new RouteDefinition({ path: 'rounds', title: 'Rounds', kind: 'ENTITY', entityName: 'Round', requiresContext: 'race', contextPath: 'rounds' });
 
     it('renders the context collection screen, told which context, attribute and item type', async () => {
@@ -136,6 +136,14 @@ describe('AppRouteRenderer', () => {
       expect(route.component).toBe(ContextCollectionComponent);
       expect(route.data).toEqual({ [CONTEXT_COLLECTION_CONTEXT_KEY]: 'race', [CONTEXT_COLLECTION_PATH_KEY]: 'rounds', [CONTEXT_COLLECTION_ENTITY_KEY]: 'Round' });
       expect(entityScreens.resolve).not.toHaveBeenCalled();
+    });
+
+    it('hands an optional context filter and the RSQL of a list route to its screens', async () => {
+      const route = await renderer().render(
+        new RouteDefinition({ path: 'results', title: 'Results', kind: 'ENTITY', entityName: 'Result', entityMode: 'LIST', rsqlFilter: 'status!=CLOSED', filterByContext: 'race' }),
+      );
+
+      expect(route.data).toMatchObject({ rsqlFilter: 'status!=CLOSED', filterByContext: 'race' });
     });
 
     it('is the generic entity screens without a context to read the collection from', async () => {
