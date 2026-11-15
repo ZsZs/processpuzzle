@@ -165,6 +165,49 @@ function readManagedVersions(props) {
   return managed;
 }
 
+// The artifactId and the version property of one lib pom, which `own` is the project's own part of.
+function readIdentity(own, pomPath) {
+  const artifactId = own.match(/<artifactId>([^<]+)<\/artifactId>/)?.[1]?.trim();
+  const versionRef = own.match(/<version>([^<]+)<\/version>/)?.[1]?.trim();
+  if (!artifactId || !versionRef) {
+    throw new Error(`Could not read artifactId/version from ${pomPath}`);
+  }
+  const versionProperty = versionRef.match(/^\$\{([^}]+)\}$/)?.[1];
+  if (!versionProperty) {
+    throw new Error(`${pomPath}: expected <version> to reference a property, got '${versionRef}'`);
+  }
+  return { artifactId, versionProperty };
+}
+
+// The in-repo dependencies of one lib pom, each with the version it resolves to.
+function readInRepoDeps(own, pomPath, props, managed) {
+  const deps = [];
+  for (const dep of own.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)) {
+    const body = dep[1];
+    const groupId = body.match(/<groupId>([^<]+)<\/groupId>/)?.[1]?.trim();
+    if (groupId !== 'com.processpuzzle' && groupId !== '${project.groupId}') continue;
+    const depArtifact = body.match(/<artifactId>([^<]+)<\/artifactId>/)?.[1]?.trim();
+    const declared = body.match(/<version>([^<]+)<\/version>/)?.[1]?.trim();
+    const version = declared ? resolveProperty(declared, props) : managed.get(depArtifact);
+    if (!version) {
+      throw new Error(`${pomPath}: dependency ${depArtifact} has no version, and none is managed in the root pom`);
+    }
+    deps.push({ artifactId: depArtifact, version });
+  }
+  return deps;
+}
+
+// Resolves each dependency's artifactId back to the project that produces it, so callers can talk in
+// project names (which is what --project takes).
+function linkDependencyProjects(graph) {
+  const byArtifact = new Map([...graph].map(([project, info]) => [info.artifactId, project]));
+  for (const info of graph.values()) {
+    for (const dep of info.deps) {
+      dep.project = byArtifact.get(dep.artifactId);
+    }
+  }
+}
+
 // Derives the in-repo dependency graph from the lib poms rather than hardcoding it, so it
 // cannot drift. Returns project -> { path, artifactId, versionProperty, version, deps }.
 // Note the project -> artifactId mapping is not identity: api-contracts -> processpuzzle-api.
@@ -183,31 +226,8 @@ function buildJavaGraph() {
     // <dependencyManagement> and <profiles> hold dependencies that are not the project's.
     const own = dropBlock(dropBlock(dropBlock(dropBlock(raw, 'parent'), 'dependencyManagement'), 'build'), 'profiles');
 
-    const artifactId = own.match(/<artifactId>([^<]+)<\/artifactId>/)?.[1]?.trim();
-    const versionRef = own.match(/<version>([^<]+)<\/version>/)?.[1]?.trim();
-    if (!artifactId || !versionRef) {
-      throw new Error(`Could not read artifactId/version from ${pomPath}`);
-    }
-    const versionProperty = versionRef.match(/^\$\{([^}]+)\}$/)?.[1];
-    if (!versionProperty) {
-      throw new Error(`${pomPath}: expected <version> to reference a property, got '${versionRef}'`);
-    }
-
-    const deps = [];
-    for (const dep of own.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)) {
-      const body = dep[1];
-      const groupId = body.match(/<groupId>([^<]+)<\/groupId>/)?.[1]?.trim();
-      if (groupId !== 'com.processpuzzle' && groupId !== '${project.groupId}') continue;
-      const depArtifact = body.match(/<artifactId>([^<]+)<\/artifactId>/)?.[1]?.trim();
-      const declared = body.match(/<version>([^<]+)<\/version>/)?.[1]?.trim();
-      const version = declared ? resolveProperty(declared, props) : managed.get(depArtifact);
-      if (!version) {
-        throw new Error(
-          `${pomPath}: dependency ${depArtifact} has no version, and none is managed in the root pom`,
-        );
-      }
-      deps.push({ artifactId: depArtifact, version });
-    }
+    const { artifactId, versionProperty } = readIdentity(own, pomPath);
+    const deps = readInRepoDeps(own, pomPath, props, managed);
 
     graph.set(dir, {
       path,
@@ -218,14 +238,7 @@ function buildJavaGraph() {
     });
   }
 
-  // Resolve each dependency's artifactId back to the project that produces it, so callers
-  // can talk in project names (which is what --project takes).
-  const byArtifact = new Map([...graph].map(([project, info]) => [info.artifactId, project]));
-  for (const info of graph.values()) {
-    for (const dep of info.deps) {
-      dep.project = byArtifact.get(dep.artifactId);
-    }
-  }
+  linkDependencyProjects(graph);
   return graph;
 }
 
@@ -352,7 +365,8 @@ async function assertDependenciesPublished(project, graph, target) {
   const results = [];
   for (const dep of info.deps) {
     const foundIn = await findDependency(dep, target);
-    console.log(`  ${(foundIn ? `ok (${foundIn})` : 'MISSING').padEnd(12)} ${dep.artifactId}:${dep.version}`);
+    const status = foundIn ? `ok (${foundIn})` : 'MISSING';
+    console.log(`  ${status.padEnd(12)} ${dep.artifactId}:${dep.version}`);
     results.push({ ...dep, foundIn });
   }
 
@@ -501,13 +515,14 @@ async function prepare(project, increment, targetOverride, allowUnpublishedDeps)
 }
 
 function usage() {
+  const knownProjects = [...PROJECTS].map(([name, { target }]) => `${name} (${target})`).join('\n  ');
   return (
     `Usage:\n` +
     `  node tools/scripts/release-java-lib.mjs prepare --project <name> --increment <major|minor|patch>\n` +
     `      [--target <github|central>]  override the project's default registry (to promote a lib)\n` +
     `      [--allow-unpublished-deps]   release even if an in-repo dependency is not published\n` +
     `  node tools/scripts/release-java-lib.mjs order\n\n` +
-    `Known projects (default target):\n  ${[...PROJECTS].map(([name, { target }]) => `${name} (${target})`).join('\n  ')}\n`
+    `Known projects (default target):\n  ${knownProjects}\n`
   );
 }
 
