@@ -300,36 +300,35 @@ describe('BaseFormNavigatorStore', () => {
       navigator = TestBed.inject(BaseFormNavigatorSingletonStore);
     });
 
-    it('is given back once, to the form that left it', () => {
-      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+    it('keeps each form\'s values under its own entity, and gives them back once, to that form', () => {
+      const parentValues = { workflowName: 'Order flow' };
+      navigator.keepFormSnapshot('Workflow Start Event', childValues);
+      navigator.keepFormSnapshot('Workflow', parentValues);
 
       expect(navigator.popFormSnapshot('Workflow Start Event')).toEqual(childValues);
       expect(navigator.popFormSnapshot('Workflow Start Event')).toBeUndefined();
+      expect(navigator.popFormSnapshot('Workflow')).toEqual(parentValues);
     });
 
-    // A workflow's form shows the form of one of its start events inside it, and both ask for the values when the
-    // page comes back from the list the start event chose its event from. The outer one asks first.
-    it('is withheld from the form of another entity, which leaves it for its owner', () => {
-      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+    it('is a round trip from when it begins until the last values are given back', () => {
+      expect(navigator.hasRoundTrip()).toBe(false);
+      navigator.beginRoundTrip();
+      expect(navigator.hasRoundTrip()).toBe(true);
 
-      expect(navigator.popFormSnapshot('Workflow')).toBeUndefined();
-      expect(navigator.popFormSnapshot('Workflow Start Event')).toEqual(childValues);
-    });
+      navigator.keepFormSnapshot('Workflow Start Event', childValues);
+      navigator.popFormSnapshot('Workflow Start Event');
 
-    it('is taken by whoever asks when no owner was recorded or none is named, as before', () => {
-      navigator.captureFormSnapshot(childValues);
-      expect(navigator.popFormSnapshot('Workflow')).toEqual(childValues);
-
-      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
-      expect(navigator.popFormSnapshot()).toEqual(childValues);
+      expect(navigator.hasRoundTrip()).toBe(false);
     });
 
     it('is dropped with the payload stacks when the router navigates on its own', async () => {
-      navigator.captureFormSnapshot(childValues, 'Workflow Start Event');
+      navigator.beginRoundTrip();
+      navigator.keepFormSnapshot('Workflow Start Event', childValues);
 
       await router.navigateByUrl('/home');
       await router.navigateByUrl('/test-entity/list');
 
+      expect(navigator.hasRoundTrip()).toBe(false);
       expect(navigator.popFormSnapshot('Workflow Start Event')).toBeUndefined();
     });
   });
