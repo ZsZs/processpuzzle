@@ -213,6 +213,16 @@ describe('AppDefinitionMapper', () => {
       expect(payload.contexts).toEqual([withExtras]);
     });
 
+    it('sends the picker count as a number, and an empty count as nothing', () => {
+      const withCount = mapper.fromDto({ ...dto, contexts: [{ name: 'race', entityName: 'Race', picker: { recent: 5 } }] });
+      Object.assign(withCount.contexts?.[0] ?? {}, { pickerRecent: '7' });
+      expect(mapper.toDto(withCount).contexts?.[0].picker).toEqual({ recent: 7 });
+
+      const emptyCount = mapper.fromDto({ ...dto, contexts: [{ name: 'race', entityName: 'Race', picker: { recent: 5 } }] });
+      Object.assign(emptyCount.contexts?.[0] ?? {}, { pickerRecent: '' });
+      expect(mapper.toDto(emptyCount).contexts?.[0].picker).toBeUndefined();
+    });
+
     it('sends only what the form filled in, and no empty nested objects', () => {
       const entity = mapper.fromDto({ ...dto, contexts: [{ name: 'race', entityName: 'Race' }] });
       Object.assign(entity.contexts?.[0] ?? {}, { displayLabel: '', pickerSearchFields: [], confirmSwitchStates: [] });

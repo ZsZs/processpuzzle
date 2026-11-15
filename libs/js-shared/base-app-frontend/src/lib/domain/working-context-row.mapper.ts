@@ -26,7 +26,7 @@ export function flattenWorkingContext(dto: WorkingContextDefinition): WorkingCon
 
 /** The inverse: what the backend takes. Nested objects that would be empty are left out, not sent as `{}`. */
 export function nestWorkingContext(row: WorkingContextRow): WorkingContextDefinition {
-  const picker = clean({ ...row.source?.picker, searchFields: row.pickerSearchFields?.length ? row.pickerSearchFields : undefined, recent: row.pickerRecent ?? undefined });
+  const picker = clean({ ...row.source?.picker, searchFields: row.pickerSearchFields?.length ? row.pickerSearchFields : undefined, recent: toCount(row.pickerRecent) });
   const display = clean({ ...row.source?.display, label: row.displayLabel || undefined, badge: row.displayBadge || undefined, extra: row.displayExtra || undefined });
   // Conditions on other attributes, which only a hand-written definition can carry, survive next to the one the form writes.
   const confirmSwitchWhen = clean({ ...row.source?.confirmSwitchWhen, [STATE_CONDITION]: row.confirmSwitchStates?.length ? row.confirmSwitchStates : undefined });
@@ -41,6 +41,16 @@ export function nestWorkingContext(row: WorkingContextRow): WorkingContextDefini
     display,
     confirmSwitchWhen,
   }) as WorkingContextDefinition;
+}
+
+/**
+ * The picker's count as the contract wants it: a whole number, or nothing. The form holds what was typed, which is text
+ * — and an empty box is "not set", not a count of zero.
+ */
+function toCount(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  const count = Number(value);
+  return Number.isInteger(count) && count >= 0 ? count : undefined;
 }
 
 /** Drops `undefined` members, and an object left with none. */
