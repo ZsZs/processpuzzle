@@ -255,6 +255,25 @@ describe('GenericEntityFormComponent', () => {
       expect(await component.confirmLeave()).toBe(true);
     });
 
+    it('does not ask when the form is left for a list to choose from, which keeps its values', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      formNavigator.captureFormSnapshot(component.baseEntityForm.getRawValue(), component.entityDescriptor().entityName);
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('still asks when the values were kept for another form', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      formNavigator.captureFormSnapshot({}, 'some-other-entity');
+      vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(false) } as never);
+
+      expect(await component.confirmLeave()).toBe(false);
+    });
+
     it('does not ask after Cancel, which discards on purpose', async () => {
       const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
       vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);

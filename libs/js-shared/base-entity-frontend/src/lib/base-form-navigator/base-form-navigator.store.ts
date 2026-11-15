@@ -181,6 +181,15 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       return snapshot;
     }
 
+    /**
+     * Whether {@link captureFormSnapshot} kept values for the form of `owner`, without taking them. A form that is
+     * being left checks this to tell a round trip to a list to choose from, which gives its values back, apart from a
+     * plain departure that would lose them.
+     */
+    function hasFormSnapshotFor(owner: string): boolean {
+      return store.formSnapshot() !== undefined && store.formSnapshotOwner() === owner;
+    }
+
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
     function determineActiveRouteSegment(): void {
       const currentUrl = determineCurrentUrl();
@@ -523,6 +532,7 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       destroyNavigationTracking,
       initializeNavigationTracking,
       popFormSnapshot,
+      hasFormSnapshotFor,
       popRequestPayload,
       popResponsePayload,
       pushResponsePayload,
