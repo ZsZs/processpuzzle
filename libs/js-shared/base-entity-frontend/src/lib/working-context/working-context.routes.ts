@@ -1,8 +1,18 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, CanMatchFn, Route, Router, Routes, UrlSegment } from '@angular/router';
+import { embeddedChildRoute, EmbeddedChildRoute } from '../base-entity.routes';
+import { ENTITY_NAME_ROUTE_DATA_KEY } from '../base-form-navigator/entity-route.registry';
 import { WorkingContextEmptyStateComponent } from './working-context-empty-state.component';
 import { WorkingContextService } from './working-context.service';
 import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY, WORKING_CONTEXT_SEGMENT } from './working-context.url';
+
+/** What a working context's entity is made of, for the routes that open its embedded rows. */
+export interface WorkingContextAggregate {
+  /** The context's entity type. With it, the context's route is the root of the URL chain its embedded screens read. */
+  entityName?: string;
+  /** The embedded children of that entity, as the entity's own details route mounts them; derived from its descriptor. */
+  embeddedChildren?: EmbeddedChildRoute[];
+}
 
 /**
  * The routes of `routes` bound to the context `contextName`, mounted twice:
@@ -19,18 +29,22 @@ import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY, WORKING_CONTE
  * Nest a child context by calling this again inside `routes`; its URL then reads
  * `ctx/site/<id>/ctx/warehouse/<id>/...`.
  */
-export function workingContextRoutes(contextName: string, routes: Routes): Routes {
+export function workingContextRoutes(contextName: string, routes: Routes, aggregate: WorkingContextAggregate = {}): Routes {
+  const embeddedBranches = (aggregate.embeddedChildren ?? []).map(embeddedChildRoute);
   const viewSegments = routes.map((route) => firstSegment(route.path)).filter((segment): segment is string => !!segment);
+  // The branches are routes of the context as well: an id named like one would swallow its URL.
+  const reservedSegments = [...viewSegments, ...embeddedBranches.map((branch) => firstSegment(branch.path)).filter((segment): segment is string => !!segment)];
   // A nested context's own `ctx` branch is not a view the user lands on.
   const landing = viewSegments.find((segment) => segment !== WORKING_CONTEXT_SEGMENT);
   const data = { [WORKING_CONTEXT_ROUTE_DATA_KEY]: contextName };
   return [
     {
       path: `${WORKING_CONTEXT_SEGMENT}/${contextName}/:${WORKING_CONTEXT_ID_PARAM}`,
-      data,
-      canMatch: [idIsNotAView(viewSegments)],
+      // The entity name makes the route a level of the URL chain the embedded screens read their aggregate from.
+      data: aggregate.entityName ? { ...data, [ENTITY_NAME_ROUTE_DATA_KEY]: aggregate.entityName } : data,
+      canMatch: [idIsNotAView(reservedSegments)],
       canActivate: [workingContextGuard],
-      children: [...(landing ? [{ path: '', redirectTo: landing, pathMatch: 'full' as const }] : []), ...routes],
+      children: [...(landing ? [{ path: '', redirectTo: landing, pathMatch: 'full' as const }] : []), ...routes, ...embeddedBranches],
     },
     {
       path: `${WORKING_CONTEXT_SEGMENT}/${contextName}`,

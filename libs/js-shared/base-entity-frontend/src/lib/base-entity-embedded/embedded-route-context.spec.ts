@@ -334,3 +334,50 @@ describe('BaseEntityDescriptor.embeddedAttrFor', () => {
     expect(() => ambiguous.embeddedAttrFor('Embedded Component')).toThrowError(/'primary', 'secondary'/);
   });
 });
+
+describe('a working context as the root of the chain', () => {
+  /** `ctx/<name>/:contextId`: the route of a working context's entity, which declares its name and its id in one. */
+  function contextRoot(name: string, entityName: string, id: string, parent: ActivatedRouteSnapshot | null = null): ActivatedRouteSnapshot {
+    const declared = { workingContext: name, entityName };
+    return { data: declared, params: { contextId: id }, url: segments('ctx', name, id), parent, routeConfig: { path: `ctx/${name}/:contextId`, data: declared } } as unknown as ActivatedRouteSnapshot;
+  }
+
+  /** An embedded child's branch and details route below `parent`, as the context's routes mount them. */
+  function embeddedBelow(parent: ActivatedRouteSnapshot, entityName: string, entityId: string): ActivatedRouteSnapshot {
+    const container = { data: { ...parent.data, entityName }, params: parent.params, url: segments(snakeCaseName(entityName)), parent, routeConfig: { path: snakeCaseName(entityName), data: { entityName } } } as unknown as ActivatedRouteSnapshot;
+    const params = { ...parent.params, entityId };
+    return { data: container.data, params, url: segments(entityId, 'details'), parent: container, routeConfig: { path: ':entityId/details' } } as unknown as ActivatedRouteSnapshot;
+  }
+
+  it('reads the context route as a level of its entity, carrying the context and the id', () => {
+    const deepest = embeddedBelow(contextRoot('warehouse', 'Test Entity', 'W1'), 'Embedded Component', 'z1');
+
+    expect(readEmbeddedBreadcrumb(deepest)).toEqual([
+      { entityName: 'Test Entity', entityId: 'W1', workingContext: 'warehouse', url: '/ctx/warehouse/W1', baseUrl: '' },
+      { entityName: 'Embedded Component', entityId: 'z1', url: '/ctx/warehouse/W1/embedded-component/z1/details', baseUrl: '/ctx/warehouse/W1' },
+    ]);
+  });
+
+  it('keeps the context on the chain, so the aggregate knows it is saved through the item endpoints', () => {
+    const deepest = embeddedBelow(contextRoot('warehouse', 'Test Entity', 'W1'), 'Embedded Component', 'embedded_1_1');
+    const levels = aggregateChainOf(readEmbeddedRouteChain(deepest), descriptorOf);
+    const payload = { id: 'W1', embeddedComponents: [{ id: 'embedded_1_1' }] };
+
+    expect(levels[0]).toMatchObject({ entityName: 'Test Entity', entityId: 'W1', workingContext: 'warehouse' });
+    expect(resolveEmbeddedRouteContext(levels, payload, descriptorOf)).toMatchObject({ rootEntityName: 'Test Entity', rootId: 'W1', viaWorkingContext: 'warehouse', attrName: 'embeddedComponents' });
+  });
+
+  it('leaves an entity\'s own route without a context', () => {
+    const levels = readEmbeddedRouteChain(routeChain({ entityName: 'Test Entity', entityId: '1' }, { entityName: 'Embedded Component', entityId: 'embedded_1_1' }));
+
+    expect(levels.every((level) => level.workingContext === undefined)).toBe(true);
+    expect(resolveEmbeddedRouteContext(levels, { id: '1', embeddedComponents: [{ id: 'embedded_1_1' }] }, descriptorOf)?.viaWorkingContext).toBeUndefined();
+  });
+
+  it('does not read the id of an inherited context as the id of a route that declares none', () => {
+    // A context's route with no id of its own — the empty-state branch — is no level at all.
+    const emptyState = { data: { workingContext: 'warehouse' }, params: {}, url: segments('ctx', 'warehouse'), parent: null, routeConfig: { path: 'ctx/warehouse', data: { workingContext: 'warehouse' } } } as unknown as ActivatedRouteSnapshot;
+
+    expect(readEmbeddedBreadcrumb(emptyState)).toEqual([]);
+  });
+});

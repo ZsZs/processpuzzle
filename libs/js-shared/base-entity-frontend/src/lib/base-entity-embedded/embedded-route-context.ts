@@ -2,6 +2,7 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { ENTITY_NAME_ROUTE_DATA_KEY } from '../base-form-navigator/entity-route.registry';
+import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY } from '../working-context/working-context.url';
 import { EmbeddedPath, EmbeddedPathStep, indexOfRow, readRows } from './embedded-aggregate';
 
 /** One `<entity>/<id>/details` step of the URL: which entity, and which instance of it. */
@@ -9,6 +10,12 @@ export interface EmbeddedRouteLevel {
   entityName: string;
   /** `undefined` on a list route, {@link BaseUrlSegments.NewEntity} for a row being created. */
   entityId: string | undefined;
+  /**
+   * Set when this level is a **working context's** entity — `ctx/<name>/<id>` — rather than an entity's own route. It is
+   * the root of the aggregate all the same: the rows below it are addressed through the URL exactly as below an entity's
+   * details form, but saved through the item endpoints, as no form of the whole entity is open to save them.
+   */
+  workingContext?: string;
 }
 
 /** A {@link EmbeddedRouteLevel} with the two URLs the level can be navigated by. */
@@ -23,6 +30,8 @@ export interface EmbeddedBreadcrumbLevel extends EmbeddedRouteLevel {
 export interface EmbeddedRouteContext {
   rootEntityName: string;
   rootId: string;
+  /** The working context the aggregate's root is the entity of, when it is one. See {@link EmbeddedRouteLevel.workingContext}. */
+  viaWorkingContext?: string;
   /** Hops from the root down to the **owner** of these rows; `[]` when the owner is the root itself. */
   path: EmbeddedPath;
   /** The owner's attribute carrying these rows. */
@@ -48,7 +57,7 @@ export interface EmbeddedRouteContext {
  *   the id of the entity it hangs under.
  */
 export function readEmbeddedRouteChain(snapshot: ActivatedRouteSnapshot | null): EmbeddedRouteLevel[] {
-  return readEmbeddedBreadcrumb(snapshot).map(({ entityName, entityId }) => ({ entityName, entityId }));
+  return readEmbeddedBreadcrumb(snapshot).map(({ entityName, entityId, workingContext }) => ({ entityName, entityId, ...(workingContext === undefined ? {} : { workingContext }) }));
 }
 
 /**
@@ -70,12 +79,13 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
     const entityName = declaredEntityName(current);
     const deepestLevel = levels[levels.length - 1];
     if (typeof entityName === 'string' && entityName.length > 0 && (deepestLevel?.entityName !== entityName || deepestLevel.entityId !== undefined)) {
-      levels.push({ entityName, entityId: undefined, url, baseUrl: url });
+      const workingContext = contextOf(current);
+      levels.push({ entityName, entityId: undefined, url, baseUrl: url, ...(workingContext === undefined ? {} : { workingContext }) });
     }
 
     url += segmentsOf(current);
 
-    const entityId = current.params[BaseUrlSegments.EntityID];
+    const entityId = current.params[contextOf(current) === undefined ? BaseUrlSegments.EntityID : WORKING_CONTEXT_ID_PARAM];
     if (typeof entityId === 'string' && levels.length > 0 && declaresEntityId(current)) {
       levels[levels.length - 1].entityId = entityId;
     }
@@ -103,9 +113,16 @@ function declaredEntityName(snapshot: ActivatedRouteSnapshot): unknown {
   return snapshot.routeConfig?.data?.[ENTITY_NAME_ROUTE_DATA_KEY];
 }
 
-/** True when `:entityId` is this route's own segment rather than one inherited from an ancestor. */
+/** True when `:entityId` — or, on a working context's route, `:contextId` — is this route's own segment rather than an inherited one. */
 function declaresEntityId(snapshot: ActivatedRouteSnapshot): boolean {
-  return snapshot.routeConfig?.path?.includes(':' + BaseUrlSegments.EntityID) === true;
+  const path = snapshot.routeConfig?.path;
+  return path?.includes(':' + BaseUrlSegments.EntityID) === true || (contextOf(snapshot) !== undefined && path?.includes(':' + WORKING_CONTEXT_ID_PARAM) === true);
+}
+
+/** The working context a route declares itself as the entity route of (`ctx/<name>/:contextId`), from its own config. */
+function contextOf(snapshot: ActivatedRouteSnapshot): string | undefined {
+  const name = snapshot.routeConfig?.data?.[WORKING_CONTEXT_ROUTE_DATA_KEY];
+  return typeof name === 'string' && snapshot.routeConfig?.path?.includes(':' + WORKING_CONTEXT_ID_PARAM) ? name : undefined;
 }
 
 /** This route's own contribution to the URL — empty for a componentless or path-less route. */
@@ -163,6 +180,7 @@ export function resolveEmbeddedRouteContext(levels: readonly EmbeddedRouteLevel[
       return {
         rootEntityName: root.entityName,
         rootId: root.entityId,
+        ...(root.workingContext === undefined ? {} : { viaWorkingContext: root.workingContext }),
         path,
         attrName: attrDescriptor.attrName,
         entityName: level.entityName,

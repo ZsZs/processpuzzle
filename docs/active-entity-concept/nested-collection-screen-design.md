@@ -101,12 +101,35 @@ The edit dialog (`ContextCollectionItemDialog`) can then be retired, or kept for
 4. `ContextCollectionComponent` row and add navigation. Component tests.
 5. E2E: part of the context scenario (phase 4, last item).
 
-## Open questions
+## Decisions taken
 
-1. **Immediate or staged in a context?** Proposed: immediate (item endpoints), since a context has no root form. The
-   alternative, staging and a "Save" in the status bar, would reintroduce the whole-document write that phase 2 removed.
-2. **Keep the edit dialog?** Proposed: retire it once rows open the form, so one editing experience exists. It can stay
-   for a first slice.
-3. **Row key addressing:** `EmbeddedRouteContext` addresses rows by index inside a document, the item endpoints by `id`.
-   Rows stored before ids existed have none until their object is saved once. Proposed: the direct service refuses to
-   address such a row and asks to save the owner first; or the backend assigns ids on read. Needs a decision.
+1. **Immediate saves in a context.** A row is saved through the item endpoints when its form is saved; there is no document-wide Save.
+2. **The edit dialog is retired.** A row, and Add, open the entity type's own embedded form below the context.
+3. **A row with no `id` is not guessed at.** Rows stored before ids existed say "Save its <entity> once from its own form first". The entity's own form assigns the ids on that save.
+
+## Built
+
+| Piece | Where |
+| --- | --- |
+| A context level is a root of the URL chain | `embedded-route-context.ts` (`workingContext` on the level, `viaWorkingContext` on the context) |
+| Embedded child branches below the context routes | `workingContextRoutes(name, routes, { entityName, embeddedChildren })`; the app route builder passes the children from the descriptors |
+| Saving through the item endpoints | `DirectEmbeddedWriter`; `EmbeddedEntityService` uses it when the aggregate's root is a context |
+| The list opens the row's form | `ContextCollectionComponent` (`<context url>/<item type>/<key>/details`, returns to the list) |
+| No repeated crumb | the status bar's breadcrumb leaves out the context levels the context crumb already shows |
+
+## Limits
+
+- **Two levels.** The server addresses a collection one level below the entity's own (a zone's shelves). A row nested deeper is refused with a message.
+- **The list screen** (`contextPath`) lists a top-level collection. Nested rows are reached through the embedded form's own list control, as in the authoring screens.
+- **Not exercised in a browser yet.** Unit and component tests cover each piece; the end-to-end scenario is the remaining item.
+
+## Trying it
+
+The testbed seeds an app, **order-desk**, over its existing Order entity (embedded lines, state machine, calculated total). It needs no new entities.
+
+1. Start the testbed (the app is created on startup if it is missing).
+2. In the designer, open Application → App Definition → **order-desk**, then its **Preview** tab.
+3. Orders → create or open a few orders (the generated forms), then **Set as active** on a row.
+4. The status bar shows the order with its state and customer; its menu switches, opens or clears it.
+5. **Lines** lists that order's lines. **Add** and a row open the line's form below the order and return to the list.
+6. The header's **context-actions** buttons and the status bar's menu offer the order's transitions.

@@ -177,3 +177,81 @@ appDefinitions:
     modules:
       - moduleKey: order-admin
         basePath: back-office
+
+  # A working context in use: the clerk picks one Order and then works inside it. The order is chosen once — from
+  # the order list ("Set as active"), or from the status bar's drawer — and stays in the status bar with its state
+  # and customer; the Lines page then lists and edits that order's lines without asking which order again. A line
+  # opens in its own form below the order (`ctx/order/<orderId>/order-line/<lineId>/details`), saved on its own
+  # through the item endpoints rather than staged for a Save of the whole order.
+  #
+  # Nothing here is specific to orders: the same shape fits any entity that embeds a collection, and the platform
+  # reads only this declaration.
+  - id: order-desk
+    name: Order desk
+    description: >-
+      Works on one order at a time: pick it once, and its lines are listed and edited without choosing the
+      order again. Demonstrates working contexts.
+    theme:
+      materialTheme: azure-blue
+      colorScheme: light
+    layout:
+      preset: sidenav-left
+      sidenavMode: side
+      sidenavCollapsible: true
+      sidenavOpenByDefault: true
+    contexts:
+      - name: order
+        entityName: Order
+        picker:
+          searchFields: [orderNumber, customerName]
+          recent: 3
+        display:
+          label: '{{orderNumber}}'
+          badge: state
+          extra: '{{customerName}}'
+        confirmSwitchWhen:
+          state: CONFIRMED
+    regions:
+      - type: header
+        widgets:
+          - id: header-app-logo
+            type: app-logo
+          - id: header-app-title
+            type: app-title
+          - id: header-spacer
+            type: spacer
+          # The transitions the active order can take, as buttons; the status bar's menu offers the same.
+          - id: header-order-actions
+            type: context-actions
+            props:
+              context: order
+      # Shows the active order on every page, with its state badge and a menu to switch, open or clear it.
+      - type: statusbar
+      - type: sidenav
+        navItems:
+          - id: nav-orders
+            label: Orders
+            icon: receipt_long
+            routePath: order-list
+          - id: nav-lines
+            label: Lines
+            icon: list_alt
+            routePath: lines
+    routes:
+      # The generic list of orders. Because 'Order' is the root of a context, every row offers "Set as active".
+      - path: order-list
+        title: Orders
+        target:
+          kind: ENTITY
+          entityName: Order
+          entityMode: LIST
+      # Requires the order context: opened without an active order it asks to select one, and opened with one it
+      # lists that order's `lineItems`. `entityName` is the type of the items.
+      - path: lines
+        title: Lines
+        requiresContext: order
+        target:
+          kind: ENTITY
+          entityName: Order Line
+          entityMode: LIST
+          contextPath: lineItems

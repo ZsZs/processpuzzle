@@ -81,7 +81,11 @@ function extraTabRoute(tab: EntityTabDescriptor): Route {
   return route;
 }
 
-function embeddedChildRoute(child: EmbeddedChildRoute): Route {
+/**
+ * The branch of one embedded child: its details routes below the owner it is mounted under, guarded so a row that is gone
+ * sends the user back to its owner. Mounted under an entity's details route, and under a working context's.
+ */
+export function embeddedChildRoute(child: EmbeddedChildRoute): Route {
   return {
     path: snakeCaseName(child.entityName),
     data: { [ENTITY_NAME_ROUTE_DATA_KEY]: child.entityName, [EMBEDDED_ENTITY_ROUTE_DATA_KEY]: true },

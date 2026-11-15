@@ -5,12 +5,16 @@ import { ModuleMount, RouteDefinition } from '../domain/app-definition';
 import { MODULE_ASSET_CONTEXT, ModuleAssetContext } from '@processpuzzle/widgets';
 import { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from '../domain/module-definition';
 import { BASE_APP_TRANSLOCO_SCOPE, BASE_ENTITY_TRANSLOCO_SCOPE } from '../base-app.i18n';
-import { workingContextRoutes } from '@processpuzzle/base-entity';
+import { type EmbeddedChildRoute, workingContextRoutes, type WorkingContextAggregate } from '@processpuzzle/base-entity';
 
 /** What the builder needs to know of a context: its name, and the one it is nested in. */
 export interface ContextRef {
   name: string;
   parent?: string;
+  /** The context's entity type. With it, the context's route is the aggregate root of the embedded screens below it. */
+  entityName?: string;
+  /** What the entity is made of, for those screens; filled in by {@link buildAppRoutes} from `contextChildren`. */
+  aggregate?: WorkingContextAggregate;
 }
 
 /** Route data naming the context a route requires; set by {@link emitNode}, read by {@link groupContextRoutes}. */
@@ -36,6 +40,11 @@ export interface AppRouteSource {
   modules?: ModuleMount[];
   /** The app's working contexts. A route naming one is served below `ctx/<name>/:id/`; see {@link groupContextRoutes}. */
   contexts?: ContextRef[];
+  /**
+   * The embedded children of an entity type, as its own details route mounts them. Asked once per context that names an
+   * entity: the rows of those children open as screens below the context's route, saved through the item endpoints.
+   */
+  contextChildren?: (entityName: string) => EmbeddedChildRoute[] | Promise<EmbeddedChildRoute[]>;
   moduleRoutes?: Record<string, RouteDefinition[] | undefined>;
   loadModule?: ModuleLoader;
   loadTranslations?: ModuleTranslationLoader;
@@ -105,19 +114,31 @@ interface TrieNode {
  * rejects as an error, so it should never arrive — keeps its first occurrence.
  */
 export async function buildAppRoutes(source: AppRouteSource, renderRoute: RouteRenderer): Promise<Routes> {
-  const appRoutes = await emitLevel(trieOf(source.routes), [], renderRoute, source.contexts ?? []);
-  return [...appRoutes, ...(await moduleRoutesOf(source, renderRoute))];
+  const contexts = await withAggregates(source);
+  const appRoutes = await emitLevel(trieOf(source.routes), [], renderRoute, contexts);
+  return [...appRoutes, ...(await moduleRoutesOf(source, renderRoute, contexts))];
 }
 
-async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer): Promise<Routes> {
+/** The contexts, each with the embedded children of its entity — what the screens below the context's route are mounted from. */
+async function withAggregates(source: AppRouteSource): Promise<ContextRef[]> {
+  return Promise.all(
+    (source.contexts ?? []).map(async (context) => {
+      if (!context.entityName) return context;
+      const embeddedChildren = (await source.contextChildren?.(context.entityName)) ?? [];
+      return { ...context, aggregate: { entityName: context.entityName, embeddedChildren } };
+    }),
+  );
+}
+
+async function moduleRoutesOf(source: AppRouteSource, renderRoute: RouteRenderer, contexts: ContextRef[]): Promise<Routes> {
   const mounted: Routes = [];
   for (const mount of source.modules ?? []) {
     if (!mount.basePath) continue;
     const routes = source.moduleRoutes?.[mount.moduleKey];
     if (routes) {
-      if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute, source.contexts ?? []) });
+      if (routes.length) mounted.push({ path: mount.basePath, children: await emitLevel(trieOf(routes), [], renderRoute, contexts) });
     } else if (source.loadModule) {
-      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations, source.moduleAssets, source.contexts ?? []));
+      mounted.push(lazyMount(mount.moduleKey, mount.basePath, source.loadModule, renderRoute, source.loadTranslations, source.moduleAssets, contexts));
     }
   }
   return mounted;
@@ -249,7 +270,8 @@ function groupContextRoutes(routes: Routes, contexts: ContextRef[]): Routes {
   const names = new Set(own.keys());
   for (const name of [...names]) for (let parent = parentOf(name); parent && !names.has(parent); parent = parentOf(parent)) names.add(parent);
 
-  const build = (name: string): Routes => workingContextRoutes(name, [...(own.get(name) ?? []), ...[...names].filter((child) => parentOf(child) === name).flatMap(build)]);
+  const build = (name: string): Routes =>
+    workingContextRoutes(name, [...(own.get(name) ?? []), ...[...names].filter((child) => parentOf(child) === name).flatMap(build)], contexts.find((context) => context.name === name)?.aggregate);
   const roots = [...names].filter((name) => parentOf(name) === undefined);
   return [...roots.flatMap(build), ...routes.filter((route) => contextOf(route) === undefined)];
 }

@@ -10,6 +10,7 @@ import { EmbeddedEntityService } from '../base-entity-service/embedded-entity.se
 import { BaseEntityStore } from '../base-entity-store/base-entity.store';
 import { BaseEntityTabsStore } from '../base-tabs/base-entity-tabs.store';
 import { BaseEntityContainerStore } from '../base-entity-container.store';
+import { DirectEmbeddedWriter } from '../working-context/direct-embedded-writer';
 import { BaseEntityFacade } from './base-entity-facade';
 
 /**
@@ -24,10 +25,11 @@ import { BaseEntityFacade } from './base-entity-facade';
 @Injectable()
 export abstract class EmbeddedEntityFacade<Entity extends BaseEntity> extends BaseEntityFacade<Entity> {
   private _accessor?: EmbeddedAggregateAccessor;
+  private _directWriter?: DirectEmbeddedWriter;
 
   /** Takes no mapper: an embedded row is carried, and mapped, by the containing entity's payload. */
   protected override createService(): BaseEntityService<Entity> {
-    return new EmbeddedEntityService<Entity>(this.entityName, this.accessor);
+    return new EmbeddedEntityService<Entity>(this.entityName, this.accessor, this.directWriter);
   }
 
   /**
@@ -56,6 +58,11 @@ export abstract class EmbeddedEntityFacade<Entity extends BaseEntity> extends Ba
     const referenceIdField = this.accessor.resolve(this.entityName)?.context.referenceIdField;
     return rowId(entity as EmbeddedRow, referenceIdField) || undefined;
   };
+
+  private get directWriter(): DirectEmbeddedWriter {
+    this._directWriter ??= runInInjectionContext(this.injector, () => inject(DirectEmbeddedWriter));
+    return this._directWriter;
+  }
 
   private get accessor(): EmbeddedAggregateAccessor {
     this._accessor ??= runInInjectionContext(this.injector, () => inject(EmbeddedAggregateAccessor));
