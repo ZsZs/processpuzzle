@@ -154,6 +154,8 @@ export interface RouteTarget {
   entityMode?: EntityMode;
   /** ENTITY + LIST only. */
   rsqlFilter?: string;
+  /** ENTITY + LIST only: see {@link RouteDefinition.filterByContext}. */
+  filterByContext?: string;
   /** ENTITY only, with `requiresContext`: see {@link RouteDefinition.contextPath}. */
   contextPath?: string;
 }
@@ -205,6 +207,11 @@ export class RouteDefinition implements BaseEntity {
    * entity of the context — no selection, and no form of the whole entity.
    */
   contextPath?: string;
+  /**
+   * ENTITY + LIST: the working context the list may be narrowed to. The route does not require the context — an optional
+   * view, shown with a toggle "only the active …" that filters the list by `<context name> == <active id>` while it is on.
+   */
+  filterByContext?: string;
   // endregion
   /** The object the flattened fields came from, preserved so a save cannot drop a future field. */
   target?: RouteTarget;
@@ -223,6 +230,7 @@ export class RouteDefinition implements BaseEntity {
     this.entityMode = init.entityMode;
     this.rsqlFilter = init.rsqlFilter;
     this.contextPath = init.contextPath;
+    this.filterByContext = init.filterByContext;
     this.target = init.target;
   }
 }

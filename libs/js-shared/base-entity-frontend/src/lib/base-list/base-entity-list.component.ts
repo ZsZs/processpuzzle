@@ -1,9 +1,12 @@
-import { AfterViewInit, Component, computed, effect, inject, InjectionToken, OnInit, Signal, signal, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, inject, InjectionToken, OnInit, Signal, signal, untracked, ViewChild } from '@angular/core';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { MatCell, MatCellDef, MatColumnDef, MatHeaderCell, MatHeaderCellDef, MatHeaderRow, MatHeaderRowDef, MatRow, MatRowDef, MatTable, MatTableDataSource } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
-import { ROUTER_OUTLET_DATA } from '@angular/router';
+import { ActivatedRoute, ROUTER_OUTLET_DATA } from '@angular/router';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { listQueryOf, routeListFilterOf, RouteListFilter } from '../base-entity-screens/route-list-filter';
+import { WorkingContextService } from '../working-context/working-context.service';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
@@ -26,7 +29,6 @@ import { commentsOf } from '../base-form/comments/entity-comment';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AddressPipe } from '../base-form/address/address.pipe';
 import { GeoLocationPipe } from '../base-form/geo-location/geo-location.pipe';
-import { WorkingContextService } from '../working-context/working-context.service';
 import { WorkingContextDefinition } from '../working-context/working-context.definition';
 
 /** The column carrying the row actions of the working contexts this entity is the root of. */
@@ -38,6 +40,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
   selector: 'base-list',
   standalone: true,
   imports: [
+    MatSlideToggle,
     TranslocoPipe,
     AddressPipe,
     GeoLocationPipe,
@@ -72,6 +75,17 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly objectStoreService = inject(ObjectStoreService);
   private readonly foreignKeyLabels = inject(ForeignKeyLabels);
+  private readonly route = inject(ActivatedRoute);
+  /** The filters this list's route declares: its RSQL, and the working context it may be narrowed to. */
+  protected readonly routeFilter: RouteListFilter = routeListFilterOf(this.route.snapshot, this.entityDescriptor().entityName);
+  /** The active entity of the context the list may be narrowed to; `undefined` when none is active. */
+  protected readonly contextEntityId = computed(() => (this.routeFilter.filterByContext ? this.workingContext.current(this.routeFilter.filterByContext)?.id : undefined));
+  /** Narrowing to the active entity: on by default, as the spec's optional view offers it. */
+  protected readonly onlyActiveContext = signal(true);
+  /** Whether the toggle is shown: the list may be narrowed, and there is something to narrow it to. */
+  protected readonly showsContextToggle = computed(() => this.routeFilter.filterByContext !== undefined && this.contextEntityId() !== undefined);
+  /** Set once the first load is made, so that a context change before it does not load twice. */
+  private viewReady = false;
   private readonly workingContext = inject(WorkingContextService);
   /** The working contexts this entity is the root of. Each one adds a "Set as active" action to every row. */
   protected readonly workingContexts: Signal<WorkingContextDefinition[]> = computed(() => this.workingContext.definitionsForEntity(this.entityDescriptor().entityName));
@@ -103,6 +117,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.dataSource.sort = this.sort;
     this.dataSource.paginator = this.paginator;
     this.loadAllData();
+    this.viewReady = true;
   }
 
   ngOnInit(): void {
@@ -243,15 +258,31 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     return Reflect.get(entity, property);
   }
 
+  /** Narrows the list to the active entity, or shows every row of the entity again. */
+  protected onToggleContextFilter(on: boolean): void {
+    this.onlyActiveContext.set(on);
+  }
+
   private loadAllData() {
     const pathParams = new Map<string, string>([]);
     const filters: FilterCondition[] = [];
-    this.store.load({ pathParams, filters });
+    this.store.load({ pathParams, filters, query: this.rsqlQuery() });
+  }
+
+  private rsqlQuery(): string | undefined {
+    return listQueryOf(this.routeFilter, this.contextEntityId(), this.onlyActiveContext());
   }
 
   protected registerEffects(): void {
     effect(() => (this.dataSource.data = this.store.entities()));
     effect(() => this.doFilter(this.store.filterKey() ?? ''));
+    // Reloads when the active entity changes or the toggle is flipped: the list follows the context.
+    effect(() => {
+      this.rsqlQuery();
+      untracked(() => {
+        if (this.viewReady) this.loadAllData();
+      });
+    });
   }
 
   // endregion

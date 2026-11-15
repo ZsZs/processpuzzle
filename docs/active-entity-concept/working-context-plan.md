@@ -56,7 +56,7 @@
   - "Views that declare them": the **context-actions** widget (`context`, optional `triggers`) puts the transitions as buttons on any page — no contract change, a widget on a route is how a view declares them.
 - **4 – in progress**
   - **Slice 1 (done):** per-item versions. Every item of a multi-valued embedded collection gets an `id` and an `itemVersion` on the first save of its object (no bulk migration: the write path is the backfill). Item PATCH and DELETE check `If-Match` against the item's own version, so two people editing different rounds of one race no longer conflict; the object-level race is still retried. Edit and delete in the collection screen now send the item version. Item ETags carry the item version; the list keeps the object version.
-  - **Slice 2:** `context: optional` views with the filter toggle.
+  - **Slice 2 (done):** `context: optional` views. An ENTITY list route declares `filterByContext` (the context name) and does not require the context. Its list shows an "only the active …" toggle, on by default, that narrows the rows to `<context> == <active id>`. This also applies `rsqlFilter`, which was stored and never used; the list reads both from its screens route's own configuration, and the RSQL is combined in one query.
   - **Slice 3:** nested paths (`rounds/{id}/results`), and the e2e context scenario.
 
 

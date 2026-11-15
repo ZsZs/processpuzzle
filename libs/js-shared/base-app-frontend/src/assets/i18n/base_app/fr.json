@@ -110,10 +110,12 @@
       "entityMode": "ENTITY uniquement : ouvrir sur la liste ou sur le détail d'un enregistrement. Enregistré, pas encore appliqué. — Guide : Entités",
       "rsqlFilter": "ENTITY + LIST uniquement : un pré-filtre tel que status==OPEN. Enregistré, pas encore appliqué. — Guide : Entités",
       "requiresContext": "Nom d'un contexte de cette application. La page est alors servie sous ctx/<nom>/<id> et affiche « Sélectionnez … » tant qu'aucun n'est actif.",
-      "contextPath": "L'attribut de l'entité du contexte dont cette page liste la collection, p. ex. rounds. Exige un contexte ; le nom d'entité est alors le type des éléments."
+      "contextPath": "L'attribut de l'entité du contexte dont cette page liste la collection, p. ex. rounds. Exige un contexte ; le nom d'entité est alors le type des éléments.",
+      "filterByContext": "N'affiche que les lignes de l'entité active de ce contexte, avec un interrupteur pour tout afficher. Laissez « Exige un contexte » vide : la page fonctionne sans."
     },
     "requiresContext": "Exige un contexte",
-    "contextPath": "Chemin du contexte"
+    "contextPath": "Chemin du contexte",
+    "filterByContext": "Filtrer par contexte"
   },
   "app_module_mount": {
     "_self": "Montage de module",

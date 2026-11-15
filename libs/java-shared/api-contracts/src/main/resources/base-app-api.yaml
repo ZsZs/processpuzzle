@@ -1388,6 +1388,13 @@ components:
           nullable: true
           description: ENTITY + LIST only. RSQL applied to the backing search.
           example: "status!=CLOSED"
+        filterByContext:
+          type: string
+          nullable: true
+          description: >-
+            ENTITY + LIST only. Name of a working context of the app. The route does not require it: the list offers a toggle
+            "only the active …" that narrows the rows to the context's active entity, by the attribute named after the context.
+          example: race
         contextPath:
           type: string
           nullable: true

@@ -229,7 +229,8 @@
       "content": "{{ entity }} ist noch in Bearbeitung. Wirklich verlassen?",
       "cancel_button": "Bleiben",
       "confirm_button": "Verlassen"
-    }
+    },
+    "only_active": "Nur das aktive {{context}}"
   },
   "context_collection": {
     "add": "Hinzufügen",

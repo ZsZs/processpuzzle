@@ -229,7 +229,8 @@
       "content": "{{ entity }} is still in progress. Do you really want to leave it?",
       "cancel_button": "Stay",
       "confirm_button": "Leave"
-    }
+    },
+    "only_active": "Only the active {{context}}"
   },
   "context_collection": {
     "add": "Add",

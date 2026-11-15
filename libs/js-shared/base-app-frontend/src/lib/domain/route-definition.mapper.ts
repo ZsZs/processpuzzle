@@ -37,6 +37,7 @@ export function flattenRouteTarget(dto: RouteDefinitionDto): RouteDefinition {
     entityMode: target?.entityMode,
     rsqlFilter: target?.rsqlFilter,
     contextPath: target?.contextPath,
+    filterByContext: target?.filterByContext,
     // Kept so nestRouteTarget can merge onto it rather than replace it.
     target,
   });
@@ -70,6 +71,7 @@ export function nestRouteTarget(route: RouteDefinition): RouteDefinitionDto {
       entityMode: route.entityMode,
       rsqlFilter: route.rsqlFilter,
       contextPath: route.contextPath || undefined,
+      filterByContext: route.filterByContext || undefined,
     },
   };
 }

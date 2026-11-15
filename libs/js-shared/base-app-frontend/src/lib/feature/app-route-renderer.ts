@@ -107,7 +107,7 @@ export class AppRouteRenderer {
       entityName: definition.entityName,
       screens,
       hostPath: definition.path,
-      data: { entityMode: definition.entityMode, rsqlFilter: definition.rsqlFilter },
+      data: { entityMode: definition.entityMode, rsqlFilter: definition.rsqlFilter, filterByContext: definition.filterByContext },
     });
 
     return { ...route, title: titleOf(definition) };

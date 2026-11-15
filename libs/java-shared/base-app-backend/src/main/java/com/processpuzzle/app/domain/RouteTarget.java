@@ -31,11 +31,17 @@ public record RouteTarget(
         String entityName,
         EntityMode entityMode,
         String rsqlFilter,
-        String contextPath) {
+        String contextPath,
+        String filterByContext) {
 
     /** A target without a context-bound collection. */
     public RouteTarget(Kind kind, List<Widget> widgets, String documentSlug, String entityName, EntityMode entityMode, String rsqlFilter) {
-        this(kind, widgets, documentSlug, entityName, entityMode, rsqlFilter, null);
+        this(kind, widgets, documentSlug, entityName, entityMode, rsqlFilter, null, null);
+    }
+
+    /** A target without a filter by context. */
+    public RouteTarget(Kind kind, List<Widget> widgets, String documentSlug, String entityName, EntityMode entityMode, String rsqlFilter, String contextPath) {
+        this(kind, widgets, documentSlug, entityName, entityMode, rsqlFilter, contextPath, null);
     }
 
     public RouteTarget {
