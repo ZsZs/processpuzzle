@@ -265,13 +265,14 @@ describe('GenericEntityFormComponent', () => {
       expect(open).not.toHaveBeenCalled();
     });
 
-    it('still asks when this form has typed edits and the values were kept for another form', async () => {
+    it('does not ask while the values of another form are kept for a round trip', async () => {
       const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
       Object.values(component.baseEntityForm.controls)[0].markAsDirty();
       formNavigator.captureFormSnapshot({}, 'some-other-entity');
-      vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(false) } as never);
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
 
-      expect(await component.confirmLeave()).toBe(false);
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
     });
 
     it('does not ask a form whose only edits are in a nested child while another form is left for a list to choose from', async () => {
