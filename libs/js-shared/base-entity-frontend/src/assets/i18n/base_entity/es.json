@@ -210,5 +210,25 @@
       "TIMEOUT": "La lectura de la ubicación tardó demasiado. Inténtelo de nuevo.",
       "UNAVAILABLE": "Este navegador no puede determinar su ubicación."
     }
+  },
+  "working_context": {
+    "search": "Buscar",
+    "recent": "Recientes",
+    "all": "Todos",
+    "no_match": "Sin resultados",
+    "empty_state": "Seleccione: {{ entity }}",
+    "switch_title": "Cambiar: {{ entity }}",
+    "menu": "Acciones del contexto",
+    "switch": "Cambiar",
+    "open": "Abrir para editar",
+    "clear": "Quitar contexto",
+    "set_active": "Establecer como activo",
+    "is_active": "Activo",
+    "confirm_switch": {
+      "title": "¿Salir del contexto activo?",
+      "content": "{{ entity }} sigue en curso. ¿Seguro que desea salir?",
+      "cancel_button": "Quedarse",
+      "confirm_button": "Salir"
+    }
   }
 }

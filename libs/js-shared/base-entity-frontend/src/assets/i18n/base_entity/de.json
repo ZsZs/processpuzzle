@@ -210,5 +210,25 @@
       "TIMEOUT": "Die Standortermittlung hat zu lange gedauert. Bitte erneut versuchen.",
       "UNAVAILABLE": "Dieser Browser kann Ihren Standort nicht ermitteln."
     }
+  },
+  "working_context": {
+    "search": "Suchen",
+    "recent": "Zuletzt verwendet",
+    "all": "Alle",
+    "no_match": "Keine Treffer",
+    "empty_state": "{{ entity }} auswählen",
+    "switch_title": "{{ entity }} wechseln",
+    "menu": "Kontextaktionen",
+    "switch": "Wechseln",
+    "open": "Zum Bearbeiten öffnen",
+    "clear": "Kontext aufheben",
+    "set_active": "Als aktiv setzen",
+    "is_active": "Aktiv",
+    "confirm_switch": {
+      "title": "Aktiven Kontext verlassen?",
+      "content": "{{ entity }} ist noch in Bearbeitung. Wirklich verlassen?",
+      "cancel_button": "Bleiben",
+      "confirm_button": "Verlassen"
+    }
   }
 }

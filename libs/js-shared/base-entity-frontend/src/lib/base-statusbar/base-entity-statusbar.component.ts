@@ -2,6 +2,9 @@ import { Component, computed, inject, input, OnInit, Signal } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
 import { MatIcon } from '@angular/material/icon';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { injectActiveLang } from '@processpuzzle/util';
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
@@ -19,6 +22,10 @@ import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { translateLabel } from '../i18n/entity-label.pipe';
 import { UnsavedChangesRegistry } from '../base-form/unsaved-changes/unsaved-changes.registry';
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
+import { EntityRouteRegistry } from '../base-form-navigator/entity-route.registry';
+import { ActiveWorkingContext, WorkingContextService } from '../working-context/working-context.service';
+import { contextLabel, renderTemplate, valueAt } from '../working-context/working-context-attributes';
+import { WORKING_CONTEXT_DRAWER_CONFIG, WorkingContextPickerDialog, WorkingContextPickerDialogData } from '../working-context/working-context-picker.dialog';
 
 /** One step of the hierarchy as it is rendered: what to show, and what it is. */
 interface EntityCrumb {
@@ -27,6 +34,17 @@ interface EntityCrumb {
   title: string;
   /** The entity's translated name, shown as the crumb's tooltip. */
   label: string;
+  testId: string;
+}
+
+/** An active working context as the status bar renders it: the root of the breadcrumb. */
+interface ContextCrumb {
+  context: ActiveWorkingContext;
+  title: string;
+  /** The entity's translated name, shown as the crumb's tooltip. */
+  label: string;
+  badge: string | undefined;
+  extra: string | undefined;
   testId: string;
 }
 
@@ -43,10 +61,46 @@ interface EntityCrumb {
 @Component({
   selector: 'base-entity-statusbar',
   standalone: true,
-  imports: [CommonModule, MatToolbar, MatIcon, TranslocoPipe],
+  imports: [CommonModule, MatToolbar, MatIcon, MatMenu, MatMenuItem, MatMenuTrigger, TranslocoPipe],
   template: `
     <mat-toolbar *ngIf="isVisible()">
       <nav class="breadcrumb" [attr.aria-label]="'base_entity.statusbar.breadcrumb_label' | transloco">
+        @for (crumb of contextCrumbs(); track crumb.context.name) {
+          <span class="context-crumb" [attr.data-testid]="crumb.testId">
+            <button type="button" class="crumb crumb-context" [attr.data-testid]="crumb.testId + '-switch'" [title]="crumb.label" (click)="onSwitchContext(crumb)">
+              {{ crumb.title }}
+              @if (crumb.extra) {
+                <span class="context-extra">{{ crumb.extra }}</span>
+              }
+            </button>
+            @if (crumb.badge) {
+              <span class="chip context-badge" [attr.data-testid]="crumb.testId + '-badge'">{{ crumb.badge }}</span>
+            }
+            <button
+              type="button"
+              class="context-menu-trigger"
+              [attr.data-testid]="crumb.testId + '-menu'"
+              [attr.aria-label]="'base_entity.working_context.menu' | transloco"
+              [matMenuTriggerFor]="contextMenu"
+            >
+              <mat-icon>arrow_drop_down</mat-icon>
+            </button>
+            <mat-menu #contextMenu="matMenu">
+              <button mat-menu-item [attr.data-testid]="crumb.testId + '-menu-switch'" (click)="onSwitchContext(crumb)">
+                <mat-icon>swap_horiz</mat-icon><span>{{ 'base_entity.working_context.switch' | transloco }}</span>
+              </button>
+              <button mat-menu-item [attr.data-testid]="crumb.testId + '-menu-open'" (click)="onOpenContext(crumb)">
+                <mat-icon>edit</mat-icon><span>{{ 'base_entity.working_context.open' | transloco }}</span>
+              </button>
+              <button mat-menu-item [attr.data-testid]="crumb.testId + '-menu-clear'" (click)="onClearContext(crumb)">
+                <mat-icon>close</mat-icon><span>{{ 'base_entity.working_context.clear' | transloco }}</span>
+              </button>
+            </mat-menu>
+          </span>
+          @if (crumbs().length > 0) {
+            <mat-icon class="crumb-separator">chevron_right</mat-icon>
+          }
+        }
         @for (crumb of crumbs(); track $index; let index = $index; let isLast = $last) {
           @if (isLast) {
             <span class="crumb crumb-current" [attr.data-testid]="crumb.testId" [title]="crumb.label">{{ crumb.title }}</span>
@@ -110,6 +164,34 @@ interface EntityCrumb {
         cursor: pointer;
         text-decoration: underline;
       }
+      .context-crumb {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .crumb-context,
+      .context-menu-trigger {
+        min-height: 48px;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .context-menu-trigger {
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+      }
+      .context-extra {
+        margin-left: 6px;
+        font-weight: 400;
+        opacity: 0.7;
+      }
+      .chip.context-badge {
+        background-color: rgba(0, 0, 0, 0.08);
+      }
       .crumb-current {
         font-weight: 500;
       }
@@ -167,9 +249,16 @@ export class BaseEntityStatusbarComponent implements OnInit {
   crumbs: Signal<EntityCrumb[]> = computed<EntityCrumb[]>(() => this.resolveCrumbs());
   // More than one crumb means an embedded form is open, which is a record by itself — the own store's
   // selection, the only thing to go by otherwise, belongs to the outermost entity.
-  isVisible: Signal<boolean> = computed(() => this.crumbs().length > 1 || (this.store != null && (this.store.currentEntity() !== undefined || this.store.selectedEntities().length === 1)));
+  contextCrumbs: Signal<ContextCrumb[]> = computed<ContextCrumb[]>(() => this.workingContext.active().map((context) => this.contextCrumb(context)));
+  isVisible: Signal<boolean> = computed(
+    () => this.contextCrumbs().length > 0 || this.crumbs().length > 1 || (this.store != null && (this.store.currentEntity() !== undefined || this.store.selectedEntities().length === 1)),
+  );
 
   private readonly descriptorRegistry = inject(BaseEntityDescriptorRegistry);
+  private readonly workingContext = inject(WorkingContextService);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly entityRouteRegistry = inject(EntityRouteRegistry);
   private readonly formNavigator = inject(BaseFormNavigatorSingletonStore);
   private readonly transloco = inject(TranslocoService);
   private readonly activeLang = injectActiveLang();
@@ -179,7 +268,9 @@ export class BaseEntityStatusbarComponent implements OnInit {
   warningCount = this.violationsStore.warningCount;
   infoCount = this.violationsStore.infoCount;
   /** The violations of the form the user is actually on, which at depth is the deepest crumb's. */
-  showViolationSummary: Signal<boolean> = computed(() => this.violationsStore.entityName() === (this.crumbs().at(-1)?.entityName ?? this.entityDescriptor().entityName) && this.violationsStore.hasViolations());
+  showViolationSummary: Signal<boolean> = computed(
+    () => this.violationsStore.entityName() === (this.crumbs().at(-1)?.entityName ?? this.entityDescriptor().entityName) && this.violationsStore.hasViolations(),
+  );
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
@@ -191,6 +282,22 @@ export class BaseEntityStatusbarComponent implements OnInit {
   // region event handling methods
   async onNavigateToCrumb(index: number): Promise<void> {
     await this.formNavigator.navigateToBreadcrumbLevel(index);
+  }
+
+  /** Opens the context's picker as a drawer; picking in it switches, and closes it. */
+  onSwitchContext(crumb: ContextCrumb): void {
+    const data: WorkingContextPickerDialogData = { contextName: crumb.context.name, entityLabel: crumb.label };
+    this.dialog.open(WorkingContextPickerDialog, { ...WORKING_CONTEXT_DRAWER_CONFIG, data });
+  }
+
+  /** The context's entity in its own form, for editing it — the context stays active. */
+  async onOpenContext(crumb: ContextCrumb): Promise<void> {
+    const url = this.entityRouteRegistry.detailsPath(crumb.context.definition.entityName, crumb.context.id);
+    if (url) await this.router.navigateByUrl(url);
+  }
+
+  async onClearContext(crumb: ContextCrumb): Promise<void> {
+    await this.workingContext.clear(crumb.context.name);
   }
 
   // endregion
@@ -218,6 +325,20 @@ export class BaseEntityStatusbarComponent implements OnInit {
   private descriptorOf(entityName: string): BaseEntityDescriptor | undefined {
     const own = this.entityDescriptor();
     return own.entityName === entityName ? own : this.descriptorRegistry.getDescriptor(entityName);
+  }
+
+  private contextCrumb(context: ActiveWorkingContext): ContextCrumb {
+    const { definition, descriptor, entity, id } = context;
+    const badgeValue = definition.display?.badge ? valueAt(entity, definition.display.badge, descriptor) : undefined;
+    const extra = definition.display?.extra && entity ? renderTemplate(definition.display.extra, entity, descriptor) : undefined;
+    return {
+      context,
+      title: contextLabel(definition.display?.label, entity, descriptor, id),
+      label: descriptor ? translateLabel(this.transloco, descriptor.i18nKey(), descriptor.entityName) : definition.entityName,
+      badge: badgeValue == null || badgeValue === '' ? undefined : String(badgeValue),
+      extra: extra && extra.length > 0 ? extra : undefined,
+      testId: createTestId(definition.entityName, 'context-crumb'),
+    };
   }
 
   private crumb(entityName: string, title: string, descriptor: BaseEntityDescriptor | undefined): EntityCrumb {

@@ -210,5 +210,25 @@
       "TIMEOUT": "Reading the location took too long. Try again.",
       "UNAVAILABLE": "This browser cannot tell your location."
     }
+  },
+  "working_context": {
+    "search": "Search",
+    "recent": "Recent",
+    "all": "All",
+    "no_match": "Nothing matches",
+    "empty_state": "Select a {{ entity }}",
+    "switch_title": "Switch {{ entity }}",
+    "menu": "Context actions",
+    "switch": "Switch",
+    "open": "Open for editing",
+    "clear": "Clear context",
+    "set_active": "Set as active",
+    "is_active": "Active",
+    "confirm_switch": {
+      "title": "Leave the active context?",
+      "content": "{{ entity }} is still in progress. Do you really want to leave it?",
+      "cancel_button": "Stay",
+      "confirm_button": "Leave"
+    }
   }
 }

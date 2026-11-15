@@ -11,6 +11,8 @@ import { UnsavedChangesRegistry } from '../base-form/unsaved-changes/unsaved-cha
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
 import { setupContainerComponentTest } from '../../test-setup';
 import { BaseEntityStatusbarComponent } from './base-entity-statusbar.component';
+import { WorkingContextService } from '../working-context/working-context.service';
+import { vi } from 'vitest';
 
 /** Stands in for the facade of an embedded level: the descriptor and the store the crumb is resolved from. */
 class EmbeddedComponentFacadeStub {
@@ -151,5 +153,44 @@ describe('BaseStatusbarComponent', () => {
     store.setCurrentEntity('1');
 
     expect(statusbar.entityTitle()).toBe('Computed Title');
+  });
+
+  describe('working context', () => {
+    const raceDescriptor = new BaseEntityDescriptor({
+      attrDescriptors: [new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Name', undefined, true), new BaseEntityAttrDescriptor('status', FormControlType.STATE, 'Status')],
+      entityName: 'Race',
+    });
+    const activeRace = {
+      name: 'race',
+      id: 'r1',
+      definition: { name: 'race', entityName: 'Race', display: { label: '{{name}}', badge: 'state', extra: 'round {{round}}' } },
+      descriptor: raceDescriptor,
+      entity: { id: 'r1', name: 'Spring Cup', status: 'Running', round: 3 },
+      url: '/ctx/race/r1',
+    };
+    const workingContextStub = { active: signal([activeRace]), clear: vi.fn(async () => true) };
+
+    it('renders the active context as the root crumb, with its badge and extra field, even with no entity selected', async () => {
+      const { fixture } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [{ provide: WorkingContextService, useValue: workingContextStub }]);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      const crumb = host.querySelector('[data-testid="race-context-crumb"]');
+      expect(crumb?.textContent).toContain('Spring Cup');
+      expect(crumb?.textContent).toContain('round 3');
+      expect(host.querySelector('[data-testid="race-context-crumb-badge"]')?.textContent?.trim()).toBe('Running');
+    });
+
+    it('clears the context from its menu', async () => {
+      const { fixture } = await setupContainerComponentTest(BaseEntityStatusbarComponent, {}, [{ provide: WorkingContextService, useValue: workingContextStub }]);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+
+      (host.querySelector('[data-testid="race-context-crumb-menu"]') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      (document.querySelector('[data-testid="race-context-crumb-menu-clear"]') as HTMLButtonElement).click();
+
+      expect(workingContextStub.clear).toHaveBeenCalledWith('race');
+    });
   });
 });

@@ -7,6 +7,8 @@ import { RouteSegments } from '../base-form-navigator/base-form-navigator.store'
 import { MatHeaderCell, MatTable, MatTableDataSource } from '@angular/material/table';
 import { describe, expect, it, vi } from 'vitest';
 import { NavigatorCommand, type NavigationPayload } from '../base-form-navigator/navigation-payload';
+import { TestBed } from '@angular/core/testing';
+import { WorkingContextService } from '../working-context/working-context.service';
 
 describe('EntityListComponent', () => {
   const textboxConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
@@ -210,6 +212,43 @@ describe('EntityListComponent', () => {
       store.doFilter('A');
       fixture.detectChanges();
       expect(component.dataSource.filter).toEqual('a');
+    });
+  });
+
+  describe('working context row action', () => {
+    async function setupWithContext() {
+      const setup = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      const workingContext = TestBed.inject(WorkingContextService);
+      workingContext.register([{ name: 'test', entityName: 'TestEntity' }]);
+      const select = vi.spyOn(workingContext, 'select').mockResolvedValue(true);
+      setup.fixture.detectChanges();
+      return { ...setup, select };
+    }
+
+    it('is absent when the entity is the root of no context', async () => {
+      const { fixture } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      expect(fixture.nativeElement.querySelector('[data-testid="testEntity-set-active-context"]')).toBeNull();
+    });
+
+    it('offers "Set as active" on every row and selects the row\'s entity', async () => {
+      const { fixture, select } = await setupWithContext();
+      const buttons = fixture.nativeElement.querySelectorAll('[data-testid="testEntity-set-active-context"]') as NodeListOf<HTMLButtonElement>;
+      expect(buttons).toHaveLength(2);
+
+      buttons[1].click();
+
+      expect(select).toHaveBeenCalledWith('test', '2');
+    });
+
+    it('sets the row active on double-click and on Enter', async () => {
+      const { fixture, select } = await setupWithContext();
+      const cell = fixture.nativeElement.querySelector('td.mat-mdc-cell:not(.mat-column-select)') as HTMLElement;
+
+      cell.dispatchEvent(new MouseEvent('dblclick'));
+      cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(select).toHaveBeenCalledTimes(2);
+      expect(select).toHaveBeenCalledWith('test', '1');
     });
   });
 });
