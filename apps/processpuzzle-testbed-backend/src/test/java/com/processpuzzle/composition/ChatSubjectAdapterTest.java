@@ -5,7 +5,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.baseentity.api.EntityObjectAccess;
-import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.chat.definition.domain.SubjectType;
 import com.processpuzzle.state.api.StateOperationApi;
@@ -43,7 +42,7 @@ class ChatSubjectAdapterTest {
 
     @Test
     void anEntityIsASubjectWhoseStateIsTheMachinesAttribute() {
-        when(objects.find("org-1", "order", id)).thenReturn(new EntityObjectView(id, 1L, Map.of("status", "CONFIRMED")));
+        when(objects.findIfPresent("org-1", "order", id)).thenReturn(Optional.of(new EntityObjectView(id, 1L, Map.of("status", "CONFIRMED"))));
         when(states.stateAttributeKey("org-1", "order")).thenReturn(Optional.of("status"));
 
         assertThat(adapter.resolve("org-1", SubjectType.ENTITY, "order", id.toString()))
@@ -52,7 +51,7 @@ class ChatSubjectAdapterTest {
 
     @Test
     void anEntityThatHasGoneHasNoChat() {
-        when(objects.find("org-1", "order", id)).thenThrow(new EntityObjectAccessException.NotFound("order", id));
+        when(objects.findIfPresent("org-1", "order", id)).thenReturn(Optional.empty());
 
         assertThat(adapter.resolve("org-1", SubjectType.ENTITY, "order", id.toString())).isEmpty();
     }

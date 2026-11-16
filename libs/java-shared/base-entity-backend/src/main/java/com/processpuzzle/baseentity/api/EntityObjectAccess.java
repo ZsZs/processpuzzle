@@ -29,6 +29,14 @@ public interface EntityObjectAccess {
     EntityObjectView find(String orgKey, String entityDefinitionCode, UUID objectId);
 
     /**
+     * {@link #find} without the exception: empty when there is no such object. For a caller that treats a missing
+     * object as an answer — a chat asking about its subject, say — and runs inside a transaction of its own. An
+     * exception thrown through this module's transactional methods can leave that transaction unable to commit even
+     * when the caller catches it, so the miss is returned, not thrown.
+     */
+    java.util.Optional<EntityObjectView> findIfPresent(String orgKey, String entityDefinitionCode, UUID objectId);
+
+    /**
      * Every object of one type, for a caller that has to reason about the whole population rather
      * than one object — base-state's startup consistency check over the entities its machines
      * govern.

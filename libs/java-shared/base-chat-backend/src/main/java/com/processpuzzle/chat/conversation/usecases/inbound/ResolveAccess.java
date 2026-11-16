@@ -14,7 +14,6 @@ import com.processpuzzle.core.tenancy.OrganizationGuard;
 import java.util.Optional;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The one place that decides what a caller may do with a conversation. Computed afresh on every call from
@@ -24,8 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>The policy only narrows access: a caller needs to be a member of the organization and the subject has
  * to be visible to them before any chat role counts.
  */
+/**
+ * Not transactional itself: its callers are the use cases, which are. As a transactional bean of its own it would
+ * throw {@code ConversationNotFoundException} through a proxy, and a caller that catches it — a list of what the user
+ * follows skips a conversation whose subject is gone — would still find its transaction marked rollback-only.
+ */
 @Service
-@Transactional(readOnly = true)
 public class ResolveAccess {
 
     private final FindChatDefinition definitions;

@@ -145,6 +145,7 @@ class ChatIntegrationTest {
     @Autowired private MarkRead markRead;
     @Autowired private Unfollow unfollow;
     @Autowired private ListUnread listUnread;
+    @Autowired private com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase deleteEntity;
     @Autowired private org.springframework.transaction.PlatformTransactionManager transactionManager;
     @Autowired private com.processpuzzle.chat.conversation.domain.ConversationRepository conversationRows;
     @Autowired private com.processpuzzle.chat.conversation.domain.ReadMarkerRepository readMarkerRows;
@@ -309,31 +310,14 @@ class ChatIntegrationTest {
     }
 
     @Test
-    void aCaughtMissingEntityInsideAReadDoesNotRollBackTheRead() {
-        org.springframework.transaction.support.TransactionTemplate template =
-                new org.springframework.transaction.support.TransactionTemplate(transactionManager);
-        template.setReadOnly(true);
-        // What the subject lookup does: the entity read throws, the caller catches it and answers "absent".
-        assertThatCode(() -> template.executeWithoutResult(status -> {
-            try {
-                entities.find(ORG, "order", UUID.randomUUID());
-            } catch (com.processpuzzle.baseentity.api.EntityObjectAccessException expected) {
-                // absent
-            }
-        })).doesNotThrowAnyException();
-    }
-
-    @Test
-    void aFollowedConversationWhoseSubjectIsGoneDoesNotBreakTheUnreadCountOfEveryOtherOne() {
-        // The subject of this conversation was deleted (an order removed after its chat was used): the subject lookup
-        // finds nothing. The lookup runs in a transaction the unread count shares, so its failure must not poison it.
-        com.processpuzzle.chat.conversation.domain.Conversation gone = open.open(ORG, "order-discussion", orderId, null).conversation();
-        com.processpuzzle.chat.conversation.domain.Conversation dangling = conversationRows.findByIdAndOrgKey(gone.getId(), ORG).orElseThrow();
-        dangling.setSubjectId(UUID.randomUUID().toString());
-        dangling.setBindingKey(UUID.randomUUID().toString());
-        conversationRows.saveAndFlush(dangling);
+    void unreadCountSurvivesAnOrderDeletedAfterItsChatWasUsed() {
+        String order = createEntity.create(ORG, "order", Map.of("orderNumber", "ORD-" + UUID.randomUUID())).getId().toString();
+        UUID id = open.open(ORG, "order-discussion", order, null).conversation().getId();
+        post.post(ORG, id, UUID.randomUUID(), "Before the order goes");
         readMarkerRows.saveAndFlush(com.processpuzzle.chat.conversation.domain.ReadMarker.builder()
-                .conversationId(gone.getId()).userSub("sub-ann").orgKey(ORG).lastReadSeq(0).updatedAt(Instant.now()).build());
+                .conversationId(id).userSub("sub-ann").orgKey(ORG).lastReadSeq(0).updatedAt(Instant.now()).build());
+
+        deleteEntity.delete(ORG, "order", UUID.fromString(order), true);
 
         assertThatCode(() -> listUnread.list(ORG)).doesNotThrowAnyException();
     }

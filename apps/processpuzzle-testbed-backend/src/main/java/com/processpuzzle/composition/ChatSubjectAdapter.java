@@ -1,7 +1,6 @@
 package com.processpuzzle.composition;
 
 import com.processpuzzle.baseentity.api.EntityObjectAccess;
-import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.chat.conversation.usecases.outbound.SubjectInfo;
 import com.processpuzzle.chat.conversation.usecases.outbound.SubjectResolverPort;
@@ -44,12 +43,8 @@ public class ChatSubjectAdapter implements SubjectResolverPort {
         if (subjectType == SubjectType.WORKFLOW_INSTANCE) {
             return workflowInstances.find(orgKey, subjectDefinition, objectId.get()).map(instance -> new SubjectInfo(null, instance.status()));
         }
-        try {
-            EntityObjectView object = objects.find(orgKey, subjectDefinition, objectId.get());
-            return Optional.of(new SubjectInfo(null, stateOf(orgKey, subjectDefinition, object)));
-        } catch (EntityObjectAccessException e) {
-            return Optional.empty();
-        }
+        return objects.findIfPresent(orgKey, subjectDefinition, objectId.get())
+                .map(object -> new SubjectInfo(null, stateOf(orgKey, subjectDefinition, object)));
     }
 
     private String stateOf(String orgKey, String entityType, EntityObjectView object) {

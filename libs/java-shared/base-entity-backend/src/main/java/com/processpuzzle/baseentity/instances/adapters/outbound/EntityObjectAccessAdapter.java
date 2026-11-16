@@ -40,6 +40,13 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
     private final RsqlToInstanceSpecificationPort rsqlSpecificationPort;
     private final EntityDefinitionLookupPort definitionLookupPort;
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<EntityObjectView> findIfPresent(String orgKey, String entityDefinitionCode, UUID objectId) {
+        return scope.find(orgKey, entityDefinitionCode, objectId)
+            .map(entityObject -> new EntityObjectView(entityObject.getId(), version(entityObject), entityObject.getPayload()));
+    }
+
     /**
      * {@code noRollbackFor}: a missing object is a normal answer to a read, and the caller may catch it. Without this,
      * the exception marks a transaction it joined — a chat's unread count, say — rollback-only, and that transaction
