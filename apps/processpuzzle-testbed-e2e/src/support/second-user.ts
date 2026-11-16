@@ -1,4 +1,4 @@
-import { Browser, BrowserContext, expect, APIRequestContext } from '@playwright/test';
+import { APIRequestContext, Browser, BrowserContext, expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { E2eUser } from './auth.paths';
 import { serviceRoots } from './race-sample.api';
@@ -31,7 +31,15 @@ export async function signInAnotherUser(browser: Browser, request: APIRequestCon
   const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
   await page.goto('/auth/login');
-  await page.locator('#username, #pp-fallback-username').first().fill(user.email);
+  const username = page.locator('#username, #pp-fallback-username').first();
+  try {
+    await username.waitFor({ state: 'visible', timeout: 60_000 });
+  } catch {
+    // Diagnosis for a run that cannot be watched: where the second browser actually is, and what it shows.
+    await test.info().attach('second-user-login', { body: await page.screenshot(), contentType: 'image/png' });
+    throw new Error(`The second user's sign-in form did not show; the page is at ${page.url()}`);
+  }
+  await username.fill(user.email);
   await page.locator('#password, #pp-fallback-password').first().fill(user.password);
   await page.locator('form [type=submit]').first().click();
   await page.waitForURL((url) => url.origin === new URL(baseURL).origin);
