@@ -1,3 +1,5 @@
+import type { TranslationSource } from '@processpuzzle/util';
+
 /**
  * Transloco scope of this library. The translations live in
  * `libs/js-shared/base-chat-frontend/src/assets/i18n/base_chat/*.json` and are published with the
@@ -8,3 +10,24 @@
  * would turn `base_chat` into `baseChat` and silently miss every key.
  */
 export const BASE_CHAT_TRANSLOCO_SCOPE = 'base_chat';
+
+/**
+ * Scope of the generic framework labels (`base_entity.tabs.*`, `base_entity.toolbar.*`), whose files base-entity
+ * owns. Registered next to {@link BASE_CHAT_TRANSLOCO_SCOPE} on the authoring route, because a route that declares
+ * a transloco scope replaces the collection it inherits rather than adding to it.
+ */
+export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
+
+/** Key root of the `Chat Definition` entity name (`._self`) and of its attribute labels. */
+export const CHAT_DEFINITION_I18N_SCOPE = `${BASE_CHAT_TRANSLOCO_SCOPE}.chat_definition`;
+
+/**
+ * Where this library's transloco bundles come from when the application ships without its assets, spread into the
+ * application's `TRANSLATION_SOURCE_REGISTRY`. The bundles normally arrive as static files and the loader tries the
+ * asset first; base-chat-backend does not serve a translations resource yet.
+ */
+export const BASE_CHAT_TRANSLATION_SOURCE: TranslationSource = {
+  scopes: [BASE_CHAT_TRANSLOCO_SCOPE],
+  serviceRootKey: 'CHAT_SERVICE_ROOT',
+  segment: 'chat',
+};

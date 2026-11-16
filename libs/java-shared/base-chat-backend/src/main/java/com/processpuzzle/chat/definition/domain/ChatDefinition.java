@@ -1,5 +1,6 @@
 package com.processpuzzle.chat.definition.domain;
 
+import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.Channel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,8 +14,10 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
@@ -208,6 +211,27 @@ public class ChatDefinition {
         if (lifecycle == ChatLifecycle.AUTO_CREATE && multiplicity == Multiplicity.MANY) {
             errors.add("an AUTO_CREATE chat creates one conversation per subject, so it cannot be MANY");
         }
+    }
+
+    /**
+     * The authored content only — neither the channel, nor the version and timestamps every save moves — as stable
+     * canonical JSON, to tell whether a draft differs from its released row or from what a starter would bring.
+     */
+    public String fingerprint() {
+        Map<String, Object> content = new LinkedHashMap<>();
+        content.put("name", name);
+        content.put("description", description);
+        content.put("subjectType", subjectType);
+        content.put("subjectDefinition", subjectDefinition);
+        content.put("multiplicity", multiplicity);
+        content.put("lifecycle", lifecycle);
+        content.put("writableStates", getWritableStates());
+        content.put("readRoles", getReadRoles());
+        content.put("writeRoles", getWriteRoles());
+        content.put("createRoles", getCreateRoles());
+        content.put("includeSubjectOwner", includeSubjectOwner);
+        content.put("retentionDays", retentionDays);
+        return CanonicalJson.of(content, Set.of());
     }
 
     /** A new released row with the draft's content: what a definition's first release creates. */

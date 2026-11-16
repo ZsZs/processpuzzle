@@ -87,12 +87,18 @@ public class SecurityConfig {
     };
 
     /**
-     * Chat. Always authenticated, whatever {@code require-authentication} says: a message has an author,
-     * which the use cases take from the token subject, and an anonymous call has none.
+     * Chat conversations, messages, read markers and the live stream. Always authenticated, whatever
+     * {@code require-authentication} says: a message has an author, which the use cases take from the token
+     * subject, and an anonymous call has none. The chat <em>definitions</em> are authored metadata like every other
+     * definition and follow {@code require-authentication}.
      */
     private static final String[] CHAT_PATHS = {
-            "/api/organizations/*/chat/**",
-            "/organizations/*/chat/**",
+            "/api/organizations/*/chat/conversations/**",
+            "/organizations/*/chat/conversations/**",
+            "/api/organizations/*/chat/unread",
+            "/organizations/*/chat/unread",
+            "/api/organizations/*/chat/stream",
+            "/organizations/*/chat/stream",
     };
 
     /**

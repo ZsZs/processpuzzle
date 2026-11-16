@@ -1,5 +1,5 @@
 /** What kind of object a conversation is about. Only entity instances for now. */
-export type ChatSubjectType = 'ENTITY';
+export type ChatSubjectType = 'ENTITY' | 'WORKFLOW_INSTANCE';
 
 export type ConversationStatus = 'OPEN' | 'CLOSED' | 'ARCHIVED';
 

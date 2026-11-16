@@ -5,7 +5,7 @@ import { BASE_CHAT_TRANSLOCO_SCOPE } from '../../base-chat.i18n';
 import { CHAT_ACTIVE_SUBJECT, CHAT_IDENTITY } from '../../domain/chat-identity';
 import { failureKindOf } from '../../domain/chat.service';
 import { ChatStore, PendingMessage } from '../../domain/chat.store';
-import { ChatMessage, ChatSubjectRef } from '../../domain/chat.types';
+import { ChatMessage, ChatSubjectRef, ChatSubjectType } from '../../domain/chat.types';
 
 type PanelStatus = 'idle' | 'loading' | 'ready' | 'none' | 'error';
 
@@ -238,8 +238,16 @@ const STICK_THRESHOLD_PX = 48;
 export class ChatPanelComponent {
   /** The entity instance to chat about; the active working context when left empty. */
   readonly subjectId = input<string | undefined>(undefined);
+  /** What kind of subject `subjectId` is; an entity instance when left empty. */
+  readonly subjectType = input<ChatSubjectType | undefined>(undefined);
   /** The chat definition to show, and to start from when the subject has no conversation. */
   readonly definitionKey = input<string | undefined>(undefined);
+  /**
+   * One conversation to show, by id — a topic picked from the topics list. The conversation has to be one the store
+   * already knows (`listForSubject` or `startConversation` put it there); `subjectId` and `definitionKey` are then
+   * not used to look for it.
+   */
+  readonly conversationId = input<string | undefined>(undefined);
 
   private readonly store = inject(ChatStore);
   private readonly identity = inject(CHAT_IDENTITY);
@@ -250,14 +258,14 @@ export class ChatPanelComponent {
   protected readonly starting = signal(false);
   protected readonly startFailure = signal<'forbidden' | 'other' | undefined>(undefined);
   protected readonly draft = signal('');
-  private readonly conversationId = signal<string | undefined>(undefined);
+  private readonly shownId = signal<string | undefined>(undefined);
 
   protected readonly subject = computed<ChatSubjectRef | undefined>(() => {
     const explicit = this.subjectId()?.trim();
-    return explicit ? { subjectType: 'ENTITY', subjectId: explicit } : this.activeSubject?.();
+    return explicit ? { subjectType: this.subjectType() ?? 'ENTITY', subjectId: explicit } : this.activeSubject?.();
   });
   protected readonly view = computed(() => {
-    const id = this.conversationId();
+    const id = this.shownId();
     return id ? this.store.viewOf(id) : undefined;
   });
   protected readonly connectionLost = computed(() => this.status() === 'ready' && this.store.connection() === 'reconnecting');
@@ -277,7 +285,8 @@ export class ChatPanelComponent {
     effect(() => {
       const subject = this.subject();
       const definitionKey = this.definitionKey();
-      untracked(() => void this.load(subject, definitionKey));
+      const conversationId = this.conversationId();
+      untracked(() => void this.load(subject, definitionKey, conversationId));
     });
     effect(() => {
       const shown = this.view();
@@ -303,7 +312,7 @@ export class ChatPanelComponent {
   }
 
   protected reload(): void {
-    void this.load(this.subject(), this.definitionKey());
+    void this.load(this.subject(), this.definitionKey(), this.conversationId());
   }
 
   protected async start(): Promise<void> {
@@ -335,17 +344,17 @@ export class ChatPanelComponent {
   }
 
   protected loadOlder(): void {
-    const id = this.conversationId();
+    const id = this.shownId();
     if (id) void this.store.loadOlder(id).catch(() => undefined);
   }
 
   protected retry(pending: PendingMessage): void {
-    const id = this.conversationId();
+    const id = this.shownId();
     if (id) void this.store.retry(id, pending.clientMessageId);
   }
 
   protected discard(pending: PendingMessage): void {
-    const id = this.conversationId();
+    const id = this.shownId();
     if (id) this.store.discard(id, pending.clientMessageId);
   }
 
@@ -355,7 +364,7 @@ export class ChatPanelComponent {
   }
 
   private sendDraft(): void {
-    const id = this.conversationId();
+    const id = this.shownId();
     const text = this.draft().trim();
     if (!id || !text) return;
     this.draft.set('');
@@ -363,11 +372,15 @@ export class ChatPanelComponent {
     void this.store.send(id, text);
   }
 
-  private async load(subject: ChatSubjectRef | undefined, definitionKey: string | undefined): Promise<void> {
+  private async load(subject: ChatSubjectRef | undefined, definitionKey: string | undefined, conversationId: string | undefined): Promise<void> {
     const serial = ++this.loadSerial;
     this.stopViewing();
-    this.conversationId.set(undefined);
+    this.shownId.set(undefined);
     this.startFailure.set(undefined);
+    if (conversationId) {
+      await this.loadKnown(serial, conversationId);
+      return;
+    }
     if (!subject) {
       this.status.set('idle');
       return;
@@ -383,9 +396,20 @@ export class ChatPanelComponent {
     }
   }
 
+  /** Shows a conversation the store already knows, whose subject and definition the caller has settled. */
+  private async loadKnown(serial: number, conversationId: string): Promise<void> {
+    this.status.set('loading');
+    try {
+      await this.store.loadHistory(conversationId);
+      if (serial === this.loadSerial) this.show(conversationId);
+    } catch {
+      if (serial === this.loadSerial) this.status.set('error');
+    }
+  }
+
   private show(conversationId: string): void {
     this.stopViewing();
-    this.conversationId.set(conversationId);
+    this.shownId.set(conversationId);
     this.status.set('ready');
     this.viewing = conversationId;
     this.store.setViewing(conversationId, true);

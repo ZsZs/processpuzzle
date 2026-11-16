@@ -28,6 +28,57 @@
   },
   "widgets": {
     "chat_panel": "Panel de chat",
+    "chat_topics": "Temas de chat",
     "unread_badge": "Mensajes de chat sin leer"
+  },
+  "chat_definition": {
+    "_self": "Definición de chat",
+    "id": "Clave",
+    "name": "Nombre",
+    "description": "Descripción",
+    "subjectType": "Tipo de asunto",
+    "subjectDefinition": "Definición del asunto",
+    "multiplicity": "Multiplicidad",
+    "lifecycle": "Ciclo de vida",
+    "writableStates": "Estados con escritura",
+    "readRoles": "Roles de lectura",
+    "writeRoles": "Roles de escritura",
+    "createRoles": "Roles de creación",
+    "includeSubjectOwner": "Incluir al propietario del asunto",
+    "retentionDays": "Días de conservación",
+    "releaseState": "Publicación",
+    "_tooltips": {
+      "id": "Unique within your organization, lower-case, e.g. order-discussion. Conversations refer to the chat by it, so avoid changing it later.",
+      "name": "The chat's name as people see it, e.g. Order discussion.",
+      "description": "A note on what the chat is for; users do not see it.",
+      "subjectType": "What the chat is about. Only ENTITY — a record of an entity type — exists today.",
+      "subjectDefinition": "The entity type whose records get the chat, e.g. order. It has to exist when the chat is released.",
+      "multiplicity": "SINGLE: one conversation per record. MANY: any number of titled topics per record.",
+      "lifecycle": "AUTO_CREATE: the conversation starts with its record. ON_DEMAND: it starts when somebody with a create role opens it. STATE_BOUND: on demand, and writable only in the states listed below.",
+      "writableStates": "STATE_BOUND only: the states of the record in which the conversation accepts messages. The record's entity type needs a state machine with these states.",
+      "readRoles": "Roles that may read the conversation. Empty: every member of the organization.",
+      "writeRoles": "Roles that may post. Empty: every member who can read.",
+      "createRoles": "Roles that may start a conversation or topic. Empty: every member who can write.",
+      "includeSubjectOwner": "Whether the person who owns the record may take part regardless of the roles above.",
+      "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
+    }
+  },
+  "topics": {
+    "title": "Temas",
+    "no_subject": "Seleccione un elemento para ver sus temas.",
+    "loading": "Cargando los temas…",
+    "error": "No se pudieron cargar los temas.",
+    "reload": "Reintentar",
+    "empty": "Aún no hay temas.",
+    "new_label": "Nuevo tema",
+    "new_placeholder": "Título del tema",
+    "create": "Iniciar tema",
+    "creating": "Iniciando…",
+    "create_failed": "No se pudo iniciar el tema.",
+    "create_forbidden": "No tiene permiso para iniciar un tema aquí.",
+    "select": "Abrir tema",
+    "unread": "sin leer",
+    "closed": "cerrado"
   }
 }

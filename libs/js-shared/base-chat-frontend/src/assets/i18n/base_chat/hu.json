@@ -28,6 +28,57 @@
   },
   "widgets": {
     "chat_panel": "Csevegőpanel",
+    "chat_topics": "Csevegési témák",
     "unread_badge": "Olvasatlan csevegőüzenetek"
+  },
+  "chat_definition": {
+    "_self": "Csevegés-definíció",
+    "id": "Kulcs",
+    "name": "Név",
+    "description": "Leírás",
+    "subjectType": "Tárgy típusa",
+    "subjectDefinition": "Tárgy definíciója",
+    "multiplicity": "Darabszám",
+    "lifecycle": "Életciklus",
+    "writableStates": "Írható állapotok",
+    "readRoles": "Olvasó szerepkörök",
+    "writeRoles": "Író szerepkörök",
+    "createRoles": "Létrehozó szerepkörök",
+    "includeSubjectOwner": "A tárgy tulajdonosa is résztvevő",
+    "retentionDays": "Megőrzés napokban",
+    "releaseState": "Kiadás",
+    "_tooltips": {
+      "id": "Unique within your organization, lower-case, e.g. order-discussion. Conversations refer to the chat by it, so avoid changing it later.",
+      "name": "The chat's name as people see it, e.g. Order discussion.",
+      "description": "A note on what the chat is for; users do not see it.",
+      "subjectType": "What the chat is about. Only ENTITY — a record of an entity type — exists today.",
+      "subjectDefinition": "The entity type whose records get the chat, e.g. order. It has to exist when the chat is released.",
+      "multiplicity": "SINGLE: one conversation per record. MANY: any number of titled topics per record.",
+      "lifecycle": "AUTO_CREATE: the conversation starts with its record. ON_DEMAND: it starts when somebody with a create role opens it. STATE_BOUND: on demand, and writable only in the states listed below.",
+      "writableStates": "STATE_BOUND only: the states of the record in which the conversation accepts messages. The record's entity type needs a state machine with these states.",
+      "readRoles": "Roles that may read the conversation. Empty: every member of the organization.",
+      "writeRoles": "Roles that may post. Empty: every member who can read.",
+      "createRoles": "Roles that may start a conversation or topic. Empty: every member who can write.",
+      "includeSubjectOwner": "Whether the person who owns the record may take part regardless of the roles above.",
+      "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
+    }
+  },
+  "topics": {
+    "title": "Témák",
+    "no_subject": "Válasszon egy elemet a témáinak megtekintéséhez.",
+    "loading": "A témák betöltése…",
+    "error": "A témákat nem sikerült betölteni.",
+    "reload": "Újra",
+    "empty": "Még nincs téma.",
+    "new_label": "Új téma",
+    "new_placeholder": "A téma címe",
+    "create": "Téma indítása",
+    "creating": "Indítás…",
+    "create_failed": "A témát nem sikerült elindítani.",
+    "create_forbidden": "Itt nem indíthat témát.",
+    "select": "Téma megnyitása",
+    "unread": "olvasatlan",
+    "closed": "lezárt"
   }
 }

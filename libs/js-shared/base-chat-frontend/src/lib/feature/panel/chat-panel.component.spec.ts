@@ -51,6 +51,7 @@ function fakeStore() {
     retry: vi.fn(async () => undefined),
     discard: vi.fn(),
     loadOlder: vi.fn(async () => undefined),
+    loadHistory: vi.fn(async (_conversationId: string): Promise<void> => undefined),
   };
 }
 
@@ -122,6 +123,32 @@ describe('ChatPanelComponent', () => {
 
       expect(store.openForSubject).toHaveBeenCalledWith({ subjectType: 'ENTITY', subjectId: 'o-1' }, 'order-discussion');
       expect(store.setViewing).toHaveBeenCalledWith('c-1', true);
+    });
+
+    it('shows a conversation it is given by id, loading its history and not looking for it by record', async () => {
+      const store = storeShowing(view());
+      const { root } = await render({ conversationId: 'c-1', subjectId: 'o-1' }, { store });
+
+      expect(store.loadHistory).toHaveBeenCalledWith('c-1');
+      expect(store.openForSubject).not.toHaveBeenCalled();
+      expect(store.setViewing).toHaveBeenCalledWith('c-1', true);
+      expect(byId(root, 'chat-log')).not.toBeNull();
+    });
+
+    it('says so when the conversation it is given cannot be loaded', async () => {
+      const store = storeShowing(view());
+      store.loadHistory.mockRejectedValue(new Error('down'));
+      const { root } = await render({ conversationId: 'c-1' }, { store });
+
+      expect(byId(root, 'chat-error')).not.toBeNull();
+      expect(store.setViewing).not.toHaveBeenCalledWith('c-1', true);
+    });
+
+    it('asks for the conversation of a workflow instance when it is told the record is one', async () => {
+      const store = storeShowing(view());
+      await render({ subjectId: 'w-1', subjectType: 'WORKFLOW_INSTANCE' }, { store });
+
+      expect(store.openForSubject).toHaveBeenCalledWith({ subjectType: 'WORKFLOW_INSTANCE', subjectId: 'w-1' }, undefined);
     });
 
     it('follows the active working context when it is given no record', async () => {

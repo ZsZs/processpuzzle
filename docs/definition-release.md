@@ -93,6 +93,7 @@ erases both tables with the tenant.
 | entity | `base_entity_definition.channel`, unique `(org_key, code, channel)`; attributes follow their definition | `EntityDefinitionReleaseParticipant` (base-entity) | step 2 |
 | state | `channel` on `state_machine_definitions` and `diagram_definitions`, keys `(org_key, entity_name, channel)`; a machine and its layout are released together, as one definition | `StateMachineReleaseParticipant` (base-state) | step 2 |
 | rule | `rule_definitions.channel`, key `(org_key, id, channel)`; `rule_definition_fields` joins on all three | `RuleReleaseParticipant` (base-rule) | step 2 |
+| chat | `chat_definition.channel`, key `(org_key, definition_key, channel)`; conversations are runtime data and are not released; a STATE_BOUND chat is checked against its entity's state machine | `ChatDefinitionReleaseParticipant` (base-chat) | step 3a |
 | event | `event_definition.channel`, key `(org_key, id, channel)` | `EventDefinitionReleaseParticipant` (base-event) | step 3a |
 | artifact, role, tool, task | `channel` on `workflow_artifact_definition`, `workflow_role_definition`, `workflow_tool_definition`, `workflow_task_definition`, keys `(org_key, id, channel)` | `ArtifactReleaseParticipant`, `RoleReleaseParticipant`, `ToolReleaseParticipant`, `TaskReleaseParticipant` (base-workflow) | step 3b |
 | workflow | `workflow_definition.channel` and `workflow_diagram.channel`; a workflow and its diagram are released together, as one definition | `WorkflowReleaseParticipant` (base-workflow) | step 3b |

@@ -40,7 +40,16 @@ public class ChatDefinitionMapper {
     }
 
     public com.processpuzzle.chat.model.ChatDefinition toModel(ChatDefinition definition) {
+        return toModel(definition, null);
+    }
+
+    /**
+     * @param releaseState where the draft stands against its released row; null for a released row, which has none
+     */
+    public com.processpuzzle.chat.model.ChatDefinition toModel(ChatDefinition definition,
+                                                             com.processpuzzle.core.definition.ReleaseState releaseState) {
         return new com.processpuzzle.chat.model.ChatDefinition()
+                .releaseState(releaseState == null ? null : com.processpuzzle.chat.model.ReleaseState.fromValue(releaseState.name()))
                 .key(definition.getDefinitionKey())
                 .name(definition.getName())
                 .description(definition.getDescription())

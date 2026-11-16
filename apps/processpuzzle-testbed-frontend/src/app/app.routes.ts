@@ -15,6 +15,7 @@ import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES, ISSUED_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
+import { BASE_CHAT_ROUTES } from '@processpuzzle/base-chat';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
@@ -305,6 +306,13 @@ export const appRoutes: Route[] = [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       { path: 'overview', loadComponent: () => import('./content/base-chat/overview.component').then((comp) => comp.OverviewComponent) },
       { path: 'samples', loadComponent: () => import('./content/base-chat/samples.component').then((comp) => comp.SamplesComponent) },
+      {
+        path: 'definitions',
+        loadComponent: () => import('./content/base-chat/definitions.component').then((comp) => comp.DefinitionsComponent),
+        // `BASE_CHAT_ROUTES` brings the `chat-definition` branch and declares its own transloco scopes. Static
+        // children, for the same reason as the base-event branch above.
+        children: BASE_CHAT_ROUTES,
+      },
     ],
   },
   {

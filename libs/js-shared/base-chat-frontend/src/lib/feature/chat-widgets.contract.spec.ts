@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { CHAT_PANEL_WIDGET, CHAT_PANEL_WIDGET_REGISTRATION } from './panel/chat-panel.widget';
+import { CHAT_TOPICS_WIDGET, CHAT_TOPICS_WIDGET_REGISTRATION } from './topics/chat-topics.widget';
 import { CHAT_UNREAD_BADGE_WIDGET, CHAT_UNREAD_BADGE_WIDGET_REGISTRATION } from './unread/chat-unread-badge.widget';
 
 /**
@@ -14,6 +15,7 @@ const SEED_CATALOGUE = 'libs/java-shared/base-widget-backend/src/main/resources/
 
 describe.each([
   [CHAT_PANEL_WIDGET, CHAT_PANEL_WIDGET_REGISTRATION],
+  [CHAT_TOPICS_WIDGET, CHAT_TOPICS_WIDGET_REGISTRATION],
   [CHAT_UNREAD_BADGE_WIDGET, CHAT_UNREAD_BADGE_WIDGET_REGISTRATION],
 ])('%s widget contract', (key, registration) => {
   const mirror = reflectComponentType(registration.component);

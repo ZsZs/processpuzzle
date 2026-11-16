@@ -11,8 +11,9 @@ application module (`chat`) that depends on `core` and `shared` only; what it ne
 platform it declares as outbound ports. The Angular half is
 [base-chat-frontend](../../js-shared/base-chat-frontend/README.md).
 
-**Status: core API and live delivery (phases 2 and 3).** Chat definitions, conversations, messages, read markers,
-unread counts and a live stream exist behind the REST API of `base-chat-api.yaml`; the Angular half is phase 4.
+**Status: definitions, conversations and live delivery (phases 2, 3 and 5).** Chat definitions (authored as drafts and
+released with the platform release, importable by Business Starters), conversations, messages, read markers, unread
+counts and a live stream exist behind the REST API of `base-chat-api.yaml`; the Angular half is phase 4.
 The design decisions, and where the build differs from the plan, are recorded in
 [docs/chat/base-chat-design-plan.md](../../../docs/chat/base-chat-design-plan.md).
 

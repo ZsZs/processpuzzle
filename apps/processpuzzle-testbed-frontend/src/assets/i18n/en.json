@@ -210,6 +210,9 @@
   "base-chat": {
     "overview_tab_label": "Overview",
     "samples_tab_label": "Samples",
+    "definitions_tab_label": "Definitions",
+    "topics_heading": "Topics",
+    "topics_desc": "Several titled topics under the same record, from the chat definition order-topics. Start one; the conversation opens below the list.",
     "samples_desc_1": "The chat panel shows the conversation of one record. Paste the id of an order — it is in the address of its form — and write a message; open this page in a second browser to see it arrive live.",
     "samples_desc_2": "Left empty, the record field makes the panel follow the active working context, which is how it behaves when a designer places it on an order screen. The chat definition decides who may read, write and start the conversation.",
     "record_label": "Record id",

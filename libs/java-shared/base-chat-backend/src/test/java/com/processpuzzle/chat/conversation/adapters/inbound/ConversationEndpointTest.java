@@ -6,7 +6,6 @@ import static com.processpuzzle.chat.conversation.ConversationFixtures.conversat
 import static com.processpuzzle.chat.conversation.ConversationFixtures.message;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

@@ -28,6 +28,57 @@
   },
   "widgets": {
     "chat_panel": "Chat-Bereich",
+    "chat_topics": "Chat-Themen",
     "unread_badge": "Ungelesene Chat-Nachrichten"
+  },
+  "chat_definition": {
+    "_self": "Chat-Definition",
+    "id": "Schlüssel",
+    "name": "Name",
+    "description": "Beschreibung",
+    "subjectType": "Gegenstandsart",
+    "subjectDefinition": "Gegenstandsdefinition",
+    "multiplicity": "Anzahl",
+    "lifecycle": "Lebenszyklus",
+    "writableStates": "Beschreibbare Zustände",
+    "readRoles": "Leserollen",
+    "writeRoles": "Schreibrollen",
+    "createRoles": "Erstellrollen",
+    "includeSubjectOwner": "Eigentümer des Gegenstands einbeziehen",
+    "retentionDays": "Aufbewahrung in Tagen",
+    "releaseState": "Freigabe",
+    "_tooltips": {
+      "id": "Unique within your organization, lower-case, e.g. order-discussion. Conversations refer to the chat by it, so avoid changing it later.",
+      "name": "The chat's name as people see it, e.g. Order discussion.",
+      "description": "A note on what the chat is for; users do not see it.",
+      "subjectType": "What the chat is about. Only ENTITY — a record of an entity type — exists today.",
+      "subjectDefinition": "The entity type whose records get the chat, e.g. order. It has to exist when the chat is released.",
+      "multiplicity": "SINGLE: one conversation per record. MANY: any number of titled topics per record.",
+      "lifecycle": "AUTO_CREATE: the conversation starts with its record. ON_DEMAND: it starts when somebody with a create role opens it. STATE_BOUND: on demand, and writable only in the states listed below.",
+      "writableStates": "STATE_BOUND only: the states of the record in which the conversation accepts messages. The record's entity type needs a state machine with these states.",
+      "readRoles": "Roles that may read the conversation. Empty: every member of the organization.",
+      "writeRoles": "Roles that may post. Empty: every member who can read.",
+      "createRoles": "Roles that may start a conversation or topic. Empty: every member who can write.",
+      "includeSubjectOwner": "Whether the person who owns the record may take part regardless of the roles above.",
+      "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
+    }
+  },
+  "topics": {
+    "title": "Themen",
+    "no_subject": "Wählen Sie ein Element, um seine Themen zu sehen.",
+    "loading": "Die Themen werden geladen…",
+    "error": "Die Themen konnten nicht geladen werden.",
+    "reload": "Erneut versuchen",
+    "empty": "Noch keine Themen.",
+    "new_label": "Neues Thema",
+    "new_placeholder": "Titel des Themas",
+    "create": "Thema beginnen",
+    "creating": "Wird begonnen…",
+    "create_failed": "Das Thema konnte nicht begonnen werden.",
+    "create_forbidden": "Sie dürfen hier kein Thema beginnen.",
+    "select": "Thema öffnen",
+    "unread": "ungelesen",
+    "closed": "geschlossen"
   }
 }

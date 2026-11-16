@@ -210,6 +210,9 @@
   "base-chat": {
     "overview_tab_label": "Aperçu",
     "samples_tab_label": "Exemples",
+    "definitions_tab_label": "Définitions",
+    "topics_heading": "Sujets",
+    "topics_desc": "Plusieurs sujets titrés sous le même enregistrement, depuis la définition de chat order-topics. Ouvrez-en un ; la conversation s'ouvre sous la liste.",
     "samples_desc_1": "Le panneau de discussion montre la conversation d’un enregistrement. Collez l’identifiant d’une commande — il figure dans l’adresse de son formulaire — et écrivez un message ; ouvrez cette page dans un second navigateur pour le voir arriver en direct.",
     "samples_desc_2": "Laissé vide, le champ fait suivre au panneau le contexte de travail actif, comme lorsqu’un concepteur le place sur l’écran d’une commande. La définition de discussion décide qui peut lire, écrire et démarrer la conversation.",
     "record_label": "Identifiant de l’enregistrement",

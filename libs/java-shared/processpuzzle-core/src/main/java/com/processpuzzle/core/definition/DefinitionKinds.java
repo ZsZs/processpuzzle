@@ -15,6 +15,10 @@ package com.processpuzzle.core.definition;
  * because an app's texts need the app to exist). They are only imported — a release carries them with the module or
  * app that owns them.
  *
+ * <p>A {@link #CHAT} names the entity type whose records get the chat and, when it is bound to state, states of that
+ * entity's machine, so it comes after the entities and the states; nothing else refers to a chat, so it is released
+ * ahead of the documents and the workflows without affecting them.
+ *
  * <p>A {@link #CALCULATION} reads and writes entity attributes, so it comes after the entities; it is released
  * after the rules, which it does not name, and before the workflows, whose states may trigger it.
  */
@@ -25,6 +29,7 @@ public final class DefinitionKinds {
     public static final String RULE = "rule";
     public static final String CALCULATION = "calculation";
     public static final String WIDGET = "widget";
+    public static final String CHAT = "chat";
     public static final String DOCUMENT = "document";
     public static final String EVENT = "event";
     public static final String ARTIFACT = "artifact";
@@ -42,6 +47,7 @@ public final class DefinitionKinds {
     public static final int RULE_ORDER = 30;
     public static final int CALCULATION_ORDER = 35;
     public static final int WIDGET_ORDER = 40;
+    public static final int CHAT_ORDER = 45;
     public static final int DOCUMENT_ORDER = 50;
     public static final int EVENT_ORDER = 52;
     public static final int ARTIFACT_ORDER = 54;

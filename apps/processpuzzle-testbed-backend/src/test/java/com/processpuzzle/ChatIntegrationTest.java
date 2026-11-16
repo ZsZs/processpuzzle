@@ -34,9 +34,13 @@ import com.processpuzzle.shared.event.PlatformEvent;
 import com.processpuzzle.state.adapter.inbound.StateMachineReleaseParticipant;
 import com.processpuzzle.state.usecase.FireStateTransition;
 import com.processpuzzle.state.usecase.ImportStateMachineDefinitions;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
+import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -114,6 +118,12 @@ class ChatIntegrationTest {
                 subjectType: ENTITY
                 subjectDefinition: order
                 multiplicity: MANY
+              - key: onboarding-run-chat
+                name: Onboarding run
+                subjectType: WORKFLOW_INSTANCE
+                subjectDefinition: onboarding
+                lifecycle: STATE_BOUND
+                writableStates: [ ACTIVE ]
             """;
 
     @Autowired private ImportEntityDefinitions importEntities;
@@ -134,6 +144,7 @@ class ChatIntegrationTest {
     @Autowired private Unfollow unfollow;
     @Autowired private ListUnread listUnread;
     @Autowired private OpenChatStream openStream;
+    @Autowired private WorkflowInstanceRepository workflowInstances;
     @Autowired private ChatStreamRegistry registry;
 
     private String orderId;
@@ -252,6 +263,30 @@ class ChatIntegrationTest {
         assertThatThrownBy(() -> post.post(ORG, id, UUID.randomUUID(), "Too late"))
                 .isInstanceOf(ConversationNotWritableException.class);
         assertThat(list.list(ORG, id, null, null)).extracting(Message::getBody).containsExactly("While it is a draft");
+    }
+
+    @Test
+    void theChatOfAWorkflowInstanceTurnsReadOnlyWhenTheInstanceCompletes() {
+        WorkflowInstance run = workflowInstances.save(WorkflowInstance.builder()
+                .orgKey(ORG).workflowId("onboarding").workflowName("Onboarding").status(WorkflowInstanceStatus.ACTIVE).startedAt(Instant.now()).build());
+        String runId = run.getId().toString();
+        UUID id = open.open(ORG, "onboarding-run-chat", runId, null).conversation().getId();
+        post.post(ORG, id, UUID.randomUUID(), "Welcome aboard");
+
+        run.setStatus(WorkflowInstanceStatus.COMPLETED);
+        workflowInstances.save(run);
+
+        assertThat(get.get(ORG, id).access().canWrite()).isFalse();
+        assertThatThrownBy(() -> post.post(ORG, id, UUID.randomUUID(), "Too late")).isInstanceOf(ConversationNotWritableException.class);
+        assertThat(list.list(ORG, id, null, null)).extracting(Message::getBody).containsExactly("Welcome aboard");
+    }
+
+    @Test
+    void aWorkflowInstanceOfAnotherWorkflowHasNoChat() {
+        WorkflowInstance run = workflowInstances.save(WorkflowInstance.builder()
+                .orgKey(ORG).workflowId("offboarding").workflowName("Offboarding").status(WorkflowInstanceStatus.ACTIVE).startedAt(Instant.now()).build());
+
+        assertThatThrownBy(() -> open.open(ORG, "onboarding-run-chat", run.getId().toString(), null)).isInstanceOf(ConversationNotFoundException.class);
     }
 
     // --- following, unread and the live stream

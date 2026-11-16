@@ -97,5 +97,13 @@
   "release": "Publication",
   "assistant": "Concepteur IA",
   "assistant_requirement": "L'utilisation de l'assistant requiert le rôle definition-designer. Un administrateur de l'organisation le crée dans Rôles de l'organisation et vous l'attribue dans Utilisateurs.",
-  "assistant_toggle": "Assistant de conception"
+  "assistant_toggle": "Assistant de conception",
+  "chat": "Chat",
+  "base-chat_card_title": "Concepteur de chat",
+  "base-chat_card_subtitle": "Des conversations sur vos enregistrements",
+  "base-chat_card_content": "Décide quels types d'entité ont une conversation, qui peut lire, écrire et en ouvrir une, et si l'état de l'enregistrement limite l'écriture.",
+  "base-chat_card_content_1": "Un chat par enregistrement, ou autant de sujets titrés que voulu",
+  "base-chat_card_content_2": "Restreindre la lecture, l'écriture et l'ouverture par rôle",
+  "base-chat_card_content_3": "Fermer l'écriture quand l'enregistrement quitte ses états",
+  "base-chat_card_button": "Définir des chats..."
 }

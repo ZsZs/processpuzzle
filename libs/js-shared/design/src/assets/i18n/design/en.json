@@ -97,5 +97,13 @@
   "release": "Release",
   "assistant": "AI Designer",
   "assistant_requirement": "Using the assistant needs the definition-designer role. An organization administrator creates it under Organization roles and assigns it to you under Users.",
-  "assistant_toggle": "Design assistant"
+  "assistant_toggle": "Design assistant",
+  "chat": "Chat",
+  "base-chat_card_title": "Chat Designer",
+  "base-chat_card_subtitle": "Conversations about your records",
+  "base-chat_card_content": "Decides which entity types get a conversation, who may read, write and start one, and whether the record's state limits writing.",
+  "base-chat_card_content_1": "One chat per record, or any number of titled topics",
+  "base-chat_card_content_2": "Restrict reading, writing and starting by role",
+  "base-chat_card_content_3": "Close the chat for writing once the record leaves its states",
+  "base-chat_card_button": "Define chats..."
 }

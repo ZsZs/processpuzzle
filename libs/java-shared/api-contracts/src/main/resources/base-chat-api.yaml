@@ -96,6 +96,21 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "409":
           $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteChatDefinition
+      tags: [ Chat Definitions ]
+      summary: Delete the draft of a chat definition
+      description: >-
+        Removes the draft; the released row stays until the next release, which removes it. Not refused while
+        conversations exist — they are kept, and unreachable once the definition is no longer released. Needs
+        the right to author metadata.
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /organizations/{orgKey}/chat/conversations:
     parameters:
@@ -123,7 +138,7 @@ paths:
           required: false
           schema:
             type: string
-          description: The entity definition code, for subjectType ENTITY.
+          description: The entity definition code for subjectType ENTITY, the workflow definition id for WORKFLOW_INSTANCE.
         - name: definition
           in: query
           required: false
@@ -440,8 +455,10 @@ components:
   schemas:
     ChatSubjectType:
       type: string
-      enum: [ ENTITY ]
-      description: What kind of object a conversation is about. ENTITY is an instance of a base-entity definition.
+      enum: [ ENTITY, WORKFLOW_INSTANCE ]
+      description: >-
+        What kind of object a conversation is about. ENTITY is an instance of a base-entity definition;
+        WORKFLOW_INSTANCE is a run of a workflow definition.
 
     ChatMultiplicity:
       type: string
@@ -467,6 +484,13 @@ components:
       enum: [ TEXT ]
       description: TEXT only for now; SYSTEM and CALL_EVENT are reserved.
 
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released, CHANGED differs from
+        the released row, RELEASED is what the running application uses. Present on drafts only.
+
     ChatDefinitionInput:
       type: object
       required: [ name, subjectType, subjectDefinition ]
@@ -480,7 +504,7 @@ components:
           $ref: "#/components/schemas/ChatSubjectType"
         subjectDefinition:
           type: string
-          description: For ENTITY, the definition code of the entity whose instances get this chat.
+          description: The definition code of the entity whose instances get this chat (ENTITY), or the id of the workflow whose instances do (WORKFLOW_INSTANCE).
           example: order
         multiplicity:
           $ref: "#/components/schemas/ChatMultiplicity"
@@ -574,6 +598,10 @@ components:
         updatedAt:
           type: string
           format: date-time
+        releaseState:
+          allOf:
+            - $ref: "#/components/schemas/ReleaseState"
+          readOnly: true
 
     OpenConversationRequest:
       type: object

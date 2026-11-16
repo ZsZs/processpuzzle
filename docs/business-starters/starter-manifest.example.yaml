@@ -23,7 +23,7 @@ locales: [en, de, hu]               # languages the starter ships labels for
 
 # --- Contents (paths relative to the manifest) --------------------------
 # The importer always processes groups in this order:
-# entities -> states -> rules -> calculations -> widgets -> documents -> workflows -> modules -> translations -> apps -> assets
+# entities -> states -> rules -> calculations -> widgets -> chats -> documents -> workflows -> modules -> translations -> apps -> assets
 contents:
   entities:
     - entities/regatta.yaml
