@@ -85,18 +85,23 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
 
     url += segmentsOf(current);
 
-    const contextRoute = workingContextOfRoute(current);
-    const entityId = current.params[contextRoute?.idParam ?? BaseUrlSegments.EntityID];
-    if (typeof entityId === 'string' && levels.length > 0 && declaresEntityId(current)) {
-      levels[levels.length - 1].entityId = entityId;
-      // A context object's id segment sits on the aggregate's own route, below the route that declared the entity: the level
-      // the entity opened is the aggregate's root, and this is where it learns that it is also a context.
-      if (contextRoute?.aggregate) levels[levels.length - 1].workingContext = contextRoute.name;
-    }
+    if (levels.length > 0) readEntityIdOf(current, levels[levels.length - 1]);
     if (levels.length > 0) levels[levels.length - 1].url = url;
   }
 
   return levels;
+}
+
+/**
+ * Reads the level's id from the route that declares it. A context object's id sits on the aggregate's own route, below the route
+ * that declared the entity, and that is where the level learns that it is also a working context.
+ */
+function readEntityIdOf(snapshot: ActivatedRouteSnapshot, level: EmbeddedBreadcrumbLevel): void {
+  const contextRoute = workingContextOfRoute(snapshot);
+  const entityId = snapshot.params[contextRoute?.idParam ?? BaseUrlSegments.EntityID];
+  if (typeof entityId !== 'string' || !declaresEntityId(snapshot)) return;
+  level.entityId = entityId;
+  if (contextRoute?.aggregate) level.workingContext = contextRoute.name;
 }
 
 /**
