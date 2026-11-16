@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
  *   <li>{@code chat.messages.rejected{reason}} — posts refused: {@code rate_limited}, {@code not_writable} or
  *       {@code forbidden}.
  *   <li>{@code chat.stream.connections} — live streams this instance holds.
+ *   <li>{@code chat.retention.conversations.deleted} and {@code chat.users.erased} — what retention and erasure removed.
  * </ul>
  *
  * No tag carries an organization or a user: the cardinality would grow with the tenants.
@@ -46,6 +47,19 @@ public class ChatMetrics {
     public void messageRejected(String reason) {
         if (registry != null) {
             Counter.builder("chat.messages.rejected").tag("reason", reason).description("Chat posts refused").register(registry).increment();
+        }
+    }
+
+    /** @param conversations how many a retention pass deleted */
+    public void retentionDeleted(int conversations) {
+        if (registry != null && conversations > 0) {
+            Counter.builder("chat.retention.conversations.deleted").description("Conversations deleted for being idle past their retention").register(registry).increment(conversations);
+        }
+    }
+
+    public void userErased() {
+        if (registry != null) {
+            Counter.builder("chat.users.erased").description("Users whose chat data was erased").register(registry).increment();
         }
     }
 

@@ -87,7 +87,7 @@ public class SecurityConfig {
     };
 
     /**
-     * Chat conversations, messages, read markers and the live stream. Always authenticated, whatever
+     * Chat conversations, messages, read markers, the live stream and the erasure of a user's chat data. Always authenticated, whatever
      * {@code require-authentication} says: a message has an author, which the use cases take from the token
      * subject, and an anonymous call has none. The chat <em>definitions</em> are authored metadata like every other
      * definition and follow {@code require-authentication}.
@@ -99,6 +99,8 @@ public class SecurityConfig {
             "/organizations/*/chat/unread",
             "/api/organizations/*/chat/stream",
             "/organizations/*/chat/stream",
+            "/api/organizations/*/chat/users/**",
+            "/organizations/*/chat/users/**",
     };
 
     /**

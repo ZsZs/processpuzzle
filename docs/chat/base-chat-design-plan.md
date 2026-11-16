@@ -401,6 +401,14 @@ or archives them yet.
   per-customer retention and erasure rules as open; they wait for that policy. `LISTEN/NOTIFY` and a load test wait for
   a second backend instance and for stage numbers.
 
+### Phase 7b as built (2026-11-16) — retention and erasure
+
+Retention and erasure are built on the defaults described in [retention-and-erasure.md](retention-and-erasure.md),
+which is written for the person who has to decide the policy. In short: a conversation idle longer than its released
+definition's `retentionDays` is deleted whole by a scheduled job; a user's chat data is anonymized on request
+(`DELETE /organizations/{orgKey}/chat/users/{userSub}`); an erased organization loses all of it (phase 2). Moderation —
+an administrator removing one message — is not built.
+
 ### Decisions (2026-11-15)
 
 - **D1** No subject-less chats in v1. Every conversation has a subject.
