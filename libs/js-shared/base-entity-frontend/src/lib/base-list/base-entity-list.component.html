@@ -8,6 +8,9 @@
     </mat-slide-toggle>
   </div>
 }
+@if (pendingTarget()) {
+  <p class="base-entity-list-context-hint" data-testid="context-object-hint">{{ 'base_entity.working_context.select_to_continue' | transloco }}</p>
+}
 <div class="base-entity-list mat-elevation-z8">
   <div class="base-entity-list-scroll">
     <table mat-table [dataSource]="dataSource" matSort aria-describedby="base-entity-list">

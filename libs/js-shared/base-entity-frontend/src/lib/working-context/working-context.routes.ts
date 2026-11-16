@@ -30,7 +30,7 @@ export interface WorkingContextAggregate {
  * `ctx/site/<id>/ctx/warehouse/<id>/...`.
  */
 export function workingContextRoutes(contextName: string, routes: Routes, aggregate: WorkingContextAggregate = {}): Routes {
-  const embeddedBranches = (aggregate.embeddedChildren ?? []).map(embeddedChildRoute);
+  const embeddedBranches = (aggregate.embeddedChildren ?? []).map((child) => embeddedChildRoute(child));
   const viewSegments = routes.map((route) => firstSegment(route.path)).filter((segment): segment is string => !!segment);
   // The branches are routes of the context as well: an id named like one would swallow its URL.
   const reservedSegments = [...viewSegments, ...embeddedBranches.map((branch) => firstSegment(branch.path)).filter((segment): segment is string => !!segment)];

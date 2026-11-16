@@ -19,7 +19,7 @@ describe('SamplesComponent', () => {
     return component.selectedButton();
   };
 
-  it.each([['test-entity'], ['test-entity-component'], ['related-entity'], ['trunk-data'], ['dynamic-entity'], ['aggregate-root'], ['demo-component-one'], ['demo-component-two']])('highlights the toggle of the sample being shown: %s', async (sample) => {
+  it.each([['test-entity'], ['test-entity-component'], ['related-entity'], ['trunk-data'], ['dynamic-entity'], ['demo-root'], ['demo-component-one'], ['demo-component-two']])('highlights the toggle of the sample being shown: %s', async (sample) => {
     expect(await selectedButtonAt(sample)).toBe(sample);
   });
 
