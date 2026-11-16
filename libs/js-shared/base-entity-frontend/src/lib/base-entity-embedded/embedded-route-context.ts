@@ -2,7 +2,7 @@ import { ActivatedRouteSnapshot } from '@angular/router';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseUrlSegments } from '../base-form-navigator/base-url-segments';
 import { ENTITY_NAME_ROUTE_DATA_KEY } from '../base-form-navigator/entity-route.registry';
-import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY } from '../working-context/working-context.url';
+import { WORKING_CONTEXT_ID_PARAM, WORKING_CONTEXT_ROUTE_DATA_KEY, workingContextOfRoute } from '../working-context/working-context.url';
 import { EmbeddedPath, EmbeddedPathStep, indexOfRow, readRows } from './embedded-aggregate';
 
 /** One `<entity>/<id>/details` step of the URL: which entity, and which instance of it. */
@@ -85,9 +85,13 @@ export function readEmbeddedBreadcrumb(snapshot: ActivatedRouteSnapshot | null):
 
     url += segmentsOf(current);
 
-    const entityId = current.params[contextOf(current) === undefined ? BaseUrlSegments.EntityID : WORKING_CONTEXT_ID_PARAM];
+    const contextRoute = workingContextOfRoute(current);
+    const entityId = current.params[contextRoute?.idParam ?? BaseUrlSegments.EntityID];
     if (typeof entityId === 'string' && levels.length > 0 && declaresEntityId(current)) {
       levels[levels.length - 1].entityId = entityId;
+      // A context object's id segment sits on the aggregate's own route, below the route that declared the entity: the level
+      // the entity opened is the aggregate's root, and this is where it learns that it is also a context.
+      if (contextRoute?.aggregate) levels[levels.length - 1].workingContext = contextRoute.name;
     }
     if (levels.length > 0) levels[levels.length - 1].url = url;
   }

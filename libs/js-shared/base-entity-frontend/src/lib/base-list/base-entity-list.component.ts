@@ -103,7 +103,15 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   protected selectOrCreateMode = signal(false);
   private requestPayload?: NavigationPayload;
 
+  /** The URL a user was sent away from for lack of a context object, which choosing one continues to; `undefined` otherwise. */
+  protected readonly pendingTarget = computed(() => {
+    const definition = this.workingContexts()[0];
+    return definition?.aggregate ? this.workingContext.pendingTarget(definition.name) : undefined;
+  });
+
   constructor() {
+    // An entity that canContextObject is the root of its own context, with no declaration of it anywhere.
+    if (this.entityDescriptor().canContextObject) this.workingContext.ensureAggregate(this.entityDescriptor().entityName);
     this.store = this.entityDescriptor().store as BaseEntityStoreApi<PersistedEntity<Entity>>;
     this.registerEffects();
   }

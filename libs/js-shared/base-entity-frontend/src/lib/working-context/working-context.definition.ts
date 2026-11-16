@@ -12,6 +12,11 @@ export interface WorkingContextDefinition {
   name: string;
   /** Entity type acting as the context root. Any entity with a registered descriptor and store may be named. */
   entityName: string;
+  /**
+   * True for a **context object**: the entity is an aggregate whose own URL carries the context (`<aggregate>/<id>/<embedded>/list`),
+   * derived from its descriptor's `canContextObject` rather than declared. Such a context has no `ctx` segment, parent or base path.
+   */
+  aggregate?: boolean;
   /** A parent context. Selecting another parent clears this context, because its routes nest below the parent's. */
   parent?: string;
   /**
