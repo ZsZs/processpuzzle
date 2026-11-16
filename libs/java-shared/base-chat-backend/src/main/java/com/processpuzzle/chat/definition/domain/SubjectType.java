@@ -13,5 +13,8 @@ import org.springframework.modulith.NamedInterface;
 public enum SubjectType {
 
     /** An instance of a base-entity definition; {@code subjectDefinition} is the definition code. */
-    ENTITY
+    ENTITY,
+
+    /** A run of a workflow definition; {@code subjectDefinition} is the workflow's id, {@code subjectId} the instance's. */
+    WORKFLOW_INSTANCE
 }

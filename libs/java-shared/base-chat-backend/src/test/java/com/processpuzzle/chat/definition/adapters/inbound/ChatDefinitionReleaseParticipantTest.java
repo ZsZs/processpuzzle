@@ -117,6 +117,34 @@ class ChatDefinitionReleaseParticipantTest {
                 DefinitionReference.required("chat", "order-discussion", DefinitionKinds.ENTITY, "order"));
     }
 
+    @Test
+    void aChatOnWorkflowInstancesRequiresTheWorkflowNotAnEntity() {
+        ChatDefinition onboarding = draft("onboarding-chat");
+        onboarding.setSubjectType(SubjectType.WORKFLOW_INSTANCE);
+        onboarding.setSubjectDefinition("onboarding");
+        drafts(onboarding);
+
+        assertThat(participant.references(ORG)).containsExactly(
+                DefinitionReference.required("chat", "onboarding-chat", DefinitionKinds.WORKFLOW, "onboarding"));
+    }
+
+    @Test
+    void aStateBoundChatOnAWorkflowIsCheckedAgainstTheInstanceStatuses() {
+        ChatDefinition onboarding = stateBound("onboarding-chat", "ACTIVE", "DONE");
+        onboarding.setSubjectType(SubjectType.WORKFLOW_INSTANCE);
+        onboarding.setSubjectDefinition("onboarding");
+        drafts(onboarding);
+        when(candidate.manages(DefinitionKinds.WORKFLOW)).thenReturn(true);
+        when(candidate.exists(DefinitionKinds.WORKFLOW, "onboarding")).thenReturn(true);
+        when(states.statesOf(ORG, SubjectType.WORKFLOW_INSTANCE, "onboarding", Channel.DRAFT))
+                .thenReturn(Optional.of(new SubjectStates(List.of("ACTIVE", "COMPLETED"))));
+
+        assertThat(participant.check(ORG, candidate)).singleElement().satisfies(problem -> {
+            assertThat(problem.errorId()).isEqualTo("chat.release.unknown-state");
+            assertThat(problem.message()).contains("DONE");
+        });
+    }
+
     // --- the states of a STATE_BOUND chat
 
     @Test
