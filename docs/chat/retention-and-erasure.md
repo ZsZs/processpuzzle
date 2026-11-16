@@ -19,7 +19,7 @@ changes their name later still appears under the old one in old messages.
 
 ## How long it is kept
 
-**By default, for ever.** Nothing is deleted unless the policy below is set.
+**By default, for ever.** Nothing is deleted unless a retention period is set, either on the chat definition or as the deployment default below.
 
 ### Retention (storage limitation)
 
@@ -33,6 +33,9 @@ Each chat definition has a **Retention Days** field (Designer → Chat). Set it,
   being written in is never deleted, whatever its age; one that nobody has touched for the period goes, open or
   closed. A completed workflow run or a shipped order does not delete its chat by itself — the chat goes N days after
   its last message.
+- A definition that sets no period takes the **deployment default**, `base-chat.retention.default-days` (set per stack, for
+  example in the testbed's `application.yaml`). 0, the default, keeps such conversations for ever. A definition's own
+  period always wins over the default.
 - Only the **released** definition counts. A definition that is only a draft does not delete anything, and
   conversations whose definition is no longer released have no policy and stay until the organization is erased.
 - Each definition has its own period; different chats can keep data for different times (for example 30 days for

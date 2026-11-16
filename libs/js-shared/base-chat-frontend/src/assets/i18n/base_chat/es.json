@@ -61,7 +61,7 @@
       "writeRoles": "Roles that may post. Empty: every member who can read.",
       "createRoles": "Roles that may start a conversation or topic. Empty: every member who can write.",
       "includeSubjectOwner": "Whether the person who owns the record may take part regardless of the roles above.",
-      "retentionDays": "Tras cuántos días sin mensajes nuevos se elimina definitivamente una conversación de este chat, con sus mensajes. Vacío: se conserva para siempre. Se aplica a la definición publicada.",
+      "retentionDays": "Tras cuántos días sin mensajes nuevos se elimina definitivamente una conversación de este chat, con sus mensajes. Vacío: el valor por defecto de la instalación, o se conserva para siempre si no hay. Se aplica a la definición publicada.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
     }
   },

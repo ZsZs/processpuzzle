@@ -29,6 +29,9 @@ import org.springframework.transaction.support.TransactionTemplate;
  * the conversation. A conversation that is still being written in is never idle. A definition without
  * {@code retentionDays} keeps its conversations for ever.
  *
+ * <p>The period is the definition's {@code retentionDays}; a definition without one takes the deployment's
+ * {@code base-chat.retention.default-days} when that is set, and otherwise keeps its conversations for ever.
+ *
  * <p>The released definitions decide. A conversation whose definition is no longer released has no policy to
  * apply and stays until the tenant is erased.
  *
@@ -51,10 +54,12 @@ public class ChatRetention {
     private final TransactionTemplate transaction;
     private final ChatMetrics metrics;
     private final boolean enabled;
+    private final int defaultDays;
 
     public ChatRetention(ChatDefinitionRepository definitions, ConversationRepository conversations, MessageRepository messages,
                          ReadMarkerRepository markers, TransactionTemplate transaction, ChatMetrics metrics,
-                         @Value("${base-chat.retention.enabled:true}") boolean enabled) {
+                         @Value("${base-chat.retention.enabled:true}") boolean enabled,
+                         @Value("${base-chat.retention.default-days:0}") int defaultDays) {
         this.definitions = definitions;
         this.conversations = conversations;
         this.messages = messages;
@@ -62,6 +67,7 @@ public class ChatRetention {
         this.transaction = transaction;
         this.metrics = metrics;
         this.enabled = enabled;
+        this.defaultDays = Math.max(0, defaultDays);
     }
 
     @Scheduled(fixedDelayString = "${base-chat.retention.interval:PT6H}", initialDelayString = "${base-chat.retention.initial-delay:PT10M}")
@@ -77,14 +83,28 @@ public class ChatRetention {
      */
     public int purgeIdle(Instant now) {
         int deleted = 0;
-        for (ChatDefinition definition : definitions.findByChannelAndRetentionDaysIsNotNull(Channel.RELEASED)) {
-            deleted += purge(definition, now.minus(Duration.ofDays(definition.getRetentionDays())));
+        for (ChatDefinition definition : definitions.findByChannel(Channel.RELEASED)) {
+            Integer days = periodOf(definition);
+            if (days != null) {
+                deleted += purge(definition, now.minus(Duration.ofDays(days)));
+            }
         }
         metrics.retentionDeleted(deleted);
         if (deleted > 0) {
             LOG.info("Chat retention deleted {} idle conversation(s).", deleted);
         }
         return deleted;
+    }
+
+    /**
+     * The period a definition keeps its conversations for: its own {@code retentionDays}, else the deployment's default
+     * when one is set, else none (kept for ever).
+     */
+    Integer periodOf(ChatDefinition definition) {
+        if (definition.getRetentionDays() != null) {
+            return definition.getRetentionDays();
+        }
+        return defaultDays > 0 ? defaultDays : null;
     }
 
     private int purge(ChatDefinition definition, Instant cutoff) {

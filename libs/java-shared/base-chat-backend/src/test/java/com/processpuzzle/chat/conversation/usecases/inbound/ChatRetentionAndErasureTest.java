@@ -87,7 +87,7 @@ class ChatRetentionAndErasureTest {
     @BeforeEach
     void setUp() {
         metrics = new ChatMetrics(meters);
-        retention = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, true);
+        retention = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, true, 0);
     }
 
     private void releasedDefinition(String key, Integer retentionDays) {
@@ -150,6 +150,36 @@ class ChatRetentionAndErasureTest {
     }
 
     @Test
+    void aDefinitionWithoutItsOwnPeriodTakesTheDeploymentDefault() {
+        releasedDefinition("order-discussion", null);
+        Conversation old = conversationIdleFor("order-discussion", 31, true);
+        Conversation recent = conversationIdleFor("order-discussion", 29, true);
+        ChatRetention withDefault = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, true, 30);
+
+        assertThat(withDefault.purgeIdle(NOW)).isEqualTo(1);
+        assertThat(exists(old)).isFalse();
+        assertThat(exists(recent)).isTrue();
+    }
+
+    @Test
+    void aDefinitionsOwnPeriodBeatsTheDeploymentDefault() {
+        releasedDefinition("short", 7);
+        Conversation idleTenDays = conversationIdleFor("short", 10, true);
+        ChatRetention withDefault = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, true, 365);
+
+        assertThat(withDefault.purgeIdle(NOW)).isEqualTo(1);
+        assertThat(exists(idleTenDays)).isFalse();
+    }
+
+    @Test
+    void noDeploymentDefaultMeansForEverWhenTheDefinitionSetsNothing() {
+        releasedDefinition("order-discussion", null);
+        ChatRetention none = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, true, 0);
+
+        assertThat(none.periodOf(definitions.findByChannel(com.processpuzzle.core.definition.Channel.RELEASED).get(0))).isNull();
+    }
+
+    @Test
     void aDefinitionWithoutRetentionKeepsItsConversationsForEver() {
         releasedDefinition("order-discussion", null);
         Conversation old = conversationIdleFor("order-discussion", 4000, true);
@@ -196,7 +226,7 @@ class ChatRetentionAndErasureTest {
     void theScheduledPassDoesNothingWhenSwitchedOff() {
         releasedDefinition("order-discussion", 1);
         Conversation old = conversationIdleFor("order-discussion", 50, true);
-        ChatRetention off = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, false);
+        ChatRetention off = new ChatRetention(definitions, conversations, messages, markers, new TransactionTemplate(transactions), metrics, false, 0);
 
         off.scheduledPass();
 

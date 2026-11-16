@@ -185,6 +185,8 @@ base-chat:
     enabled: true
     interval: PT6H
     initial-delay: PT10M
+    # The period for a definition that sets none; 0 keeps such conversations for ever. A definition's own period wins.
+    default-days: 0
 
 base-event:
   # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an
