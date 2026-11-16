@@ -1,5 +1,7 @@
 package com.processpuzzle.state.api;
 
+import com.processpuzzle.core.definition.Channel;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.modulith.NamedInterface;
@@ -36,4 +38,12 @@ public interface StateOperationApi {
      * module learns which attribute it must leave alone.
      */
     Optional<String> stateAttributeKey(String orgKey, String entityName);
+
+    /**
+     * The keys of the states of {@code entityName}'s machine in {@code channel}, or empty when no machine governs that
+     * entity type there. Asked by a definition that names states of another feature's entity — a chat that is writable
+     * only in some states — so that it can be checked while its author saves or releases it: the draft channel for a
+     * designer's check, the released one for the running application.
+     */
+    Optional<List<String>> stateKeys(String orgKey, String entityName, Channel channel);
 }

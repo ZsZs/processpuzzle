@@ -2,6 +2,7 @@ package com.processpuzzle.state.adapter.inbound;
 
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.api.StateTransitionResult;
+import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.domain.StateMachineDefinition;
 import com.processpuzzle.state.usecase.EntityObjectStateProjection;
 import com.processpuzzle.state.usecase.FindStateMachineDefinition;
@@ -145,6 +146,25 @@ class StateOperationApiAdapterTest {
 
         assertThat(adapter.stateAttributeKey(ORG, ENTITY)).isEmpty();
         assertThat(adapter.stateAttributeKey(ORG, "invoice")).isEmpty();
+    }
+
+    @Test
+    void stateKeys_listsTheStatesOfTheMachineInTheAskedChannel() {
+        StateMachineDefinition machine = StateMachineDefinition.builder().orgKey(ORG).entityName(ENTITY)
+                .states(List.of(new State("DRAFT", "Draft", null, false, false, null), new State("CONFIRMED", "Confirmed", null, true, false, null)))
+                .build();
+        when(findStateMachineDefinition.find(ORG, ENTITY, Channel.DRAFT)).thenReturn(java.util.Optional.of(machine));
+        when(findStateMachineDefinition.find(ORG, ENTITY, Channel.RELEASED)).thenReturn(java.util.Optional.empty());
+
+        assertThat(adapter.stateKeys(ORG, ENTITY, Channel.DRAFT)).contains(List.of("DRAFT", "CONFIRMED"));
+        assertThat(adapter.stateKeys(ORG, ENTITY, Channel.RELEASED)).as("not released yet").isEmpty();
+    }
+
+    @Test
+    void stateKeys_isEmptyForAnEntityNoMachineGoverns() {
+        when(findStateMachineDefinition.find(ORG, "invoice", Channel.DRAFT)).thenReturn(java.util.Optional.empty());
+
+        assertThat(adapter.stateKeys(ORG, "invoice", Channel.DRAFT)).isEmpty();
     }
 
     private static StateMachineDefinition machineWithStateAttribute(String stateAttributeKey) {

@@ -19,9 +19,11 @@ import com.processpuzzle.chat.definition.domain.Multiplicity;
 import com.processpuzzle.chat.definition.usecases.exception.ChatDefinitionNotFoundException;
 import com.processpuzzle.chat.definition.usecases.exception.InvalidChatDefinitionException;
 import com.processpuzzle.chat.definition.usecases.exception.StaleChatDefinitionException;
+import com.processpuzzle.chat.definition.usecases.inbound.DeleteChatDefinition;
 import com.processpuzzle.chat.definition.usecases.inbound.FindChatDefinition;
 import com.processpuzzle.chat.definition.usecases.inbound.SaveChatDefinition;
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.core.definition.PendingChange;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,13 +45,17 @@ class ChatDefinitionEndpointTest {
 
     private FindChatDefinition find;
     private SaveChatDefinition save;
+    private DeleteChatDefinition delete;
+    private ChatDefinitionReleaseParticipant releaseParticipant;
     private MockMvc mvc;
 
     @BeforeEach
     void setUp() {
         find = mock(FindChatDefinition.class);
         save = mock(SaveChatDefinition.class);
-        mvc = MockMvcBuilders.standaloneSetup(new ChatDefinitionEndpoint(find, save, new ChatDefinitionMapper()))
+        delete = mock(DeleteChatDefinition.class);
+        releaseParticipant = mock(ChatDefinitionReleaseParticipant.class);
+        mvc = MockMvcBuilders.standaloneSetup(new ChatDefinitionEndpoint(find, save, delete, new ChatDefinitionMapper(), releaseParticipant))
                 .setControllerAdvice(new ChatApiExceptionHandler())
                 .build();
     }
@@ -142,5 +148,31 @@ class ChatDefinitionEndpointTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errorId").value("chat.definition.invalid"));
         mvc.perform(put(BASE + "/old").contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.errorId").value("chat.definition.stale-write"));
+    }
+
+    @Test
+    void aDraftCarriesWhereItStandsAgainstItsReleasedRow() throws Exception {
+        when(find.findAll("org-1", Channel.DRAFT)).thenReturn(List.of(stored()));
+        when(releaseParticipant.drafts("org-1")).thenReturn(java.util.Set.of("order-discussion"));
+        when(releaseParticipant.pending("org-1")).thenReturn(List.of(
+                new PendingChange("chat", "order-discussion", PendingChange.Change.CHANGED, "f")));
+
+        mvc.perform(get(BASE)).andExpect(jsonPath("$[0].releaseState").value("CHANGED"));
+    }
+
+    @Test
+    void aReleasedRowHasNoReleaseState() throws Exception {
+        when(find.findAll("org-1", Channel.RELEASED)).thenReturn(List.of(stored()));
+
+        mvc.perform(get(BASE).param("revision", "released")).andExpect(jsonPath("$[0].releaseState").doesNotExist());
+    }
+
+    @Test
+    void deletesTheDraftAnswers204AndAnUnknownKeyIs404() throws Exception {
+        org.mockito.Mockito.doThrow(new ChatDefinitionNotFoundException("org-1", "nope")).when(delete).delete("org-1", "nope");
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(BASE + "/order-discussion")).andExpect(status().isNoContent());
+        verify(delete).delete("org-1", "order-discussion");
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(BASE + "/nope")).andExpect(status().isNotFound());
     }
 }

@@ -20,6 +20,11 @@ class ContentGroupsTest {
     }
 
     @Test
+    void chatsAreAGroupOfTheirOwnKind() {
+        assertThat(ContentGroups.kindOf("chats")).contains(DefinitionKinds.CHAT);
+    }
+
+    @Test
     void anUnknownGroupHasNoKind() {
         assertThat(ContentGroups.kindOf("themes")).isEmpty();
     }

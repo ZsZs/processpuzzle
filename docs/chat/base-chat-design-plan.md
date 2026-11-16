@@ -340,7 +340,32 @@ Not done, and why:
   run here. Everything it would exercise is covered below that level (the stream against a fake `fetch` with a
   real `ReadableStream`; the panel against a store; the backend's delivery to followers after commit), but the
   seam between a real browser, nginx and the stream is unverified. See `docs/e2e-plan.md`.
-- **Designer authoring of chat definitions** is phase 5.
+- **Designer authoring of chat definitions** is phase 5, below.
+
+### Phase 5 as built (2026-11-16)
+
+Chat definitions are authored, released and imported like every other definition kind.
+
+- **Designer.** A top-level **Chat** section (`/design/chats`, componentless like States and Entities) hosts base-chat's
+  `Chat Definition` branch (`BASE_CHAT_ROUTES`, generic list and form). The key is held as the entity `id`; the mapper
+  drops `writableStates` unless the lifecycle is `STATE_BOUND`, always sends the three role lists, and never sends the
+  read-only `releaseState`. The three role fields suggest the realm roles. Subject Definition is a dropdown of the
+  organization's entity types. Hosts spread `BASE_CHAT_FACADE_PROVIDERS` / `BASE_CHAT_ENTITY_FACADES`; the testbed
+  also mounts the branch under *Base Chat → Definitions*.
+- **Release.** `ChatDefinitionReleaseParticipant` (kind `chat`, order 45: after entities and states, before documents
+  and workflows). Every chat requires its entity type; a `STATE_BOUND` one is checked against the entity's state
+  machine, **draft channel**, through the new `SubjectStatesPort` (base-chat) — errors `chat.release.no-state-machine`
+  and `chat.release.unknown-state`. A host that cannot say (no adapter, empty answer) refuses nothing. The testbed's
+  `ChatSubjectStatesAdapter` answers from the new `StateOperationApi.stateKeys(orgKey, entity, channel)`, so base-chat
+  still names no other feature. `DELETE .../chat/definitions/{key}` removes a draft; the released row goes with the next
+  release. Drafts carry a `releaseState` (NEW / CHANGED / RELEASED), as in the other features.
+- **Starters.** A bundle's `chats` group (`ChatDefinitionImportParticipant`) imports drafts, reports create-versus-
+  update per key, can replace everything (`removeAll`) and fingerprints drafts for the dry-run diff.
+- **Roles.** `ChatRoleReferences` names every read / write / create role of a chat to the role catalog, so org-admin
+  creates the missing realm roles.
+
+Not done: the existing conversations of a deleted or un-released definition are kept but unreachable; nothing lists
+or archives them yet.
 
 ### Decisions (2026-11-15)
 

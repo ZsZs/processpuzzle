@@ -60,9 +60,11 @@ public class ImportChatDefinitions {
 
         int created = 0;
         int updated = 0;
+        List<String> updatedKeys = new ArrayList<>();
         for (ChatDefinition definition : byKey.values()) {
             if (write(orgKey, definition, Channel.DRAFT)) {
                 updated++;
+                updatedKeys.add(definition.getDefinitionKey());
             } else {
                 created++;
             }
@@ -70,7 +72,20 @@ public class ImportChatDefinitions {
                 write(orgKey, definition, Channel.RELEASED);
             }
         }
-        return new ImportOutcome(created, updated, List.of(), List.copyOf(byKey.keySet()));
+        return new ImportOutcome(created, updated, List.of(), List.copyOf(byKey.keySet()), List.copyOf(updatedKeys));
+    }
+
+    /**
+     * Deletes every draft of the organization, for a starter that replaces what is there. The released rows go with
+     * the next release, which removes the released rows that have no draft.
+     *
+     * @return the keys removed
+     */
+    @Transactional
+    public List<String> removeAll(String orgKey) {
+        List<ChatDefinition> drafts = repository.findByOrgKeyAndChannelOrderByDefinitionKeyAsc(orgKey, Channel.DRAFT);
+        repository.deleteAll(drafts);
+        return drafts.stream().map(ChatDefinition::getDefinitionKey).toList();
     }
 
     /** @return whether the row existed and was replaced */

@@ -3,6 +3,7 @@ package com.processpuzzle.state.adapter.inbound;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.state.api.StateOperationApi;
 import com.processpuzzle.state.api.StateTransitionResult;
+import com.processpuzzle.state.domain.State;
 import com.processpuzzle.state.usecase.EntityObjectStateProjection;
 import com.processpuzzle.state.usecase.FindStateMachineDefinition;
 import com.processpuzzle.state.usecase.FireStateTransition;
@@ -11,6 +12,7 @@ import com.processpuzzle.state.usecase.exception.StaleEntityObjectVersionExcepti
 import com.processpuzzle.state.usecase.exception.UnknownTriggerException;
 import com.processpuzzle.state.usecase.port.EntityObjectSnapshot;
 import com.processpuzzle.state.usecase.service.EntityObjectGatewayResolver;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -87,5 +89,11 @@ class StateOperationApiAdapter implements StateOperationApi {
         return findStateMachineDefinition.find(orgKey, entityName, Channel.RELEASED)
                 .map(machine -> machine.getStateAttributeKey())
                 .filter(key -> !key.isBlank());
+    }
+
+    @Override
+    public Optional<List<String>> stateKeys(String orgKey, String entityName, Channel channel) {
+        return findStateMachineDefinition.find(orgKey, entityName, channel)
+                .map(machine -> machine.getStates().stream().map(State::key).toList());
     }
 }
