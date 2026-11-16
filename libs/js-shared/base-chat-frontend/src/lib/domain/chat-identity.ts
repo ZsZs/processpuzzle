@@ -20,7 +20,7 @@ export interface ChatIdentity {
 
 export const CHAT_IDENTITY = new InjectionToken<ChatIdentity>('CHAT_IDENTITY', {
   providedIn: 'root',
-  factory: () => ({ accessToken: async () => undefined, userId: () => undefined }),
+  factory: () => ({ accessToken: () => Promise.resolve(undefined), userId: () => undefined }),
 });
 
 /** `fetch`, as a token so a test can stand in for the network. */

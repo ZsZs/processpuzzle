@@ -114,7 +114,7 @@ export class ChatStreamService {
     try {
       arm();
       for (;;) {
-        const { done, value } = await reader.read();
+        const { done, value } = await reader.read(); // NOSONAR: reading a stream is sequential by nature
         if (done) return true;
         arm();
         for (const frame of parser.feed(decoder.decode(value, { stream: true }))) this.dispatch(frame);
