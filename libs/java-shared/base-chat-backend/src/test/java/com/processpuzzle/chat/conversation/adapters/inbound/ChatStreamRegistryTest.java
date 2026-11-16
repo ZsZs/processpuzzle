@@ -1,5 +1,7 @@
 package com.processpuzzle.chat.conversation.adapters.inbound;
 
+import com.processpuzzle.chat.common.ChatMetrics;
+import io.micrometer.core.instrument.MeterRegistry;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.ORG;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.conversation;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.message;
@@ -65,7 +67,7 @@ class ChatStreamRegistryTest {
 
     @BeforeEach
     void setUp() {
-        registry = new ChatStreamRegistry(new ConversationMapper(), 25);
+        registry = new ChatStreamRegistry(new ConversationMapper(), new ChatMetrics((MeterRegistry) null), 25);
         conversation = conversation();
     }
 
@@ -242,7 +244,7 @@ class ChatStreamRegistryTest {
 
     @Test
     void theHeartbeatSchedulerStartsAndStopsWithTheBean() {
-        ChatStreamRegistry started = new ChatStreamRegistry(new ConversationMapper(), 1);
+        ChatStreamRegistry started = new ChatStreamRegistry(new ConversationMapper(), new ChatMetrics((MeterRegistry) null), 1);
 
         started.start();
         started.stop();

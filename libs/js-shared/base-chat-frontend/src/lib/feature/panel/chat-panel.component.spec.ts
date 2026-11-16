@@ -406,6 +406,15 @@ describe('ChatPanelComponent', () => {
       expect(byId(root, 'chat-read-only')?.textContent).toContain('read this conversation');
     });
 
+    it('says a message was refused for posting too fast, and keeps it for a retry', async () => {
+      const failed: PendingMessage = { clientMessageId: 'p-3', body: 'Too eager', status: 'failed', failure: 'rate-limited', createdAt: '2026-11-16T10:33:00Z' };
+      const store = storeShowing(view({ pending: [failed] }));
+      const { root } = await render({ subjectId: 'o-1' }, { store });
+
+      expect(byId(root, 'chat-failed')?.textContent).toContain('posting too fast');
+      expect(byId(root, 'chat-retry')).not.toBeNull();
+    });
+
     it('shows a message being sent, and a failed one with a retry and a discard', async () => {
       const sending: PendingMessage = { clientMessageId: 'p-1', body: 'On its way', status: 'sending', createdAt: '2026-11-16T10:31:00Z' };
       const failed: PendingMessage = { clientMessageId: 'p-2', body: 'Lost', status: 'failed', failure: 'conflict', createdAt: '2026-11-16T10:32:00Z' };

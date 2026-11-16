@@ -18,6 +18,7 @@
     "failed": "Not sent.",
     "failed_forbidden": "Not sent: you may not post here.",
     "failed_conflict": "Not sent: the conversation is closed.",
+    "failed_rate_limited": "Not sent: you are posting too fast. Try again in a moment.",
     "retry": "Retry",
     "discard": "Discard",
     "read_only": "You can read this conversation but not write in it.",
@@ -60,7 +61,7 @@
       "writeRoles": "Roles that may post. Empty: every member who can read.",
       "createRoles": "Roles that may start a conversation or topic. Empty: every member who can write.",
       "includeSubjectOwner": "Whether the person who owns the record may take part regardless of the roles above.",
-      "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
+      "retentionDays": "After how many days without a new message a conversation of this chat is deleted for good, with its messages. Empty: kept for ever. Takes effect for the released definition.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
     }
   },

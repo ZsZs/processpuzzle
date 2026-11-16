@@ -172,6 +172,19 @@ base-chat:
   # The chat definitions the testbed ships. The import upserts and releases what it writes, so an edited
   # seed file reaches an already-seeded stack.
   loadDefaultChatDefinitions: yes
+  # Posting limit per user and organization, per backend instance: a burst of `burst` messages, then `per-second`
+  # more every second; over it a post is answered 429 with Retry-After. A burst of 0 switches the limit off.
+  # chat.messages.posted, chat.messages.rejected{reason} and chat.stream.connections are on /actuator/metrics.
+  rate-limit:
+    burst: 20
+    per-second: 2
+  # Retention: a conversation nobody has written in for as long as its released definition's `retentionDays` is
+  # deleted whole (messages, read markers, the conversation). A definition without `retentionDays` keeps its
+  # conversations for ever. The job runs every `interval`; `enabled: false` switches it off.
+  retention:
+    enabled: true
+    interval: PT6H
+    initial-delay: PT10M
 
 base-event:
   # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an

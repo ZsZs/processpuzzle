@@ -11,7 +11,9 @@ import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../dialo
 import { DEFAULT_RECENT_CONTEXTS, WORKING_CONTEXT_DEFINITIONS, WorkingContextDefinition } from './working-context.definition';
 import { ENTITY_STATE_ACTIONS, EntityStateSnapshot } from './entity-state-actions';
 import { matchesConditions } from './working-context-attributes';
-import { readWorkingContextLevels, WORKING_CONTEXT_SEGMENT, WorkingContextRouteLevel } from './working-context.url';
+import { EntityRouteRegistry } from '../base-form-navigator/entity-route.registry';
+import { snakeCaseName } from '../base-form-navigator/base-form-navigator.store';
+import { readWorkingContextLevels, UNKNOWN_CONTEXT_OBJECT_ID, WORKING_CONTEXT_SEGMENT, WorkingContextRouteLevel } from './working-context.url';
 
 /** A context the URL currently names, with what is known about its entity. */
 export interface ActiveWorkingContext {
@@ -48,6 +50,9 @@ export class WorkingContextService {
   /** What is known of each active entity's state, by `<entity>/<id>`, with the entity version it was read at. */
   private readonly snapshots = signal<Record<string, { version: unknown; snapshot: EntityStateSnapshot | undefined }>>({});
   private readonly snapshotsLoading = new Set<string>();
+  private readonly entityRoutes = inject(EntityRouteRegistry);
+  /** Where the user was heading when no context object was known, by context name — see {@link rememberTarget}. */
+  private readonly pendingTargets = signal<Record<string, string>>({});
 
   /** True while a transition is being fired, so a second click does not fire another. */
   readonly firing = signal(false);
@@ -97,6 +102,36 @@ export class WorkingContextService {
     return () => this.registered.update((current) => current.filter((candidate) => !definitions.includes(candidate)));
   }
 
+  /**
+   * The context of an entity that `canContextObject`: named like its URL segment, and addressed by its own URL
+   * (`<aggregate>/<id>/<embedded>/list`) rather than a `ctx` segment. Created on first ask and then kept.
+   */
+  ensureAggregate(entityName: string): WorkingContextDefinition {
+    const name = snakeCaseName(entityName);
+    const existing = this.definitionOf(name);
+    if (existing) return existing;
+
+    const definition: WorkingContextDefinition = { name, entityName, aggregate: true };
+    this.registered.update((current) => [...current, definition]);
+    return definition;
+  }
+
+  /** Remembers the URL a user asked for while no context object was known; {@link takeTarget} hands it back once one is chosen. */
+  rememberTarget(name: string, url: string): void {
+    this.pendingTargets.update((current) => ({ ...current, [name]: url }));
+  }
+
+  /** The URL waiting for a context object, without consuming it — the list says where the user is headed. */
+  pendingTarget(name: string): string | undefined {
+    return this.pendingTargets()[name];
+  }
+
+  private takeTarget(name: string): string | undefined {
+    const url = this.pendingTargets()[name];
+    if (url !== undefined) this.pendingTargets.update(({ [name]: _taken, ...rest }) => rest);
+    return url;
+  }
+
   definitionOf(name: string): WorkingContextDefinition | undefined {
     return this.definitions().find((definition) => definition.name === name);
   }
@@ -136,7 +171,7 @@ export class WorkingContextService {
     if (current?.id === id) return this.router.navigateByUrl(current.url);
     if (current && !(await this.confirmLeaving(current))) return false;
 
-    const url = this.urlFor(definition, id);
+    const url = definition.aggregate ? this.aggregateUrlFor(definition, id) : this.urlFor(definition, id);
     if (url === undefined) return false;
     this.remember(name, id);
     return this.router.navigateByUrl(url);
@@ -150,6 +185,8 @@ export class WorkingContextService {
     if (current && !(await this.confirmLeaving(current))) return false;
 
     this.forgetLast(name);
+    // A context object's URL keeps its view and asks for the object again; its guard sends the user to the list to choose.
+    if (level.aggregate) return this.router.navigateByUrl(`${level.baseUrl}/${UNKNOWN_CONTEXT_OBJECT_ID}${level.rest}`);
     return this.router.navigateByUrl(`${level.baseUrl}/${WORKING_CONTEXT_SEGMENT}/${name}${level.id === undefined ? level.rest : this.viewOf(level.rest)}`);
   }
 
@@ -265,6 +302,23 @@ export class WorkingContextService {
       return parent ? parent.url + segment : undefined;
     }
     return (definition.basePath ?? '').replace(/\/$/, '') + segment;
+  }
+
+  /**
+   * Where choosing `id` leads: back to the URL the user was refused at while none was known; otherwise the view they are on,
+   * for another object; otherwise the aggregate's own address, which lands on its first embedded list.
+   */
+  private aggregateUrlFor(definition: WorkingContextDefinition, id: string): string | undefined {
+    const segment = encodeURIComponent(id);
+    const target = this.takeTarget(definition.name);
+    if (target) return target.replace(`/${UNKNOWN_CONTEXT_OBJECT_ID}`, `/${segment}`);
+
+    const level = this.levels().find((candidate) => candidate.name === definition.name && candidate.aggregate);
+    // Switching keeps the kind of part being listed, not a row of the object being left.
+    if (level) return `${level.baseUrl}/${segment}${this.viewOf(level.rest) ? this.viewOf(level.rest) + '/list' : ''}`;
+
+    const base = this.entityRoutes.basePath(definition.entityName);
+    return base === undefined ? undefined : `${base}/${segment}`;
   }
 
   /** The first segment of the view inside a context — not a nested `ctx`, which belongs to the entity being left. */

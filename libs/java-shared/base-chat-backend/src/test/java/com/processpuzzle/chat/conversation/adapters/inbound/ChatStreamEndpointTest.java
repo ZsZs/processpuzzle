@@ -1,5 +1,7 @@
 package com.processpuzzle.chat.conversation.adapters.inbound;
 
+import com.processpuzzle.chat.common.ChatMetrics;
+import io.micrometer.core.instrument.MeterRegistry;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.ORG;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.conversation;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.message;
@@ -46,7 +48,7 @@ class ChatStreamEndpointTest {
     @BeforeEach
     void setUp() {
         open = mock(OpenChatStream.class);
-        registry = new ChatStreamRegistry(new ConversationMapper(), 25);
+        registry = new ChatStreamRegistry(new ConversationMapper(), new ChatMetrics((MeterRegistry) null), 25);
         mvc = MockMvcBuilders.standaloneSetup(new ChatStreamEndpoint(open, registry))
                 .setControllerAdvice(new ChatApiExceptionHandler())
                 .build();

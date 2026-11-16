@@ -69,7 +69,7 @@ export function unreadOf(conversation: Conversation): number {
 }
 
 /** Why a call failed, in terms a panel can say to the user. */
-export type ChatFailureKind = 'forbidden' | 'not-found' | 'conflict' | 'invalid' | 'unavailable';
+export type ChatFailureKind = 'forbidden' | 'not-found' | 'conflict' | 'invalid' | 'rate-limited' | 'unavailable';
 
 /** A number in [0, 1) from the platform's random source — not for secrets, but there is no reason to use a worse one. */
 export function randomFraction(): number {

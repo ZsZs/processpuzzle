@@ -1,6 +1,7 @@
 package com.processpuzzle.chat.common;
 
 import com.processpuzzle.chat.conversation.usecases.exception.ChatAccessDeniedException;
+import com.processpuzzle.chat.conversation.usecases.exception.ChatRateLimitedException;
 import com.processpuzzle.chat.conversation.usecases.exception.ConversationConflictException;
 import com.processpuzzle.chat.conversation.usecases.exception.ConversationNotFoundException;
 import com.processpuzzle.chat.conversation.usecases.exception.ConversationNotWritableException;
@@ -12,6 +13,7 @@ import com.processpuzzle.chat.definition.usecases.exception.StaleChatDefinitionE
 import com.processpuzzle.core.exception.ApiAdviceOrder;
 import com.processpuzzle.shared.model.ErrorResponse;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -48,6 +50,13 @@ public class ChatApiExceptionHandler {
     @ExceptionHandler(ConversationNotWritableException.class)
     public ResponseEntity<ErrorResponse> handleNotWritable(ConversationNotWritableException e) {
         return error(HttpStatus.CONFLICT, "chat.conversation.not-writable", e.getMessage());
+    }
+
+    @ExceptionHandler(ChatRateLimitedException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimited(ChatRateLimitedException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, (e.getRetryAfter().toMillis() + 999) / 1000)))
+                .body(new ErrorResponse("chat.rate-limited", e.getMessage()));
     }
 
     @ExceptionHandler(ConversationConflictException.class)

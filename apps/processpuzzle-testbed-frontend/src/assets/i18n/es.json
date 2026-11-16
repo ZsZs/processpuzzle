@@ -218,10 +218,10 @@
     "intro_heading": "ProcessPuzzle Chat",
     "frontend_heading": "Frontend — @processpuzzle/base-chat",
     "backend_heading": "Backend — base-chat-backend",
-    "intro_paragraph_1": "El chat es una capacidad de la plataforma: un diseñador une una conversación a un tipo de registro y los roles deciden quién participa. Los mensajes se numeran por conversación sin huecos, se entregan en directo y se cuentan como no leídos por usuario.",
+    "intro_paragraph_1": "El chat es una capacidad de la plataforma: un diseñador vincula una conversación a un tipo de registro —o a las ejecuciones de un flujo de trabajo— y los roles deciden quién puede leer, escribir e iniciar una. Los mensajes se numeran por conversación sin huecos, se entregan en directo, se cuentan como no leídos por usuario y tienen un límite de frecuencia. Un chat puede permitir varios temas con título por registro y puede vincularse al estado del registro, de modo que pase a solo lectura cuando el pedido se envía o la ejecución termina.",
     "intro_paragraph_2": "La funcionalidad se divide en dos bibliotecas complementarias:",
-    "intro_frontend_desc": "Servicios Angular, un almacén con envío optimista y flujo en directo, y los widgets del panel de chat y del contador de no leídos.",
-    "intro_backend_desc": "Módulo Spring Boot con las conversaciones, las reglas de acceso, los marcadores de lectura y el flujo de eventos enviados por el servidor."
+    "intro_frontend_desc": "Servicios Angular, un almacén con envío optimista y flujo en directo, los widgets de panel de chat, temas y contador de no leídos, y las pantallas de definiciones de chat que aloja la sección Chat del diseñador (aquí, en la pestaña Definiciones).",
+    "intro_backend_desc": "Módulo Spring Boot con las definiciones de chat (publicadas con la publicación de la plataforma, importables con Business Starters), las conversaciones, las reglas de acceso, los marcadores de lectura, el flujo de eventos enviados por el servidor, el límite de frecuencia de envío y las métricas de Micrometer."
   },
   "base-calculation": {
     "overview_tab_label": "Resumen",

@@ -218,10 +218,10 @@
     "intro_heading": "ProcessPuzzle Chat",
     "frontend_heading": "Frontend — @processpuzzle/base-chat",
     "backend_heading": "Backend — base-chat-backend",
-    "intro_paragraph_1": "A csevegés platformképesség: a tervező egy rekordfajtához köt egy beszélgetést, és a szerepkörök döntik el, ki vehet részt benne. Az üzeneteket beszélgetésenként hézag nélkül számozzuk, élőben kézbesítjük, és felhasználónként számoljuk az olvasatlanokat.",
+    "intro_paragraph_1": "A csevegés platformképesség: a tervező egy beszélgetést köt egy rekordtípushoz — vagy egy munkafolyamat futásaihoz —, a szerepkörök pedig eldöntik, ki olvashat, írhat és indíthat egyet. Az üzenetek beszélgetésenként hézagmentesen számozottak, élőben érkeznek, felhasználónként olvasatlanként számolódnak, és az írás gyakorisága korlátozott. Egy csevegés engedhet több címmel ellátott témát rekordonként, és köthető a rekord állapotához, így írásvédetté válik, amikor a rendelést kiszállítják vagy a futás befejeződik.",
     "intro_paragraph_2": "A funkció két egymást kiegészítő könyvtárra oszlik:",
-    "intro_frontend_desc": "Angular szolgáltatások, optimista küldésű és élő adatfolyamos tároló, valamint a csevegőpanel és az olvasatlan-számláló widgetek.",
-    "intro_backend_desc": "Spring Boot modul a beszélgetésekkel, a hozzáférési szabályokkal, az olvasásjelölőkkel és a szerver által küldött események folyamával."
+    "intro_frontend_desc": "Angular szolgáltatások, optimista küldésű és élő adatfolyamú tároló, a csevegőpanel, a témák és az olvasatlan-jelvény widgetek, valamint a tervező Csevegés szekciójában lévő csevegés-definíció képernyők (itt a Definíciók fülön).",
+    "intro_backend_desc": "Spring Boot modul a csevegés-definíciókkal (a platform kiadásával együtt kiadva, Business Starterrel importálhatók), a beszélgetésekkel, a hozzáférési szabályokkal, az olvasási jelölőkkel, a szerver által küldött eseményfolyammal, az írási gyakoriság korlátozásával és a Micrometer metrikákkal."
   },
   "base-calculation": {
     "overview_tab_label": "Áttekintés",

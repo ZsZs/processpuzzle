@@ -218,10 +218,10 @@
     "intro_heading": "ProcessPuzzle Chat",
     "frontend_heading": "Frontend — @processpuzzle/base-chat",
     "backend_heading": "Backend — base-chat-backend",
-    "intro_paragraph_1": "Chat ist eine Plattformfunktion: Ein Designer bindet eine Konversation an eine Art von Datensatz, und Rollen entscheiden, wer teilnimmt. Nachrichten werden je Konversation lückenlos nummeriert, live zugestellt und je Benutzer als ungelesen gezählt.",
+    "intro_paragraph_1": "Chat ist eine Plattformfunktion: Ein Designer bindet ein Gespräch an eine Art von Datensatz — oder an die Läufe eines Workflows — und Rollen bestimmen, wer lesen, schreiben und eines beginnen darf. Nachrichten werden pro Gespräch lückenlos nummeriert, live zugestellt, pro Benutzer als ungelesen gezählt und in der Rate begrenzt. Ein Chat kann mehrere Themen mit Titel pro Datensatz erlauben und an den Zustand des Datensatzes gebunden sein, sodass er schreibgeschützt wird, wenn die Bestellung versandt oder der Lauf abgeschlossen ist.",
     "intro_paragraph_2": "Die Funktion besteht aus zwei sich ergänzenden Bibliotheken:",
-    "intro_frontend_desc": "Angular-Dienste, ein Speicher mit optimistischem Senden und Live-Stream sowie die Widgets Chat-Panel und Ungelesen-Zähler.",
-    "intro_backend_desc": "Spring-Boot-Modul mit den Konversationen, den Zugriffsregeln, den Lesemarkern und dem Server-Sent-Event-Stream."
+    "intro_frontend_desc": "Angular-Dienste, ein Store mit optimistischem Senden und Live-Stream, die Widgets Chat-Panel, Themen und Ungelesen-Zähler sowie die Bildschirme für Chat-Definitionen, die der Chat-Bereich des Designers enthält (hier im Tab Definitionen).",
+    "intro_backend_desc": "Spring-Boot-Modul mit den Chat-Definitionen (mit dem Plattform-Release freigegeben, per Business Starter importierbar), den Gesprächen, den Zugriffsregeln, Lesemarkern, dem Server-Sent-Event-Stream, der Ratenbegrenzung beim Schreiben und Micrometer-Metriken."
   },
   "base-calculation": {
     "overview_tab_label": "Überblick",

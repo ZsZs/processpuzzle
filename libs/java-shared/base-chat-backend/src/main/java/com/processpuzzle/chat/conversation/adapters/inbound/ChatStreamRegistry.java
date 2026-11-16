@@ -1,5 +1,6 @@
 package com.processpuzzle.chat.conversation.adapters.inbound;
 
+import com.processpuzzle.chat.common.ChatMetrics;
 import com.processpuzzle.chat.conversation.domain.Message;
 import com.processpuzzle.chat.conversation.domain.StreamGrant;
 import com.processpuzzle.chat.conversation.events.MessagePostedEvent;
@@ -66,9 +67,11 @@ public class ChatStreamRegistry {
     private final long heartbeatSeconds;
     private ScheduledExecutorService scheduler;
 
-    public ChatStreamRegistry(ConversationMapper mapper, @Value("${base-chat.stream.heartbeat-seconds:25}") long heartbeatSeconds) {
+    public ChatStreamRegistry(ConversationMapper mapper, ChatMetrics metrics,
+                              @Value("${base-chat.stream.heartbeat-seconds:25}") long heartbeatSeconds) {
         this.mapper = mapper;
         this.heartbeatSeconds = Math.max(1, heartbeatSeconds);
+        metrics.streamConnections(this::openConnections);
     }
 
     @PostConstruct

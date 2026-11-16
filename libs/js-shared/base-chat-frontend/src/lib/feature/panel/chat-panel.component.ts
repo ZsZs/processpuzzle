@@ -306,6 +306,8 @@ export class ChatPanelComponent {
         return 'base_chat.panel.failed_forbidden';
       case 'conflict':
         return 'base_chat.panel.failed_conflict';
+      case 'rate-limited':
+        return 'base_chat.panel.failed_rate_limited';
       default:
         return 'base_chat.panel.failed';
     }
