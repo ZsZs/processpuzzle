@@ -149,6 +149,18 @@ export class ChatStore {
     return conversation.id;
   }
 
+  /**
+   * Reads every conversation of a subject the user may read — the topics of a `MANY` chat — and remembers them, so
+   * their titles and unread counts show.
+   *
+   * @returns the conversations' ids, oldest first
+   */
+  async listForSubject(subject: ChatSubjectRef, definitionKey?: string): Promise<string[]> {
+    const found = await this.chat.findConversations(subject, definitionKey);
+    for (const conversation of found) this.upsert(conversation);
+    return found.map((conversation) => conversation.id);
+  }
+
   /** Opens a conversation on a subject that has none yet. */
   async startConversation(definitionKey: string, subjectId: string, title?: string): Promise<string> {
     const conversation = await this.chat.openConversation(definitionKey, subjectId, title);

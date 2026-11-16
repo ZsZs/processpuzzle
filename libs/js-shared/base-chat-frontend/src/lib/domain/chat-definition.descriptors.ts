@@ -51,6 +51,7 @@ function createChatDefinitionAttrDescriptors(entityCodes?: () => Selectable[]): 
   const subjectDefinitionAttr = entityCodes
     ? new BaseEntityAttrDescriptor('subjectDefinition', FormControlType.DROPDOWN, 'Subject Definition', entityCodes)
     : new BaseEntityAttrDescriptor('subjectDefinition', FormControlType.TEXT_BOX, 'Subject Definition');
+  subjectDefinitionAttr.placeholder = 'The entity type code, or the workflow id for workflow instances';
   subjectDefinitionAttr.required = true;
 
   const multiplicityAttr = new BaseEntityAttrDescriptor('multiplicity', FormControlType.DROPDOWN, 'Multiplicity', toSelectables(Object.keys(ChatMultiplicity)));

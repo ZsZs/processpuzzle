@@ -28,6 +28,7 @@
   },
   "widgets": {
     "chat_panel": "Panneau de discussion",
+    "chat_topics": "Sujets de chat",
     "unread_badge": "Messages de discussion non lus"
   },
   "chat_definition": {
@@ -62,5 +63,22 @@
       "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
     }
+  },
+  "topics": {
+    "title": "Sujets",
+    "no_subject": "Sélectionnez un élément pour voir ses sujets.",
+    "loading": "Chargement des sujets…",
+    "error": "Les sujets n'ont pas pu être chargés.",
+    "reload": "Réessayer",
+    "empty": "Aucun sujet pour le moment.",
+    "new_label": "Nouveau sujet",
+    "new_placeholder": "Titre du sujet",
+    "create": "Ouvrir le sujet",
+    "creating": "Ouverture…",
+    "create_failed": "Le sujet n'a pas pu être ouvert.",
+    "create_forbidden": "Vous n'avez pas le droit d'ouvrir un sujet ici.",
+    "select": "Ouvrir le sujet",
+    "unread": "non lus",
+    "closed": "clos"
   }
 }

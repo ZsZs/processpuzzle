@@ -28,6 +28,7 @@
   },
   "widgets": {
     "chat_panel": "Csevegőpanel",
+    "chat_topics": "Csevegési témák",
     "unread_badge": "Olvasatlan csevegőüzenetek"
   },
   "chat_definition": {
@@ -62,5 +63,22 @@
       "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
     }
+  },
+  "topics": {
+    "title": "Témák",
+    "no_subject": "Válasszon egy elemet a témáinak megtekintéséhez.",
+    "loading": "A témák betöltése…",
+    "error": "A témákat nem sikerült betölteni.",
+    "reload": "Újra",
+    "empty": "Még nincs téma.",
+    "new_label": "Új téma",
+    "new_placeholder": "A téma címe",
+    "create": "Téma indítása",
+    "creating": "Indítás…",
+    "create_failed": "A témát nem sikerült elindítani.",
+    "create_forbidden": "Itt nem indíthat témát.",
+    "select": "Téma megnyitása",
+    "unread": "olvasatlan",
+    "closed": "lezárt"
   }
 }

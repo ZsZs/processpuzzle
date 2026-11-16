@@ -28,6 +28,7 @@
   },
   "widgets": {
     "chat_panel": "Chat panel",
+    "chat_topics": "Chat topics",
     "unread_badge": "Unread chat messages"
   },
   "chat_definition": {
@@ -62,5 +63,22 @@
       "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
     }
+  },
+  "topics": {
+    "title": "Topics",
+    "no_subject": "Select an item to see its topics.",
+    "loading": "Loading the topics…",
+    "error": "The topics could not be loaded.",
+    "reload": "Try again",
+    "empty": "No topics yet.",
+    "new_label": "New topic",
+    "new_placeholder": "Title of the topic",
+    "create": "Start topic",
+    "creating": "Starting…",
+    "create_failed": "The topic could not be started.",
+    "create_forbidden": "You are not allowed to start a topic here.",
+    "select": "Open topic",
+    "unread": "unread",
+    "closed": "closed"
   }
 }

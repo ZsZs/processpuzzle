@@ -26,10 +26,21 @@ export const CHAT_PANEL_WIDGET_REGISTRATION: WidgetRegistration = {
           title: 'Record',
           description: 'Id of the record to chat about; the active working context when left empty.',
         },
+        subjectType: {
+          type: 'string',
+          enum: ['ENTITY', 'WORKFLOW_INSTANCE'],
+          title: 'Kind of record',
+          description: 'What the record is — an entity instance, or a workflow instance; an entity instance when left empty.',
+        },
         definitionKey: {
           type: 'string',
           title: 'Chat definition',
           description: 'Key of the chat definition to show, and to start from when the record has no conversation yet.',
+        },
+        conversationId: {
+          type: 'string',
+          title: 'Conversation',
+          description: 'Id of one conversation to show, as the topics list does; the record and definition are then not used to find it.',
         },
       },
       additionalProperties: false,
