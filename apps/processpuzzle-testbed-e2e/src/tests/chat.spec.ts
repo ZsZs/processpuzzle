@@ -2,7 +2,7 @@ import { BrowserContext, expect, Page, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { PlatformApi } from '../support/platform.api';
 import { EntityApi, ServiceRoots, serviceRoots } from '../support/race-sample.api';
-import { signInAnotherUser } from '../support/second-user';
+import { STORAGE_STATE } from '../support/auth.paths';
 
 /**
  * Two people talk about one order, each in a browser of their own: the first starts the order's chat, the second
@@ -51,13 +51,16 @@ test.describe('Chat @auth', () => {
 
   const messageWith = (page: Page, text: string) => page.getByTestId('chat-message').filter({ hasText: text });
 
-  test('two users chat on one order, live', async ({ page, browser, request, baseURL }) => {
+  test('two browsers chat on one order, live', async ({ page, browser, baseURL }) => {
     await openOrderChat(page);
     await page.getByTestId('chat-start').click();
     await say(page, 'Hello from the first user');
     await expect(messageWith(page, 'Hello from the first user')).toBeVisible();
 
-    ({ context: second } = await signInAnotherUser(browser, request, baseURL as string));
+    // A second browser on the same signed-in session, as every other @auth spec starts from it: the message has to
+    // reach it live, which is the point of this test. Both browsers are the same account; the messages say who sent
+    // them only by name, and the test checks the text.
+    second = await browser.newContext({ baseURL, storageState: STORAGE_STATE });
     const otherPage = await second.newPage();
     await openOrderChat(otherPage);
     // The second user finds the conversation, with what was said before they came.
