@@ -108,12 +108,30 @@ public class BaseEntityDefinition extends Auditable {
     @Builder.Default
     private boolean canContextObject = false;
 
+    /**
+     * Who may write the records of this type, when it is a <em>shared</em> type: one of a common, read by every
+     * organization of its starter. Null for a tenant type, the only kind outside a common.
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(length = 16)
+    private SharingWrite sharingWrite;
+
+    /** Who may read the records of a shared type; set together with {@link #sharingWrite}. */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(length = 16)
+    private SharingVisibility sharingVisibility;
+
     private UUID organizationId;
 
     @jakarta.persistence.OneToMany(mappedBy = "entityDefinition", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
     @jakarta.persistence.OrderBy("displayOrder ASC")
     @Builder.Default
     private List<BaseEntityAttribute> attributes = new ArrayList<>();
+
+    /** True for a type of a common whose records every organization of the starter reads. */
+    public boolean isShared() {
+        return sharingWrite != null;
+    }
 
     public boolean isComponent() {
         return !componentParents.isEmpty();
@@ -162,6 +180,8 @@ public class BaseEntityDefinition extends Auditable {
         this.componentParents = new ArrayList<>(draft.componentParents);
         this.isEmbedded = draft.isEmbedded;
         this.canContextObject = draft.canContextObject;
+        this.sharingWrite = draft.sharingWrite;
+        this.sharingVisibility = draft.sharingVisibility;
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));
         java.util.Set<String> kept = new java.util.HashSet<>();

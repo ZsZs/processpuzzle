@@ -26,6 +26,7 @@ public class DeleteEntityInstanceUseCase {
 
     /** @param orgKey see {@code UpdateEntityInstanceUseCase.update} for what is not found. */
     public void delete(String orgKey, String entityDefinitionCode, UUID id, boolean cascade) {
+        scope.requireWritable(orgKey, entityDefinitionCode);
         EntityObject entityObject = scope.find(orgKey, entityDefinitionCode, id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
 

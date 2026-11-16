@@ -1,121 +1,299 @@
-# Shared Data ("Commons") Concept for ProcessPuzzle Business Starters
+# Shared Data ("Commons") for Business Starters — Concept
 
-Status: concept, agreed in discussion on 2026-11-15. Next step: manifest schema.
+Status: concept v2, 2026-11-16. Rewrites v1 (2026-11-15) after review against the code and the
+[business starters design](../business-starters/business-starters-design.md),
+[definition release](../definition-release.md) and
+[definition migrations](../definition-migration-concept/definition-migrations-concept.md).
 
 ## 1. Problem
 
-Some custom applications, such as SailRC, must share part of their data across all subscribers:
+Organizations subscribed to the same business starter extend and change their application freely — that is
+the core selling point. Some of their data must nevertheless be one data set for all of them: curated
+reference data (asset types), the participating organizations' public profiles, publicly announced events,
+a registry of assets that move between organizations.
 
-- Each yacht club subscribes to the SailRC custom app individually.
-- Clubs will extend and change the features of the original business starter over time. This is the core selling point of ProcessPuzzle.
-- Entities such as Sailor, Boat, Boat Class, Yacht Club and Race must nevertheless be available to all SailRC instances.
-- Sharing is limited to subscribers of the same starter. It never crosses domains.
+- Sharing is limited to the subscribers of one starter. It never crosses starters.
+- Completely open data is rejected: open writes destroy data quality, and personal data needs consent (GDPR).
 
-Making the data completely open was rejected. Personal data (Sailor) requires consent and control (GDPR), and open writes would destroy data quality.
+## 2. Goals and non-goals
 
-## 2. Goals
+- **Generic.** Any starter may declare a common; a starter without one is unaffected.
+- **Part of the platform.** A common is created and maintained by ProcessPuzzle, the starter's author. It is
+  never deleted and needs no subscription.
+- **Defined once.** Shared entity types exist in exactly one place, the common. Subscribers cannot change or
+  extend them; they create their own entity types that **refer to** the common ones.
+- **Simple until needed.** No row-level security (see §8), no new runtime, no data copies.
+- **Not in scope:** governance of the shared data (who approves what, duplicate merging, disputes). The
+  platform enforces who may write; deciding what is right is the common's administrator's business.
 
-- A generic mechanism: any business starter can declare a common part (for example `sailrc-common`).
-- Subscriptions are connected to the common automatically.
-- The platform provides only the mechanism. It does not own the shared data or run governance.
-- Clubs can still extend and customise their own application freely.
+## 3. Core concepts
 
-## 3. Core Concepts
+### 3.1 The common is an organization
 
-### 3.1 Common (data space)
+A common is an ordinary organization with a reserved key, one per starter: `<starterId>-common`.
 
-- Every business starter may declare one common, for example `sailrc-common`.
-- The common is an organisation of type `COMMON`, stored in the same pooled database under its own `orgKey`.
-- It has an administrator organisation: a real organisation (for example a federation) later, the platform owner initially. Handing over administration means reassigning a role, not migrating data.
-- Subscribers join the data space automatically at provisioning.
+- It lives in the same pooled custom database and is served by the same `processpuzzle-custom-backend` as
+  every subscriber. It has no backend, realm or database of its own.
+- Its members are ProcessPuzzle staff. They curate its data with the generated CRUD screens of the shared
+  types; a curation app of its own is not planned.
+- It is never deleted. The tenant data cleaner refuses a common's key.
 
-### 3.2 Separate data ownership from schema ownership
+This is the global entity type already planned in `EntityObjectScope` (reserved key `_global`, never
+implemented), scoped to one starter. The commons replace `_global`; the javadoc is updated with step 1.
 
-- Shared entities have a platform-governed core definition: a small, versioned set of attributes that tenants cannot change.
-- Clubs add local extension attributes in their own org, keyed by the global record's ID. Example: a global Sailor core record plus a club overlay (membership status, internal notes).
-- Core definition changes ship as a definition release through the migration-set mechanism.
+### 3.2 Membership is derived, not stored
 
-### 3.3 Sharing policy per shared entity
+An organization is a member of a common exactly when it has the common's starter installed —
+`starter_installed (org_key, starter_id)`, which the seed already writes. No membership table, no
+provisioning step to forget. `processpuzzle-core` declares a `DataSpaceDirectory` port
+(`commonOf(orgKey)`, `isCommon(orgKey)`); `base-starter-backend` implements it, so base-entity depends on no
+starter code.
 
-Write policy (who may write):
+### 3.3 Shared entity types
 
-| Policy | Meaning |
-|---|---|
-| `COMMON_ADMIN` | Only the common's administrators |
-| `OWNER_ORG` | Only the org that owns the record |
-| `SELF` | Only the person the record describes |
+A shared entity type is an entity definition of the common, released in the common like any definition.
 
-Read visibility:
+- **Read-only for members.** A member's definition lookup (`EntityDefinitionLookupPort`) also answers the
+  common's *released* shared types. The member's designer lists them, marked as common and read-only; a
+  member's release resolves references to them without checking them (they are not the member's to release).
+- **Reserved codes.** A member may not define an entity type with the code of one of its common's types;
+  saving, importing and releasing refuse it.
+- **Sharing policy on the definition**, not in the manifest — the runtime reads it from the same place as
+  everything else, and the designer can show it:
 
-| Visibility | Meaning |
-|---|---|
-| `PUBLIC` | Readable by all members of the data space |
-| `OWNER_ONLY` / `PRIVATE` | Not shared |
+```yaml
+sharing:
+  write: COMMON_ADMIN        # COMMON_ADMIN | OWNER_ORG | SELF (reserved, §7)
+  visibility: PUBLIC         # PUBLIC | OWNER_ONLY
+  visibleWhen:               # optional: public only in these states of the type's state machine
+    state: [ PUBLISHED, COMPLETED ]
+  from: event                # optional: owner and visibility follow the record this REFERENCE
+                             # attribute points to (here: a booking follows its event)
+identifiers:                 # natural keys, unique among non-retired records
+  - [ assetType, serialNumber ]
+```
 
-### 3.4 References, not copies
+### 3.4 Records: where they live and who owns them
 
-- Tenant data references shared records by `(commonOrgKey, id)`.
-- There is no synchronisation problem.
-- If query performance requires it, local denormalised projections can be added later via Spring Modulith events.
+- Every record of a shared type is stored under the **common's** org key. `EntityObjectScope.storageOrgKey()`
+  — the seam already built for this — answers the common's key for a shared type.
+- New columns on `entity_object`, all nullable: `owner_org_key` (the member that created it, for
+  `OWNER_ORG`), `owner_subject` (reserved for `SELF`), `retired_at` / `retired_by` (§3.6).
 
-## 4. Application to SailRC
+| Policy | Read | Write |
+|---|---|---|
+| `COMMON_ADMIN` + `PUBLIC` | every member | the common's members (ProcessPuzzle staff) |
+| `OWNER_ORG` + `PUBLIC` | every member | the owner org; the common's members too |
+| `OWNER_ORG` + `OWNER_ONLY` | the owner org | the owner org |
+| `visibleWhen` | others see the record only in the listed states | unchanged |
+| `from: <attribute>` | as the referenced record | as the referenced record |
 
-| Entity | Write policy | Visibility | Notes |
-|---|---|---|---|
-| Boat Class | `COMMON_ADMIN` | Public | Curated reference data; changes via proposal and approval workflow |
-| Yacht Club | `OWNER_ORG` | Public | Each club maintains its own record |
-| Race | `OWNER_ORG` | Public once published | Drafts stay private |
-| Boat | `OWNER_ORG` or `SELF` | Public | Global registry (class, sail number, photos); owner claims it |
-| Sailor | `SELF` | Consent-based, minimal public core | Open design question, see section 5 |
+**Records that belong to another record.** Much shared data is part of something one organization runs: an
+event is organized by one member, but its bookings and outcomes should be as public as the event. Such types
+are shared types too, with `from: <attribute>`: owner and visibility are those of the referenced record —
+one level, to a type of the same common, not chained. Only the event's owner writes its bookings, and they
+become public when the event does. Embedded components need nothing: they are stored inside their parent and
+share its record. Members of other organizations contributing to someone else's event (booking themselves)
+is contribution, deferred (§7).
 
-## 5. Sailor: self-defined (open question)
+All of it is decided in one place, `EntityObjectScope` and the access policy behind `OrganizationGuard`, and
+nowhere else.
 
-`SELF` means a record owned by a person, not an organisation, so the platform needs a user-owned record linked to a Keycloak user.
+### 3.5 References, not copies
 
-Candidate flow:
+- A member's entity refers to a shared record with the existing `REFERENCE` value kind (`FOREIGN_KEY` /
+  `LOOKUP` control) and `linkedEntityType: <shared type code>`. Object ids are UUIDs, unique across
+  organizations, so the stored value stays a plain id. **No new attribute type.**
+- **References point into the common, never out of it.** A shared type may refer to shared types of the same
+  common only; a member's type may refer to its own types and to its common's. A reference from a common
+  record to a member's record would not resolve for anyone else, so saving, importing and releasing a shared
+  type refuse it. Data that others must see therefore has to be a shared type (`from:` above); mirroring a
+  member's records into the common was considered and rejected — two copies, synchronization, and the
+  member's customized shape would need mapping back onto the common one.
+- Resolving the reference goes through the scope, which reads it from the common. Pickers search the
+  common; lists resolve labels in one batch.
+- What a member would have added to a shared type goes into **its own** type that refers to it (a member's
+  `Member Asset Profile` with a reference to the shared `Asset`). There are no overlays and no `extends`.
+- Cross-organization queries do not join: a filter on a referenced record's attributes is not offered (it is
+  not offered within an organization either — `AttributePathResolver` does not traverse references).
 
-1. A club creates a minimal stub (name plus an identifier), visible only to that club.
-2. The sailor later claims it via an invite link and decides what becomes public.
-3. This avoids duplicate identities and keeps GDPR consent with the person.
-4. Guests without a Keycloak account can exist as stubs.
+### 3.6 Nothing is hard deleted in a common
 
-Decision: keep `SELF` in the write-policy model from the start; design the exact Sailor flow later.
+- Deleting a record of a shared type **retires** it: `retired_at` is set, the record keeps resolving by id
+  (shown as retired), and searches and pickers leave it out. The common's members can reinstate it.
+- No API hard-deletes a common's records. A hard delete is a platform maintenance operation, done by hand.
+- When a member organization is deleted, its own data goes as today. Shared records it owns stay; with their
+  owner gone only the common's members can write them.
+- The delete guard's reference check (`EntityObjectRepository.existsAnyReferenceTo`) is today a text scan
+  across all organizations. It is limited to the organization and its common.
 
-## 6. Provisioning
+## 4. Who changes what
 
-- The starter manifest declares the common and its shared entities.
-- The customer seed ([customer-seed](customer-seed)) gets an extra step: when an org subscribes to a starter that declares a common, it is added to that data space.
-- The common org itself is created once, from the Admin app.
+| Change | By | How |
+|---|---|---|
+| Shared type definitions | ProcessPuzzle | the starter repository, released as a new common bundle version, upgraded into the common (§5.3) |
+| Shared records (`COMMON_ADMIN`) | ProcessPuzzle staff | the custom application, logged in to the common |
+| Shared records (`OWNER_ORG`) | the owning member | its own application, through its own `orgKey` path |
+| Member definitions | the member's designer | as today; may refer to shared types, never change them |
 
-## 7. Enforcement (technical outline)
+The starter repository is the source of truth for the common's definitions. The common's designer is not used
+to edit them; a change made there would be overwritten by the next upgrade.
 
-- Same pooled database (`PROCESSPUZZLE_CUSTOM`) and the existing `@IdClass` pattern with `orgKey` in the primary key.
-- The Postgres row-level security policy is extended: a record is readable if its visibility is shared, and writable only per its write policy (owner org, common admin, or the owning user).
-- The `OrganizationGuard` is extended so access to common records goes through a defined path (for example a dedicated endpoint or scope) instead of the tenant `:orgKey` check.
-- Cross-org JSONB/RSQL queries cannot simply join. References are resolved in the application layer or via a read-through cache.
+## 5. Starters: the common bundle, replace and upgrade
 
-## 8. Governance (outside the platform)
+### 5.1 Two parts per starter
 
-Handled by the common's administrator organisation, not by ProcessPuzzle:
+A starter with a common is split into a **common part** and a **customisable part**. They differ in target
+(one organization, forever, versus every subscriber), in who applies an upgrade (ProcessPuzzle, at once,
+versus each organization's administrator, when it suits them) and in whether anyone may change them (no one
+versus the subscriber's designer). Each part is therefore its own bundle with its own version, packaged and
+rolled out separately. They stay in one folder because they are authored and reviewed together, and the
+customisable part is written against the common part:
 
-- Approving new Boat Classes and Yacht Clubs.
-- Detecting and merging duplicate sailors and boats, supported by external identifiers (World Sailing ID, class plus sail number).
-- Dispute handling for shared records.
+```
+business-starters/<starter-id>/
+  manifest.yaml            # tenant bundle; names the common it needs
+  entities/ ...            # member-side definitions, may reference shared types
+  common/
+    manifest.yaml          # common bundle
+    entities/ states/ rules/ apps/ ...
+    migrations/
+```
 
-## 9. Decisions Taken
+The tenant manifest gains one block (`manifestVersion: 2`):
 
-1. Generic mechanism: every starter may declare a common part.
-2. Subscriptions are connected to the common automatically.
-3. The common is assigned a real organisation (or the platform owner as administrator initially).
-4. Yacht clubs define races, which are publicly available.
-5. Sailor is self-defined; the exact flow is deferred.
-6. ProcessPuzzle provides the mechanism only, no data ownership or governance.
-7. World-wide scope with `country` as an attribute, not per-country commons.
-8. Completely open data is rejected.
+```yaml
+common:
+  id: <starter-id>-common
+  minVersion: 1.2.0        # the common version the tenant definitions were written against
+```
 
-## 10. Open Questions
+The common manifest is a starter manifest with `kind: common` and no `common:` block. Examples:
+`sailrc-starter.manifest.yaml` in this folder. `BundleReader` stops ignoring unknown top-level fields for
+`manifestVersion: 2`, so a misspelt block fails packaging instead of being dropped.
 
-- Exact Sailor claim and consent flow.
-- Whether clubs need to work offline or independently if the common is unreachable (for example at a race on the water), which would require local caching of referenced records.
-- How the common's administrator role transfers to a federation later.
-- Manifest schema: the `common:` block and the per-entity sharing policy (next step).
+### 5.2 Replace and upgrade are two operations
+
+| | Replace (exists) | Upgrade (new) |
+|---|---|---|
+| When | the organization holds no objects and no workflow instances | any time, to a newer version of the installed starter |
+| Definitions | all removed, the bundle's imported | per definition, by provenance (below) |
+| Data | untouched (there is none) | migrated by the bundle's migration steps |
+| Result | released at once on sign-up, drafts in the designer | drafts plus pending migration steps, then a release |
+
+Upgrade, per definition, using the provenance the importer already records (`starter_definition_provenance`):
+
+- in the bundle, untouched in the org (fingerprint equals the recorded hash) → replaced by the new content;
+- in the bundle, customized in the org → kept, reported as a conflict (v1: the org's version wins);
+- new in the bundle → added;
+- dropped from the bundle → removed if untouched, kept if customized.
+
+Migration steps come with the bundle: `migrations/<from>-to-<to>.yaml`, in the operations of the migration
+catalog (v1: rename attribute, fill attribute, map values). They become the release's pending steps, so the
+existing release machinery checks, dry-runs and applies them in one transaction. An upgrade goes one version
+at a time; a skipped version is a chain of upgrades. The manifest's `migration: null` placeholder is replaced
+by this.
+
+### 5.3 Upgrading a common
+
+The same upgrade, into the common, released by ProcessPuzzle. One check is added to the common's release:
+the member organizations' definitions that refer to a shared type or attribute — references of attributes,
+rules, calculations, documents and workflow artifacts. Removing or renaming something a member refers to is
+an error naming the members; everything else goes through. Member data never needs migrating for a common
+release: members store only ids.
+
+A tenant install or upgrade whose `common.minVersion` is not yet in the common is refused.
+
+**Consequence of deferred member upgrades:** at any time members run different versions of the customisable
+part against the one current common. A common release must therefore stay compatible with every customisable
+version still installed — which is what the reference check above enforces, since it reads the members'
+definitions as they are, whatever version they came from.
+
+### 5.4 Rollout
+
+Publishing a version (CI puts it in the bucket, §4 of the starter design) does not yet offer it to anyone.
+ProcessPuzzle decides when to **roll out**, from a rollout screen in platform-admin (biz repository):
+
+1. The screen lists the starters, their published versions and, per version, how many organizations run it.
+2. Rolling out a version of the **common part** upgrades the common at once: Admin calls the custom
+   backend's internal upgrade endpoint for `<starterId>-common`, which upgrades and releases it (§5.3). A
+   refused release (members' references broken) stops the rollout and is shown with the plan.
+3. Rolling out a version of the **customisable part** makes it the *offered* version of the starter: the
+   custom backend stores it per starter, new sign-ups install it, and existing subscribers are told an
+   upgrade is available. It can be rolled out only once its `common.minVersion` is rolled out.
+4. Each organization's administrator applies the upgrade from the designer when it suits them (§5.2): drafts
+   and pending migration steps, then a release.
+
+Rollout records (who rolled out which version when, and the outcome) live in Admin's database. The custom
+backend only knows the offered version per starter and what each organization has installed.
+
+### 5.5 Creating a common
+
+The first rollout of a starter's common part creates the common: Admin creates the Keycloak organization,
+seeds it without a starter, then replace-installs the common bundle. Later rollouts upgrade it (§5.4). Installing the starter into a subscriber is refused while its common does not exist; the SeedJob
+records the failure as for any failed install.
+
+## 6. Security model
+
+- One custom backend serves all customers. Isolation is the `{orgKey}` path checked against the caller's
+  organization by `OrganizationGuard`, plus the org filter in every query.
+- Commons add exactly one rule: a request for organization *A* may read and — per policy — write records
+  stored under *A*'s common, because the scope says so. The path is still *A*'s; a member never addresses the
+  common's key directly. Requests addressed to the common's key need membership of the common, as for any
+  organization.
+
+## 7. Deferred
+
+- **`SELF` and consent.** Records owned by a person (`owner_subject`), claim by invitation, per-attribute
+  visibility, erasure across members. Needs its own GDPR design; the column and the enum value are reserved.
+- **Contribution by proposal.** Members proposing changes to `COMMON_ADMIN` data through a workflow in the
+  common.
+- **Conflict resolution in upgrades** beyond "the org's version wins".
+- **Local projections** of shared records via events, if lookups become slow; **offline** use, which is an
+  application concern.
+- **A dedicated backend for a large organization.** The pooled database and the org-key scope do not
+  prevent it, but commons then span backends; considered when an organization needs it.
+- **Transferring administration** of a common to an outside organization (a federation): adding its users to
+  the common — a membership change, no data moves.
+
+## 8. Database enforcement
+
+No row-level security. Tenancy is enforced in application code today and commons follow that. Flyway — and with
+it RLS as a second line of defence, if wanted — comes when the platform is made production ready. The new
+columns are added by Hibernate, like every column so far.
+
+## 9. Implementation plan
+
+Each step is a core PR, then library releases, then a biz bump where noted.
+
+1. **Shared reads (base-entity, core).** `DataSpaceDirectory` port; `storageOrgKey()` answers the common for
+   shared types; the definition lookup answers the common's released shared types, read-only; reserved codes; references only into the common (§3.5);
+   the `sharing` block on entity definitions (`COMMON_ADMIN` + `PUBLIC` only); member release resolves
+   references into the common. Testbed: a demo common with domain-neutral types.
+2. **References in the frontend.** Picker and label resolution against shared types; common types read-only
+   in the member's designer.
+3. **Retire instead of delete.** `retired_at` / `retired_by`, delete becomes retire for shared types,
+   reinstate, searches and pickers skip retired; the delete guard's reference check limited to org + common;
+   the tenant data cleaner refuses a common.
+4. **Common bundle and manifest v2 (base-starter).** `kind: common`, the tenant `common:` block, strict
+   fields for v2, packager support, refusing an install whose common is missing or too old. Biz: create a
+   common from Admin.
+5. **Owner writes.** `owner_org_key`, `OWNER_ORG`, `OWNER_ONLY`, `visibleWhen`, `from:`; natural-key uniqueness
+   from `identifiers`.
+6. **Starter upgrade.** Provenance-based upgrade, bundle migration steps as pending steps, one version at a
+   time; the same operation for tenants and commons; the offered version per starter; "upgrade available"
+   and Apply in the designer for the org administrator; the internal upgrade endpoint for a common.
+   Biz: the rollout screen in platform-admin (§5.4) and its rollout records.
+7. **Common release check** against members' references (§5.3).
+
+Steps 1–3 make a curated common usable; 4 makes it installable from a real starter; 5–7 can follow in any
+order once a starter needs them.
+
+## 10. Decisions on the v2 open questions (2026-11-16)
+
+- **Upgrade conflicts:** the organization's customized version wins; the upgrade reports it. Choosing per
+  definition is deferred.
+- **Rolling back a rollout** only withdraws the offered version. Organizations that applied it keep it.
+- **Data of one member that all must see** is a shared type owned by that member (`OWNER_ORG`, `from:`), not
+  a mirror of the member's records (§3.5).
+- **Scope of the work:** generic only. SailRC is the driving example; nothing in the platform is built for it.

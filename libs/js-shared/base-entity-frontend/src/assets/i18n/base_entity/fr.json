@@ -57,6 +57,7 @@
     "version": "Version",
     "updatedAt": "Mis à jour le",
     "releaseState": "Publication",
+    "sharedFrom": "Partagé depuis",
     "_tooltips": {
       "code": "Clé unique du type d'entité dans votre organisation, utilisée dans les adresses. Courte, en minuscules et compatible URL, p. ex. order ; évitez de la modifier ensuite.",
       "name": "Le nom d'entité par lequel les pages, routes et menus de l'application désignent ce type, p. ex. Order.",
@@ -68,7 +69,8 @@
       "attributes": "Les champs du type d'entité, une ligne par champ. Ils sont enregistrés avec la définition.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement de la définition. Défini par le système.",
-      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système."
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
+      "sharedFrom": "Le commun dont provient ce type. Votre organisation le lit, mais seul le commun le publie ou le modifie. Vide pour vos propres types. Défini par le système."
     }
   },
   "artifact": {

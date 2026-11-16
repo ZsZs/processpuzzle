@@ -57,6 +57,7 @@
     "version": "Verzió",
     "updatedAt": "Módosítva",
     "releaseState": "Kiadás",
+    "sharedFrom": "Megosztva innen",
     "_tooltips": {
       "code": "Az entitástípus egyedi kulcsa a szervezeten belül, a címekben is ez szerepel. Rövid, kisbetűs és URL-barát, pl. order; később lehetőleg ne módosítsa.",
       "name": "Az entitásnév, amellyel az alkalmazás oldalai, útvonalai és menüi erre a típusra hivatkoznak, pl. Order.",
@@ -68,7 +69,8 @@
       "attributes": "Az entitástípus mezői, mezőnként egy sor. A definícióval együtt mentődnek.",
       "version": "Minden mentéssel növekszik. A rendszer állítja be.",
       "updatedAt": "A definíció utolsó mentésének időpontja. A rendszer állítja be.",
-      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be."
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
+      "sharedFrom": "A közös tér, amelyből ez a típus származik. A szervezet olvassa, de csak a közös tér adja ki vagy módosítja. Saját típusoknál üres. A rendszer állítja be."
     }
   },
   "artifact": {

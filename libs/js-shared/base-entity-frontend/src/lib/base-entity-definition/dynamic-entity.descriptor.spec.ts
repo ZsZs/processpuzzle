@@ -12,6 +12,11 @@ function attrOf(definition: EntityDefinition, attrName: string) {
 }
 
 describe('descriptorOf', () => {
+  it('is read-only for a type a common shares with the organization, and editable otherwise', () => {
+    expect(descriptorOf(ORDER_DEFINITION, lookup).isReadOnly).toBe(false);
+    expect(descriptorOf(new EntityDefinition({ ...ORDER_DEFINITION, sharedFrom: 'starter-common' }), lookup).isReadOnly).toBe(true);
+  });
+
   it('names the entity by the definition name, not by its code — the descriptor is what URLs and registries are keyed by', () => {
     const descriptor = descriptorOf(ORDER_DEFINITION, lookup);
 

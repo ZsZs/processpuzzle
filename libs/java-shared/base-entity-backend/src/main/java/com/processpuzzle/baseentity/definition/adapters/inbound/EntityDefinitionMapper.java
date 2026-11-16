@@ -7,6 +7,8 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.DateFormat;
 import com.processpuzzle.baseentity.definition.domain.DateStyle;
 import com.processpuzzle.baseentity.definition.domain.MapProvider;
+import com.processpuzzle.baseentity.definition.domain.SharingVisibility;
+import com.processpuzzle.baseentity.definition.domain.SharingWrite;
 import com.processpuzzle.baseentity.definition.domain.TimeStyle;
 import com.processpuzzle.baseentity.model.AttributeDateFormat;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
@@ -36,6 +38,8 @@ public class EntityDefinitionMapper {
             .isEmbedded(Boolean.TRUE.equals(input.getIsEmbedded()))
             .canContextObject(Boolean.TRUE.equals(input.getCanContextObject()))
             .organizationId(input.getOrganizationId())
+            .sharingWrite(input.getSharing() == null ? null : SharingWrite.valueOf(input.getSharing().getWrite().getValue()))
+            .sharingVisibility(input.getSharing() == null ? null : SharingVisibility.valueOf(input.getSharing().getVisibility().getValue()))
             .build();
 
         if (input.getAttributes() != null) {
@@ -86,6 +90,12 @@ public class EntityDefinitionMapper {
         model.setComponentParents(definition.getComponentParents());
         model.setIsEmbedded(definition.isEmbedded());
         model.setCanContextObject(definition.isCanContextObject());
+        if (definition.isShared()) {
+            com.processpuzzle.baseentity.model.EntitySharing sharing = new com.processpuzzle.baseentity.model.EntitySharing();
+            sharing.setWrite(com.processpuzzle.baseentity.model.EntitySharing.WriteEnum.fromValue(definition.getSharingWrite().name()));
+            sharing.setVisibility(com.processpuzzle.baseentity.model.EntitySharing.VisibilityEnum.fromValue(definition.getSharingVisibility().name()));
+            model.setSharing(sharing);
+        }
         model.setOrganizationId(definition.getOrganizationId());
         if (definition.getAttributes() != null) {
             model.setAttributes(definition.getAttributes().stream().map(this::toModel).toList());
@@ -125,6 +135,28 @@ public class EntityDefinitionMapper {
         model.setDefaultCountry(attribute.getDefaultCountry());
         model.setValidationRules(attribute.getValidationRules());
         return model;
+    }
+
+    /** The model as {@code requestOrgKey} sees it: a type of another organization (its common) is marked {@code sharedFrom}. */
+    public com.processpuzzle.baseentity.model.BaseEntityDefinition toModel(BaseEntityDefinition definition, String requestOrgKey) {
+        com.processpuzzle.baseentity.model.BaseEntityDefinition model = toModel(definition);
+        if (model != null && definition.getOrgKey() != null && !definition.getOrgKey().equals(requestOrgKey)) {
+            model.setSharedFrom(definition.getOrgKey());
+        }
+        return model;
+    }
+
+    public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page, String requestOrgKey) {
+        List<Object> content = page.getContent().stream()
+            .map(definition -> toModel(definition, requestOrgKey))
+            .map(Object.class::cast)
+            .toList();
+        return new Page()
+            .content(content)
+            .page(page.getNumber())
+            .size(page.getSize())
+            .totalElements((int) page.getTotalElements())
+            .totalPages(page.getTotalPages());
     }
 
     public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page) {

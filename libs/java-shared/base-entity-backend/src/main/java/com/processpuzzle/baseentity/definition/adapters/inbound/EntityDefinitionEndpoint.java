@@ -51,7 +51,7 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20);
         var domainStatus = mapper.toDomainStatus(status);
         Channel channel = Channel.ofRevision(revision);
-        Page result = mapper.toPage(findAllUseCase.findAll(orgKey, channel, domainStatus, isEmbedded, pageable));
+        Page result = mapper.toPage(findAllUseCase.findAll(orgKey, channel, domainStatus, isEmbedded, pageable), orgKey);
         if (channel == Channel.DRAFT && result.getContent() != null) {
             Map<String, ReleaseState> states = ReleaseState.ofDrafts(releaseParticipant, orgKey);
             result.getContent().stream()
@@ -75,7 +75,7 @@ public class EntityDefinitionEndpoint implements BaseEntityDefinitionsApi {
     public ResponseEntity<com.processpuzzle.baseentity.model.BaseEntityDefinition> getEntityDefinition(String orgKey, String code,
                                                                                                        String revision) {
         Channel channel = Channel.ofRevision(revision);
-        var definition = mapper.toModel(findByCodeUseCase.findByCode(orgKey, code, channel));
+        var definition = mapper.toModel(findByCodeUseCase.findByCode(orgKey, code, channel), orgKey);
         if (channel == Channel.DRAFT) {
             definition.setReleaseState(releaseStateOf(ReleaseState.ofDrafts(releaseParticipant, orgKey), code));
         }

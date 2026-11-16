@@ -31,6 +31,12 @@ import type { MapProvider } from '../base-form/address/address-map';
  */
 export type EntityDefinitionStatus = 'DRAFT' | 'ACTIVE' | 'DEPRECATED';
 
+/** `EntitySharing` of the contract: the policy of a type a common shares with the organizations of its starter. */
+export interface EntitySharing {
+  write: 'COMMON_ADMIN' | 'OWNER_ORG' | 'SELF';
+  visibility: 'PUBLIC' | 'OWNER_ONLY';
+}
+
 /** `ValueKind` of the contract: what the attribute's value *is*, as opposed to how it is edited. */
 export type EntityValueKind = 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'DATE_TIME' | 'ENUM' | 'REFERENCE';
 
@@ -194,6 +200,13 @@ export class EntityDefinition implements BaseEntity {
   isEmbedded?: boolean;
   /** True when a user can pick one object of this type as the context object; see `BaseEntityDescriptorOptions.canContextObject`. */
   canContextObject?: boolean;
+  /** Set on a type of a common: shared with every organization of its starter. Kept as read so a save does not drop it. */
+  sharing?: EntitySharing;
+  /**
+   * Set on a type this organization reads but does not own: the key of the common that shares it. Such a type is
+   * released, shown read-only, and neither changed nor deleted from here. Reported by the backend, never sent back.
+   */
+  sharedFrom?: string;
   attributes?: EntityAttributeDefinition[];
   // region server-assigned
   version?: number;
@@ -213,6 +226,8 @@ export class EntityDefinition implements BaseEntity {
     this.componentParents = init.componentParents ?? [];
     this.isEmbedded = init.isEmbedded ?? false;
     this.canContextObject = init.canContextObject ?? false;
+    this.sharing = init.sharing;
+    this.sharedFrom = init.sharedFrom;
     this.attributes = init.attributes ?? [];
     this.version = init.version;
     this.createdAt = init.createdAt;

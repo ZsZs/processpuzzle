@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import type { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
-import { ENTITY_DEFINITION_STATUSES, ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
+import { ENTITY_DEFINITION_STATUSES, ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS, EntityDefinition } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE, ENTITY_DEFINITION_I18N_SCOPE } from '../i18n/base-entity.i18n';
 import { createEntityAttributeDescriptor, ENTITY_ATTRIBUTE_ID_FIELD } from './entity-attribute.descriptors';
 import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './entity-authoring-names';
@@ -31,7 +31,7 @@ describe('createEntityDefinitionDescriptor', () => {
   });
 
   it('authors every field of BaseEntityDefinitionInput', () => {
-    expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual(['attributes', 'canContextObject', 'code', 'componentParents', 'description', 'isEmbedded', 'name', 'releaseState', 'status', 'updatedAt', 'version']);
+    expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual(['attributes', 'canContextObject', 'code', 'componentParents', 'description', 'isEmbedded', 'name', 'releaseState', 'sharedFrom', 'status', 'updatedAt', 'version']);
   });
 
   /**
@@ -65,6 +65,19 @@ describe('createEntityDefinitionDescriptor', () => {
 
     expect(releaseStateAttr.disabled).toBe(true);
     expect(releaseStateAttr.hideInTable).toBeFalsy();
+  });
+
+  /** A type the organization's common shares is shown in the list, but is neither edited nor deleted here. */
+  it('keeps a type shared from the common read-only', () => {
+    const descriptor = createEntityDefinitionDescriptor();
+    const own = new EntityDefinition({ code: 'profile', name: 'Profile' });
+    const shared = new EntityDefinition({ code: 'asset', name: 'Asset', sharedFrom: 'starter-common' });
+
+    expect(attrOf(attrs, 'sharedFrom').disabled).toBe(true);
+    expect(descriptor.isEditable?.(own)).toBe(true);
+    expect(descriptor.isDeletable?.(own)).toBe(true);
+    expect(descriptor.isEditable?.(shared)).toBe(false);
+    expect(descriptor.isDeletable?.(shared)).toBe(false);
   });
 
   /**

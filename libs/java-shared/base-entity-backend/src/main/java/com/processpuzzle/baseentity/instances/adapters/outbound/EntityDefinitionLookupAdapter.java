@@ -9,8 +9,9 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,14 +20,47 @@ import org.springframework.stereotype.Component;
  * defines.
  */
 @Component
-@RequiredArgsConstructor
 public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort {
 
     private final EntityDefinitionRepository entityDefinitionRepository;
+    private final ObjectProvider<DataSpaceDirectory> dataSpaces;
 
+    public EntityDefinitionLookupAdapter(EntityDefinitionRepository entityDefinitionRepository,
+                                         ObjectProvider<DataSpaceDirectory> dataSpaces) {
+        this.entityDefinitionRepository = entityDefinitionRepository;
+        this.dataSpaces = dataSpaces;
+    }
+
+    /**
+     * The organization's own definition, or else the shared type of its common. A member cannot define a type
+     * under a shared type's code, so the two never compete; a member cannot draft a shared type either, so even
+     * a draft lookup reads the common's released row.
+     */
     @Override
     public Optional<EntityDefinitionView> findByCode(String orgKey, String code, Channel channel) {
-        return entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, channel).map(this::toView);
+        Optional<EntityDefinitionView> own = entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, channel).map(this::toView);
+        if (own.isPresent()) {
+            return own;
+        }
+        return sharedDefinition(orgKey, code).map(this::toView);
+    }
+
+    @Override
+    public Optional<String> sharedFrom(String orgKey, String code) {
+        if (entityDefinitionRepository.existsByOrgKeyAndCodeAndChannel(orgKey, code, Channel.RELEASED)) {
+            return Optional.empty();
+        }
+        return sharedDefinition(orgKey, code).map(BaseEntityDefinition::getOrgKey);
+    }
+
+    private Optional<BaseEntityDefinition> sharedDefinition(String orgKey, String code) {
+        DataSpaceDirectory directory = dataSpaces.getIfAvailable();
+        if (directory == null) {
+            return Optional.empty();
+        }
+        return directory.commonOf(orgKey)
+            .flatMap(common -> entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(common, code, Channel.RELEASED))
+            .filter(BaseEntityDefinition::isShared);
     }
 
     private EntityDefinitionView toView(BaseEntityDefinition definition) {

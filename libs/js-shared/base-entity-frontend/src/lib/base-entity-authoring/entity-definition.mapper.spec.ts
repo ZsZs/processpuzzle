@@ -121,6 +121,17 @@ describe('EntityDefinitionMapper', () => {
       expect(dto).not.toHaveProperty('releaseState');
     });
 
+    /** Not authored in the form, but a type of a common must stay shared when the common saves it. */
+    it('carries the sharing of a type through a save, and never sends where it was shared from', () => {
+      const sharing = { write: 'COMMON_ADMIN' as const, visibility: 'PUBLIC' as const };
+      const read = mapper.fromDto({ ...responseDto, sharing, sharedFrom: 'starter-common' });
+
+      expect(read.sharing).toEqual(sharing);
+      expect(read.sharedFrom).toBe('starter-common');
+      expect(mapper.toDto(read).sharing).toEqual(sharing);
+      expect(mapper.toDto(read)).not.toHaveProperty('sharedFrom');
+    });
+
     it('falls back to the id mirror when the code was cleared on the form', () => {
       expect(mapper.toDto(new EntityDefinition({ id: 'order', code: '' })).code).toBe('order');
     });

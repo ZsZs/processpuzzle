@@ -1,141 +1,111 @@
 # =============================================================================
-# ProcessPuzzle Business Starter manifest: example for SailRC
-# Draft v0.1: proposal for the "common" block and the per-entity sharing policy.
-# Stored in the processpuzzle-biz repo next to the starter's definition YAMLs.
+# SailRC applied to the commons concept (shared-data-commons-concept.md), v2, 2026-11-16.
+# Four parts of processpuzzle-biz/business-starters/sailrc/, shown as YAML documents:
+#   1. manifest.yaml              tenant bundle (installed into every subscribing yacht club)
+#   2. common/manifest.yaml       common bundle (installed once into sailrc-common)
+#   3. common/entities/*.yaml     the sharing policy lives on the shared entity definitions
+#   4. entities/*.yaml            a club's own types refer to the shared ones
+# Domain-specific; belongs in the biz repository once the concept is implemented.
 # =============================================================================
-apiVersion: processpuzzle/v1
-kind: BusinessStarter
 
-metadata:
-  key: sailrc                      # unique starter key; also the data-space domain
-  name: SailRC Regatta Management
-  version: 1.0.0
+# --- 1. manifest.yaml (tenant bundle) ----------------------------------------
+manifestVersion: 2
+id: sailrc
+name: SailRC Regatta Management
+version: 1.0.0
+author: ProcessPuzzle
+license: proprietary
+definitionSchemaVersion: 1
+common:
+  id: sailrc-common
+  minVersion: 1.0.0            # install / upgrade refused while the common is older;
+                               # rollable out only once this common version is rolled out
+contents:
+  entities:   [ entities/club-sailor-profile.yaml, entities/race-budget.yaml ]   # the club's own types
+  workflows:  [ workflows/regatta-organisation.yaml ]
+  modules:    [ modules/race-office.yaml ]
+  apps:       [ apps/race-office.yaml ]
+migrations: []                 # migrations/<from>-to-<to>.yaml, one per upgrade step
+---
+# --- 2. common/manifest.yaml (common bundle) ---------------------------------
+manifestVersion: 2
+kind: common                   # installed into the organization <id>; never into a subscriber
+id: sailrc-common
+name: SailRC Common Data
+version: 1.0.0
+author: ProcessPuzzle
+license: proprietary
+definitionSchemaVersion: 1
+contents:
+  entities:   [ entities/boat-class.yaml, entities/yacht-club.yaml, entities/race.yaml,
+                entities/entry.yaml, entities/result.yaml, entities/boat.yaml, entities/sailor.yaml ]
+  states:     [ states/race-lifecycle.yaml, states/entry-lifecycle.yaml ]   # Race's visibleWhen needs its machine
+  rules:      [ rules/entry-validation.yaml ]  # rules of shared types are shared too
+migrations: []
+---
+# --- 3. common/entities/*.yaml (excerpts: sharing per shared type) -----------
+entityDefinitions:
+  - code: boat-class
+    name: Boat Class
+    sharing: { write: COMMON_ADMIN, visibility: PUBLIC }   # curated by ProcessPuzzle staff
+    identifiers: [ [ name ] ]
 
-spec:
-  # ---------------------------------------------------------------------------
-  # Existing part: definition bundles imported into the customer org (keyed by orgKey)
-  # ---------------------------------------------------------------------------
-  definitions:
-    entities:  [ entities/*.yaml ]
-    states:    [ states/*.yaml ]
-    rules:     [ rules/*.yaml ]
-    documents: [ documents/*.yaml ]
-    workflows: [ workflows/*.yaml ]
-    apps:      [ apps/*.yaml ]
+  - code: yacht-club
+    name: Yacht Club
+    sharing: { write: OWNER_ORG, visibility: PUBLIC }      # each club maintains its own record
+    identifiers: [ [ country, name ] ]
 
-  # ---------------------------------------------------------------------------
-  # New part: the common (shared data space). Optional; omit for starters
-  # that have no shared data (for example inventory, billing).
-  # ---------------------------------------------------------------------------
-  common:
-    key: sailrc-common             # orgKey of the COMMON org; must be globally unique
-    displayName: SailRC Common Data
+  - code: race
+    name: Race
+    sharing:
+      write: OWNER_ORG                                     # the organising club
+      visibility: PUBLIC
+      visibleWhen: { state: [ PUBLISHED, IN_PROGRESS, COMPLETED ] }   # drafts stay with the club
 
-    # Who administers the common. Reassigning this later is a role change, not a data migration.
-    administration:
-      organisation: null           # orgKey of a real organisation, or null while the platform owner administers
-      administrators: []           # initial admin user subjects (for example the platform owner's account)
+  # --- Data of the race: organised by one club, public with the race ------
+  - code: entry
+    name: Entry
+    sharing: { from: race }                                # owner and visibility of the referenced race
+    attributes:
+      - { code: race, valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: race }
+      - { code: boat, valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: boat }
+      - { code: helmsman, valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: sailor }
 
-    # How subscribers are connected to the common.
-    membership:
-      joinOn: SUBSCRIPTION         # SUBSCRIPTION = automatic at provisioning (customer seed step)
-      memberRole: COMMON_MEMBER    # role granted to the subscribing org in the common
-      leaveBehaviour: KEEP_CONTRIBUTIONS   # records an org created stay in the common after it unsubscribes
+  - code: result
+    name: Result
+    sharing: { from: race }
+    attributes:
+      - { code: race,     valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: race }
+      - { code: entry,    valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: entry }
+      - { code: position, valueKind: NUMBER,    formControlType: NUMBER }
 
-    # Shared entities. `ref` points to an entity definition in spec.definitions.
-    entities:
+  - code: boat
+    name: Boat
+    sharing: { write: OWNER_ORG, visibility: PUBLIC }      # global registry: class, sail number, photos
+    identifiers: [ [ boatClass, sailNumber ] ]
 
-      # --- Curated reference data -------------------------------------------
-      - ref: BoatClass
-        coreVersion: 1             # core definition is versioned and shipped via definition releases
-        sharing:
-          write: COMMON_ADMIN      # COMMON_ADMIN | OWNER_ORG | SELF
-          visibility: PUBLIC       # PUBLIC | OWNER_ONLY | CONSENT
-        extensions: NONE           # NONE | ALLOWED: may clubs add local attributes via an overlay?
-        contribution:              # how non-admins can influence the data
-          mode: PROPOSAL           # NONE | PROPOSAL
-          workflow: BoatClassProposalWorkflow   # approval runs in the common org
-        identifiers:               # matching keys for duplicate detection
-          - [ name ]
+  - code: sailor
+    name: Sailor
+    # SELF and per-attribute consent are deferred (concept §7). Until then a club's sailors stay
+    # OWNER_ONLY: shared storage and ids, but not visible to other clubs. Consequence: another club sees a
+    # public entry whose helmsman does not resolve — a reason to do the Sailor consent design early.
+    sharing: { write: OWNER_ORG, visibility: OWNER_ONLY }
+---
+# --- 4. entities/*.yaml (tenant side: own types referring to shared ones) ----
+# References point into the common, never out of it (concept §3.5): entry and result are shared types
+# above, because other clubs must see them; what only the club needs stays here.
+entityDefinitions:
+  # Instead of extending the shared Sailor: the club's own type, referring to it.
+  - code: club-sailor-profile
+    name: Club Sailor Profile
+    attributes:
+      - { code: sailor,           valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: sailor }
+      - { code: membershipStatus, valueKind: ENUM,      formControlType: ENUM_SELECT }
+      - { code: internalNotes,    valueKind: TEXT,      formControlType: TEXTAREA }
 
-      # --- Self-maintained organisation profile -----------------------------
-      - ref: YachtClub
-        coreVersion: 1
-        sharing:
-          write: OWNER_ORG         # only the club's own org may edit its record
-          visibility: PUBLIC
-        extensions: ALLOWED
-        ownerBinding:
-          kind: ORG                # record is created automatically for the subscribing org
-          createOn: SUBSCRIPTION
-        identifiers:
-          - [ country, name ]
-          - [ externalId.nationalAuthority ]
-
-      # --- Event data with a publication lifecycle --------------------------
-      - ref: Race
-        coreVersion: 1
-        sharing:
-          write: OWNER_ORG         # the organising club
-          visibility: PUBLIC
-          visibleWhen:             # drafts stay private; the rule references the race state machine
-            state: [ PUBLISHED, IN_PROGRESS, COMPLETED ]
-        extensions: ALLOWED
-        ownerBinding:
-          kind: ORG
-
-      # --- Boat registry ----------------------------------------------------
-      - ref: Boat
-        coreVersion: 1
-        sharing:
-          write: OWNER_ORG         # may later move to SELF once the owner claims the record
-          visibility: PUBLIC
-        extensions: ALLOWED
-        identifiers:
-          - [ boatClass, sailNumber ]
-          - [ externalId.worldSailing ]
-        claim:                     # a sailor can later claim a boat
-          by: USER
-          via: INVITE
-
-      # --- Person record: owned by the sailor -------------------------------
-      - ref: Sailor
-        coreVersion: 1
-        sharing:
-          write: SELF             # only the person the record describes
-          visibility: CONSENT     # per attribute, see attributes below
-        extensions: ALLOWED        # clubs keep membership data in an overlay in their own org
-        ownerBinding:
-          kind: USER               # owner is a Keycloak user subject, not an org
-          claim:
-            via: INVITE            # a club creates a stub; the sailor claims it by invite link
-            stub:
-              allowed: true
-              visibleTo: CREATING_ORG   # unclaimed stubs are visible only to the creating club
-              requiredAttributes: [ displayName ]
-        attributes:                # attribute-level visibility for CONSENT entities
-          displayName:  { visibility: PUBLIC }
-          nationality:  { visibility: PUBLIC }
-          sailNumber:   { visibility: PUBLIC }
-          birthYear:    { visibility: CONSENT }
-          email:        { visibility: OWNER_ONLY }
-        identifiers:
-          - [ externalId.worldSailing ]
-
-  # ---------------------------------------------------------------------------
-  # How tenant entities refer to common records. Defined on the attribute in the
-  # tenant entity definition, shown here for illustration only.
-  # ---------------------------------------------------------------------------
-  # entities/Result.yaml (excerpt)
-  #   attributes:
-  #     - name: boat
-  #       type: COMMON_REFERENCE        # stored as (commonOrgKey, id); resolved at the application layer
-  #       target: { common: sailrc-common, entity: Boat }
-  #     - name: helmsman
-  #       type: COMMON_REFERENCE
-  #       target: { common: sailrc-common, entity: Sailor }
-  #
-  # Overlay (local extension) of a common record, stored in the tenant org:
-  #   entities/ClubSailorProfile.yaml
-  #     extends: { common: sailrc-common, entity: Sailor }   # keyed by (commonOrgKey, sailorId)
-  #     attributes: [ membershipStatus, internalNotes ]
+  - code: race-budget
+    name: Race Budget
+    attributes:
+      - { code: race,     valueKind: REFERENCE, formControlType: LOOKUP, linkedEntityType: race }
+      - { code: entryFee, valueKind: NUMBER,    formControlType: NUMBER }
+      - { code: costs,    valueKind: NUMBER,    formControlType: NUMBER }

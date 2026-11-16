@@ -57,6 +57,7 @@
     "version": "Versión",
     "updatedAt": "Actualizado el",
     "releaseState": "Publicación",
+    "sharedFrom": "Compartido desde",
     "_tooltips": {
       "code": "Clave única del tipo de entidad dentro de su organización, usada en las direcciones. Corta, en minúsculas y apta para URL, p. ej. order; evite cambiarla después.",
       "name": "El nombre de entidad con el que las páginas, rutas y menús de la aplicación se refieren a este tipo, p. ej. Order.",
@@ -68,7 +69,8 @@
       "attributes": "Los campos del tipo de entidad, una fila por campo. Se guardan junto con la definición.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema.",
-      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema."
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
+      "sharedFrom": "El común del que procede este tipo. Su organización lo lee, pero solo el común lo publica o lo modifica. Vacío en los tipos propios. Lo establece el sistema."
     }
   },
   "artifact": {
