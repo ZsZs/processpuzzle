@@ -1,7 +1,8 @@
 import { HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BaseEntityRestService } from '@processpuzzle/base-entity';
+import { BaseEntityRestService, PersistedEntity } from '@processpuzzle/base-entity';
 import { definitionRead } from '@processpuzzle/util';
+import { Observable } from 'rxjs';
 import { ChatDefinition } from './chat-definition';
 import { ChatDefinitionMapper } from './chat-definition.mapper';
 
@@ -18,5 +19,13 @@ export class ChatDefinitionService extends BaseEntityRestService<ChatDefinition>
 
   constructor() {
     super(inject(ChatDefinitionMapper), 'CHAT_SERVICE_ROOT', 'chat/definitions');
+  }
+
+  /**
+   * A definition is created by `PUT .../definitions/{key}` — the contract has no collection `POST`, because the
+   * author chooses the key — so a new one is saved the way an edited one is. The key is the entity's `id`.
+   */
+  override add(entity: ChatDefinition): Observable<PersistedEntity<ChatDefinition>> {
+    return this.update({ ...entity, id: entity.id } as PersistedEntity<ChatDefinition>);
   }
 }

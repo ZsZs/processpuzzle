@@ -33,4 +33,15 @@ describe('ChatDefinitionService', () => {
 
     expect(((await found) as PersistedEntity<ChatDefinition>[]).map((definition) => definition.id)).toEqual(['order-discussion']);
   });
+
+  it('creates a definition with a PUT under its key, as the contract has no collection POST', async () => {
+    const created = firstValueFrom(service.add(new ChatDefinition({ id: 'order-crew', name: 'Crew', subjectDefinition: 'order' })));
+
+    const request = controller.expectOne('https://localhost:8080/organizations/acme/chat/definitions/order-crew');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toMatchObject({ key: 'order-crew', name: 'Crew' });
+    request.flush({ key: 'order-crew', name: 'Crew', subjectType: 'ENTITY', subjectDefinition: 'order', version: 0 });
+
+    expect((await created).id).toBe('order-crew');
+  });
 });
