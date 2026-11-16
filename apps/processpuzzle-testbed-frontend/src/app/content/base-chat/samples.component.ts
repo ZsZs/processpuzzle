@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { ChatPanelComponent, ChatSubjectType, ChatTopicsComponent } from '@processpuzzle/base-chat';
 import { ChatDefinitionOption, ChatSampleOptions, RecordOption } from './chat-sample-options';
@@ -75,7 +75,7 @@ import { ChatDefinitionOption, ChatSampleOptions, RecordOption } from './chat-sa
     }
   `,
 })
-export class SamplesComponent {
+export class SamplesComponent implements OnInit {
   private readonly options = inject(ChatSampleOptions);
 
   protected readonly subjectId = signal('');
@@ -90,11 +90,18 @@ export class SamplesComponent {
   private recordSerial = 0;
 
   constructor() {
-    void this.options.definitions().then((found) => this.definitions.set(found));
     effect(() => {
       const definition = this.definition();
       untracked(() => void this.loadRecords(definition));
     });
+  }
+
+  ngOnInit(): void {
+    void this.loadDefinitions();
+  }
+
+  private async loadDefinitions(): Promise<void> {
+    this.definitions.set(await this.options.definitions());
   }
 
   protected pickDefinition(key: string): void {

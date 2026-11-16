@@ -58,12 +58,18 @@ export class ChatSampleOptions {
         .filter((record) => typeof record.id === 'string')
         .map((record) => {
           const title = titleAttribute ? record[titleAttribute] : undefined;
-          return { id: record.id as string, label: title === undefined || title === null || title === '' ? undefined : String(title) };
+          return { id: record.id as string, label: typeof title === 'string' || typeof title === 'number' ? titleText(title) : undefined };
         });
     } catch {
       return [];
     }
   }
+}
+
+/** A titled record's title as text; an empty one titles nothing. */
+function titleText(title: string | number): string | undefined {
+  const text = String(title);
+  return text === '' ? undefined : text;
 }
 
 /** What a read answers — a page, a list or one record — as a list. */
