@@ -210,6 +210,7 @@
   "base-chat": {
     "overview_tab_label": "Resumen",
     "samples_tab_label": "Ejemplos",
+    "definitions_tab_label": "Definiciones",
     "samples_desc_1": "El panel de chat muestra la conversación de un registro. Pegue el id de un pedido — está en la dirección de su formulario — y escriba un mensaje; abra esta página en un segundo navegador para verlo llegar en directo.",
     "samples_desc_2": "Si el campo queda vacío, el panel sigue el contexto de trabajo activo, que es como se comporta cuando un diseñador lo coloca en la pantalla de un pedido. La definición de chat decide quién puede leer, escribir e iniciar la conversación.",
     "record_label": "Id del registro",

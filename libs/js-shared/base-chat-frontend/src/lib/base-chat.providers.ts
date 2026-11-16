@@ -1,4 +1,7 @@
-import { Provider } from '@angular/core';
+import type { Provider } from '@angular/core';
+import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
+import { CHAT_DEFINITION_ENTITY_NAME } from './domain/chat-entity-names';
+import { ChatDefinitionFacade } from './feature/definition/chat-definition.facade';
 import { provideChatPanelWidget } from './feature/panel/chat-panel.widget';
 import { provideChatUnreadBadgeWidget } from './feature/unread/chat-unread-badge.widget';
 
@@ -12,3 +15,11 @@ import { provideChatUnreadBadgeWidget } from './feature/unread/chat-unread-badge
 export function provideChatWidgets(): Provider[] {
   return [...provideChatPanelWidget(), ...provideChatUnreadBadgeWidget()];
 }
+
+/** The facade of the chat definitions, to be spread into the application's `providers`. */
+export const BASE_CHAT_FACADE_PROVIDERS: Provider[] = [ChatDefinitionFacade];
+
+/** The same facade keyed by entity name, to be spread into the application's `BASE_ENTITY_FACADE_REGISTRY` value. */
+export const BASE_CHAT_ENTITY_FACADES: BaseEntityFacadeRegistry = {
+  [CHAT_DEFINITION_ENTITY_NAME]: ChatDefinitionFacade,
+};

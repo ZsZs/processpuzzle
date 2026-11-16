@@ -13,7 +13,15 @@ import {
   TRANSLATION_SOURCE_REGISTRY,
 } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
-import { CHAT_IDENTITY, type ChatIdentity, provideChatWidgets, provideChatWorkingContextSubject } from '@processpuzzle/base-chat';
+import {
+  BASE_CHAT_ENTITY_FACADES,
+  BASE_CHAT_FACADE_PROVIDERS,
+  BASE_CHAT_TRANSLATION_SOURCE,
+  CHAT_IDENTITY,
+  type ChatIdentity,
+  provideChatWidgets,
+  provideChatWorkingContextSubject,
+} from '@processpuzzle/base-chat';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
@@ -127,6 +135,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-event: the routable `Event Definition` catalog. base-workflow's start event names it in
       // a FOREIGN_KEY without importing base-event, so this registration is also what fills that picker.
       ...BASE_EVENT_FACADE_PROVIDERS,
+      ...BASE_CHAT_FACADE_PROVIDERS,
       // And for base-calculation: the routable `Calculation Definition`, whose extra tabs edit its source.
       ...BASE_CALCULATION_FACADE_PROVIDERS,
       // And for base-workflow: three routable aggregates — the `Workflow` a tenant authors, the
@@ -216,6 +225,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           ...BASE_WIDGET_ENTITY_FACADES,
           ...BASE_STATE_ENTITY_FACADES,
           ...BASE_EVENT_ENTITY_FACADES,
+          ...BASE_CHAT_ENTITY_FACADES,
           ...BASE_CALCULATION_ENTITY_FACADES,
           ...BASE_WORKFLOW_ENTITY_FACADES,
           ...BASE_AI_ENTITY_FACADES,
@@ -234,6 +244,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
         BASE_DOCUMENT_TRANSLATION_SOURCE,
         BASE_STATE_TRANSLATION_SOURCE,
         BASE_EVENT_TRANSLATION_SOURCE,
+        BASE_CHAT_TRANSLATION_SOURCE,
         BASE_CALCULATION_TRANSLATION_SOURCE,
         BASE_WORKFLOW_TRANSLATION_SOURCE,
         BASE_AI_TRANSLATION_SOURCE,

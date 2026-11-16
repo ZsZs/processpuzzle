@@ -10,9 +10,11 @@ workflow instance — with live delivery and unread counts. The backend half is
 [base-chat-backend](../../java-shared/base-chat-backend/README.md); the design is in
 [docs/chat/base-chat-design-plan.md](../../../docs/chat/base-chat-design-plan.md).
 
-**Status: panel, badge and live stream (phase 4).** The library gives an application a conversation on a record —
-history, a message box, unread counts, live delivery — as two widgets and the services behind them. Authoring chat
-definitions in the designer and the topics list are later phases.
+**Status: panel, badge, live stream and authoring (phases 4 and 5).** The library gives an application a conversation
+on a record — history, a message box, unread counts, live delivery — as two widgets and the services behind them, and
+the `Chat Definition` screens (`BASE_CHAT_ROUTES`, mounted by the designer under `/design/chats`) that decide which
+records get a chat and who may read, write and start it. The host spreads `BASE_CHAT_FACADE_PROVIDERS` into its
+providers and `BASE_CHAT_ENTITY_FACADES` into the `BASE_ENTITY_FACADE_REGISTRY` value. The topics list is a later phase.
 
 ## Using it
 

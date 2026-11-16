@@ -97,5 +97,13 @@
   "release": "Publicación",
   "assistant": "Diseñador IA",
   "assistant_requirement": "Usar el asistente requiere el rol definition-designer. Un administrador de la organización lo crea en Roles de la organización y se lo asigna en Usuarios.",
-  "assistant_toggle": "Asistente de diseño"
+  "assistant_toggle": "Asistente de diseño",
+  "chat": "Chat",
+  "base-chat_card_title": "Diseñador de chat",
+  "base-chat_card_subtitle": "Conversaciones sobre sus registros",
+  "base-chat_card_content": "Decide qué tipos de entidad tienen una conversación, quién puede leer, escribir e iniciar una, y si el estado del registro limita la escritura.",
+  "base-chat_card_content_1": "Un chat por registro, o cualquier número de temas con título",
+  "base-chat_card_content_2": "Restringir la lectura, la escritura y el inicio por rol",
+  "base-chat_card_content_3": "Cerrar la escritura cuando el registro salga de sus estados",
+  "base-chat_card_button": "Definir chats..."
 }

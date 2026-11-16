@@ -210,6 +210,7 @@
   "base-chat": {
     "overview_tab_label": "Übersicht",
     "samples_tab_label": "Beispiele",
+    "definitions_tab_label": "Definitionen",
     "samples_desc_1": "Das Chat-Panel zeigt die Konversation eines Datensatzes. Fügen Sie die ID einer Bestellung ein — sie steht in der Adresse ihres Formulars — und schreiben Sie eine Nachricht; öffnen Sie diese Seite in einem zweiten Browser, um sie live ankommen zu sehen.",
     "samples_desc_2": "Bleibt das Feld leer, folgt das Panel dem aktiven Arbeitskontext — so verhält es sich, wenn ein Designer es auf einer Bestellseite platziert. Die Chat-Definition legt fest, wer die Konversation lesen, beschreiben und starten darf.",
     "record_label": "Datensatz-ID",

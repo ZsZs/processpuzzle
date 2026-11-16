@@ -7,6 +7,7 @@ import { BASE_STARTER_ROUTES } from '@processpuzzle/base-starter';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { BASE_WIDGET_ROUTES } from '@processpuzzle/widgets';
 import { BASE_WORKFLOW_ROUTES } from '@processpuzzle/base-workflow';
+import { BASE_CHAT_ROUTES } from '@processpuzzle/base-chat';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
 import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
@@ -131,6 +132,23 @@ export const DESIGN_SECTIONS: Routes = [
     // No `providers`: the tab bar names its `design` scope on the directive itself, so this route adds
     // nothing to the injectors the tabs' own screens resolve through.
     children: [{ path: '', pathMatch: 'full', redirectTo: 'workflow' }, ...BASE_WORKFLOW_ROUTES, ...BASE_EVENT_ROUTES],
+  },
+  // The Chat section: base-chat's `Chat Definition` branch — which entity types get a conversation, who may read,
+  // write and start one, and whether the subject's state limits writing. Nested under `chats` like States and
+  // Entities, and for the same reasons: `BASE_CHAT_ROUTES` mounts at `chat-definition`, the snake-cased entity
+  // name `BaseFormNavigatorSingletonStore` builds its details URL from, and the sidenav lists the top-level
+  // routes that declare a `design.*` menu title. Componentless, because the section holds one routable entity.
+  // After Workflows, the last of the sections whose definitions it refers to (entities and states); it is
+  // released on its own, after both.
+  //
+  // As for every other feature mounted here, the hosting application has to spread
+  // BASE_CHAT_FACADE_PROVIDERS and BASE_CHAT_ENTITY_FACADES into its own providers. The branch declares its own
+  // transloco scopes, so this route adds none.
+  {
+    path: 'chats',
+    title: 'ProcessPuzzle Design - Chat',
+    data: { icon: 'forum', menuTitle: 'design.chat' },
+    children: [{ path: '', pathMatch: 'full', redirectTo: 'chat-definition' }, ...BASE_CHAT_ROUTES],
   },
   // One section, three tabs — see ApplicationDesignerComponent. Both spreads are unchanged, so the branches
   // keep their own transloco scopes and stay mountable elsewhere (the testbed mounts BASE_APP_ROUTES a second
