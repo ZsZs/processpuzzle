@@ -83,6 +83,12 @@
     </dependency>
 
     <!-- Annotations only, for the com.processpuzzle.chat application module declaration -->
+    <!-- Optional: the host's actuator brings the registry; without one the module reports nothing. -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-api</artifactId>

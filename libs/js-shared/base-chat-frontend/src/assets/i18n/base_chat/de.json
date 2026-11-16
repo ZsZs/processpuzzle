@@ -18,6 +18,7 @@
     "failed": "Nicht gesendet.",
     "failed_forbidden": "Nicht gesendet: Sie dürfen hier nicht schreiben.",
     "failed_conflict": "Nicht gesendet: Die Konversation ist geschlossen.",
+    "failed_rate_limited": "Nicht gesendet: Sie schreiben zu schnell. Versuchen Sie es gleich noch einmal.",
     "retry": "Erneut senden",
     "discard": "Verwerfen",
     "read_only": "Sie können diese Konversation lesen, aber nicht darin schreiben.",

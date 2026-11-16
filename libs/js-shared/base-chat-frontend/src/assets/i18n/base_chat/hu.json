@@ -18,6 +18,7 @@
     "failed": "Nem lett elküldve.",
     "failed_forbidden": "Nem lett elküldve: itt nem írhat.",
     "failed_conflict": "Nem lett elküldve: a beszélgetés lezárult.",
+    "failed_rate_limited": "Nem sikerült elküldeni: túl gyorsan ír. Próbálja újra egy pillanat múlva.",
     "retry": "Újra",
     "discard": "Elvetés",
     "read_only": "Ezt a beszélgetést olvashatja, de nem írhat bele.",

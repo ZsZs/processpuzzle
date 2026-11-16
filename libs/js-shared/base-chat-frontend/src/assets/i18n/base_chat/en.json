@@ -18,6 +18,7 @@
     "failed": "Not sent.",
     "failed_forbidden": "Not sent: you may not post here.",
     "failed_conflict": "Not sent: the conversation is closed.",
+    "failed_rate_limited": "Not sent: you are posting too fast. Try again in a moment.",
     "retry": "Retry",
     "discard": "Discard",
     "read_only": "You can read this conversation but not write in it.",

@@ -387,6 +387,20 @@ or archives them yet.
   can publish the event later and a lifecycle listener can send a stream event.
 - The testbed seeds `order-topics` (MANY) for the Base Chat samples.
 
+### Phase 7 as built (2026-11-16) — rate limit and metrics
+
+- **Rate limit.** `PostRateLimiter`: an in-memory token bucket per user and organization (`base-chat.rate-limit.burst`
+  20, `per-second` 2; a burst of 0 switches it off). It is taken in `PostMessage` after the access decisions and before
+  the conversation is locked, so a caller who may not see the conversation learns nothing from a 429, and a refused
+  post costs no lock. Over the limit the API answers 429 `chat.rate-limited` with `Retry-After`; the panel says so and
+  keeps the message for a retry. A replay takes a token too. Per instance, not a distributed quota.
+- **Metrics.** `ChatMetrics` (Micrometer, optional): `chat.messages.posted`, `chat.messages.rejected{reason}`
+  (`rate_limited`, `not_writable`, `forbidden`) and `chat.stream.connections`, on the testbed's `/actuator/metrics`.
+  No organization or user tag.
+- **Not built, on purpose.** Retention, erasure and moderation delete or rewrite data, and the plan still lists the
+  per-customer retention and erasure rules as open; they wait for that policy. `LISTEN/NOTIFY` and a load test wait for
+  a second backend instance and for stage numbers.
+
 ### Decisions (2026-11-15)
 
 - **D1** No subject-less chats in v1. Every conversation has a subject.

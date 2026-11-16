@@ -18,6 +18,7 @@
     "failed": "No enviado.",
     "failed_forbidden": "No enviado: no puede escribir aquí.",
     "failed_conflict": "No enviado: la conversación está cerrada.",
+    "failed_rate_limited": "No enviado: está escribiendo demasiado rápido. Inténtelo de nuevo en un momento.",
     "retry": "Reintentar",
     "discard": "Descartar",
     "read_only": "Puede leer esta conversación pero no escribir en ella.",

@@ -133,6 +133,7 @@ describe('failureKindOf', () => {
     [404, 'not-found'],
     [409, 'conflict'],
     [400, 'invalid'],
+    [429, 'rate-limited'],
     [500, 'unavailable'],
     [0, 'unavailable'],
   ])('reads %i as %s', (status, kind) => {
