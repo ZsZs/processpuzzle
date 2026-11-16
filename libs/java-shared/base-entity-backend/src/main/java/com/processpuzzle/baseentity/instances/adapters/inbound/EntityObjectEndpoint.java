@@ -38,6 +38,7 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     private final com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase searchUseCase;
     private final com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase updateUseCase;
     private final DeleteEntityInstanceUseCase deleteUseCase;
+    private final com.processpuzzle.baseentity.instances.usecases.inbound.ReinstateEntityInstanceUseCase reinstateUseCase;
     private final com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedCollectionUseCase embeddedUseCase;
     private final EntityObjectMapper mapper;
 
@@ -47,12 +48,13 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
         String entityDefinitionCode,
         String rsql,
         String sort,
+        Boolean includeRetired,
         Integer page,
         Integer size
     ) {
         Sort sortObj = SortParser.parse(sort);
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20, sortObj);
-        return ResponseEntity.ok(mapper.toPage(searchUseCase.search(orgKey, entityDefinitionCode, rsql, pageable)));
+        return ResponseEntity.ok(mapper.toPage(searchUseCase.search(orgKey, entityDefinitionCode, rsql, pageable, Boolean.TRUE.equals(includeRetired))));
     }
 
     @Override
@@ -105,6 +107,11 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     public ResponseEntity<Void> deleteEntity(String orgKey, String entityDefinitionCode, UUID id, Boolean cascade) {
         deleteUseCase.delete(orgKey, entityDefinitionCode, id, Boolean.TRUE.equals(cascade));
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> reinstateEntity(String orgKey, String entityDefinitionCode, UUID id) {
+        return ResponseEntity.ok(mapper.toModel(reinstateUseCase.reinstate(orgKey, entityDefinitionCode, id)));
     }
 
     @Override

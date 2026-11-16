@@ -281,6 +281,14 @@ paths:
           schema:
             type: string
           example: 'createdAt,desc'
+        - name: includeRetired
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: >
+            Lists the retired objects of a shared type too. Honoured for the common's own members only; a member
+            organization never sees retired objects listed.
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -385,7 +393,9 @@ paths:
       summary: Delete an entity instance
       description: >
         Deleting an object that other objects reference via a FOREIGN_KEY attribute
-        value is rejected (409) unless `cascade=true` is passed.
+        value is rejected (409) unless `cascade=true` is passed. An object of a shared type is
+        not deleted but retired (`retiredAt` is set): it still resolves by id, lists leave it out,
+        and `reinstate` takes it back.
       parameters:
         - name: cascade
           in: query
@@ -403,6 +413,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/reinstate:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: reinstateEntity
+      tags: [ Base Entities ]
+      summary: Reinstate a retired object of a shared type
+      description: Lists the object again. An object that is not retired is returned unchanged.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityObject'
+        '403':
+          description: the type is shared and the caller is not a member of its common
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # ── Embedded collections ──
   # One level of an aggregate: the embedded components an entity instance carries in an
@@ -1357,6 +1402,14 @@ components:
         payload:
           type: object
           additionalProperties: true
+        retiredAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Set while the object of a shared type is retired; absent otherwise.
+        retiredBy:
+          type: string
+          readOnly: true
         createdAt:
           type: string
           format: date-time

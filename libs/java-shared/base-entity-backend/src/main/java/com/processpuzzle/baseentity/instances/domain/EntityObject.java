@@ -55,6 +55,17 @@ public class EntityObject extends Auditable {
     @jakarta.persistence.Version
     private Long version;
 
+    /** When the object was retired — a shared type's way of being deleted; it still resolves by id, but is left out of lists. */
+    @Column(name = "retired_at")
+    private java.time.Instant retiredAt;
+
+    @Column(name = "retired_by")
+    private String retiredBy;
+
+    public boolean isRetired() {
+        return retiredAt != null;
+    }
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     @Builder.Default

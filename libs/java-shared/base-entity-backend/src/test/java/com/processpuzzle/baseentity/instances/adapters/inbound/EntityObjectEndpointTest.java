@@ -62,6 +62,8 @@ class EntityObjectEndpointTest {
     @Mock
     private SearchEntityInstancesUseCase searchUseCase;
     @Mock
+    private com.processpuzzle.baseentity.instances.usecases.inbound.ReinstateEntityInstanceUseCase reinstateUseCase;
+    @Mock
     private EmbeddedCollectionUseCase embeddedUseCase;
 
     private final EntityObjectMapper mapper = new EntityObjectMapper();
@@ -77,6 +79,7 @@ class EntityObjectEndpointTest {
                 searchUseCase,
                 updateUseCase,
                 deleteUseCase,
+                reinstateUseCase,
                 embeddedUseCase,
                 mapper
         );
@@ -205,7 +208,7 @@ class EntityObjectEndpointTest {
                 .build();
         Page<EntityObject> page = new PageImpl<>(List.of(entity));
 
-        when(searchUseCase.search(eq("test-org"), eq("partner"), eq("name==ACME"), any(Pageable.class)))
+        when(searchUseCase.search(eq("test-org"), eq("partner"), eq("name==ACME"), any(Pageable.class), eq(false)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/organizations/test-org/entities/{entityDefinitionCode}", "partner")

@@ -46,6 +46,13 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
     }
 
     @Override
+    public boolean isShared(String orgKey, String code) {
+        return entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, Channel.RELEASED)
+            .map(BaseEntityDefinition::isShared)
+            .orElseGet(() -> sharedDefinition(orgKey, code).isPresent());
+    }
+
+    @Override
     public Optional<String> sharedFrom(String orgKey, String code) {
         if (entityDefinitionRepository.existsByOrgKeyAndCodeAndChannel(orgKey, code, Channel.RELEASED)) {
             return Optional.empty();

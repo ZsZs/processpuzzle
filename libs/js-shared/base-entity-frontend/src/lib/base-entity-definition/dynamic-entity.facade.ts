@@ -72,6 +72,11 @@ export class DynamicEntityFacade extends BaseEntityFacade<DynamicEntity> {
   }
 
   protected override createDescriptor(): BaseEntityDescriptor {
+    // Deleting a record of a type the common shares retires it; Reinstate is how it comes back.
+    if (this.definition.sharing && this.service instanceof DynamicEntityService) {
+      const service = this.service;
+      this.synthesizedDescriptor.reinstate = (id) => service.reinstate(id);
+    }
     return this.synthesizedDescriptor;
   }
 }

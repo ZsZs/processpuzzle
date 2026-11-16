@@ -135,6 +135,17 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     await this.navigateBack();
   }
 
+  /** Whether the row shown is a retired record of a shared type; it can be reinstated where the entity offers it. */
+  isRetired = computed(() => !this.isNewObject() && !!Reflect.get(this.entity() as object, 'retiredAt'));
+  canReinstate = computed(() => this.isRetired() && !this.entityReadOnly() && !!this.entityDescriptor().reinstate);
+
+  async onReinstate() {
+    const reinstate = this.entityDescriptor().reinstate;
+    if (!reinstate || !this.canReinstate()) return;
+    await firstValueFrom(reinstate(this.entityId()));
+    await this.store().reload(this.entityId());
+  }
+
   async onDelete() {
     if (this.isReadOnly()) return;
     this.leaveWithoutAsking = true;

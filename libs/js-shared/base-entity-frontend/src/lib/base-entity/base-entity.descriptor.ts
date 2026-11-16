@@ -1,6 +1,7 @@
 import type { BaseEntity } from './base-entity';
 import type { TemplateRef, Type } from '@angular/core';
 import type { Route, Routes } from '@angular/router';
+import type { Observable } from 'rxjs';
 import { FormControlType, type AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import type { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
@@ -119,6 +120,11 @@ export interface BaseEntityDescriptorOptions {
 
 export class BaseEntityDescriptor {
   store: unknown;
+  /**
+   * Takes a retired row back, when this entity has retired rows (a shared type's deleted records). Assigned by the
+   * facade that knows the repository, like {@link store}; the form offers Reinstate on a retired row only if it is set.
+   */
+  reinstate?: (id: string) => Observable<unknown>;
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle: EntityTitle;

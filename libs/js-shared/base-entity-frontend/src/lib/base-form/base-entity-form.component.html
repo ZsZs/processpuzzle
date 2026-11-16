@@ -8,6 +8,9 @@
     <form [formGroup]="baseEntityForm" (ngSubmit)="onSubmit()" (focusout)="onFieldBlur()">
       <ng-template baseFormHost></ng-template>
     </form>
+    @if (isRetired()) {
+      <p class="retired-notice" data-testid="retired-notice"><mat-icon>archive</mat-icon> This record is retired: it is left out of lists and pickers, and can no longer be changed.</p>
+    }
     @if (violations().length > 0) {
       <ul class="rule-violations" data-testid="rule-violations">
         @for (violation of violations(); track violation.ruleId) {
@@ -22,6 +25,9 @@
   <mat-card-actions>
     <button id="cancel" [attr.data-testid]="entityDescriptor().createTestId('cancel')" mat-raised-button color="secondary" (click)="onCancel()">Cancel</button>
     <button id="delete" [attr.data-testid]="entityDescriptor().createTestId('delete')" mat-raised-button color="primary" type="button" [disabled]="isNewObject() || isAbstract() || entityReadOnly() || !rowDeletable()" (click)="onDelete()">Delete</button>
+    @if (canReinstate()) {
+      <button id="reinstate" [attr.data-testid]="entityDescriptor().createTestId('reinstate')" mat-raised-button color="primary" type="button" (click)="onReinstate()">Reinstate</button>
+    }
     @if (entityDescriptor().extraFormActionsTemplate?.(); as extraTpl) {
       <ng-container [ngTemplateOutlet]="extraTpl"></ng-container>
     }

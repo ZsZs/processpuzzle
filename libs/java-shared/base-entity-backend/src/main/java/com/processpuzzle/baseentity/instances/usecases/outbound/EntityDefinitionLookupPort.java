@@ -23,6 +23,11 @@ public interface EntityDefinitionLookupPort {
      * definition of that code is a shared type, when {@code orgKey} is a member of it and defines no type of that
      * code itself. Its objects are stored under that key, and {@link #findByCode} answers its definition.
      */
+    /** Whether the type {@code code} is a shared type as {@code orgKey} sees it: its own, when it is a common, or its common's. */
+    default boolean isShared(String orgKey, String code) {
+        return sharedFrom(orgKey, code).isPresent();
+    }
+
     default Optional<String> sharedFrom(String orgKey, String code) {
         return Optional.empty();
     }

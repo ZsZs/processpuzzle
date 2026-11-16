@@ -250,6 +250,8 @@ export class EntityDefinition implements BaseEntity {
 export interface DynamicEntity {
   id?: string;
   version?: number;
+  /** When the record of a shared type was retired — it still resolves, but lists leave it out. */
+  retiredAt?: string;
   [attrName: string]: unknown;
 }
 
