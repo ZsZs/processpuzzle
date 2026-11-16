@@ -88,14 +88,15 @@ defineEntityCrudSuite({
       reason: "'state' is only meaningful with action STATE_CHANGED",
     },
     {
-      // The generator picks the first entity type for Subject Definition, and the first Lifecycle, AUTO_CREATE,
-      // then moves on to STATE_BOUND on the update — which needs writable states of the subject's own state
-      // machine, where the generator writes prose. Pinned on both steps to a seeded entity type and the lifecycle
-      // that carries no states. The key's pattern comes from the descriptor.
+      // The generator picks the first entity type for Subject Definition and the first Lifecycle, AUTO_CREATE, then
+      // moves on to the next on the update. Writable states are kept only for STATE_BOUND — the mapper drops them
+      // otherwise — so the generated chips would not survive a save under any other lifecycle. Pinned on both steps
+      // to a seeded entity type and STATE_BOUND. Saving does not check the states against the entity's machine; the
+      // release does (ChatDefinitionReleaseParticipant). The key's pattern comes from the descriptor.
       entityName: 'Chat Definition',
-      create: { subjectDefinition: 'order', lifecycle: 'ON_DEMAND' },
-      update: { subjectDefinition: 'order', lifecycle: 'ON_DEMAND' },
-      reason: 'a chat definition names a real entity type, and STATE_BOUND names real states of its machine',
+      create: { subjectDefinition: 'order', lifecycle: 'STATE_BOUND' },
+      update: { subjectDefinition: 'order', lifecycle: 'STATE_BOUND' },
+      reason: 'a chat definition names a real entity type, and only a STATE_BOUND one keeps the writable states the generator fills',
     },
   ],
 });
