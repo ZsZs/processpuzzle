@@ -34,14 +34,14 @@ class CalculationAdaptersTest {
 
     @Test
     void readsObjectsAndTreatsAnUnknownOrMalformedIdAsAbsent() {
-        when(access.find("org", "order", id)).thenReturn(new EntityObjectView(id, 2, Map.of("total", 1)));
+        when(access.findIfPresent("org", "order", id)).thenReturn(Optional.of(new EntityObjectView(id, 2, Map.of("total", 1))));
         assertThat(adapter.find("org", "order", id.toString())).hasValueSatisfying(record -> {
             assertThat(record.id()).isEqualTo(id.toString());
             assertThat(record.version()).isEqualTo(2);
         });
 
         UUID missing = UUID.randomUUID();
-        when(access.find("org", "order", missing)).thenThrow(new EntityObjectAccessException.NotFound("order", missing));
+        when(access.findIfPresent("org", "order", missing)).thenReturn(Optional.empty());
         assertThat(adapter.find("org", "order", missing.toString())).isEmpty();
         assertThat(adapter.find("org", "order", "not-a-uuid")).isEmpty();
     }
