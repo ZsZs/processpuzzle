@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ChatPanelComponent } from '@processpuzzle/base-chat';
+import { ChatPanelComponent, ChatTopicsComponent } from '@processpuzzle/base-chat';
 
 /**
  * The `chat-panel` on a record the visitor names: paste the id of an order — from the address of its form — and talk
@@ -10,7 +10,7 @@ import { ChatPanelComponent } from '@processpuzzle/base-chat';
 @Component({
   selector: 'base-chat-samples',
   standalone: true,
-  imports: [TranslocoDirective, ChatPanelComponent],
+  imports: [TranslocoDirective, ChatPanelComponent, ChatTopicsComponent],
   template: `
     <ng-container *transloco="let t; prefix: 'base-chat'">
       <section class="samples">
@@ -27,6 +27,9 @@ import { ChatPanelComponent } from '@processpuzzle/base-chat';
           </label>
         </div>
         <pp-chat-panel class="panel" [subjectId]="subjectId() || undefined" [definitionKey]="definitionKey() || undefined" />
+        <h3>{{ t('topics_heading') }}</h3>
+        <p>{{ t('topics_desc') }}</p>
+        <pp-chat-topics class="panel" [subjectId]="subjectId() || undefined" definitionKey="order-topics" />
       </section>
     </ng-container>
   `,

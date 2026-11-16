@@ -28,6 +28,7 @@
   },
   "widgets": {
     "chat_panel": "Chat-Bereich",
+    "chat_topics": "Chat-Themen",
     "unread_badge": "Ungelesene Chat-Nachrichten"
   },
   "chat_definition": {
@@ -62,5 +63,22 @@
       "retentionDays": "How long messages are kept after the conversation closes. Empty: for ever.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
     }
+  },
+  "topics": {
+    "title": "Themen",
+    "no_subject": "Wählen Sie ein Element, um seine Themen zu sehen.",
+    "loading": "Die Themen werden geladen…",
+    "error": "Die Themen konnten nicht geladen werden.",
+    "reload": "Erneut versuchen",
+    "empty": "Noch keine Themen.",
+    "new_label": "Neues Thema",
+    "new_placeholder": "Titel des Themas",
+    "create": "Thema beginnen",
+    "creating": "Wird begonnen…",
+    "create_failed": "Das Thema konnte nicht begonnen werden.",
+    "create_forbidden": "Sie dürfen hier kein Thema beginnen.",
+    "select": "Thema öffnen",
+    "unread": "ungelesen",
+    "closed": "geschlossen"
   }
 }

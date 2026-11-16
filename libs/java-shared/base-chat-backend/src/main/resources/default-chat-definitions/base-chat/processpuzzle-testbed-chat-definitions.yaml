@@ -8,3 +8,10 @@ chat-definitions:
     subjectDefinition: order
     multiplicity: SINGLE
     lifecycle: ON_DEMAND
+  - key: order-topics
+    name: Order topics
+    description: Any number of titled topics per order, started by anyone who works on it.
+    subjectType: ENTITY
+    subjectDefinition: order
+    multiplicity: MANY
+    lifecycle: ON_DEMAND

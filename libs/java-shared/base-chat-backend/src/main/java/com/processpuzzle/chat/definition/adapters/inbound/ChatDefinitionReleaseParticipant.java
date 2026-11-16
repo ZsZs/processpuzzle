@@ -3,6 +3,7 @@ package com.processpuzzle.chat.definition.adapters.inbound;
 import com.processpuzzle.chat.definition.domain.ChatDefinition;
 import com.processpuzzle.chat.definition.domain.ChatDefinitionRepository;
 import com.processpuzzle.chat.definition.domain.ChatLifecycle;
+import com.processpuzzle.chat.definition.domain.SubjectType;
 import com.processpuzzle.chat.definition.usecases.outbound.PermitAllSubjectStatesPort;
 import com.processpuzzle.chat.definition.usecases.outbound.SubjectStates;
 import com.processpuzzle.chat.definition.usecases.outbound.SubjectStatesPort;
@@ -87,7 +88,7 @@ public class ChatDefinitionReleaseParticipant implements ReleaseParticipant {
     @Transactional(readOnly = true)
     public List<DefinitionReference> references(String orgKey) {
         return byKey(orgKey, Channel.DRAFT).values().stream()
-                .map(definition -> DefinitionReference.required(kind(), definition.getDefinitionKey(), DefinitionKinds.ENTITY, definition.getSubjectDefinition()))
+                .map(definition -> DefinitionReference.required(kind(), definition.getDefinitionKey(), referencedKind(definition), definition.getSubjectDefinition()))
                 .toList();
     }
 
@@ -96,13 +97,19 @@ public class ChatDefinitionReleaseParticipant implements ReleaseParticipant {
     public List<ReleaseProblem> check(String orgKey, ReleaseCandidate candidate) {
         List<ReleaseProblem> problems = new ArrayList<>();
         for (ChatDefinition definition : byKey(orgKey, Channel.DRAFT).values()) {
-            // A missing entity is the reference's error already; asking about its states as well would only repeat it.
-            boolean entityMissing = candidate.manages(DefinitionKinds.ENTITY) && !candidate.exists(DefinitionKinds.ENTITY, definition.getSubjectDefinition());
+            // A missing subject definition is the reference's error already; asking about its states as well would only repeat it.
+            String referenced = referencedKind(definition);
+            boolean entityMissing = candidate.manages(referenced) && !candidate.exists(referenced, definition.getSubjectDefinition());
             if (definition.getLifecycle() == ChatLifecycle.STATE_BOUND && !entityMissing) {
                 problems.addAll(checkWritableStates(orgKey, definition));
             }
         }
         return problems;
+    }
+
+    /** The kind of definition a chat's subject type names: an entity for records, a workflow for its instances. */
+    private static String referencedKind(ChatDefinition definition) {
+        return definition.getSubjectType() == SubjectType.WORKFLOW_INSTANCE ? DefinitionKinds.WORKFLOW : DefinitionKinds.ENTITY;
     }
 
     private List<ReleaseProblem> checkWritableStates(String orgKey, ChatDefinition definition) {

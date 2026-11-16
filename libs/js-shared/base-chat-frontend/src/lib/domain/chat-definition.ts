@@ -1,9 +1,10 @@
 import type { ReleaseState } from '@processpuzzle/util';
 import { BaseEntity } from '@processpuzzle/base-entity';
 
-/** What a chat is about; `ENTITY` is the only kind there is. */
+/** What a chat is about: a record of an entity type, or a run of a workflow. */
 export enum ChatSubjectKind {
   ENTITY = 'ENTITY',
+  WORKFLOW_INSTANCE = 'WORKFLOW_INSTANCE',
 }
 
 /** One chat per subject, or any number of titled topics. */
@@ -35,7 +36,7 @@ export class ChatDefinition implements BaseEntity {
   name: string;
   description?: string;
   subjectType: ChatSubjectKind;
-  /** The entity definition code whose records get the chat, e.g. `order`. */
+  /** The entity definition code whose records get the chat, e.g. `order`; the workflow's id for `WORKFLOW_INSTANCE`. */
   subjectDefinition: string;
   multiplicity: ChatMultiplicity;
   lifecycle: ChatLifecycleKind;

@@ -367,6 +367,26 @@ Chat definitions are authored, released and imported like every other definition
 Not done: the existing conversations of a deleted or un-released definition are kept but unreachable; nothing lists
 or archives them yet.
 
+### Phase 6 as built (2026-11-16)
+
+- **Topics.** `pp-chat-topics` (widget `chat-topics`) lists the titled conversations of a record's `MANY` chat with
+  their live unread counts and a "closed" mark where the user cannot write, starts a new topic from a title, and shows
+  the selected topic in a `pp-chat-panel`, which gained a `conversationId` input for that. Who may start a topic is the
+  definition's create roles, which only the server knows, so the form is offered to everyone and a 403 is said in
+  words (as "Start a chat" does). Topics started by others appear after a reload.
+- **Workflow instances.** `SubjectType.WORKFLOW_INSTANCE`: `subjectDefinition` is the workflow's id, `subjectId` the
+  instance's. base-workflow publishes `workflow :: access` (`WorkflowInstanceAccess`: existence by workflow and
+  status), and the testbed's `ChatSubjectAdapter` / `ChatSubjectStatesAdapter` answer from it, so the chat module
+  still names no other feature. A chat's state is the instance's status (ACTIVE, SUSPENDED, COMPLETED, CANCELLED); a
+  `STATE_BOUND` chat with `writableStates: [ACTIVE]` therefore turns read-only when the instance completes (D5).
+  The release participant requires the *workflow* definition for such a chat and checks its writable states against
+  the statuses. The panel and topics widgets take a `subjectType` input.
+- **Deviation from the plan: no `PlatformEvent` on completion.** Access is computed from the subject's state at read
+  and write time, so nothing needs to be told when an instance completes. What is lost is a *push*: a panel that is
+  open on a conversation keeps its composer until the next load or a refused post. If that matters, base-workflow
+  can publish the event later and a lifecycle listener can send a stream event.
+- The testbed seeds `order-topics` (MANY) for the Base Chat samples.
+
 ### Decisions (2026-11-15)
 
 - **D1** No subject-less chats in v1. Every conversation has a subject.

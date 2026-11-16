@@ -211,6 +211,21 @@ describe('ChatStore', () => {
 
   // region opening and history
   describe('opening a conversation', () => {
+    it('lists every conversation of a subject, oldest first, without loading their messages', async () => {
+      s.chat.findConversations.mockResolvedValue([
+        conversation({ id: 'c-1', title: 'Protest A', following: true, lastSeq: 4, lastReadSeq: 1 }),
+        conversation({ id: 'c-2', title: 'Protest B' }),
+      ]);
+
+      const ids = await s.store.listForSubject(SUBJECT, 'race-protests');
+
+      expect(ids).toEqual(['c-1', 'c-2']);
+      expect(s.chat.findConversations).toHaveBeenCalledWith(SUBJECT, 'race-protests');
+      expect(s.chat.listMessages).not.toHaveBeenCalled();
+      expect(s.store.viewOf('c-1')?.conversation.title).toBe('Protest A');
+      expect(s.store.unread('c-1')).toBe(3);
+    });
+
     it('answers nothing for a subject that has none the user may read', async () => {
       expect(await s.store.openForSubject(SUBJECT)).toBeUndefined();
     });

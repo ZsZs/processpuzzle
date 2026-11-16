@@ -138,7 +138,7 @@ paths:
           required: false
           schema:
             type: string
-          description: The entity definition code, for subjectType ENTITY.
+          description: The entity definition code for subjectType ENTITY, the workflow definition id for WORKFLOW_INSTANCE.
         - name: definition
           in: query
           required: false
@@ -455,8 +455,10 @@ components:
   schemas:
     ChatSubjectType:
       type: string
-      enum: [ ENTITY ]
-      description: What kind of object a conversation is about. ENTITY is an instance of a base-entity definition.
+      enum: [ ENTITY, WORKFLOW_INSTANCE ]
+      description: >-
+        What kind of object a conversation is about. ENTITY is an instance of a base-entity definition;
+        WORKFLOW_INSTANCE is a run of a workflow definition.
 
     ChatMultiplicity:
       type: string
@@ -502,7 +504,7 @@ components:
           $ref: "#/components/schemas/ChatSubjectType"
         subjectDefinition:
           type: string
-          description: For ENTITY, the definition code of the entity whose instances get this chat.
+          description: The definition code of the entity whose instances get this chat (ENTITY), or the id of the workflow whose instances do (WORKFLOW_INSTANCE).
           example: order
         multiplicity:
           $ref: "#/components/schemas/ChatMultiplicity"
