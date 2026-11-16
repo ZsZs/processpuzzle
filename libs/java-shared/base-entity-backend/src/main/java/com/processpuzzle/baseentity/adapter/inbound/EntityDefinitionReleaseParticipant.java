@@ -14,6 +14,7 @@ import com.processpuzzle.core.definition.ProblemResolution;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.definition.ReleaseProblem;
+import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 /**
@@ -54,13 +56,16 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
     private final EntityDefinitionRepository repository;
     private final EntityInstanceDataPort instances;
     private final EntityDefinitionFingerprint fingerprint;
+    private final ObjectProvider<DataSpaceDirectory> dataSpaces;
 
     public EntityDefinitionReleaseParticipant(EntityDefinitionRepository repository,
                                               EntityInstanceDataPort instances,
-                                              EntityDefinitionFingerprint fingerprint) {
+                                              EntityDefinitionFingerprint fingerprint,
+                                              ObjectProvider<DataSpaceDirectory> dataSpaces) {
         this.repository = repository;
         this.instances = instances;
         this.fingerprint = fingerprint;
+        this.dataSpaces = dataSpaces;
     }
 
     @Override
@@ -87,11 +92,32 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
         Set<String> keys = new TreeSet<>();
         for (BaseEntityDefinition draft : byCode(orgKey, Channel.DRAFT).values()) {
             keys.add(draft.getCode());
-            if (draft.getName() != null && !draft.getName().isBlank()) {
-                keys.add(draft.getName());
-            }
+            addNames(keys, draft);
         }
+        sharedTypesOfCommon(orgKey).forEach(shared -> addNames(keys, shared));
         return keys;
+    }
+
+    private static void addNames(Set<String> keys, BaseEntityDefinition definition) {
+        keys.add(definition.getCode());
+        if (definition.getName() != null && !definition.getName().isBlank()) {
+            keys.add(definition.getName());
+        }
+    }
+
+    /**
+     * The types the organization's common shares, as released: the organization may refer to them but does not release
+     * them, so they are referable without being among its {@linkplain #drafts drafts}.
+     */
+    private List<BaseEntityDefinition> sharedTypesOfCommon(String orgKey) {
+        DataSpaceDirectory directory = dataSpaces.getIfAvailable();
+        if (directory == null) {
+            return List.of();
+        }
+        return directory.commonOf(orgKey)
+            .map(common -> repository.findAllByOrgKeyAndChannel(common, Channel.RELEASED).stream()
+                .filter(BaseEntityDefinition::isShared).toList())
+            .orElse(List.of());
     }
 
     @Override

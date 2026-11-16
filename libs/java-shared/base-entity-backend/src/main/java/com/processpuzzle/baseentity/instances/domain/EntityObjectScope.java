@@ -92,9 +92,11 @@ public class EntityObjectScope {
      * made from the old payload fails on the optimistic lock instead of undoing the rewrite. Not validated and
      * publishes no event: the release checks the result, and a migration is not a business event.
      *
+     * @throws ForbiddenException for a shared type: a member's release never rewrites the common's objects
      * @return how many objects were written
      */
     public long rewriteAll(String orgKey, String entityDefinitionCode, UnaryOperator<Map<String, Object>> rewrite) {
+        requireWritable(orgKey, entityDefinitionCode);
         long written = 0;
         for (EntityObject object : findAll(orgKey, entityDefinitionCode)) {
             Map<String, Object> rewritten = rewrite.apply(new LinkedHashMap<>(object.getPayload()));
