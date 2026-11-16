@@ -115,6 +115,8 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
     // exception thrown while the router is building children.
     isEmbedded: definition.isEmbedded === true && componentParents.length > 0,
     canContextObject: definition.canContextObject === true && definition.isEmbedded !== true,
+    // A type the organization's common shares: its objects are the common's, read here and never written.
+    isReadOnly: !!definition.sharedFrom,
   });
 }
 

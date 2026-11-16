@@ -196,47 +196,72 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
         before.forEach((attributeCode, old) -> {
             BaseEntityAttribute changed = after.get(attributeCode);
             if (changed == null) {
-                long holding = count(payloads, attributeCode, value -> !StoredValues.isBlank(value));
-                if (holding > 0) {
-                    problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeRemoved",
-                            "'%s.%s' is removed; the values %d object(s) hold for it stay stored but are no longer shown."
-                                .formatted(code, attributeCode, holding))
-                        .about(attributeCode, holding)
-                        .resolvableBy(renames(code, old, before, after)));
-                }
+                removedAttribute(code, old, before, after, payloads, problems);
             } else if (old.getValueKind() != changed.getValueKind() || old.isMultiValued() != changed.isMultiValued()) {
-                long misfits = count(payloads, attributeCode, value -> !StoredValues.isBlank(value)
-                    && !StoredValues.fits(value, changed.getValueKind(), changed.isMultiValued()));
-                if (misfits > 0) {
-                    problems.add(ReleaseProblem.error(kind(), code, "entity.release.attributeTypeChanged",
-                            "'%s.%s' changes its type, but %d object(s) hold values that do not fit the new one."
-                                .formatted(code, attributeCode, misfits))
-                        .about(attributeCode, misfits));
-                }
+                retypedAttribute(code, changed, payloads, problems);
             } else if (!old.isRequired() && changed.isRequired() && changed.getDefaultValue() == null) {
-                long empty = count(payloads, attributeCode, StoredValues::isBlank);
-                if (empty > 0) {
-                    problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeNowRequired",
-                            "'%s.%s' becomes required; %d object(s) without a value cannot be saved until they get one."
-                                .formatted(code, attributeCode, empty))
-                        .about(attributeCode, empty)
-                        .resolvableBy(fill(code, changed)));
-                }
+                nowRequiredAttribute(code, changed, payloads, problems);
             }
         });
         after.forEach((attributeCode, added) -> {
             if (!before.containsKey(attributeCode) && added.isRequired() && added.getDefaultValue() == null) {
-                long empty = count(payloads, attributeCode, StoredValues::isBlank);
-                if (empty > 0) {
-                    problems.add(ReleaseProblem.error(kind(), code, "entity.release.requiredWithoutDefault",
-                            "'%s.%s' is required and has no default, but %d object(s) have no value for it."
-                                .formatted(code, attributeCode, empty))
-                        .about(attributeCode, empty)
-                        .resolvableBy(fill(code, added)));
-                }
+                addedRequiredAttribute(code, added, payloads, problems);
             }
         });
         return problems;
+    }
+
+    private void removedAttribute(String code, BaseEntityAttribute old, Map<String, BaseEntityAttribute> before,
+                                  Map<String, BaseEntityAttribute> after, List<Map<String, Object>> payloads,
+                                  List<ReleaseProblem> problems) {
+        String attributeCode = old.getCode();
+        long holding = count(payloads, attributeCode, value -> !StoredValues.isBlank(value));
+        if (holding > 0) {
+            problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeRemoved",
+                    "'%s.%s' is removed; the values %d object(s) hold for it stay stored but are no longer shown."
+                        .formatted(code, attributeCode, holding))
+                .about(attributeCode, holding)
+                .resolvableBy(renames(code, old, before, after)));
+        }
+    }
+
+    private void retypedAttribute(String code, BaseEntityAttribute changed, List<Map<String, Object>> payloads,
+                                  List<ReleaseProblem> problems) {
+        String attributeCode = changed.getCode();
+        long misfits = count(payloads, attributeCode, value -> !StoredValues.isBlank(value)
+            && !StoredValues.fits(value, changed.getValueKind(), changed.isMultiValued()));
+        if (misfits > 0) {
+            problems.add(ReleaseProblem.error(kind(), code, "entity.release.attributeTypeChanged",
+                    "'%s.%s' changes its type, but %d object(s) hold values that do not fit the new one."
+                        .formatted(code, attributeCode, misfits))
+                .about(attributeCode, misfits));
+        }
+    }
+
+    private void nowRequiredAttribute(String code, BaseEntityAttribute changed, List<Map<String, Object>> payloads,
+                                      List<ReleaseProblem> problems) {
+        String attributeCode = changed.getCode();
+        long empty = count(payloads, attributeCode, StoredValues::isBlank);
+        if (empty > 0) {
+            problems.add(ReleaseProblem.warning(kind(), code, "entity.release.attributeNowRequired",
+                    "'%s.%s' becomes required; %d object(s) without a value cannot be saved until they get one."
+                        .formatted(code, attributeCode, empty))
+                .about(attributeCode, empty)
+                .resolvableBy(fill(code, changed)));
+        }
+    }
+
+    private void addedRequiredAttribute(String code, BaseEntityAttribute added, List<Map<String, Object>> payloads,
+                                        List<ReleaseProblem> problems) {
+        String attributeCode = added.getCode();
+        long empty = count(payloads, attributeCode, StoredValues::isBlank);
+        if (empty > 0) {
+            problems.add(ReleaseProblem.error(kind(), code, "entity.release.requiredWithoutDefault",
+                    "'%s.%s' is required and has no default, but %d object(s) have no value for it."
+                        .formatted(code, attributeCode, empty))
+                .about(attributeCode, empty)
+                .resolvableBy(fill(code, added)));
+        }
     }
 
     /**

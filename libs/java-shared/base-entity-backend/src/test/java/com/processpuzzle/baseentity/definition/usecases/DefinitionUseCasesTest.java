@@ -82,8 +82,8 @@ class DefinitionUseCasesTest {
         createUseCase = new CreateEntityDefinitionUseCase(repository, validator, sharing);
         replaceUseCase = new ReplaceEntityDefinitionUseCase(repository, validator, sharing);
         deleteUseCase = new DeleteEntityDefinitionUseCase(repository, existenceCheckPort);
-        findAllUseCase = new FindAllEntityDefinitionsUseCase(repository);
-        findByCodeUseCase = new FindEntityDefinitionByCodeUseCase(repository);
+        findAllUseCase = new FindAllEntityDefinitionsUseCase(repository, noDataSpaces);
+        findByCodeUseCase = new FindEntityDefinitionByCodeUseCase(repository, noDataSpaces);
         addAttributeUseCase = new AddAttributeUseCase(repository, validator);
         replaceAttributeUseCase = new ReplaceAttributeUseCase(repository, validator);
         deleteAttributeUseCase = new DeleteAttributeUseCase(repository);

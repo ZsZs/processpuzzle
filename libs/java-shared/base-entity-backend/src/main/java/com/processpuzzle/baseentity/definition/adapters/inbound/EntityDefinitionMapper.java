@@ -137,6 +137,28 @@ public class EntityDefinitionMapper {
         return model;
     }
 
+    /** The model as {@code requestOrgKey} sees it: a type of another organization (its common) is marked {@code sharedFrom}. */
+    public com.processpuzzle.baseentity.model.BaseEntityDefinition toModel(BaseEntityDefinition definition, String requestOrgKey) {
+        com.processpuzzle.baseentity.model.BaseEntityDefinition model = toModel(definition);
+        if (model != null && definition.getOrgKey() != null && !definition.getOrgKey().equals(requestOrgKey)) {
+            model.setSharedFrom(definition.getOrgKey());
+        }
+        return model;
+    }
+
+    public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page, String requestOrgKey) {
+        List<Object> content = page.getContent().stream()
+            .map(definition -> toModel(definition, requestOrgKey))
+            .map(Object.class::cast)
+            .toList();
+        return new Page()
+            .content(content)
+            .page(page.getNumber())
+            .size(page.getSize())
+            .totalElements((int) page.getTotalElements())
+            .totalPages(page.getTotalPages());
+    }
+
     public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page) {
         List<Object> content = page.getContent().stream()
             .map(this::toModel)

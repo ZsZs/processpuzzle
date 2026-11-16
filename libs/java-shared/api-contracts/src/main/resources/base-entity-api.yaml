@@ -1295,6 +1295,13 @@ components:
               allOf:
                 - $ref: '#/components/schemas/ReleaseState'
               readOnly: true
+            sharedFrom:
+              type: string
+              readOnly: true
+              description: >
+                Set on a type the organization reads but does not own: the key of the common that
+                shares it. Such a type is released, read-only, and cannot be changed or deleted from
+                here.
 
     BaseEntityDefinitionPage:
       $ref: '#/components/schemas/Page'
