@@ -43,6 +43,18 @@ describe('DynamicEntityRegistry', () => {
     expect(resolved?.descriptor.store).toBe(resolved?.facade.store);
   });
 
+  /** Deleting a record of a shared type retires it, so only such a type's screens get the way back. */
+  it('wires Reinstate into the descriptor of a type its common shares, and of no other', async () => {
+    const shared = new EntityDefinition({ ...ORDER_DEFINITION, sharing: { write: 'COMMON_ADMIN', visibility: 'PUBLIC' } });
+
+    const sharedResolved = await resolve('Order', [ORDER_LINE_DEFINITION, shared]);
+    expect(sharedResolved?.descriptor.reinstate).toBeTypeOf('function');
+
+    registry.reset();
+    const plain = await resolve('Order');
+    expect(plain?.descriptor.reinstate).toBeUndefined();
+  });
+
   it('gives the store the definition defaults, so a new-row form opens with the authored values', async () => {
     const resolved = await resolve('Order');
     const store = resolved?.facade.store as { createEntity(): Record<string, unknown> };

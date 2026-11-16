@@ -136,7 +136,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   }
 
   /** Whether the row shown is a retired record of a shared type; it can be reinstated where the entity offers it. */
-  isRetired = computed(() => !this.isNewObject() && !!Reflect.get(this.entity() as object, 'retiredAt'));
+  isRetired = computed(() => !this.isNewObject() && !!(this.entity() as { retiredAt?: string } | undefined)?.retiredAt);
   canReinstate = computed(() => this.isRetired() && !this.entityReadOnly() && !!this.entityDescriptor().reinstate);
 
   async onReinstate() {

@@ -1,4 +1,4 @@
-import { Type } from '@angular/core';
+import { runInInjectionContext, Type } from '@angular/core';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseEntityFacade } from '../base-entity-facade/base-entity-facade';
 import { EmbeddedEntityFacade } from '../base-entity-facade/embedded-entity.facade';
@@ -73,9 +73,10 @@ export class DynamicEntityFacade extends BaseEntityFacade<DynamicEntity> {
 
   protected override createDescriptor(): BaseEntityDescriptor {
     // Deleting a record of a type the common shares retires it; Reinstate is how it comes back.
-    if (this.definition.sharing && this.service instanceof DynamicEntityService) {
-      const service = this.service;
-      this.synthesizedDescriptor.reinstate = (id) => service.reinstate(id);
+    if (this.definition.sharing) {
+      // The service injects `HttpClient`, which only an injection context may do; the descriptor is asked for outside one.
+      const service = runInInjectionContext(this.injector, () => this.service);
+      if (service instanceof DynamicEntityService) this.synthesizedDescriptor.reinstate = (id) => service.reinstate(id);
     }
     return this.synthesizedDescriptor;
   }
