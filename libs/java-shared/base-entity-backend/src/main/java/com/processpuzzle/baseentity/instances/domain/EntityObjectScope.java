@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.instances.domain;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,11 +74,29 @@ public class EntityObjectScope {
             .filter(object -> object.getEntityDefinitionCode().equals(entityDefinitionCode));
     }
 
+    /** The objects of the type that are not retired. */
     public List<EntityObject> findAll(String orgKey, String entityDefinitionCode) {
+        return findEvery(orgKey, entityDefinitionCode).stream().filter(object -> !object.isRetired()).toList();
+    }
+
+    private List<EntityObject> findEvery(String orgKey, String entityDefinitionCode) {
         return repository.findAllByOrgKeyAndEntityDefinitionCode(storageOrgKey(orgKey, entityDefinitionCode), entityDefinitionCode);
     }
 
-    /** The payloads alone of every object of {@code entityDefinitionCode}, without loading the objects as entities. */
+    /** Whether the type is a shared type as {@code orgKey} sees it — its common's, or its own when it is a common. */
+    public boolean isShared(String orgKey, String entityDefinitionCode) {
+        return definitions.isShared(orgKey, entityDefinitionCode);
+    }
+
+    /**
+     * The organizations whose objects can refer to an object of {@code orgKey}'s: the organization itself and, for a
+     * member, its common. The delete guard looks no further.
+     */
+    public Collection<String> referringOrgKeys(String orgKey, String entityDefinitionCode) {
+        return List.of(orgKey, storageOrgKey(orgKey, entityDefinitionCode)).stream().distinct().toList();
+    }
+
+    /** The payloads alone of every object of {@code entityDefinitionCode}, retired ones included, without loading the objects as entities. */
     public List<Map<String, Object>> payloads(String orgKey, String entityDefinitionCode) {
         return repository.findPayloadsByOrgKeyAndEntityDefinitionCodeIn(storageOrgKey(orgKey, entityDefinitionCode),
                 List.of(entityDefinitionCode)).stream()
@@ -98,7 +117,7 @@ public class EntityObjectScope {
     public long rewriteAll(String orgKey, String entityDefinitionCode, UnaryOperator<Map<String, Object>> rewrite) {
         requireWritable(orgKey, entityDefinitionCode);
         long written = 0;
-        for (EntityObject object : findAll(orgKey, entityDefinitionCode)) {
+        for (EntityObject object : findEvery(orgKey, entityDefinitionCode)) {
             Map<String, Object> rewritten = rewrite.apply(new LinkedHashMap<>(object.getPayload()));
             if (!rewritten.equals(object.getPayload())) {
                 object.setPayload(rewritten);

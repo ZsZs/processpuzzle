@@ -22,6 +22,8 @@ public class EntityObjectMapper {
         model.setEntityDefinitionCode(entityObject.getEntityDefinitionCode());
         model.setVersion(entityObject.getVersion() != null ? entityObject.getVersion().intValue() : null);
         model.setPayload(entityObject.getPayload());
+        model.setRetiredAt(toOffsetDateTime(entityObject.getRetiredAt()));
+        model.setRetiredBy(entityObject.getRetiredBy());
         model.setCreatedAt(toOffsetDateTime(entityObject.getCreatedAt()));
         model.setCreatedBy(entityObject.getCreatedBy());
         model.setUpdatedAt(toOffsetDateTime(entityObject.getUpdatedAt()));

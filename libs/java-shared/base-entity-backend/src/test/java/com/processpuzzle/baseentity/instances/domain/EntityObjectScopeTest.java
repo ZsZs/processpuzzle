@@ -80,7 +80,7 @@ class EntityObjectScopeTest {
         List<EntityObject> orders = List.of(object(ORG, "order"));
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "order")).thenReturn(orders);
 
-        assertThat(scope.findAll(ORG, "order")).isSameAs(orders);
+        assertThat(scope.findAll(ORG, "order")).containsExactlyElementsOf(orders);
     }
 
     /** Only an object whose payload the rewrite changes is written. */
@@ -140,5 +140,26 @@ class EntityObjectScopeTest {
         when(definitions.sharedFrom("starter-common", "asset")).thenReturn(Optional.empty());
 
         assertThat(scope.requireWritable("starter-common", "asset")).isEqualTo("starter-common");
+    }
+
+    /** A retired object keeps resolving by id, but the lists leave it out. */
+    @Test
+    void findAll_leavesRetiredObjectsOut_andFindStillResolvesThem() {
+        EntityObject live = object(ORG, "order");
+        EntityObject retired = object(ORG, "order");
+        retired.setRetiredAt(java.time.Instant.now());
+        when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "order")).thenReturn(List.of(live, retired));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(retired));
+
+        assertThat(scope.findAll(ORG, "order")).containsExactly(live);
+        assertThat(scope.find(ORG, "order", id)).containsSame(retired);
+    }
+
+    @Test
+    void referringOrgKeys_areTheOrganizationAndItsCommon() {
+        when(definitions.sharedFrom(ORG, "asset")).thenReturn(Optional.of("common"));
+
+        assertThat(scope.referringOrgKeys(ORG, "asset")).containsExactly(ORG, "common");
+        assertThat(scope.referringOrgKeys(ORG, "order")).containsExactly(ORG);
     }
 }

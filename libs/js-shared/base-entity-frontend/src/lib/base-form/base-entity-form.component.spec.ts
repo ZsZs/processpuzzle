@@ -49,6 +49,71 @@ describe('GenericEntityFormComponent', () => {
     });
   });
 
+  describe('a retired record of a shared type:', () => {
+    const retired = Object.assign(new TestEntity('1', 'test-entity', 'description of the entity', true), { retiredAt: '2026-11-16T10:00:00Z' });
+
+    /** The facade sets `reinstate` before anything renders; the harness renders first, so the descriptor is swapped for a copy that has it. */
+    function reinstatableWith(component: { entityDescriptor: unknown }, reinstate: () => unknown) {
+      const current = (component.entityDescriptor as () => object)();
+      const copy = Object.assign(Object.create(Object.getPrototypeOf(current)), current, { reinstate });
+      (component.entityDescriptor as unknown as { set(value: object): void }).set(copy);
+    }
+
+    it('shows the retired notice, and offers Reinstate only where the entity can be reinstated', async () => {
+      const reinstate = vi.fn().mockReturnValue(of({}));
+      const { fixture, component } = await setupFormComponentTest([labelConfig, checkboxConfig], retired);
+      reinstatableWith(component, reinstate);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.debugElement.query(By.css('[data-testid=retired-notice]'))).toBeTruthy();
+      expect(fixture.debugElement.query(By.css('button#reinstate'))).toBeTruthy();
+    });
+
+    it('offers no Reinstate without a way to reinstate, and no notice for a live record', async () => {
+      const retiredOnly = await setupFormComponentTest([labelConfig, checkboxConfig], retired);
+      expect(retiredOnly.fixture.debugElement.query(By.css('[data-testid=retired-notice]'))).toBeTruthy();
+      expect(retiredOnly.fixture.debugElement.query(By.css('button#reinstate'))).toBeNull();
+
+      TestBed.resetTestingModule();
+      const live = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      reinstatableWith(live.component, vi.fn());
+      live.fixture.detectChanges();
+      expect(live.fixture.debugElement.query(By.css('[data-testid=retired-notice]'))).toBeNull();
+      expect(live.component.canReinstate()).toBe(false);
+    });
+
+    /** The route can render before the store has the row; that must not throw. */
+    it('is not retired while the row is not loaded', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.entity = (() => undefined) as unknown as typeof component.entity;
+
+      expect(component.isRetired()).toBe(false);
+    });
+
+    it('onReinstate() reinstates the record and re-reads it', async () => {
+      const reinstate = vi.fn().mockReturnValue(of({}));
+      const { component, store } = await setupFormComponentTest([labelConfig, checkboxConfig], retired);
+      reinstatableWith(component, reinstate);
+      vi.spyOn(store, 'reload').mockResolvedValue(testEntity);
+
+      await component.onReinstate();
+
+      expect(reinstate).toHaveBeenCalledWith(component.entityId());
+      expect(store.reload).toHaveBeenCalledWith(component.entityId());
+    });
+
+    it('onReinstate() does nothing for a record that is not retired', async () => {
+      const reinstate = vi.fn().mockReturnValue(of({}));
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      reinstatableWith(component, reinstate);
+
+      await component.onReinstate();
+
+      expect(reinstate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('form actions:', () => {
     it('onCancel()', async () => {
       // SETUP:

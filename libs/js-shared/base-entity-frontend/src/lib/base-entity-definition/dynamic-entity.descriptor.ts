@@ -3,7 +3,7 @@ import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descri
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { effectiveDateFormat } from '../base-entity/date-format';
 import { toSelectables } from '../base-entity/selectables';
-import { EntityAttributeDefinition, EntityDefinition } from './entity-definition';
+import { DynamicEntity, EntityAttributeDefinition, EntityDefinition } from './entity-definition';
 
 /**
  * Resolves a definition by its `code` — how an attribute names an embedded child or a foreign-key target.
@@ -117,6 +117,9 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
     canContextObject: definition.canContextObject === true && definition.isEmbedded !== true,
     // A type the organization's common shares: its objects are the common's, read here and never written.
     isReadOnly: !!definition.sharedFrom,
+    // A retired record of a shared type is shown, not changed: it comes back through Reinstate.
+    isEditable: (entity) => !(entity as DynamicEntity).retiredAt,
+    isDeletable: (entity) => !(entity as DynamicEntity).retiredAt,
   });
 }
 

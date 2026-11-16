@@ -9,6 +9,7 @@ import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository.Payl
 import com.processpuzzle.shared.event.OrganizationDeletedEvent;
 import com.processpuzzle.shared.event.StoredObjectsReleasedEvent;
 import com.processpuzzle.shared.event.StoredObjectsReleasedEvent.StoredObjectRef;
+import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -18,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -56,9 +58,12 @@ public class TenantDataCleaner {
     private final EntityObjectRepository objects;
     private final EntityTranslationRepository translations;
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectProvider<DataSpaceDirectory> dataSpaces;
 
     public TenantDataCleaner(EntityDefinitionRepository definitions, EntityObjectRepository objects,
-                             EntityTranslationRepository translations, ApplicationEventPublisher eventPublisher) {
+                             EntityTranslationRepository translations, ApplicationEventPublisher eventPublisher,
+                             ObjectProvider<DataSpaceDirectory> dataSpaces) {
+        this.dataSpaces = dataSpaces;
         this.definitions = definitions;
         this.objects = objects;
         this.translations = translations;
@@ -68,6 +73,12 @@ public class TenantDataCleaner {
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrganizationDeleted(OrganizationDeletedEvent event) {
         String orgKey = event.orgKey();
+        DataSpaceDirectory directory = dataSpaces.getIfAvailable();
+        if (directory != null && directory.isCommon(orgKey)) {
+            // Its members' references would dangle for good: nothing is hard deleted in a common (concept §3.6).
+            throw new IllegalStateException(("'%s' is a common, whose shared records are never erased with it; "
+                + "a hard delete is a maintenance operation").formatted(orgKey));
+        }
         List<StoredObjectRef> releasedFiles = referencedFiles(orgKey);
 
         definitions.eraseAttributesByOrgKey(orgKey);

@@ -156,3 +156,11 @@ mat-card-actions {
 .base-entity-form-superseded {
     display: none;
 }
+
+.retired-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 0;
+    font-style: italic;
+}

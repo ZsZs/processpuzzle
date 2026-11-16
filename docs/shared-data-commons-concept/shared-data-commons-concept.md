@@ -275,6 +275,8 @@ Each step is a core PR, then library releases, then a biz bump where noted.
 3. **Retire instead of delete.** `retired_at` / `retired_by`, delete becomes retire for shared types,
    reinstate, searches and pickers skip retired; the delete guard's reference check limited to org + common;
    the tenant data cleaner refuses a common.
+   *Backend done:* `DELETE` on a shared type sets `retiredAt`/`retiredBy`; `POST …/{id}/reinstate`;
+   `includeRetired` on the list (the common's own members only). Frontend (retired badge, reinstate action) follows.
 4. **Common bundle and manifest v2 (base-starter).** `kind: common`, the tenant `common:` block, strict
    fields for v2, packager support, refusing an install whose common is missing or too old. Biz: create a
    common from Admin.

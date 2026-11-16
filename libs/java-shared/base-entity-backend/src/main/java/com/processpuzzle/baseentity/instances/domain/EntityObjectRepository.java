@@ -16,23 +16,26 @@ public interface EntityObjectRepository
 
     long countByOrgKey(String orgKey);
 
+    /** Retired objects count: they are data the type still has. */
     boolean existsByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);
 
+    /** Retired objects included; {@link EntityObjectScope} decides whether the caller sees them. */
     List<EntityObject> findAllByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);
 
     /** By id within one organization; callers go through {@link EntityObjectScope}, which picks the organization. */
     Optional<EntityObject> findByIdAndOrgKey(UUID id, String orgKey);
 
     /**
-     * Blunt "does any payload anywhere contain this id" containment check, used for the
-     * delete-guard on /entities/{id} (cascade=false path). Unindexed — acceptable at current
-     * volumes, worth tightening to a scoped FOREIGN_KEY-attribute lookup once that becomes a
-     * hot path (see README).
+     * Blunt "does any payload of these organizations contain this id" containment check, used for the
+     * delete-guard on /entities/{id} (cascade=false path). Limited to the organization and its common: an
+     * object is referred to from nowhere else. Unindexed — acceptable at current volumes, worth tightening
+     * to a scoped FOREIGN_KEY-attribute lookup once that becomes a hot path (see README).
      */
     @Query(
-        value = "select exists (select 1 from entity_object o where o.payload::text like concat('%', :referencedId, '%'))",
+        value = "select exists (select 1 from entity_object o where o.org_key in (:orgKeys) "
+            + "and o.payload::text like concat('%', :referencedId, '%'))",
         nativeQuery = true)
-    boolean existsAnyReferenceTo(@Param("referencedId") String referencedId);
+    boolean existsAnyReferenceTo(@Param("referencedId") String referencedId, @Param("orgKeys") Collection<String> orgKeys);
 
     /**
      * The payloads alone of a tenant's objects of the given definitions, without loading the objects
