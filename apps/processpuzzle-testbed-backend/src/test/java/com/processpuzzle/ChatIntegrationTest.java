@@ -1,6 +1,7 @@
 package com.processpuzzle;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.processpuzzle.baseentity.adapter.inbound.EntityDefinitionReleaseParticipant;
@@ -144,6 +145,9 @@ class ChatIntegrationTest {
     @Autowired private MarkRead markRead;
     @Autowired private Unfollow unfollow;
     @Autowired private ListUnread listUnread;
+    @Autowired private org.springframework.transaction.PlatformTransactionManager transactionManager;
+    @Autowired private com.processpuzzle.chat.conversation.domain.ConversationRepository conversationRows;
+    @Autowired private com.processpuzzle.chat.conversation.domain.ReadMarkerRepository readMarkerRows;
     @Autowired private OpenChatStream openStream;
     @Autowired private WorkflowInstanceRepository workflowInstances;
     @Autowired private MeterRegistry meters;
@@ -302,6 +306,36 @@ class ChatIntegrationTest {
 
         assertThat(meters.counter("chat.messages.posted").count() - before).isEqualTo(1.0);
         assertThat(meters.find("chat.stream.connections").gauge()).isNotNull();
+    }
+
+    @Test
+    void aCaughtMissingEntityInsideAReadDoesNotRollBackTheRead() {
+        org.springframework.transaction.support.TransactionTemplate template =
+                new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+        template.setReadOnly(true);
+        // What the subject lookup does: the entity read throws, the caller catches it and answers "absent".
+        assertThatCode(() -> template.executeWithoutResult(status -> {
+            try {
+                entities.find(ORG, "order", UUID.randomUUID());
+            } catch (com.processpuzzle.baseentity.api.EntityObjectAccessException expected) {
+                // absent
+            }
+        })).doesNotThrowAnyException();
+    }
+
+    @Test
+    void aFollowedConversationWhoseSubjectIsGoneDoesNotBreakTheUnreadCountOfEveryOtherOne() {
+        // The subject of this conversation was deleted (an order removed after its chat was used): the subject lookup
+        // finds nothing. The lookup runs in a transaction the unread count shares, so its failure must not poison it.
+        com.processpuzzle.chat.conversation.domain.Conversation gone = open.open(ORG, "order-discussion", orderId, null).conversation();
+        com.processpuzzle.chat.conversation.domain.Conversation dangling = conversationRows.findByIdAndOrgKey(gone.getId(), ORG).orElseThrow();
+        dangling.setSubjectId(UUID.randomUUID().toString());
+        dangling.setBindingKey(UUID.randomUUID().toString());
+        conversationRows.saveAndFlush(dangling);
+        readMarkerRows.saveAndFlush(com.processpuzzle.chat.conversation.domain.ReadMarker.builder()
+                .conversationId(gone.getId()).userSub("sub-ann").orgKey(ORG).lastReadSeq(0).updatedAt(Instant.now()).build());
+
+        assertThatCode(() -> listUnread.list(ORG)).doesNotThrowAnyException();
     }
 
     // --- following, unread and the live stream
