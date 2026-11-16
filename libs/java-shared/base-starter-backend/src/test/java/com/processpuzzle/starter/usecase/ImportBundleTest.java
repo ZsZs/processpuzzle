@@ -16,6 +16,7 @@ import com.processpuzzle.starter.bundle.BundleReader;
 import com.processpuzzle.starter.bundle.TestBundles;
 import com.processpuzzle.starter.domain.DefinitionProvenance;
 import com.processpuzzle.starter.domain.DefinitionProvenanceRepository;
+import com.processpuzzle.starter.domain.DataSpaceRepository;
 import com.processpuzzle.starter.domain.InstalledStarterRepository;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -57,6 +58,8 @@ class ImportBundleTest {
     @Autowired
     private InstalledStarterRepository installedStarterRepository;
     @Autowired
+    private DataSpaceRepository dataSpaceRepository;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private final List<String> calls = new ArrayList<>();
@@ -71,6 +74,7 @@ class ImportBundleTest {
     void setUp() {
         provenanceRepository.deleteAll();
         installedStarterRepository.deleteAll();
+        dataSpaceRepository.deleteAll();
         policy = mock(OrganizationAccessPolicy.class);
         OrganizationGuard guard = new OrganizationGuard(provider(policy));
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
@@ -95,7 +99,7 @@ class ImportBundleTest {
         ImportParticipants participants = new ImportParticipants(factory.getBeanProvider(DefinitionImportParticipant.class),
                 factory.getBeanProvider(InstanceDataProbe.class));
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
-                provenanceRepository, installedStarterRepository, transactionManager, provider(null));
+                provenanceRepository, installedStarterRepository, commonRules(), transactionManager, provider(null));
         listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants);
     }
 
@@ -295,7 +299,7 @@ class ImportBundleTest {
         small.getBundle().setMaxFileBytes(4);
         ImportBundle strict = new ImportBundle(new OrganizationGuard(provider(policy)), new BundleReader(small),
                 ImportParticipants.of(List.of(entities)), provenanceRepository, installedStarterRepository,
-                transactionManager, provider(null));
+                commonRules(), transactionManager, provider(null));
 
         assertThatThrownBy(() -> strict.execute("acme", bundle("item\n", ""), false, null))
                 .isInstanceOfSatisfying(ImportRejectedException.class,
@@ -326,6 +330,106 @@ class ImportBundleTest {
         assertThat(listInstalledStarters.execute("acme")).singleElement()
                 .extracting(ListInstalledStarters.View::customizedDefinitions).isEqualTo(2);
         assertThat(listInstalledStarters.execute("other")).isEmpty();
+    }
+
+    private CommonRules commonRules() {
+        return new CommonRules(dataSpaceRepository, installedStarterRepository, new RegisterDataSpace(dataSpaceRepository));
+    }
+
+    private static final String COMMON_MANIFEST = """
+            manifestVersion: 2
+            kind: common
+            id: inventory-common
+            name: Inventory Common
+            version: %s
+            definitionSchemaVersion: 1
+            contents:
+              entities:
+                - entities/item.yaml
+            """;
+
+    private static final String TENANT_MANIFEST = """
+            manifestVersion: 2
+            id: inventory
+            name: Inventory
+            version: 1.0.0
+            definitionSchemaVersion: 1
+            common:
+              id: inventory-common
+              minVersion: %s
+            contents:
+              entities:
+                - entities/item.yaml
+            """;
+
+    private ByteArrayInputStream commonBundle(String version) {
+        return zip(Map.of("manifest.yaml", COMMON_MANIFEST.formatted(version), "entities/item.yaml", "entityDefinitions: []\n"));
+    }
+
+    private ByteArrayInputStream tenantBundle(String minVersion) {
+        return zip(Map.of("manifest.yaml", TENANT_MANIFEST.formatted(minVersion), "entities/item.yaml", "entityDefinitions: []\n"));
+    }
+
+    @Test
+    void aCommonBundleCreatesTheCommonOfItsStarter() {
+        ImportReport report = importBundle.execute("inventory-common", commonBundle("1.0.0"), false, "staff");
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(dataSpaceRepository.findByStarterId("inventory")).hasValueSatisfying(
+                space -> assertThat(space.getCommonKey()).isEqualTo("inventory-common"));
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("inventory-common", "inventory-common")).isPresent();
+    }
+
+    @Test
+    void aDryRunOfACommonBundleCreatesNothing() {
+        importBundle.execute("inventory-common", commonBundle("1.0.0"), true, null);
+
+        assertThat(dataSpaceRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void aCommonBundleInstallsOnlyIntoItsOwnOrganization() {
+        assertThatThrownBy(() -> importBundle.execute("acme", commonBundle("1.0.0"), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::message).singleElement().asString().contains("installs only into"));
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void aTenantBundleIsRefusedWhileItsCommonDoesNotExist() {
+        assertThatThrownBy(() -> importBundle.execute("acme", tenantBundle("1.0.0"), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::message).singleElement().asString().contains("does not exist yet"));
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void aTenantBundleIsRefusedWhileItsCommonIsOlderThanMinVersion() {
+        importBundle.execute("inventory-common", commonBundle("1.0.0"), false, null);
+        calls.clear();
+
+        assertThatThrownBy(() -> importBundle.execute("acme", tenantBundle("1.2.0"), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::message).singleElement().asString().contains("needs 'inventory-common' 1.2.0"));
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void aTenantBundleInstallsOnceItsCommonIsAtMinVersion() {
+        importBundle.execute("inventory-common", commonBundle("1.2.0"), false, null);
+
+        ImportReport report = importBundle.execute("acme", tenantBundle("1.2.0"), false, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+    }
+
+    @Test
+    void aTenantBundleIsNeverInstalledIntoACommon() {
+        importBundle.execute("inventory-common", commonBundle("1.0.0"), false, null);
+
+        assertThatThrownBy(() -> importBundle.execute("inventory-common", tenantBundle("1.0.0"), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::message).singleElement().asString().contains("is a common"));
     }
 
     private ByteArrayInputStream bundle(String entityFile, String ruleFile) {

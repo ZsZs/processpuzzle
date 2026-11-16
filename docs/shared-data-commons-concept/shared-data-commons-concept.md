@@ -278,6 +278,11 @@ Each step is a core PR, then library releases, then a biz bump where noted.
 4. **Common bundle and manifest v2 (base-starter).** `kind: common`, the tenant `common:` block, strict
    fields for v2, packager support, refusing an install whose common is missing or too old. Biz: create a
    common from Admin.
+   *Core done:* `manifestVersion: 2` (`kind`, `common:`, `migrations`, strict top-level fields), `CommonRules` at import
+   (a common bundle only into its own organization, which it registers as the starter's data space; a tenant bundle
+   never into a common, and not while its common is missing or older than `minVersion`), commons left out of the
+   subscriber catalog, and the packager reading a starter's `common/` folder as a second bundle. Admin's "create a
+   common" (biz) is the remaining part.
 5. **Owner writes.** `owner_org_key`, `OWNER_ORG`, `OWNER_ONLY`, `visibleWhen`, `from:`; natural-key uniqueness
    from `identifiers`.
 6. **Starter upgrade.** Provenance-based upgrade, bundle migration steps as pending steps, one version at a

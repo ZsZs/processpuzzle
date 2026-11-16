@@ -15,6 +15,9 @@
  * — zips are built deterministically for exactly this — and refused when it is not: a published version is
  * immutable, so changed content needs a new version. Uploading `--out` to the bucket is the caller's step.
  *
+ * A starter that shares data has a `common/` folder beside its manifest: a second bundle, `kind: common`, id
+ * `<starter id>-common`, packaged and versioned on its own (docs/shared-data-commons-concept §5.1).
+ *
  * The checks here are structural only (manifest fields, safe paths, listed files present). Whether the
  * definitions import is the dry-run gate's job, against a running backend, before the upload.
  */
@@ -27,6 +30,13 @@ import { parse, stringify } from 'yaml';
 
 export const CATALOG_VERSION = 1;
 export const SUPPORTED_SCHEMA_VERSIONS = [1];
+export const SUPPORTED_MANIFEST_VERSIONS = [1, 2];
+const COMMON_SUFFIX = '-common';
+// What a manifestVersion 2 manifest may say at its top level; BundleReader refuses anything else the same way.
+const V2_FIELDS = [
+  'manifestVersion', 'kind', 'id', 'name', 'version', 'description', 'category', 'tags', 'author', 'license', 'icon',
+  'definitionSchemaVersion', 'platform', 'locales', 'common', 'contents', 'migration', 'migrations', 'integrity',
+];
 const CONTENT_GROUPS = [
   'entities', 'states', 'rules', 'calculations', 'widgets', 'documents', 'workflows', 'modules', 'apps', 'translations', 'assets',
 ];
@@ -48,6 +58,20 @@ export function readStarter(folder) {
   const manifest = parse(readFileSync(manifestPath, 'utf8')) ?? {};
   const where = `${folder}/manifest.yaml`;
 
+  checkIdentity(manifest, where);
+  const contents = manifest.contents ?? {};
+  const files = contentFiles(contents, where);
+  checkCommons(manifest, folder, where);
+  const extras = [manifest.icon, manifest.migration, ...(manifest.migrations ?? [])].filter(Boolean);
+  for (const path of [...files, ...extras]) {
+    if (!SAFE_PATH.test(path) || path.split('/').includes('..')) throw new StarterError(`${where}: unsafe path '${path}'`);
+    if (!existsSync(join(folder, path))) throw new StarterError(`${where}: lists '${path}', which does not exist`);
+  }
+  checkOwnedFiles(folder, contents, where);
+  return { manifest, files: [...new Set([...files, ...extras])].sort() };
+}
+
+function checkIdentity(manifest, where) {
   if (!ID.test(manifest.id ?? '')) throw new StarterError(`${where}: 'id' must be a kebab-case slug`);
   if (!SEMVER.test(manifest.version ?? '')) throw new StarterError(`${where}: 'version' must be semver`);
   if (!manifest.name) throw new StarterError(`${where}: 'name' is required`);
@@ -57,21 +81,60 @@ export function readStarter(folder) {
   for (const removed of ['requires', 'seedData', 'install', 'conflictsWith']) {
     if (removed in manifest) throw new StarterError(`${where}: '${removed}' is not supported — a starter is all or nothing`);
   }
+}
 
-  const contents = manifest.contents ?? {};
+function contentFiles(contents, where) {
   const files = [];
   for (const [group, paths] of Object.entries(contents)) {
     if (!CONTENT_GROUPS.includes(group)) throw new StarterError(`${where}: unknown contents group '${group}'`);
     files.push(...(paths ?? []));
   }
   if (files.length === 0) throw new StarterError(`${where}: 'contents' lists no definition file`);
-  const extras = [manifest.icon, manifest.migration].filter(Boolean);
-  for (const path of [...files, ...extras]) {
-    if (!SAFE_PATH.test(path) || path.split('/').includes('..')) throw new StarterError(`${where}: unsafe path '${path}'`);
-    if (!existsSync(join(folder, path))) throw new StarterError(`${where}: lists '${path}', which does not exist`);
+  return files;
+}
+
+/** The commons fields of manifestVersion 2, with the same rules as BundleReader in base-starter-backend. */
+function checkCommons(manifest, folder, where) {
+  const version = manifest.manifestVersion ?? 1;
+  if (!SUPPORTED_MANIFEST_VERSIONS.includes(version)) throw new StarterError(`${where}: unsupported manifestVersion ${version}`);
+  if (version < 2) {
+    for (const field of ['kind', 'common', 'migrations']) {
+      if (field in manifest) throw new StarterError(`${where}: '${field}' needs manifestVersion 2`);
+    }
+    return;
   }
-  checkOwnedFiles(folder, contents, where);
-  return { manifest, files: [...new Set([...files, ...extras])].sort() };
+  for (const field of Object.keys(manifest)) {
+    if (!V2_FIELDS.includes(field)) throw new StarterError(`${where}: unknown field '${field}'`);
+  }
+  if (manifest.kind !== undefined && !['starter', 'common'].includes(manifest.kind)) {
+    throw new StarterError(`${where}: unknown kind '${manifest.kind}'`);
+  }
+  if (manifest.kind === 'common') checkCommonManifest(manifest, where);
+  else if (manifest.common) checkTenantCommon(manifest, folder, where);
+}
+
+function checkCommonManifest(manifest, where) {
+  if (!manifest.id.endsWith(COMMON_SUFFIX) || manifest.id === COMMON_SUFFIX.slice(1)) {
+    throw new StarterError(`${where}: a common's id must be '<starter id>${COMMON_SUFFIX}'`);
+  }
+  if (manifest.common) throw new StarterError(`${where}: a common has no 'common' block of its own`);
+}
+
+function checkTenantCommon(manifest, folder, where) {
+  for (const field of Object.keys(manifest.common)) {
+    if (!['id', 'minVersion'].includes(field)) throw new StarterError(`${where}: unknown field 'common.${field}'`);
+  }
+  if (manifest.common.id !== `${manifest.id}${COMMON_SUFFIX}`) {
+    throw new StarterError(`${where}: 'common.id' must be '${manifest.id}${COMMON_SUFFIX}'`);
+  }
+  if (!SEMVER.test(manifest.common.minVersion ?? '')) throw new StarterError(`${where}: 'common.minVersion' must be semver`);
+  // Authored side by side: the tenant cannot ask for a common version this very folder does not have.
+  const commonManifest = join(folder, 'common', 'manifest.yaml');
+  if (!existsSync(commonManifest)) return;
+  const common = parse(readFileSync(commonManifest, 'utf8')) ?? {};
+  if (common.version && compareVersions(common.version, manifest.common.minVersion) < 0) {
+    throw new StarterError(`${where}: needs ${manifest.common.id} ${manifest.common.minVersion}, and common/ is at ${common.version}`);
+  }
 }
 
 /**
@@ -80,6 +143,13 @@ export function readStarter(folder) {
  * A translation is `<locale>.json` straight under its module — an application has no translation store.
  */
 function checkOwnedFiles(folder, contents, where) {
+  const defined = definedOwners(folder, contents);
+  for (const group of OWNED_GROUPS) {
+    for (const path of contents[group] ?? []) checkOwnedPath(group, path, defined, where);
+  }
+}
+
+function definedOwners(folder, contents) {
   const defined = { apps: new Set(), modules: new Set() };
   for (const path of contents.modules ?? []) {
     for (const module of parse(readFileSync(join(folder, path), 'utf8'))?.moduleDefinitions ?? []) defined.modules.add(module?.key);
@@ -87,21 +157,19 @@ function checkOwnedFiles(folder, contents, where) {
   for (const path of contents.apps ?? []) {
     for (const app of parse(readFileSync(join(folder, path), 'utf8'))?.appDefinitions ?? []) defined.apps.add(app?.id);
   }
-  for (const group of OWNED_GROUPS) {
-    for (const path of contents[group] ?? []) {
-      const [, ownerKind, owner, ...rest] = path.split('/');
-      if (!OWNER_KINDS.includes(ownerKind) || !owner || rest.length === 0) {
-        throw new StarterError(`${where}: '${path}' must be <dir>/<apps|modules>/<owner>/<path>`);
-      }
-      if (!defined[ownerKind].has(owner)) {
-        throw new StarterError(`${where}: '${path}' belongs to ${ownerKind.slice(0, -1)} '${owner}', which the starter does not define`);
-      }
-      if (group === 'translations') {
-        if (rest.length !== 1 || !rest[0].endsWith('.json')) {
-          throw new StarterError(`${where}: '${path}' must be <dir>/${ownerKind}/${owner}/<locale>.json`);
-        }
-      }
-    }
+  return defined;
+}
+
+function checkOwnedPath(group, path, defined, where) {
+  const [, ownerKind, owner, ...rest] = path.split('/');
+  if (!OWNER_KINDS.includes(ownerKind) || !owner || rest.length === 0) {
+    throw new StarterError(`${where}: '${path}' must be <dir>/<apps|modules>/<owner>/<path>`);
+  }
+  if (!defined[ownerKind].has(owner)) {
+    throw new StarterError(`${where}: '${path}' belongs to ${ownerKind.slice(0, -1)} '${owner}', which the starter does not define`);
+  }
+  if (group === 'translations' && (rest.length !== 1 || !rest[0].endsWith('.json'))) {
+    throw new StarterError(`${where}: '${path}' must be <dir>/${ownerKind}/${owner}/<locale>.json`);
   }
 }
 
@@ -189,7 +257,9 @@ export function packageStarters({ source, out, catalog, publishedAt }) {
   const folders = readdirSync(source)
     .map((name) => join(source, name))
     .filter((path) => statSync(path).isDirectory() && existsSync(join(path, 'manifest.yaml')))
-    .sort();
+    .sort()
+    // A starter's common is a bundle of its own, authored in the starter's folder.
+    .flatMap((path) => (existsSync(join(path, 'common', 'manifest.yaml')) ? [path, join(path, 'common')] : [path]));
   for (const folder of folders) {
     const { manifest, bytes, sha256: hash } = bundleOf(folder);
     let starter = merged.starters.find((candidate) => candidate.id === manifest.id);

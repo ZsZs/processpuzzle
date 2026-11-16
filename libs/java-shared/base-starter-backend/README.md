@@ -67,5 +67,10 @@ transactional imports. JaCoCo writes the coverage report to `reports/coverage/in
 
 ## Not yet
 
+**Commons.** A `manifestVersion: 2` manifest may be `kind: common` (id `<starter>-common`, installed once into the
+organization of that key, which becomes the starter's data space) or name its common in a `common:` block
+(`id`, `minVersion`); such a tenant bundle is refused while the common is missing or older. Version 2 also refuses
+unknown top-level fields. See `docs/shared-data-commons-concept`.
+
 Upgrades and the migration script (the manifest carries `migration`, nothing runs it), export, and participants
 for widget, document, workflow and app definitions.
