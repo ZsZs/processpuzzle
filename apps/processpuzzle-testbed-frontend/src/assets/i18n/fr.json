@@ -218,10 +218,10 @@
     "intro_heading": "ProcessPuzzle Chat",
     "frontend_heading": "Frontend — @processpuzzle/base-chat",
     "backend_heading": "Backend — base-chat-backend",
-    "intro_paragraph_1": "La discussion est une capacité de la plateforme : un concepteur lie une conversation à un type d’enregistrement et les rôles décident qui participe. Les messages sont numérotés par conversation sans trou, livrés en direct et comptés comme non lus par utilisateur.",
+    "intro_paragraph_1": "Le chat est une capacité de la plateforme : un concepteur lie une conversation à un type d'enregistrement — ou aux exécutions d'un workflow — et les rôles décident qui peut lire, écrire et en ouvrir une. Les messages sont numérotés par conversation sans trou, livrés en direct, comptés comme non lus par utilisateur et soumis à une limite de débit. Un chat peut autoriser plusieurs sujets titrés par enregistrement et être lié à son état, de sorte qu'il passe en lecture seule quand la commande est expédiée ou que l'exécution se termine.",
     "intro_paragraph_2": "La fonctionnalité se répartit en deux bibliothèques complémentaires :",
-    "intro_frontend_desc": "Services Angular, un magasin à envoi optimiste et flux en direct, et les widgets du panneau de discussion et du compteur de non-lus.",
-    "intro_backend_desc": "Module Spring Boot avec les conversations, les règles d’accès, les marqueurs de lecture et le flux d’événements envoyés par le serveur."
+    "intro_frontend_desc": "Services Angular, un store avec envoi optimiste et flux en direct, les widgets panneau de chat, sujets et compteur de non lus, et les écrans de définitions de chat qu'héberge la section Chat du concepteur (ici, l'onglet Définitions).",
+    "intro_backend_desc": "Module Spring Boot avec les définitions de chat (publiées avec la publication de la plateforme, importables par Business Starters), les conversations, les règles d'accès, les marqueurs de lecture, le flux d'événements serveur, la limite de débit d'envoi et les métriques Micrometer."
   },
   "base-calculation": {
     "overview_tab_label": "Aperçu",

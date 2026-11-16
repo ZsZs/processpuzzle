@@ -218,10 +218,10 @@
     "intro_heading": "ProcessPuzzle Chat",
     "frontend_heading": "Frontend — @processpuzzle/base-chat",
     "backend_heading": "Backend — base-chat-backend",
-    "intro_paragraph_1": "Chat is a platform capability: a designer binds a conversation to a kind of record, and roles decide who takes part. Messages are numbered per conversation without gaps, delivered live, and counted as unread per user.",
+    "intro_paragraph_1": "Chat is a platform capability: a designer binds a conversation to a kind of record — or to the runs of a workflow — and roles decide who may read, write and start one. Messages are numbered per conversation without gaps, delivered live, counted as unread per user and rate limited. A chat can allow several titled topics per record, and can be bound to the record's state, so that it turns read-only when the order is shipped or the run completes.",
     "intro_paragraph_2": "The feature is split into two complementary libraries:",
-    "intro_frontend_desc": "Angular services, a store with optimistic sending and a live stream, and the chat panel and unread badge widgets.",
-    "intro_backend_desc": "Spring Boot module with the conversations, the access rules, read markers and the server-sent event stream."
+    "intro_frontend_desc": "Angular services, a store with optimistic sending and a live stream, the chat panel, topics and unread badge widgets, and the Chat Definition screens the designer's Chat section hosts (the Definitions tab shows them here).",
+    "intro_backend_desc": "Spring Boot module with the chat definitions (released with the platform release, importable by Business Starters), the conversations, the access rules, read markers, the server-sent event stream, the posting rate limit and Micrometer metrics."
   },
   "base-calculation": {
     "overview_tab_label": "Overview",
