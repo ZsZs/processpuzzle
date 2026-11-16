@@ -15,6 +15,9 @@ public interface ChatDefinitionRepository extends JpaRepository<ChatDefinition, 
 
     List<ChatDefinition> findByOrgKeyAndChannelOrderByDefinitionKeyAsc(String orgKey, Channel channel);
 
+    /** Every definition of every tenant on the channel that keeps conversations only for a while. */
+    List<ChatDefinition> findByChannelAndRetentionDaysIsNotNull(Channel channel);
+
     /** Every definition of a tenant in one statement, for erasing the tenant. */
     @Modifying(flushAutomatically = true)
     @Query("delete from ChatDefinition d where d.orgKey = :orgKey")

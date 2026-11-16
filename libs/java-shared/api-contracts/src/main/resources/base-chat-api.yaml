@@ -248,6 +248,34 @@ paths:
         "204":
           description: Not following (any more)
 
+  /organizations/{orgKey}/chat/users/{userSub}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - name: userSub
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The identity provider's subject of the user whose chat data is erased.
+    delete:
+      operationId: eraseChatUser
+      tags: [ Chat Privacy ]
+      summary: Erase a user's chat data (GDPR)
+      description: >-
+        Anonymizes what the user wrote and started: their messages keep their place in the conversation but lose
+        author and text (the text becomes "[removed]"), the conversations they opened lose the creator, and their
+        read markers are deleted. Other people's conversations stay readable. Allowed for the user themself and for
+        whoever administers the organization. Not undoable.
+      responses:
+        "200":
+          description: Erased; how much was
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatErasureResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /organizations/{orgKey}/chat/unread:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -494,6 +522,23 @@ components:
       type: string
       enum: [ TEXT ]
       description: TEXT only for now; SYSTEM and CALL_EVENT are reserved.
+
+    ChatErasureResult:
+      type: object
+      required: [ messages, conversations, readMarkers ]
+      properties:
+        messages:
+          type: integer
+          format: int32
+          description: Messages anonymized.
+        conversations:
+          type: integer
+          format: int32
+          description: Conversations that lost their creator.
+        readMarkers:
+          type: integer
+          format: int32
+          description: Read markers deleted.
 
     ReleaseState:
       type: string

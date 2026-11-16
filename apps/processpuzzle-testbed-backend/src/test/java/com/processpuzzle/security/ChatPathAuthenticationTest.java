@@ -29,6 +29,7 @@ class ChatPathAuthenticationTest {
         assertThat(status("POST", "/organizations/my-org/chat/conversations/9d1c0000-0000-4000-8000-000000000001/messages")).isEqualTo(401);
         assertThat(status("GET", "/organizations/my-org/chat/unread")).isEqualTo(401);
         assertThat(status("GET", "/organizations/my-org/chat/stream")).isEqualTo(401);
+        assertThat(status("DELETE", "/organizations/my-org/chat/users/sub-ann")).isEqualTo(401);
     }
 
     @Test

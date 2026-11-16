@@ -178,6 +178,13 @@ base-chat:
   rate-limit:
     burst: 20
     per-second: 2
+  # Retention: a conversation nobody has written in for as long as its released definition's `retentionDays` is
+  # deleted whole (messages, read markers, the conversation). A definition without `retentionDays` keeps its
+  # conversations for ever. The job runs every `interval`; `enabled: false` switches it off.
+  retention:
+    enabled: true
+    interval: PT6H
+    initial-delay: PT10M
 
 base-event:
   # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an

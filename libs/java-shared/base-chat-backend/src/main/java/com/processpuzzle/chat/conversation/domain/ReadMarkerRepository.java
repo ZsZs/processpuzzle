@@ -70,6 +70,15 @@ public interface ReadMarkerRepository extends JpaRepository<ReadMarker, ReadMark
     @Query("select m.lastReadSeq from ReadMarker m where m.conversationId = :conversationId and m.userSub = :userSub")
     Optional<Long> lastReadOf(@Param("conversationId") UUID conversationId, @Param("userSub") String userSub);
 
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ReadMarker m where m.orgKey = :orgKey and m.conversationId in :conversationIds")
+    int deleteByConversationIds(@Param("orgKey") String orgKey, @Param("conversationIds") java.util.Collection<UUID> conversationIds);
+
+    /** Every marker of one user, for erasing them. */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ReadMarker m where m.orgKey = :orgKey and m.userSub = :userSub")
+    int deleteByUser(@Param("orgKey") String orgKey, @Param("userSub") String userSub);
+
     /** @return 1 when the user followed the conversation */
     @Modifying(flushAutomatically = true)
     @Query("delete from ReadMarker m where m.orgKey = :orgKey and m.conversationId = :conversationId and m.userSub = :userSub")

@@ -1,9 +1,12 @@
 package com.processpuzzle.chat.conversation.domain;
 
 import com.processpuzzle.chat.definition.domain.SubjectType;
+import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -42,6 +45,25 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             String orgKey, SubjectType subjectType, String subjectId);
 
     boolean existsByOrgKeyAndBindingKey(String orgKey, String bindingKey);
+
+    /**
+     * The conversations of one definition that nothing has happened in since {@code cutoff}: the newest message, or
+     * the opening of a conversation that has none, is older. Oldest activity first, so a backlog is worked off in order.
+     */
+    @Query("select c.id from Conversation c where c.orgKey = :orgKey and c.definitionKey = :definitionKey "
+            + "and coalesce((select max(m.createdAt) from Message m where m.conversationId = c.id), c.createdAt) < :cutoff "
+            + "order by c.createdAt asc")
+    List<UUID> findIdleIds(@Param("orgKey") String orgKey, @Param("definitionKey") String definitionKey,
+                           @Param("cutoff") Instant cutoff, Pageable page);
+
+    @Modifying(flushAutomatically = true)
+    @Query("delete from Conversation c where c.orgKey = :orgKey and c.id in :ids")
+    int deleteByIds(@Param("orgKey") String orgKey, @Param("ids") Collection<UUID> ids);
+
+    /** Takes the creator off the conversations a user opened — erasure keeps the conversation, not who started it. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update Conversation c set c.createdBy = :erased, c.createdByName = null where c.orgKey = :orgKey and c.createdBy = :userSub")
+    int anonymizeCreator(@Param("orgKey") String orgKey, @Param("userSub") String userSub, @Param("erased") String erased);
 
     /** Every conversation of a tenant in one statement, for erasing the tenant. */
     @Modifying(flushAutomatically = true)
