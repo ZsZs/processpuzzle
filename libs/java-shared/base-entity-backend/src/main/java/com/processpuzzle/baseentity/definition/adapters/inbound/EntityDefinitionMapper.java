@@ -34,6 +34,7 @@ public class EntityDefinitionMapper {
             .status(toDomainStatus(input.getStatus()))
             .componentParents(input.getComponentParents() != null ? input.getComponentParents() : List.of())
             .isEmbedded(Boolean.TRUE.equals(input.getIsEmbedded()))
+            .canContextObject(Boolean.TRUE.equals(input.getCanContextObject()))
             .organizationId(input.getOrganizationId())
             .build();
 
@@ -84,6 +85,7 @@ public class EntityDefinitionMapper {
         model.setStatus(toModelStatus(definition.getStatus()));
         model.setComponentParents(definition.getComponentParents());
         model.setIsEmbedded(definition.isEmbedded());
+        model.setCanContextObject(definition.isCanContextObject());
         model.setOrganizationId(definition.getOrganizationId());
         if (definition.getAttributes() != null) {
             model.setAttributes(definition.getAttributes().stream().map(this::toModel).toList());

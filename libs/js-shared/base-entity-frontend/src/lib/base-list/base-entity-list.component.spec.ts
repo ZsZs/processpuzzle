@@ -215,7 +215,7 @@ describe('EntityListComponent', () => {
     });
   });
 
-  describe('working context row action', () => {
+  describe('working context button', () => {
     async function setupWithContext() {
       const setup = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
       const workingContext = TestBed.inject(WorkingContextService);
@@ -230,14 +230,23 @@ describe('EntityListComponent', () => {
       expect(fixture.nativeElement.querySelector('[data-testid="testEntity-set-active-context"]')).toBeNull();
     });
 
-    it('offers "Set as active" on every row and selects the row\'s entity', async () => {
+    it('has no action on the rows, but a button below the list that waits for exactly one selected row', async () => {
       const { fixture, select } = await setupWithContext();
-      const buttons = fixture.nativeElement.querySelectorAll('[data-testid="testEntity-set-active-context"]') as NodeListOf<HTMLButtonElement>;
-      expect(buttons).toHaveLength(2);
+      const cells = () => fixture.nativeElement.querySelectorAll('td.mat-mdc-cell:not(.mat-column-select)') as NodeListOf<HTMLElement>;
+      const button = fixture.nativeElement.querySelector('[data-testid="testEntity-set-active-context"]') as HTMLButtonElement;
+      expect(fixture.nativeElement.querySelectorAll('td [data-testid="testEntity-set-active-context"]')).toHaveLength(0);
+      expect(button.disabled).toBe(true);
 
-      buttons[1].click();
+      cells()[2].click();
+      fixture.detectChanges();
+      expect(button.disabled).toBe(false);
 
+      button.click();
       expect(select).toHaveBeenCalledWith('test', '2');
+
+      cells()[0].click();
+      fixture.detectChanges();
+      expect(button.disabled).toBe(true);
     });
 
     it('sets the row active on double-click and on Enter', async () => {

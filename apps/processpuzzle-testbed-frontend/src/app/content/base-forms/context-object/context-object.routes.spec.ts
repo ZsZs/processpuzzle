@@ -48,11 +48,11 @@ describe('contextObjectRoutes', () => {
     expect(resolve).toHaveBeenCalledWith(DEMO_ROOT_NAME);
   });
 
-  it("opens on the aggregate root's own list", async () => {
+  it("serves the aggregate root's own list, with no redirect: the Samples page's buttons are these segments", async () => {
     const result = await routes();
 
-    expect(result[0]).toMatchObject({ path: '', pathMatch: 'full', redirectTo: AGGREGATE_ROOT_PATH });
-    expect(result[1].path).toBe(AGGREGATE_ROOT_PATH);
+    expect(result[0].path).toBe(AGGREGATE_ROOT_PATH);
+    expect(result.some((route) => route.redirectTo !== undefined)).toBe(false);
   });
 
   it('serves the context below ctx/<name>, with the root as its entity and each part as a list and as an embedded branch', async () => {

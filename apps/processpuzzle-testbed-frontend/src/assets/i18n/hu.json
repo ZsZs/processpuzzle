@@ -149,9 +149,7 @@
     "overview_tab_label": "Áttekintés",
     "samples_tab_label": "Példák",
     "samples_desc_1": "Az alábbi példa entitások a könyvtár funkcionalitásának bemutatására szolgálnak:",
-    "samples_desc_2": "Az alábbi táblázatok és űrlapok az entitásokból és azok attribútum leíróiból generálódnak futásidőben.",
-    "context_object_tab_label": "Kontextus objektum",
-    "context_object_no_context": "Még nincs kiválasztva aggregátum gyökér. Nyissa meg az „Aggregate Root” gombot, és kattintson egy sorban az „Aktívvá tétel” gombra."
+    "samples_desc_2": "Az alábbi táblázatok és űrlapok az entitásokból és azok attribútum leíróiból generálódnak futásidőben."
   },
   "base-rules": {
     "overview_tab_label": "Áttekintés",

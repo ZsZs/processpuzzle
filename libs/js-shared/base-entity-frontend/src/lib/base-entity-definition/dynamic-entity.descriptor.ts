@@ -114,6 +114,7 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
     // and it is worth more to render its attributes read-through than to fail the whole route with an
     // exception thrown while the router is building children.
     isEmbedded: definition.isEmbedded === true && componentParents.length > 0,
+    canContextObject: definition.canContextObject === true && definition.isEmbedded !== true,
   });
 }
 

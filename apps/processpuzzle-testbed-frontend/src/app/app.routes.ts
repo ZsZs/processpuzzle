@@ -170,15 +170,13 @@ export const appRoutes: Route[] = [
             loadComponent: () => import('./content/base-forms/dynamic-entity/dynamic-entity-container.component').then((comp) => comp.DynamicEntityContainerComponent),
             loadChildren: dynamicEntityScreenRoutes,
           },
+          {
+            // The Context Object sample: three metadata-only entities, so — like Dynamic Entity — its screens are
+            // contributed as routes at run time. Path-less: its routes are the sample buttons' own segments.
+            path: '',
+            loadChildren: contextObjectRoutes,
+          },
         ],
-      },
-      {
-        // The Context Object demonstration: a page of its own, apart from the samples, because it is about one
-        // feature rather than about the form controls. Its three entities exist only as metadata, so its screens are
-        // contributed as routes at run time, as the Dynamic Entity sample's are.
-        path: 'context-object',
-        loadComponent: () => import('./content/base-forms/context-object/context-object.component').then((comp) => comp.ContextObjectComponent),
-        loadChildren: contextObjectRoutes,
       },
     ],
   },
