@@ -49,7 +49,7 @@ public class CreateEntityInstanceUseCase {
         payloadValidatorPort.validate(orgKey, definition, payload);
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()
-            .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
+            .orgKey(scope.requireWritable(orgKey, entityDefinitionCode))
             .entityDefinitionCode(entityDefinitionCode)
             .payload(payload)
             .build());

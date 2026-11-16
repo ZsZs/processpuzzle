@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-import lombok.RequiredArgsConstructor;
+import com.processpuzzle.baseentity.common.ForbiddenException;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,27 +17,50 @@ import org.springframework.stereotype.Component;
  * {@code EntityObjectAccess}, the delete guard, the seed loader — goes through here instead of
  * filtering on {@code orgKey} itself.
  *
- * <p><b>Why a seam rather than a {@code WHERE org_key = ?} at each call.</b> Entity types will come in
- * two kinds. A <em>tenant</em> type, the only kind today, keeps its objects per organization. A
- * <em>global</em> type is shared reference data — currencies, countries — whose objects every tenant
- * reads alike. Those will be stored under a reserved organization key ({@code _global}), so
- * {@code org_key} stays not-null and {@code (org_key, code)} stays unique; the definition will carry the
- * flag. When it does, {@link #storageOrgKey} answers {@code _global} for a flagged type and nothing
- * else changes. Who may <em>write</em> a global type — platform staff only, presumably — is a decision for
- * that change, not this class.
+ * <p><b>Why a seam rather than a {@code WHERE org_key = ?} at each call.</b> Entity types come in two kinds.
+ * A <em>tenant</em> type keeps its objects per organization. A <em>shared</em> type belongs to a common — the
+ * organization the platform keeps for a business starter — whose members all read its objects alike; they are stored
+ * under the common's key, so {@code org_key} stays not-null and {@code (org_key, code)} stays unique.
+ * {@link #storageOrgKey} answers which, and nothing else changes; {@link #requireWritable} keeps a member from
+ * writing what is not its own. See {@code docs/shared-data-commons-concept}.
  */
 @Component
-@RequiredArgsConstructor
 public class EntityObjectScope {
 
     private final EntityObjectRepository repository;
+    private final EntityDefinitionLookupPort definitions;
+
+    @Autowired
+    public EntityObjectScope(EntityObjectRepository repository, EntityDefinitionLookupPort definitions) {
+        this.repository = repository;
+        this.definitions = definitions;
+    }
+
+    /** A scope in which no type is shared. */
+    public EntityObjectScope(EntityObjectRepository repository) {
+        this(repository, (orgKey, code, channel) -> Optional.empty());
+    }
 
     /**
      * The organization key the objects of {@code entityDefinitionCode} are stored under, as seen from a
-     * request addressed to {@code orgKey}. Today always {@code orgKey}: every entity type is a tenant type.
+     * request addressed to {@code orgKey}: {@code orgKey} itself for a tenant type, the common's key for a type its
+     * common shares with it.
      */
     public String storageOrgKey(String orgKey, String entityDefinitionCode) {
-        return orgKey;
+        return definitions.sharedFrom(orgKey, entityDefinitionCode).orElse(orgKey);
+    }
+
+    /**
+     * Refuses a write to a shared type from a member: the objects of a shared type are the common's, and a member
+     * only reads them. The common's own requests, addressed to its key, are the ones that write.
+     */
+    public String requireWritable(String orgKey, String entityDefinitionCode) {
+        String storage = storageOrgKey(orgKey, entityDefinitionCode);
+        if (!storage.equals(orgKey)) {
+            throw new ForbiddenException(
+                "'%s' is shared by '%s' and cannot be changed from '%s'".formatted(entityDefinitionCode, storage, orgKey));
+        }
+        return storage;
     }
 
     /**

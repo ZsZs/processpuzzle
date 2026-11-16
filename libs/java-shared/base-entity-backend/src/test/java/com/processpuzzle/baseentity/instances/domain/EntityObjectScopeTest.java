@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import com.processpuzzle.baseentity.common.ForbiddenException;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,20 +28,23 @@ class EntityObjectScopeTest {
     @Mock
     private EntityObjectRepository repository;
 
+    @Mock
+    private EntityDefinitionLookupPort definitions;
+
     private EntityObjectScope scope;
 
     private final UUID id = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        scope = new EntityObjectScope(repository);
+        scope = new EntityObjectScope(repository, definitions);
     }
 
     private EntityObject object(String orgKey, String code) {
         return EntityObject.builder().id(id).orgKey(orgKey).entityDefinitionCode(code).version(0L).build();
     }
 
-    /** Every entity type is a tenant type today; a global type will answer the reserved key instead. */
+    /** A tenant type is stored under the request's own organization. */
     @Test
     void storageOrgKey_isTheRequestOrganization() {
         assertThat(scope.storageOrgKey(ORG, "order")).isEqualTo(ORG);
@@ -104,5 +110,35 @@ class EntityObjectScopeTest {
 
         assertThat(scope.existsAny(ORG, "order")).isTrue();
         assertThat(scope.existsAny(OTHER_ORG, "order")).isFalse();
+    }
+
+    @Test
+    void storageOrgKey_ofASharedType_isTheCommon() {
+        when(definitions.sharedFrom(ORG, "asset")).thenReturn(Optional.of("starter-common"));
+
+        assertThat(scope.storageOrgKey(ORG, "asset")).isEqualTo("starter-common");
+    }
+
+    @Test
+    void find_ofASharedType_readsTheCommonsObject() {
+        when(definitions.sharedFrom(ORG, "asset")).thenReturn(Optional.of("starter-common"));
+        EntityObject asset = object("starter-common", "asset");
+        when(repository.findByIdAndOrgKey(id, "starter-common")).thenReturn(Optional.of(asset));
+
+        assertThat(scope.find(ORG, "asset", id)).contains(asset);
+    }
+
+    @Test
+    void requireWritable_refusesAMemberWritingASharedType() {
+        when(definitions.sharedFrom(ORG, "asset")).thenReturn(Optional.of("starter-common"));
+
+        assertThatThrownBy(() -> scope.requireWritable(ORG, "asset")).isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void requireWritable_letsTheCommonWriteItsOwnType() {
+        when(definitions.sharedFrom("starter-common", "asset")).thenReturn(Optional.empty());
+
+        assertThat(scope.requireWritable("starter-common", "asset")).isEqualTo("starter-common");
     }
 }

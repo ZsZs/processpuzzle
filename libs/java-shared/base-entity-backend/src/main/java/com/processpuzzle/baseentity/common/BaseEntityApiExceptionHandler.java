@@ -22,6 +22,11 @@ public class BaseEntityApiExceptionHandler {
         return problem(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
+        return problem(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
         return problem(HttpStatus.CONFLICT, ex.getMessage());

@@ -1,0 +1,11 @@
+package com.processpuzzle.baseentity.definition.domain;
+
+/** Who may write the records of a shared entity type. */
+public enum SharingWrite {
+    /** Only the common's own members, the platform staff who curate it. */
+    COMMON_ADMIN,
+    /** The member that owns the record. Not supported yet. */
+    OWNER_ORG,
+    /** The person the record describes. Reserved. */
+    SELF
+}

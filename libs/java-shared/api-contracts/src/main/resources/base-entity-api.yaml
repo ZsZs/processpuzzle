@@ -1200,6 +1200,24 @@ components:
               format: uuid
               readOnly: true
 
+    EntitySharing:
+      type: object
+      required: [ write, visibility ]
+      description: >
+        Present on an entity type of a common (the organization the platform keeps for a business
+        starter): the type is shared, defined once there and read by every organization of the
+        starter. Rejected (422) on any other organization, on an embedded type, and for a policy that
+        is not supported yet.
+      properties:
+        write:
+          type: string
+          enum: [ COMMON_ADMIN, OWNER_ORG, SELF ]
+          description: Who may write the records. Only COMMON_ADMIN is supported so far.
+        visibility:
+          type: string
+          enum: [ PUBLIC, OWNER_ONLY ]
+          description: Who may read the records. Only PUBLIC is supported so far.
+
     BaseEntityDefinitionInput:
       type: object
       required: [ code, name, attributes ]
@@ -1233,6 +1251,8 @@ components:
             True: a user can pick one object of this type as the "context object" — the aggregate
             whose embedded components are then listed and edited without naming it again. Only
             meaningful for a stand-alone (not embedded) definition.
+        sharing:
+          $ref: '#/components/schemas/EntitySharing'
         organizationId:
           type: string
           format: uuid

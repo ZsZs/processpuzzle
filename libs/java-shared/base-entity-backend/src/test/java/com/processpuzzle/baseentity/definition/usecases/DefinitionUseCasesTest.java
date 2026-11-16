@@ -73,8 +73,14 @@ class DefinitionUseCasesTest {
 
     @BeforeEach
     void setUp() {
-        createUseCase = new CreateEntityDefinitionUseCase(repository, validator);
-        replaceUseCase = new ReplaceEntityDefinitionUseCase(repository, validator);
+        // No data-space directory: a host without commons, where nothing is shared.
+        @SuppressWarnings("unchecked")
+        org.springframework.beans.factory.ObjectProvider<com.processpuzzle.core.tenancy.DataSpaceDirectory> noDataSpaces =
+            org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+        com.processpuzzle.baseentity.definition.domain.EntitySharingValidator sharing =
+            new com.processpuzzle.baseentity.definition.domain.EntitySharingValidator(repository, noDataSpaces);
+        createUseCase = new CreateEntityDefinitionUseCase(repository, validator, sharing);
+        replaceUseCase = new ReplaceEntityDefinitionUseCase(repository, validator, sharing);
         deleteUseCase = new DeleteEntityDefinitionUseCase(repository, existenceCheckPort);
         findAllUseCase = new FindAllEntityDefinitionsUseCase(repository);
         findByCodeUseCase = new FindEntityDefinitionByCodeUseCase(repository);

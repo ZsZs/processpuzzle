@@ -57,6 +57,7 @@ public class UpdateEntityInstanceUseCase {
      *               one of another type than {@code entityDefinitionCode}, is not found
      */
     public EntityObject update(String orgKey, String entityDefinitionCode, UUID id, Long expectedVersion, Map<String, Object> payload) {
+        scope.requireWritable(orgKey, entityDefinitionCode);
         EntityObject entityObject = scope.find(orgKey, entityDefinitionCode, id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
 
