@@ -390,6 +390,17 @@ paths:
           $ref: "#/components/responses/NotFound"
         "409":
           $ref: "#/components/responses/Conflict"
+        "429":
+          description: The user is posting faster than the rate limit allows (`chat.rate-limited`).
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another post is accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
 

@@ -8,7 +8,9 @@ import com.processpuzzle.chat.conversation.domain.Message;
 import com.processpuzzle.chat.conversation.domain.MessageKind;
 import com.processpuzzle.chat.conversation.domain.MessageRepository;
 import com.processpuzzle.chat.conversation.domain.PostedMessage;
+import com.processpuzzle.chat.common.ChatMetrics;
 import com.processpuzzle.chat.conversation.usecases.exception.ChatAccessDeniedException;
+import com.processpuzzle.chat.conversation.usecases.exception.ChatRateLimitedException;
 import com.processpuzzle.chat.conversation.usecases.exception.ConversationNotFoundException;
 import com.processpuzzle.chat.conversation.usecases.exception.ConversationNotWritableException;
 import com.processpuzzle.chat.conversation.usecases.exception.InvalidChatRequestException;
@@ -49,11 +51,14 @@ public class PostMessage {
     private final CurrentPrincipal principal;
     private final ReadMarkers markers;
     private final ApplicationEventPublisher events;
+    private final PostRateLimiter limiter;
+    private final ChatMetrics metrics;
     private final int maxLength;
 
     public PostMessage(ConversationRepository conversations, MessageRepository messages, ResolveAccess access,
                        OrganizationGuard guard, CurrentPrincipal principal, ReadMarkers markers,
-                       ApplicationEventPublisher events, @Value("${base-chat.max-message-length:4000}") int maxLength) {
+                       ApplicationEventPublisher events, PostRateLimiter limiter, ChatMetrics metrics,
+                       @Value("${base-chat.max-message-length:4000}") int maxLength) {
         this.conversations = conversations;
         this.messages = messages;
         this.access = access;
@@ -61,6 +66,8 @@ public class PostMessage {
         this.principal = principal;
         this.markers = markers;
         this.events = events;
+        this.limiter = limiter;
+        this.metrics = metrics;
         this.maxLength = Math.min(maxLength, HARD_LIMIT);
     }
 
@@ -76,13 +83,17 @@ public class PostMessage {
             throw ConversationNotFoundException.conversation();
         }
         if (!allowed.mayWrite()) {
+            metrics.messageRejected("forbidden");
             throw new ChatAccessDeniedException("Your roles do not allow posting in this conversation");
         }
         if (!allowed.writable()) {
+            metrics.messageRejected("not_writable");
             throw notWritable();
         }
+        acquire(orgKey, author);
 
         if (conversations.lockIfStatus(conversationId, orgKey, ConversationStatus.OPEN) == 0) {
+            metrics.messageRejected("not_writable");
             throw notWritable();
         }
         Optional<Message> replay = messages.findByConversationIdAndAuthorSubAndClientMessageId(conversationId, author, clientMessageId);
@@ -104,7 +115,18 @@ public class PostMessage {
         Message stored = messages.save(message);
         markers.followAfterPosting(orgKey, conversationId, author, stored.getSeq());
         events.publishEvent(new MessagePostedEvent(orgKey, conversationId, stored));
+        metrics.messagePosted();
         return new PostedMessage(stored, true);
+    }
+
+    /** Taken after the access decisions, so a caller who may not see the conversation learns nothing from a 429. */
+    private void acquire(String orgKey, String author) {
+        try {
+            limiter.acquire(orgKey, author);
+        } catch (ChatRateLimitedException e) {
+            metrics.messageRejected("rate_limited");
+            throw e;
+        }
     }
 
     private void validate(UUID clientMessageId, String body) {

@@ -1,5 +1,8 @@
 package com.processpuzzle.chat.conversation.usecases;
 
+import com.processpuzzle.chat.common.ChatMetrics;
+import com.processpuzzle.chat.conversation.usecases.inbound.PostRateLimiter;
+import io.micrometer.core.instrument.MeterRegistry;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.ORG;
 import static com.processpuzzle.chat.conversation.ConversationFixtures.conversation;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +86,7 @@ class PostMessageConcurrencyTest {
             CurrentPrincipal principal = mock(CurrentPrincipal.class);
             when(principal.subject()).thenReturn(Optional.of("sub-author"));
             when(principal.displayName()).thenReturn(Optional.of("Ann Author"));
-            return new PostMessage(conversations, messages, access, mock(OrganizationGuard.class), principal, markers, events, 4000);
+            return new PostMessage(conversations, messages, access, mock(OrganizationGuard.class), principal, markers, events, new PostRateLimiter(0, 1), new ChatMetrics((MeterRegistry) null), 4000);
         }
     }
 

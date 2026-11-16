@@ -37,6 +37,7 @@ import com.processpuzzle.state.usecase.ImportStateMachineDefinitions;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstance;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceStatus;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -145,6 +146,7 @@ class ChatIntegrationTest {
     @Autowired private ListUnread listUnread;
     @Autowired private OpenChatStream openStream;
     @Autowired private WorkflowInstanceRepository workflowInstances;
+    @Autowired private MeterRegistry meters;
     @Autowired private ChatStreamRegistry registry;
 
     private String orderId;
@@ -287,6 +289,19 @@ class ChatIntegrationTest {
                 .orgKey(ORG).workflowId("offboarding").workflowName("Offboarding").status(WorkflowInstanceStatus.ACTIVE).startedAt(Instant.now()).build());
 
         assertThatThrownBy(() -> open.open(ORG, "onboarding-run-chat", run.getId().toString(), null)).isInstanceOf(ConversationNotFoundException.class);
+    }
+
+    @Test
+    void aStoredMessageIsCountedAndAReplayIsNot() {
+        UUID id = open.open(ORG, "order-discussion", orderId, null).conversation().getId();
+        double before = meters.counter("chat.messages.posted").count();
+        UUID clientId = UUID.randomUUID();
+
+        post.post(ORG, id, clientId, "Counted once");
+        post.post(ORG, id, clientId, "Counted once");
+
+        assertThat(meters.counter("chat.messages.posted").count() - before).isEqualTo(1.0);
+        assertThat(meters.find("chat.stream.connections").gauge()).isNotNull();
     }
 
     // --- following, unread and the live stream

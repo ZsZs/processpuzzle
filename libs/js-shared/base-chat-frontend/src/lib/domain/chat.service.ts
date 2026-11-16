@@ -17,6 +17,8 @@ export function failureKindOf(error: unknown): ChatFailureKind {
       return 'conflict';
     case HttpStatusCode.BadRequest:
       return 'invalid';
+    case HttpStatusCode.TooManyRequests:
+      return 'rate-limited';
     default:
       return 'unavailable';
   }
