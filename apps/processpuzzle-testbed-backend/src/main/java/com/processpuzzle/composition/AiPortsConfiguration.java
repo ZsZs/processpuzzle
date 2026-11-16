@@ -5,7 +5,6 @@ import com.processpuzzle.ai.usecase.port.SubjectDirectory;
 import com.processpuzzle.baseentity.api.EntityAttributeKind;
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.api.EntityObjectAccess;
-import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.store.usecases.outbound.FileStorageService;
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
@@ -77,31 +76,19 @@ public class AiPortsConfiguration {
 
             @Override
             public boolean subjectExists(String orgKey, String entityName, UUID objectId) {
-                try {
-                    objects.find(orgKey, entityName, objectId);
-                    return true;
-                } catch (EntityObjectAccessException.NotFound e) {
-                    return false;
-                }
+                return objects.findIfPresent(orgKey, entityName, objectId).isPresent();
             }
 
             @Override
             public Optional<String> identifier(String orgKey, String entityName, UUID objectId, String attributeKey) {
-                try {
-                    Object value = objects.find(orgKey, entityName, objectId).payload().get(attributeKey);
-                    return value == null || value.toString().isBlank() ? Optional.empty() : Optional.of(value.toString());
-                } catch (EntityObjectAccessException.NotFound e) {
-                    return Optional.empty();
-                }
+                Object value = objects.findIfPresent(orgKey, entityName, objectId).map(view -> view.payload().get(attributeKey)).orElse(null);
+                return value == null || value.toString().isBlank() ? Optional.empty() : Optional.of(value.toString());
             }
 
             @Override
             public List<SubjectPhoto> photos(String orgKey, String entityName, UUID objectId, String attributeKey) {
-                try {
-                    return artifactPhotos(objects.find(orgKey, entityName, objectId).payload().get(attributeKey));
-                } catch (EntityObjectAccessException.NotFound e) {
-                    return List.of();
-                }
+                return objects.findIfPresent(orgKey, entityName, objectId)
+                        .map(view -> artifactPhotos(view.payload().get(attributeKey))).orElse(List.of());
             }
 
             @Override
