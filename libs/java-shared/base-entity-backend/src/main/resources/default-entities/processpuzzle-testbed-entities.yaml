@@ -637,6 +637,7 @@ entityDefinitions:
       embedded parts without going through it again.
     status: ACTIVE
     isEmbedded: false
+    canContextObject: true
     componentParents: [ ]
     attributes:
       - code: name

@@ -38,6 +38,21 @@ class EntityDefinitionValidatorTest {
     }
 
     @Test
+    void validate_standaloneContextObject_passes() {
+        validator.validate(BaseEntityDefinition.builder().code("race").name("Race").canContextObject(true).build());
+    }
+
+    @Test
+    void validate_embeddedContextObject_throwsValidationException() {
+        BaseEntityDefinition definition = BaseEntityDefinition.builder()
+                .code("line").name("Line").isEmbedded(true).componentParents(List.of("order")).canContextObject(true).build();
+
+        assertThatThrownBy(() -> validator.validate(definition))
+                .isInstanceOfSatisfying(ValidationException.class, ve ->
+                        assertThat(ve.getViolations().get(0).message()).contains("canContextObject"));
+    }
+
+    @Test
     void validate_dateFormatOnDateKinds_passes() {
         validator.validate(definitionWith(dateAttribute(ValueKind.DATE, new DateFormat(DateStyle.SHORT, TimeStyle.NONE))));
         validator.validate(definitionWith(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.MEDIUM, TimeStyle.SHORT))));

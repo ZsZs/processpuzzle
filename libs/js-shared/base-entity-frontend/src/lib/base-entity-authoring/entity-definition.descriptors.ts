@@ -49,6 +49,7 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   // options are a callback re-read on every change detection, so a definition saved a moment ago is already on
   // offer. Without them it accepts free text, and `descriptorOf` drops a code with no definition behind it —
   // the backend rejects one on save either way.
+  const canContextObjectAttr = new BaseEntityAttrDescriptor('canContextObject', FormControlType.CHECKBOX, 'Can be context object');
   const componentParentsAttr = new BaseEntityAttrDescriptor('componentParents', FormControlType.TAGS, 'Component Parents', entityCodes);
   componentParentsAttr.hideInTable = true;
   // endregion
@@ -76,7 +77,7 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
 
   const identityRow = new FlexboxDescriptor([codeAttr, nameAttr, statusAttr, releaseStateAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const containmentRow = new FlexboxDescriptor([isEmbeddedAttr, componentParentsAttr], FlexDirection.ROW);
+  const containmentRow = new FlexboxDescriptor([isEmbeddedAttr, canContextObjectAttr, componentParentsAttr], FlexDirection.ROW);
   containmentRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };

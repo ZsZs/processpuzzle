@@ -60,15 +60,18 @@ class EntityDefinitionMapperTest {
         input.setStatus(EntityDefinitionStatus.ACTIVE);
         input.setComponentParents(List.of());
         input.setIsEmbedded(false);
+        input.setCanContextObject(true);
         input.setAttributes(List.of(attrInput));
 
         BaseEntityDefinition domain = mapper.toDomain(input);
+        assertThat(domain.isCanContextObject()).isTrue();
         assertThat(domain.getCode()).isEqualTo("partner");
         assertThat(domain.getAttributes()).hasSize(1);
         assertThat(domain.getAttributes().get(0).getEntityDefinition()).isSameAs(domain);
 
         com.processpuzzle.baseentity.model.BaseEntityDefinition model = mapper.toModel(domain);
         assertThat(model.getCode()).isEqualTo("partner");
+        assertThat(model.getCanContextObject()).isTrue();
         assertThat(model.getAttributes()).hasSize(1);
         assertThat(model.getAttributes().get(0).getCode()).isEqualTo("name");
     }

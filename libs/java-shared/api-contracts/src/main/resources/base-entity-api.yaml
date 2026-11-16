@@ -1226,6 +1226,13 @@ components:
             (no EntityObject rows of its own). False: persisted independently,
             linked back to its parent via a FOREIGN_KEY attribute value. Rejected
             (422) when true and componentParents is empty.
+        canContextObject:
+          type: boolean
+          default: false
+          description: >
+            True: a user can pick one object of this type as the "context object" — the aggregate
+            whose embedded components are then listed and edited without naming it again. Only
+            meaningful for a stand-alone (not embedded) definition.
         organizationId:
           type: string
           format: uuid

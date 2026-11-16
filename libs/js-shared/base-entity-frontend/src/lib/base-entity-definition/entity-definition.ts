@@ -192,6 +192,8 @@ export class EntityDefinition implements BaseEntity {
   componentParents?: string[];
   /** True when this definition's payload travels inside its parent's and it has no rows of its own. */
   isEmbedded?: boolean;
+  /** True when a user can pick one object of this type as the context object; see `BaseEntityDescriptorOptions.canContextObject`. */
+  canContextObject?: boolean;
   attributes?: EntityAttributeDefinition[];
   // region server-assigned
   version?: number;
@@ -210,6 +212,7 @@ export class EntityDefinition implements BaseEntity {
     // to append to.
     this.componentParents = init.componentParents ?? [];
     this.isEmbedded = init.isEmbedded ?? false;
+    this.canContextObject = init.canContextObject ?? false;
     this.attributes = init.attributes ?? [];
     this.version = init.version;
     this.createdAt = init.createdAt;

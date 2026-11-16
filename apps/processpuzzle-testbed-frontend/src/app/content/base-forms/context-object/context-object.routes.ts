@@ -20,7 +20,7 @@ export const DEMO_COMPONENT_TWO_NAME = 'Demo Component Two';
 /** The working context the demonstration declares: the Demo Root a user has selected. */
 export const DEMO_CONTEXT_NAME = 'demo-root';
 /** Where the page is mounted; what a selection from the root's own list navigates below. */
-export const CONTEXT_OBJECT_BASE_PATH = '/base-entity/context-object';
+export const CONTEXT_OBJECT_BASE_PATH = '/base-entity/samples';
 
 export const AGGREGATE_ROOT_PATH = 'aggregate-root';
 /** The path of a part's list, and the URL segment of its embedded form: the same, so the page's button stays selected while a row is edited. */
@@ -30,7 +30,7 @@ export const COMPONENT_TWO_PATH = 'demo-component-two';
 /**
  * The screens of the demonstration, contributed as routes at run time because the three entities exist only as metadata:
  *
- * - `aggregate-root` — the root's ordinary list and details. Where the root is selected: its list offers "Set as active".
+ * - `aggregate-root` — the root's ordinary list and details. Where the root is selected: select one row of its list, then "Set as context object".
  * - `ctx/demo-root/<id>/demo-component-one|two` — a list of that part, for the selected root. A row, and Add, open the part's
  *   own form below the root (`…/demo-component-one/<rowId>/details`), saved on its own, without opening the root.
  * - `ctx/demo-root/<part>` with no id — the same view when no root is selected: it asks for one, and continues with the one
@@ -39,7 +39,6 @@ export const COMPONENT_TWO_PATH = 'demo-component-two';
 export async function contextObjectRoutes(): Promise<Routes> {
   const screens = await inject(EntityScreenResolver).resolve(DEMO_ROOT_NAME);
   return [
-    { path: '', pathMatch: 'full', redirectTo: AGGREGATE_ROOT_PATH },
     { path: AGGREGATE_ROOT_PATH, ...entityScreenRoute({ entityName: DEMO_ROOT_NAME, screens, hostPath: AGGREGATE_ROOT_PATH }) },
     ...workingContextRoutes(
       DEMO_CONTEXT_NAME,

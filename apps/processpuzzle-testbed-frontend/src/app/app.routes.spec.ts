@@ -31,7 +31,8 @@ describe('appRoutes — entity screen mount points', () => {
 
   const mountedEntities = (...path: [string, ...string[]]): Array<{ path: string | undefined; entityName: unknown }> =>
     childrenOf(...path)
-      .filter((route) => route.loadChildren !== undefined)
+      // A path-less mount contributes no segment of its own — the Context Object sample's routes carry their own entity names.
+      .filter((route) => route.loadChildren !== undefined && route.path !== '')
       .map((route) => ({ path: route.path, entityName: route.data?.[ENTITY_NAME_ROUTE_DATA_KEY] }));
 
   it.each([

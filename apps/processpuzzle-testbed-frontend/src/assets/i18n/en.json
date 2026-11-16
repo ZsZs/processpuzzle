@@ -149,9 +149,7 @@
     "overview_tab_label": "Overview",
     "samples_tab_label": "Samples",
     "samples_desc_1": "The sample entities, to demonstrate the functionality this library are as follows:",
-    "samples_desc_2": "The tables and forms below are generated from the entities end their attribute descriptors, run-time.",
-    "context_object_tab_label": "Context Object",
-    "context_object_no_context": "No aggregate root is selected yet. Open Aggregate Root and click \"Set as active\" on a row."
+    "samples_desc_2": "The tables and forms below are generated from the entities end their attribute descriptors, run-time."
   },
   "base-rules": {
     "overview_tab_label": "Overview",

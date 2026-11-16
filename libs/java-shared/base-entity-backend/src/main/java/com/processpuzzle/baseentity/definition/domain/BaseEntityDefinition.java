@@ -99,6 +99,15 @@ public class BaseEntityDefinition extends Auditable {
     @Builder.Default
     private boolean isEmbedded = false;
 
+    /**
+     * True: a user can pick one object of this type as the working "context object"; the other
+     * features then address its embedded components without naming the object each time.
+     */
+    @ColumnDefault("false")
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean canContextObject = false;
+
     private UUID organizationId;
 
     @jakarta.persistence.OneToMany(mappedBy = "entityDefinition", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
@@ -152,6 +161,7 @@ public class BaseEntityDefinition extends Auditable {
         this.status = draft.status;
         this.componentParents = new ArrayList<>(draft.componentParents);
         this.isEmbedded = draft.isEmbedded;
+        this.canContextObject = draft.canContextObject;
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));
         java.util.Set<String> kept = new java.util.HashSet<>();

@@ -31,8 +31,6 @@ import { AddressPipe } from '../base-form/address/address.pipe';
 import { GeoLocationPipe } from '../base-form/geo-location/geo-location.pipe';
 import { WorkingContextDefinition } from '../working-context/working-context.definition';
 
-/** The column carrying the row actions of the working contexts this entity is the root of. */
-export const WORKING_CONTEXT_COLUMN = 'workingContextActions';
 
 export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DISPLAYED_COLUMNS');
 
@@ -87,7 +85,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   /** Set once the first load is made, so that a context change before it does not load twice. */
   private viewReady = false;
   private readonly workingContext = inject(WorkingContextService);
-  /** The working contexts this entity is the root of. Each one adds a "Set as active" action to every row. */
+  /** The working contexts this entity is the root of. They add a "Set as context object" button below the list, enabled while exactly one row is selected. */
   protected readonly workingContexts: Signal<WorkingContextDefinition[]> = computed(() => this.workingContext.definitionsForEntity(this.entityDescriptor().entityName));
   columnDescriptors: Signal<BaseEntityAttrDescriptor[]> = computed(() => {
     return filterAttributeDescriptors(this.entityDescriptor().attrDescriptors);
@@ -97,7 +95,6 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
       .filter((column) => column.hideInTable !== true)
       .map((column) => column.attrName);
     columns.unshift('select');
-    if (this.workingContexts().length > 0) columns.push(WORKING_CONTEXT_COLUMN);
     return columns;
   });
   @ViewChild(MatSort) sort = {} as MatSort;
@@ -166,13 +163,18 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     if (this.workingContexts().length > 0) void this.onSetActive(this.workingContexts()[0], entity);
   }
 
-  async onSetActive(definition: WorkingContextDefinition, entity: PersistedEntity<Entity>, event?: Event): Promise<void> {
-    event?.stopPropagation();
+  async onSetActive(definition: WorkingContextDefinition, entity: PersistedEntity<Entity>): Promise<void> {
     await this.workingContext.select(definition.name, entity.id);
   }
 
-  isActiveContext(definition: WorkingContextDefinition, entity: PersistedEntity<Entity>): boolean {
-    return this.workingContext.current(definition.name)?.id === entity.id;
+  /** Makes the one selected row the context object. */
+  async onSetSelectedAsContext(): Promise<void> {
+    const [entity] = this.selection.selected;
+    if (this.canSetContextObject() && entity) await this.onSetActive(this.workingContexts()[0], entity);
+  }
+
+  canSetContextObject(): boolean {
+    return this.workingContexts().length > 0 && this.selection.selected.length === 1;
   }
 
   /** A FOREIGN_KEY cell shows the linked object's identifying attribute, as the form does, not its id. */

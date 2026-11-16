@@ -20,6 +20,7 @@ public class EntityDefinitionValidator {
     public void validate(BaseEntityDefinition definition) {
         List<Violation> violations = new ArrayList<>();
         validateEmbeddedParent(definition, violations);
+        validateContextObject(definition, violations);
         validateAttributes(definition, violations);
         validateEmbeddedComponentsUniqueness(definition, violations);
 
@@ -32,6 +33,14 @@ public class EntityDefinitionValidator {
         if (definition.isEmbedded() && definition.getComponentParents().isEmpty()) {
             violations.add(new Violation(null,
                 "'%s' declares isEmbedded without a componentParent; an embedded component must name the entity whose payload carries it."
+                    .formatted(definition.getCode())));
+        }
+    }
+
+    private void validateContextObject(BaseEntityDefinition definition, List<Violation> violations) {
+        if (definition.isCanContextObject() && definition.isEmbedded()) {
+            violations.add(new Violation(null,
+                "'%s' declares canContextObject but is embedded; only a stand-alone entity can be picked as the context object."
                     .formatted(definition.getCode())));
         }
     }

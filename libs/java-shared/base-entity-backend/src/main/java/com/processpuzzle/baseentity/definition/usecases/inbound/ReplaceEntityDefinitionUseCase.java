@@ -36,6 +36,7 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setStatus(desiredState.getStatus());
         existing.setComponentParents(desiredState.getComponentParents());
         existing.setEmbedded(desiredState.isEmbedded());
+        existing.setCanContextObject(desiredState.isCanContextObject());
         existing.setOrganizationId(desiredState.getOrganizationId());
 
         replaceAttributes(existing, desiredState);
