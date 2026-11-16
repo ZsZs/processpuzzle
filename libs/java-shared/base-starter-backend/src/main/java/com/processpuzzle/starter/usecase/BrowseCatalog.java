@@ -1,6 +1,7 @@
 package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.starter.bundle.BundleReader;
+import com.processpuzzle.starter.bundle.CommonKeys;
 import com.processpuzzle.starter.registry.StarterCatalog;
 import com.processpuzzle.starter.registry.StarterRegistry;
 import com.processpuzzle.starter.registry.StarterVersions;
@@ -25,8 +26,17 @@ public class BrowseCatalog {
         this.registry = registry;
     }
 
-    /** Sorted by name; each starter's versions newest first. */
+    /** What a subscriber may pick: sorted by name, each starter's versions newest first, the commons left out. */
     public List<StarterCatalog.Starter> list() {
+        return installables().stream().filter(starter -> !CommonKeys.isCommonId(starter.id())).toList();
+    }
+
+    public Optional<StarterCatalog.Starter> get(String starterId) {
+        return list().stream().filter(starter -> starter.id().equals(starterId)).findFirst();
+    }
+
+    /** Commons are published like starters, but belong to no subscriber's catalog: only the platform installs them. */
+    private List<StarterCatalog.Starter> installables() {
         return registry.catalog().starters().stream()
                 .filter(starter -> starter.id() != null)
                 .map(BrowseCatalog::installable)
@@ -35,15 +45,11 @@ public class BrowseCatalog {
                 .toList();
     }
 
-    public Optional<StarterCatalog.Starter> get(String starterId) {
-        return list().stream().filter(starter -> starter.id().equals(starterId)).findFirst();
-    }
-
     /**
      * @throws StarterNotFoundException if the catalog has no installable {@code version} of the starter
      */
     public StarterCatalog.Version version(String starterId, String version) {
-        StarterCatalog.Starter starter = get(starterId)
+        StarterCatalog.Starter starter = installables().stream().filter(candidate -> candidate.id().equals(starterId)).findFirst()
                 .orElseThrow(() -> new StarterNotFoundException("The catalog has no starter '" + starterId + "'."));
         return starter.version(version)
                 .orElseThrow(() -> new StarterNotFoundException(

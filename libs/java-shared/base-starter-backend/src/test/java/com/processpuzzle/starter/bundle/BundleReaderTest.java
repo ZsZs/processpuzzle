@@ -276,6 +276,68 @@ class BundleReaderTest {
                 "empty or not a zip");
     }
 
+    private static Map<String, String> v2(String manifest) {
+        Map<String, String> files = new LinkedHashMap<>();
+        files.put("manifest.yaml", manifest);
+        files.put("entities/item.yaml", "entityDefinitions: []\n");
+        return files;
+    }
+
+    private static final String V2_HEAD = "manifestVersion: 2\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n";
+    private static final String V2_CONTENTS = "contents:\n  entities:\n    - entities/item.yaml\n";
+
+    @Test
+    void readsACommonBundle() {
+        StarterBundle bundle = read(v2(V2_HEAD + "kind: common\nid: inventory-common\n" + V2_CONTENTS + "migrations: []\n"));
+
+        assertThat(bundle.manifest().isCommon()).isTrue();
+        assertThat(bundle.manifest().common()).isNull();
+    }
+
+    @Test
+    void readsATenantBundleThatNamesItsCommon() {
+        StarterBundle bundle = read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: inventory-common\n  minVersion: 1.2.0\n" + V2_CONTENTS));
+
+        assertThat(bundle.manifest().isCommon()).isFalse();
+        assertThat(bundle.manifest().common()).isEqualTo(new StarterManifest.Common("inventory-common", "1.2.0"));
+    }
+
+    @Test
+    void aVersion2ManifestRefusesAMisspeltField() {
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommn:\n  id: inventory-common\n" + V2_CONTENTS)), "unknown field 'commn'");
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: inventory-common\n  minVersoin: 1.0.0\n" + V2_CONTENTS)),
+                "unknown field 'common.minVersoin'");
+    }
+
+    @Test
+    void aVersion1ManifestStillIgnoresWhatItDoesNotKnowAndRefusesTheCommonsFields() {
+        read(v2("manifestVersion: 1\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\nwhatever: 1\n" + V2_CONTENTS));
+
+        assertInvalid(() -> read(v2("manifestVersion: 1\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n"
+                + "kind: common\n" + V2_CONTENTS)), "need manifestVersion 2");
+    }
+
+    @Test
+    void aCommonMustBeNamedAfterItsStarterAndHasNoCommonBlock() {
+        assertInvalid(() -> read(v2(V2_HEAD + "kind: common\nid: inventory\n" + V2_CONTENTS)), "'<starter id>-common'");
+        assertInvalid(() -> read(v2(V2_HEAD + "kind: common\nid: inventory-common\ncommon:\n  id: x-common\n  minVersion: 1.0.0\n" + V2_CONTENTS)),
+                "no 'common' block");
+    }
+
+    @Test
+    void aTenantMustNameItsOwnCommonAndAMinVersion() {
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: other-common\n  minVersion: 1.0.0\n" + V2_CONTENTS)),
+                "'common.id' must be 'inventory-common'");
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: inventory-common\n  minVersion: latest\n" + V2_CONTENTS)),
+                "'common.minVersion'");
+    }
+
+    @Test
+    void aManifestVersionFromTheFutureIsRefused() {
+        assertInvalid(() -> read(v2("manifestVersion: 3\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n" + V2_CONTENTS)),
+                "Unsupported manifestVersion 3");
+    }
+
     private StarterBundle read(Map<String, String> files) {
         return reader.read(new ByteArrayInputStream(TestBundles.zip(files)));
     }
