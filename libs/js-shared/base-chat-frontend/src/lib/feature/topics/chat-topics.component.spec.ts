@@ -223,14 +223,14 @@ describe('ChatTopicsComponent', () => {
 
   it('ignores a slow answer for a record it has moved away from', async () => {
     const store = storeWithTopics();
-    let release: (ids: string[]) => void = () => undefined;
-    store.listForSubject.mockImplementationOnce(() => new Promise<string[]>((resolve) => (release = resolve)));
+    const pending: Array<(ids: string[]) => void> = [];
+    store.listForSubject.mockImplementationOnce(() => new Promise<string[]>((resolve) => pending.push(resolve)));
     store.listForSubject.mockResolvedValueOnce([]);
     const { fixture, root } = await render({ subjectId: 'r-1', definitionKey: 'race-protests' }, { store });
 
     fixture.componentRef.setInput('subjectId', 'r-2');
     await flush(fixture);
-    release(['c-1', 'c-2']);
+    pending[0](['c-1', 'c-2']);
     await flush(fixture);
 
     expect(byId(root, 'topics-empty')).not.toBeNull();
