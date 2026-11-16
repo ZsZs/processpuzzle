@@ -33,11 +33,7 @@ public class CalculationEntityAdapter implements EntityQueryPort, EntityWritePor
         if (objectId.isEmpty()) {
             return Optional.empty();
         }
-        try {
-            return Optional.of(recordOf(entities.find(orgKey, entity, objectId.get())));
-        } catch (EntityObjectAccessException.NotFound e) {
-            return Optional.empty();
-        }
+        return entities.findIfPresent(orgKey, entity, objectId.get()).map(CalculationEntityAdapter::recordOf);
     }
 
     @Override
