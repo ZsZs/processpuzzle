@@ -4,7 +4,7 @@ import { STARTER_IMPORT_I18N_SCOPE, STARTER_UPGRADE_I18N_SCOPE } from '../base-s
 import { UpgradeAction, UpgradeReport } from '../domain/starter';
 
 /** The actions that leave the organization's own definition as it is. */
-const KEPT: readonly UpgradeAction[] = ['keep-customized', 'keep-deleted', 'keep-in-use'];
+const KEPT: ReadonlySet<UpgradeAction> = new Set<UpgradeAction>(['keep-customized', 'keep-deleted', 'keep-in-use']);
 
 /**
  * One `UpgradeReport`: from which version to which, what happens to each definition and why some are kept, or why
@@ -138,10 +138,10 @@ export class UpgradeReportComponent {
   protected readonly importScope = STARTER_IMPORT_I18N_SCOPE;
 
   protected changed(): number {
-    return (this.report().items ?? []).filter((item) => !KEPT.includes(item.action)).length;
+    return (this.report().items ?? []).filter((item) => !KEPT.has(item.action)).length;
   }
 
   protected kept(): number {
-    return (this.report().items ?? []).filter((item) => KEPT.includes(item.action)).length;
+    return (this.report().items ?? []).filter((item) => KEPT.has(item.action)).length;
   }
 }
