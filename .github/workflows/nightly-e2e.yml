@@ -166,7 +166,12 @@ jobs:
               echo "|---------|--------|"
 
               for browser in chromium firefox webkit edge; do
-                result="${{ needs.$browser.result }}"
+                case $browser in
+                  chromium) result="${{ needs.chromium.result }}" ;;
+                  firefox) result="${{ needs.firefox.result }}" ;;
+                  webkit) result="${{ needs.webkit.result }}" ;;
+                  edge) result="${{ needs.edge.result }}" ;;
+                esac
                 icon="⏭️"
                 if [ "$result" = "success" ]; then icon="✅"; fi
                 if [ "$result" = "failure" ]; then icon="❌"; fi
@@ -243,7 +248,12 @@ jobs:
             echo '| Browser | Status |' >> "$BODY_FILE"
             echo '|---------|--------|' >> "$BODY_FILE"
             for browser in chromium firefox webkit edge; do
-              result="${{ needs.$browser.result }}"
+              case $browser in
+                chromium) result="${{ needs.chromium.result }}" ;;
+                firefox) result="${{ needs.firefox.result }}" ;;
+                webkit) result="${{ needs.webkit.result }}" ;;
+                edge) result="${{ needs.edge.result }}" ;;
+              esac
               icon="⏭️ skipped"
               if [ "$result" = "success" ]; then icon="✅ passed"; fi
               if [ "$result" = "failure" ]; then icon="❌ failed"; fi
