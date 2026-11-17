@@ -12,6 +12,14 @@ import { serviceRoots } from '../support/race-sample.api';
 const EDITOR_ROLE = 'documentation-editor';
 const HANDBOOK_SLUG = 'testbed-handbook';
 const CONTENT_BOOK_LIST = '/base-document/samples/content-book/list';
+/**
+ * The role the document test types into a document. Fixed, because the realm keeps what a document's roles create and
+ * the signed-in test user cannot delete it: one role for the lifetime of an environment instead of one per run. The
+ * price is that after the first run the role is already there, so a later run shows the role is *offered* on My Profile
+ * but not that this run created it; the creation itself is covered by org-admin's `EnsureReferencedRoles` tests and by
+ * the first run in a fresh realm.
+ */
+const CATALOG_ROLE = 'e2e-role-catalog';
 
 test.describe('Role catalog @auth', () => {
   test.describe.configure({ timeout: 120_000 });
@@ -32,7 +40,7 @@ test.describe('Role catalog @auth', () => {
 
   test('a role an author types into a document is created in the realm and can be picked on My Profile', async ({ page, request, baseURL }) => {
     const roles = await serviceRoots(request, baseURL as string);
-    const role = `e2e-role-${randomUUID().slice(0, 8)}`;
+    const role = CATALOG_ROLE;
     const slug = `e2e-role-doc-${randomUUID().slice(0, 8)}`;
 
     // The browser's own bearer token, taken from its first backend call: the API context carries no session.
@@ -56,7 +64,9 @@ test.describe('Role catalog @auth', () => {
         await expect(roleCheckbox(page, role)).toBeVisible({ timeout: 5_000 });
       }).toPass({ timeout: 45_000 });
     } finally {
-      // The realm role stays: nothing in the platform removes a role on purpose, and the testbed is wiped nightly.
+      // The realm role stays: nothing in the platform removes a role on purpose, and a test's own user is no administrator.
+      // That is why it has one fixed name: a name per run left a role behind in the realm of every environment that is not
+      // wiped (stage held 48 of them).
       await request.delete(`${roles.backend}/documents/${encodeURIComponent(documentId)}`, { headers: { authorization } });
     }
   });
