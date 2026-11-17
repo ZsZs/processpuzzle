@@ -78,12 +78,69 @@ class DefaultWidgetLoaderTest {
     }
 
     @Test
-    void aDefinitionAlreadyInTheRepository_neverReachesTheEndpoint() {
+    void aDefinitionAlreadyInTheRepository_isNeverCreatedAgain() {
         when(repository.existsByOrgKeyAndKey(anyString(), anyString())).thenReturn(true);
 
         loader.loadDefaults();
 
         verify(endpoint, never()).createWidgetDefinition(anyString(), any());
+    }
+
+    private static final String ONE_WIDGET = "widgetDefinitions:\n  - key: chart\n    name: Chart\n    description: Draws a chart.\n    category: data\n";
+
+    private WidgetDefinition stored(String description) {
+        WidgetDefinition stored = new WidgetDefinition();
+        stored.setKey("chart");
+        stored.setName("Chart");
+        stored.setDescription(description);
+        stored.setCategory("data");
+        return stored;
+    }
+
+    @Test
+    void aStoredDefinitionThatDiffersFromTheFile_isUpdatedToTheFile() {
+        resolvesTo(yamlFile("other-org-widgets.yaml", ONE_WIDGET));
+        when(repository.existsByOrgKeyAndKey("other-org", "chart")).thenReturn(true);
+        when(endpoint.getWidgetDefinition("other-org", "chart")).thenReturn(ResponseEntity.ok(stored("Draws an old chart.")));
+
+        loader.loadDefaults();
+
+        ArgumentCaptor<WidgetDefinitionInput> written = ArgumentCaptor.forClass(WidgetDefinitionInput.class);
+        verify(endpoint).updateWidgetDefinition(eq("other-org"), eq("chart"), written.capture());
+        assertThat(written.getValue().getDescription()).isEqualTo("Draws a chart.");
+        verify(endpoint, never()).createWidgetDefinition(anyString(), any());
+    }
+
+    @Test
+    void aStoredDefinitionThatSaysWhatTheFileSays_isLeftAloneSoItIsNotMarkedEdited() {
+        resolvesTo(yamlFile("other-org-widgets.yaml", ONE_WIDGET));
+        when(repository.existsByOrgKeyAndKey("other-org", "chart")).thenReturn(true);
+        when(endpoint.getWidgetDefinition("other-org", "chart")).thenReturn(ResponseEntity.ok(stored("Draws a chart.")));
+
+        loader.loadDefaults();
+
+        verify(endpoint, never()).updateWidgetDefinition(anyString(), anyString(), any());
+        verify(endpoint, never()).createWidgetDefinition(anyString(), any());
+    }
+
+    @Test
+    void anUpdateTheUseCaseRefuses_isSurvived() {
+        resolvesTo(yamlFile("other-org-widgets.yaml", ONE_WIDGET));
+        when(repository.existsByOrgKeyAndKey("other-org", "chart")).thenReturn(true);
+        when(endpoint.getWidgetDefinition("other-org", "chart")).thenReturn(ResponseEntity.ok(stored("Draws an old chart.")));
+        doThrow(new WidgetDefinitionInvalidException("no")).when(endpoint).updateWidgetDefinition(anyString(), anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
+    }
+
+    @Test
+    void anUpdateFailingForAnyOtherReason_isSurvived() {
+        resolvesTo(yamlFile("other-org-widgets.yaml", ONE_WIDGET));
+        when(repository.existsByOrgKeyAndKey("other-org", "chart")).thenReturn(true);
+        when(endpoint.getWidgetDefinition("other-org", "chart")).thenReturn(ResponseEntity.ok(stored("Draws an old chart.")));
+        doThrow(new IllegalStateException("down")).when(endpoint).updateWidgetDefinition(anyString(), anyString(), any());
+
+        assertThatCode(loader::loadDefaults).doesNotThrowAnyException();
     }
 
     @Test
