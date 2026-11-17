@@ -76,6 +76,8 @@ public class StarterMapper {
                 .action(com.processpuzzle.starter.model.UpgradeReportItem.ActionEnum.fromValue(
                         item.action().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-')))
                 .note(item.note())));
+        report.migrationSteps().forEach(step -> model.addMigrationStepsItem(new com.processpuzzle.starter.model.UpgradeMigrationStep()
+                .kind(step.kind()).key(step.key()).operation(step.operation()).subject(step.subject())));
         report.errors().forEach(error -> model.addErrorsItem(new ImportError().file(error.file()).message(error.message())));
         return model;
     }

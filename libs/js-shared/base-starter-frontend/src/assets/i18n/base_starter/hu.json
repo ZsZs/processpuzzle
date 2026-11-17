@@ -77,6 +77,7 @@
       "keep-customized": "megtartva (testreszabott)",
       "keep-deleted": "törölve marad",
       "keep-in-use": "megtartva (használatban)"
-    }
+    },
+    "migrations": "{{count}} migrációs lépés módosítja a meglévő objektumokat a közzétételkor:"
   }
 }

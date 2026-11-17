@@ -413,6 +413,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/UpgradeReportItem"
+        migrationSteps:
+          type: array
+          description: >-
+            The steps the starter's migration for this version brought, queued to run on the existing objects with the
+            organization's next release.
+          items:
+            $ref: "#/components/schemas/UpgradeMigrationStep"
         skippedKinds:
           type: array
           description: Kinds the starter brings that cannot be upgraded definition by definition yet; left as they are.
@@ -422,6 +429,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ImportError"
+
+    UpgradeMigrationStep:
+      type: object
+      required: [ kind, key, operation ]
+      properties:
+        kind:
+          type: string
+        key:
+          type: string
+          description: The definition whose objects the step changes.
+        operation:
+          type: string
+        subject:
+          type: string
+          description: The part of the definition the step is about — an attribute's code.
 
     UpgradeReportItem:
       type: object

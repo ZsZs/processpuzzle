@@ -8,9 +8,11 @@ import java.util.List;
  *
  * @param fromVersion  the version the organization had installed; null when the starter is not installed
  * @param skippedKinds kinds the bundle brings that cannot be upgraded definition by definition yet; left as they are
+ * @param migrationSteps the steps the bundle's migration brought, queued to run with the next release
  */
 public record UpgradeReport(boolean dryRun, Status status, String starterId, String fromVersion, String toVersion,
-                            List<Item> items, List<String> skippedKinds, List<ImportReport.Error> errors) {
+                            List<Item> items, List<String> skippedKinds, List<ImportReport.Error> errors,
+                            List<MigrationStepInfo> migrationSteps) {
 
     public enum Status {
         APPLIED, WOULD_APPLY, REJECTED
@@ -30,10 +32,24 @@ public record UpgradeReport(boolean dryRun, Status status, String starterId, Str
     public record Item(String kind, String key, Action action, String note) {
     }
 
+    /**
+     * A migration step the upgrade queued for the organization's next release, which runs it on the existing objects.
+     *
+     * @param subject the part of the definition the step is about — an attribute's code — or null
+     */
+    public record MigrationStepInfo(String kind, String key, String operation, String subject) {
+    }
+
     public UpgradeReport {
         items = items == null ? List.of() : List.copyOf(items);
         skippedKinds = skippedKinds == null ? List.of() : List.copyOf(skippedKinds);
         errors = errors == null ? List.of() : List.copyOf(errors);
+        migrationSteps = migrationSteps == null ? List.of() : List.copyOf(migrationSteps);
+    }
+
+    public UpgradeReport(boolean dryRun, Status status, String starterId, String fromVersion, String toVersion,
+                         List<Item> items, List<String> skippedKinds, List<ImportReport.Error> errors) {
+        this(dryRun, status, starterId, fromVersion, toVersion, items, skippedKinds, errors, List.of());
     }
 
     public static UpgradeReport rejected(boolean dryRun, String starterId, String fromVersion, String toVersion,

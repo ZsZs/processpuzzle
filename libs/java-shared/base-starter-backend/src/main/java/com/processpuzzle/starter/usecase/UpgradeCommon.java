@@ -84,7 +84,7 @@ public class UpgradeCommon {
             });
         } catch (OrganizationReleaseRefusedException refused) {
             UpgradeReport wouldHave = new UpgradeReport(false, UpgradeReport.Status.WOULD_APPLY, upgraded[0].starterId(),
-                upgraded[0].fromVersion(), upgraded[0].toVersion(), upgraded[0].items(), upgraded[0].skippedKinds(), List.of());
+                upgraded[0].fromVersion(), upgraded[0].toVersion(), upgraded[0].items(), upgraded[0].skippedKinds(), List.of(), upgraded[0].migrationSteps());
             return new Result(wouldHave, Release.REFUSED, refused.problems());
         }
     }

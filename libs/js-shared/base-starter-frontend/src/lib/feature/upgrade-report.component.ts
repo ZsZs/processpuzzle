@@ -45,6 +45,18 @@ const KEPT: ReadonlySet<UpgradeAction> = new Set<UpgradeAction>(['keep-customize
       @if (r.status !== 'rejected') {
         <p class="report__drafts" data-testid="upgrade-report-drafts">{{ scope + '.drafts' | transloco }}</p>
       }
+      @if (r.migrationSteps?.length) {
+        <div class="report__migrations" data-testid="upgrade-report-migrations">
+          <p>{{ scope + '.migrations' | transloco: { count: r.migrationSteps?.length } }}</p>
+          <ul>
+            @for (step of r.migrationSteps; track $index) {
+              <li>
+                <code>{{ step.operation }}</code> {{ step.key }}{{ step.subject ? ' · ' + step.subject : '' }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
       @if (r.skippedKinds?.length) {
         <p class="report__skipped" data-testid="upgrade-report-skipped">{{ scope + '.skipped' | transloco: { kinds: r.skippedKinds?.join(', ') } }}</p>
       }
@@ -100,8 +112,14 @@ const KEPT: ReadonlySet<UpgradeAction> = new Set<UpgradeAction>(['keep-customize
       color: #666666;
     }
     .report__drafts,
-    .report__skipped {
+    .report__skipped,
+    .report__migrations p {
       margin: 0;
+    }
+    .report__migrations ul {
+      margin: 4px 0 0;
+      padding-left: 20px;
+      font-size: 13px;
     }
     .report__errors {
       margin: 0;

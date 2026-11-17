@@ -65,6 +65,7 @@ public class BundleReader {
         StarterManifest manifest = parseManifest(manifestBytes);
         validateManifest(manifest);
         validateFileList(manifest, entries);
+        validateMigrations(manifest, entries);
         verifyIntegrity(manifest, entries);
         return new StarterBundle(manifest, entries);
     }
@@ -236,6 +237,17 @@ public class BundleReader {
         for (String path : entries.keySet()) {
             if (!listed.contains(path)) {
                 throw BundleRejectedException.invalid(path, "'" + path + "' is not listed in " + MANIFEST + ".");
+            }
+        }
+    }
+
+    /** A migration file is checked when the bundle is read, so a malformed one fails the packaging, not an organization's upgrade. */
+    private void validateMigrations(StarterManifest manifest, Map<String, byte[]> entries) {
+        for (String path : manifest.migrations()) {
+            try {
+                MigrationFile.read(path, entries.get(path));
+            } catch (IllegalArgumentException e) {
+                throw BundleRejectedException.invalid(path, "'" + path + "': " + e.getMessage() + ".");
             }
         }
     }

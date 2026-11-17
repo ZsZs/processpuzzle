@@ -77,6 +77,7 @@
       "keep-customized": "kept (customized)",
       "keep-deleted": "kept deleted",
       "keep-in-use": "kept (in use)"
-    }
+    },
+    "migrations": "{{count}} migration steps will change the existing objects when you release:"
   }
 }

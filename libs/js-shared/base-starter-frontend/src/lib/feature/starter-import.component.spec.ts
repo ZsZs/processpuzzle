@@ -31,6 +31,7 @@ const translations = {
     'base_starter.upgrade.summary': '{{changed}} to change, {{kept}} kept',
     'base_starter.upgrade.drafts': 'Review the drafts, then release.',
     'base_starter.upgrade.skipped': 'Left as they are: {{kinds}}',
+    'base_starter.upgrade.migrations': '{{count}} migration steps will run.',
     'base_starter.upgrade.action.replace': 'replace',
     'base_starter.upgrade.action.keep-customized': 'kept (customized)',
   },
@@ -172,6 +173,7 @@ describe('StarterImportComponent', () => {
       fromVersion: '1.0.0',
       toVersion: '1.1.0',
       skippedKinds: ['calculation'],
+      migrationSteps: [{ kind: 'entity', key: 'item', operation: 'renameAttribute', subject: 'name' }],
       items: [
         { kind: 'entity', key: 'item', action: 'replace' },
         { kind: 'rule', key: 'sku-format', action: 'keep-customized', note: 'changed by the organization; its version stays' },
@@ -198,6 +200,9 @@ describe('StarterImportComponent', () => {
       expect(byTestId('upgrade-report-items')?.textContent).toContain('changed by the organization');
       expect(byTestId('upgrade-report-drafts')?.textContent).toContain('Review the drafts');
       expect(byTestId('upgrade-report-skipped')?.textContent).toContain('calculation');
+      expect(byTestId('upgrade-report-migrations')?.textContent).toContain('1 migration steps will run.');
+      expect(byTestId('upgrade-report-migrations')?.textContent).toContain('renameAttribute');
+      expect(byTestId('upgrade-report-migrations')?.textContent).toContain('name');
       expect((byTestId('upgrade-apply') as HTMLButtonElement).disabled).toBe(false);
 
       service.upgrade.mockReturnValueOnce(of({ ...upgradePreview, dryRun: false, status: 'applied' }));

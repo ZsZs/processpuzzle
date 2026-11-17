@@ -304,7 +304,10 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    kinds that cannot be upgraded yet are left alone and named). Also done: the offered version (`OfferStarterVersion`), the installed-starters listing's `upgradeAvailable`, the member upgrade
    endpoint, and `UpgradeCommon` — upgrade and release of a common in one transaction, so a release refused by the members' references
    check (step 7) rolls the upgrade back. The participants of every kind now upgrade definition by definition (calculation, module, app, translation and
-   asset included; the app-side kinds write drafts only and an app is never removed by an upgrade). Open: bundle migration steps, and the
+   asset included; the app-side kinds write drafts only and an app is never removed by an upgrade). Bundle migration steps are done too: `migrations/<from>-to-<to>.yaml` (`migration: {from, to, steps: [{kind, key,
+   operation, subject, parameters}]}`, the release machinery's own steps) is read when the bundle is, checked by the packager, and an
+   upgrade queues the file for exactly its step of versions as pending steps (`MigrationStepQueue`, implemented by base-release),
+   in the same transaction as the drafts; the release runs them. Open: the
    application-side endpoints that expose `OfferStarterVersion` and `UpgradeCommon` to the platform's rollout.
 7. **Common release check** against members' references (§5.3).
    *Done (type level):* releasing a common refuses to take away, or rename, a type that a member's definitions still refer to

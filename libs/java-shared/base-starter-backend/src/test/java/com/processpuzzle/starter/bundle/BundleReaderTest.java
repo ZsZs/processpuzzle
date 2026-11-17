@@ -338,6 +338,38 @@ class BundleReaderTest {
                 "Unsupported manifestVersion 3");
     }
 
+    private static final String MIGRATION = "migration:\n  from: 1.0.0\n  to: 1.1.0\n  steps:\n    - kind: entity\n      key: item\n      operation: fillAttribute\n      subject: status\n";
+
+    private static Map<String, String> withMigration(String path, String content) {
+        Map<String, String> files = v2(V2_HEAD + "id: inventory\n" + V2_CONTENTS + "migrations:\n  - " + path + "\n");
+        files.put(path, content);
+        return files;
+    }
+
+    @Test
+    void readsAMigrationFileThatIsListed() {
+        StarterBundle bundle = read(withMigration("migrations/1.0.0-to-1.1.0.yaml", MIGRATION));
+
+        assertThat(bundle.manifest().migrations()).containsExactly("migrations/1.0.0-to-1.1.0.yaml");
+        assertThat(bundle.files()).containsKey("migrations/1.0.0-to-1.1.0.yaml");
+    }
+
+    @Test
+    void aMalformedMigrationFailsTheBundleWithTheFileNamed() {
+        assertInvalid(() -> read(withMigration("migrations/1.0.0-to-1.1.0.yaml", MIGRATION.replace("to: 1.1.0", "to: 1.2.0"))), "named for 1.0.0 → 1.1.0");
+        assertInvalid(() -> read(withMigration("migrations/upgrade.yaml", MIGRATION)), "migrations/<from>-to-<to>.yaml");
+        assertInvalid(() -> read(withMigration("migrations/1.0.0-to-1.1.0.yaml", MIGRATION.replace("operation: fillAttribute", ""))),
+                "needs a kind, a key and an operation");
+    }
+
+    @Test
+    void aMigrationFileTheManifestDoesNotListIsRefused() {
+        Map<String, String> files = v2(V2_HEAD + "id: inventory\n" + V2_CONTENTS);
+        files.put("migrations/1.0.0-to-1.1.0.yaml", MIGRATION);
+
+        assertInvalid(() -> read(files), "is not listed");
+    }
+
     private StarterBundle read(Map<String, String> files) {
         return reader.read(new ByteArrayInputStream(TestBundles.zip(files)));
     }

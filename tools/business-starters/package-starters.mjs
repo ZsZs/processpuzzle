@@ -62,6 +62,7 @@ export function readStarter(folder) {
   const contents = manifest.contents ?? {};
   const files = contentFiles(contents, where);
   checkCommons(manifest, folder, where);
+  for (const path of manifest.migrations ?? []) checkMigration(folder, path, where);
   const extras = [manifest.icon, manifest.migration, ...(manifest.migrations ?? [])].filter(Boolean);
   for (const path of [...files, ...extras]) {
     if (!SAFE_PATH.test(path) || path.split('/').includes('..')) throw new StarterError(`${where}: unsafe path '${path}'`);
@@ -91,6 +92,26 @@ function contentFiles(contents, where) {
   }
   if (files.length === 0) throw new StarterError(`${where}: 'contents' lists no definition file`);
   return files;
+}
+
+/**
+ * A migration file, `migrations/<from>-to-<to>.yaml`, with the same rules as MigrationFile in base-starter-backend: the
+ * name tells the versions, the file says the same, they are in order, and each step has a kind, a key and an operation.
+ */
+function checkMigration(folder, path, where) {
+  const named = /^migrations\/([^/]+?)-to-([^/]+)\.yaml$/.exec(path);
+  if (!named) throw new StarterError(`${where}: '${path}' must be migrations/<from>-to-<to>.yaml`);
+  const migration = (existsSync(join(folder, path)) ? parse(readFileSync(join(folder, path), 'utf8')) : null)?.migration;
+  if (!migration) return; // a missing file is reported with the other listed files
+  if (migration.from !== named[1] || migration.to !== named[2]) {
+    throw new StarterError(`${where}: '${path}' is named for ${named[1]} → ${named[2]} but says ${migration.from} → ${migration.to}`);
+  }
+  if (compareVersions(migration.from, migration.to) >= 0) throw new StarterError(`${where}: '${path}' must go to a newer version`);
+  (migration.steps ?? []).forEach((step, index) => {
+    if (!step?.kind || !step?.key || !step?.operation) {
+      throw new StarterError(`${where}: step ${index + 1} of '${path}' needs a kind, a key and an operation`);
+    }
+  });
 }
 
 /** The commons fields of manifestVersion 2, with the same rules as BundleReader in base-starter-backend. */
