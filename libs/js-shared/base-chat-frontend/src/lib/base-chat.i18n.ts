@@ -33,7 +33,8 @@ export const BASE_CHAT_TRANSLATION_SOURCE: TranslationSource = {
 };
 
 /**
- * Label of the Chat tab an entity's screens get from base-chat. It renders on the entity's own route, which does
- * not register this library's scope; `provideEntityChatTab()` does.
+ * Label of the Chat tab an entity's screens get from base-chat. It renders on the entity's own route, so that
+ * route has to provide this library's scope too: a route's own transloco scope hides the root registration that
+ * `provideEntityChatTab()` makes.
  */
 export const ENTITY_CHAT_I18N_KEY = `${BASE_CHAT_TRANSLOCO_SCOPE}.tabs.chat`;
