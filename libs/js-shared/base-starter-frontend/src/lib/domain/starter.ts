@@ -60,6 +60,39 @@ export interface InstalledStarter {
   readonly installedBy?: string;
   /** Definitions of this starter whose current content no longer matches what was imported. */
   readonly customizedDefinitions?: number;
+  /** The version the platform offers, when it is newer than the installed one. */
+  readonly offeredVersion?: string;
+  /** Whether a newer version is on offer; {@link StarterService.upgrade} applies it. */
+  readonly upgradeAvailable?: boolean;
+}
+
+/**
+ * What an upgrade does to one definition. `add` — new in the starter; `replace` — in the starter and untouched here;
+ * `remove` — dropped by the starter and untouched here; `keep-customized` — changed here, so this organization's
+ * version stays; `keep-deleted` — deleted here, not brought back; `keep-in-use` — dropped by the starter, but
+ * something still depends on it.
+ */
+export type UpgradeAction = 'add' | 'replace' | 'remove' | 'keep-customized' | 'keep-deleted' | 'keep-in-use';
+
+export interface UpgradeReportItem {
+  readonly kind: DefinitionKind;
+  readonly key: string;
+  readonly action: UpgradeAction;
+  /** Why a definition was kept, when there is something to say. */
+  readonly note?: string;
+}
+
+/** The outcome of an upgrade, or of its dry run: drafts the organization's administrator then reviews and releases. */
+export interface UpgradeReport {
+  readonly dryRun: boolean;
+  readonly status: ImportStatus;
+  readonly starterId?: string;
+  readonly fromVersion?: string;
+  readonly toVersion?: string;
+  readonly items?: readonly UpgradeReportItem[];
+  /** Kinds the starter brings that cannot be upgraded definition by definition yet; left as they are. */
+  readonly skippedKinds?: readonly string[];
+  readonly errors?: readonly ImportError[];
 }
 
 /** One installable version of a catalog starter. */
@@ -85,6 +118,11 @@ export interface CatalogStarter {
 export interface StarterSelection {
   readonly starterId: string;
   readonly version: string;
+}
+
+/** True for anything the server answered with an `UpgradeReport` body — a 200 or a 422. */
+export function isUpgradeReport(value: unknown): value is UpgradeReport {
+  return typeof value === 'object' && value !== null && 'status' in value && 'dryRun' in value;
 }
 
 /** True for anything the server answered with an `ImportReport` body — a 200, a 409, a 413 or a 422. */
