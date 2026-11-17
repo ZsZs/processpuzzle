@@ -1,10 +1,13 @@
 import { defineEntityCrudSuite } from '@processpuzzle/e2e-testing';
 import { testConfig } from '../../playwright.config';
+import { removeWorkflowInstancesOfFixture } from '../support/fixture-cleanup';
 import { REGISTRY_PATH } from '../support/global-setup';
 
 defineEntityCrudSuite({
   registryPath: REGISTRY_PATH,
   routePrefix: testConfig.routePrefix,
+  // An order starts a workflow run, and deleting the order does not end it; without this every run of the suite left its runs in the task dashboard.
+  afterFixtureRemoved: removeWorkflowInstancesOfFixture,
   excludedEntities: [
     {
       entityName: 'State Machine Definition',

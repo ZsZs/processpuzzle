@@ -40,7 +40,7 @@ export {
   buildUpdateData,
   buildUpdateDataForContext,
 } from './lib/data/test-data-factory';
-export { EntityCrudFixtureManager, type EntityFixture } from './lib/data/entity-crud-fixture-manager';
+export { EntityCrudFixtureManager, type AfterFixtureRemoved, type EntityFixture, type RemovedFixture } from './lib/data/entity-crud-fixture-manager';
 export { resolveDependencyOrder } from './lib/data/dependency.resolver';
 export { createPngBuffer, createTextBuffer } from './lib/data/binary-fixtures';
 

@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import type { FixtureOverride } from '../controls/control-tester';
-import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
+import { type AfterFixtureRemoved, EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
 import { identificationAttr } from '../data/test-data-factory';
 import { EntityFormPO } from '../pages/entity-form.po';
 import { EntityListPO } from '../pages/entity-list.po';
@@ -32,6 +32,12 @@ export interface DefineEntityCrudSuiteOptions {
    * another — the alternative to excluding the whole entity. See {@link FixtureOverride}.
    */
   fixtureOverrides?: FixtureOverride[];
+  /**
+   * Called once a fixture the suite created has been removed from the application, with the page to reach its
+   * API through. For what the fixture's existence started somewhere the suite does not look: an order starts a
+   * workflow, and deleting the order does not end it, so each run used to leave its runs behind.
+   */
+  afterFixtureRemoved?: AfterFixtureRemoved;
 }
 
 /** One entity the suite is told not to exercise, and why. */
@@ -123,6 +129,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
         await form.navigateToDetail(fixture.id);
         await form.delete();
         manager.markDeleted(fixture);
+        await manager.afterRemoval(page, fixture);
 
         if (idAttr) {
           await list.assertNotInList(fixture.data[idAttr.attrName]);
@@ -140,5 +147,5 @@ function createFixtureManager(
   options: DefineEntityCrudSuiteOptions,
 ): EntityCrudFixtureManager {
   const suffix = `e2e-${Date.now().toString(36)}-${descriptor.entityName.replace(/\s+/g, '-').toLowerCase()}-r${retry}`;
-  return new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides);
+  return new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides, options.afterFixtureRemoved);
 }
