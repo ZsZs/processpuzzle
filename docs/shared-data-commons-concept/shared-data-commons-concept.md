@@ -301,8 +301,10 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    Biz: the rollout screen in platform-admin (§5.4) and its rollout records.
    *Done so far:* the participant SPI for definition-by-definition upgrades (entity, rule, state, chat) and `UpgradeStarter` /
    `UpgradePlanner` in base-starter (replace untouched, keep customized, add new, remove dropped; drafts; one version at a time;
-   kinds that cannot be upgraded yet are left alone and named). Open: the other participants, bundle migration steps, the
-   offered version and the internal upgrade endpoint, the designer's Apply.
+   kinds that cannot be upgraded yet are left alone and named). Also done: the offered version (`OfferStarterVersion`), the installed-starters listing's `upgradeAvailable`, the member upgrade
+   endpoint, and `UpgradeCommon` — upgrade and release of a common in one transaction, so a release refused by the members' references
+   check (step 7) rolls the upgrade back. Open: the other participants, bundle migration steps, the designer's Apply, and the
+   application-side endpoints that expose `OfferStarterVersion` and `UpgradeCommon` to the platform's rollout.
 7. **Common release check** against members' references (§5.3).
    *Done (type level):* releasing a common refuses to take away, or rename, a type that a member's definitions still refer to
    (`ReleasePlanner`, `ReleaseParticipant.removedReferableKeys`, `DataSpaceDirectory.membersOf`), naming the members and what
