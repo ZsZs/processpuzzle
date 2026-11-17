@@ -331,3 +331,50 @@ order once a starter needs them.
 - **Data of one member that all must see** is a shared type owned by that member (`OWNER_ORG`, `from:`), not
   a mirror of the member's records (§3.5).
 - **Scope of the work:** generic only. SailRC is the driving example; nothing in the platform is built for it.
+
+## 11. What `processpuzzle-biz` still has to do
+
+The framework side of §9 is finished (2026-11-17). What remains lives in the biz repository, which consumes the
+framework libraries through its submodule. Nothing here has been checked against the biz code.
+
+**0. Publish, then bump.** Release the libraries that changed — core, base-entity, base-starter (backend and frontend),
+base-release, base-state, base-app, base-calculation, base-chat, base-rule — one at a time, then bump the submodule. The
+host must include base-release (it provides `OrganizationReleaser` and `MigrationStepQueue`); run its Modularity and
+context-load tests after the bump.
+
+**1. Create a common** (§5.5), on the first rollout of a starter's `<starterId>-common` version:
+1. create the Keycloak organization whose key is `<starterId>-common`;
+2. seed it as an ordinary organization, without a starter;
+3. `InstallStarter.provision(commonKey, commonKey, version, by)` — replace-installs the common bundle, registers the data
+   space and records the common as installed;
+4. release it, so the shared types become what members read.
+
+A tenant starter that names a common (`common:` block) cannot be installed while the common is missing or older than its
+`minVersion`.
+
+**2. The rollout screen** in platform-admin (§5.4), with rollout records (who, which version, when, outcome) in Admin's
+database:
+
+| Rollout of | Call | Notes |
+|---|---|---|
+| a common version | `UpgradeCommon.upgradeAndRelease(commonKey, version, by)` | upgrade and release in one transaction; a refused release — notably members still referring to a type the version takes away (§5.3) — rolls the upgrade back, and the result carries `problems` and the report of what the upgrade would have done: show both |
+| a tenant version | `OfferStarterVersion.offer(starterId, version, by)` | refused (`IllegalStateException`) while the common is older than its `minVersion`, or when the version is not newer than the offered one — roll out the common first |
+| withdrawing an offer | `OfferStarterVersion.withdraw(starterId)` | only stops the offer; what organizations applied stays (§10) |
+
+The screen's list of starters and their versions comes from the catalog; how many organizations run each version, from
+the installed-starters records.
+
+**3. Expose them, privately.** The framework has no HTTP endpoint for `OfferStarterVersion` or `UpgradeCommon`, on
+purpose. The custom backend exposes them to Admin's rollout only — platform client credentials or a platform role, never a
+subscriber's token — as it already does for the seed call.
+
+**4. Starter repository** (`business-starters/`), for a starter that shares data: a `common/` folder with a `kind: common`
+manifest (id `<starter>-common`); `manifestVersion: 2` and `common: {id, minVersion}` in the tenant manifest; the sharing
+policy (`sharing`, `identifiers`) on the shared entity definitions; `migrations/<from>-to-<to>.yaml` for a version that
+changes the shape of existing data. The packager packages `common/` as a bundle of its own. SailRC is the driving example
+(`sailrc-starter.manifest.yaml` in this folder); nothing in the platform is built for it.
+
+**5. Good to know.** A subscriber's upgrade writes drafts and queues the migration steps; its administrator applies it from
+the designer (already built: *Upgrade to …*, preview, apply) and releases afterwards. A common's upgrade releases at once.
+An app is never removed by an upgrade. References from members to a single *attribute* of a shared type are not checked by
+the common's release (§5.3 note).
