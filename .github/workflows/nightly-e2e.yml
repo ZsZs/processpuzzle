@@ -195,6 +195,9 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Find or create Nightly E2E Results Issue
         id: find-issue
         run: |
