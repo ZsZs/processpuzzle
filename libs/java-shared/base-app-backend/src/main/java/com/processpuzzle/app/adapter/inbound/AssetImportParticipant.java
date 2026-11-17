@@ -13,6 +13,7 @@ import com.processpuzzle.app.usecase.service.ModuleAssetSweeper;
 import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
@@ -80,6 +81,58 @@ public class AssetImportParticipant implements DefinitionImportParticipant {
 
     @Override
     public ParticipantResult apply(String orgKey, String fileName, byte[] content) {
+        return write(orgKey, fileName, content, true);
+    }
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    /** An asset file is one definition: its key is its owner and path. */
+    @Override
+    public Set<String> keysIn(String fileName, byte[] content) {
+        return BundleOwnedPath.parse(fileName).map(path -> Set.of(path.key())).orElse(Set.of());
+    }
+
+    /**
+     * Writes the file's draft if its key is wanted, and neither releases the owner nor sweeps: an install makes the
+     * files live at once, an upgrade leaves them as drafts for the organization's release.
+     */
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] content, Set<String> keys) {
+        return BundleOwnedPath.parse(fileName).filter(path -> keys.contains(path.key())).isPresent()
+                ? write(orgKey, fileName, content, false) : new ParticipantResult(List.of(), List.of());
+    }
+
+    /** Deletes the draft files and hands what they named to the sweeper, which leaves what a released row still names. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, key -> removeDraft(orgKey, key));
+    }
+
+    private void removeDraft(String orgKey, String key) {
+        String[] parts = key.split("/", 3);
+        if (parts.length != 3) {
+            throw new IllegalStateException("not an asset key: '" + key + "'");
+        }
+        boolean app = BundleOwnedPath.APPS.equals(parts[0]);
+        String sha256;
+        if (app) {
+            AppAsset asset = appAssets.findByOrgKeyAndAppIdAndChannelAndPath(orgKey, parts[1], Channel.DRAFT, parts[2])
+                    .orElseThrow(() -> new IllegalStateException("no draft of '" + key + "'"));
+            sha256 = asset.getSha256();
+            appAssets.delete(asset);
+        } else {
+            ModuleAsset asset = moduleAssets.findByOrgKeyAndModuleKeyAndChannelAndPath(orgKey, parts[1], Channel.DRAFT, parts[2])
+                    .orElseThrow(() -> new IllegalStateException("no draft of '" + key + "'"));
+            sha256 = asset.getSha256();
+            moduleAssets.delete(asset);
+        }
+        sweeper.sweep(orgKey, List.of(sha256));
+    }
+
+    private ParticipantResult write(String orgKey, String fileName, byte[] content, boolean release) {
         BundleOwnedPath path = BundleOwnedPath.parse(fileName).orElse(null);
         if (path == null) {
             return ParticipantResult.rejected(List.of(fileName + ": an asset belongs under <group>/modules/<module key>/ or "
@@ -92,15 +145,19 @@ public class AssetImportParticipant implements DefinitionImportParticipant {
                     return ParticipantResult.rejected(List.of(fileName + ": the bundle defines no app '" + path.ownerKey() + "'."));
                 }
                 uploadAppAsset.execute(orgKey, path.ownerKey(), path.rest(), path.fileName(), null, content);
-                Set<String> dropped = new TreeSet<>();
-                appRelease.release(orgKey, path.ownerKey(), dropped);
-                sweeper.sweep(orgKey, dropped);
+                if (release) {
+                    Set<String> dropped = new TreeSet<>();
+                    appRelease.release(orgKey, path.ownerKey(), dropped);
+                    sweeper.sweep(orgKey, dropped);
+                }
             } else {
                 if (!modules.existsByOrgKeyAndKeyAndChannel(orgKey, path.ownerKey(), Channel.DRAFT)) {
                     return ParticipantResult.rejected(List.of(fileName + ": the bundle defines no module '" + path.ownerKey() + "'."));
                 }
                 uploadModuleAsset.execute(orgKey, path.ownerKey(), path.rest(), path.fileName(), null, content);
-                moduleRelease.release(orgKey);
+                if (release) {
+                    moduleRelease.release(orgKey);
+                }
             }
         } catch (RuntimeException e) {
             return ParticipantResult.rejected(List.of(fileName + ": " + e.getMessage()));
