@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +65,10 @@ class FollowedRecordTest {
     private CriteriaQuery<?> query;
     @Mock
     private CriteriaBuilder cb;
+    @Mock
+    private Path path;
+    @Mock
+    private Expression followedId;
 
     private EntityObjectScope scope;
     private final UUID raceId = UUID.randomUUID();
@@ -162,8 +165,7 @@ class FollowedRecordTest {
         SearchEntityInstancesUseCase search = new SearchEntityInstancesUseCase(repository, scope, rsql);
         when(rsql.toSpecification(any(), any(), any())).thenReturn((r, q, c) -> null);
         when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
-        lenient().when(root.get(any(String.class))).thenReturn(mock(Path.class));
-        Expression followedId = mock(Expression.class);
+        lenient().when(root.get(any(String.class))).thenReturn(path);
         when(cb.function(eq("jsonb_extract_path_text"), eq(String.class), any(), any())).thenReturn(followedId);
 
         search.search(OTHER, "entry", null, PageRequest.of(0, 10), false);
@@ -181,7 +183,7 @@ class FollowedRecordTest {
         SearchEntityInstancesUseCase search = new SearchEntityInstancesUseCase(repository, scope, rsql);
         when(rsql.toSpecification(any(), any(), any())).thenReturn((r, q, c) -> null);
         when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
-        lenient().when(root.get(any(String.class))).thenReturn(mock(Path.class));
+        lenient().when(root.get(any(String.class))).thenReturn(path);
 
         search.search(OTHER, "entry", null, PageRequest.of(0, 10), false);
         ArgumentCaptor<Specification<EntityObject>> captor = ArgumentCaptor.forClass(Specification.class);
