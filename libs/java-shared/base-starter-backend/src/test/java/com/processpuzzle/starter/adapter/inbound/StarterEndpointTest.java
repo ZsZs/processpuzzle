@@ -171,6 +171,6 @@ class StarterEndpointTest {
 
         endpoint.upgradeStarter("acme", "inventory", null);
 
-        org.mockito.Mockito.verify(upgrader).execute("acme", "inventory", null, false, null);
+        verify(upgrader).execute("acme", "inventory", null, false, null);
     }
 }
