@@ -98,6 +98,17 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
         return keys;
     }
 
+    /** Code and name of each released type that has no draft answering to them any more: removed, or renamed. */
+    @Override
+    public Set<String> removedReferableKeys(String orgKey) {
+        Set<String> kept = new TreeSet<>();
+        byCode(orgKey, Channel.DRAFT).values().forEach(draft -> addNames(kept, draft));
+        Set<String> removed = new TreeSet<>();
+        byCode(orgKey, Channel.RELEASED).values().forEach(released -> addNames(removed, released));
+        removed.removeAll(kept);
+        return removed;
+    }
+
     private static void addNames(Set<String> keys, BaseEntityDefinition definition) {
         keys.add(definition.getCode());
         if (definition.getName() != null && !definition.getName().isBlank()) {

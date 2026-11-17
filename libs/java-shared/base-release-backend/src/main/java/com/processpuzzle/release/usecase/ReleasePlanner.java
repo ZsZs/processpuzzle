@@ -5,11 +5,15 @@ import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseCandidate;
 import com.processpuzzle.core.definition.ReleaseParticipant;
 import com.processpuzzle.core.definition.ReleaseProblem;
+import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,10 +30,20 @@ class ReleasePlanner {
 
     static final String UNRESOLVED_REFERENCE = "release.unresolved-reference";
 
-    private final ReleaseParticipants participants;
+    static final String MEMBER_REFERENCES = "release.common-member-references";
 
-    ReleasePlanner(ReleaseParticipants participants) {
+    private final ReleaseParticipants participants;
+    private final ObjectProvider<DataSpaceDirectory> dataSpaces;
+
+    @Autowired
+    ReleasePlanner(ReleaseParticipants participants, ObjectProvider<DataSpaceDirectory> dataSpaces) {
         this.participants = participants;
+        this.dataSpaces = dataSpaces;
+    }
+
+    /** A planner of a host without commons. */
+    ReleasePlanner(ReleaseParticipants participants) {
+        this(participants, null);
     }
 
     PendingRelease plan(String orgKey) {
@@ -60,7 +74,53 @@ class ReleasePlanner {
             }
             problems.addAll(participant.check(orgKey, candidate));
         }
+        problems.addAll(memberReferenceProblems(orgKey));
         return new PendingRelease(changes, problems);
+    }
+
+    /**
+     * A common must not release away what its members still refer to: its shared types are theirs to refer to, and a
+     * member's definitions are not the common's to break. For each key the release would take away, the members that
+     * still refer to it are named; removing or renaming it waits until they stop. Looked up only when something is
+     * taken away, since it reads every member.
+     */
+    private List<ReleaseProblem> memberReferenceProblems(String orgKey) {
+        DataSpaceDirectory directory = dataSpaces == null ? null : dataSpaces.getIfAvailable();
+        if (directory == null || !directory.isCommon(orgKey)) {
+            return List.of();
+        }
+        Map<String, Set<String>> removed = new HashMap<>();
+        participants.inOrder().forEach(participant -> {
+            Set<String> keys = participant.removedReferableKeys(orgKey);
+            if (!keys.isEmpty()) {
+                removed.put(participant.kind(), keys);
+            }
+        });
+        if (removed.isEmpty()) {
+            return List.of();
+        }
+        Map<TakenAway, List<String>> referrers = new LinkedHashMap<>();
+        for (String member : directory.membersOf(orgKey)) {
+            for (ReleaseParticipant participant : participants.inOrder()) {
+                for (DefinitionReference reference : participant.references(member)) {
+                    if (removed.getOrDefault(reference.toKind(), Set.of()).contains(reference.toKey())) {
+                        referrers.computeIfAbsent(new TakenAway(reference.toKind(), reference.toKey()), key -> new ArrayList<>())
+                            .add(member + " (" + reference.fromKind() + " '" + reference.fromKey() + "')");
+                    }
+                }
+            }
+        }
+        List<ReleaseProblem> problems = new ArrayList<>();
+        referrers.forEach((taken, who) -> {
+            problems.add(ReleaseProblem.error(taken.kind(), taken.key(), MEMBER_REFERENCES, "The " + taken.kind() + " '" + taken.key()
+                + "' is referred to by members of this common: " + String.join(", ", who)
+                + ". It can be removed or renamed once they no longer refer to it."));
+        });
+        return problems;
+    }
+
+    /** A definition of the common that the release takes away, or renames. */
+    private record TakenAway(String kind, String key) {
     }
 
     private static ReleaseProblem unresolved(DefinitionReference reference) {

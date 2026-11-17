@@ -28,4 +28,9 @@ public class DataSpaceDirectoryAdapter implements DataSpaceDirectory {
     public boolean isCommon(String orgKey) {
         return dataSpaces.existsById(orgKey);
     }
+
+    @Override
+    public java.util.Set<String> membersOf(String commonKey) {
+        return new java.util.LinkedHashSet<>(dataSpaces.findMemberKeysOf(commonKey));
+    }
 }

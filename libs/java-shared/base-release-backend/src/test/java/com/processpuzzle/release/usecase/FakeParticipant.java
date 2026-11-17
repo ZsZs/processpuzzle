@@ -19,6 +19,10 @@ class FakeParticipant implements ReleaseParticipant {
     final List<PendingChange> pending = new ArrayList<>();
     final List<DefinitionReference> references = new ArrayList<>();
     final List<ReleaseProblem> problems = new ArrayList<>();
+    /** What the release takes away; what the members of a common may still refer to. */
+    final Set<String> removedKeys = new LinkedHashSet<>();
+    /** References by organization, for a test with several; an organization not named here has {@link #references}. */
+    final java.util.Map<String, List<DefinitionReference>> referencesByOrg = new java.util.LinkedHashMap<>();
     Runnable onRelease = () -> { };
 
     private final String kind;
@@ -66,7 +70,12 @@ class FakeParticipant implements ReleaseParticipant {
 
     @Override
     public List<DefinitionReference> references(String orgKey) {
-        return references;
+        return referencesByOrg.getOrDefault(orgKey, references);
+    }
+
+    @Override
+    public Set<String> removedReferableKeys(String orgKey) {
+        return removedKeys;
     }
 
     @Override

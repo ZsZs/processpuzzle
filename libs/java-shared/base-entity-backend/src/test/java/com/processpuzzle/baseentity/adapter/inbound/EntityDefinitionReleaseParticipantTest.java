@@ -178,6 +178,27 @@ class EntityDefinitionReleaseParticipantTest {
     }
 
     @Test
+    void aReleaseTakesAwayTheCodeAndNameOfARemovedType_andTheOldNameOfARenamedOne() {
+        BaseEntityDefinition claim = definition("claim", attribute("amount", ValueKind.NUMBER));
+        claim.setName("Claim form");
+        BaseEntityDefinition partner = definition("partner", attribute("name", ValueKind.TEXT));
+        partner.setName("Business partner");
+        saveDraft(claim);
+        saveDraft(partner);
+        release();
+        assertThat(participant.removedReferableKeys(ORG)).isEmpty();
+
+        transaction.executeWithoutResult(status -> {
+            repository.delete(draft("partner"));
+            BaseEntityDefinition renamed = draft("claim");
+            renamed.setName("Insurance claim");
+            repository.save(renamed);
+        });
+
+        assertThat(participant.removedReferableKeys(ORG)).containsExactlyInAnyOrder("partner", "Business partner", "Claim form");
+    }
+
+    @Test
     void theFirstReleaseCopiesTheDraft_withIdsOfItsOwn() {
         BaseEntityDefinition draft = saveDraft(definition("claim", attribute("amount", ValueKind.NUMBER), attribute("note", ValueKind.TEXT)));
         assertThat(participant.pending(ORG)).extracting(PendingChange::key, PendingChange::change)
