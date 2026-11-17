@@ -3,9 +3,11 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, Eleme
 import { provideTranslocoScope, TranslocoPipe } from '@jsverse/transloco';
 import { BASE_CHAT_TRANSLOCO_SCOPE } from '../../base-chat.i18n';
 import { CHAT_ACTIVE_SUBJECT, CHAT_IDENTITY } from '../../domain/chat-identity';
+import { ChatDefinitionLookup } from '../../domain/chat-definition.lookup';
 import { failureKindOf } from '../../domain/chat.service';
+import { type TopicFailure, topicFailureKey, topicFailureOf } from '../topic-failure';
 import { ChatStore, PendingMessage } from '../../domain/chat.store';
-import { ChatMessage, ChatSubjectRef, ChatSubjectType } from '../../domain/chat.types';
+import { ChatMessage, ChatSubjectRef, ChatSubjectType, unreadOf } from '../../domain/chat.types';
 
 type PanelStatus = 'idle' | 'loading' | 'ready' | 'none' | 'error';
 
@@ -34,6 +36,37 @@ const STICK_THRESHOLD_PX = 48;
   providers: [provideTranslocoScope({ scope: BASE_CHAT_TRANSLOCO_SCOPE, alias: BASE_CHAT_TRANSLOCO_SCOPE })],
   template: `
     <section class="pp-chat" [attr.aria-label]="'base_chat.panel.title' | transloco">
+      @if (topicMode() && status() !== 'error') {
+        <div class="pp-chat__topics">
+          @if (topics().length > 0) {
+            <select class="pp-chat__select" data-testid="topic-select" [attr.aria-label]="'base_chat.topics.select' | transloco" (change)="pickTopic($any($event.target).value)">
+              @for (topic of topics(); track topic.id) {
+                <option [value]="topic.id" [selected]="topic.id === shownId()">
+                  {{ topic.title }}{{ topic.closed ? ' (' + ('base_chat.topics.closed' | transloco) + ')' : '' }}{{ topic.unread > 0 ? ' [' + topic.unread + ']' : '' }}
+                </option>
+              }
+            </select>
+          }
+          <form class="pp-chat__new" (submit)="createTopic($event)">
+            <input
+              class="pp-chat__input pp-chat__input--title"
+              data-testid="topic-title"
+              [attr.aria-label]="'base_chat.topics.new_label' | transloco"
+              [placeholder]="'base_chat.topics.new_placeholder' | transloco"
+              [value]="topicTitle()"
+              (input)="topicTitle.set($any($event.target).value)"
+            />
+            <button type="submit" class="pp-chat__button pp-chat__button--primary" data-testid="topic-create" [disabled]="!canCreateTopic()">
+              {{ (starting() ? 'base_chat.topics.creating' : 'base_chat.topics.create') | transloco }}
+            </button>
+          </form>
+          @if (startFailure(); as failure) {
+            <p class="pp-chat__hint" role="alert" data-testid="topic-create-failed">
+              {{ topicFailureText(failure) | transloco }}
+            </p>
+          }
+        </div>
+      }
       @if (connectionLost()) {
         <p class="pp-chat__status" role="status" data-testid="chat-reconnecting">{{ 'base_chat.panel.reconnecting' | transloco }}</p>
       }
@@ -49,7 +82,9 @@ const STICK_THRESHOLD_PX = 48;
           <button type="button" class="pp-chat__button" data-testid="chat-reload" (click)="reload()">{{ 'base_chat.panel.reload' | transloco }}</button>
         }
         @case ('none') {
-          @if (definitionKey()) {
+          @if (topicMode()) {
+            <p class="pp-chat__hint" data-testid="topics-empty">{{ 'base_chat.topics.empty' | transloco }}</p>
+          } @else if (definitionKey()) {
             <button type="button" class="pp-chat__button pp-chat__button--primary" data-testid="chat-start" [disabled]="starting()" (click)="start()">
               {{ (starting() ? 'base_chat.panel.starting' : 'base_chat.panel.start') | transloco }}
             </button>
@@ -64,7 +99,7 @@ const STICK_THRESHOLD_PX = 48;
         }
         @case ('ready') {
           @if (view(); as shown) {
-            @if (shown.conversation.title) {
+            @if (shown.conversation.title && !topicMode()) {
               <h3 class="pp-chat__title" data-testid="chat-title">{{ shown.conversation.title }}</h3>
             }
             <ol #log class="pp-chat__log" role="log" aria-live="polite" aria-relevant="additions" data-testid="chat-log" (scroll)="onScroll()">
@@ -137,6 +172,19 @@ const STICK_THRESHOLD_PX = 48;
       .pp-chat__title {
         margin: 0;
         font-size: 1rem;
+      }
+      .pp-chat__topics {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .pp-chat__select {
+        font: inherit;
+        padding: 0.35rem 0.5rem;
+      }
+      .pp-chat__new {
+        display: flex;
+        gap: 0.5rem;
       }
       .pp-chat__log {
         flex: 1 1 auto;
@@ -252,13 +300,18 @@ export class ChatPanelComponent {
   private readonly store = inject(ChatStore);
   private readonly identity = inject(CHAT_IDENTITY);
   private readonly activeSubject = inject(CHAT_ACTIVE_SUBJECT, { optional: true });
+  private readonly definitions = inject(ChatDefinitionLookup);
   private readonly log = viewChild<ElementRef<HTMLElement>>('log');
 
   protected readonly status = signal<PanelStatus>('idle');
   protected readonly starting = signal(false);
-  protected readonly startFailure = signal<'forbidden' | 'other' | undefined>(undefined);
+  protected readonly startFailure = signal<TopicFailure | undefined>(undefined);
   protected readonly draft = signal('');
-  private readonly shownId = signal<string | undefined>(undefined);
+  protected readonly shownId = signal<string | undefined>(undefined);
+  /** The definition holds several titled topics per record: the panel offers them in a drop-down, one at a time. */
+  protected readonly topicMode = signal(false);
+  protected readonly topicTitle = signal('');
+  private readonly topicIds = signal<string[]>([]);
 
   protected readonly subject = computed<ChatSubjectRef | undefined>(() => {
     const explicit = this.subjectId()?.trim();
@@ -270,6 +323,14 @@ export class ChatPanelComponent {
   });
   protected readonly connectionLost = computed(() => this.status() === 'ready' && this.store.connection() === 'reconnecting');
   protected readonly canSend = computed(() => this.draft().trim().length > 0);
+  protected readonly topics = computed(() =>
+    this.topicIds().flatMap((id) => {
+      const shown = this.store.viewOf(id);
+      if (!shown) return [];
+      return [{ id, title: shown.conversation.title || id, unread: unreadOf(shown.conversation), closed: !shown.conversation.permissions.canWrite }];
+    }),
+  );
+  protected readonly canCreateTopic = computed(() => this.topicTitle().trim().length > 0 && !this.starting());
 
   private loadSerial = 0;
   private viewing: string | undefined;
@@ -333,6 +394,34 @@ export class ChatPanelComponent {
     }
   }
 
+  protected topicFailureText(failure: TopicFailure): string {
+    return topicFailureKey(failure);
+  }
+
+  protected pickTopic(id: string): void {
+    void this.openTopic(id);
+  }
+
+  protected async createTopic(event: Event): Promise<void> {
+    event.preventDefault();
+    const subject = this.subject();
+    const definitionKey = this.definitionKey();
+    const title = this.topicTitle().trim();
+    if (!subject || !definitionKey || !title || this.starting()) return;
+    this.starting.set(true);
+    this.startFailure.set(undefined);
+    try {
+      const id = await this.store.startConversation(definitionKey, subject.subjectId, title);
+      this.topicIds.update((known) => (known.includes(id) ? known : [...known, id]));
+      this.topicTitle.set('');
+      this.show(id);
+    } catch (error) {
+      this.startFailure.set(topicFailureOf(error));
+    } finally {
+      this.starting.set(false);
+    }
+  }
+
   protected submit(event: Event): void {
     event.preventDefault();
     this.sendDraft();
@@ -379,6 +468,8 @@ export class ChatPanelComponent {
     this.stopViewing();
     this.shownId.set(undefined);
     this.startFailure.set(undefined);
+    this.topicMode.set(false);
+    this.topicIds.set([]);
     if (conversationId) {
       await this.loadKnown(serial, conversationId);
       return;
@@ -389,10 +480,37 @@ export class ChatPanelComponent {
     }
     this.status.set('loading');
     try {
+      if (definitionKey && (await this.definitions.hasTopics(definitionKey))) {
+        await this.loadTopics(serial, subject, definitionKey);
+        return;
+      }
       const id = await this.store.openForSubject(subject, definitionKey);
       if (serial !== this.loadSerial) return; // the subject changed while this was loading
       if (id) this.show(id);
       else this.status.set('none');
+    } catch {
+      if (serial === this.loadSerial) this.status.set('error');
+    }
+  }
+
+  /** A topics definition: lists the record's topics and shows the newest, so exactly one is ever on screen. */
+  private async loadTopics(serial: number, subject: ChatSubjectRef, definitionKey: string): Promise<void> {
+    const ids = await this.store.listForSubject(subject, definitionKey);
+    if (serial !== this.loadSerial) return;
+    this.topicMode.set(true);
+    this.topicIds.set(ids);
+    const newest = ids.at(-1);
+    if (newest) await this.openTopic(newest, serial);
+    else this.status.set('none');
+  }
+
+  private async openTopic(id: string, serial = this.loadSerial): Promise<void> {
+    this.stopViewing();
+    this.shownId.set(undefined);
+    this.status.set('loading');
+    try {
+      await this.store.loadHistory(id);
+      if (serial === this.loadSerial) this.show(id);
     } catch {
       if (serial === this.loadSerial) this.status.set('error');
     }

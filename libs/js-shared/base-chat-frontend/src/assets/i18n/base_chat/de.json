@@ -78,6 +78,7 @@
     "creating": "Wird begonnen…",
     "create_failed": "Das Thema konnte nicht begonnen werden.",
     "create_forbidden": "Sie dürfen hier kein Thema beginnen.",
+    "create_duplicate": "Dieser Datensatz hat bereits ein Thema mit diesem Titel.",
     "select": "Thema öffnen",
     "unread": "ungelesen",
     "closed": "geschlossen"

@@ -99,17 +99,20 @@ describe('base-chat SamplesComponent', () => {
       expect(select.value).toBe('order-discussion');
     });
 
-    it("offers the picked definition's records with their title next to the id", async () => {
+    it("offers the picked definition's records by title, not by id, and resolves a picked title to its id", async () => {
       options.definitions.mockResolvedValue([orderChat, runChat]);
       options.records.mockResolvedValue([{ id: 'o-1', label: 'ORD-1001' }, { id: 'o-2' }]);
-      const { root } = await render();
+      const { root, fixture, panel } = await render();
 
       expect(options.records).toHaveBeenCalledWith('order');
-      const offered = [...root.querySelectorAll('#chat-sample-records option')].map((option) => [option.getAttribute('value'), option.getAttribute('label')]);
-      expect(offered).toEqual([
-        ['o-1', 'ORD-1001 — o-1'],
-        ['o-2', 'o-2'],
-      ]);
+      const offered = [...root.querySelectorAll('#chat-sample-records option')].map((option) => option.getAttribute('value'));
+      expect(offered).toEqual(['ORD-1001', 'o-2']);
+
+      const record = field(root, 'chat-sample-record');
+      record.value = 'ORD-1001';
+      record.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(panel.subjectId()).toBe('o-1');
     });
 
     it('still takes an id typed in, and leaves the record list to the entity type of the definition', async () => {

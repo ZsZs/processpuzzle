@@ -3,6 +3,7 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ChatDefinitionLookup } from '../../domain/chat-definition.lookup';
 import { CHAT_ACTIVE_SUBJECT, CHAT_IDENTITY } from '../../domain/chat-identity';
 import { ChatStore, ConversationView, PendingMessage } from '../../domain/chat.store';
 import { ChatMessage, ChatSubjectRef, Conversation } from '../../domain/chat.types';
@@ -52,6 +53,7 @@ function fakeStore() {
     discard: vi.fn(),
     loadOlder: vi.fn(async () => undefined),
     loadHistory: vi.fn(async (_conversationId: string): Promise<void> => undefined),
+    listForSubject: vi.fn(async (_subject: ChatSubjectRef, _definitionKey?: string): Promise<string[]> => []),
   };
 }
 
@@ -64,13 +66,15 @@ interface Rendered {
   active?: ReturnType<typeof signal<ChatSubjectRef | undefined>>;
 }
 
-async function render(inputs: Record<string, unknown>, options: { store?: FakeStore; active?: ChatSubjectRef } = {}): Promise<Rendered> {
+async function render(inputs: Record<string, unknown>, options: { store?: FakeStore; active?: ChatSubjectRef; topicDefinitions?: string[] } = {}): Promise<Rendered> {
   const store = options.store ?? fakeStore();
+  const topicDefinitions = options.topicDefinitions ?? [];
   const active = options.active ? signal<ChatSubjectRef | undefined>(options.active) : undefined;
   TestBed.configureTestingModule({
     providers: [
       provideTranslocoTesting({ translations: chatTranslations() }),
       { provide: ChatStore, useValue: store },
+      { provide: ChatDefinitionLookup, useValue: { hasTopics: async (key: string) => topicDefinitions.includes(key) } },
       { provide: CHAT_IDENTITY, useValue: { accessToken: async () => undefined, userId: () => 'u-me' } },
       ...(active ? [{ provide: CHAT_ACTIVE_SUBJECT, useValue: active }] : []),
     ],
@@ -79,6 +83,8 @@ async function render(inputs: Record<string, unknown>, options: { store?: FakeSt
   for (const [name, value] of Object.entries(inputs)) fixture.componentRef.setInput(name, value);
   fixture.detectChanges();
   await fixture.whenStable();
+  // The definition lookup is one more asynchronous step before the conversation is asked for.
+  await new Promise((resolve) => setTimeout(resolve));
   fixture.detectChanges();
   return { fixture, root: fixture.nativeElement as HTMLElement, store, active };
 }
@@ -95,6 +101,7 @@ function required<T extends HTMLElement>(root: HTMLElement, id: string): T {
 async function flush(fixture: ComponentFixture<unknown>) {
   fixture.detectChanges();
   await fixture.whenStable();
+  await new Promise((resolve) => setTimeout(resolve));
   fixture.detectChanges();
 }
 
@@ -123,6 +130,95 @@ describe('ChatPanelComponent', () => {
 
       expect(store.openForSubject).toHaveBeenCalledWith({ subjectType: 'ENTITY', subjectId: 'o-1' }, 'order-discussion');
       expect(store.setViewing).toHaveBeenCalledWith('c-1', true);
+    });
+
+    describe('for a definition with topics', () => {
+      const topicView = (id: string, title: string) => view({ conversation: conversation({ id, title, definitionKey: 'order-topics' }) });
+      const topicsStore = () => {
+        const store = fakeStore();
+        store.views.set(
+          new Map([
+            ['t-1', topicView('t-1', 'Delivery')],
+            ['t-2', topicView('t-2', 'Invoice')],
+          ]),
+        );
+        store.listForSubject.mockResolvedValue(['t-1', 't-2']);
+        return store;
+      };
+
+      it('lists the topics in a drop-down and shows only the newest one', async () => {
+        const store = topicsStore();
+        const { root } = await render({ subjectId: 'o-1', definitionKey: 'order-topics' }, { store, topicDefinitions: ['order-topics'] });
+
+        const options = [...required<HTMLSelectElement>(root, 'topic-select').options].map((option) => option.textContent?.trim());
+        expect(options).toEqual(['Delivery', 'Invoice']);
+        expect(store.openForSubject).not.toHaveBeenCalled();
+        expect(store.loadHistory).toHaveBeenCalledWith('t-2');
+        expect(root.querySelectorAll('[data-testid="chat-log"]')).toHaveLength(1);
+        expect(byId(root, 'chat-start')).toBeNull();
+      });
+
+      it('switches to the topic picked in the drop-down', async () => {
+        const store = topicsStore();
+        const { fixture, root } = await render({ subjectId: 'o-1', definitionKey: 'order-topics' }, { store, topicDefinitions: ['order-topics'] });
+        const select = required<HTMLSelectElement>(root, 'topic-select');
+        select.value = 't-1';
+        select.dispatchEvent(new Event('change'));
+        await flush(fixture);
+
+        expect(store.loadHistory).toHaveBeenCalledWith('t-1');
+        expect(store.setViewing).toHaveBeenCalledWith('t-1', true);
+      });
+
+      it('offers only the form to start a topic while the record has none, and starts it under its title', async () => {
+        const store = fakeStore();
+        store.startConversation.mockImplementation(async () => {
+          store.views.set(new Map([['t-3', topicView('t-3', 'Protest')]]));
+          return 't-3';
+        });
+        const { fixture, root } = await render({ subjectId: 'o-1', definitionKey: 'order-topics' }, { store, topicDefinitions: ['order-topics'] });
+        expect(byId(root, 'topic-select')).toBeNull();
+        expect(byId(root, 'topics-empty')).not.toBeNull();
+
+        const title = required<HTMLInputElement>(root, 'topic-title');
+        title.value = 'Protest';
+        title.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        required<HTMLButtonElement>(root, 'topic-create').click();
+        await flush(fixture);
+
+        expect(store.startConversation).toHaveBeenCalledWith('order-topics', 'o-1', 'Protest');
+        expect(byId(root, 'chat-log')).not.toBeNull();
+        expect(required<HTMLSelectElement>(root, 'topic-select').options).toHaveLength(1);
+      });
+
+      it('says so when the record already has a topic of that title', async () => {
+        const store = fakeStore();
+        store.startConversation.mockRejectedValue(new HttpErrorResponse({ status: 409 }));
+        const { fixture, root } = await render({ subjectId: 'o-1', definitionKey: 'order-topics' }, { store, topicDefinitions: ['order-topics'] });
+        const title = required<HTMLInputElement>(root, 'topic-title');
+        title.value = 'Delivery';
+        title.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        required<HTMLButtonElement>(root, 'topic-create').click();
+        await flush(fixture);
+
+        expect(byId(root, 'topic-create-failed')?.textContent).toContain('already has a topic');
+      });
+
+      it('says so when the topic could not be started', async () => {
+        const store = fakeStore();
+        store.startConversation.mockRejectedValue(new Error('down'));
+        const { fixture, root } = await render({ subjectId: 'o-1', definitionKey: 'order-topics' }, { store, topicDefinitions: ['order-topics'] });
+        const title = required<HTMLInputElement>(root, 'topic-title');
+        title.value = 'Protest';
+        title.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        required<HTMLButtonElement>(root, 'topic-create').click();
+        await flush(fixture);
+
+        expect(byId(root, 'topic-create-failed')).not.toBeNull();
+      });
     });
 
     it('shows a conversation it is given by id, loading its history and not looking for it by record', async () => {

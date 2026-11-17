@@ -78,6 +78,7 @@
     "creating": "Starting…",
     "create_failed": "The topic could not be started.",
     "create_forbidden": "You are not allowed to start a topic here.",
+    "create_duplicate": "This record already has a topic with that title.",
     "select": "Open topic",
     "unread": "unread",
     "closed": "closed"

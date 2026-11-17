@@ -78,6 +78,7 @@
     "creating": "Indítás…",
     "create_failed": "A témát nem sikerült elindítani.",
     "create_forbidden": "Itt nem indíthat témát.",
+    "create_duplicate": "Ennek a rekordnak már van ilyen című témája.",
     "select": "Téma megnyitása",
     "unread": "olvasatlan",
     "closed": "lezárt"
