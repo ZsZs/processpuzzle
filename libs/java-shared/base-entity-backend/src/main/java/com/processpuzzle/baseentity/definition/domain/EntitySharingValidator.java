@@ -46,8 +46,8 @@ public class EntitySharingValidator {
         if (definition.isEmbedded()) {
             throw violation("'%s' is shared but embedded; an embedded component lives in its parent's record.".formatted(code));
         }
-        if (definition.getSharingWrite() != SharingWrite.COMMON_ADMIN || definition.getSharingVisibility() != SharingVisibility.PUBLIC) {
-            throw violation("'%s': only sharing with write COMMON_ADMIN and visibility PUBLIC is supported yet.".formatted(code));
+        if (definition.getSharingWrite() == SharingWrite.SELF) {
+            throw violation("'%s': write SELF is reserved; records owned by a person need their own consent design.".formatted(code));
         }
     }
 

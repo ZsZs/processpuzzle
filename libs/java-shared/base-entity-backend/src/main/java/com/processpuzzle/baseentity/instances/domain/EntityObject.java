@@ -55,6 +55,14 @@ public class EntityObject extends Auditable {
     @jakarta.persistence.Version
     private Long version;
 
+    /**
+     * The member organization that created the object, for a shared type whose write policy is `OWNER_ORG`; null
+     * everywhere else, including the records the common's own staff create. Only the owner — and the common's
+     * members — write the record.
+     */
+    @Column(name = "owner_org_key", updatable = false)
+    private String ownerOrgKey;
+
     /** When the object was retired — a shared type's way of being deleted; it still resolves by id, but is left out of lists. */
     @Column(name = "retired_at")
     private java.time.Instant retiredAt;

@@ -178,7 +178,9 @@ public class EmbeddedCollectionUseCase {
 
     private ItemResult attemptChange(String orgKey, String entityDefinitionCode, UUID id, CollectionAddress address,
                                      Function<List<Map<String, Object>>, Map<String, Object>> operation) {
+        scope.requireWritable(orgKey, entityDefinitionCode);
         EntityObject object = load(orgKey, entityDefinitionCode, id);
+        scope.requireOwnedBy(orgKey, entityDefinitionCode, object);
         requireEmbeddedPath(orgKey, object, address);
         Edit edit = editAt(object.getPayload() == null ? Map.of() : object.getPayload(), address, 0, operation);
 

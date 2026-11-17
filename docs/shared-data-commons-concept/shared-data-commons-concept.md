@@ -287,6 +287,9 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    common" (biz) is the remaining part.
 5. **Owner writes.** `owner_org_key`, `OWNER_ORG`, `OWNER_ONLY`, `visibleWhen`, `from:`; natural-key uniqueness
    from `identifiers`.
+   *Slice 1 done:* `owner_org_key`, `OWNER_ORG` writes (the owner and the common's members change and retire a record; a member
+   creating one becomes its owner) and `OWNER_ONLY` visibility, in the scope, the instance use cases and the embedded
+   collections (which did not check the shared-type write rule before). Still open: `visibleWhen`, `from:`, `identifiers`.
 6. **Starter upgrade.** Provenance-based upgrade, bundle migration steps as pending steps, one version at a
    time; the same operation for tenants and commons; the offered version per starter; "upgrade available"
    and Apply in the designer for the org administrator; the internal upgrade endpoint for a common.

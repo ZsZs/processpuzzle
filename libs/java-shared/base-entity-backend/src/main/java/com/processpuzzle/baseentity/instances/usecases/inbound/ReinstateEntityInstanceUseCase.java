@@ -27,6 +27,7 @@ public class ReinstateEntityInstanceUseCase {
         scope.requireWritable(orgKey, entityDefinitionCode);
         EntityObject entityObject = scope.find(orgKey, entityDefinitionCode, id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
+        scope.requireOwnedBy(orgKey, entityDefinitionCode, entityObject);
         if (!entityObject.isRetired()) {
             return entityObject;
         }

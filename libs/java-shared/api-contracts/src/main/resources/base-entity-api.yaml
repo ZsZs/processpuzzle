@@ -1250,18 +1250,22 @@ components:
       required: [ write, visibility ]
       description: >
         Present on an entity type of a common (the organization the platform keeps for a business
-        starter): the type is shared, defined once there and read by every organization of the
+        starter): the type is shared, defined once there and read by the organizations of the
         starter. Rejected (422) on any other organization, on an embedded type, and for a policy that
-        is not supported yet.
+        is not supported yet (write SELF).
       properties:
         write:
           type: string
           enum: [ COMMON_ADMIN, OWNER_ORG, SELF ]
-          description: Who may write the records. Only COMMON_ADMIN is supported so far.
+          description: >
+            Who may write the records. COMMON_ADMIN: the common's own members only. OWNER_ORG: the member that
+            created a record changes and retires it, and the common's members too. SELF is reserved.
         visibility:
           type: string
           enum: [ PUBLIC, OWNER_ONLY ]
-          description: Who may read the records. Only PUBLIC is supported so far.
+          description: >
+            Who may read the records. PUBLIC: every member. OWNER_ONLY: the owning member, and the common's own
+            members.
 
     BaseEntityDefinitionInput:
       type: object

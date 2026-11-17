@@ -60,6 +60,7 @@ public class UpdateEntityInstanceUseCase {
         scope.requireWritable(orgKey, entityDefinitionCode);
         EntityObject entityObject = scope.find(orgKey, entityDefinitionCode, id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
+        scope.requireOwnedBy(orgKey, entityDefinitionCode, entityObject);
 
         if (!entityObject.getVersion().equals(expectedVersion)) {
             throw new ConflictException("version conflict on entity '%s'".formatted(id));

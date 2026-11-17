@@ -4,7 +4,7 @@ package com.processpuzzle.baseentity.definition.domain;
 public enum SharingWrite {
     /** Only the common's own members, the platform staff who curate it. */
     COMMON_ADMIN,
-    /** The member that owns the record. Not supported yet. */
+    /** The member that created the record, and the common's own members. */
     OWNER_ORG,
     /** The person the record describes. Reserved. */
     SELF

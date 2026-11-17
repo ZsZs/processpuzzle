@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import com.processpuzzle.baseentity.common.ForbiddenException;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort.SharingView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -52,16 +53,60 @@ public class EntityObjectScope {
     }
 
     /**
-     * Refuses a write to a shared type from a member: the objects of a shared type are the common's, and a member
-     * only reads them. The common's own requests, addressed to its key, are the ones that write.
+     * Refuses a write to a shared type from a member, unless the type lets its owners write: the objects of a shared
+     * type are the common's, and a member only reads them. The common's own requests, addressed to its key, write
+     * all of them. For an owner-written type a member may still only change the objects it owns —
+     * {@link #requireOwnedBy}.
      */
     public String requireWritable(String orgKey, String entityDefinitionCode) {
         String storage = storageOrgKey(orgKey, entityDefinitionCode);
-        if (!storage.equals(orgKey)) {
+        if (!storage.equals(orgKey) && !sharingOf(orgKey, entityDefinitionCode).is(SharingView::ownerWrites)) {
             throw new ForbiddenException(
                 "'%s' is shared by '%s' and cannot be changed from '%s'".formatted(entityDefinitionCode, storage, orgKey));
         }
         return storage;
+    }
+
+    /** The key to record as owner of a new object: the member creating it in an owner-written shared type, else none. */
+    public Optional<String> ownerForNew(String orgKey, String entityDefinitionCode) {
+        return storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey) ? Optional.empty() : Optional.of(orgKey);
+    }
+
+    /**
+     * Refuses a member the change of an object another member owns. The common's own requests may change any object;
+     * a type without owners has nothing to check, because {@link #requireWritable} has refused the member already.
+     */
+    public void requireOwnedBy(String orgKey, String entityDefinitionCode, EntityObject object) {
+        if (!storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey) && !orgKey.equals(object.getOwnerOrgKey())) {
+            throw new ForbiddenException("'%s' belongs to another organization and cannot be changed from '%s'"
+                .formatted(object.getId(), orgKey));
+        }
+    }
+
+    /**
+     * Whether {@code orgKey} may see {@code object}: every object of a public type, and — in a type whose visibility
+     * is `OWNER_ONLY` — a member's own objects only. The common's own requests see everything.
+     */
+    public boolean isVisibleTo(String orgKey, String entityDefinitionCode, EntityObject object) {
+        return storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey)
+            || !sharingOf(orgKey, entityDefinitionCode).is(SharingView::ownerOnly)
+            || orgKey.equals(object.getOwnerOrgKey());
+    }
+
+    /** Whether a member's lists are limited to what it owns: an `OWNER_ONLY` shared type, seen from outside the common. */
+    public boolean listsOwnOnly(String orgKey, String entityDefinitionCode) {
+        return !storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey)
+            && sharingOf(orgKey, entityDefinitionCode).is(SharingView::ownerOnly);
+    }
+
+    private Sharing sharingOf(String orgKey, String entityDefinitionCode) {
+        return new Sharing(definitions.sharingOf(orgKey, entityDefinitionCode));
+    }
+
+    private record Sharing(Optional<SharingView> view) {
+        boolean is(java.util.function.Predicate<SharingView> test) {
+            return view.filter(test).isPresent();
+        }
     }
 
     /**
@@ -71,12 +116,14 @@ public class EntityObjectScope {
      */
     public Optional<EntityObject> find(String orgKey, String entityDefinitionCode, UUID id) {
         return repository.findByIdAndOrgKey(id, storageOrgKey(orgKey, entityDefinitionCode))
-            .filter(object -> object.getEntityDefinitionCode().equals(entityDefinitionCode));
+            .filter(object -> object.getEntityDefinitionCode().equals(entityDefinitionCode))
+            .filter(object -> isVisibleTo(orgKey, entityDefinitionCode, object));
     }
 
     /** The objects of the type that are not retired. */
     public List<EntityObject> findAll(String orgKey, String entityDefinitionCode) {
-        return findEvery(orgKey, entityDefinitionCode).stream().filter(object -> !object.isRetired()).toList();
+        return findEvery(orgKey, entityDefinitionCode).stream()
+            .filter(object -> !object.isRetired() && isVisibleTo(orgKey, entityDefinitionCode, object)).toList();
     }
 
     private List<EntityObject> findEvery(String orgKey, String entityDefinitionCode) {

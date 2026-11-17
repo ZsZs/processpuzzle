@@ -50,6 +50,7 @@ public class CreateEntityInstanceUseCase {
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()
             .orgKey(scope.requireWritable(orgKey, entityDefinitionCode))
+            .ownerOrgKey(scope.ownerForNew(orgKey, entityDefinitionCode).orElse(null))
             .entityDefinitionCode(entityDefinitionCode)
             .payload(payload)
             .build());
