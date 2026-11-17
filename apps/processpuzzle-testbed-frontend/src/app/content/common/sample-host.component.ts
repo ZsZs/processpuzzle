@@ -36,6 +36,7 @@ export interface SampleTab {
       @if (selectedDescription(); as description) {
         <p class="sample-description" data-testid="sample-description">{{ description }}</p>
       }
+      <ng-content select="[sample-banner]"></ng-content>
       <mat-divider />
       <router-outlet></router-outlet>
     </ng-container>

@@ -164,3 +164,22 @@ mat-card-actions {
     margin: 8px 0 0;
     font-style: italic;
 }
+
+/* The fold control of an embedded list: a small +/- on the frame's top-left corner, before the label. */
+.embedded-list-toggle {
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: 600 14px/1 sans-serif;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.embedded-list-toggle:hover {
+  background: rgba(0, 0, 0, 0.08);
+}

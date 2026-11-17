@@ -54,6 +54,9 @@ export class WorkingContextService {
   /** Where the user was heading when no context object was known, by context name — see {@link rememberTarget}. */
   private readonly pendingTargets = signal<Record<string, string>>({});
 
+  /** Bumped whenever the remembered ids change, so {@link lastId} can be read reactively. */
+  private readonly rememberedVersion = signal(0);
+
   /** True while a transition is being fired, so a second click does not fire another. */
   readonly firing = signal(false);
 
@@ -174,7 +177,8 @@ export class WorkingContextService {
     const url = definition.aggregate ? this.aggregateUrlFor(definition, id) : this.urlFor(definition, id);
     if (url === undefined) return false;
     this.remember(name, id);
-    return this.router.navigateByUrl(url);
+    // A context object chosen from its own list with no page waiting is only remembered: the user stays on the list.
+    return url === null ? true : this.router.navigateByUrl(url);
   }
 
   /** Leaves the context: the view stays, showing its empty state. The stored fallback is dropped with it. */
@@ -238,6 +242,7 @@ export class WorkingContextService {
 
   /** The id a context view opened without a context restores, when the context persists to localStorage. */
   lastId(name: string): string | undefined {
+    this.rememberedVersion();
     if (this.definitionOf(name)?.persist === 'url') return undefined;
     return this.storage()?.getItem(STORAGE_PREFIX + name + '.last') ?? undefined;
   }
@@ -248,6 +253,7 @@ export class WorkingContextService {
     storage.setItem(STORAGE_PREFIX + name + '.last', id);
     const recent = [id, ...this.readList(name, 'recent').filter((candidate) => candidate !== id)].slice(0, 10);
     storage.setItem(STORAGE_PREFIX + name + '.recent', JSON.stringify(recent));
+    this.rememberedVersion.update((version) => version + 1);
   }
 
   /** Drops an id that no longer resolves, so neither the fallback nor the picker offers it again. */
@@ -306,9 +312,9 @@ export class WorkingContextService {
 
   /**
    * Where choosing `id` leads: back to the URL the user was refused at while none was known; otherwise the view they are on,
-   * for another object; otherwise the aggregate's own address, which lands on its first embedded list.
+   * for another object; otherwise `null` — nowhere, the choice is only remembered.
    */
-  private aggregateUrlFor(definition: WorkingContextDefinition, id: string): string | undefined {
+  private aggregateUrlFor(definition: WorkingContextDefinition, id: string): string | null | undefined {
     const segment = encodeURIComponent(id);
     const target = this.takeTarget(definition.name);
     if (target) return target.replace(`/${UNKNOWN_CONTEXT_OBJECT_ID}`, `/${segment}`);
@@ -317,8 +323,8 @@ export class WorkingContextService {
     // Switching keeps the kind of part being listed, not a row of the object being left.
     if (level) return `${level.baseUrl}/${segment}${this.viewOf(level.rest) ? this.viewOf(level.rest) + '/list' : ''}`;
 
-    const base = this.entityRoutes.basePath(definition.entityName);
-    return base === undefined ? undefined : `${base}/${segment}`;
+    // Outside the context (the aggregate's own list), with nowhere asked for: remember only.
+    return null;
   }
 
   /** The first segment of the view inside a context — not a nested `ctx`, which belongs to the entity being left. */
@@ -342,6 +348,7 @@ export class WorkingContextService {
 
   private forgetLast(name: string): void {
     this.storage()?.removeItem(STORAGE_PREFIX + name + '.last');
+    this.rememberedVersion.update((version) => version + 1);
   }
 
   private readList(name: string, key: string): string[] {

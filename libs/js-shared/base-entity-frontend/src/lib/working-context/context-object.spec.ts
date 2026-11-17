@@ -128,13 +128,14 @@ describe('a context object: the aggregate as its own context', () => {
     expect(service().lastId('race')).toBeUndefined();
   });
 
-  it('selects from outside onto the aggregate', async () => {
+  it('selecting from the aggregate list only remembers the object and stays', async () => {
     await RouterTestingHarness.create('/races/list');
     service().ensureAggregate('Race');
 
-    await service().select('race', 'r1');
+    expect(await service().select('race', 'r1')).toBe(true);
 
-    expect(url()).toBe('/races/r1/rounds/list');
+    expect(url()).toBe('/races/list');
+    expect(service().lastId('race')).toBe('r1');
   });
 
   it('switches to another object on the same kind of part', async () => {
