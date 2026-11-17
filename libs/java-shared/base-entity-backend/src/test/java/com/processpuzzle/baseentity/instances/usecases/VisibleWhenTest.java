@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -63,6 +62,12 @@ class VisibleWhenTest {
     private CriteriaQuery<?> query;
     @Mock
     private CriteriaBuilder cb;
+    @Mock
+    private Path path;
+    @Mock
+    private Expression held;
+    @Mock
+    private Expression state;
 
     private EntityObjectScope scope;
 
@@ -119,9 +124,7 @@ class VisibleWhenTest {
         SearchEntityInstancesUseCase search = new SearchEntityInstancesUseCase(repository, scope, rsql);
         when(rsql.toSpecification(any(), any(), any())).thenReturn((r, q, c) -> null);
         when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
-        lenient().when(root.get(any(String.class))).thenReturn(mock(Path.class));
-        Expression held = mock(Expression.class);
-        Expression state = mock(Expression.class);
+        lenient().when(root.get(any(String.class))).thenReturn(path);
         when(cb.function(eq("jsonb_extract_path_text"), eq(String.class), any(), any())).thenReturn(held);
         when(cb.coalesce(held, "DRAFT")).thenReturn(state);
 

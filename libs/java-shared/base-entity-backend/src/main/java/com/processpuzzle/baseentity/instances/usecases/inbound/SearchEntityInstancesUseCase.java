@@ -55,7 +55,7 @@ public class SearchEntityInstancesUseCase {
 
     /**
      * A member's list of a shared type holds its own records and, unless the type is owner-only, the others' that are
-     * in a visible state — read from the payload attribute the state machine keeps the state in, or the machine's
+     * in a visible state — or, for a type whose records follow another, whose followed record is visible — read from the payload attribute the state machine keeps the state in, or the machine's
      * initial state when a record holds none.
      */
     private Specification<EntityObject> restrictionFilter(String orgKey, String entityDefinitionCode) {
@@ -63,6 +63,15 @@ public class SearchEntityInstancesUseCase {
             Predicate own = cb.equal(root.get("ownerOrgKey"), orgKey);
             if (restriction.ownOnly()) {
                 return own;
+            }
+            if (restriction.followed() != null) {
+                // A record follows another: visible when the one it follows is, which was worked out as a list of ids.
+                if (restriction.followedIds().isEmpty()) {
+                    return own;
+                }
+                Expression<String> followedId = cb.function("jsonb_extract_path_text", String.class, root.get("payload"),
+                    cb.literal(restriction.followed()));
+                return cb.or(own, followedId.in(restriction.followedIds()));
             }
             Expression<String> held = cb.function("jsonb_extract_path_text", String.class, root.get("payload"),
                 cb.literal(restriction.tracking().attributeKey()));

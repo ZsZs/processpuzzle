@@ -40,8 +40,9 @@ public class EntityDefinitionMapper {
             .organizationId(input.getOrganizationId())
             .identifiers(input.getIdentifiers() == null ? new java.util.ArrayList<>()
                 : input.getIdentifiers().stream().<List<String>>map(java.util.ArrayList::new).toList())
-            .sharingWrite(input.getSharing() == null ? null : SharingWrite.valueOf(input.getSharing().getWrite().getValue()))
-            .sharingVisibility(input.getSharing() == null ? null : SharingVisibility.valueOf(input.getSharing().getVisibility().getValue()))
+            .sharingWrite(sharingWrite(input.getSharing()))
+            .sharingVisibility(sharingVisibility(input.getSharing()))
+            .sharingFrom(input.getSharing() == null ? null : input.getSharing().getFrom())
             .sharingVisibleWhen(visibleWhenStates(input.getSharing()))
             .build();
 
@@ -49,6 +50,27 @@ public class EntityDefinitionMapper {
             input.getAttributes().forEach(attrInput -> definition.addAttribute(toDomain(attrInput)));
         }
         return definition;
+    }
+
+    /** A type that follows another record is stored as owner-written and public; the policy proper is the referenced record's. */
+    private static SharingWrite sharingWrite(com.processpuzzle.baseentity.model.EntitySharing sharing) {
+        if (sharing == null) {
+            return null;
+        }
+        if (sharing.getWrite() != null) {
+            return SharingWrite.valueOf(sharing.getWrite().getValue());
+        }
+        return sharing.getFrom() == null ? null : SharingWrite.OWNER_ORG;
+    }
+
+    private static SharingVisibility sharingVisibility(com.processpuzzle.baseentity.model.EntitySharing sharing) {
+        if (sharing == null) {
+            return null;
+        }
+        if (sharing.getVisibility() != null) {
+            return SharingVisibility.valueOf(sharing.getVisibility().getValue());
+        }
+        return sharing.getFrom() == null ? null : SharingVisibility.PUBLIC;
     }
 
     private static List<String> visibleWhenStates(com.processpuzzle.baseentity.model.EntitySharing sharing) {
@@ -104,6 +126,7 @@ public class EntityDefinitionMapper {
             com.processpuzzle.baseentity.model.EntitySharing sharing = new com.processpuzzle.baseentity.model.EntitySharing();
             sharing.setWrite(com.processpuzzle.baseentity.model.EntitySharing.WriteEnum.fromValue(definition.getSharingWrite().name()));
             sharing.setVisibility(com.processpuzzle.baseentity.model.EntitySharing.VisibilityEnum.fromValue(definition.getSharingVisibility().name()));
+            sharing.setFrom(definition.getSharingFrom());
             if (!definition.getSharingVisibleWhen().isEmpty()) {
                 com.processpuzzle.baseentity.model.SharingVisibleWhen visibleWhen = new com.processpuzzle.baseentity.model.SharingVisibleWhen();
                 visibleWhen.setState(new java.util.ArrayList<>(definition.getSharingVisibleWhen()));

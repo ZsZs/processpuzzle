@@ -16,6 +16,7 @@ import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInsta
 import com.processpuzzle.baseentity.instances.usecases.inbound.ReinstateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort.SharingView;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,8 +71,8 @@ class OwnerWritesTest {
     void aNewObjectIsOwnedByTheMemberThatCreatedIt_andByNoOneWhenTheCommonDoes() {
         sharedAs(CLUB, "OWNER_ORG", "PUBLIC");
 
-        assertThat(scope.ownerForNew(CLUB, "boat")).contains(CLUB);
-        assertThat(scope.ownerForNew(COMMON, "boat")).isEmpty();
+        assertThat(scope.ownerForNew(CLUB, "boat", Map.of())).contains(CLUB);
+        assertThat(scope.ownerForNew(COMMON, "boat", Map.of())).isEmpty();
     }
 
     @Test

@@ -1247,12 +1247,11 @@ components:
 
     EntitySharing:
       type: object
-      required: [ write, visibility ]
       description: >
         Present on an entity type of a common (the organization the platform keeps for a business
         starter): the type is shared, defined once there and read by the organizations of the
         starter. Rejected (422) on any other organization, on an embedded type, and for a policy that
-        is not supported yet (write SELF).
+        is not supported yet (write SELF). Give `write` and `visibility`, or only `from`.
       properties:
         write:
           type: string
@@ -1266,6 +1265,14 @@ components:
           description: >
             Who may read the records. PUBLIC: every member. OWNER_ONLY: the owning member, and the common's own
             members.
+        from:
+          type: string
+          description: >
+            The REFERENCE attribute whose record this type's records follow: a booking follows its event. Owner and
+            visibility are those of the referenced record (one level; the referenced type is a shared type of the same
+            common that follows nothing itself), only the owner of that record — and the common — creates or changes
+            them, and the attribute cannot change afterwards. Replaces `write`, `visibility` and `visibleWhen`,
+            which are then left out.
         visibleWhen:
           $ref: '#/components/schemas/SharingVisibleWhen'
 

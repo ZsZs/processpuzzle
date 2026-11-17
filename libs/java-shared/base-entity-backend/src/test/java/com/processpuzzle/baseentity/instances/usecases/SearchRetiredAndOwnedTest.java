@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -57,6 +56,8 @@ class SearchRetiredAndOwnedTest {
     private CriteriaQuery<?> query;
     @Mock
     private CriteriaBuilder cb;
+    @Mock
+    private Path path;
 
     private SearchEntityInstancesUseCase search;
 
@@ -65,7 +66,7 @@ class SearchRetiredAndOwnedTest {
         search = new SearchEntityInstancesUseCase(repository, new EntityObjectScope(repository, definitions), rsql);
         when(rsql.toSpecification(any(), any(), any())).thenReturn((r, q, c) -> null);
         when(repository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
-        lenient().when(root.get(any(String.class))).thenReturn(mock(Path.class));
+        lenient().when(root.get(any(String.class))).thenReturn(path);
     }
 
     private void sharedInCommon(String visibility) {
