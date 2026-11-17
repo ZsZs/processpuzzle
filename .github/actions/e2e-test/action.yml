@@ -40,9 +40,17 @@ runs:
 
     - name: Install Playwright Browsers
       run: |
+        # The `setup` project and the global setup always run in Chromium, whatever browsers are under test
+        # (playwright.config.ts), so a job for firefox, webkit or edge needs it too: without it they fail at
+        # launch with "Executable doesn't exist ... chromium_headless_shell".
+        echo "Installing Playwright browser: chromium (setup)"
+        npx playwright install chromium --with-deps
         IFS=',' read -ra BROWSER_LIST <<< "${{ inputs.browsers }}"
         for browser in "${BROWSER_LIST[@]}"; do
           browser=$(echo "$browser" | tr -d '[:space:]')
+          [ "$browser" = chromium ] && continue
+          # The config names the project `edge`; Playwright installs it as `msedge`.
+          [ "$browser" = edge ] && browser=msedge
           echo "Installing Playwright browser: $browser"
           npx playwright install "$browser" --with-deps
         done

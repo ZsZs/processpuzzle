@@ -32,9 +32,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Query the last successful run of this workflow
-          last_sha=$(gh api repos/${{ github.repository }}/actions/workflows/nightly-e2e.yml/runs \
-            --jq '.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | .head_sha' \
-            --limit 10 | head -1)
+          # `status=success` filters by conclusion. (`gh api` has no --limit: the flag made this step fail, the SHA
+          # came back empty, and every night counted as the first ever run, so the gate never skipped.)
+          last_sha=$(gh api "repos/${{ github.repository }}/actions/workflows/nightly-e2e.yml/runs?status=success&per_page=1" \
+            --jq '.workflow_runs[0].head_sha // empty')
           echo "sha=${last_sha:-}" >> $GITHUB_OUTPUT
 
       - name: Compare SHAs
@@ -213,6 +214,8 @@ jobs:
             echo '' >> "$BODY_FILE"
             echo '**Last run:** Not yet run' >> "$BODY_FILE"
             echo '**Status:** Pending' >> "$BODY_FILE"
+            # The label has to exist before an issue can carry it; `|| true` for the run that finds it there.
+            gh label create automated --description "Opened or updated by a workflow" --color ededed 2>/dev/null || true
             gh issue create \
               --title "Nightly E2E Results" \
               --label "automated" \
