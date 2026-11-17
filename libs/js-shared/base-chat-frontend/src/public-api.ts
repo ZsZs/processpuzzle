@@ -1,7 +1,7 @@
 /*
  * Public API Surface of @processpuzzle/base-chat
  */
-export { BASE_CHAT_TRANSLATION_SOURCE, BASE_CHAT_TRANSLOCO_SCOPE, CHAT_DEFINITION_I18N_SCOPE } from './lib/base-chat.i18n';
+export { BASE_CHAT_TRANSLATION_SOURCE, BASE_CHAT_TRANSLOCO_SCOPE, CHAT_DEFINITION_I18N_SCOPE, ENTITY_CHAT_I18N_KEY } from './lib/base-chat.i18n';
 export { BASE_CHAT_ENTITY_FACADES, BASE_CHAT_FACADE_PROVIDERS, provideChatWidgets } from './lib/base-chat.providers';
 export { BASE_CHAT_ROUTES } from './lib/base-chat.routes';
 export { ChatDefinition, ChatLifecycleKind, ChatMultiplicity, ChatSubjectKind } from './lib/domain/chat-definition';
@@ -10,6 +10,8 @@ export { ChatDefinitionMapper, type ChatDefinitionDto } from './lib/domain/chat-
 export { ChatDefinitionService } from './lib/domain/chat-definition.service';
 export { ChatDefinitionStore } from './lib/domain/chat-definition.store';
 export { ChatDefinitionFacade } from './lib/feature/definition/chat-definition.facade';
+export { ENTITY_CHAT_TAB, ENTITY_CHAT_TAB_SEGMENT, EntityChatTabContributor, provideEntityChatTab } from './lib/feature/entity/entity-chat-tab.contributor';
+export { EntityChatTabComponent } from './lib/feature/entity/entity-chat-tab.component';
 
 export { CHAT_ACTIVE_SUBJECT, CHAT_FETCH, CHAT_IDENTITY, type ChatFetch, type ChatIdentity } from './lib/domain/chat-identity';
 export { ChatService, failureKindOf } from './lib/domain/chat.service';

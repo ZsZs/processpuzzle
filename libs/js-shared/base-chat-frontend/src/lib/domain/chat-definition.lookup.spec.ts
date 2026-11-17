@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ChatMultiplicity } from './chat-definition';
+import { ChatMultiplicity, ChatSubjectKind } from './chat-definition';
 import { ChatDefinitionLookup } from './chat-definition.lookup';
 import { ChatDefinitionService } from './chat-definition.service';
 
@@ -36,6 +36,23 @@ describe('ChatDefinitionLookup', () => {
     findAll.mockReturnValue(of({ content: [{ id: 'order-topics', multiplicity: ChatMultiplicity.MANY }] }));
 
     expect(await lookup().hasTopics('order-topics')).toBe(true);
+  });
+
+  it('finds the chats of an entity type by name, and none for an unknown or missing one', async () => {
+    findAll.mockReturnValue(
+      of([
+        { id: 'order-topics', name: 'Order topics', subjectType: ChatSubjectKind.ENTITY, subjectDefinition: 'order', multiplicity: ChatMultiplicity.MANY },
+        { id: 'order-discussion', name: 'Order discussion', subjectType: ChatSubjectKind.ENTITY, subjectDefinition: 'order', multiplicity: ChatMultiplicity.SINGLE },
+        { id: 'run-chat', name: 'Run chat', subjectType: ChatSubjectKind.WORKFLOW_INSTANCE, subjectDefinition: 'order', multiplicity: ChatMultiplicity.SINGLE },
+        { id: 'boat-chat', name: 'Boat chat', subjectType: ChatSubjectKind.ENTITY, subjectDefinition: 'boat', multiplicity: ChatMultiplicity.SINGLE },
+      ]),
+    );
+    const subject = lookup();
+
+    expect((await subject.forEntity('order')).map((chat) => chat.id)).toEqual(['order-discussion', 'order-topics']);
+    expect(await subject.forEntity('nothing')).toEqual([]);
+    expect(await subject.forEntity(undefined)).toEqual([]);
+    expect(findAll).toHaveBeenCalledTimes(1);
   });
 
   it('answers no for an unknown definition', async () => {

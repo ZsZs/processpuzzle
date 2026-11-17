@@ -21,6 +21,7 @@ import {
   type ChatIdentity,
   provideChatWidgets,
   provideChatWorkingContextSubject,
+  provideEntityChatTab,
 } from '@processpuzzle/base-chat';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -181,6 +182,9 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // panel placed without one chats about.
       ...provideChatWidgets(),
       provideChatWorkingContextSubject(),
+      // And base-chat's Chat tab, offered to every entity type some chat definition is about — `Order` and
+      // `Dynamic Entity` in this tenant — on the same contributor arrangement as the tabs above.
+      ...provideEntityChatTab(),
       { provide: CHAT_IDENTITY, useFactory: createChatIdentity },
       // Which document and book actions to offer, from the signed-in user's roles. base-document does not
       // know the auth library, so the application bridges the two; the backend still decides.

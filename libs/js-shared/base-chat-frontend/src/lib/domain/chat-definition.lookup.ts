@@ -1,29 +1,42 @@
 import { inject, Injectable, Injector } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { ChatDefinition, ChatMultiplicity } from './chat-definition';
+import { ChatDefinition, ChatMultiplicity, ChatSubjectKind } from './chat-definition';
 import { ChatDefinitionService } from './chat-definition.service';
 
 /**
- * Answers one question about a chat definition for the panel: does it hold several titled topics per record?
+ * Answers questions about the chat definitions that screens need: does a definition hold several titled topics
+ * per record, and which chats does an entity type have?
  *
- * The definitions are read once and remembered. A read that fails answers "no" without remembering it, so the panel
- * falls back to the single chat it has always shown and a later look may still find out.
+ * The definitions are read once and remembered. A read that fails answers "none" without remembering it, so a
+ * screen falls back to what it showed before there was a lookup and a later look may still find out.
  */
 @Injectable({ providedIn: 'root' })
 export class ChatDefinitionLookup {
   private readonly injector = inject(Injector);
-  private readonly known = new Map<string, boolean>();
+  private known?: ChatDefinition[];
 
   async hasTopics(definitionKey: string): Promise<boolean> {
-    const remembered = this.known.get(definitionKey);
-    if (remembered !== undefined) return remembered;
+    const definition = (await this.all()).find((candidate) => candidate.id === definitionKey);
+    return definition?.multiplicity === ChatMultiplicity.MANY;
+  }
+
+  /** The chats whose records are of the given entity definition code, by name. */
+  async forEntity(entityDefinitionCode: string | undefined): Promise<ChatDefinition[]> {
+    if (!entityDefinitionCode) return [];
+    return (await this.all())
+      .filter((definition) => definition.subjectType === ChatSubjectKind.ENTITY && definition.subjectDefinition === entityDefinitionCode)
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  private async all(): Promise<ChatDefinition[]> {
+    if (this.known) return this.known;
     try {
       const found = await firstValueFrom(this.injector.get(ChatDefinitionService).findAll());
-      for (const definition of listOf(found)) this.known.set(definition.id, definition.multiplicity === ChatMultiplicity.MANY);
+      this.known = listOf(found);
+      return this.known;
     } catch {
-      return false;
+      return [];
     }
-    return this.known.get(definitionKey) ?? false;
   }
 }
 

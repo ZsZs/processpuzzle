@@ -31,3 +31,9 @@ export const BASE_CHAT_TRANSLATION_SOURCE: TranslationSource = {
   serviceRootKey: 'CHAT_SERVICE_ROOT',
   segment: 'chat',
 };
+
+/**
+ * Label of the Chat tab an entity's screens get from base-chat. It renders on the entity's own route, which does
+ * not register this library's scope; `provideEntityChatTab()` does.
+ */
+export const ENTITY_CHAT_I18N_KEY = `${BASE_CHAT_TRANSLOCO_SCOPE}.tabs.chat`;
