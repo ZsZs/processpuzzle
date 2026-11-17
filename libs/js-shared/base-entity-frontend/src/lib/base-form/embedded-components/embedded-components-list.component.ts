@@ -39,11 +39,9 @@ import { EmbeddedComponentRefComponent } from './embedded-component-ref.componen
       <div class="row">
         <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
           <legend [ngClass]="config().labelClass">
-            {{ config().i18nKey() | ppLabel: config().label }}
             <!-- A long list can be folded away: the rows stay in the document, only their display is hidden. -->
             <button
               type="button"
-              mat-icon-button
               class="embedded-list-toggle"
               [attr.data-testid]="config().attrName + '-toggle-list'"
               [attr.aria-expanded]="listVisible()"
@@ -51,8 +49,9 @@ import { EmbeddedComponentRefComponent } from './embedded-component-ref.componen
               [title]="(listVisible() ? 'base_entity.embedded_components.hide_list' : 'base_entity.embedded_components.show_list') | transloco"
               (click)="toggleList()"
             >
-              <mat-icon>{{ listVisible() ? 'expand_less' : 'expand_more' }}</mat-icon>
+              {{ listVisible() ? '−' : '+' }}
             </button>
+            {{ config().i18nKey() | ppLabel: config().label }}
           </legend>
           @if (!listVisible()) {
             <p class="base-entity-form-hint" [attr.data-testid]="config().attrName + '-hidden-count'">{{ 'base_entity.embedded_components.hidden_count' | transloco: { count: rows().length } }}</p>

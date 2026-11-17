@@ -137,16 +137,16 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
 
   // region event handling methods
   onChangeSelection(entity?: PersistedEntity<Entity>) {
-    if (entity && this.isSelected(entity)) this.store.selectEntity(entity.id);
-    else if (entity) this.store.deselectEntity(entity.id);
+    if (entity && this.isSelected(entity)) this.store.selectEntity(this.keyOf(entity));
+    else if (entity) this.store.deselectEntity(this.keyOf(entity));
 
-    if (this.selection.selected.length === 1) this.store.setCurrentEntity(this.selection.selected[0].id);
+    if (this.selection.selected.length === 1) this.store.setCurrentEntity(this.keyOf(this.selection.selected[0]));
     else this.store.clearCurrentEntity();
   }
 
   onNavigateToDetails(entity: PersistedEntity<Entity>): void {
-    this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entity.id);
-    this.store.setCurrentEntity(entity.id);
+    this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, this.keyOf(entity));
+    this.store.setCurrentEntity(this.keyOf(entity));
   }
 
   onNavigateToRelated(config: BaseEntityAttrDescriptor, entity: PersistedEntity<Entity>) {
@@ -230,7 +230,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     } else {
       this.dataSource.data.forEach((entity) => {
         this.selection.select(entity);
-        this.store.selectEntity(entity.id);
+        this.store.selectEntity(this.keyOf(entity));
       });
     }
   }
@@ -255,6 +255,11 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   // endregion
 
   // region protected, private helper methods
+  /** The row's key as its store knows it: an embedded row is keyed by its `referenceIdField`, which is not always `id`. */
+  private keyOf(entity: PersistedEntity<Entity>): string {
+    return this.store.keyOf?.(entity) ?? entity.id;
+  }
+
   private cancelSelections() {
     this.store.deselectAll();
     this.selection.clear();

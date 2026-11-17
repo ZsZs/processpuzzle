@@ -30,11 +30,11 @@
           <td mat-cell [class.pp-col-autosize]="colDescriptor.autosizeColumn" (click)="onRowClick(element)" (dblclick)="onRowDoubleClick(element)" (keydown.enter)="onRowEnter(element)" tabindex="0" role="button" *matCellDef="let element">
             <span class="pp-cell-content">
               @if (colDescriptor.isLinkToDetails) {
-                <a class="link-to-details" (click)="onNavigateToDetails(element)">{{
+                <a class="link-to-details" (click)="onNavigateToDetails(element); $event.stopPropagation()">{{
                   colDescriptor.formControlType === 'DATE' ? (element[colDescriptor.attrName] | ppDate: colDescriptor.dateFormat) : element[colDescriptor.attrName]
                 }}</a>
               } @else if (colDescriptor.linkedEntityType !== undefined) {
-                <a (click)="onNavigateToRelated(colDescriptor, element)">{{ foreignKeyLabel(colDescriptor, element) }}</a>
+                <a (click)="onNavigateToRelated(colDescriptor, element); $event.stopPropagation()">{{ foreignKeyLabel(colDescriptor, element) }}</a>
               } @else if ((colDescriptor.formControlType === 'ARTIFACT' || colDescriptor.formControlType === 'AVATAR') && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null) {
                 @for (artifact of artifactsOf(element[colDescriptor.attrName]); track $index; let last = $last) {
                   <a (click)="onDownloadObject(artifact, $event)">{{

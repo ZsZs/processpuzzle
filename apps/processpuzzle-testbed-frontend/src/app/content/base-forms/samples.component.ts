@@ -1,8 +1,8 @@
-import { Component, computed, inject, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { WorkingContextService } from '@processpuzzle/base-entity';
 import { SampleHostComponent, SampleTab } from '../common/sample-host.component';
-import { COMPONENT_ONE_PATH, COMPONENT_TWO_PATH, DEMO_ROOT_PATH } from './context-object/context-object.routes';
+import { COMPONENT_ONE_PATH, COMPONENT_TWO_PATH, DEMO_ROOT_NAME, DEMO_ROOT_PATH } from './context-object/context-object.routes';
 
 /** What stands for "the context object, whichever it is": the guard of the aggregate's route resolves it, or asks for a choice. */
 const UNKNOWN = 'unknown';
@@ -14,6 +14,7 @@ const UNKNOWN = 'unknown';
   template: `
     <pp-sample-host prefix="base-entity" groupName="fontStyle" ariaLabel="Font Style" desc2Key="samples_desc_1" [tabs]="tabs()">
       <img sample-header src="https://github.com/ZsZs/processpuzzle/blob/develop/docs/base-entity-sample_entities.png?raw=true" width="600px" alt="Sample Entities" />
+      <p sample-banner class="context-object-banner" data-testid="context-object-banner">Context object: <strong>{{ contextObjectName() || 'none selected' }}</strong></p>
     </pp-sample-host>
   `,
 })
@@ -32,7 +33,7 @@ export class SamplesComponent {
       {
         route: DEMO_ROOT_PATH,
         link: [DEMO_ROOT_PATH, 'list'],
-        label: 'Aggregate Root',
+        label: DEMO_ROOT_NAME,
         description:
           'The Context Object sample. A context object is an entity you pick once and then work inside. Select exactly one row below and press "Set as context object"; the status bar then shows it, and the embedded component lists are about that object.',
       },
@@ -50,5 +51,19 @@ export class SamplesComponent {
       },
     ];
   });
+  /** The name of the context object — the one the URL names, else the one remembered — shown above the forms. */
+  protected readonly contextObjectName = signal('');
   readonly selectedButton = computed(() => this.host()?.selectedButton() ?? '');
+
+  constructor() {
+    effect(() => {
+      const id = this.workingContext.current(DEMO_ROOT_PATH)?.id ?? this.workingContext.lastId(DEMO_ROOT_PATH);
+      untracked(() => void this.showName(id));
+    });
+  }
+
+  private async showName(id: string | undefined): Promise<void> {
+    const entity = id ? await this.workingContext.load(DEMO_ROOT_PATH, id) : undefined;
+    this.contextObjectName.set(entity ? String(entity['name'] ?? entity['id']) : '');
+  }
 }

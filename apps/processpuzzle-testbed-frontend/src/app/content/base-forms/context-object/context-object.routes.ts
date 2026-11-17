@@ -17,10 +17,10 @@ export const COMPONENT_TWO_PATH = 'demo-component-two';
 
 /**
  * The one screen the demonstration contributes: the Demo Root's ordinary screens, mounted at `demo-root`. The three entities
- * exist only as metadata, so the route is made at run time. Nothing here mentions a context: the root's definition says
+ * exist only as metadata, so the route is made at run time. The host route also names the entity, as every mount does, so the navigator builds its URLs on the host's own prefix. Nothing here mentions a context: the root's definition says
  * `canContextObject`, and base-entity adds `demo-root/<id>/<part>/list` for each embedded part by itself.
  */
 export async function contextObjectRoutes(): Promise<Routes> {
   const screens = await inject(EntityScreenResolver).resolve(DEMO_ROOT_NAME);
-  return [{ path: DEMO_ROOT_PATH, ...entityScreenRoute({ entityName: DEMO_ROOT_NAME, screens, hostPath: DEMO_ROOT_PATH }) }];
+  return [{ path: DEMO_ROOT_PATH, ...entityScreenRoute({ entityName: DEMO_ROOT_NAME, screens, hostPath: DEMO_ROOT_PATH, data: { entityName: DEMO_ROOT_NAME } }) }];
 }

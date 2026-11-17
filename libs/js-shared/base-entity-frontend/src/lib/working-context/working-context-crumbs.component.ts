@@ -55,6 +55,7 @@ interface ContextCrumb {
           class="context-menu-trigger"
           [attr.data-testid]="crumb.testId + '-menu'"
           [attr.aria-label]="'base_entity.working_context.menu' | transloco"
+          [title]="'base_entity.working_context.menu' | transloco"
           [matMenuTriggerFor]="contextMenu"
         >
           <mat-icon>arrow_drop_down</mat-icon>
@@ -119,10 +120,27 @@ interface ContextCrumb {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      /* A visible control, not a bare glyph: a bordered chip that darkens on hover and shows keyboard focus. */
       .context-menu-trigger {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
+        align-self: center;
+        width: 28px;
+        min-height: 28px;
+        height: 28px;
         padding: 0;
+        border: 1px solid currentColor;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.08);
+      }
+      .context-menu-trigger:hover,
+      .context-menu-trigger[aria-expanded='true'] {
+        background-color: rgba(0, 0, 0, 0.2);
+      }
+      .context-menu-trigger:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
       }
       .context-extra {
         margin-left: 6px;
