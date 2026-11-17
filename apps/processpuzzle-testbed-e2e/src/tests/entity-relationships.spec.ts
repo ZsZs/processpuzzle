@@ -1,10 +1,13 @@
 import { defineEntityRelationshipSuite } from '@processpuzzle/e2e-testing';
 import { testConfig } from '../../playwright.config';
+import { removeWorkflowInstancesOfFixture } from '../support/fixture-cleanup';
 import { REGISTRY_PATH } from '../support/global-setup';
 
 defineEntityRelationshipSuite({
   registryPath: REGISTRY_PATH,
   routePrefix: testConfig.routePrefix,
+  // An order starts a workflow run, and deleting the order does not end it; without this every run of the suite left its runs in the task dashboard.
+  afterFixtureRemoved: removeWorkflowInstancesOfFixture,
   // 'Order' used to be excluded here for its `lineItems`, whose 'total-matches-line-items' ERROR rule the
   // generated fixture could not satisfy. It needs no exclusion now: the entity moved to metadata in
   // base-entity's processpuzzle-testbed-entities.yaml, so it has no facade and never reaches the registry
