@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ImportReport, UpgradeReport } from './starter';
 import { catalogRootOf, StarterService } from './starter.service';
 
-const ROOT = 'http://backend/organizations/processpuzzle-testbed';
+const ROOT = 'https://backend/organizations/processpuzzle-testbed';
 const INSTALL_URL = `${ROOT}/starters/install`;
 
 const rejected: ImportReport = { dryRun: true, status: 'rejected', errors: [{ message: 'it holds 3 entity objects' }] };
@@ -28,7 +28,7 @@ describe('StarterService', () => {
 
   it('reads the catalog from the root without its organization segment', async () => {
     const result = firstValueFrom(service.listCatalog());
-    http.expectOne('http://backend/starters').flush([{ id: 'inventory', name: 'Inventory', versions: [{ version: '1.0.0', status: 'published' }] }]);
+    http.expectOne('https://backend/starters').flush([{ id: 'inventory', name: 'Inventory', versions: [{ version: '1.0.0', status: 'published' }] }]);
 
     await expect(result).resolves.toEqual([expect.objectContaining({ id: 'inventory' })]);
   });
@@ -115,12 +115,12 @@ describe('StarterService', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: ROOT, STARTER_SERVICE_ROOT: 'http://starters/organizations/acme' } } },
+        { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { BACKEND_SERVICE_ROOT: ROOT, STARTER_SERVICE_ROOT: 'https://starters/organizations/acme' } } },
       ],
     });
     const own = TestBed.inject(HttpTestingController);
     const result = firstValueFrom(TestBed.inject(StarterService).listInstalled());
-    own.expectOne('http://starters/organizations/acme/starters').flush([]);
+    own.expectOne('https://starters/organizations/acme/starters').flush([]);
 
     await expect(result).resolves.toEqual([]);
     own.verify();
@@ -129,7 +129,7 @@ describe('StarterService', () => {
 
 describe('catalogRootOf', () => {
   it.each([
-    ['http://localhost:8080/organizations/acme', 'http://localhost:8080'],
+    ['https://localhost:8080/organizations/acme', 'https://localhost:8080'],
     ['/api/organizations/acme/', '/api'],
     ['/api', '/api'],
   ])('%s → %s', (root, expected) => {
