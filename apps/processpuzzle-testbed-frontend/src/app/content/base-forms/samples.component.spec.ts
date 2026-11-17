@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { WorkingContextService } from '@processpuzzle/base-entity';
 import { SamplesComponent } from './samples.component';
 
