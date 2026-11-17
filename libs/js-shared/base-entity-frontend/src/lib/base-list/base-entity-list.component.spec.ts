@@ -107,6 +107,41 @@ describe('EntityListComponent', () => {
       expect(store.setCurrentEntity).toHaveBeenNthCalledWith(2, testEntity_2.id);
     });
 
+    it('onChangeSelection() without a row only re-reads how many are selected', async () => {
+      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      vi.spyOn(store, 'selectEntity');
+      vi.spyOn(store, 'deselectEntity');
+      vi.spyOn(store, 'clearCurrentEntity');
+
+      component.onChangeSelection();
+
+      expect(store.selectEntity).not.toHaveBeenCalled();
+      expect(store.deselectEntity).not.toHaveBeenCalled();
+      expect(store.clearCurrentEntity).toHaveBeenCalled();
+    });
+
+    it('identifies a row by the key its store names — an embedded row is not keyed by id', async () => {
+      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      store.keyOf = (entity) => `key-${entity.name}`;
+      vi.spyOn(store, 'selectEntity');
+
+      component.selection.select(testEntity_1);
+      component.onChangeSelection(testEntity_1);
+
+      expect(store.selectEntity).toHaveBeenCalledWith('key-hello');
+    });
+
+    it('falls back to id for a store that names no key', async () => {
+      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      (store as { keyOf?: unknown }).keyOf = undefined;
+      vi.spyOn(store, 'selectEntity');
+
+      component.selection.select(testEntity_1);
+      component.onChangeSelection(testEntity_1);
+
+      expect(store.selectEntity).toHaveBeenCalledWith(testEntity_1.id);
+    });
+
     it('navigateToDetails() calls form navigator and sets current entity.', async () => {
       const { component, store, formNavigator } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
       vi.spyOn(formNavigator, 'navigateToDetails');

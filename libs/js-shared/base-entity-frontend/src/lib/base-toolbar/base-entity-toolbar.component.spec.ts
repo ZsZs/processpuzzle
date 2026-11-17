@@ -152,6 +152,51 @@ describe('BaseEntityToolbarComponent', () => {
       expect(component.store.delete).toHaveBeenNthCalledWith(2, '2');
     });
 
+    it('onEditEntity() opens the current row by its key', async () => {
+      const { component, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      vi.spyOn(formNavigator, 'navigateToDetails');
+      component.store.setCurrentEntity('2');
+
+      (component as BaseEntityToolbarComponent<TestEntity>).onEditEntity();
+
+      expect(formNavigator.navigateToDetails).toHaveBeenCalledWith('TestEntity', '2');
+    });
+
+    it('onEditEntity() does nothing without a current row', async () => {
+      const { component, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      vi.spyOn(formNavigator, 'navigateToDetails');
+      component.store.clearCurrentEntity();
+
+      (component as BaseEntityToolbarComponent<TestEntity>).onEditEntity();
+
+      expect(formNavigator.navigateToDetails).not.toHaveBeenCalled();
+    });
+
+    it('addresses a row by its store key, and by id when the store names none', async () => {
+      const { component, formNavigator } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      const row = { id: '7', name: 'seven' } as unknown as TestEntity;
+      vi.spyOn(formNavigator, 'navigateToDetails');
+      const stub = { currentEntity: () => row, selectedEntities: () => [row], delete: vi.fn() };
+
+      component.store = { ...stub, keyOf: (entity: TestEntity) => `key-${entity.name}` } as never;
+      (component as BaseEntityToolbarComponent<TestEntity>).onEditEntity();
+      expect(formNavigator.navigateToDetails).toHaveBeenLastCalledWith('TestEntity', 'key-seven');
+
+      component.store = stub as never;
+      (component as BaseEntityToolbarComponent<TestEntity>).onEditEntity();
+      expect(formNavigator.navigateToDetails).toHaveBeenLastCalledWith('TestEntity', '7');
+    });
+
+    it('onDeleteEntities() skips a row that has no key', async () => {
+      const { component } = await setupContainerComponentTest(BaseEntityToolbarComponent<TestEntity>);
+      const stub = { selectedEntities: () => [{ name: 'keyless' }], delete: vi.fn(), keyOf: () => undefined };
+      component.store = stub as never;
+
+      (component as BaseEntityToolbarComponent<TestEntity>).onDeleteEntities();
+
+      expect(stub.delete).not.toHaveBeenCalled();
+    });
+
     it('shows the PDF export button when the list has entities', async () => {
       const { fixture } = await setupContainerComponentTest(BaseEntityToolbarComponent);
       const pdfButton = fixture.debugElement.query(By.css('button[data-testid="testEntity-pdf-export"]'));
