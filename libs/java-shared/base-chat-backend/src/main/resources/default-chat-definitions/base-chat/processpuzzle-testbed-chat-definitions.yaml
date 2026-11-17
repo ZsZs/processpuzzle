@@ -15,3 +15,10 @@ chat-definitions:
     subjectDefinition: order
     multiplicity: MANY
     lifecycle: ON_DEMAND
+  - key: dynamic-entity-topics
+    name: Dynamic Entity topics
+    description: Any number of titled topics per dynamic entity — the example behind the Chat tab of the Dynamic Entity sample.
+    subjectType: ENTITY
+    subjectDefinition: dynamic-entity
+    multiplicity: MANY
+    lifecycle: ON_DEMAND

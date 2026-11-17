@@ -1,4 +1,7 @@
 {
+  "tabs": {
+    "chat": "Chat"
+  },
   "panel": {
     "title": "Discussion",
     "no_subject": "Sélectionnez un élément pour en discuter.",

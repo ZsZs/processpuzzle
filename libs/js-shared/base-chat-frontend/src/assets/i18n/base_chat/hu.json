@@ -1,4 +1,7 @@
 {
+  "tabs": {
+    "chat": "Csevegés"
+  },
   "panel": {
     "title": "Csevegés",
     "no_subject": "Válasszon ki egy elemet, hogy beszélgethessen róla.",
