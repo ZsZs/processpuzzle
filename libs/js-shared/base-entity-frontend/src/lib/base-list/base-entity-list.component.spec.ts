@@ -5,6 +5,7 @@ import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { MatHeaderCell, MatTable, MatTableDataSource } from '@angular/material/table';
+import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { NavigatorCommand, type NavigationPayload } from '../base-form-navigator/navigation-payload';
 import { TestBed } from '@angular/core/testing';
@@ -293,6 +294,43 @@ describe('EntityListComponent', () => {
 
       expect(select).toHaveBeenCalledTimes(2);
       expect(select).toHaveBeenCalledWith('test', '1');
+    });
+  });
+
+  describe('retired records of a shared type:', () => {
+    const retired = Object.assign(new TestEntity('3', 'gone', 'no longer used', false, 1, new Date('2024-01-01T00:00:00.000Z'), TestEnum.VALUE_ONE), { retiredAt: '2026-11-16T10:00:00Z' });
+
+    it('offers no toggle for an entity whose records are never retired', async () => {
+      const { fixture } = await setupListComponentTest([textboxConfig], MOCK_STORE_RESPONSE);
+
+      expect(fixture.debugElement.query(By.css('[data-testid="testEntity-show-retired"]'))).toBeNull();
+    });
+
+    it('lists retired records only when asked, and reloads when the toggle is flipped', async () => {
+      const { fixture, component, store } = await setupListComponentTest([textboxConfig], [...MOCK_STORE_RESPONSE, retired], undefined, (descriptor) => {
+        descriptor.reinstate = () => of({});
+      });
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css('[data-testid="testEntity-show-retired"]'))).toBeTruthy();
+      expect(store.load).toHaveBeenLastCalledWith(expect.objectContaining({ includeRetired: false }));
+
+      (component as unknown as { onToggleRetired(on: boolean): void }).onToggleRetired(true);
+      fixture.detectChanges();
+      TestBed.flushEffects();
+
+      expect(store.load).toHaveBeenLastCalledWith(expect.objectContaining({ includeRetired: true }));
+    });
+
+    it('marks a retired row as retired, and no other', async () => {
+      const { fixture } = await setupListComponentTest([textboxConfig], [...MOCK_STORE_RESPONSE, retired], undefined, (descriptor) => {
+        descriptor.reinstate = () => of({});
+      });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const rows = fixture.debugElement.queryAll(By.css('tr[mat-row]'));
+      expect(rows.filter((row) => row.nativeElement.getAttribute('data-retired') === 'true')).toHaveLength(1);
+      expect(rows.some((row) => row.nativeElement.classList.contains('base-entity-list-row--retired'))).toBe(true);
     });
   });
 });

@@ -251,5 +251,8 @@
     "delete_title": "Törli ezt az elemet?",
     "delete_content": "Ez nem vonható vissza.",
     "conflict": "Valaki más egy időben módosította. A lista a mentett állapotot mutatja — próbálja újra."
+  },
+  "list": {
+    "show_retired": "Kivont rekordok megjelenítése"
   }
 }

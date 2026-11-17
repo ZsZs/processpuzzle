@@ -8,6 +8,13 @@
     </mat-slide-toggle>
   </div>
 }
+@if (canShowRetired()) {
+  <div class="base-entity-list-context-filter">
+    <mat-slide-toggle [checked]="showRetired()" (change)="onToggleRetired($event.checked)" [attr.data-testid]="entityDescriptor().createTestId('show-retired')">
+      {{ 'base_entity.list.show_retired' | transloco }}
+    </mat-slide-toggle>
+  </div>
+}
 @if (pendingTarget()) {
   <p class="base-entity-list-context-hint" data-testid="context-object-hint">{{ 'base_entity.working_context.select_to_continue' | transloco }}</p>
 }
@@ -60,7 +67,7 @@
         </ng-container>
       }
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns()" [class.base-entity-list-row--retired]="isRetired(row)" [attr.data-retired]="isRetired(row) ? 'true' : null"></tr>
     </table>
   </div>
   <div class="base-entity-list-footer">
