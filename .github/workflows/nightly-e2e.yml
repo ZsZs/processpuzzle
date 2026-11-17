@@ -193,26 +193,25 @@ jobs:
       - name: Find or create Nightly E2E Results Issue
         id: find-issue
         run: |
-          # Search for existing issue
           issue_number=$(gh issue list --search "Nightly E2E Results" --state all --json number -q '.[0].number' 2>/dev/null || echo "")
-
           if [ -z "$issue_number" ]; then
             echo "No existing issue found. Creating new one."
+            BODY_FILE=$(mktemp)
+            echo '## Nightly E2E Multi-Browser Test Results' > "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo 'This issue is automatically updated after each nightly e2e run.' >> "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo '---' >> "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo '**Last run:** Not yet run' >> "$BODY_FILE"
+            echo '**Status:** Pending' >> "$BODY_FILE"
             gh issue create \
               --title "Nightly E2E Results" \
               --label "automated" \
-              --body "## Nightly E2E Multi-Browser Test Results
-
-This issue is automatically updated after each nightly e2e run.
-
----
-
-**Last run:** Not yet run
-**Status:** Pending
-"
+              --body "$(cat "$BODY_FILE")"
+            rm "$BODY_FILE"
             issue_number=$(gh issue list --search "Nightly E2E Results" --state all --json number -q '.[0].number')
           fi
-
           echo "issue_number=$issue_number" >> $GITHUB_OUTPUT
 
       - name: Update Issue with results
@@ -222,46 +221,42 @@ This issue is automatically updated after each nightly e2e run.
           HAS_CHANGES="${{ needs.gate.outputs.has_changes }}"
           CURRENT_SHA="${{ needs.gate.outputs.current_sha }}"
           LAST_SHA="${{ needs.gate.outputs.last_sha }}"
-
+          BODY_FILE=$(mktemp)
           if [ "$HAS_CHANGES" = "false" ]; then
-            BODY="## Nightly E2E Multi-Browser Test Results
-
-**Last run:** $(date -u '+%Y-%m-%d %H:%M UTC')
-**Status:** ⏭️ Skipped — no new commits since last run
-**Current SHA:** \`${CURRENT_SHA}\`
-**Last successful SHA:** \`${LAST_SHA}\`
-
----
-
-*No tests were run because \`develop\` has no new commits since the last successful nightly.*"
+            echo '## Nightly E2E Multi-Browser Test Results' > "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo "**Last run:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> "$BODY_FILE"
+            echo '**Status:** ⏭️ Skipped — no new commits since last run' >> "$BODY_FILE"
+            echo "**Current SHA:** \`${CURRENT_SHA}\`" >> "$BODY_FILE"
+            echo "**Last successful SHA:** \`${LAST_SHA}\`" >> "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo '---' >> "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo '*No tests were run because \`develop\` has no new commits since the last successful nightly.*' >> "$BODY_FILE"
           else
-            # Build the browser status table
-            TABLE=""
+            echo '## Nightly E2E Multi-Browser Test Results' > "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo "**Last run:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> "$BODY_FILE"
+            echo "**Commit:** \`${CURRENT_SHA}\`" >> "$BODY_FILE"
+            echo '**Environment:** STAGE (\`https://testbed.stage.processpuzzle.de\`)' >> "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo '| Browser | Status |' >> "$BODY_FILE"
+            echo '|---------|--------|' >> "$BODY_FILE"
             for browser in chromium firefox webkit edge; do
               result="${{ needs.$browser.result }}"
               icon="⏭️ skipped"
               if [ "$result" = "success" ]; then icon="✅ passed"; fi
               if [ "$result" = "failure" ]; then icon="❌ failed"; fi
               if [ "$result" = "cancelled" ]; then icon="⛔ cancelled"; fi
-              TABLE="${TABLE}| $browser | $icon
-"
+              echo "| $browser | $icon" >> "$BODY_FILE"
             done
-
-            BODY="## Nightly E2E Multi-Browser Test Results
-
-**Last run:** $(date -u '+%Y-%m-%d %H:%M UTC')
-**Commit:** \`${CURRENT_SHA}\`
-**Environment:** STAGE (\`https://testbed.stage.processpuzzle.de\`)
-
-| Browser | Status |
-|---------|--------|
-${TABLE}
----
-
-*Automatically updated by the nightly-e2e workflow.*"
+            echo '' >> "$BODY_FILE"
+            echo '---' >> "$BODY_FILE"
+            echo '' >> "$BODY_FILE"
+            echo '*Automatically updated by the nightly-e2e workflow.*' >> "$BODY_FILE"
           fi
-
-          gh issue edit "$ISSUE_NUMBER" --body "$BODY"
+          gh issue edit "$ISSUE_NUMBER" --body "$(cat "$BODY_FILE")"
+          rm "$BODY_FILE"
 
   # ---------------------------------------------------------------------------
   # Email notification: send failure report to zsolt.zsuffa@processpuzzle.com
