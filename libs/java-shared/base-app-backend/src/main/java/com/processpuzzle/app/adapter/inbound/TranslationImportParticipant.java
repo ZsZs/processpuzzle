@@ -43,6 +43,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class TranslationImportParticipant implements DefinitionImportParticipant {
 
+    private static final String JSON_EXTENSION = ".json";
+
     private final UploadModuleTranslations upload;
     private final UploadAppTranslations uploadApp;
     private final ModuleTranslationRepository translations;
@@ -111,34 +113,32 @@ public class TranslationImportParticipant implements DefinitionImportParticipant
 
     private void removeDraft(String orgKey, String key) {
         String[] parts = key.split("/", 3);
-        boolean app = parts.length == 3 && BundleOwnedPath.APPS.equals(parts[0]);
-        Optional<?> found = app
-                ? appTranslations.findByOrgKeyAndAppIdAndChannelAndLocale(orgKey, parts[1], Channel.DRAFT, parts[2])
-                : parts.length == 3 ? translations.findByOrgKeyAndModuleKeyAndChannelAndLocale(orgKey, parts[1], Channel.DRAFT, parts[2]) : Optional.empty();
-        if (found.isEmpty()) {
-            throw new IllegalStateException("no draft of '" + key + "'");
+        if (parts.length != 3) {
+            throw new IllegalStateException("not a translation key: '" + key + "'");
         }
-        if (app) {
-            appTranslations.delete((AppDefinitionTranslation) found.get());
+        if (BundleOwnedPath.APPS.equals(parts[0])) {
+            appTranslations.delete(appTranslations.findByOrgKeyAndAppIdAndChannelAndLocale(orgKey, parts[1], Channel.DRAFT, parts[2])
+                    .orElseThrow(() -> new IllegalStateException("no draft of '" + key + "'")));
         } else {
-            translations.delete((ModuleTranslation) found.get());
+            translations.delete(translations.findByOrgKeyAndModuleKeyAndChannelAndLocale(orgKey, parts[1], Channel.DRAFT, parts[2])
+                    .orElseThrow(() -> new IllegalStateException("no draft of '" + key + "'")));
         }
     }
 
     private static Optional<String> keyOf(String fileName) {
         return BundleOwnedPath.parse(fileName)
-                .filter(path -> path.rest().endsWith(".json") && !path.rest().contains("/"))
+                .filter(path -> path.rest().endsWith(JSON_EXTENSION) && !path.rest().contains("/"))
                 .map(path -> key(path.isApp() ? BundleOwnedPath.APPS : BundleOwnedPath.MODULES, path.ownerKey(),
-                        path.rest().substring(0, path.rest().length() - ".json".length())));
+                        path.rest().substring(0, path.rest().length() - JSON_EXTENSION.length())));
     }
 
     private ParticipantResult write(String orgKey, String fileName, byte[] json, boolean release) {
         BundleOwnedPath path = BundleOwnedPath.parse(fileName).orElse(null);
-        if (path == null || !path.rest().endsWith(".json") || path.rest().contains("/")) {
+        if (path == null || !path.rest().endsWith(JSON_EXTENSION) || path.rest().contains("/")) {
             return ParticipantResult.rejected(List.of(fileName + ": a translation is <group>/modules/<module key>/<locale>.json "
                     + "or <group>/apps/<app id>/<locale>.json."));
         }
-        String locale = path.rest().substring(0, path.rest().length() - ".json".length());
+        String locale = path.rest().substring(0, path.rest().length() - JSON_EXTENSION.length());
         return path.isApp() ? applyToApp(orgKey, fileName, path, locale, json, release)
                 : applyToModule(orgKey, fileName, path, locale, json, release);
     }
