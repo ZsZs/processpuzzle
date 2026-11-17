@@ -78,10 +78,14 @@ class OwnerWritesTest {
     void aMemberChangesItsOwnObjectsOnly_andTheCommonChangesAny() {
         sharedAs(CLUB, "OWNER_ORG", "PUBLIC");
 
-        scope.requireOwnedBy(CLUB, "boat", boatOwnedBy(CLUB));
-        assertThatThrownBy(() -> scope.requireOwnedBy(CLUB, "boat", boatOwnedBy(OTHER))).isInstanceOf(ForbiddenException.class);
-        assertThatThrownBy(() -> scope.requireOwnedBy(CLUB, "boat", boatOwnedBy(null))).isInstanceOf(ForbiddenException.class);
-        scope.requireOwnedBy(COMMON, "boat", boatOwnedBy(OTHER));
+        EntityObject ownBoat = boatOwnedBy(CLUB);
+        EntityObject othersBoat = boatOwnedBy(OTHER);
+        EntityObject commonsBoat = boatOwnedBy(null);
+
+        scope.requireOwnedBy(CLUB, "boat", ownBoat);
+        assertThatThrownBy(() -> scope.requireOwnedBy(CLUB, "boat", othersBoat)).isInstanceOf(ForbiddenException.class);
+        assertThatThrownBy(() -> scope.requireOwnedBy(CLUB, "boat", commonsBoat)).isInstanceOf(ForbiddenException.class);
+        scope.requireOwnedBy(COMMON, "boat", othersBoat);
     }
 
     @Test

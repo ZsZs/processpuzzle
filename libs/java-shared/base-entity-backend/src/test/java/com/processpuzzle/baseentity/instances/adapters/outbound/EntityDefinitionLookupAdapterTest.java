@@ -200,4 +200,39 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(view.geoLocation()).isTrue();
         assertThat(view.address()).isFalse();
     }
+
+    @Test
+    void sharingOf_answersTheCommonsPolicyForAMember() {
+        when(repository.findByOrgKeyAndCodeAndChannel("club", "boat", Channel.RELEASED)).thenReturn(Optional.empty());
+        when(dataSpaces.getIfAvailable()).thenReturn(directory);
+        when(directory.commonOf("club")).thenReturn(Optional.of("starter-common"));
+        BaseEntityDefinition boat = shared("starter-common", "boat");
+        boat.setSharingWrite(com.processpuzzle.baseentity.definition.domain.SharingWrite.OWNER_ORG);
+        boat.setSharingVisibility(com.processpuzzle.baseentity.definition.domain.SharingVisibility.OWNER_ONLY);
+        when(repository.findByOrgKeyAndCodeAndChannel("starter-common", "boat", Channel.RELEASED)).thenReturn(Optional.of(boat));
+
+        assertThat(adapter.sharingOf("club", "boat")).hasValueSatisfying(sharing -> {
+            assertThat(sharing.ownerWrites()).isTrue();
+            assertThat(sharing.ownerOnly()).isTrue();
+        });
+    }
+
+    @Test
+    void sharingOf_answersTheOwnPolicyForTheCommonItself() {
+        when(repository.findByOrgKeyAndCodeAndChannel("starter-common", "asset", Channel.RELEASED))
+            .thenReturn(Optional.of(shared("starter-common", "asset")));
+
+        assertThat(adapter.sharingOf("starter-common", "asset")).hasValueSatisfying(sharing -> {
+            assertThat(sharing.ownerWrites()).isFalse();
+            assertThat(sharing.ownerOnly()).isFalse();
+        });
+    }
+
+    @Test
+    void sharingOf_isEmptyForATenantType() {
+        when(repository.findByOrgKeyAndCodeAndChannel("club", "order", Channel.RELEASED))
+            .thenReturn(Optional.of(BaseEntityDefinition.builder().orgKey("club").code("order").name("o").build()));
+
+        assertThat(adapter.sharingOf("club", "order")).isEmpty();
+    }
 }
