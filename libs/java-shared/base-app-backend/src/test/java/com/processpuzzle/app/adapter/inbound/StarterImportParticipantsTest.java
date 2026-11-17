@@ -340,4 +340,59 @@ class StarterImportParticipantsTest {
     private static byte[] bytes(String yaml) {
         return yaml.getBytes(StandardCharsets.UTF_8);
     }
+
+    @Test
+    void anUpgradeWritesModuleDraftsOnly_andLeavesTheReleaseToTheOrganization() {
+        modules.apply(ORG, "modules/plan.yaml", bytes(MODULES));
+        flushAndClear();
+
+        assertThat(modules.supportsUpgrade()).isTrue();
+        assertThat(modules.keysIn("modules/plan.yaml", bytes(MODULES))).containsExactly("plan-race");
+        ParticipantResult result = modules.applyOnly(ORG, "modules/plan.yaml", bytes(MODULES.replace("Plan Race", "Plan a Race")), Set.of("plan-race"));
+        flushAndClear();
+
+        assertThat(result.items()).containsExactly(new ImportedItem("plan-race", ImportedItem.Action.UPDATE));
+        assertThat(moduleRepository.findByOrgKeyAndKeyAndChannel(ORG, "plan-race", Channel.DRAFT)).get()
+                .extracting(ModuleDefinition::getName).isEqualTo("Plan a Race");
+        assertThat(moduleRepository.findByOrgKeyAndKeyAndChannel(ORG, "plan-race", Channel.RELEASED)).get()
+                .extracting(ModuleDefinition::getName).as("not released").isEqualTo("Plan Race");
+        assertThat(modules.applyOnly(ORG, "modules/plan.yaml", bytes(MODULES), Set.of("absent")).items()).isEmpty();
+    }
+
+    @Test
+    void removingModuleDraftsLeavesTheReleasedRowForTheNextRelease() {
+        modules.apply(ORG, "modules/plan.yaml", bytes(MODULES));
+        flushAndClear();
+
+        var removal = modules.removeDrafts(ORG, Set.of("plan-race"));
+        flushAndClear();
+
+        assertThat(removal.removed()).containsExactly("plan-race");
+        assertThat(moduleRepository.findByOrgKeyAndKeyAndChannel(ORG, "plan-race", Channel.DRAFT)).isEmpty();
+        assertThat(moduleRepository.findByOrgKeyAndKeyAndChannel(ORG, "plan-race", Channel.RELEASED)).isPresent();
+    }
+
+    @Test
+    void anUpgradeWritesTheAppAsADraftWithoutPublishingIt_andNeverRemovesOne() {
+        modules.apply(ORG, "modules/plan.yaml", bytes(MODULES));
+        apps.apply(ORG, "apps/app.yaml", bytes(APP.formatted("race-app")));
+        flushAndClear();
+
+        assertThat(apps.supportsUpgrade()).isTrue();
+        assertThat(apps.keysIn("apps/app.yaml", bytes(APP.formatted("race-app")))).containsExactly("race-app");
+        long revisionBefore = appRepository.findByOrgKeyAndId(ORG, "race-app").orElseThrow().getRevision();
+        ParticipantResult result = apps.applyOnly(ORG, "apps/app.yaml", bytes(APP.formatted("race-app").replace("Sail Race Control", "Regatta Control")), Set.of("race-app"));
+        flushAndClear();
+
+        assertThat(result.isRejected()).isFalse();
+        AppDefinition app = appRepository.findByOrgKeyAndId(ORG, "race-app").orElseThrow();
+        assertThat(app.getName()).isEqualTo("Regatta Control");
+        assertThat(app.getRevision()).isGreaterThanOrEqualTo(revisionBefore);
+        assertThat(apps.applyOnly(ORG, "apps/app.yaml", bytes(APP.formatted("race-app")), Set.of("absent")).items()).isEmpty();
+
+        var removal = apps.removeDrafts(ORG, Set.of("race-app"));
+        assertThat(removal.removed()).isEmpty();
+        assertThat(removal.refused()).containsKey("race-app");
+        assertThat(appRepository.findByOrgKeyAndId(ORG, "race-app")).isPresent();
+    }
 }

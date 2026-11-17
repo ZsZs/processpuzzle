@@ -303,7 +303,8 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    `UpgradePlanner` in base-starter (replace untouched, keep customized, add new, remove dropped; drafts; one version at a time;
    kinds that cannot be upgraded yet are left alone and named). Also done: the offered version (`OfferStarterVersion`), the installed-starters listing's `upgradeAvailable`, the member upgrade
    endpoint, and `UpgradeCommon` — upgrade and release of a common in one transaction, so a release refused by the members' references
-   check (step 7) rolls the upgrade back. Open: the other participants, bundle migration steps, the designer's Apply, and the
+   check (step 7) rolls the upgrade back. The participants of every kind now upgrade definition by definition (calculation, module, app, translation and
+   asset included; the app-side kinds write drafts only and an app is never removed by an upgrade). Open: bundle migration steps, and the
    application-side endpoints that expose `OfferStarterVersion` and `UpgradeCommon` to the platform's rollout.
 7. **Common release check** against members' references (§5.3).
    *Done (type level):* releasing a common refuses to take away, or rename, a type that a member's definitions still refer to

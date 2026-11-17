@@ -1,16 +1,21 @@
 package com.processpuzzle.calculation.adapter.inbound;
 
 import com.processpuzzle.calculation.domain.CalculationDefinition;
+import com.processpuzzle.calculation.domain.definition.CalculationParser;
+import com.processpuzzle.calculation.usecase.DeleteCalculationDefinition;
 import com.processpuzzle.calculation.usecase.FindCalculationDefinition;
 import com.processpuzzle.calculation.usecase.ImportCalculationDefinitions;
 import com.processpuzzle.calculation.usecase.ImportOutcome;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,10 +31,51 @@ public class CalculationImportParticipant implements DefinitionImportParticipant
 
     private final ImportCalculationDefinitions importer;
     private final FindCalculationDefinition find;
+    private final DeleteCalculationDefinition deleteDefinition;
 
-    public CalculationImportParticipant(ImportCalculationDefinitions importer, FindCalculationDefinition find) {
+    public CalculationImportParticipant(ImportCalculationDefinitions importer, FindCalculationDefinition find,
+                                        DeleteCalculationDefinition deleteDefinition) {
         this.importer = importer;
         this.find = find;
+        this.deleteDefinition = deleteDefinition;
+    }
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    /** The ids of the file's documents; a document that cannot be read has none, and is reported when the file is applied. */
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        Set<String> ids = new LinkedHashSet<>();
+        for (String document : CalculationParser.documents(new String(yaml, StandardCharsets.UTF_8))) {
+            CalculationParser.Parsed parsed = CalculationParser.parse(document);
+            if (parsed.isParsed() && parsed.model().id() != null) {
+                ids.add(parsed.model().id());
+            }
+        }
+        return ids;
+    }
+
+    /** The file with only the documents of these ids, still one calculation per document. */
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        List<String> kept = new ArrayList<>();
+        for (String document : CalculationParser.documents(new String(yaml, StandardCharsets.UTF_8))) {
+            CalculationParser.Parsed parsed = CalculationParser.parse(document);
+            if (!parsed.isParsed() || keys.contains(parsed.model().id())) {
+                kept.add(document);
+            }
+        }
+        return kept.isEmpty() ? new ParticipantResult(List.of(), List.of())
+                : apply(orgKey, fileName, String.join("---\n", kept).getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** The designer's delete of a calculation's draft. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, id -> deleteDefinition.delete(orgKey, id));
     }
 
     @Override
