@@ -122,6 +122,12 @@ describe('EntityDefinitionMapper', () => {
     });
 
     /** Not authored in the form, but a type of a common must stay shared when the common saves it. */
+    it('carries the natural keys of a type through a save', () => {
+      const identifiers = [['country', 'name']];
+
+      expect(mapper.toDto(mapper.fromDto({ ...responseDto, identifiers })).identifiers).toEqual(identifiers);
+    });
+
     it('carries the sharing of a type through a save, and never sends where it was shared from', () => {
       const sharing = { write: 'COMMON_ADMIN' as const, visibility: 'PUBLIC' as const };
       const read = mapper.fromDto({ ...responseDto, sharing, sharedFrom: 'starter-common' });

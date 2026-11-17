@@ -88,7 +88,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
                 .map(BaseEntityAttribute::getCode)
                 .findFirst()
                 .orElse(null),
-            definition.getName()
+            definition.getName(),
+            definition.getIdentifiers()
         );
     }
 

@@ -121,12 +121,29 @@ public class BaseEntityDefinition extends Auditable {
     @Column(length = 16)
     private SharingVisibility sharingVisibility;
 
+    /**
+     * Natural keys: each entry names the attributes whose values together identify a record, unique among the
+     * type's non-retired records. Empty when the type has none.
+     */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<List<String>> identifiers = new ArrayList<>();
+
     private UUID organizationId;
 
     @jakarta.persistence.OneToMany(mappedBy = "entityDefinition", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
     @jakarta.persistence.OrderBy("displayOrder ASC")
     @Builder.Default
     private List<BaseEntityAttribute> attributes = new ArrayList<>();
+
+    private static List<List<String>> copyOf(List<List<String>> identifiers) {
+        List<List<String>> copy = new ArrayList<>();
+        if (identifiers != null) {
+            identifiers.forEach(key -> copy.add(new ArrayList<>(key)));
+        }
+        return copy;
+    }
 
     /** True for a type of a common whose records every organization of the starter reads. */
     public boolean isShared() {
@@ -182,6 +199,7 @@ public class BaseEntityDefinition extends Auditable {
         this.canContextObject = draft.canContextObject;
         this.sharingWrite = draft.sharingWrite;
         this.sharingVisibility = draft.sharingVisibility;
+        this.identifiers = copyOf(draft.identifiers);
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));
         java.util.Set<String> kept = new java.util.HashSet<>();

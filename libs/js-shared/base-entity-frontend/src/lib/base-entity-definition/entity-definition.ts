@@ -202,6 +202,8 @@ export class EntityDefinition implements BaseEntity {
   canContextObject?: boolean;
   /** Set on a type of a common: shared with every organization of its starter. Kept as read so a save does not drop it. */
   sharing?: EntitySharing;
+  /** Natural keys: attribute codes whose values together are unique among the type's non-retired records. Kept as read. */
+  identifiers?: string[][];
   /**
    * Set on a type this organization reads but does not own: the key of the common that shares it. Such a type is
    * released, shown read-only, and neither changed nor deleted from here. Reported by the backend, never sent back.
@@ -227,6 +229,7 @@ export class EntityDefinition implements BaseEntity {
     this.isEmbedded = init.isEmbedded ?? false;
     this.canContextObject = init.canContextObject ?? false;
     this.sharing = init.sharing;
+    this.identifiers = init.identifiers;
     this.sharedFrom = init.sharedFrom;
     this.attributes = init.attributes ?? [];
     this.version = init.version;
