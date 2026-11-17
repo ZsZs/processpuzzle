@@ -61,50 +61,53 @@ export default defineConfig({
     ['html', { outputFolder: path.join(__dirname, 'reports/e2e'), open: 'on-failure' }],
     ['junit', { outputFile: path.join(__dirname, 'reports/e2e/results.xml') }], // combine multiple
   ],
-  projects: [
-    // Registers and signs in a test user once; only the `@auth` project depends on it, so the anonymous suites
-    // (and the prod smoke run) neither need sign-up to be open nor change behaviour.
-    {
-      name: 'setup',
-      testMatch: /auth\.setup\.ts/,
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'chromium',
-      grepInvert: /@auth/,
-      use: { ...devices['Desktop Chrome'] },
-    },
-    // Specs that need a signed-in user are tagged `@auth` in their describe title.
-    {
-      name: 'chromium-auth',
-      grep: /@auth/,
-      dependencies: ['setup'],
-      use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
-    },
+  projects: (() => {
+    // When E2E_BROWSERS is set (e.g. "chromium,firefox,webkit,edge"), generate projects for all
+    // requested browsers. When unset, fall back to chromium-only for backward compatibility with
+    // existing CI workflows.
+    const browsersEnv = process.env['E2E_BROWSERS'];
+    const browsers = browsersEnv
+      ? browsersEnv.split(',').map((b) => b.trim().toLowerCase())
+      : ['chromium'];
 
-    // Uncomment for mobile browsers support
-    /* {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    /* {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    }, */
+    // Setup project always runs once in Chromium (auth is browser-agnostic for this app).
+    const projects: any[] = [
+      {
+        name: 'setup',
+        testMatch: /auth\.setup\.ts/,
+        use: { ...devices['Desktop Chrome'] },
+      },
+    ];
 
-    // Uncomment for branded browsers
-    /* {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    },
-    {
-      name: 'Google Chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    } */
-  ],
+    // Browser device mapping
+    const deviceMap: Record<string, any> = {
+      chromium: devices['Desktop Chrome'],
+      firefox: devices['Desktop Firefox'],
+      webkit: devices['Desktop Safari'],
+      edge: { ...devices['Desktop Edge'], channel: 'msedge' },
+    };
+
+    for (const browser of browsers) {
+      const device = deviceMap[browser];
+      if (!device) continue;
+
+      // Anonymous project
+      projects.push({
+        name: browser,
+        grepInvert: /@auth/,
+        use: { ...device },
+      });
+
+      // Authenticated project
+      projects.push({
+        name: `${browser}-auth`,
+        grep: /@auth/,
+        dependencies: ['setup'],
+        use: { ...device, storageState: STORAGE_STATE },
+      });
+    }
+
+    return projects;
+  })(),
   testIgnore: [],
 });
