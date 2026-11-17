@@ -55,11 +55,14 @@ class StateMachineImportParticipantTest {
     @Mock
     private ExportStateMachineDefinitions exportDefinitions;
 
+    @Mock
+    private com.processpuzzle.state.usecase.DeleteStateMachineDefinition deleteDefinition;
+
     private StateMachineImportParticipant participant;
 
     @BeforeEach
     void setUp() {
-        participant = new StateMachineImportParticipant(importDefinitions, exportDefinitions);
+        participant = new StateMachineImportParticipant(importDefinitions, exportDefinitions, deleteDefinition);
     }
 
     @Test
@@ -214,5 +217,29 @@ class StateMachineImportParticipantTest {
         when(importDefinitions.removeAll(ORG)).thenReturn(java.util.List.of("Order"));
 
         assertThat(participant.removeAll(ORG)).containsExactly("Order");
+    }
+
+    @Test
+    void upgradesMachineByMachine_keepingTheRestOfTheFileOut() throws Exception {
+        String file = "stateMachines:\n  - entityName: order\n  - entityName: partner\n";
+        when(exportDefinitions.execute(ORG, null)).thenReturn(bytes("stateMachines: []\n"));
+        when(importDefinitions.execute(eq(ORG), any())).thenReturn(new ImportOutcome(1, 0, List.of()));
+
+        assertThat(participant.supportsUpgrade()).isTrue();
+        assertThat(participant.keysIn(FILE, bytes(file))).containsExactly("order", "partner");
+        participant.applyOnly(ORG, FILE, bytes(file), Set.of("partner"));
+
+        ArgumentCaptor<java.io.InputStream> sent = ArgumentCaptor.forClass(java.io.InputStream.class);
+        verify(importDefinitions).execute(eq(ORG), sent.capture());
+        assertThat(new String(sent.getValue().readAllBytes())).contains("partner").doesNotContain("order");
+        assertThat(participant.applyOnly(ORG, FILE, bytes(file), Set.of("absent")).items()).isEmpty();
+    }
+
+    @Test
+    void removingDrafts_goesThroughTheDesignersDelete() {
+        var removal = participant.removeDrafts(ORG, Set.of("order"));
+
+        assertThat(removal.removed()).containsExactly("order");
+        verify(deleteDefinition).execute(ORG, "order");
     }
 }

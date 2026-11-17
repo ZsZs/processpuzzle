@@ -1,5 +1,6 @@
 package com.processpuzzle.baseentity.adapter.inbound;
 
+import static org.mockito.Mockito.verifyNoInteractions;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
@@ -44,11 +45,14 @@ class EntityDefinitionImportParticipantTest {
     @Mock
     private FindEntityDefinitionsByCodesUseCase findByCodes;
 
+    @Mock
+    private com.processpuzzle.baseentity.definition.usecases.inbound.DeleteEntityDefinitionUseCase deleteDefinition;
+
     private EntityDefinitionImportParticipant participant;
 
     @BeforeEach
     void setUp() {
-        participant = new EntityDefinitionImportParticipant(importDefinitions, findByCodes, new EntityDefinitionFingerprint(new EntityDefinitionMapper()));
+        participant = new EntityDefinitionImportParticipant(importDefinitions, findByCodes, new EntityDefinitionFingerprint(new EntityDefinitionMapper()), deleteDefinition);
     }
 
     @Test
@@ -117,7 +121,7 @@ class EntityDefinitionImportParticipantTest {
     void malformedYamlThroughTheRealImportIsRejectedNotThrown() {
         ImportEntityDefinitions realImport = new ImportEntityDefinitions(null, null, new EntityDefinitionMapper(), null, null);
         EntityDefinitionImportParticipant real =
-                new EntityDefinitionImportParticipant(realImport, findByCodes, new EntityDefinitionFingerprint(new EntityDefinitionMapper()));
+                new EntityDefinitionImportParticipant(realImport, findByCodes, new EntityDefinitionFingerprint(new EntityDefinitionMapper()), deleteDefinition);
 
         ParticipantResult result = real.apply(ORG, FILE, bytes("entityDefinitions: [ unclosed"));
 
@@ -195,5 +199,43 @@ class EntityDefinitionImportParticipantTest {
         when(importDefinitions.removeAll(ORG)).thenReturn(java.util.List.of("item"));
 
         assertThat(participant.removeAll(ORG)).containsExactly("item");
+    }
+
+    @Test
+    void upgradesDefinitionByDefinition_applyingOnlyTheKeysItIsGiven() throws Exception {
+        String file = "entityDefinitions:\n  - code: order\n    name: Order\n  - code: partner\n    name: Partner\n";
+        when(importDefinitions.execute(eq(ORG), any())).thenReturn(
+                new ImportEntityDefinitions.Outcome(List.of("partner"), List.of(), List.of()));
+
+        assertThat(participant.supportsUpgrade()).isTrue();
+        assertThat(participant.keysIn(FILE, bytes(file))).containsExactly("order", "partner");
+        ParticipantResult result = participant.applyOnly(ORG, FILE, bytes(file), Set.of("partner"));
+
+        assertThat(result.items()).extracting(ImportedItem::key).containsExactly("partner");
+        ArgumentCaptor<java.io.InputStream> sent = ArgumentCaptor.forClass(java.io.InputStream.class);
+        verify(importDefinitions).execute(eq(ORG), sent.capture());
+        assertThat(new String(sent.getValue().readAllBytes())).contains("partner").doesNotContain("order");
+    }
+
+    @Test
+    void aFileWithNoneOfTheKeysWritesNothing() {
+        ParticipantResult result = participant.applyOnly(ORG, FILE, bytes("entityDefinitions:\n  - code: order\n"), Set.of("partner"));
+
+        assertThat(result.items()).isEmpty();
+        assertThat(result.isRejected()).isFalse();
+        verifyNoInteractions(importDefinitions);
+    }
+
+    @Test
+    void removingDrafts_keepsWhatTheDesignersDeleteRefuses_andRetriesWhatBecomesFree() {
+        org.mockito.Mockito.lenient().doThrow(new com.processpuzzle.baseentity.common.ConflictException("still a component parent"))
+                .doNothing().when(deleteDefinition).delete(ORG, "order");
+        org.mockito.Mockito.lenient().doThrow(new com.processpuzzle.baseentity.common.ConflictException("still has instances"))
+                .when(deleteDefinition).delete(ORG, "partner");
+
+        var removal = participant.removeDrafts(ORG, new java.util.LinkedHashSet<>(List.of("order", "line", "partner")));
+
+        assertThat(removal.removed()).containsExactly("line", "order");
+        assertThat(removal.refused()).containsEntry("partner", "still has instances");
     }
 }

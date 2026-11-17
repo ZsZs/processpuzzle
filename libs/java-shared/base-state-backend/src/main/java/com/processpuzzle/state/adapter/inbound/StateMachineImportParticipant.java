@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.DefinitionYaml;
+import com.processpuzzle.state.usecase.DeleteStateMachineDefinition;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
@@ -33,10 +36,40 @@ public class StateMachineImportParticipant implements DefinitionImportParticipan
     private final ExportStateMachineDefinitions exportDefinitions;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
 
+    private final DeleteStateMachineDefinition deleteDefinition;
+
     public StateMachineImportParticipant(ImportStateMachineDefinitions importDefinitions,
-                                         ExportStateMachineDefinitions exportDefinitions) {
+                                         ExportStateMachineDefinitions exportDefinitions,
+                                         DeleteStateMachineDefinition deleteDefinition) {
         this.importDefinitions = importDefinitions;
         this.exportDefinitions = exportDefinitions;
+        this.deleteDefinition = deleteDefinition;
+    }
+
+    private static final String LIST = "stateMachines";
+    private static final String KEY = "entityName";
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        return DefinitionYaml.keys(yaml, LIST, KEY);
+    }
+
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        return keysIn(fileName, yaml).stream().noneMatch(keys::contains)
+                ? new ParticipantResult(List.of(), List.of())
+                : apply(orgKey, fileName, DefinitionYaml.only(yaml, LIST, KEY, keys));
+    }
+
+    /** The designer's delete, which takes the machine's diagram layout with it. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, entityName -> deleteDefinition.execute(orgKey, entityName));
     }
 
     @Override
