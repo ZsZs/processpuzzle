@@ -299,6 +299,10 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    time; the same operation for tenants and commons; the offered version per starter; "upgrade available"
    and Apply in the designer for the org administrator; the internal upgrade endpoint for a common.
    Biz: the rollout screen in platform-admin (§5.4) and its rollout records.
+   *Done so far:* the participant SPI for definition-by-definition upgrades (entity, rule, state, chat) and `UpgradeStarter` /
+   `UpgradePlanner` in base-starter (replace untouched, keep customized, add new, remove dropped; drafts; one version at a time;
+   kinds that cannot be upgraded yet are left alone and named). Open: the other participants, bundle migration steps, the
+   offered version and the internal upgrade endpoint, the designer's Apply.
 7. **Common release check** against members' references (§5.3).
 
 Steps 1–3 make a curated common usable; 4 makes it installable from a real starter; 5–7 can follow in any
