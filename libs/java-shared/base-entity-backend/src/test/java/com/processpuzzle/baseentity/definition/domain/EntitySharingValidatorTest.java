@@ -152,4 +152,62 @@ class EntitySharingValidatorTest {
         assertThatThrownBy(() -> validator.validate(COMMON, ownerOnly)).satisfies(e -> refusedWith(e, "visibleWhen"));
         assertThatThrownBy(() -> validator.validate(COMMON, blank)).satisfies(e -> refusedWith(e, "blank"));
     }
+
+    private static BaseEntityDefinition entry(String from, ValueKind kind, String linkedType) {
+        BaseEntityDefinition entry = type(COMMON, "entry", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC);
+        entry.addAttribute(BaseEntityAttribute.builder().code("race").name("Race").valueKind(kind)
+            .formControlType(FormControlType.LOOKUP).linkedEntityType(linkedType).build());
+        entry.setSharingFrom(from);
+        return entry;
+    }
+
+    @Test
+    void from_namingAReferenceToASharedType_isAccepted() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+        when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "race", Channel.DRAFT))
+            .thenReturn(Optional.of(type(COMMON, "race", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC)));
+
+        validator.validate(COMMON, entry("race", ValueKind.REFERENCE, "race"));
+    }
+
+    @Test
+    void from_isAcceptedBeforeItsTargetIsDefined() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+
+        validator.validate(COMMON, entry("race", ValueKind.REFERENCE, "race"));
+    }
+
+    @Test
+    void from_mustNameASingleReferenceAttribute() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+        BaseEntityDefinition notReference = entry("race", ValueKind.TEXT, null);
+        BaseEntityDefinition unknown = entry("ghost", ValueKind.REFERENCE, "race");
+
+        assertThatThrownBy(() -> validator.validate(COMMON, notReference)).satisfies(e -> refusedWith(e, "REFERENCE"));
+        assertThatThrownBy(() -> validator.validate(COMMON, unknown)).satisfies(e -> refusedWith(e, "not an attribute"));
+    }
+
+    @Test
+    void from_cannotFollowAChainOrATypeThatIsNotShared() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+        BaseEntityDefinition chained = type(COMMON, "race", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC);
+        chained.setSharingFrom("event");
+        when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "race", Channel.DRAFT)).thenReturn(Optional.of(chained));
+        BaseEntityDefinition entry = entry("race", ValueKind.REFERENCE, "race");
+
+        assertThatThrownBy(() -> validator.validate(COMMON, entry)).satisfies(e -> refusedWith(e, "one level"));
+
+        when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "race", Channel.DRAFT))
+            .thenReturn(Optional.of(BaseEntityDefinition.builder().orgKey(COMMON).code("race").name("Race").build()));
+        assertThatThrownBy(() -> validator.validate(COMMON, entry)).satisfies(e -> refusedWith(e, "one level"));
+    }
+
+    @Test
+    void from_takesItsPolicyFromTheReferencedRecord() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+        BaseEntityDefinition ownerOnly = entry("race", ValueKind.REFERENCE, "race");
+        ownerOnly.setSharingVisibility(SharingVisibility.OWNER_ONLY);
+
+        assertThatThrownBy(() -> validator.validate(COMMON, ownerOnly)).satisfies(e -> refusedWith(e, "takes its owner and visibility"));
+    }
 }

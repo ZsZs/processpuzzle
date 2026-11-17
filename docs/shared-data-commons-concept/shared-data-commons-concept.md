@@ -289,7 +289,12 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    from `identifiers`.
    *Slice 1 done:* `owner_org_key`, `OWNER_ORG` writes (the owner and the common's members change and retire a record; a member
    creating one becomes its owner) and `OWNER_ONLY` visibility, in the scope, the instance use cases and the embedded
-   collections (which did not check the shared-type write rule before). Still open: `visibleWhen`, `from:`, `identifiers`.
+   collections (which did not check the shared-type write rule before). Also done: `identifiers` (natural keys, checked in the
+   application on create, update and reinstate; the database does not enforce them yet, §8); `visibleWhen` (non-owners see a
+   record only in the listed states; the core port `RecordStates`, implemented by base-state, says where the state is
+   kept; without it only the owner sees the record); and `from:` (a type whose records follow another: owner and
+   visibility are the followed record's, only its owner or the common adds one, and the followed attribute cannot
+   change; a type that follows takes no `write`/`visibility`). Step 5 is complete.
 6. **Starter upgrade.** Provenance-based upgrade, bundle migration steps as pending steps, one version at a
    time; the same operation for tenants and commons; the offered version per starter; "upgrade available"
    and Apply in the designer for the org administrator; the internal upgrade endpoint for a common.

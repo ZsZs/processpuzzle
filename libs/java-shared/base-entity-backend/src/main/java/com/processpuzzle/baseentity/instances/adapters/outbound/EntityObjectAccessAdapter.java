@@ -138,7 +138,7 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
             } else {
                 byKey.put(key, repository.save(EntityObject.builder()
                     .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
-                    .ownerOrgKey(scope.ownerForNew(orgKey, entityDefinitionCode).orElse(null))
+                    .ownerOrgKey(scope.ownerForNew(orgKey, entityDefinitionCode, row).orElse(null))
                     .entityDefinitionCode(entityDefinitionCode)
                     .payload(new LinkedHashMap<>(row))
                     .build()));

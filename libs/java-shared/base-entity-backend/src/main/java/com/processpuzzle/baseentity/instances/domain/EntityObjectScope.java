@@ -80,9 +80,49 @@ public class EntityObjectScope {
         return storage;
     }
 
-    /** The key to record as owner of a new object: the member creating it in an owner-written shared type, else none. */
-    public Optional<String> ownerForNew(String orgKey, String entityDefinitionCode) {
-        return storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey) ? Optional.empty() : Optional.of(orgKey);
+    /**
+     * The key to record as owner of a new object: the member creating it in an owner-written shared type, else none.
+     * For a type whose records follow another record the owner is that record's, and only it — or the common — may
+     * add one.
+     *
+     * @throws ConflictException   if a following type's payload does not name an existing record to follow
+     * @throws ForbiddenException  if the member is not the owner of that record
+     */
+    public Optional<String> ownerForNew(String orgKey, String entityDefinitionCode, Map<String, Object> payload) {
+        String storage = storageOrgKey(orgKey, entityDefinitionCode);
+        Optional<SharingView> sharing = definitions.sharingOf(orgKey, entityDefinitionCode).filter(SharingView::following);
+        if (sharing.isEmpty()) {
+            return storage.equals(orgKey) ? Optional.empty() : Optional.of(orgKey);
+        }
+        EntityObject followed = followedBy(storage, sharing.get(), payload).orElseThrow(() -> new ConflictException(
+            "'%s' must name an existing '%s' in '%s'".formatted(entityDefinitionCode, sharing.get().fromType(), sharing.get().from())));
+        if (!storage.equals(orgKey) && !orgKey.equals(followed.getOwnerOrgKey())) {
+            throw new ForbiddenException("'%s' belongs to another organization; only its owner adds '%s' to it"
+                .formatted(followed.getId(), entityDefinitionCode));
+        }
+        return Optional.ofNullable(followed.getOwnerOrgKey());
+    }
+
+    /**
+     * Refuses the change of the attribute a following type's records follow: a record cannot move to another one, whose
+     * owner may be someone else.
+     */
+    public void requireFollowedUnchanged(String orgKey, String entityDefinitionCode, Map<String, Object> stored, Map<String, Object> submitted) {
+        definitions.sharingOf(orgKey, entityDefinitionCode).filter(SharingView::following).ifPresent(sharing -> {
+            if (!Objects.equals(stored.get(sharing.from()), submitted.get(sharing.from()))) {
+                throw new ConflictException("'%s' of a '%s' cannot change once it exists".formatted(sharing.from(), entityDefinitionCode));
+            }
+        });
+    }
+
+    private Optional<EntityObject> followedBy(String storage, SharingView sharing, Map<String, Object> payload) {
+        Object id = payload == null ? null : payload.get(sharing.from());
+        try {
+            return id == null ? Optional.empty() : repository.findByIdAndOrgKey(UUID.fromString(id.toString()), storage)
+                .filter(found -> found.getEntityDefinitionCode().equals(sharing.fromType()));
+        } catch (IllegalArgumentException notAnId) {
+            return Optional.empty();
+        }
     }
 
     /**
@@ -101,13 +141,19 @@ public class EntityObjectScope {
      * more for an `OWNER_ONLY` type; the records in a visible state for a type with {@code visibleWhen}; nothing at
      * all — no restriction — for the common's own requests and a type that limits no one.
      *
-     * @param states   the states in which a record is visible to a non-owner; used when {@code tracking} is set
-     * @param tracking where a record's state is kept; null when only the owner sees a record
+     * @param states        the states in which a record is visible to a non-owner; used when {@code tracking} is set
+     * @param tracking      where a record's state is kept; null when only the owner sees a record
+     * @param followed      for a type whose records follow another: the attribute naming that record
+     * @param followedIds   ...and the ids of the followed records a non-owner may see; their records are visible then
      */
-    public record ListRestriction(List<String> states, RecordStates.StateTracking tracking) {
+    public record ListRestriction(List<String> states, RecordStates.StateTracking tracking, String followed, List<String> followedIds) {
+
+        public ListRestriction(List<String> states, RecordStates.StateTracking tracking) {
+            this(states, tracking, null, List.of());
+        }
 
         public boolean ownOnly() {
-            return tracking == null;
+            return tracking == null && followed == null;
         }
     }
 
@@ -117,6 +163,9 @@ public class EntityObjectScope {
             return Optional.empty();
         }
         return definitions.sharingOf(orgKey, entityDefinitionCode).flatMap(sharing -> {
+            if (sharing.following()) {
+                return followingRestriction(orgKey, sharing);
+            }
             if (sharing.ownerOnly()) {
                 return Optional.of(new ListRestriction(List.of(), null));
             }
@@ -130,12 +179,32 @@ public class EntityObjectScope {
         });
     }
 
+    /** A following type is visible as the records it follows are: own-only where they are, else those of visible ones. */
+    private Optional<ListRestriction> followingRestriction(String orgKey, SharingView sharing) {
+        return listRestriction(orgKey, sharing.fromType()).map(followed -> {
+            if (followed.ownOnly()) {
+                return followed;
+            }
+            List<String> visible = findEvery(orgKey, sharing.fromType()).stream()
+                .filter(each -> isVisibleTo(orgKey, sharing.fromType(), each)).map(each -> each.getId().toString()).toList();
+            return new ListRestriction(List.of(), null, sharing.from(), visible);
+        });
+    }
+
     /**
      * Whether {@code orgKey} may see {@code object}: the common's own requests and an object's owner see it; any
      * other member sees it unless the type is `OWNER_ONLY`, or limited to some states and the object is in another.
      */
     public boolean isVisibleTo(String orgKey, String entityDefinitionCode, EntityObject object) {
-        return orgKey.equals(object.getOwnerOrgKey()) || listRestriction(orgKey, entityDefinitionCode)
+        if (orgKey.equals(object.getOwnerOrgKey()) || storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey)) {
+            return true;
+        }
+        Optional<SharingView> following = definitions.sharingOf(orgKey, entityDefinitionCode).filter(SharingView::following);
+        if (following.isPresent()) {
+            return followedBy(object.getOrgKey(), following.get(), object.getPayload())
+                .map(followed -> isVisibleTo(orgKey, following.get().fromType(), followed)).orElse(false);
+        }
+        return listRestriction(orgKey, entityDefinitionCode)
             .map(restriction -> !restriction.ownOnly() && restriction.states().contains(restriction.tracking().stateIn(object.getPayload())))
             .orElse(true);
     }

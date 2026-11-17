@@ -500,4 +500,26 @@ class EntityDefinitionMapperTest {
         assertThat(definition.getSharingVisibleWhen()).containsExactly("PUBLISHED", "COMPLETED");
         assertThat(mapper.toModel(definition).getSharing().getVisibleWhen().getState()).containsExactly("PUBLISHED", "COMPLETED");
     }
+
+    @Test
+    void from_aTypeThatFollowsARecordNeedsNoWriteOrVisibility_andRoundTrips() {
+        BaseEntityDefinitionInput input = new BaseEntityDefinitionInput().code("entry").name("Entry")
+            .sharing(new com.processpuzzle.baseentity.model.EntitySharing().from("race"));
+
+        var definition = mapper.toDomain(input);
+
+        assertThat(definition.getSharingFrom()).isEqualTo("race");
+        assertThat(definition.getSharingWrite()).isEqualTo(com.processpuzzle.baseentity.definition.domain.SharingWrite.OWNER_ORG);
+        assertThat(definition.getSharingVisibility()).isEqualTo(com.processpuzzle.baseentity.definition.domain.SharingVisibility.PUBLIC);
+        assertThat(mapper.toModel(definition).getSharing().getFrom()).isEqualTo("race");
+    }
+
+    @Test
+    void sharingWithNeitherPolicyNorFrom_staysIncomplete() {
+        var definition = mapper.toDomain(new BaseEntityDefinitionInput().code("x").name("X")
+            .sharing(new com.processpuzzle.baseentity.model.EntitySharing()));
+
+        assertThat(definition.getSharingWrite()).isNull();
+        assertThat(definition.getSharingVisibility()).isNull();
+    }
 }

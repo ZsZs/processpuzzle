@@ -131,6 +131,15 @@ public class BaseEntityDefinition extends Auditable {
     private List<String> sharingVisibleWhen = new ArrayList<>();
 
     /**
+     * The REFERENCE attribute whose record this type's records follow, for a shared type whose records belong to
+     * another record (a booking to its event): owner and visibility are those of the referenced record, and the
+     * attribute cannot change once the record exists. Such a type is stored as owner-written and public; what its
+     * records may actually be read and written by is read from the referenced record. Null for any other type.
+     */
+    @Column(length = 100)
+    private String sharingFrom;
+
+    /**
      * Natural keys: each entry names the attributes whose values together identify a record, unique among the
      * type's non-retired records. Empty when the type has none.
      */
@@ -209,6 +218,7 @@ public class BaseEntityDefinition extends Auditable {
         this.sharingWrite = draft.sharingWrite;
         this.sharingVisibility = draft.sharingVisibility;
         this.sharingVisibleWhen = draft.sharingVisibleWhen == null ? new ArrayList<>() : new ArrayList<>(draft.sharingVisibleWhen);
+        this.sharingFrom = draft.sharingFrom;
         this.identifiers = copyOf(draft.identifiers);
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));

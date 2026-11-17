@@ -37,6 +37,8 @@ export interface EntitySharing {
   visibility: 'PUBLIC' | 'OWNER_ONLY';
   /** Limits a PUBLIC type: non-owners see a record only in these states of its state machine. */
   visibleWhen?: { state: string[] };
+  /** The REFERENCE attribute whose record this type's records follow: owner and visibility are that record's. */
+  from?: string;
 }
 
 /** `ValueKind` of the contract: what the attribute's value *is*, as opposed to how it is edited. */

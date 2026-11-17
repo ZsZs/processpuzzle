@@ -25,7 +25,7 @@ public interface EntityDefinitionLookupPort {
      * code itself. Its objects are stored under that key, and {@link #findByCode} answers its definition.
      */
     /** The sharing policy of a shared type, as plain names so the instances module need not know the definition's enums. */
-    record SharingView(String write, String visibility, List<String> visibleWhen) {
+    record SharingView(String write, String visibility, List<String> visibleWhen, String from, String fromType) {
         public static final String OWNER_ORG = "OWNER_ORG";
         public static final String OWNER_ONLY = "OWNER_ONLY";
 
@@ -33,8 +33,17 @@ public interface EntityDefinitionLookupPort {
             visibleWhen = visibleWhen == null ? List.of() : List.copyOf(visibleWhen);
         }
 
+        public SharingView(String write, String visibility, List<String> visibleWhen) {
+            this(write, visibility, visibleWhen, null, null);
+        }
+
         public SharingView(String write, String visibility) {
             this(write, visibility, List.of());
+        }
+
+        /** Whether the records follow another record, whose owner and visibility they take. */
+        public boolean following() {
+            return from != null && fromType != null;
         }
 
         /** Whether non-owners see a record only in some states of its state machine. */
