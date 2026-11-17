@@ -89,6 +89,19 @@ class ReleasePlanner {
         if (directory == null || !directory.isCommon(orgKey)) {
             return List.of();
         }
+        Map<String, Set<String>> removed = removedKeysByKind(orgKey);
+        if (removed.isEmpty()) {
+            return List.of();
+        }
+        List<ReleaseProblem> problems = new ArrayList<>();
+        referrers(directory.membersOf(orgKey), removed).forEach((taken, who) ->
+            problems.add(ReleaseProblem.error(taken.kind(), taken.key(), MEMBER_REFERENCES, "The " + taken.kind() + " '" + taken.key()
+                + "' is referred to by members of this common: " + String.join(", ", who)
+                + ". It can be removed or renamed once they no longer refer to it.")));
+        return problems;
+    }
+
+    private Map<String, Set<String>> removedKeysByKind(String orgKey) {
         Map<String, Set<String>> removed = new HashMap<>();
         participants.inOrder().forEach(participant -> {
             Set<String> keys = participant.removedReferableKeys(orgKey);
@@ -96,27 +109,21 @@ class ReleasePlanner {
                 removed.put(participant.kind(), keys);
             }
         });
-        if (removed.isEmpty()) {
-            return List.of();
-        }
+        return removed;
+    }
+
+    /** Who refers to each removed key: the member, and the definition of it that does. */
+    private Map<TakenAway, List<String>> referrers(Set<String> members, Map<String, Set<String>> removed) {
         Map<TakenAway, List<String>> referrers = new LinkedHashMap<>();
-        for (String member : directory.membersOf(orgKey)) {
+        for (String member : members) {
             for (ReleaseParticipant participant : participants.inOrder()) {
-                for (DefinitionReference reference : participant.references(member)) {
-                    if (removed.getOrDefault(reference.toKind(), Set.of()).contains(reference.toKey())) {
-                        referrers.computeIfAbsent(new TakenAway(reference.toKind(), reference.toKey()), key -> new ArrayList<>())
-                            .add(member + " (" + reference.fromKind() + " '" + reference.fromKey() + "')");
-                    }
-                }
+                participant.references(member).stream()
+                    .filter(reference -> removed.getOrDefault(reference.toKind(), Set.of()).contains(reference.toKey()))
+                    .forEach(reference -> referrers.computeIfAbsent(new TakenAway(reference.toKind(), reference.toKey()), key -> new ArrayList<>())
+                        .add(member + " (" + reference.fromKind() + " '" + reference.fromKey() + "')"));
             }
         }
-        List<ReleaseProblem> problems = new ArrayList<>();
-        referrers.forEach((taken, who) -> {
-            problems.add(ReleaseProblem.error(taken.kind(), taken.key(), MEMBER_REFERENCES, "The " + taken.kind() + " '" + taken.key()
-                + "' is referred to by members of this common: " + String.join(", ", who)
-                + ". It can be removed or renamed once they no longer refer to it."));
-        });
-        return problems;
+        return referrers;
     }
 
     /** A definition of the common that the release takes away, or renames. */
