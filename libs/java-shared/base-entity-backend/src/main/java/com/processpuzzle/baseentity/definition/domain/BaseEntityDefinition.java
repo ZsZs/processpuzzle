@@ -122,6 +122,15 @@ public class BaseEntityDefinition extends Auditable {
     private SharingVisibility sharingVisibility;
 
     /**
+     * The states of the type's state machine in which a record of a shared type is visible to the members that do
+     * not own it; empty when it is visible in every state. The owner and the common always see it.
+     */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> sharingVisibleWhen = new ArrayList<>();
+
+    /**
      * Natural keys: each entry names the attributes whose values together identify a record, unique among the
      * type's non-retired records. Empty when the type has none.
      */
@@ -199,6 +208,7 @@ public class BaseEntityDefinition extends Auditable {
         this.canContextObject = draft.canContextObject;
         this.sharingWrite = draft.sharingWrite;
         this.sharingVisibility = draft.sharingVisibility;
+        this.sharingVisibleWhen = draft.sharingVisibleWhen == null ? new ArrayList<>() : new ArrayList<>(draft.sharingVisibleWhen);
         this.identifiers = copyOf(draft.identifiers);
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));

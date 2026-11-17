@@ -57,7 +57,8 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
         Optional<BaseEntityDefinition> own = entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, Channel.RELEASED);
         Optional<BaseEntityDefinition> shared = own.isPresent() ? own : sharedDefinition(orgKey, code);
         return shared.filter(BaseEntityDefinition::isShared)
-            .map(definition -> new SharingView(definition.getSharingWrite().name(), definition.getSharingVisibility().name()));
+            .map(definition -> new SharingView(definition.getSharingWrite().name(), definition.getSharingVisibility().name(),
+                definition.getSharingVisibleWhen()));
     }
 
     @Override

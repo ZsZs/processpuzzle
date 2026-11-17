@@ -1266,6 +1266,22 @@ components:
           description: >
             Who may read the records. PUBLIC: every member. OWNER_ONLY: the owning member, and the common's own
             members.
+        visibleWhen:
+          $ref: '#/components/schemas/SharingVisibleWhen'
+
+    SharingVisibleWhen:
+      type: object
+      required: [ state ]
+      description: >
+        Limits a PUBLIC shared type: the members that do not own a record see it only while it is in one of these
+        states of the type's state machine. The owner and the common's own members always see it. Rejected (422)
+        on an OWNER_ONLY type, where it would add nothing, and with no states.
+      properties:
+        state:
+          type: array
+          minItems: 1
+          items:
+            type: string
 
     BaseEntityDefinitionInput:
       type: object

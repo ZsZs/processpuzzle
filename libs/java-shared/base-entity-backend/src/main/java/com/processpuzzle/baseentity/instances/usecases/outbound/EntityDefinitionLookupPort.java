@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.instances.usecases.outbound;
 
 import com.processpuzzle.core.definition.Channel;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -24,9 +25,22 @@ public interface EntityDefinitionLookupPort {
      * code itself. Its objects are stored under that key, and {@link #findByCode} answers its definition.
      */
     /** The sharing policy of a shared type, as plain names so the instances module need not know the definition's enums. */
-    record SharingView(String write, String visibility) {
+    record SharingView(String write, String visibility, List<String> visibleWhen) {
         public static final String OWNER_ORG = "OWNER_ORG";
         public static final String OWNER_ONLY = "OWNER_ONLY";
+
+        public SharingView {
+            visibleWhen = visibleWhen == null ? List.of() : List.copyOf(visibleWhen);
+        }
+
+        public SharingView(String write, String visibility) {
+            this(write, visibility, List.of());
+        }
+
+        /** Whether non-owners see a record only in some states of its state machine. */
+        public boolean limitedByState() {
+            return !visibleWhen.isEmpty();
+        }
 
         public boolean ownerWrites() {
             return OWNER_ORG.equals(write);

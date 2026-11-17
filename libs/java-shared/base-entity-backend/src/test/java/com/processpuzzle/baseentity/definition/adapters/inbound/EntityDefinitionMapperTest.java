@@ -486,4 +486,18 @@ class EntityDefinitionMapperTest {
         assertThat(desc.getEntityName()).isEqualTo("EmptyDef");
         assertThat(desc.getAttrDescriptors()).isEmpty();
     }
+
+    @Test
+    void visibleWhen_survivesTheRoundTripThroughTheContract() {
+        com.processpuzzle.baseentity.model.EntitySharing sharing = new com.processpuzzle.baseentity.model.EntitySharing()
+            .write(com.processpuzzle.baseentity.model.EntitySharing.WriteEnum.OWNER_ORG)
+            .visibility(com.processpuzzle.baseentity.model.EntitySharing.VisibilityEnum.PUBLIC)
+            .visibleWhen(new com.processpuzzle.baseentity.model.SharingVisibleWhen().state(java.util.List.of("PUBLISHED", "COMPLETED")));
+        BaseEntityDefinitionInput input = new BaseEntityDefinitionInput().code("race").name("Race").sharing(sharing);
+
+        var definition = mapper.toDomain(input);
+
+        assertThat(definition.getSharingVisibleWhen()).containsExactly("PUBLISHED", "COMPLETED");
+        assertThat(mapper.toModel(definition).getSharing().getVisibleWhen().getState()).containsExactly("PUBLISHED", "COMPLETED");
+    }
 }

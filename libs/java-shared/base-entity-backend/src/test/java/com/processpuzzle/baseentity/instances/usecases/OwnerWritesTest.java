@@ -97,8 +97,8 @@ class OwnerWritesTest {
         assertThat(scope.find(CLUB, "boat", id)).isPresent();
         assertThat(scope.find(OTHER, "boat", id)).isEmpty();
         assertThat(scope.find(COMMON, "boat", id)).isPresent();
-        assertThat(scope.listsOwnOnly(OTHER, "boat")).isTrue();
-        assertThat(scope.listsOwnOnly(COMMON, "boat")).isFalse();
+        assertThat(scope.listRestriction(OTHER, "boat")).hasValueSatisfying(restriction -> assertThat(restriction.ownOnly()).isTrue());
+        assertThat(scope.listRestriction(COMMON, "boat")).isEmpty();
     }
 
     @Test
@@ -107,7 +107,7 @@ class OwnerWritesTest {
         when(repository.findByIdAndOrgKey(id, COMMON)).thenReturn(Optional.of(boatOwnedBy(CLUB)));
 
         assertThat(scope.find(OTHER, "boat", id)).isPresent();
-        assertThat(scope.listsOwnOnly(OTHER, "boat")).isFalse();
+        assertThat(scope.listRestriction(OTHER, "boat")).isEmpty();
     }
 
     @Test

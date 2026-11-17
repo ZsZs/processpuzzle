@@ -46,8 +46,23 @@ public class EntitySharingValidator {
         if (definition.isEmbedded()) {
             throw violation("'%s' is shared but embedded; an embedded component lives in its parent's record.".formatted(code));
         }
+        validateVisibleWhen(definition);
         if (definition.getSharingWrite() == SharingWrite.SELF) {
             throw violation("'%s': write SELF is reserved; records owned by a person need their own consent design.".formatted(code));
+        }
+    }
+
+    private void validateVisibleWhen(BaseEntityDefinition definition) {
+        List<String> states = definition.getSharingVisibleWhen() == null ? List.of() : definition.getSharingVisibleWhen();
+        if (states.isEmpty()) {
+            return;
+        }
+        if (definition.getSharingVisibility() != SharingVisibility.PUBLIC) {
+            throw violation("'%s': visibleWhen limits a PUBLIC type; an OWNER_ONLY one is not visible to other members at all."
+                .formatted(definition.getCode()));
+        }
+        if (states.stream().anyMatch(state -> state == null || state.isBlank())) {
+            throw violation("'%s': visibleWhen names a blank state.".formatted(definition.getCode()));
         }
     }
 

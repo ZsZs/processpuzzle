@@ -9,6 +9,7 @@ import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.common.ValidationException.Violation;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -129,5 +130,26 @@ class EntitySharingValidatorTest {
         when(directory.commonOf(MEMBER)).thenReturn(Optional.empty());
 
         assertThatCode(() -> validator.validate(MEMBER, type(MEMBER, "asset", null, null))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void visibleWhen_limitsAPublicType() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+        BaseEntityDefinition race = type(COMMON, "race", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC);
+        race.setSharingVisibleWhen(List.of("PUBLISHED"));
+
+        validator.validate(COMMON, race);
+    }
+
+    @Test
+    void visibleWhen_onAnOwnerOnlyTypeOrWithABlankState_isRefused() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+        BaseEntityDefinition ownerOnly = type(COMMON, "sailor", SharingWrite.OWNER_ORG, SharingVisibility.OWNER_ONLY);
+        ownerOnly.setSharingVisibleWhen(List.of("PUBLISHED"));
+        BaseEntityDefinition blank = type(COMMON, "race", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC);
+        blank.setSharingVisibleWhen(List.of(" "));
+
+        assertThatThrownBy(() -> validator.validate(COMMON, ownerOnly)).satisfies(e -> refusedWith(e, "visibleWhen"));
+        assertThatThrownBy(() -> validator.validate(COMMON, blank)).satisfies(e -> refusedWith(e, "blank"));
     }
 }
