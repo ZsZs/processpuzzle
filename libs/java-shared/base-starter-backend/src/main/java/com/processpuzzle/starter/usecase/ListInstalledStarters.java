@@ -6,6 +6,9 @@ import com.processpuzzle.starter.domain.DefinitionProvenance;
 import com.processpuzzle.starter.domain.DefinitionProvenanceRepository;
 import com.processpuzzle.starter.domain.InstalledStarter;
 import com.processpuzzle.starter.domain.InstalledStarterRepository;
+import com.processpuzzle.starter.domain.OfferedVersion;
+import com.processpuzzle.starter.domain.OfferedVersionRepository;
+import com.processpuzzle.starter.registry.StarterVersions;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,11 +34,14 @@ public class ListInstalledStarters {
     private final InstalledStarterRepository installedStarterRepository;
     private final DefinitionProvenanceRepository provenanceRepository;
     private final ImportParticipants participants;
+    private final OfferedVersionRepository offered;
 
     public ListInstalledStarters(OrganizationGuard guard,
                                  InstalledStarterRepository installedStarterRepository,
                                  DefinitionProvenanceRepository provenanceRepository,
-                                 ImportParticipants participants) {
+                                 ImportParticipants participants,
+                                 OfferedVersionRepository offered) {
+        this.offered = offered;
         this.guard = guard;
         this.installedStarterRepository = installedStarterRepository;
         this.provenanceRepository = provenanceRepository;
@@ -46,9 +52,15 @@ public class ListInstalledStarters {
     public List<View> execute(String orgKey) {
         guard.requireAccess(orgKey);
         return installedStarterRepository.findByOrgKeyOrderByStarterId(orgKey).stream()
-                .map(installed -> new View(installed.getStarterId(), installed.getVersion(),
-                        installed.getInstalledAt(), installed.getInstalledBy(), customized(orgKey, installed)))
+                .map(installed -> view(orgKey, installed))
                 .toList();
+    }
+
+    private View view(String orgKey, InstalledStarter installed) {
+        String offeredVersion = offered.findById(installed.getStarterId()).map(OfferedVersion::getVersion).orElse(null);
+        boolean upgradeAvailable = offeredVersion != null && StarterVersions.compare(offeredVersion, installed.getVersion()) > 0;
+        return new View(installed.getStarterId(), installed.getVersion(), installed.getInstalledAt(), installed.getInstalledBy(),
+                customized(orgKey, installed), upgradeAvailable ? offeredVersion : null, upgradeAvailable);
     }
 
     private int customized(String orgKey, InstalledStarter installed) {
@@ -74,7 +86,11 @@ public class ListInstalledStarters {
         return customized;
     }
 
+    /**
+     * @param offeredVersion   the version the platform offers when it is newer than the installed one; otherwise null
+     * @param upgradeAvailable whether an upgrade is on offer
+     */
     public record View(String starterId, String version, Instant installedAt, String installedBy,
-                       int customizedDefinitions) {
+                       int customizedDefinitions, String offeredVersion, boolean upgradeAvailable) {
     }
 }

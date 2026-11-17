@@ -53,7 +53,31 @@ public class StarterMapper {
                 .version(view.version())
                 .installedAt(view.installedAt().atOffset(ZoneOffset.UTC))
                 .installedBy(view.installedBy())
-                .customizedDefinitions(view.customizedDefinitions());
+                .customizedDefinitions(view.customizedDefinitions())
+                .offeredVersion(view.offeredVersion())
+                .upgradeAvailable(view.upgradeAvailable());
+    }
+
+    public com.processpuzzle.starter.model.UpgradeReport toModel(com.processpuzzle.starter.usecase.UpgradeReport report) {
+        com.processpuzzle.starter.model.UpgradeReport model = new com.processpuzzle.starter.model.UpgradeReport()
+                .dryRun(report.dryRun())
+                .status(switch (report.status()) {
+                    case APPLIED -> com.processpuzzle.starter.model.UpgradeReport.StatusEnum.APPLIED;
+                    case WOULD_APPLY -> com.processpuzzle.starter.model.UpgradeReport.StatusEnum.WOULD_APPLY;
+                    case REJECTED -> com.processpuzzle.starter.model.UpgradeReport.StatusEnum.REJECTED;
+                })
+                .starterId(report.starterId())
+                .fromVersion(report.fromVersion())
+                .toVersion(report.toVersion())
+                .skippedKinds(report.skippedKinds());
+        report.items().forEach(item -> model.addItemsItem(new com.processpuzzle.starter.model.UpgradeReportItem()
+                .kind(DefinitionKind.fromValue(item.kind()))
+                .key(item.key())
+                .action(com.processpuzzle.starter.model.UpgradeReportItem.ActionEnum.fromValue(
+                        item.action().name().toLowerCase(java.util.Locale.ROOT).replace('_', '-')))
+                .note(item.note())));
+        report.errors().forEach(error -> model.addErrorsItem(new ImportError().file(error.file()).message(error.message())));
+        return model;
     }
 
     public CatalogStarter toModel(StarterCatalog.Starter starter) {

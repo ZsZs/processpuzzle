@@ -60,6 +60,8 @@ class ImportBundleTest {
     @Autowired
     private DataSpaceRepository dataSpaceRepository;
     @Autowired
+    private com.processpuzzle.starter.domain.OfferedVersionRepository offeredRepository;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private final List<String> calls = new ArrayList<>();
@@ -100,7 +102,7 @@ class ImportBundleTest {
                 factory.getBeanProvider(InstanceDataProbe.class));
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
                 provenanceRepository, installedStarterRepository, commonRules(), transactionManager, provider(null));
-        listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants);
+        listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants, offeredRepository);
     }
 
     @Test

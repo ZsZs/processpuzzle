@@ -41,6 +41,11 @@ public class CommonRules {
         if (dataSpaces.existsById(orgKey)) {
             return List.of(error("'" + orgKey + "' is a common; a starter is not installed into it."));
         }
+        return commonProblems(manifest);
+    }
+
+    /** What stops a tenant bundle that names a common from being used now: the common is missing or older than it needs. */
+    public List<ImportReport.Error> commonProblems(StarterManifest manifest) {
         StarterManifest.Common needed = manifest.common();
         if (needed == null) {
             return List.of();

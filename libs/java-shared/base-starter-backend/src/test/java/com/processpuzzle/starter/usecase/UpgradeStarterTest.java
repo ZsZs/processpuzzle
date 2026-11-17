@@ -13,6 +13,7 @@ import com.processpuzzle.starter.bundle.TestBundles;
 import com.processpuzzle.starter.domain.DataSpaceRepository;
 import com.processpuzzle.starter.domain.DefinitionProvenanceRepository;
 import com.processpuzzle.starter.domain.InstalledStarterRepository;
+import com.processpuzzle.starter.domain.OfferedVersionRepository;
 import com.processpuzzle.starter.registry.StarterCatalog;
 import com.processpuzzle.starter.registry.StarterRegistry;
 import java.util.ArrayList;
@@ -60,6 +61,8 @@ class UpgradeStarterTest {
     @Autowired
     private DataSpaceRepository dataSpaceRepository;
     @Autowired
+    private OfferedVersionRepository offeredRepository;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private final List<String> calls = new ArrayList<>();
@@ -68,12 +71,15 @@ class UpgradeStarterTest {
     private FakeParticipant entities;
     private FakeParticipant rules;
     private UpgradeStarter upgrade;
+    private OfferStarterVersion offer;
+    private ListInstalledStarters listing;
 
     @BeforeEach
     void setUp() {
         provenanceRepository.deleteAll();
         installedRepository.deleteAll();
         dataSpaceRepository.deleteAll();
+        offeredRepository.deleteAll();
         calls.clear();
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         entities.upgradeable = true;
@@ -96,7 +102,10 @@ class UpgradeStarterTest {
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
                 new UpgradePlanner(participants, provenanceRepository), commonRules, participants, provenanceRepository,
-                installedRepository, transactionManager, provider());
+                installedRepository, offeredRepository, transactionManager, provider());
+        offer = new OfferStarterVersion(new BrowseCatalog(registry), installer, new BundleReader(new StarterProperties()), commonRules,
+                offeredRepository, provider());
+        listing = new ListInstalledStarters(guard, installedRepository, provenanceRepository, participants, offeredRepository);
         installer.provision(ORG, "inventory", "1.0.0", "seed");
         calls.clear();
     }
@@ -232,5 +241,85 @@ class UpgradeStarterTest {
 
         assertThat(upgrade.provision(ORG, "inventory", "2.0.0", "staff").errors()).singleElement()
                 .satisfies(error -> assertThat(error.message()).contains("is starter 'other'"));
+    }
+
+    @Test
+    void withoutAVersionAnOrganizationGoesToTheNextOfferedOne_andNeverPastIt() {
+        publish("3.0.0", "item\n", "positive\n");
+        offer.offer("inventory", "3.0.0", "staff");
+
+        UpgradeReport first = upgrade.provision(ORG, "inventory", null, "alice");
+        UpgradeReport second = upgrade.provision(ORG, "inventory", null, "alice");
+        UpgradeReport third = upgrade.provision(ORG, "inventory", null, "alice");
+
+        assertThat(first.toVersion()).isEqualTo("2.0.0");
+        assertThat(second.toVersion()).isEqualTo("3.0.0");
+        assertThat(third.status()).isEqualTo(UpgradeReport.Status.REJECTED);
+        assertThat(third.errors()).singleElement().satisfies(error -> assertThat(error.message()).contains("No newer version"));
+    }
+
+    @Test
+    void withoutAVersionAndNothingOffered_thereIsNothingToUpgradeTo() {
+        assertThat(upgrade.provision(ORG, "inventory", null, "alice").errors()).singleElement()
+                .satisfies(error -> assertThat(error.message()).contains("No newer version"));
+    }
+
+    @Test
+    void theListingTellsAnUpgradeIsAvailable_untilTheOrganizationHasApplied() {
+        offer.offer("inventory", "2.0.0", "staff");
+
+        assertThat(listing.execute(ORG)).singleElement().satisfies(view -> {
+            assertThat(view.upgradeAvailable()).isTrue();
+            assertThat(view.offeredVersion()).isEqualTo("2.0.0");
+        });
+
+        upgrade.provision(ORG, "inventory", null, "alice");
+
+        assertThat(listing.execute(ORG)).singleElement().satisfies(view -> {
+            assertThat(view.upgradeAvailable()).isFalse();
+            assertThat(view.offeredVersion()).isNull();
+        });
+    }
+
+    @Test
+    void aRolloutOffersANewerVersionOnly_andWithdrawingStopsTheOffer() {
+        offer.offer("inventory", "2.0.0", "staff");
+
+        assertThat(offer.offeredVersion("inventory")).contains("2.0.0");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> offer.offer("inventory", "1.0.0", "staff"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("offered already");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> offer.offer("inventory", "9.9.9", "staff"))
+                .isInstanceOf(StarterNotFoundException.class);
+
+        offer.withdraw("inventory");
+
+        assertThat(offer.offeredVersion("inventory")).isEmpty();
+        assertThat(listing.execute(ORG)).singleElement().satisfies(view -> assertThat(view.upgradeAvailable()).isFalse());
+    }
+
+    @Test
+    void aVersionNeedingANewerCommonCannotBeOfferedYet() {
+        String tenant = """
+                manifestVersion: 2
+                id: inventory
+                name: Inventory
+                version: 3.0.0
+                definitionSchemaVersion: 1
+                common:
+                  id: inventory-common
+                  minVersion: 2.0.0
+                contents:
+                  entities:
+                    - entities/item.yaml
+                """;
+        byte[] bytes = TestBundles.zip(Map.of("manifest.yaml", tenant, "entities/item.yaml", "item\n"));
+        bundles.put("inventory/3.0.0/bundle.zip", bytes);
+        List<StarterCatalog.Version> versions = new ArrayList<>(catalog.starters().getFirst().versions());
+        versions.add(new StarterCatalog.Version("3.0.0", null, null, 1, BundleReader.sha256(bytes), "inventory/3.0.0/bundle.zip"));
+        catalog = new StarterCatalog(1, List.of(new StarterCatalog.Starter("inventory", "Inventory", null, null, null, null, null, null, versions)));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> offer.offer("inventory", "3.0.0", "staff"))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("does not exist yet");
+        assertThat(offer.offeredVersion("inventory")).isEmpty();
     }
 }

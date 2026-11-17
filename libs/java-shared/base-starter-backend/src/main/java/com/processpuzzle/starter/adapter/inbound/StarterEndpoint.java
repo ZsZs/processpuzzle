@@ -6,6 +6,9 @@ import com.processpuzzle.starter.model.CatalogStarter;
 import com.processpuzzle.starter.model.ImportReport;
 import com.processpuzzle.starter.model.InstallStarterRequest;
 import com.processpuzzle.starter.model.InstalledStarter;
+import com.processpuzzle.starter.model.UpgradeRequest;
+import com.processpuzzle.starter.usecase.UpgradeReport;
+import com.processpuzzle.starter.usecase.UpgradeStarter;
 import com.processpuzzle.starter.usecase.BrowseCatalog;
 import com.processpuzzle.starter.usecase.ImportBundle;
 import com.processpuzzle.starter.usecase.InstallStarter;
@@ -30,11 +33,14 @@ public class StarterEndpoint implements BaseStarterApi {
     private final InstallStarter installStarter;
     private final ImportBundle importBundle;
     private final ListInstalledStarters listInstalledStarters;
+    private final UpgradeStarter upgradeStarter;
     private final StarterMapper mapper;
     private final HttpServletRequest request;
 
     public StarterEndpoint(BrowseCatalog browseCatalog, InstallStarter installStarter, ImportBundle importBundle,
-                           ListInstalledStarters listInstalledStarters, StarterMapper mapper, HttpServletRequest request) {
+                           ListInstalledStarters listInstalledStarters, UpgradeStarter upgradeStarter, StarterMapper mapper,
+                           HttpServletRequest request) {
+        this.upgradeStarter = upgradeStarter;
         this.browseCatalog = browseCatalog;
         this.installStarter = installStarter;
         this.importBundle = importBundle;
@@ -68,6 +74,16 @@ public class StarterEndpoint implements BaseStarterApi {
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to read the uploaded bundle", e);
         }
+    }
+
+    @Override
+    public ResponseEntity<com.processpuzzle.starter.model.UpgradeReport> upgradeStarter(String orgKey, String starterId,
+                                                                                         UpgradeRequest upgradeRequest) {
+        UpgradeRequest asked = upgradeRequest == null ? new UpgradeRequest() : upgradeRequest;
+        UpgradeReport report = upgradeStarter.execute(orgKey, starterId, asked.getVersion(), Boolean.TRUE.equals(asked.getDryRun()), principalName());
+        com.processpuzzle.starter.model.UpgradeReport model = mapper.toModel(report);
+        return report.status() == UpgradeReport.Status.REJECTED
+                ? ResponseEntity.unprocessableEntity().body(model) : ResponseEntity.ok(model);
     }
 
     @Override
