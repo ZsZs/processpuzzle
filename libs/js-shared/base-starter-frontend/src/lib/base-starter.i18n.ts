@@ -14,3 +14,6 @@ export const STARTER_IMPORT_I18N_SCOPE = `${BASE_STARTER_TRANSLOCO_SCOPE}.import
 
 /** Key root of the installed-starters table. */
 export const INSTALLED_STARTERS_I18N_SCOPE = `${BASE_STARTER_TRANSLOCO_SCOPE}.installed`;
+
+/** Key root of the upgrade report and its actions. */
+export const STARTER_UPGRADE_I18N_SCOPE = `${BASE_STARTER_TRANSLOCO_SCOPE}.upgrade`;

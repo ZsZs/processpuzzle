@@ -34,7 +34,9 @@
       "module": "Module",
       "app": "Application",
       "translation": "Translation",
-      "asset": "File"
+      "asset": "File",
+      "calculation": "Calculation",
+      "chat": "Chat"
     },
     "catalogEmpty": "The catalog has no starters yet.",
     "version": "Version",
@@ -48,7 +50,33 @@
       "version": "Version",
       "installedAt": "Installed",
       "installedBy": "By",
-      "customized": "Customized definitions"
+      "customized": "Customized definitions",
+      "upgrade": "Upgrade"
+    },
+    "upToDate": "up to date",
+    "upgradeTo": "Upgrade to {{version}}"
+  },
+  "upgrade": {
+    "title": "Upgrade",
+    "apply": "Apply upgrade",
+    "status": {
+      "applied": "Upgraded",
+      "would-apply": "Would upgrade",
+      "rejected": "Rejected"
+    },
+    "summary": "{{changed}} to change, {{kept}} kept as they are",
+    "drafts": "The upgrade writes drafts: review them, then release.",
+    "skipped": "Not upgraded yet, left as they are: {{kinds}}",
+    "column": {
+      "note": "Note"
+    },
+    "action": {
+      "add": "add",
+      "replace": "replace",
+      "remove": "remove",
+      "keep-customized": "kept (customized)",
+      "keep-deleted": "kept deleted",
+      "keep-in-use": "kept (in use)"
     }
   }
 }

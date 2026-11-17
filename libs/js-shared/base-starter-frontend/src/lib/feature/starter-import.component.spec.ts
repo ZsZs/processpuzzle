@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CatalogStarter, ImportReport, InstalledStarter } from '../domain/starter';
+import { CatalogStarter, ImportReport, InstalledStarter, UpgradeReport } from '../domain/starter';
 import { StarterService } from '../domain/starter.service';
 import { StarterImportComponent } from './starter-import.component';
 
@@ -22,6 +22,17 @@ const translations = {
     'base_starter.import.action.update': 'update',
     'base_starter.import.action.delete': 'delete',
     'base_starter.installed.empty': 'No starter yet.',
+    'base_starter.installed.upgradeTo': 'Upgrade to {{version}}',
+    'base_starter.installed.upToDate': 'up to date',
+    'base_starter.upgrade.apply': 'Apply upgrade',
+    'base_starter.upgrade.status.would-apply': 'Would upgrade',
+    'base_starter.upgrade.status.applied': 'Upgraded',
+    'base_starter.upgrade.status.rejected': 'Rejected',
+    'base_starter.upgrade.summary': '{{changed}} to change, {{kept}} kept',
+    'base_starter.upgrade.drafts': 'Review the drafts, then release.',
+    'base_starter.upgrade.skipped': 'Left as they are: {{kinds}}',
+    'base_starter.upgrade.action.replace': 'replace',
+    'base_starter.upgrade.action.keep-customized': 'kept (customized)',
   },
 };
 
@@ -54,10 +65,10 @@ const installed: InstalledStarter[] = [{ starterId: 'inventory', version: '1.1.0
 
 describe('StarterImportComponent', () => {
   let fixture: ComponentFixture<StarterImportComponent>;
-  let service: { install: ReturnType<typeof vi.fn>; listInstalled: ReturnType<typeof vi.fn>; listCatalog: ReturnType<typeof vi.fn> };
+  let service: { upgrade: ReturnType<typeof vi.fn>; install: ReturnType<typeof vi.fn>; listInstalled: ReturnType<typeof vi.fn>; listCatalog: ReturnType<typeof vi.fn> };
 
-  async function create(starters: CatalogStarter[]): Promise<void> {
-    service = { install: vi.fn(), listInstalled: vi.fn(() => of([])), listCatalog: vi.fn(() => of(starters)) };
+  async function create(starters: CatalogStarter[], installedStarters: InstalledStarter[] = []): Promise<void> {
+    service = { upgrade: vi.fn(), install: vi.fn(), listInstalled: vi.fn(() => of(installedStarters)), listCatalog: vi.fn(() => of(starters)) };
     await TestBed.configureTestingModule({
       imports: [StarterImportComponent],
       providers: [provideTranslocoTesting({ translations }), { provide: StarterService, useValue: service }],
@@ -147,5 +158,66 @@ describe('StarterImportComponent', () => {
 
     expect(byTestId('starter-catalog-empty')?.textContent).toContain('No starters yet.');
     expect(byTestId('starter-catalog')).toBeNull();
+  });
+
+  describe('an upgrade is on offer', () => {
+    const upgradeOffered: InstalledStarter[] = [
+      { starterId: 'inventory', version: '1.0.0', installedAt: '2026-10-05T10:00:00Z', customizedDefinitions: 1, offeredVersion: '1.1.0', upgradeAvailable: true },
+      { starterId: 'sail', version: '2.0.0', installedAt: '2026-10-05T10:00:00Z', upgradeAvailable: false },
+    ];
+    const upgradePreview: UpgradeReport = {
+      dryRun: true,
+      status: 'would-apply',
+      starterId: 'inventory',
+      fromVersion: '1.0.0',
+      toVersion: '1.1.0',
+      skippedKinds: ['calculation'],
+      items: [
+        { kind: 'entity', key: 'item', action: 'replace' },
+        { kind: 'rule', key: 'sku-format', action: 'keep-customized', note: 'changed by the organization; its version stays' },
+      ],
+    };
+
+    beforeEach(() => create(catalog, upgradeOffered));
+
+    it('offers the upgrade only for the starter that has one', () => {
+      expect(byTestId('upgrade-inventory')?.textContent).toContain('Upgrade to 1.1.0');
+      expect(byTestId('upgrade-sail')).toBeNull();
+      expect(byTestId('installed-starter-sail')?.textContent).toContain('up to date');
+      expect(byTestId('upgrade-report')).toBeNull();
+    });
+
+    it('previews the upgrade, shows what is kept and why, and applies it', async () => {
+      service.upgrade.mockReturnValueOnce(of(upgradePreview));
+
+      await click('upgrade-inventory');
+
+      expect(service.upgrade).toHaveBeenCalledWith('inventory', true, undefined);
+      expect(byTestId('upgrade-report-status')?.textContent).toContain('Would upgrade');
+      expect(byTestId('upgrade-report-summary')?.textContent).toContain('1 to change, 1 kept');
+      expect(byTestId('upgrade-report-items')?.textContent).toContain('changed by the organization');
+      expect(byTestId('upgrade-report-drafts')?.textContent).toContain('Review the drafts');
+      expect(byTestId('upgrade-report-skipped')?.textContent).toContain('calculation');
+      expect((byTestId('upgrade-apply') as HTMLButtonElement).disabled).toBe(false);
+
+      service.upgrade.mockReturnValueOnce(of({ ...upgradePreview, dryRun: false, status: 'applied' }));
+      service.listInstalled.mockReturnValue(of([{ ...upgradeOffered[0], version: '1.1.0', upgradeAvailable: false }, upgradeOffered[1]]));
+      await click('upgrade-apply');
+
+      expect(service.upgrade).toHaveBeenLastCalledWith('inventory', false, '1.1.0');
+      expect(byTestId('upgrade-report-status')?.textContent).toContain('Upgraded');
+      expect(byTestId('upgrade-inventory')).toBeNull();
+      expect((byTestId('upgrade-apply') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('shows why a refused upgrade was refused, and cannot apply it', async () => {
+      service.upgrade.mockReturnValueOnce(of({ dryRun: true, status: 'rejected', errors: [{ message: 'Upgrade to 1.0.5 first' }] } satisfies UpgradeReport));
+
+      await click('upgrade-inventory');
+
+      expect(byTestId('upgrade-report-errors')?.textContent).toContain('Upgrade to 1.0.5 first');
+      expect(byTestId('upgrade-report-drafts')).toBeNull();
+      expect((byTestId('upgrade-apply') as HTMLButtonElement).disabled).toBe(true);
+    });
   });
 });

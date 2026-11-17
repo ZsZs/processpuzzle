@@ -34,7 +34,9 @@
       "module": "Modul",
       "app": "Alkalmazás",
       "translation": "Fordítás",
-      "asset": "Fájl"
+      "asset": "Fájl",
+      "calculation": "Számítás",
+      "chat": "Csevegés"
     },
     "catalogEmpty": "A katalógusban még nincs starter.",
     "version": "Verzió",
@@ -48,7 +50,33 @@
       "version": "Verzió",
       "installedAt": "Telepítve",
       "installedBy": "Telepítette",
-      "customized": "Módosított definíciók"
+      "customized": "Módosított definíciók",
+      "upgrade": "Frissítés"
+    },
+    "upToDate": "naprakész",
+    "upgradeTo": "Frissítés erre: {{version}}"
+  },
+  "upgrade": {
+    "title": "Frissítés",
+    "apply": "Frissítés alkalmazása",
+    "status": {
+      "applied": "Frissítve",
+      "would-apply": "Frissítene",
+      "rejected": "Elutasítva"
+    },
+    "summary": "{{changed}} módosul, {{kept}} változatlan marad",
+    "drafts": "A frissítés vázlatokat ír: nézze át, majd tegye közzé őket.",
+    "skipped": "Még nem frissíthető, változatlanul hagyva: {{kinds}}",
+    "column": {
+      "note": "Megjegyzés"
+    },
+    "action": {
+      "add": "hozzáadás",
+      "replace": "csere",
+      "remove": "eltávolítás",
+      "keep-customized": "megtartva (testreszabott)",
+      "keep-deleted": "törölve marad",
+      "keep-in-use": "megtartva (használatban)"
     }
   }
 }

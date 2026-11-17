@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { catchError, Observable, of, throwError } from 'rxjs';
-import { CatalogStarter, ImportReport, InstalledStarter, isImportReport, StarterSelection } from './starter';
+import { CatalogStarter, ImportReport, InstalledStarter, isImportReport, isUpgradeReport, StarterSelection, UpgradeReport } from './starter';
 
 /**
  * The tenant-free root the catalog lives under: the organization-scoped root with its
@@ -38,6 +38,18 @@ export class StarterService {
   install(selection: StarterSelection, dryRun: boolean): Observable<ImportReport> {
     return this.http.post<ImportReport>(`${this.root}/starters/install`, { ...selection, dryRun }).pipe(
       catchError((error: unknown) => (error instanceof HttpErrorResponse && isImportReport(error.error) ? of(error.error) : throwError(() => error))),
+    );
+  }
+
+  /**
+   * Upgrades an installed starter to `version` — or, left out, to the next version on offer — as a dry run or for real.
+   * The upgrade writes drafts; nothing is released. Like {@link install}, a refused upgrade (422) is the report it carries,
+   * not an error.
+   */
+  upgrade(starterId: string, dryRun: boolean, version?: string): Observable<UpgradeReport> {
+    const body = version ? { version, dryRun } : { dryRun };
+    return this.http.post<UpgradeReport>(`${this.root}/starters/${encodeURIComponent(starterId)}/upgrade`, body).pipe(
+      catchError((error: unknown) => (error instanceof HttpErrorResponse && isUpgradeReport(error.error) ? of(error.error) : throwError(() => error))),
     );
   }
 
