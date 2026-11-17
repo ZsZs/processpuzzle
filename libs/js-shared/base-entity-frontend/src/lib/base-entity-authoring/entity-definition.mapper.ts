@@ -49,6 +49,7 @@ interface EntityDefinitionDto {
   isEmbedded?: boolean;
   canContextObject?: boolean;
   sharing?: EntitySharing;
+  identifiers?: string[][];
   sharedFrom?: string;
   attributes?: EntityAttributeDto[];
   version?: number;
@@ -96,6 +97,7 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       isEmbedded: source.isEmbedded,
       canContextObject: source.canContextObject,
       sharing: source.sharing,
+      identifiers: source.identifiers,
       sharedFrom: source.sharedFrom,
       attributes: (source.attributes ?? []).map(toAttribute),
       version: source.version,
@@ -117,6 +119,8 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       canContextObject: entity.canContextObject ?? false,
       // Carried, not authored here: the form has no control for it, and a save without it would unshare the type.
       sharing: entity.sharing,
+      // Likewise carried: the natural keys of the type, which only the starter's YAML authors for now.
+      identifiers: entity.identifiers,
       attributes: (entity.attributes ?? []).map(fromAttribute),
     };
   }

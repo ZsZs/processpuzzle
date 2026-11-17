@@ -47,6 +47,7 @@ public class CreateEntityInstanceUseCase {
 
         payload = EmbeddedItemIdentity.withIdentities(definition, payload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, payload);
+        scope.requireUniqueKeys(orgKey, entityDefinitionCode, payload, null);
 
         EntityObject created = repository.saveAndFlush(EntityObject.builder()
             .orgKey(scope.requireWritable(orgKey, entityDefinitionCode))

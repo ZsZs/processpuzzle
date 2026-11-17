@@ -1298,6 +1298,16 @@ components:
             meaningful for a stand-alone (not embedded) definition.
         sharing:
           $ref: '#/components/schemas/EntitySharing'
+        identifiers:
+          type: array
+          description: >
+            Natural keys. Each entry lists attribute codes whose values together identify a record; no two
+            non-retired records of the type may carry the same values (409 on a write that would). A record
+            lacking a value for one of the attributes is not constrained by that key.
+          items:
+            type: array
+            items:
+              type: string
         organizationId:
           type: string
           format: uuid

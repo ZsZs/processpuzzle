@@ -30,6 +30,8 @@ public class ReinstateEntityInstanceUseCase {
         if (!entityObject.isRetired()) {
             return entityObject;
         }
+        // Its key may have been taken while it was retired.
+        scope.requireUniqueKeys(orgKey, entityDefinitionCode, entityObject.getPayload(), entityObject.getId());
         entityObject.setRetiredAt(null);
         entityObject.setRetiredBy(null);
         EntityObject reinstated = repository.saveAndFlush(entityObject);

@@ -4,10 +4,13 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
+import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.common.ForbiddenException;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -126,6 +129,35 @@ public class EntityObjectScope {
             }
         }
         return written;
+    }
+
+    /**
+     * Refuses a payload that repeats the natural key of another non-retired object of the type: one of the type's
+     * {@code identifiers}, the same values in all its attributes. A payload without a value for one of a key's
+     * attributes is not constrained by that key. Compared in the application, over the type's objects — the same for
+     * a shared type as for any other — until the database enforces it.
+     *
+     * @param ownId the object being written, which is not its own duplicate; null for a new one
+     * @throws ConflictException naming the key
+     */
+    public void requireUniqueKeys(String orgKey, String entityDefinitionCode, Map<String, Object> payload, UUID ownId) {
+        List<List<String>> keys = definitions.findByCode(orgKey, entityDefinitionCode)
+            .map(EntityDefinitionView::identifiers).orElse(List.of());
+        if (keys.isEmpty()) {
+            return;
+        }
+        List<List<String>> constrained = keys.stream().filter(key -> NaturalKey.valuesOf(payload, key) != null).toList();
+        if (constrained.isEmpty()) {
+            return;
+        }
+        List<EntityObject> others = findEvery(orgKey, entityDefinitionCode).stream()
+            .filter(object -> !object.isRetired() && !Objects.equals(object.getId(), ownId)).toList();
+        for (List<String> key : constrained) {
+            List<String> values = NaturalKey.valuesOf(payload, key);
+            if (others.stream().anyMatch(other -> values.equals(NaturalKey.valuesOf(other.getPayload(), key)))) {
+                throw new ConflictException("Another '%s' already has %s".formatted(entityDefinitionCode, NaturalKey.describe(key, values)));
+            }
+        }
     }
 
     public boolean existsAny(String orgKey, String entityDefinitionCode) {

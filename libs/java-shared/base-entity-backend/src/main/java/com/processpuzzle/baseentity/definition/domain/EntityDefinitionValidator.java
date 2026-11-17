@@ -22,6 +22,7 @@ public class EntityDefinitionValidator {
         validateEmbeddedParent(definition, violations);
         validateContextObject(definition, violations);
         validateAttributes(definition, violations);
+        validateIdentifiers(definition, violations);
         validateEmbeddedComponentsUniqueness(definition, violations);
 
         if (!violations.isEmpty()) {
@@ -42,6 +43,23 @@ public class EntityDefinitionValidator {
             violations.add(new Violation(null,
                 "'%s' declares canContextObject but is embedded; only a stand-alone entity can be picked as the context object."
                     .formatted(definition.getCode())));
+        }
+    }
+
+    private void validateIdentifiers(BaseEntityDefinition definition, List<Violation> violations) {
+        java.util.Set<String> codes = definition.getAttributes().stream()
+            .filter(attribute -> attribute.getFormControlType() != FormControlType.EMBEDDED_COMPONENTS)
+            .map(BaseEntityAttribute::getCode).collect(Collectors.toSet());
+        java.util.Set<List<String>> seen = new java.util.HashSet<>();
+        for (List<String> key : definition.getIdentifiers() == null ? List.<List<String>>of() : definition.getIdentifiers()) {
+            if (key == null || key.isEmpty()) {
+                violations.add(new Violation(null, "'%s' declares an empty identifier.".formatted(definition.getCode())));
+            } else if (!codes.containsAll(key)) {
+                violations.add(new Violation(null, "'%s' declares the identifier %s, which names an attribute the type does not have "
+                    + "(or an embedded collection, which cannot be part of a key).".formatted(definition.getCode(), key)));
+            } else if (!seen.add(key)) {
+                violations.add(new Violation(null, "'%s' declares the identifier %s twice.".formatted(definition.getCode(), key)));
+            }
         }
     }
 
