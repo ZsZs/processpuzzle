@@ -12,6 +12,8 @@ jobs:
   # ---------------------------------------------------------------------------
   gate:
     runs-on: ubuntu-latest
+    # Includes the wait for a quiet stage below, which gives up after an hour.
+    timeout-minutes: 90
     outputs:
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
       last_sha: ${{ steps.check-changes.outputs.last_sha }}
@@ -60,6 +62,41 @@ jobs:
           fi
           echo "last_sha=$LAST_SHA" >> $GITHUB_OUTPUT
           echo "current_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
+
+      # The browser jobs test STAGE, and a stage deploy recreates its backend and frontend and runs an e2e gate of its
+      # own against it. The two under each other fail tests that have nothing wrong with them (a screen that never
+      # attaches, a linked entity shown as its id): attempt 3 of run 44119177906 started three minutes before a deploy
+      # restarted stage. A deploy is a run of build-testbed-apps.yml on develop (its deploy-stage job) or a hand-started
+      # run of deploy-testbed-apps.yml, so the browsers start once none of them is going.
+      #
+      # This waits, it does not take the deploy's concurrency group: a group keeps one running and one pending run and
+      # cancels an older pending one, so holding it from here could cancel a queued deploy. A deploy that starts after
+      # the browsers have started is not prevented; a nightly at 02:00 UTC rarely meets one.
+      - name: Wait for a quiet stage
+        if: steps.check-changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          deadline=$((SECONDS + 3600))
+          while true; do
+            busy=0
+            for workflow in build-testbed-apps.yml deploy-testbed-apps.yml; do
+              for state in queued in_progress waiting pending; do
+                count=$(gh api "repos/${{ github.repository }}/actions/workflows/$workflow/runs?status=$state&per_page=100" --jq '[.workflow_runs[] | select(.head_branch == "develop")] | length')
+                busy=$((busy + count))
+              done
+            done
+            if [ "$busy" -eq 0 ]; then
+              echo "No deploy of stage is running. Starting the browsers."
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::warning::A stage deploy was still running after an hour; starting the browsers anyway."
+              break
+            fi
+            echo "$busy build or deploy run(s) of develop are going; stage may restart. Waiting a minute."
+            sleep 60
+          done
 
   # ---------------------------------------------------------------------------
   # Browser jobs: run e2e tests against STAGE for each browser
