@@ -102,7 +102,7 @@ export const appRoutes: Route[] = [
     // The facades are provided once, in `app.config.ts`. Re-providing them here would give this route its own
     // instances — and so its own stores — while `BaseEntityDescriptorRegistry`, which is root-provided, would
     // still resolve the root ones: an embedded child would then read a document nobody has loaded.
-    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
     children: [
       {
         path: '',
@@ -189,7 +189,7 @@ export const appRoutes: Route[] = [
     // No `provideBaseRuleEngine()` here any more: the rule engine is bound once, application-wide, in
     // `app.config.ts`. Having it on this route made rule validation a property of the section the user
     // happened to be in rather than of the entity being edited.
-    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
     children: [
       {
         path: '',
@@ -394,7 +394,7 @@ export const appRoutes: Route[] = [
           {
             path: ORDER_PATH,
             data: { entityName: ORDER_NAME },
-            providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+            providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
             loadChildren: orderScreenRoutes,
           },
           ...BASE_DOCUMENT_ROUTES,
@@ -411,7 +411,7 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./content/base-ai/base-ai.component').then((comp) => comp.BaseAiComponent),
     // `base_entity` for the Boat screens' generic tab labels, as on the base-rule branch: `Boat` is
     // resolved at run-time and brings no scope of its own. The profile branch registers its own.
-    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
     children: [
       {
         path: '',

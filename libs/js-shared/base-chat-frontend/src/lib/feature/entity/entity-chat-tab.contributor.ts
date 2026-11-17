@@ -28,8 +28,8 @@ export class EntityChatTabContributor implements EntityTabContributor {
 
 /**
  * Registers the Chat tab for the whole application; spread into the root `providers`. The transloco scope is
- * registered too, because the tab label renders on the entity's route, which does not register `base_chat` — the
- * same reasoning as base-state's `provideEntityStateMachineTab()`.
+ * registered at the root too, but a route that provides its own transloco scope hides that one: each route that
+ * renders an entity's screens must also provide `base_chat`, as base-state's `provideEntityStateMachineTab()` describes.
  */
 export function provideEntityChatTab(): Provider[] {
   return [

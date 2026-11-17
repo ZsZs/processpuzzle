@@ -48,10 +48,9 @@ export const ENTITY_STATE_MACHINE_I18N_SCOPE = `${BASE_STATE_TRANSLOCO_SCOPE}.en
  * Label of the State Machine tab. Resolved with `{ entity }` like every other tab label, so a translation
  * may name the entity it is shown on.
  *
- * The scope this key lives in has to be *registered where the tab bar renders*, which is the governed
- * entity's route — not base-state's. That is why `provideEntityStateMachineTab()` registers `base_state`
- * alongside the contributor rather than leaving it to `BASE_STATE_ROUTES`: the tab appears on screens that
- * branch of the router knows nothing about.
+ * The scope this key lives in has to be *provided where the tab bar renders*, which is the governed entity's
+ * route — not base-state's. `provideEntityStateMachineTab()` registers `base_state` at the root, but a route that
+ * provides its own transloco scope hides that one, so each such route must provide `base_state` too.
  */
 export const ENTITY_STATE_MACHINE_I18N_KEY = `${ENTITY_STATE_MACHINE_I18N_SCOPE}.tab`;
 
