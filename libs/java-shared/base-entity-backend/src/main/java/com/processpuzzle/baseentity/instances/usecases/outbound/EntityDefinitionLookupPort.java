@@ -23,6 +23,25 @@ public interface EntityDefinitionLookupPort {
      * definition of that code is a shared type, when {@code orgKey} is a member of it and defines no type of that
      * code itself. Its objects are stored under that key, and {@link #findByCode} answers its definition.
      */
+    /** The sharing policy of a shared type, as plain names so the instances module need not know the definition's enums. */
+    record SharingView(String write, String visibility) {
+        public static final String OWNER_ORG = "OWNER_ORG";
+        public static final String OWNER_ONLY = "OWNER_ONLY";
+
+        public boolean ownerWrites() {
+            return OWNER_ORG.equals(write);
+        }
+
+        public boolean ownerOnly() {
+            return OWNER_ONLY.equals(visibility);
+        }
+    }
+
+    /** The sharing policy of the type {@code code} as {@code orgKey} sees it; empty for a tenant type. */
+    default Optional<SharingView> sharingOf(String orgKey, String code) {
+        return Optional.empty();
+    }
+
     /** Whether the type {@code code} is a shared type as {@code orgKey} sees it: its own, when it is a common, or its common's. */
     default boolean isShared(String orgKey, String code) {
         return sharedFrom(orgKey, code).isPresent();

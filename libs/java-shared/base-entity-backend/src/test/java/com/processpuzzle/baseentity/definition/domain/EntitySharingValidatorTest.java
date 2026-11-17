@@ -89,13 +89,20 @@ class EntitySharingValidatorTest {
     }
 
     @Test
-    void policiesNotSupportedYet_areRefused() {
+    void writeSelf_isReservedAndRefused() {
         when(directory.isCommon(COMMON)).thenReturn(true);
 
-        assertThatThrownBy(() -> validator.validate(COMMON, type(COMMON, "asset", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC)))
-            .satisfies(e -> refusedWith(e, "supported"));
-        assertThatThrownBy(() -> validator.validate(COMMON, type(COMMON, "asset", SharingWrite.COMMON_ADMIN, SharingVisibility.OWNER_ONLY)))
-            .satisfies(e -> refusedWith(e, "supported"));
+        assertThatThrownBy(() -> validator.validate(COMMON, type(COMMON, "asset", SharingWrite.SELF, SharingVisibility.PUBLIC)))
+            .satisfies(e -> refusedWith(e, "reserved"));
+    }
+
+    @Test
+    void ownerWrittenAndOwnerOnlyTypes_areAccepted() {
+        when(directory.isCommon(COMMON)).thenReturn(true);
+
+        validator.validate(COMMON, type(COMMON, "club", SharingWrite.OWNER_ORG, SharingVisibility.PUBLIC));
+        validator.validate(COMMON, type(COMMON, "sailor", SharingWrite.OWNER_ORG, SharingVisibility.OWNER_ONLY));
+        validator.validate(COMMON, type(COMMON, "class", SharingWrite.COMMON_ADMIN, SharingVisibility.OWNER_ONLY));
     }
 
     @Test
