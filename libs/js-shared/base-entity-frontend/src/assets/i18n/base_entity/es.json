@@ -251,5 +251,8 @@
     "delete_title": "¿Eliminar este elemento?",
     "delete_content": "Esta acción no se puede deshacer.",
     "conflict": "Otra persona lo cambió al mismo tiempo. La lista muestra lo guardado — inténtelo de nuevo."
+  },
+  "list": {
+    "show_retired": "Mostrar registros retirados"
   }
 }

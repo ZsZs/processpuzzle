@@ -251,5 +251,8 @@
     "delete_title": "Delete this item?",
     "delete_content": "This cannot be undone.",
     "conflict": "Someone else changed this at the same time. The list shows what is stored now — please try again."
+  },
+  "list": {
+    "show_retired": "Show retired records"
   }
 }

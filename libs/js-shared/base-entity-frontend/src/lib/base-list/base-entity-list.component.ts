@@ -80,6 +80,10 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   protected readonly contextEntityId = computed(() => (this.routeFilter.filterByContext ? this.workingContext.current(this.routeFilter.filterByContext)?.id : undefined));
   /** Narrowing to the active entity: on by default, as the spec's optional view offers it. */
   protected readonly onlyActiveContext = signal(true);
+  /** Whether the retired records of a shared type are listed too, marked as such. Off by default, like every list and picker. */
+  protected readonly showRetired = signal(false);
+  /** An entity whose records can be retired is one that can reinstate them: a shared type. */
+  protected readonly canShowRetired = computed(() => !!this.entityDescriptor().reinstate);
   /** Whether the toggle is shown: the list may be narrowed, and there is something to narrow it to. */
   protected readonly showsContextToggle = computed(() => this.routeFilter.filterByContext !== undefined && this.contextEntityId() !== undefined);
   /** Set once the first load is made, so that a context change before it does not load twice. */
@@ -278,10 +282,18 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     this.onlyActiveContext.set(on);
   }
 
+  protected onToggleRetired(on: boolean): void {
+    this.showRetired.set(on);
+  }
+
+  protected isRetired(row: unknown): boolean {
+    return !!(row as { retiredAt?: string } | undefined)?.retiredAt;
+  }
+
   private loadAllData() {
     const pathParams = new Map<string, string>([]);
     const filters: FilterCondition[] = [];
-    this.store.load({ pathParams, filters, query: this.rsqlQuery() });
+    this.store.load({ pathParams, filters, query: this.rsqlQuery(), includeRetired: this.canShowRetired() && this.showRetired() });
   }
 
   private rsqlQuery(): string | undefined {
@@ -294,6 +306,7 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
     // Reloads when the active entity changes or the toggle is flipped: the list follows the context.
     effect(() => {
       this.rsqlQuery();
+      this.showRetired();
       untracked(() => {
         if (this.viewReady) this.loadAllData();
       });

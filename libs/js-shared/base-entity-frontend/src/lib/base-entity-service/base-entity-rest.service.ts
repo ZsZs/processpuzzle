@@ -144,6 +144,7 @@ export class BaseEntityRestService<Entity extends BaseEntity> implements BaseEnt
     if (queryCondition.page !== undefined) queryParams.set('page', queryCondition.page.toString());
     if (queryCondition.pageSize !== undefined) queryParams.set('size', queryCondition.pageSize.toString());
     if (queryCondition.orderBys?.length) queryParams.set(this.sortParamName, this.buildOrder(queryCondition.orderBys));
+    if (queryCondition.includeRetired) queryParams.set('includeRetired', 'true');
     const rsql = this.buildRsql(queryCondition);
     if (rsql) queryParams.set(this.filterParamName, rsql);
 
