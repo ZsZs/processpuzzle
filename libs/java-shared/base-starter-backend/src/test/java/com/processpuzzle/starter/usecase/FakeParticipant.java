@@ -55,6 +55,61 @@ class FakeParticipant implements DefinitionImportParticipant {
         return new ParticipantResult(items, List.of());
     }
 
+    /** Whether this kind can be upgraded; a test turns it on. */
+    boolean upgradeable;
+    /** Keys the removal refuses, with the reason. */
+    final Map<String, String> refusals = new LinkedHashMap<>();
+
+    @Override
+    public boolean supportsUpgrade() {
+        return upgradeable;
+    }
+
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        Set<String> keys = new java.util.LinkedHashSet<>();
+        for (String line : new String(yaml, StandardCharsets.UTF_8).split("\n")) {
+            if (!line.isBlank() && !line.trim().startsWith("!")) {
+                keys.add(line.trim());
+            }
+        }
+        return keys;
+    }
+
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        calls.add(kind + ":only:" + String.join(",", keys));
+        StringBuilder narrowed = new StringBuilder();
+        for (String key : keysIn(fileName, yaml)) {
+            if (keys.contains(key)) {
+                narrowed.append(key).append('\n');
+            }
+        }
+        for (String line : new String(yaml, StandardCharsets.UTF_8).split("\n")) {
+            if (line.trim().startsWith("!")) {
+                narrowed.append(line).append('\n');
+            }
+        }
+        return apply(orgKey, fileName, narrowed.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public com.processpuzzle.core.definition.DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        calls.add(kind + ":removeDrafts:" + String.join(",", keys));
+        List<String> removed = new ArrayList<>();
+        Map<String, String> refused = new LinkedHashMap<>();
+        Map<String, String> org = store.computeIfAbsent(orgKey, k -> new LinkedHashMap<>());
+        for (String key : keys) {
+            if (refusals.containsKey(key)) {
+                refused.put(key, refusals.get(key));
+            } else {
+                org.remove(key);
+                removed.add(key);
+            }
+        }
+        return new com.processpuzzle.core.definition.DefinitionRemoval(removed, refused);
+    }
+
     @Override
     public List<String> removeAll(String orgKey) {
         calls.add(kind + ":removeAll");
