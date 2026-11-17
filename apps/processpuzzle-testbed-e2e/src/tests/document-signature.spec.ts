@@ -1,7 +1,7 @@
 import { expect, Page, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { E2eUser, USER_FILE } from '../support/auth.paths';
+import { authFilesFor, E2eUser } from '../support/auth.paths';
 import { PlatformApi } from '../support/platform.api';
 import { EntityApi, ServiceRoots, serviceRoots } from '../support/race-sample.api';
 
@@ -35,11 +35,11 @@ test.describe('Document signature @auth', () => {
   let orderId: string;
   let orderNumber: string;
 
-  test.beforeEach(async ({ request, baseURL }) => {
+  test.beforeEach(async ({ request, baseURL }, testInfo) => {
     roots = await serviceRoots(request, baseURL as string);
     entities = new EntityApi(request, roots);
     platform = new PlatformApi(request, roots);
-    user = JSON.parse(readFileSync(USER_FILE, 'utf-8')) as E2eUser;
+    user = JSON.parse(readFileSync(authFilesFor(testInfo.project.name).credentials, 'utf-8')) as E2eUser;
     invoiceId = await platform.documentIdBySlug('order-invoice');
 
     orderNumber = `E2E-${randomUUID().slice(0, 8)}`;

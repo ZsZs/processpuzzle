@@ -1,6 +1,6 @@
 import { expect, Page, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { E2eUser, USER_FILE } from '../support/auth.paths';
+import { authFilesFor, E2eUser } from '../support/auth.paths';
 import { OrderRun } from '../support/order-run';
 import { PlatformApi } from '../support/platform.api';
 import { EntityApi, ServiceRoots, serviceRoots } from '../support/race-sample.api';
@@ -23,11 +23,11 @@ test.describe('Order lifecycle @auth', () => {
   let platform: PlatformApi;
   let user: E2eUser;
 
-  test.beforeEach(async ({ request, baseURL }) => {
+  test.beforeEach(async ({ request, baseURL }, testInfo) => {
     roots = await serviceRoots(request, baseURL as string);
     entities = new EntityApi(request, roots);
     platform = new PlatformApi(request, roots);
-    user = JSON.parse(readFileSync(USER_FILE, 'utf-8')) as E2eUser;
+    user = JSON.parse(readFileSync(authFilesFor(testInfo.project.name).credentials, 'utf-8')) as E2eUser;
   });
 
   test.afterEach(async () => {

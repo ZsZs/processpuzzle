@@ -1,11 +1,11 @@
 import { expect, test as setup } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { AUTH_DIRECTORY, E2eUser, STORAGE_STATE, USER_FILE } from './auth.paths';
+import { AUTH_DIRECTORY, authFilesFor, E2eUser } from './auth.paths';
 import { serviceRoots } from './race-sample.api';
 
 /**
- * Registers a fresh user and signs in once, so that every `@auth` spec starts logged in.
+ * Registers a fresh user and signs in once per browser, so that every `@auth` spec starts logged in.
  *
  * The testbed realm has open sign-up without email verification, which the backend exposes as
  * `POST /registration`, so no seeded account (and no credential) is needed — on ci and stage alike. The user
@@ -15,7 +15,8 @@ import { serviceRoots } from './race-sample.api';
  * ProcessPuzzle login page and keeps the Keycloak session cookies in `storageState`. keycloak-js restores the
  * session from them (`check-sso`) in every test that uses it.
  */
-setup('register and sign in a test user', async ({ page, request, baseURL }) => {
+setup('register and sign in a test user', async ({ page, request, baseURL }, testInfo) => {
+  const files = authFilesFor(testInfo.project.name);
   // A page load can take a while on a stack that has just started (a development server compiles on demand), and the
   // redirect to the identity provider and back loads the application twice.
   setup.setTimeout(120_000);
@@ -46,6 +47,6 @@ setup('register and sign in a test user', async ({ page, request, baseURL }) => 
 
   mkdirSync(AUTH_DIRECTORY, { recursive: true });
   const registered: E2eUser = { ...user, displayName: `${user.firstName} ${user.lastName}` };
-  writeFileSync(USER_FILE, JSON.stringify(registered));
-  await page.context().storageState({ path: STORAGE_STATE });
+  writeFileSync(files.credentials, JSON.stringify(registered));
+  await page.context().storageState({ path: files.storageState });
 });

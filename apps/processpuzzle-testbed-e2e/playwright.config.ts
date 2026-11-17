@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 import path from 'path';
-import { STORAGE_STATE } from './src/support/auth.paths';
+import { authFilesFor } from './src/support/auth.paths';
 
 // For CI, you may want to set BASE_URL to the deployed application.
 const environment = process.env['ENVIRONMENT'] || 'dev';
@@ -70,14 +70,10 @@ export default defineConfig({
       ? browsersEnv.split(',').map((b) => b.trim().toLowerCase())
       : ['chromium'];
 
-    // Setup project always runs once in Chromium (auth is browser-agnostic for this app).
-    const projects: any[] = [
-      {
-        name: 'setup',
-        testMatch: /auth\.setup\.ts/,
-        use: { ...devices['Desktop Chrome'] },
-      },
-    ];
+    // Every browser signs in itself (`setup-<browser>`, below). A session made in Chromium and handed to Firefox or
+    // WebKit is not restored by them — the header stays anonymous and every @auth test fails — so the browser
+    // matrix would only ever test signed-in behaviour in Chromium.
+    const projects: any[] = [];
 
     // Browser device mapping
     const deviceMap: Record<string, any> = {
@@ -91,10 +87,24 @@ export default defineConfig({
       const device = deviceMap[browser];
       if (!device) continue;
 
+      // The recognize specs fake a camera with Chromium launch flags and the `camera` permission. Firefox rejects the
+      // permission ("Unknown permission: camera") and WebKit the flags (`Unknown option --use-fake-ui-for-media-stream`),
+      // so they run in the Chromium engine only — Chromium itself and Edge, which is Chromium.
+      const chromiumEngine = browser === 'chromium' || browser === 'edge';
+      const fakeCameraSpecs = /recognize-sample(\.ai)?\.spec\.ts/;
+
       // Anonymous project
       projects.push({
         name: browser,
         grepInvert: /@auth/,
+        testIgnore: chromiumEngine ? [] : [fakeCameraSpecs],
+        use: { ...device },
+      });
+
+      // This browser's own sign-in: it registers an account and keeps the session its @auth project starts from.
+      projects.push({
+        name: `setup-${browser}`,
+        testMatch: /auth\.setup\.ts/,
         use: { ...device },
       });
 
@@ -102,8 +112,8 @@ export default defineConfig({
       projects.push({
         name: `${browser}-auth`,
         grep: /@auth/,
-        dependencies: ['setup'],
-        use: { ...device, storageState: STORAGE_STATE },
+        dependencies: [`setup-${browser}`],
+        use: { ...device, storageState: authFilesFor(`${browser}-auth`).storageState },
       });
     }
 
