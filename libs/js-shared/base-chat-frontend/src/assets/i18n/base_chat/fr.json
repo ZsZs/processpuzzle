@@ -78,6 +78,7 @@
     "creating": "Ouverture…",
     "create_failed": "Le sujet n'a pas pu être ouvert.",
     "create_forbidden": "Vous n'avez pas le droit d'ouvrir un sujet ici.",
+    "create_duplicate": "Cet enregistrement a déjà un sujet portant ce titre.",
     "select": "Ouvrir le sujet",
     "unread": "non lus",
     "closed": "clos"

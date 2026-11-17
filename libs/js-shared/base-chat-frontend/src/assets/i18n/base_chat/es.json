@@ -78,6 +78,7 @@
     "creating": "Iniciando…",
     "create_failed": "No se pudo iniciar el tema.",
     "create_forbidden": "No tiene permiso para iniciar un tema aquí.",
+    "create_duplicate": "Este registro ya tiene un tema con ese título.",
     "select": "Abrir tema",
     "unread": "sin leer",
     "closed": "cerrado"

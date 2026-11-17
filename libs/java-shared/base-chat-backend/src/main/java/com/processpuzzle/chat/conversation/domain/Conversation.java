@@ -12,6 +12,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,7 +34,7 @@ import lombok.ToString;
  * {@code updatable}: a stale copy of this entity saved later must not write an old number back.
  *
  * <p>{@link #bindingKey} is what makes "one conversation per subject" a database fact for a SINGLE
- * definition: unique per organization where present, and absent for a MANY definition, whose topics repeat.
+ * definition, and "one topic per title on a subject" for a MANY definition: unique per organization.
  */
 @Getter
 @Setter
@@ -97,6 +98,16 @@ public class Conversation {
     /** The key two conversations of a SINGLE definition would collide on: one per subject. */
     public static String bindingKeyOf(String definitionKey, String subjectId) {
         return definitionKey + "|" + subjectId;
+    }
+
+    /**
+     * The key two topics of a MANY definition would collide on: the same title on the same subject. The title is
+     * compared as people read it — without surrounding or repeated blanks and regardless of case — so "Delivery"
+     * and " delivery  " are one topic.
+     */
+    public static String bindingKeyOf(String definitionKey, String subjectId, String title) {
+        String normalized = title.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+        return bindingKeyOf(definitionKey, subjectId) + "|" + normalized;
     }
 
     public boolean isOpen() {

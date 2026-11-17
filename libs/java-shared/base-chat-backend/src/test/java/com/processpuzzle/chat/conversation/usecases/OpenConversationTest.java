@@ -116,14 +116,24 @@ class OpenConversationTest {
     }
 
     @Test
-    void aManyDefinitionOpensTitledTopicsWithoutABindingKey() {
+    void aManyDefinitionOpensTitledTopicsBoundToTheirNormalizedTitle() {
         definition.setMultiplicity(Multiplicity.MANY);
 
-        Conversation conversation = open.open(ORG, DEFINITION_KEY, SUBJECT_ID, "  Protest of race 3  ").conversation();
+        Conversation conversation = open.open(ORG, DEFINITION_KEY, SUBJECT_ID, "  Protest   of race 3  ").conversation();
 
-        assertThat(conversation.getTitle()).isEqualTo("Protest of race 3");
-        assertThat(conversation.getBindingKey()).isNull();
-        verify(conversations, never()).existsByOrgKeyAndBindingKey(any(), any());
+        assertThat(conversation.getTitle()).isEqualTo("Protest   of race 3");
+        assertThat(conversation.getBindingKey()).isEqualTo(DEFINITION_KEY + "|" + SUBJECT_ID + "|protest of race 3");
+    }
+
+    @Test
+    void aTopicWithATitleTheSubjectAlreadyHasIsAConflictWhateverItsCase() {
+        definition.setMultiplicity(Multiplicity.MANY);
+        when(conversations.existsByOrgKeyAndBindingKey(ORG, DEFINITION_KEY + "|" + SUBJECT_ID + "|delivery")).thenReturn(true);
+
+        assertThatThrownBy(() -> open.open(ORG, DEFINITION_KEY, SUBJECT_ID, " DELIVERY "))
+                .isInstanceOf(ConversationConflictException.class).hasMessageContaining("topic titled");
+        verify(conversations, never()).saveAndFlush(any());
+        verify(facts, never()).opened(any());
     }
 
     @Test

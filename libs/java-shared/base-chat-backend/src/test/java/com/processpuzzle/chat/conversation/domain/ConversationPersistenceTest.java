@@ -92,6 +92,25 @@ class ConversationPersistenceTest {
     }
 
     @Test
+    void aSubjectCannotHaveTwoTopicsOfOneTitleButAnotherSubjectCan() {
+        for (String subject : List.of("o-1", "o-2")) {
+            Conversation topic = conversation();
+            topic.setId(null);
+            topic.setSubjectId(subject);
+            topic.setTitle("Delivery");
+            topic.setBindingKey(Conversation.bindingKeyOf(DEFINITION_KEY, subject, "Delivery"));
+            conversations.saveAndFlush(topic);
+        }
+        Conversation again = conversation();
+        again.setId(null);
+        again.setSubjectId("o-1");
+        again.setTitle(" delivery");
+        again.setBindingKey(Conversation.bindingKeyOf(DEFINITION_KEY, "o-1", " delivery"));
+
+        assertThatThrownBy(() -> conversations.saveAndFlush(again)).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
     void theSameBindingInAnotherOrganizationIsFineAndTopicsWithoutOneRepeat() {
         saved();
         Conversation elsewhere = conversation();

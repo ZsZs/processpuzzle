@@ -85,7 +85,7 @@ public class OpenConversation {
         }
 
         Conversation conversation = build(orgKey, definition, subjectId, titleFor(definition, title), opener);
-        save(conversation, definitionKey);
+        save(conversation, definition);
         facts.opened(conversation);
         long read = markers.advanceTo(orgKey, conversation.getId(), opener, 0);
         return new ConversationView(conversation, access.resolve(definition, subject, conversation), read);
@@ -101,28 +101,32 @@ public class OpenConversation {
                 .subjectId(subjectId)
                 .title(title)
                 .status(ConversationStatus.OPEN)
-                .bindingKey(single ? Conversation.bindingKeyOf(definition.getDefinitionKey(), subjectId) : null)
+                .bindingKey(single ? Conversation.bindingKeyOf(definition.getDefinitionKey(), subjectId)
+                        : Conversation.bindingKeyOf(definition.getDefinitionKey(), subjectId, title))
                 .createdBy(opener)
                 .createdByName(principal.displayName().orElse(null))
                 .createdAt(Instant.now())
                 .build();
     }
 
-    private void save(Conversation conversation, String definitionKey) {
+    private void save(Conversation conversation, ChatDefinition definition) {
         String bindingKey = conversation.getBindingKey();
-        if (bindingKey != null && conversations.existsByOrgKeyAndBindingKey(conversation.getOrgKey(), bindingKey)) {
-            throw alreadyExists(definitionKey);
+        if (conversations.existsByOrgKeyAndBindingKey(conversation.getOrgKey(), bindingKey)) {
+            throw alreadyExists(definition, conversation.getTitle());
         }
         try {
             conversations.saveAndFlush(conversation);
         } catch (DataIntegrityViolationException e) {
             // A concurrent open won the race for the same binding.
-            throw alreadyExists(definitionKey);
+            throw alreadyExists(definition, conversation.getTitle());
         }
     }
 
-    private static ConversationConflictException alreadyExists(String definitionKey) {
-        return new ConversationConflictException("The subject already has its conversation of '%s'".formatted(definitionKey));
+    private static ConversationConflictException alreadyExists(ChatDefinition definition, String title) {
+        if (definition.getMultiplicity() == Multiplicity.SINGLE) {
+            return new ConversationConflictException("The subject already has its conversation of '%s'".formatted(definition.getDefinitionKey()));
+        }
+        return new ConversationConflictException("The subject already has a topic titled '%s' in '%s'".formatted(title, definition.getDefinitionKey()));
     }
 
     private static String titleFor(ChatDefinition definition, String title) {

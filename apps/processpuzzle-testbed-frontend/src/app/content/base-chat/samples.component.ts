@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { ChatPanelComponent, ChatSubjectType, ChatTopicsComponent } from '@processpuzzle/base-chat';
+import { ChatPanelComponent, ChatSubjectType } from '@processpuzzle/base-chat';
 import { ChatDefinitionOption, ChatSampleOptions, RecordOption } from './chat-sample-options';
 
 /**
@@ -12,7 +12,7 @@ import { ChatDefinitionOption, ChatSampleOptions, RecordOption } from './chat-sa
 @Component({
   selector: 'base-chat-samples',
   standalone: true,
-  imports: [TranslocoDirective, ChatPanelComponent, ChatTopicsComponent],
+  imports: [TranslocoDirective, ChatPanelComponent],
   template: `
     <ng-container *transloco="let t; prefix: 'base-chat'">
       <section class="samples">
@@ -33,18 +33,15 @@ import { ChatDefinitionOption, ChatSampleOptions, RecordOption } from './chat-sa
           </label>
           <label>
             {{ t('record_label') }}
-            <input data-testid="chat-sample-record" list="chat-sample-records" [value]="subjectId()" (input)="subjectId.set($any($event.target).value.trim())" />
+            <input data-testid="chat-sample-record" list="chat-sample-records" [value]="recordText()" (input)="typeRecord($any($event.target).value)" />
             <datalist id="chat-sample-records">
               @for (record of records(); track record.id) {
-                <option [value]="record.id" [attr.label]="optionLabel(record)">{{ optionLabel(record) }}</option>
+                <option [value]="optionLabel(record)"></option>
               }
             </datalist>
           </label>
         </div>
         <pp-chat-panel class="panel" [subjectId]="subjectId() || undefined" [subjectType]="subjectType()" [definitionKey]="definitionKey() || undefined" />
-        <h3>{{ t('topics_heading') }}</h3>
-        <p>{{ t('topics_desc') }}</p>
-        <pp-chat-topics class="panel" [subjectId]="subjectId() || undefined" definitionKey="order-topics" />
       </section>
     </ng-container>
   `,
@@ -79,6 +76,8 @@ export class SamplesComponent implements OnInit {
   private readonly options = inject(ChatSampleOptions);
 
   protected readonly subjectId = signal('');
+  /** The record field's text: the title of the picked record, or an id typed in. */
+  protected readonly recordText = signal('');
   protected readonly definitionKey = signal('order-discussion');
   protected readonly definitions = signal<ChatDefinitionOption[]>([]);
   protected readonly records = signal<RecordOption[]>([]);
@@ -108,10 +107,20 @@ export class SamplesComponent implements OnInit {
     this.definitionKey.set(key);
     // The record belonged to the previous definition's subject type.
     this.subjectId.set('');
+    this.recordText.set('');
   }
 
+  /** What the picker shows for a record: its title, or the id when it has none. */
   protected optionLabel(record: RecordOption): string {
-    return record.label ? `${record.label} — ${record.id}` : record.id;
+    return record.label ?? record.id;
+  }
+
+  /** A picked title resolves to its record's id; anything else typed or pasted is taken as an id. */
+  protected typeRecord(text: string): void {
+    const typed = text.trim();
+    this.recordText.set(typed);
+    const match = this.records().find((record) => this.optionLabel(record) === typed);
+    this.subjectId.set(match?.id ?? typed);
   }
 
   private async loadRecords(definition: ChatDefinitionOption | undefined): Promise<void> {

@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { provideTranslocoScope, TranslocoPipe } from '@jsverse/transloco';
 import { BASE_CHAT_TRANSLOCO_SCOPE } from '../../base-chat.i18n';
 import { CHAT_ACTIVE_SUBJECT } from '../../domain/chat-identity';
-import { failureKindOf } from '../../domain/chat.service';
 import { ChatStore } from '../../domain/chat.store';
 import { ChatSubjectRef, ChatSubjectType, unreadOf } from '../../domain/chat.types';
+import { type TopicFailure, topicFailureKey, topicFailureOf } from '../topic-failure';
 import { ChatPanelComponent } from '../panel/chat-panel.component';
 
 type TopicsStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -84,7 +84,7 @@ type TopicsStatus = 'idle' | 'loading' | 'ready' | 'error';
             </form>
             @if (createFailure(); as failure) {
               <p class="pp-topics__hint" role="alert" data-testid="topic-create-failed">
-                {{ (failure === 'forbidden' ? 'base_chat.topics.create_forbidden' : 'base_chat.topics.create_failed') | transloco }}
+                {{ topicFailureText(failure) | transloco }}
               </p>
             }
           }
@@ -195,7 +195,7 @@ export class ChatTopicsComponent {
   protected readonly status = signal<TopicsStatus>('idle');
   protected readonly title = signal('');
   protected readonly creating = signal(false);
-  protected readonly createFailure = signal<'forbidden' | 'other' | undefined>(undefined);
+  protected readonly createFailure = signal<TopicFailure | undefined>(undefined);
   protected readonly selectedId = signal<string | undefined>(undefined);
   private readonly ids = signal<string[]>([]);
 
@@ -228,6 +228,10 @@ export class ChatTopicsComponent {
     void this.load(this.subject(), this.definitionKey());
   }
 
+  protected topicFailureText(failure: TopicFailure): string {
+    return topicFailureKey(failure);
+  }
+
   protected select(id: string): void {
     this.selectedId.set(id);
   }
@@ -246,7 +250,7 @@ export class ChatTopicsComponent {
       this.title.set('');
       this.selectedId.set(id);
     } catch (error) {
-      this.createFailure.set(failureKindOf(error) === 'forbidden' ? 'forbidden' : 'other');
+      this.createFailure.set(topicFailureOf(error));
     } finally {
       this.creating.set(false);
     }

@@ -209,8 +209,6 @@
     "overview_tab_label": "Áttekintés",
     "samples_tab_label": "Minták",
     "definitions_tab_label": "Definíciók",
-    "topics_heading": "Témák",
-    "topics_desc": "Több címmel ellátott téma ugyanahhoz a rekordhoz, az order-topics csevegés-definícióból. Indítson egyet; a beszélgetés a lista alatt nyílik meg.",
     "samples_desc_1": "A csevegőpanel egy rekord beszélgetését mutatja. Illessze be egy megrendelés azonosítóját — az űrlapjának címében található — és írjon üzenetet; nyissa meg ezt az oldalt egy második böngészőben, hogy lássa élőben megérkezni.",
     "samples_desc_2": "Üresen hagyva a mező a panelt az aktív munkakörnyezetet követi, ahogy akkor viselkedik, ha egy tervező megrendelés-képernyőre helyezi. A csevegésdefiníció dönti el, ki olvashatja, írhatja és indíthatja a beszélgetést.",
     "record_label": "Rekord azonosítója",
