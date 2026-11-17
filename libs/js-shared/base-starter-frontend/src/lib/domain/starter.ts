@@ -74,6 +74,16 @@ export interface InstalledStarter {
  */
 export type UpgradeAction = 'add' | 'replace' | 'remove' | 'keep-customized' | 'keep-deleted' | 'keep-in-use';
 
+/** A step the upgrade's migration brought, queued to run on the existing objects with the organization's next release. */
+export interface UpgradeMigrationStep {
+  readonly kind: string;
+  /** The definition whose objects the step changes. */
+  readonly key: string;
+  readonly operation: string;
+  /** The part of the definition the step is about — an attribute's code. */
+  readonly subject?: string;
+}
+
 export interface UpgradeReportItem {
   readonly kind: DefinitionKind;
   readonly key: string;
@@ -90,6 +100,7 @@ export interface UpgradeReport {
   readonly fromVersion?: string;
   readonly toVersion?: string;
   readonly items?: readonly UpgradeReportItem[];
+  readonly migrationSteps?: readonly UpgradeMigrationStep[];
   /** Kinds the starter brings that cannot be upgraded definition by definition yet; left as they are. */
   readonly skippedKinds?: readonly string[];
   readonly errors?: readonly ImportError[];

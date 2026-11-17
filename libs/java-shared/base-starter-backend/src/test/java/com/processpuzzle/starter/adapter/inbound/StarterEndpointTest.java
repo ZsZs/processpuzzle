@@ -146,7 +146,8 @@ class StarterEndpointTest {
     void anAppliedUpgradeIs200_andARefusedOneIs422WithTheReport() {
         var applied = new com.processpuzzle.starter.usecase.UpgradeReport(false, com.processpuzzle.starter.usecase.UpgradeReport.Status.APPLIED,
                 "inventory", "1.0.0", "2.0.0", List.of(new com.processpuzzle.starter.usecase.UpgradeReport.Item("entity", "item",
-                com.processpuzzle.starter.usecase.UpgradeReport.Action.KEEP_CUSTOMIZED, "changed")), List.of("rule"), List.of());
+                com.processpuzzle.starter.usecase.UpgradeReport.Action.KEEP_CUSTOMIZED, "changed")), List.of("rule"), List.of(),
+                List.of(new com.processpuzzle.starter.usecase.UpgradeReport.MigrationStepInfo("entity", "item", "renameAttribute", "name")));
         when(upgrader.execute("acme", "inventory", "2.0.0", false, null)).thenReturn(applied);
         when(upgrader.execute("acme", "inventory", null, true, null)).thenReturn(com.processpuzzle.starter.usecase.UpgradeReport.rejected(
                 true, "inventory", "1.0.0", null, List.of(new com.processpuzzle.starter.usecase.ImportReport.Error(null, "no newer version"))));
@@ -160,6 +161,11 @@ class StarterEndpointTest {
             assertThat(item.getNote()).isEqualTo("changed");
         });
         assertThat(ok.getBody().getSkippedKinds()).containsExactly("rule");
+        assertThat(ok.getBody().getMigrationSteps()).singleElement().satisfies(step -> {
+            assertThat(step.getOperation()).isEqualTo("renameAttribute");
+            assertThat(step.getKey()).isEqualTo("item");
+            assertThat(step.getSubject()).isEqualTo("name");
+        });
         assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         assertThat(refused.getBody().getErrors()).singleElement().satisfies(error -> assertThat(error.getMessage()).isEqualTo("no newer version"));
     }

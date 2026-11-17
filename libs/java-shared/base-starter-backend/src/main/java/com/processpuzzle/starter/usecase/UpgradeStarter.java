@@ -1,10 +1,13 @@
 package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.MigrationStep;
+import com.processpuzzle.core.definition.MigrationStepQueue;
 import com.processpuzzle.core.definition.ParticipantResult;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
 import com.processpuzzle.starter.bundle.BundleRejectedException;
+import com.processpuzzle.starter.bundle.MigrationFile;
 import com.processpuzzle.starter.bundle.StarterBundle;
 import com.processpuzzle.starter.bundle.StarterManifest;
 import com.processpuzzle.starter.domain.DefinitionProvenance;
@@ -35,6 +38,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * the designer would write them, and the organization's administrator reviews and releases. Unlike a replace-install,
  * an upgrade does not need an empty organization: it keeps what the organization customized, and its data stays.
  *
+ * <p>A bundle may carry `migrations/<installed>-to-<target>.yaml`: the steps that change the organization's existing
+ * objects to fit the new definitions. They are queued with the drafts, in the same transaction, and run when the
+ * organization releases — the release checks the data as the steps leave it.
+ *
  * <p>The target is the version asked for, or the next one offered. One version at a time: the target must be the next published version after the installed one, so that a
  * bundle's migrations only ever step from the version before it. A skipped version is a chain of upgrades.
  *
@@ -52,13 +59,15 @@ public class UpgradeStarter {
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedRepository;
     private final OfferedVersionRepository offered;
+    private final ObjectProvider<MigrationStepQueue> queue;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
     public UpgradeStarter(OrganizationGuard guard, InstallStarter installer, StarterRegistry registry, BundleReader reader,
                           UpgradePlanner planner, CommonRules commonRules,
                           DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
-                          OfferedVersionRepository offered, PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
+                          OfferedVersionRepository offered, ObjectProvider<MigrationStepQueue> queue,
+                          PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
         this.guard = guard;
         this.installer = installer;
         this.registry = registry;
@@ -68,6 +77,7 @@ public class UpgradeStarter {
         this.provenanceRepository = provenanceRepository;
         this.installedRepository = installedRepository;
         this.offered = offered;
+        this.queue = queue;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -168,13 +178,44 @@ public class UpgradeStarter {
             }
         }
         Map<String, Set<String>> removed = remove(orgKey, plan, items);
+        List<MigrationStep> steps = migrationSteps(bundle, from);
+        String queueProblem = queue(orgKey, steps);
+        if (queueProblem != null) {
+            status.setRollbackOnly();
+            return UpgradeReport.rejected(dryRun, manifest.id(), from, manifest.version(),
+                List.of(new ImportReport.Error(MigrationFile.pathOf(from, manifest.version()), queueProblem)));
+        }
         if (dryRun) {
             status.setRollbackOnly();
         } else {
             recordProvenance(orgKey, manifest, plan, removed, by);
         }
         return new UpgradeReport(dryRun, dryRun ? UpgradeReport.Status.WOULD_APPLY : UpgradeReport.Status.APPLIED,
-            manifest.id(), from, manifest.version(), items, plan.skippedKinds(), List.of());
+            manifest.id(), from, manifest.version(), items, plan.skippedKinds(), List.of(),
+            steps.stream().map(step -> new UpgradeReport.MigrationStepInfo(step.kind(), step.key(), step.operation(), step.subject())).toList());
+    }
+
+    /** The steps the bundle brings for exactly this step of versions, from the installed one to the target. */
+    private static List<MigrationStep> migrationSteps(StarterBundle bundle, String from) {
+        String path = MigrationFile.pathOf(from, bundle.manifest().version());
+        return bundle.manifest().migrations().contains(path) ? MigrationFile.read(path, bundle.file(path)).steps() : List.of();
+    }
+
+    /** Queues the steps for the organization's next release; what stops that, or null. */
+    private String queue(String orgKey, List<MigrationStep> steps) {
+        if (steps.isEmpty()) {
+            return null;
+        }
+        MigrationStepQueue migrationQueue = queue.getIfAvailable();
+        if (migrationQueue == null) {
+            return "The bundle migrates existing objects, which this application cannot do.";
+        }
+        try {
+            migrationQueue.enqueue(orgKey, steps);
+            return null;
+        } catch (IllegalArgumentException e) {
+            return e.getMessage();
+        }
     }
 
     private List<ImportReport.Error> write(String orgKey, StarterBundle bundle, UpgradePlanner.KindPlan kind) {

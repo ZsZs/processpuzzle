@@ -71,6 +71,8 @@ class UpgradeStarterTest {
     private FakeParticipant entities;
     private FakeParticipant rules;
     private UpgradeStarter upgrade;
+    private final List<com.processpuzzle.core.definition.MigrationStep> queued = new ArrayList<>();
+    private boolean hostMigrates;
     private OfferStarterVersion offer;
     private ListInstalledStarters listing;
 
@@ -80,6 +82,8 @@ class UpgradeStarterTest {
         installedRepository.deleteAll();
         dataSpaceRepository.deleteAll();
         offeredRepository.deleteAll();
+        queued.clear();
+        hostMigrates = true;
         calls.clear();
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         entities.upgradeable = true;
@@ -102,12 +106,27 @@ class UpgradeStarterTest {
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
                 new UpgradePlanner(participants, provenanceRepository), commonRules, provenanceRepository,
-                installedRepository, offeredRepository, transactionManager, provider());
+                installedRepository, offeredRepository, queueProvider(), transactionManager, provider());
         offer = new OfferStarterVersion(new BrowseCatalog(registry), installer, new BundleReader(new StarterProperties()), commonRules,
                 offeredRepository, provider());
         listing = new ListInstalledStarters(guard, installedRepository, provenanceRepository, participants, offeredRepository);
         installer.provision(ORG, "inventory", "1.0.0", "seed");
         calls.clear();
+    }
+
+    /** A queue that takes the steps down and refuses an operation named 'explode'. */
+    @SuppressWarnings("unchecked")
+    private ObjectProvider<com.processpuzzle.core.definition.MigrationStepQueue> queueProvider() {
+        ObjectProvider<com.processpuzzle.core.definition.MigrationStepQueue> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenAnswer(call -> hostMigrates ? (com.processpuzzle.core.definition.MigrationStepQueue) (org, steps) -> {
+            steps.forEach(step -> {
+                if ("explode".equals(step.operation())) {
+                    throw new IllegalArgumentException("Nothing runs the migration operation 'explode' on a " + step.kind() + ".");
+                }
+            });
+            queued.addAll(steps);
+        } : null);
+        return provider;
     }
 
     @SuppressWarnings("unchecked")
@@ -321,5 +340,106 @@ class UpgradeStarterTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> offer.offer("inventory", "3.0.0", "staff"))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("does not exist yet");
         assertThat(offer.offeredVersion("inventory")).isEmpty();
+    }
+
+    // --- migrations the bundle brings ---------------------------------------------------
+
+    private static final String RENAME = """
+            migration:
+              from: 1.0.0
+              to: 2.0.0
+              steps:
+                - kind: entity
+                  key: item
+                  operation: renameAttribute
+                  subject: name
+                  parameters: { to: title }
+                - id: fill-it
+                  kind: entity
+                  key: item
+                  operation: fillAttribute
+                  subject: status
+                  parameters: { value: NEW }
+            """;
+
+    /** Replaces version 2.0.0 in the catalog by one that carries migration files. */
+    private void publish2WithMigrations(Map<String, String> migrationFiles) {
+        StringBuilder listed = new StringBuilder();
+        migrationFiles.keySet().forEach(path -> listed.append("  - ").append(path).append('\n'));
+        String manifest = "manifestVersion: 2\nid: inventory\nname: Inventory\nversion: 2.0.0\ndefinitionSchemaVersion: 1\n"
+                + "contents:\n  entities:\n    - entities/item.yaml\n  rules:\n    - rules/item-rules.yaml\nmigrations:\n" + listed;
+        Map<String, String> files = new LinkedHashMap<>(migrationFiles);
+        files.put("manifest.yaml", manifest);
+        files.put("entities/item.yaml", "item\nbarn\n");
+        files.put("rules/item-rules.yaml", "positive\n");
+        byte[] bytes = TestBundles.zip(files);
+        bundles.put("inventory/2.0.0/bundle.zip", bytes);
+        List<StarterCatalog.Version> versions = new ArrayList<>(catalog.starters().getFirst().versions());
+        versions.replaceAll(version -> version.version().equals("2.0.0")
+                ? new StarterCatalog.Version("2.0.0", null, null, 1, BundleReader.sha256(bytes), "inventory/2.0.0/bundle.zip") : version);
+        catalog = new StarterCatalog(1, List.of(new StarterCatalog.Starter("inventory", "Inventory", null, null, null, null, null, null, versions)));
+    }
+
+    @Test
+    void queuesTheMigrationOfExactlyThisStep_inOrder_andReportsIt() {
+        publish2WithMigrations(Map.of("migrations/1.0.0-to-2.0.0.yaml", RENAME));
+
+        UpgradeReport report = upgrade.provision(ORG, "inventory", "2.0.0", "staff");
+
+        assertThat(report.status()).isEqualTo(UpgradeReport.Status.APPLIED);
+        assertThat(queued).extracting(step -> step.operation() + ":" + step.subject() + ":" + step.id())
+                .containsExactly("renameAttribute:name:step-1", "fillAttribute:status:fill-it");
+        assertThat(queued.getFirst().parameters()).containsEntry("to", "title");
+        assertThat(report.migrationSteps()).extracting(UpgradeReport.MigrationStepInfo::operation, UpgradeReport.MigrationStepInfo::subject)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("renameAttribute", "name"), org.assertj.core.groups.Tuple.tuple("fillAttribute", "status"));
+    }
+
+    @Test
+    void aMigrationForAnotherStepIsNotQueued() {
+        String earlier = RENAME.replace("from: 1.0.0", "from: 0.9.0").replace("to: 2.0.0", "to: 1.0.0");
+        publish2WithMigrations(Map.of("migrations/0.9.0-to-1.0.0.yaml", earlier));
+
+        UpgradeReport report = upgrade.provision(ORG, "inventory", "2.0.0", "staff");
+
+        assertThat(report.status()).isEqualTo(UpgradeReport.Status.APPLIED);
+        assertThat(queued).isEmpty();
+        assertThat(report.migrationSteps()).isEmpty();
+    }
+
+    @Test
+    void aDryRunReportsTheStepsToo() {
+        publish2WithMigrations(Map.of("migrations/1.0.0-to-2.0.0.yaml", RENAME));
+
+        UpgradeReport report = upgrade.execute(ORG, "inventory", "2.0.0", true, "alice");
+
+        assertThat(report.status()).isEqualTo(UpgradeReport.Status.WOULD_APPLY);
+        assertThat(report.migrationSteps()).hasSize(2);
+    }
+
+    @Test
+    void aStepNothingRunsRefusesTheUpgrade_andRollsItBack() {
+        publish2WithMigrations(Map.of("migrations/1.0.0-to-2.0.0.yaml", RENAME.replace("renameAttribute", "explode")));
+
+        UpgradeReport report = upgrade.provision(ORG, "inventory", "2.0.0", "staff");
+
+        assertThat(report.status()).isEqualTo(UpgradeReport.Status.REJECTED);
+        assertThat(report.errors()).singleElement().satisfies(error -> {
+            assertThat(error.file()).isEqualTo("migrations/1.0.0-to-2.0.0.yaml");
+            assertThat(error.message()).contains("explode");
+        });
+        assertThat(installedRepository.findByOrgKeyAndStarterId(ORG, "inventory")).hasValueSatisfying(
+                installed -> assertThat(installed.getVersion()).isEqualTo("1.0.0"));
+        assertThat(queued).isEmpty();
+    }
+
+    @Test
+    void anApplicationThatCannotMigrateRefusesABundleThatNeedsIt() {
+        publish2WithMigrations(Map.of("migrations/1.0.0-to-2.0.0.yaml", RENAME));
+        hostMigrates = false;
+
+        UpgradeReport report = upgrade.provision(ORG, "inventory", "2.0.0", "staff");
+
+        assertThat(report.status()).isEqualTo(UpgradeReport.Status.REJECTED);
+        assertThat(report.errors()).singleElement().satisfies(error -> assertThat(error.message()).contains("cannot do"));
     }
 }

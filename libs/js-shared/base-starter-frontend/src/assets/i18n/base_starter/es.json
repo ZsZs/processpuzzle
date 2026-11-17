@@ -77,6 +77,7 @@
       "keep-customized": "se mantiene (personalizado)",
       "keep-deleted": "sigue eliminado",
       "keep-in-use": "se mantiene (en uso)"
-    }
+    },
+    "migrations": "{{count}} pasos de migración cambiarán los objetos existentes al publicar:"
   }
 }
