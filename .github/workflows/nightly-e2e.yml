@@ -1,0 +1,308 @@
+name: Nightly E2E Multi-Browser
+
+on:
+  schedule:
+    # Daily at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gate: check whether develop has new commits since the last successful nightly
+  # ---------------------------------------------------------------------------
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check-changes.outputs.has_changes }}
+      last_sha: ${{ steps.check-changes.outputs.last_sha }}
+      current_sha: ${{ steps.check-changes.outputs.current_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get current develop SHA
+        id: current-sha
+        run: |
+          sha=$(git ls-remote origin refs/heads/develop | cut -f1)
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+
+      - name: Get last successful nightly SHA
+        id: last-sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Query the last successful run of this workflow
+          last_sha=$(gh api repos/${{ github.repository }}/actions/workflows/nightly-e2e.yml/runs \
+            --jq '.workflow_runs[] | select(.status == "completed" and .conclusion == "success") | .head_sha' \
+            --limit 10 | head -1)
+          echo "sha=${last_sha:-}" >> $GITHUB_OUTPUT
+
+      - name: Compare SHAs
+        id: check-changes
+        run: |
+          CURRENT_SHA="${{ steps.current-sha.outputs.sha }}"
+          LAST_SHA="${{ steps.last-sha.outputs.sha }}"
+
+          echo "Current develop SHA: $CURRENT_SHA"
+          echo "Last successful nightly SHA: $LAST_SHA"
+
+          if [ -z "$LAST_SHA" ]; then
+            # First ever run — treat as changes detected
+            echo "No previous nightly run found. Running tests."
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          elif [ "$CURRENT_SHA" = "$LAST_SHA" ]; then
+            echo "No new commits since last successful nightly. Skipping."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "New commits detected. Running tests."
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+          echo "last_sha=$LAST_SHA" >> $GITHUB_OUTPUT
+          echo "current_sha=$CURRENT_SHA" >> $GITHUB_OUTPUT
+
+  # ---------------------------------------------------------------------------
+  # Browser jobs: run e2e tests against STAGE for each browser
+  # Each browser is a separate job so the summary can read per-browser results.
+  # ---------------------------------------------------------------------------
+  chromium:
+    needs: gate
+    if: needs.gate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run E2E tests (chromium)
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: stage
+          base_dir: apps/processpuzzle-testbed-e2e
+          browsers: chromium
+          workers: '1'
+
+  firefox:
+    needs: gate
+    if: needs.gate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run E2E tests (firefox)
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: stage
+          base_dir: apps/processpuzzle-testbed-e2e
+          browsers: firefox
+          workers: '1'
+
+  webkit:
+    needs: gate
+    if: needs.gate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run E2E tests (webkit)
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: stage
+          base_dir: apps/processpuzzle-testbed-e2e
+          browsers: webkit
+          workers: '1'
+
+  edge:
+    needs: gate
+    if: needs.gate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run E2E tests (edge)
+        uses: ./.github/actions/e2e-test
+        with:
+          target_environment: stage
+          base_dir: apps/processpuzzle-testbed-e2e
+          browsers: edge
+          workers: '1'
+
+  # ---------------------------------------------------------------------------
+  # Summary: aggregate results into a markdown table
+  # ---------------------------------------------------------------------------
+  summary:
+    needs: [gate, chromium, firefox, webkit, edge]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          HAS_CHANGES="${{ needs.gate.outputs.has_changes }}"
+          CURRENT_SHA="${{ needs.gate.outputs.current_sha }}"
+          LAST_SHA="${{ needs.gate.outputs.last_sha }}"
+
+          if [ "$HAS_CHANGES" = "false" ]; then
+            {
+              echo "# Nightly E2E Results"
+              echo ""
+              echo "**Skipped:** No new commits on \`develop\` since last successful nightly run."
+              echo ""
+              echo "- Last successful SHA: \`${LAST_SHA}\`"
+              echo "- Current develop SHA: \`${CURRENT_SHA}\`"
+            } >> $GITHUB_STEP_SUMMARY
+          else
+            {
+              echo "# Nightly E2E Results"
+              echo ""
+              echo "**Commit:** \`${CURRENT_SHA}\`"
+              echo "**Environment:** STAGE (\`https://testbed.stage.processpuzzle.de\`)"
+              echo ""
+              echo "| Browser | Status |"
+              echo "|---------|--------|"
+
+              for browser in chromium firefox webkit edge; do
+                result="${{ needs.$browser.result }}"
+                icon="⏭️"
+                if [ "$result" = "success" ]; then icon="✅"; fi
+                if [ "$result" = "failure" ]; then icon="❌"; fi
+                if [ "$result" = "cancelled" ]; then icon="⛔"; fi
+                echo "| $browser | $icon $result |"
+              done
+
+              echo ""
+              echo "---"
+              echo "*Generated at $(date -u '+%Y-%m-%d %H:%M UTC')*"
+            } >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Issue updater: create or update "Nightly E2E Results" Issue
+  # ---------------------------------------------------------------------------
+  update-issue:
+    needs: [gate, chromium, firefox, webkit, edge]
+    runs-on: ubuntu-latest
+    if: always()
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Find or create Nightly E2E Results Issue
+        id: find-issue
+        run: |
+          # Search for existing issue
+          issue_number=$(gh issue list --search "Nightly E2E Results" --state all --json number -q '.[0].number' 2>/dev/null || echo "")
+
+          if [ -z "$issue_number" ]; then
+            echo "No existing issue found. Creating new one."
+            gh issue create \
+              --title "Nightly E2E Results" \
+              --label "automated" \
+              --body "## Nightly E2E Multi-Browser Test Results
+
+This issue is automatically updated after each nightly e2e run.
+
+---
+
+**Last run:** Not yet run
+**Status:** Pending
+"
+            issue_number=$(gh issue list --search "Nightly E2E Results" --state all --json number -q '.[0].number')
+          fi
+
+          echo "issue_number=$issue_number" >> $GITHUB_OUTPUT
+
+      - name: Update Issue with results
+        if: steps.find-issue.outputs.issue_number != ''
+        run: |
+          ISSUE_NUMBER="${{ steps.find-issue.outputs.issue_number }}"
+          HAS_CHANGES="${{ needs.gate.outputs.has_changes }}"
+          CURRENT_SHA="${{ needs.gate.outputs.current_sha }}"
+          LAST_SHA="${{ needs.gate.outputs.last_sha }}"
+
+          if [ "$HAS_CHANGES" = "false" ]; then
+            BODY="## Nightly E2E Multi-Browser Test Results
+
+**Last run:** $(date -u '+%Y-%m-%d %H:%M UTC')
+**Status:** ⏭️ Skipped — no new commits since last run
+**Current SHA:** \`${CURRENT_SHA}\`
+**Last successful SHA:** \`${LAST_SHA}\`
+
+---
+
+*No tests were run because \`develop\` has no new commits since the last successful nightly.*"
+          else
+            # Build the browser status table
+            TABLE=""
+            for browser in chromium firefox webkit edge; do
+              result="${{ needs.$browser.result }}"
+              icon="⏭️ skipped"
+              if [ "$result" = "success" ]; then icon="✅ passed"; fi
+              if [ "$result" = "failure" ]; then icon="❌ failed"; fi
+              if [ "$result" = "cancelled" ]; then icon="⛔ cancelled"; fi
+              TABLE="${TABLE}| $browser | $icon
+"
+            done
+
+            BODY="## Nightly E2E Multi-Browser Test Results
+
+**Last run:** $(date -u '+%Y-%m-%d %H:%M UTC')
+**Commit:** \`${CURRENT_SHA}\`
+**Environment:** STAGE (\`https://testbed.stage.processpuzzle.de\`)
+
+| Browser | Status |
+|---------|--------|
+${TABLE}
+---
+
+*Automatically updated by the nightly-e2e workflow.*"
+          fi
+
+          gh issue edit "$ISSUE_NUMBER" --body "$BODY"
+
+  # ---------------------------------------------------------------------------
+  # Email notification: send failure report to zsolt.zsuffa@processpuzzle.com
+  # Requires repository secrets: SMTP_USER (IONOS email) and SMTP_PASSWORD (IONOS email password)
+  # ---------------------------------------------------------------------------
+  notify-email:
+    needs: [gate, chromium, firefox, webkit, edge]
+    runs-on: ubuntu-latest
+    if: |
+      always() &&
+      needs.gate.outputs.has_changes == 'true' &&
+      (needs.chromium.result == 'failure' ||
+       needs.firefox.result == 'failure' ||
+       needs.webkit.result == 'failure' ||
+       needs.edge.result == 'failure')
+    steps:
+      - name: Send failure email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.ionos.com
+          server_port: 465
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "❌ Nightly E2E Tests Failed — ${{ github.repository }}"
+          to: zsolt.zsuffa@processpuzzle.com
+          from: Nightly E2E Monitor <${{ secrets.SMTP_USER }}>
+          body: |
+            Nightly E2E Multi-Browser tests have failed.
+
+            Run details:
+            - Workflow: ${{ github.workflow }}
+            - Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - Commit: ${{ needs.gate.outputs.current_sha }}
+            - Environment: STAGE (https://testbed.stage.processpuzzle.de)
+            - Time: $(date -u '+%Y-%m-%d %H:%M UTC')
+
+            Browser results:
+            - Chromium: ${{ needs.chromium.result }}
+            - Firefox: ${{ needs.firefox.result }}
+            - WebKit: ${{ needs.webkit.result }}
+            - Edge: ${{ needs.edge.result }}
+
+            Please check the workflow run for detailed failure information.
+          ignore_cert: false
