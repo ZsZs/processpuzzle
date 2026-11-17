@@ -5,6 +5,8 @@ import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
 import lombok.RequiredArgsConstructor;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,7 +35,7 @@ public class SearchEntityInstancesUseCase {
             .and((root, query, cb) -> cb.equal(root.get("orgKey"), storageOrgKey))
             .and((root, query, cb) -> cb.equal(root.get("entityDefinitionCode"), entityDefinitionCode))
             .and(retiredFilter(orgKey, storageOrgKey, includeRetired))
-            .and(ownFilter(orgKey, entityDefinitionCode));
+            .and(restrictionFilter(orgKey, entityDefinitionCode));
         return repository.findAll(specification, pageable);
     }
 
@@ -51,9 +53,20 @@ public class SearchEntityInstancesUseCase {
         return (root, query, cb) -> cb.or(cb.isNull(root.get("retiredAt")), cb.equal(root.get("ownerOrgKey"), orgKey));
     }
 
-    /** In a type whose records only their owner sees, a member's list holds its own. */
-    private Specification<EntityObject> ownFilter(String orgKey, String entityDefinitionCode) {
-        return (root, query, cb) -> scope.listsOwnOnly(orgKey, entityDefinitionCode)
-            ? cb.equal(root.get("ownerOrgKey"), orgKey) : cb.conjunction();
+    /**
+     * A member's list of a shared type holds its own records and, unless the type is owner-only, the others' that are
+     * in a visible state — read from the payload attribute the state machine keeps the state in, or the machine's
+     * initial state when a record holds none.
+     */
+    private Specification<EntityObject> restrictionFilter(String orgKey, String entityDefinitionCode) {
+        return (root, query, cb) -> scope.listRestriction(orgKey, entityDefinitionCode).map(restriction -> {
+            Predicate own = cb.equal(root.get("ownerOrgKey"), orgKey);
+            if (restriction.ownOnly()) {
+                return own;
+            }
+            Expression<String> held = cb.function("jsonb_extract_path_text", String.class, root.get("payload"),
+                cb.literal(restriction.tracking().attributeKey()));
+            return cb.or(own, cb.coalesce(held, restriction.tracking().initialState()).in(restriction.states()));
+        }).orElseGet(cb::conjunction);
     }
 }

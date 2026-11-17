@@ -35,6 +35,8 @@ export type EntityDefinitionStatus = 'DRAFT' | 'ACTIVE' | 'DEPRECATED';
 export interface EntitySharing {
   write: 'COMMON_ADMIN' | 'OWNER_ORG' | 'SELF';
   visibility: 'PUBLIC' | 'OWNER_ONLY';
+  /** Limits a PUBLIC type: non-owners see a record only in these states of its state machine. */
+  visibleWhen?: { state: string[] };
 }
 
 /** `ValueKind` of the contract: what the attribute's value *is*, as opposed to how it is edited. */

@@ -41,6 +41,7 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setCanContextObject(desiredState.isCanContextObject());
         existing.setSharingWrite(desiredState.getSharingWrite());
         existing.setSharingVisibility(desiredState.getSharingVisibility());
+        existing.setSharingVisibleWhen(desiredState.getSharingVisibleWhen());
         existing.setOrganizationId(desiredState.getOrganizationId());
 
         replaceAttributes(existing, desiredState);

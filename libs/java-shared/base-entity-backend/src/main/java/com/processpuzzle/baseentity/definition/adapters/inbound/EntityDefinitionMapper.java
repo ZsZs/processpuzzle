@@ -40,12 +40,20 @@ public class EntityDefinitionMapper {
             .organizationId(input.getOrganizationId())
             .sharingWrite(input.getSharing() == null ? null : SharingWrite.valueOf(input.getSharing().getWrite().getValue()))
             .sharingVisibility(input.getSharing() == null ? null : SharingVisibility.valueOf(input.getSharing().getVisibility().getValue()))
+            .sharingVisibleWhen(visibleWhenStates(input.getSharing()))
             .build();
 
         if (input.getAttributes() != null) {
             input.getAttributes().forEach(attrInput -> definition.addAttribute(toDomain(attrInput)));
         }
         return definition;
+    }
+
+    private static List<String> visibleWhenStates(com.processpuzzle.baseentity.model.EntitySharing sharing) {
+        if (sharing == null || sharing.getVisibleWhen() == null || sharing.getVisibleWhen().getState() == null) {
+            return new java.util.ArrayList<>();
+        }
+        return new java.util.ArrayList<>(sharing.getVisibleWhen().getState());
     }
 
     public BaseEntityAttribute toDomain(BaseEntityAttributeInput input) {
@@ -94,6 +102,11 @@ public class EntityDefinitionMapper {
             com.processpuzzle.baseentity.model.EntitySharing sharing = new com.processpuzzle.baseentity.model.EntitySharing();
             sharing.setWrite(com.processpuzzle.baseentity.model.EntitySharing.WriteEnum.fromValue(definition.getSharingWrite().name()));
             sharing.setVisibility(com.processpuzzle.baseentity.model.EntitySharing.VisibilityEnum.fromValue(definition.getSharingVisibility().name()));
+            if (!definition.getSharingVisibleWhen().isEmpty()) {
+                com.processpuzzle.baseentity.model.SharingVisibleWhen visibleWhen = new com.processpuzzle.baseentity.model.SharingVisibleWhen();
+                visibleWhen.setState(new java.util.ArrayList<>(definition.getSharingVisibleWhen()));
+                sharing.setVisibleWhen(visibleWhen);
+            }
             model.setSharing(sharing);
         }
         model.setOrganizationId(definition.getOrganizationId());

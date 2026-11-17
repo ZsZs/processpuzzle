@@ -9,7 +9,9 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import com.processpuzzle.baseentity.common.ForbiddenException;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.core.definition.RecordStates;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort.SharingView;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,11 +33,19 @@ public class EntityObjectScope {
 
     private final EntityObjectRepository repository;
     private final EntityDefinitionLookupPort definitions;
+    private final ObjectProvider<RecordStates> recordStates;
 
     @Autowired
-    public EntityObjectScope(EntityObjectRepository repository, EntityDefinitionLookupPort definitions) {
+    public EntityObjectScope(EntityObjectRepository repository, EntityDefinitionLookupPort definitions,
+                             ObjectProvider<RecordStates> recordStates) {
         this.repository = repository;
         this.definitions = definitions;
+        this.recordStates = recordStates;
+    }
+
+    /** A scope of a host without state machines: a type limited to some states is then visible to its owners only. */
+    public EntityObjectScope(EntityObjectRepository repository, EntityDefinitionLookupPort definitions) {
+        this(repository, definitions, null);
     }
 
     /** A scope in which no type is shared. */
@@ -84,19 +94,47 @@ public class EntityObjectScope {
     }
 
     /**
-     * Whether {@code orgKey} may see {@code object}: every object of a public type, and — in a type whose visibility
-     * is `OWNER_ONLY` — a member's own objects only. The common's own requests see everything.
+     * What a member's reads of a shared type are limited to, beyond the records it owns, which it always sees: nothing
+     * more for an `OWNER_ONLY` type; the records in a visible state for a type with {@code visibleWhen}; nothing at
+     * all — no restriction — for the common's own requests and a type that limits no one.
+     *
+     * @param states   the states in which a record is visible to a non-owner; used when {@code tracking} is set
+     * @param tracking where a record's state is kept; null when only the owner sees a record
      */
-    public boolean isVisibleTo(String orgKey, String entityDefinitionCode, EntityObject object) {
-        return storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey)
-            || !sharingOf(orgKey, entityDefinitionCode).is(SharingView::ownerOnly)
-            || orgKey.equals(object.getOwnerOrgKey());
+    public record ListRestriction(List<String> states, RecordStates.StateTracking tracking) {
+
+        public boolean ownOnly() {
+            return tracking == null;
+        }
     }
 
-    /** Whether a member's lists are limited to what it owns: an `OWNER_ONLY` shared type, seen from outside the common. */
-    public boolean listsOwnOnly(String orgKey, String entityDefinitionCode) {
-        return !storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey)
-            && sharingOf(orgKey, entityDefinitionCode).is(SharingView::ownerOnly);
+    public Optional<ListRestriction> listRestriction(String orgKey, String entityDefinitionCode) {
+        String storage = storageOrgKey(orgKey, entityDefinitionCode);
+        if (storage.equals(orgKey)) {
+            return Optional.empty();
+        }
+        return definitions.sharingOf(orgKey, entityDefinitionCode).flatMap(sharing -> {
+            if (sharing.ownerOnly()) {
+                return Optional.of(new ListRestriction(List.of(), null));
+            }
+            if (!sharing.limitedByState()) {
+                return Optional.empty();
+            }
+            // Without a state machine to read the state from, nothing can be shown to a non-owner.
+            RecordStates states = recordStates == null ? null : recordStates.getIfAvailable();
+            return Optional.of(new ListRestriction(sharing.visibleWhen(),
+                states == null ? null : states.trackingOf(storage, entityDefinitionCode).orElse(null)));
+        });
+    }
+
+    /**
+     * Whether {@code orgKey} may see {@code object}: the common's own requests and an object's owner see it; any
+     * other member sees it unless the type is `OWNER_ONLY`, or limited to some states and the object is in another.
+     */
+    public boolean isVisibleTo(String orgKey, String entityDefinitionCode, EntityObject object) {
+        return orgKey.equals(object.getOwnerOrgKey()) || listRestriction(orgKey, entityDefinitionCode)
+            .map(restriction -> !restriction.ownOnly() && restriction.states().contains(restriction.tracking().stateIn(object.getPayload())))
+            .orElse(true);
     }
 
     private Sharing sharingOf(String orgKey, String entityDefinitionCode) {
