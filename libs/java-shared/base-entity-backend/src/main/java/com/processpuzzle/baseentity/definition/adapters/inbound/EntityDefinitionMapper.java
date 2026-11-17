@@ -38,6 +38,8 @@ public class EntityDefinitionMapper {
             .isEmbedded(Boolean.TRUE.equals(input.getIsEmbedded()))
             .canContextObject(Boolean.TRUE.equals(input.getCanContextObject()))
             .organizationId(input.getOrganizationId())
+            .identifiers(input.getIdentifiers() == null ? new java.util.ArrayList<>()
+                : input.getIdentifiers().stream().<List<String>>map(java.util.ArrayList::new).toList())
             .sharingWrite(input.getSharing() == null ? null : SharingWrite.valueOf(input.getSharing().getWrite().getValue()))
             .sharingVisibility(input.getSharing() == null ? null : SharingVisibility.valueOf(input.getSharing().getVisibility().getValue()))
             .sharingVisibleWhen(visibleWhenStates(input.getSharing()))
@@ -110,6 +112,7 @@ public class EntityDefinitionMapper {
             model.setSharing(sharing);
         }
         model.setOrganizationId(definition.getOrganizationId());
+        model.setIdentifiers(definition.getIdentifiers() == null || definition.getIdentifiers().isEmpty() ? null : definition.getIdentifiers());
         if (definition.getAttributes() != null) {
             model.setAttributes(definition.getAttributes().stream().map(this::toModel).toList());
         }

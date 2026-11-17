@@ -74,6 +74,7 @@ public class UpdateEntityInstanceUseCase {
         effectivePayload = CommentHistoryGuard.guard(definition, entityObject.getPayload(), effectivePayload);
         effectivePayload = EmbeddedItemIdentity.withIdentities(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, effectivePayload);
+        scope.requireUniqueKeys(orgKey, entityDefinitionCode, effectivePayload, entityObject.getId());
 
         entityObject.setPayload(effectivePayload);
         EntityObject updated = repository.saveAndFlush(entityObject);

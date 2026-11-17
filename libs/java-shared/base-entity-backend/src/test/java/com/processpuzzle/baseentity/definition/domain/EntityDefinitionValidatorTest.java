@@ -396,4 +396,29 @@ class EntityDefinitionValidatorTest {
     private static BaseEntityAttribute textAttribute() {
         return BaseEntityAttribute.builder().code("street").name("Street").valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT_BOX).build();
     }
+
+    private static BaseEntityDefinition withIdentifiers(List<List<String>> identifiers) {
+        BaseEntityAttribute text = BaseEntityAttribute.builder().code("name").name("Name")
+                .valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT).build();
+        return BaseEntityDefinition.builder().code("club").name("Club").attributes(List.of(text)).identifiers(identifiers).build();
+    }
+
+    @Test
+    void validate_identifiersNamingTheTypesAttributes_pass() {
+        validator.validate(withIdentifiers(List.of(List.of("name"))));
+    }
+
+    @Test
+    void validate_identifierNamingAnUnknownAttribute_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of("name", "country")))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+    }
+
+    @Test
+    void validate_emptyOrRepeatedIdentifier_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of()))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+        assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of("name"), List.of("name")))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+    }
 }
