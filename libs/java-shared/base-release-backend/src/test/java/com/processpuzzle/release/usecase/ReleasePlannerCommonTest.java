@@ -2,6 +2,7 @@ package com.processpuzzle.release.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,7 +78,7 @@ class ReleasePlannerCommonTest {
     void nothingTakenAwayMeansNoMemberIsLookedAt() {
         planner.plan(COMMON);
 
-        verify(directory, org.mockito.Mockito.never()).membersOf(COMMON);
+        verify(directory, never()).membersOf(COMMON);
     }
 
     @Test

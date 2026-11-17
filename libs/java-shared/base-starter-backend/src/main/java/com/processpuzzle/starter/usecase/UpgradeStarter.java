@@ -1,6 +1,5 @@
 package com.processpuzzle.starter.usecase;
 
-import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.DefinitionRemoval;
 import com.processpuzzle.core.definition.ParticipantResult;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
@@ -50,7 +49,6 @@ public class UpgradeStarter {
     private final BundleReader reader;
     private final UpgradePlanner planner;
     private final CommonRules commonRules;
-    private final ImportParticipants participants;
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedRepository;
     private final OfferedVersionRepository offered;
@@ -58,7 +56,7 @@ public class UpgradeStarter {
     private final Clock clock;
 
     public UpgradeStarter(OrganizationGuard guard, InstallStarter installer, StarterRegistry registry, BundleReader reader,
-                          UpgradePlanner planner, CommonRules commonRules, ImportParticipants participants,
+                          UpgradePlanner planner, CommonRules commonRules,
                           DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
                           OfferedVersionRepository offered, PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -67,7 +65,6 @@ public class UpgradeStarter {
         this.reader = reader;
         this.planner = planner;
         this.commonRules = commonRules;
-        this.participants = participants;
         this.provenanceRepository = provenanceRepository;
         this.installedRepository = installedRepository;
         this.offered = offered;

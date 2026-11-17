@@ -101,7 +101,7 @@ class UpgradeStarterTest {
                 provenanceRepository, installedRepository, commonRules, transactionManager, provider());
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
-                new UpgradePlanner(participants, provenanceRepository), commonRules, participants, provenanceRepository,
+                new UpgradePlanner(participants, provenanceRepository), commonRules, provenanceRepository,
                 installedRepository, offeredRepository, transactionManager, provider());
         offer = new OfferStarterVersion(new BrowseCatalog(registry), installer, new BundleReader(new StarterProperties()), commonRules,
                 offeredRepository, provider());
