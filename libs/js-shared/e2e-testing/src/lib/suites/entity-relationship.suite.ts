@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/assertions-in-tests -- the assertions of a generated test live in the page objects it drives (assertFieldValues, assertNotInList and the like), which this rule cannot see into */
 import { test, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
@@ -105,11 +104,9 @@ export function defineEntityRelationshipSuite(options: DefineEntityRelationshipS
 
         test(tester.kind, async ({ page }, testInfo) => {
           const excluded = excludedRelationship(options.excludedRelationships, descriptor.entityName, tester.attr.attrName);
-          /* eslint-disable sonarjs/no-skipped-tests -- skipped on purpose, with the reason, so the gap stays in the report */
           test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
           test.skip(linkedDescriptor === undefined, `'${linkedName}' is not in the registry`);
           test.skip(identificationAttr(descriptor) === undefined, `[${descriptor.entityName}] has no identification attr`);
-          /* eslint-enable sonarjs/no-skipped-tests */
           // A row is addressed by the text it shows, which is the child's identification attribute.
           test.skip(identificationAttr(linkedDescriptor as BaseEntityDescriptor) === undefined, `[${linkedName}] has no identification attr, so no row can be addressed`);
 
