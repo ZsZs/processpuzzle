@@ -3,7 +3,10 @@ package com.processpuzzle.baseentity.adapter.inbound;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.baseentity.definition.usecases.inbound.FindEntityDefinitionsByCodesUseCase;
 import com.processpuzzle.baseentity.definition.usecases.inbound.ImportEntityDefinitions;
+import com.processpuzzle.baseentity.definition.usecases.inbound.DeleteEntityDefinitionUseCase;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.DefinitionYaml;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
@@ -27,13 +30,42 @@ public class EntityDefinitionImportParticipant implements DefinitionImportPartic
     private final ImportEntityDefinitions importDefinitions;
     private final FindEntityDefinitionsByCodesUseCase findByCodes;
     private final EntityDefinitionFingerprint fingerprint;
+    private final DeleteEntityDefinitionUseCase deleteDefinition;
 
     public EntityDefinitionImportParticipant(ImportEntityDefinitions importDefinitions,
                                              FindEntityDefinitionsByCodesUseCase findByCodes,
-                                             EntityDefinitionFingerprint fingerprint) {
+                                             EntityDefinitionFingerprint fingerprint,
+                                             DeleteEntityDefinitionUseCase deleteDefinition) {
         this.importDefinitions = importDefinitions;
         this.findByCodes = findByCodes;
         this.fingerprint = fingerprint;
+        this.deleteDefinition = deleteDefinition;
+    }
+
+    private static final String LIST = "entityDefinitions";
+    private static final String KEY = "code";
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        return DefinitionYaml.keys(yaml, LIST, KEY);
+    }
+
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        return keysIn(fileName, yaml).stream().noneMatch(keys::contains)
+            ? new ParticipantResult(List.of(), List.of())
+            : apply(orgKey, fileName, DefinitionYaml.only(yaml, LIST, KEY, keys));
+    }
+
+    /** The designer's delete, which refuses a type that still has objects or is another one's component parent. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, code -> deleteDefinition.delete(orgKey, code));
     }
 
     @Override

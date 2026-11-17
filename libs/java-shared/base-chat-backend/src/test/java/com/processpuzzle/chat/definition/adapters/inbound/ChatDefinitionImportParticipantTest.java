@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.processpuzzle.chat.definition.domain.ChatDefinition;
 import com.processpuzzle.chat.definition.domain.ChatDefinition;
 import com.processpuzzle.chat.definition.domain.ChatDefinitionRepository;
 import com.processpuzzle.chat.definition.domain.ChatDefinitionTest;
@@ -112,5 +114,32 @@ class ChatDefinitionImportParticipantTest {
 
         definition.setReadRoles(new ArrayList<>(List.of("sailor")));
         assertThat(definition.fingerprint()).isNotEqualTo(before);
+    }
+
+    @Test
+    void upgradesChatByChat_keepingTheRestOfTheFileOut() throws IOException {
+        byte[] file = "chat-definitions:\n  - key: order-discussion\n  - key: other\n".getBytes(StandardCharsets.UTF_8);
+        when(importer.execute(eq(ORG), any(), eq(false))).thenReturn(new ImportOutcome(1, 0, List.of(), List.of("other"), List.of()));
+
+        assertThat(participant.supportsUpgrade()).isTrue();
+        assertThat(participant.keysIn("chats.yaml", file)).containsExactly("order-discussion", "other");
+        assertThat(participant.applyOnly(ORG, "chats.yaml", file, java.util.Set.of("other")).items())
+                .containsExactly(new ImportedItem("other", ImportedItem.Action.CREATE));
+        assertThat(participant.applyOnly(ORG, "chats.yaml", file, java.util.Set.of("absent")).items()).isEmpty();
+    }
+
+    @Test
+    void removingDrafts_deletesTheDraftRows_andKeepsWhatHasNone() {
+        ChatDefinition draft = mock(ChatDefinition.class);
+        when(repository.findByOrgKeyAndDefinitionKeyAndChannel(ORG, "old", com.processpuzzle.core.definition.Channel.DRAFT))
+                .thenReturn(java.util.Optional.of(draft));
+        when(repository.findByOrgKeyAndDefinitionKeyAndChannel(ORG, "ghost", com.processpuzzle.core.definition.Channel.DRAFT))
+                .thenReturn(java.util.Optional.empty());
+
+        var removal = participant.removeDrafts(ORG, new java.util.LinkedHashSet<>(List.of("old", "ghost")));
+
+        assertThat(removal.removed()).containsExactly("old");
+        assertThat(removal.refused()).containsKey("ghost");
+        verify(repository).delete(draft);
     }
 }

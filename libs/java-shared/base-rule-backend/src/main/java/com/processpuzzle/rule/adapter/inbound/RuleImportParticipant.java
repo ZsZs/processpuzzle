@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.DefinitionYaml;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
 import com.processpuzzle.rule.adapter.inbound.dto.RuleYamlDocument;
 import com.processpuzzle.rule.adapter.inbound.dto.RuleYamlEntry;
+import com.processpuzzle.rule.usecase.DeleteRule;
 import com.processpuzzle.rule.usecase.ExportRules;
 import com.processpuzzle.rule.usecase.ImportOutcome;
 import com.processpuzzle.rule.usecase.ImportRules;
@@ -37,9 +40,38 @@ public class RuleImportParticipant implements DefinitionImportParticipant {
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    public RuleImportParticipant(ImportRules importRules, ExportRules exportRules) {
+    private final DeleteRule deleteRule;
+
+    public RuleImportParticipant(ImportRules importRules, ExportRules exportRules, DeleteRule deleteRule) {
         this.importRules = importRules;
         this.exportRules = exportRules;
+        this.deleteRule = deleteRule;
+    }
+
+    private static final String LIST = "rules";
+    private static final String KEY = "id";
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        return DefinitionYaml.keys(yaml, LIST, KEY);
+    }
+
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        return keysIn(fileName, yaml).stream().noneMatch(keys::contains)
+                ? new ParticipantResult(List.of(), List.of())
+                : apply(orgKey, fileName, DefinitionYaml.only(yaml, LIST, KEY, keys));
+    }
+
+    /** The designer's delete, which refuses a rule another rule still extends. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, id -> deleteRule.execute(orgKey, id));
     }
 
     @Override
