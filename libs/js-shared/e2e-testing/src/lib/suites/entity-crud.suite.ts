@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/assertions-in-tests -- the assertions of a generated test live in the page objects it drives (assertFieldValues, assertNotInList and the like), which this rule cannot see into */
 import { test } from '@playwright/test';
 import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
@@ -72,6 +73,7 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       // In `beforeEach` rather than in each test: one place, and every test of the group is still reported,
       // skipped with the reason. `afterEach` below stays harmless — a skipped test leaves `manager` unset.
       test.beforeEach(() => {
+        // eslint-disable-next-line sonarjs/no-skipped-tests -- skipped on purpose, with the application's reason, so the gap stays in the report
         test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
       });
 
