@@ -189,6 +189,48 @@ paths:
         "403":
           description: The authenticated principal may not act on this organization.
 
+  /organizations/{orgKey}/starters/{starterId}/upgrade:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/StarterIdParam"
+    post:
+      operationId: upgradeStarter
+      summary: Upgrade the organization to the next version of an installed starter
+      description: >-
+        Requires design rights on the organization. Goes one published version at a time, to `version` or, when
+        none is given, to the next version after the installed one, as far as the offered version. Untouched
+        definitions are replaced, new ones added, dropped untouched ones removed; what the organization customized
+        stays and is reported. The result is drafts — the organization's administrator reviews and releases. With
+        dryRun the upgrade is planned and reported, and nothing is written.
+      tags: [ Base Starter ]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpgradeRequest"
+      responses:
+        "200":
+          description: Upgrade report, of a dry run or of an applied upgrade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpgradeReport"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+        "404":
+          description: No such starter or version in the catalog.
+        "422":
+          description: >-
+            The upgrade was refused — the starter is not installed, the version is not the next one, the bundle or one of
+            its definitions failed validation; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpgradeReport"
+        "503":
+          description: The registry could not be read.
+
 components:
 
   parameters:
@@ -294,6 +336,12 @@ components:
         customizedDefinitions:
           type: integer
           description: Definitions of this starter whose current content no longer matches what was imported.
+        offeredVersion:
+          type: string
+          description: The version the platform offers, when it is newer than the installed one.
+        upgradeAvailable:
+          type: boolean
+          description: Whether a newer version is on offer; the upgrade endpoint applies it.
 
     CatalogStarter:
       type: object
@@ -335,6 +383,63 @@ components:
         status:
           type: string
           enum: [ published, deprecated ]
+
+    UpgradeRequest:
+      type: object
+      properties:
+        version:
+          type: string
+          description: The version to upgrade to; the next one offered when left out.
+        dryRun:
+          type: boolean
+          default: false
+
+    UpgradeReport:
+      type: object
+      required: [ dryRun, status ]
+      properties:
+        dryRun:
+          type: boolean
+        status:
+          type: string
+          enum: [ applied, would-apply, rejected ]
+        starterId:
+          type: string
+        fromVersion:
+          type: string
+        toVersion:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UpgradeReportItem"
+        skippedKinds:
+          type: array
+          description: Kinds the starter brings that cannot be upgraded definition by definition yet; left as they are.
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportError"
+
+    UpgradeReportItem:
+      type: object
+      required: [ kind, key, action ]
+      properties:
+        kind:
+          $ref: "#/components/schemas/DefinitionKind"
+        key:
+          type: string
+        action:
+          type: string
+          description: >-
+            add - new in the starter; replace - in the starter and untouched here; remove - dropped by the starter and
+            untouched here; keep-customized - changed here, so this organization's version stays; keep-deleted - deleted
+            here, not brought back; keep-in-use - dropped by the starter, but something still depends on it.
+          enum: [ add, replace, remove, keep-customized, keep-deleted, keep-in-use ]
+        note:
+          type: string
 
     InstallStarterRequest:
       type: object

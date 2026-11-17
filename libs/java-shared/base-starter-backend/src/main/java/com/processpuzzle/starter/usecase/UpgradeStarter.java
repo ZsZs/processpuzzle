@@ -12,6 +12,8 @@ import com.processpuzzle.starter.domain.DefinitionProvenance;
 import com.processpuzzle.starter.domain.DefinitionProvenanceRepository;
 import com.processpuzzle.starter.domain.InstalledStarter;
 import com.processpuzzle.starter.domain.InstalledStarterRepository;
+import com.processpuzzle.starter.domain.OfferedVersion;
+import com.processpuzzle.starter.domain.OfferedVersionRepository;
 import com.processpuzzle.starter.registry.StarterCatalog;
 import com.processpuzzle.starter.registry.StarterRegistry;
 import com.processpuzzle.starter.registry.StarterVersions;
@@ -34,7 +36,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * the designer would write them, and the organization's administrator reviews and releases. Unlike a replace-install,
  * an upgrade does not need an empty organization: it keeps what the organization customized, and its data stays.
  *
- * <p>One version at a time: the target must be the next published version after the installed one, so that a
+ * <p>The target is the version asked for, or the next one offered. One version at a time: the target must be the next published version after the installed one, so that a
  * bundle's migrations only ever step from the version before it. A skipped version is a chain of upgrades.
  *
  * <p>Everything is written in one transaction, which a dry run rolls back.
@@ -51,13 +53,14 @@ public class UpgradeStarter {
     private final ImportParticipants participants;
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedRepository;
+    private final OfferedVersionRepository offered;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
     public UpgradeStarter(OrganizationGuard guard, InstallStarter installer, StarterRegistry registry, BundleReader reader,
                           UpgradePlanner planner, CommonRules commonRules, ImportParticipants participants,
                           DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
-                          PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
+                          OfferedVersionRepository offered, PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
         this.guard = guard;
         this.installer = installer;
         this.registry = registry;
@@ -67,6 +70,7 @@ public class UpgradeStarter {
         this.participants = participants;
         this.provenanceRepository = provenanceRepository;
         this.installedRepository = installedRepository;
+        this.offered = offered;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -85,10 +89,15 @@ public class UpgradeStarter {
         return upgrade(orgKey, starterId, version, false, by);
     }
 
-    private UpgradeReport upgrade(String orgKey, String starterId, String version, boolean dryRun, String by) {
+    private UpgradeReport upgrade(String orgKey, String starterId, String requested, boolean dryRun, String by) {
         InstalledStarter installed = installedRepository.findByOrgKeyAndStarterId(orgKey, starterId).orElse(null);
         if (installed == null) {
-            return refused(dryRun, starterId, null, version, "Starter '" + starterId + "' is not installed in '" + orgKey + "'.");
+            return refused(dryRun, starterId, null, requested, "Starter '" + starterId + "' is not installed in '" + orgKey + "'.");
+        }
+        String version = requested != null ? requested : nextOffered(starterId, installed.getVersion());
+        if (version == null) {
+            return refused(dryRun, starterId, installed.getVersion(), null,
+                "No newer version of '" + starterId + "' is offered than " + installed.getVersion() + ".");
         }
         String refusal = versionRefusal(starterId, installed.getVersion(), version);
         if (refusal != null) {
@@ -107,6 +116,22 @@ public class UpgradeStarter {
         }
         UpgradePlanner.Plan plan = planner.plan(orgKey, bundle);
         return transactionTemplate.execute(status -> apply(orgKey, bundle, plan, installed.getVersion(), dryRun, by, status));
+    }
+
+    /**
+     * With no version asked for, the next published version after the installed one — as far as the offered version,
+     * which an organization never goes past; null when none is offered or the organization is up to date.
+     */
+    private String nextOffered(String starterId, String installedVersion) {
+        String offeredVersion = offered.findById(starterId).map(OfferedVersion::getVersion).orElse(null);
+        if (offeredVersion == null || StarterVersions.compare(offeredVersion, installedVersion) <= 0) {
+            return null;
+        }
+        return registry.catalog().starter(starterId).map(StarterCatalog.Starter::versions).orElse(List.of()).stream()
+            .filter(each -> each.version() != null && !StarterCatalog.Version.YANKED.equals(each.effectiveStatus()))
+            .map(StarterCatalog.Version::version)
+            .filter(each -> StarterVersions.compare(each, installedVersion) > 0 && StarterVersions.compare(each, offeredVersion) <= 0)
+            .min(StarterVersions.ASCENDING).orElse(null);
     }
 
     /** The target must be newer than what is installed, and the next published version after it. */
