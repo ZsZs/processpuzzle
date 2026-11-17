@@ -146,15 +146,15 @@ public class EntityObjectScope {
         if (keys.isEmpty()) {
             return;
         }
-        List<List<String>> constrained = keys.stream().filter(key -> NaturalKey.valuesOf(payload, key) != null).toList();
+        List<List<String>> constrained = keys.stream().filter(key -> NaturalKey.valuesOf(payload, key).isPresent()).toList();
         if (constrained.isEmpty()) {
             return;
         }
         List<EntityObject> others = findEvery(orgKey, entityDefinitionCode).stream()
             .filter(object -> !object.isRetired() && !Objects.equals(object.getId(), ownId)).toList();
         for (List<String> key : constrained) {
-            List<String> values = NaturalKey.valuesOf(payload, key);
-            if (others.stream().anyMatch(other -> values.equals(NaturalKey.valuesOf(other.getPayload(), key)))) {
+            List<String> values = NaturalKey.valuesOf(payload, key).orElseThrow();
+            if (others.stream().anyMatch(other -> NaturalKey.valuesOf(other.getPayload(), key).filter(values::equals).isPresent())) {
                 throw new ConflictException("Another '%s' already has %s".formatted(entityDefinitionCode, NaturalKey.describe(key, values)));
             }
         }

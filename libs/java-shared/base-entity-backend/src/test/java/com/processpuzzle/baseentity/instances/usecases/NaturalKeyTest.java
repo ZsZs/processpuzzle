@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -60,7 +61,9 @@ class NaturalKeyTest {
     void aRepeatedKeyIsAConflict_whichNamesIt() {
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "club")).thenReturn(List.of(stored(Map.of("country", "HU", "name", "BYC"))));
 
-        assertThatThrownBy(() -> scope.requireUniqueKeys(ORG, "club", Map.of("country", "HU", "name", " BYC "), null))
+        Map<String, Object> payload = Map.of("country", "HU", "name", " BYC ");
+
+        assertThatThrownBy(() -> scope.requireUniqueKeys(ORG, "club", payload, null))
             .isInstanceOf(ConflictException.class).hasMessageContaining("country = 'HU', name = 'BYC'");
     }
 
@@ -68,7 +71,9 @@ class NaturalKeyTest {
     void anotherValueInOneAttributeIsAnotherKey() {
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "club")).thenReturn(List.of(stored(Map.of("country", "HU", "name", "BYC"))));
 
-        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", Map.of("country", "AT", "name", "BYC"), null)).doesNotThrowAnyException();
+        Map<String, Object> payload = Map.of("country", "AT", "name", "BYC");
+
+        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", payload, null)).doesNotThrowAnyException();
     }
 
     @Test
@@ -76,7 +81,10 @@ class NaturalKeyTest {
         EntityObject own = stored(Map.of("country", "HU", "name", "BYC"));
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "club")).thenReturn(List.of(own));
 
-        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", Map.of("country", "HU", "name", "BYC"), own.getId())).doesNotThrowAnyException();
+        Map<String, Object> payload = Map.of("country", "HU", "name", "BYC");
+        UUID ownId = own.getId();
+
+        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", payload, ownId)).doesNotThrowAnyException();
     }
 
     @Test
@@ -85,13 +93,17 @@ class NaturalKeyTest {
         retired.setRetiredAt(Instant.now());
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "club")).thenReturn(List.of(retired));
 
-        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", Map.of("country", "HU", "name", "BYC"), null)).doesNotThrowAnyException();
+        Map<String, Object> payload = Map.of("country", "HU", "name", "BYC");
+
+        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", payload, null)).doesNotThrowAnyException();
     }
 
     @Test
     void aMissingValueLeavesTheKeyUnconstrained() {
-        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", Map.of("name", "BYC"), null)).doesNotThrowAnyException();
-        verify(repository, org.mockito.Mockito.never()).findAllByOrgKeyAndEntityDefinitionCode(any(), any());
+        Map<String, Object> payload = Map.of("name", "BYC");
+
+        assertThatCode(() -> scope.requireUniqueKeys(ORG, "club", payload, null)).doesNotThrowAnyException();
+        verify(repository, never()).findAllByOrgKeyAndEntityDefinitionCode(any(), any());
     }
 
     @Test
@@ -102,7 +114,9 @@ class NaturalKeyTest {
             .payload(Map.of("sailNumber", 7)).build();
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "boat")).thenReturn(List.of(boat));
 
-        assertThatThrownBy(() -> scope.requireUniqueKeys(ORG, "boat", Map.of("sailNumber", 7.0), null)).isInstanceOf(ConflictException.class);
+        Map<String, Object> payload = Map.of("sailNumber", 7.0);
+
+        assertThatThrownBy(() -> scope.requireUniqueKeys(ORG, "boat", payload, null)).isInstanceOf(ConflictException.class);
     }
 
     @Test
@@ -110,8 +124,10 @@ class NaturalKeyTest {
         when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "club")).thenReturn(List.of(stored(Map.of("country", "HU", "name", "BYC"))));
         CreateEntityInstanceUseCase create = new CreateEntityInstanceUseCase(repository, scope, definitions, validator, events);
 
-        assertThatThrownBy(() -> create.create(ORG, "club", Map.of("country", "HU", "name", "BYC"))).isInstanceOf(ConflictException.class);
-        verify(repository, org.mockito.Mockito.never()).saveAndFlush(any());
+        Map<String, Object> payload = Map.of("country", "HU", "name", "BYC");
+
+        assertThatThrownBy(() -> create.create(ORG, "club", payload)).isInstanceOf(ConflictException.class);
+        verify(repository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -123,6 +139,8 @@ class NaturalKeyTest {
             .thenReturn(List.of(retired, stored(Map.of("country", "HU", "name", "BYC"))));
         ReinstateEntityInstanceUseCase reinstate = new ReinstateEntityInstanceUseCase(repository, scope, events);
 
-        assertThatThrownBy(() -> reinstate.reinstate(ORG, "club", retired.getId())).isInstanceOf(ConflictException.class);
+        UUID id = retired.getId();
+
+        assertThatThrownBy(() -> reinstate.reinstate(ORG, "club", id)).isInstanceOf(ConflictException.class);
     }
 }
