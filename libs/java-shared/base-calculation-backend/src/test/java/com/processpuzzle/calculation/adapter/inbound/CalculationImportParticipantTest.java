@@ -1,7 +1,9 @@
 package com.processpuzzle.calculation.adapter.inbound;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.calculation.domain.CalculationDefinition;
@@ -72,7 +74,7 @@ class CalculationImportParticipantTest {
         participant.applyOnly("org", "calculations/x.yaml", FILE.getBytes(StandardCharsets.UTF_8), Set.of("totals"));
 
         org.mockito.ArgumentCaptor<String> sent = org.mockito.ArgumentCaptor.forClass(String.class);
-        org.mockito.Mockito.verify(importer).execute(org.mockito.ArgumentMatchers.eq("org"), sent.capture());
+        verify(importer).execute(org.mockito.ArgumentMatchers.eq("org"), sent.capture());
         assertThat(sent.getValue()).contains("calculation: totals").doesNotContain("ranking");
         assertThat(participant.applyOnly("org", "calculations/x.yaml", FILE.getBytes(StandardCharsets.UTF_8), Set.of("absent")).items()).isEmpty();
     }
@@ -87,13 +89,13 @@ class CalculationImportParticipantTest {
         participant.applyOnly("org", "calculations/x.yaml", file, Set.of("ranking"));
 
         org.mockito.ArgumentCaptor<String> sent = org.mockito.ArgumentCaptor.forClass(String.class);
-        org.mockito.Mockito.verify(importer).execute(org.mockito.ArgumentMatchers.eq("org"), sent.capture());
+        verify(importer).execute(org.mockito.ArgumentMatchers.eq("org"), sent.capture());
         assertThat(sent.getValue()).contains("ranking").contains("not: [valid");
     }
 
     @Test
     void removingDrafts_isTheDesignersDelete() {
-        org.mockito.Mockito.doThrow(new IllegalStateException("no such calculation")).when(deleteDefinition).delete("org", "ghost");
+        doThrow(new IllegalStateException("no such calculation")).when(deleteDefinition).delete("org", "ghost");
 
         var removal = participant.removeDrafts("org", new java.util.LinkedHashSet<>(List.of("ranking", "ghost")));
 
