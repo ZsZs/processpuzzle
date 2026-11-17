@@ -47,4 +47,11 @@ class DataSpaceDirectoryAdapterTest {
         assertThat(directory.isCommon("starter-common")).isTrue();
         assertThat(directory.isCommon("club")).isFalse();
     }
+
+    @Test
+    void membersOf_listsTheOrganizationsOfTheCommon() {
+        when(dataSpaces.findMemberKeysOf("starter-common")).thenReturn(List.of("club-a", "club-b"));
+
+        assertThat(directory.membersOf("starter-common")).containsExactly("club-a", "club-b");
+    }
 }

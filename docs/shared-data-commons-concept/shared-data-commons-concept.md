@@ -304,6 +304,10 @@ Each step is a core PR, then library releases, then a biz bump where noted.
    kinds that cannot be upgraded yet are left alone and named). Open: the other participants, bundle migration steps, the
    offered version and the internal upgrade endpoint, the designer's Apply.
 7. **Common release check** against members' references (§5.3).
+   *Done (type level):* releasing a common refuses to take away, or rename, a type that a member's definitions still refer to
+   (`ReleasePlanner`, `ReleaseParticipant.removedReferableKeys`, `DataSpaceDirectory.membersOf`), naming the members and what
+   refers. It reads the members' *drafts' references*, so it covers every kind that reports references; references to a single
+   attribute of a shared type are not checked yet.
 
 Steps 1–3 make a curated common usable; 4 makes it installable from a real starter; 5–7 can follow in any
 order once a starter needs them.

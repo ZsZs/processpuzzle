@@ -1,6 +1,7 @@
 package com.processpuzzle.core.tenancy;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Which organizations share a data space — a <em>common</em>.
@@ -20,4 +21,9 @@ public interface DataSpaceDirectory {
 
     /** Whether {@code orgKey} is a common, that is, the home of shared definitions and records. */
     boolean isCommon(String orgKey);
+
+    /** The organizations that are members of the common {@code commonKey}: those that installed its starter. Empty for any other key. */
+    default Set<String> membersOf(String commonKey) {
+        return Set.of();
+    }
 }

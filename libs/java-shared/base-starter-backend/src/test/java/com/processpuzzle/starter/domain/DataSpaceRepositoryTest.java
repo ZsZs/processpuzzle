@@ -52,4 +52,12 @@ class DataSpaceRepositoryTest {
     void anOrganizationWhoseStartersHaveNoCommonHasNone() {
         assertThat(dataSpaces.findCommonKeysOf("other")).isEmpty();
     }
+
+    @Test
+    void theMembersOfACommonAreTheOrganizationsThatInstalledItsStarter() {
+        install("another-club", "alpha");
+
+        assertThat(dataSpaces.findMemberKeysOf("alpha-common")).containsExactly("another-club", "club");
+        assertThat(dataSpaces.findMemberKeysOf("no-such-common")).isEmpty();
+    }
 }

@@ -38,6 +38,16 @@ public interface ReleaseParticipant {
         return drafts(orgKey);
     }
 
+    /**
+     * The keys another definition may have referred to a <em>released</em> definition of this kind by that this release
+     * would take away: those of the released rows whose draft is gone, or no longer answers to that name. What the
+     * members of a common must not be left referring to when the common releases. Empty for a kind others do not
+     * refer into.
+     */
+    default Set<String> removedReferableKeys(String orgKey) {
+        return Set.of();
+    }
+
     /** Every definition of this kind whose draft differs from its released row. */
     List<PendingChange> pending(String orgKey);
 
