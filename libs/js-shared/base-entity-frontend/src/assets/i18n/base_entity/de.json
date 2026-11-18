@@ -51,22 +51,26 @@
     "description": "Beschreibung",
     "status": "Status",
     "isEmbedded": "Eingebettet",
+    "canContextObject": "Kontextobjekt",
     "componentParents": "Übergeordnete Komponenten",
     "attributes": "Attribute",
     "version": "Version",
     "updatedAt": "Aktualisiert am",
     "releaseState": "Release-Stand",
+    "sharedFrom": "Geteilt von",
     "_tooltips": {
       "code": "Eindeutiger Schlüssel des Entitätstyps in Ihrer Organisation, wird in Adressen verwendet. Kurz, kleingeschrieben und URL-tauglich, z. B. order; später möglichst nicht ändern.",
       "name": "Der Entitätsname, unter dem Seiten, Routen und Menüs der Anwendung diesen Typ ansprechen, z. B. Order.",
       "description": "Eine Notiz für Sie und Ihre Mitgestalter, wozu dieser Entitätstyp dient; Benutzer sehen sie nicht.",
       "status": "ACTIVE für einen Typ in Gebrauch, DEPRECATED, um ihn auszumustern: Die Anwendung zeigt einen ausgemusterten Typ nicht mehr an. Ob die Anwendung den Typ überhaupt kennt, entscheidet seine Veröffentlichung, angezeigt unter Release-Stand.",
       "isEmbedded": "Ankreuzen, wenn Datensätze dieses Typs nur innerhalb eines anderen Datensatzes existieren, z. B. Bestellpositionen in einer Bestellung. Dann auch den übergeordneten Typ unter Übergeordnete Komponenten angeben.",
+      "canContextObject": "Ankreuzen, damit Benutzer einen Datensatz dieses Typs als Kontextobjekt wählen können: der Datensatz, dessen eingebettete Teile dann ohne erneute Auswahl aufgelistet und bearbeitet werden. Nicht für eingebettete Typen.",
       "componentParents": "Für einen eingebetteten Typ: die Codes der Entitätstypen, deren Datensätze ihn enthalten, z. B. order. Pflicht, wenn Eingebettet angekreuzt ist.",
       "attributes": "Die Felder des Entitätstyps, eine Zeile pro Feld. Sie werden zusammen mit der Definition gespeichert.",
       "version": "Erhöht sich bei jedem Speichern. Wird vom System gesetzt.",
       "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt.",
-      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt."
+      "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
+      "sharedFrom": "Das Common, aus dem dieser Typ stammt. Ihre Organisation liest den Typ, aber nur das Common veröffentlicht oder ändert ihn. Leer bei eigenen Typen. Wird vom System gesetzt."
     }
   },
   "artifact": {
@@ -100,7 +104,15 @@
     "delete_button": "Löschen"
   },
   "statusbar": {
-    "breadcrumb_label": "Datensatz-Hierarchie"
+    "breadcrumb_label": "Datensatz-Hierarchie",
+    "unsaved_changes": "Ungespeicherte Änderungen",
+    "unsaved_changes_hint": "Speichern Sie {{ entity }}, um diese Änderungen zu behalten"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Ungespeicherte Änderungen",
+    "content": "Es gibt ungespeicherte Änderungen. Wenn Sie diese Seite verlassen, gehen sie verloren.",
+    "cancel_button": "Bleiben",
+    "leave_button": "Verlassen"
   },
   "tabs": {
     "list": "{{ entity }} - Liste",
@@ -140,7 +152,10 @@
   "embedded_components": {
     "save_owner_first": "Speichern Sie diesen Datensatz, bevor Sie {{ entity }} hinzufügen — eine eingebettete Komponente wird darin gespeichert.",
     "move_up": "Nach oben",
-    "move_down": "Nach unten"
+    "move_down": "Nach unten",
+    "hide_list": "Liste ausblenden",
+    "show_list": "Liste anzeigen",
+    "hidden_count": "{{ count }} ausgeblendet"
   },
   "rich_text": {
     "toolbar": {
@@ -202,5 +217,42 @@
       "TIMEOUT": "Die Standortermittlung hat zu lange gedauert. Bitte erneut versuchen.",
       "UNAVAILABLE": "Dieser Browser kann Ihren Standort nicht ermitteln."
     }
+  },
+  "working_context": {
+    "search": "Suchen",
+    "recent": "Zuletzt verwendet",
+    "all": "Alle",
+    "no_match": "Keine Treffer",
+    "empty_state": "{{ entity }} auswählen",
+    "switch_title": "{{ entity }} wechseln",
+    "select_to_continue": "Wählen Sie einen Eintrag und drücken Sie „Als Kontextobjekt setzen“, um zur gewünschten Seite zu gelangen.",
+    "show_list": "Gesamte Liste anzeigen",
+    "menu": "Kontextaktionen",
+    "switch": "Wechseln",
+    "open": "Zum Bearbeiten öffnen",
+    "clear": "Kontext aufheben",
+    "set_active": "Als Kontextobjekt setzen",
+    "is_active": "Aktiv",
+    "confirm_switch": {
+      "title": "Aktiven Kontext verlassen?",
+      "content": "{{ entity }} ist noch in Bearbeitung. Wirklich verlassen?",
+      "cancel_button": "Bleiben",
+      "confirm_button": "Verlassen"
+    },
+    "only_active": "Nur das aktive {{context}}"
+  },
+  "context_collection": {
+    "add": "Hinzufügen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "empty": "Noch nichts vorhanden.",
+    "delete_title": "Diesen Eintrag löschen?",
+    "delete_content": "Das lässt sich nicht rückgängig machen.",
+    "conflict": "Jemand anderes hat dies gleichzeitig geändert. Die Liste zeigt den gespeicherten Stand — bitte erneut versuchen."
+  },
+  "list": {
+    "show_retired": "Stillgelegte Datensätze anzeigen"
   }
 }

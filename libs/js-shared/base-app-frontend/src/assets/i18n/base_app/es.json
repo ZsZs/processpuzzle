@@ -68,8 +68,10 @@
       "routes": "Las páginas de la aplicación, una fila por página. Añádelas antes que los elementos de navegación que apuntan a ellas. — Guía: Rutas",
       "modules": "Partes de la aplicación creadas por separado cuyas rutas aparecen bajo una ruta base. — Guía: Módulos",
       "assets": "Archivos que aporta la aplicación, como las imágenes de sus páginas. Un widget se refiere a uno como app:<ruta>. — Guía: Aplicaciones",
-      "translations": "Los textos de las páginas propias de la aplicación, como las tarjetas de su página de inicio, un archivo por idioma. Las claves son las que los widgets nombran bajo su translocoPrefix. — Guía: Aplicaciones"
-    }
+      "translations": "Los textos de las páginas propias de la aplicación, como las tarjetas de su página de inicio, un archivo por idioma. Las claves son las que los widgets nombran bajo su translocoPrefix. — Guía: Aplicaciones",
+      "contexts": "Entidades que se eligen una vez y en las que luego se trabaja. Una página se suma con Requiere contexto."
+    },
+    "contexts": "Contextos"
   },
   "app_region": {
     "_self": "Región",
@@ -77,7 +79,7 @@
     "navItems": "Elementos de navegación",
     "widgets": "Widgets",
     "_tooltips": {
-      "type": "header (arriba), sidenav (panel de navegación) o footer (abajo). Cada tipo puede usarse una vez. — Guía: Regiones",
+      "type": "header (arriba), sidenav (panel de navegación) o footer (abajo). Cada tipo puede usarse una vez. Statusbar (bajo la cabecera) muestra los contextos activos. — Guía: Regiones",
       "navItems": "Las entradas de menú del sidenav. Solo las usa la región sidenav. — Guía: Elementos de navegación",
       "widgets": "Los widgets del encabezado o del pie de página, colocados en una fila en este orden. Usa un spacer para desplazar los siguientes a la derecha. — Guía: Encabezado"
     }
@@ -106,8 +108,14 @@
       "documentSlug": "Solo DOCUMENT: el slug del documento que se muestra. Aún no se renderiza. — Guía: Documentos",
       "entityName": "Solo ENTITY: el nombre de una entidad definida en Entidades; su lista y su formulario se generan automáticamente. — Guía: Entidades",
       "entityMode": "Solo ENTITY: abrir en la lista o en los detalles de un registro. Se guarda, pero aún no se aplica. — Guía: Entidades",
-      "rsqlFilter": "Solo ENTITY + LIST: un filtro previo como status==OPEN. Se guarda, pero aún no se aplica. — Guía: Entidades"
-    }
+      "rsqlFilter": "Solo ENTITY + LIST: un filtro previo como status==OPEN. Se guarda, pero aún no se aplica. — Guía: Entidades",
+      "requiresContext": "Nombre de un contexto de esta aplicación. La página se sirve entonces bajo ctx/<nombre>/<id> y muestra «Seleccione …» mientras no haya ninguno activo.",
+      "contextPath": "El atributo de la entidad del contexto cuya colección lista esta página, p. ej. zones. Requiere contexto; el nombre de entidad es entonces el tipo de los elementos.",
+      "filterByContext": "Muestra solo las filas de la entidad activa de este contexto, con un interruptor para verlo todo. Deje vacío «Requiere contexto»: la página funciona sin él."
+    },
+    "requiresContext": "Requiere contexto",
+    "contextPath": "Ruta del contexto",
+    "filterByContext": "Filtrar por contexto"
   },
   "app_module_mount": {
     "_self": "Montaje de módulo",
@@ -260,6 +268,33 @@
     "lifecycle": {
       "title": "Guardar, previsualizar y publicar",
       "body": "<p>Una aplicación nueva empieza como <b>borrador</b>. <b>Guardar</b> almacena sus cambios; la pestaña <b>Vista previa</b> muestra entonces la definición guardada tal como la presenta la aplicación en ejecución, tema incluido: compruébela allí antes de seguir. Los usuarios todavía no reciben nada: la aplicación en ejecución solo usa definiciones <b>publicadas</b>. Abra la sección <b>Publicación</b> del diseñador para ver todo lo que ha cambiado —esta aplicación, sus módulos y las demás definiciones que usa— y <b>publíquelo</b> todo junto; la versión guardada pasa a ser la <b>versión publicada</b>. Después puede seguir editando y guardando; los usuarios verán los cambios solo cuando vuelva a publicar.</p>"
+    }
+  },
+  "app_context": {
+    "_self": "Contexto",
+    "name": "Nombre",
+    "entityName": "Nombre de la entidad",
+    "parent": "Padre",
+    "basePath": "Ruta base",
+    "persist": "Recordar",
+    "pickerSearchFields": "Campos de búsqueda",
+    "pickerRecent": "Recientes ofrecidos",
+    "displayLabel": "Texto mostrado",
+    "displayBadge": "Insignia mostrada",
+    "displayExtra": "Texto adicional",
+    "confirmSwitchStates": "Estados con confirmación",
+    "_tooltips": {
+      "name": "Nombre y segmento de URL del contexto: sus páginas se sirven bajo ctx/<nombre>/<id>.",
+      "entityName": "El tipo de entidad que se elige una vez y en el que luego se trabaja, p. ej. Race.",
+      "parent": "El contexto en el que este está anidado. Elegir otro padre borra este.",
+      "basePath": "La ruta bajo la que se montan las páginas del contexto, p. ej. /conduct. Vacío: la raíz de la aplicación.",
+      "persist": "url guarda la elección solo en la dirección; url-local-storage recuerda además la última en este dispositivo.",
+      "pickerSearchFields": "Los atributos que busca el selector. Vacío: el atributo de título.",
+      "pickerRecent": "Cuántas entradas recientes ofrece el selector arriba. 3 por defecto.",
+      "displayLabel": "El texto de la barra de estado, con marcadores {{atributo}}. Vacío: el atributo de título.",
+      "displayBadge": "Un atributo mostrado como insignia; state designa el atributo de estado.",
+      "displayExtra": "Un segundo texto, más discreto, con marcadores {{atributo}}.",
+      "confirmSwitchStates": "Estados en los que salir de la entidad pide confirmación antes."
     }
   }
 }

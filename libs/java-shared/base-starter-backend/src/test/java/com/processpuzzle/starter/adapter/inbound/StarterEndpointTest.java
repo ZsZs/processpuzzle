@@ -37,7 +37,8 @@ class StarterEndpointTest {
     private final ListInstalledStarters installed = mock(ListInstalledStarters.class);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final StarterMapper mapper = new StarterMapper();
-    private final StarterEndpoint endpoint = new StarterEndpoint(catalog, installer, importer, installed, mapper, request);
+    private final com.processpuzzle.starter.usecase.UpgradeStarter upgrader = mock(com.processpuzzle.starter.usecase.UpgradeStarter.class);
+    private final StarterEndpoint endpoint = new StarterEndpoint(catalog, installer, importer, installed, upgrader, mapper, request);
 
     @Test
     void listsAndFindsCatalogStarters() {
@@ -126,7 +127,7 @@ class StarterEndpointTest {
     @Test
     void listsTheOrganizationsInstalledStarters() {
         ListInstalledStarters.View view = new ListInstalledStarters.View("inventory", "1.0.0",
-                Instant.parse("2026-10-06T10:00:00Z"), "alice", 2);
+                Instant.parse("2026-10-06T10:00:00Z"), "alice", 2, null, false);
         when(installed.execute("acme")).thenReturn(List.of(view));
 
         var response = endpoint.listInstalledStarters("acme");
@@ -139,5 +140,43 @@ class StarterEndpointTest {
     private static ImportReport report(boolean dryRun) {
         return new ImportReport(dryRun, dryRun ? ImportReport.Status.WOULD_APPLY : ImportReport.Status.APPLIED,
                 "inventory", "1.0.0", List.of(), List.of());
+    }
+
+    @Test
+    void anAppliedUpgradeIs200_andARefusedOneIs422WithTheReport() {
+        var applied = new com.processpuzzle.starter.usecase.UpgradeReport(false, com.processpuzzle.starter.usecase.UpgradeReport.Status.APPLIED,
+                "inventory", "1.0.0", "2.0.0", List.of(new com.processpuzzle.starter.usecase.UpgradeReport.Item("entity", "item",
+                com.processpuzzle.starter.usecase.UpgradeReport.Action.KEEP_CUSTOMIZED, "changed")), List.of("rule"), List.of(),
+                List.of(new com.processpuzzle.starter.usecase.UpgradeReport.MigrationStepInfo("entity", "item", "renameAttribute", "name")));
+        when(upgrader.execute("acme", "inventory", "2.0.0", false, null)).thenReturn(applied);
+        when(upgrader.execute("acme", "inventory", null, true, null)).thenReturn(com.processpuzzle.starter.usecase.UpgradeReport.rejected(
+                true, "inventory", "1.0.0", null, List.of(new com.processpuzzle.starter.usecase.ImportReport.Error(null, "no newer version"))));
+
+        var ok = endpoint.upgradeStarter("acme", "inventory", new com.processpuzzle.starter.model.UpgradeRequest().version("2.0.0"));
+        var refused = endpoint.upgradeStarter("acme", "inventory", new com.processpuzzle.starter.model.UpgradeRequest().dryRun(true));
+
+        assertThat(ok.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ok.getBody().getItems()).singleElement().satisfies(item -> {
+            assertThat(item.getAction()).isEqualTo(com.processpuzzle.starter.model.UpgradeReportItem.ActionEnum.KEEP_CUSTOMIZED);
+            assertThat(item.getNote()).isEqualTo("changed");
+        });
+        assertThat(ok.getBody().getSkippedKinds()).containsExactly("rule");
+        assertThat(ok.getBody().getMigrationSteps()).singleElement().satisfies(step -> {
+            assertThat(step.getOperation()).isEqualTo("renameAttribute");
+            assertThat(step.getKey()).isEqualTo("item");
+            assertThat(step.getSubject()).isEqualTo("name");
+        });
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        assertThat(refused.getBody().getErrors()).singleElement().satisfies(error -> assertThat(error.getMessage()).isEqualTo("no newer version"));
+    }
+
+    @Test
+    void anUpgradeWithoutABodyAsksForTheNextOfferedVersion() {
+        when(upgrader.execute("acme", "inventory", null, false, null)).thenReturn(com.processpuzzle.starter.usecase.UpgradeReport.rejected(
+                false, "inventory", "1.0.0", null, List.of()));
+
+        endpoint.upgradeStarter("acme", "inventory", null);
+
+        verify(upgrader).execute("acme", "inventory", null, false, null);
     }
 }

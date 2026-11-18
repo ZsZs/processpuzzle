@@ -16,6 +16,16 @@ import {
   identificationAttr,
 } from './test-data-factory';
 
+/** What a cleanup hook is told about a fixture that is gone. */
+export interface RemovedFixture {
+  entityName: string;
+  /** The id the application gave it, which is what whatever it started refers to. */
+  id: string;
+}
+
+/** An application's cleanup after a fixture's removal; see {@link DefineEntityCrudSuiteOptions.afterFixtureRemoved}. */
+export type AfterFixtureRemoved = (fixture: RemovedFixture, page: Page) => Promise<void>;
+
 export interface EntityFixture extends LinkedEntityFixture {
   descriptor: BaseEntityDescriptor;
   deleted: boolean;
@@ -33,6 +43,7 @@ export class EntityCrudFixtureManager {
     private readonly uniqueSuffix: string,
     private readonly expectTimeoutMs?: number,
     private readonly fixtureOverrides: FixtureOverride[] = [],
+    private readonly afterFixtureRemoved?: AfterFixtureRemoved,
   ) {}
 
   async testSetup(page: Page, descriptor: BaseEntityDescriptor): Promise<void> {
@@ -145,6 +156,11 @@ export class EntityCrudFixtureManager {
 
   markDeleted(fixture: EntityFixture): void {
     fixture.deleted = true;
+  }
+
+  /** Hands a removed fixture to the application's cleanup hook, if it gave one; a fixture without an id cannot be pointed at. */
+  async afterRemoval(page: Page, fixture: EntityFixture): Promise<void> {
+    if (fixture.id) await this.afterFixtureRemoved?.({ entityName: fixture.entityName, id: fixture.id }, page);
   }
 
   private async ensureLinkedFixtures(page: Page, descriptor: BaseEntityDescriptor, stack: string[]): Promise<void> {
@@ -270,6 +286,7 @@ export class EntityCrudFixtureManager {
       await list.deleteByIdentification(fixture.displayValue);
     }
     fixture.deleted = true;
+    await this.afterRemoval(page, fixture);
   }
 
   private registerFixture(fixture: EntityFixture): void {

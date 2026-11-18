@@ -56,7 +56,14 @@ public class InstallStarter {
         return install(orgKey, starterId, version, false, installedBy);
     }
 
-    private ImportReport install(String orgKey, String starterId, String version, boolean dryRun, String installedBy) {
+    /**
+     * The bundle of a catalog version, fetched by the backend and checked against the catalog's sha256 — for the
+     * install, and for an upgrade, which reads the same bundle.
+     *
+     * @throws StarterNotFoundException if the catalog has no installable such version
+     * @throws ImportRejectedException  if the download does not match the catalog
+     */
+    byte[] download(String starterId, String version, boolean dryRun) {
         StarterCatalog.Version entry = catalog.version(starterId, version);
         byte[] bundle = registry.bundle(entry.bundle());
         String actual = BundleReader.sha256(bundle);
@@ -65,6 +72,11 @@ public class InstallStarter {
                     new ImportReport.Error(entry.bundle(), "The downloaded bundle does not match the catalog's sha256."))),
                     ImportRejectedException.Reason.INVALID);
         }
+        return bundle;
+    }
+
+    private ImportReport install(String orgKey, String starterId, String version, boolean dryRun, String installedBy) {
+        byte[] bundle = download(starterId, version, dryRun);
         return importBundle.importAuthorized(orgKey, new ByteArrayInputStream(bundle), dryRun, installedBy,
                 new ImportBundle.Expected(starterId, version));
     }

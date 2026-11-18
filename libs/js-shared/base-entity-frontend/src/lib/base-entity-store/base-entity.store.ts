@@ -67,6 +67,8 @@ export interface BaseEntityStoreApi<Entity extends BaseEntity> {
   reload(id: string): Promise<PersistedEntity<Entity> | undefined>;
   resetErrorState(): void;
   selectEntity(id: string): void;
+  /** What identifies a row of this store — its `id`, or for an embedded row the attribute its entity keys it by. */
+  keyOf?(entity: Entity): string | undefined;
   setCurrentEntity(id: string | undefined): void;
   /**
    * Replaces a row in this store **without** persisting it, and remembers that it is unsaved. An embedded
@@ -153,6 +155,7 @@ export function BaseEntityStore<Entity extends BaseEntity>(entityType: new () =>
         createEntity: (): Entity => new entityType(),
         add: addEntity(store, repository),
         delete: deleteEntity(store, repository, keyOf),
+        keyOf,
         hasStagedChanges: (id: string): boolean => store.stagedIds().includes(id),
         deleteAll: deleteAllEntities(store, repository),
         deselectAll: () => {

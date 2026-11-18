@@ -33,4 +33,10 @@ describe('ContentComponent', () => {
     expect(links).toContain('/design/assistant');
     expect(links).toContain('/design/release');
   });
+
+  it('offers the Chat section as a card', () => {
+    const links = component.cards.flatMap((card) => card.actions?.map((action) => action.link) ?? []);
+
+    expect(links).toContain('/design/chats');
+  });
 });

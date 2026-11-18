@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CatalogStarter, ImportReport, InstalledStarter } from './starter';
+import { CatalogStarter, ImportReport, InstalledStarter, UpgradeReport } from './starter';
 import { StarterImportStore } from './starter-import.store';
 import { StarterService } from './starter.service';
 
@@ -23,11 +23,11 @@ const catalog: CatalogStarter[] = [
 ];
 
 describe('StarterImportStore', () => {
-  let service: { install: ReturnType<typeof vi.fn>; listInstalled: ReturnType<typeof vi.fn>; listCatalog: ReturnType<typeof vi.fn> };
+  let service: { upgrade: ReturnType<typeof vi.fn>; install: ReturnType<typeof vi.fn>; listInstalled: ReturnType<typeof vi.fn>; listCatalog: ReturnType<typeof vi.fn> };
   let store: InstanceType<typeof StarterImportStore>;
 
   beforeEach(async () => {
-    service = { install: vi.fn(), listInstalled: vi.fn(() => of(installed)), listCatalog: vi.fn(() => of(catalog)) };
+    service = { upgrade: vi.fn(), install: vi.fn(), listInstalled: vi.fn(() => of(installed)), listCatalog: vi.fn(() => of(catalog)) };
     TestBed.configureTestingModule({ providers: [StarterImportStore, { provide: StarterService, useValue: service }] });
     store = TestBed.inject(StarterImportStore);
     await store.loadCatalog();
@@ -120,5 +120,77 @@ describe('StarterImportStore', () => {
     await store.loadInstalled();
 
     expect(store.installed()).toEqual(installed);
+  });
+
+  describe('upgrading an installed starter', () => {
+    const wouldUpgrade: UpgradeReport = {
+      dryRun: true,
+      status: 'would-apply',
+      starterId: 'inventory',
+      fromVersion: '1.0.0',
+      toVersion: '1.1.0',
+      items: [{ kind: 'entity', key: 'item', action: 'replace' }],
+    };
+    const upgraded: UpgradeReport = { ...wouldUpgrade, dryRun: false, status: 'applied' };
+
+    it('cannot apply before a preview has come back', () => {
+      expect(store.upgradeReport()).toBeUndefined();
+      expect(store.canApplyUpgrade()).toBe(false);
+    });
+
+    it('previews the upgrade to the version on offer, and then applies exactly that version', async () => {
+      service.upgrade.mockReturnValueOnce(of(wouldUpgrade)).mockReturnValueOnce(of(upgraded));
+
+      await store.previewUpgrade('inventory');
+
+      expect(service.upgrade).toHaveBeenCalledWith('inventory', true, undefined);
+      expect(store.upgradeReport()).toEqual(wouldUpgrade);
+      expect(store.canApplyUpgrade()).toBe(true);
+
+      service.listInstalled.mockReturnValue(of([{ ...installed[0], version: '1.1.0' }]));
+      await store.applyUpgrade();
+
+      expect(service.upgrade).toHaveBeenLastCalledWith('inventory', false, '1.1.0');
+      expect(store.upgradeReport()).toEqual(upgraded);
+      expect(store.installed()[0].version).toBe('1.1.0');
+      expect(store.canApplyUpgrade()).toBe(false);
+    });
+
+    it('keeps Apply disabled after a refused preview', async () => {
+      const refused: UpgradeReport = { dryRun: true, status: 'rejected', errors: [{ message: 'No newer version' }] };
+      service.upgrade.mockReturnValue(of(refused));
+
+      await store.previewUpgrade('inventory');
+
+      expect(store.upgradeReport()).toEqual(refused);
+      expect(store.canApplyUpgrade()).toBe(false);
+    });
+
+    it('previewing another starter discards the report about the previous one', async () => {
+      service.upgrade.mockReturnValue(of(wouldUpgrade));
+      await store.previewUpgrade('inventory');
+
+      service.upgrade.mockReturnValue(new Promise(() => undefined) as never);
+      void store.previewUpgrade('sail');
+
+      expect(store.upgradeStarterId()).toBe('sail');
+      expect(store.upgradeReport()).toBeUndefined();
+    });
+
+    it('reports a failure that carries no report as an error', async () => {
+      service.upgrade.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503, statusText: 'Service Unavailable' })));
+
+      await store.previewUpgrade('inventory');
+
+      expect(store.error()).toBeTruthy();
+      expect(store.isBusy()).toBe(false);
+      expect(store.canApplyUpgrade()).toBe(false);
+    });
+
+    it('does nothing when applying without a starter chosen', async () => {
+      await store.applyUpgrade();
+
+      expect(service.upgrade).not.toHaveBeenCalled();
+    });
   });
 });

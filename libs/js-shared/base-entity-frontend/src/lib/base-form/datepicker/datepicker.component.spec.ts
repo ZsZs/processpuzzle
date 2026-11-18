@@ -63,6 +63,14 @@ describe('DatepickerComponent', () => {
     expect(component.control.dirty).toBe(true);
   });
 
+  it('stays pristine when a date-time attribute is shown with its value', async () => {
+    const { component, fixture } = await setup({ dateStyle: 'short', timeStyle: 'short' }, '2026-01-15T09:30:00Z');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.control.dirty).toBe(false);
+  });
+
   it('keeps the time of day when a new date is picked for a date-time format', async () => {
     const { component } = await setup({ dateStyle: 'short', timeStyle: 'short' });
 

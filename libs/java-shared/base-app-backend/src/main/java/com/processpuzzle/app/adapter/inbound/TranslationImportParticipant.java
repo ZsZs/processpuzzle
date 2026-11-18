@@ -13,6 +13,7 @@ import com.processpuzzle.app.usecase.service.AppTranslationReleases;
 import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +42,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class TranslationImportParticipant implements DefinitionImportParticipant {
+
+    private static final String JSON_EXTENSION = ".json";
 
     private final UploadModuleTranslations upload;
     private final UploadAppTranslations uploadApp;
@@ -77,16 +81,69 @@ public class TranslationImportParticipant implements DefinitionImportParticipant
 
     @Override
     public ParticipantResult apply(String orgKey, String fileName, byte[] json) {
+        return write(orgKey, fileName, json, true);
+    }
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    /** A translation file is one definition: the key of its module or app and its locale. */
+    @Override
+    public Set<String> keysIn(String fileName, byte[] json) {
+        return keyOf(fileName).map(Set::of).orElse(Set.of());
+    }
+
+    /**
+     * Writes the file's draft if its key is wanted, and does not release the owner: an install makes the texts live
+     * at once, an upgrade leaves them as drafts for the organization's release.
+     */
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] json, Set<String> keys) {
+        return keyOf(fileName).filter(keys::contains).isPresent()
+                ? write(orgKey, fileName, json, false) : new ParticipantResult(List.of(), List.of());
+    }
+
+    /** Deletes the draft bundles; the released ones go with the next release. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, key -> removeDraft(orgKey, key));
+    }
+
+    private void removeDraft(String orgKey, String key) {
+        String[] parts = key.split("/", 3);
+        if (parts.length != 3) {
+            throw new IllegalStateException("not a translation key: '" + key + "'");
+        }
+        if (BundleOwnedPath.APPS.equals(parts[0])) {
+            appTranslations.delete(appTranslations.findByOrgKeyAndAppIdAndChannelAndLocale(orgKey, parts[1], Channel.DRAFT, parts[2])
+                    .orElseThrow(() -> new IllegalStateException("no draft of '" + key + "'")));
+        } else {
+            translations.delete(translations.findByOrgKeyAndModuleKeyAndChannelAndLocale(orgKey, parts[1], Channel.DRAFT, parts[2])
+                    .orElseThrow(() -> new IllegalStateException("no draft of '" + key + "'")));
+        }
+    }
+
+    private static Optional<String> keyOf(String fileName) {
+        return BundleOwnedPath.parse(fileName)
+                .filter(path -> path.rest().endsWith(JSON_EXTENSION) && !path.rest().contains("/"))
+                .map(path -> key(path.isApp() ? BundleOwnedPath.APPS : BundleOwnedPath.MODULES, path.ownerKey(),
+                        path.rest().substring(0, path.rest().length() - JSON_EXTENSION.length())));
+    }
+
+    private ParticipantResult write(String orgKey, String fileName, byte[] json, boolean release) {
         BundleOwnedPath path = BundleOwnedPath.parse(fileName).orElse(null);
-        if (path == null || !path.rest().endsWith(".json") || path.rest().contains("/")) {
+        if (path == null || !path.rest().endsWith(JSON_EXTENSION) || path.rest().contains("/")) {
             return ParticipantResult.rejected(List.of(fileName + ": a translation is <group>/modules/<module key>/<locale>.json "
                     + "or <group>/apps/<app id>/<locale>.json."));
         }
-        String locale = path.rest().substring(0, path.rest().length() - ".json".length());
-        return path.isApp() ? applyToApp(orgKey, fileName, path, locale, json) : applyToModule(orgKey, fileName, path, locale, json);
+        String locale = path.rest().substring(0, path.rest().length() - JSON_EXTENSION.length());
+        return path.isApp() ? applyToApp(orgKey, fileName, path, locale, json, release)
+                : applyToModule(orgKey, fileName, path, locale, json, release);
     }
 
-    private ParticipantResult applyToApp(String orgKey, String fileName, BundleOwnedPath path, String locale, byte[] json) {
+    private ParticipantResult applyToApp(String orgKey, String fileName, BundleOwnedPath path, String locale, byte[] json, boolean release) {
         if (!apps.existsByOrgKeyAndId(orgKey, path.ownerKey())) {
             return ParticipantResult.rejected(List.of(fileName + ": the bundle defines no app '" + path.ownerKey() + "'."));
         }
@@ -96,12 +153,14 @@ public class TranslationImportParticipant implements DefinitionImportParticipant
         } catch (RuntimeException e) {
             return ParticipantResult.rejected(List.of(fileName + ": " + e.getMessage()));
         }
-        appRelease.release(orgKey, path.ownerKey());
+        if (release) {
+            appRelease.release(orgKey, path.ownerKey());
+        }
         return new ParticipantResult(List.of(new ImportedItem(key(BundleOwnedPath.APPS, path.ownerKey(), locale),
                 existed ? ImportedItem.Action.UPDATE : ImportedItem.Action.CREATE)), List.of());
     }
 
-    private ParticipantResult applyToModule(String orgKey, String fileName, BundleOwnedPath path, String locale, byte[] json) {
+    private ParticipantResult applyToModule(String orgKey, String fileName, BundleOwnedPath path, String locale, byte[] json, boolean release) {
         if (!modules.existsByOrgKeyAndKeyAndChannel(orgKey, path.ownerKey(), Channel.DRAFT)) {
             return ParticipantResult.rejected(List.of(fileName + ": the bundle defines no module '" + path.ownerKey() + "'."));
         }
@@ -118,7 +177,9 @@ public class TranslationImportParticipant implements DefinitionImportParticipant
         if (!errors.isEmpty()) {
             return ParticipantResult.rejected(errors);
         }
-        moduleRelease.release(orgKey);
+        if (release) {
+            moduleRelease.release(orgKey);
+        }
         return new ParticipantResult(List.of(new ImportedItem(key(BundleOwnedPath.MODULES, path.ownerKey(), locale),
                 existed ? ImportedItem.Action.UPDATE : ImportedItem.Action.CREATE)), List.of());
     }

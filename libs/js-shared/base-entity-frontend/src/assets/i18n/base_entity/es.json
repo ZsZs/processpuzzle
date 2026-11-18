@@ -51,22 +51,26 @@
     "description": "Descripción",
     "status": "Estado",
     "isEmbedded": "Incrustada",
+    "canContextObject": "Objeto de contexto",
     "componentParents": "Componentes padre",
     "attributes": "Atributos",
     "version": "Versión",
     "updatedAt": "Actualizado el",
     "releaseState": "Publicación",
+    "sharedFrom": "Compartido desde",
     "_tooltips": {
       "code": "Clave única del tipo de entidad dentro de su organización, usada en las direcciones. Corta, en minúsculas y apta para URL, p. ej. order; evite cambiarla después.",
       "name": "El nombre de entidad con el que las páginas, rutas y menús de la aplicación se refieren a este tipo, p. ej. Order.",
       "description": "Una nota para usted y los demás diseñadores sobre la finalidad de este tipo de entidad; los usuarios no la ven.",
       "status": "ACTIVE para un tipo en uso, DEPRECATED para retirarlo: la aplicación ya no muestra un tipo retirado. Si la aplicación tiene el tipo depende de su publicación, que se muestra en Publicación.",
       "isEmbedded": "Márquelo cuando los registros de este tipo solo existan dentro de otro registro, p. ej. las líneas de un pedido. Indique entonces también el padre en Componentes padre.",
+      "canContextObject": "Márquelo para permitir elegir un registro de este tipo como objeto de contexto: sus partes incrustadas se listan y editan sin volver a nombrarlo. No válido para tipos incrustados.",
       "componentParents": "Para un tipo incrustado: los códigos de los tipos de entidad cuyos registros lo contienen, p. ej. order. Obligatorio si Incrustada está marcado.",
       "attributes": "Los campos del tipo de entidad, una fila por campo. Se guardan junto con la definición.",
       "version": "Aumenta con cada guardado. Lo establece el sistema.",
       "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema.",
-      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema."
+      "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
+      "sharedFrom": "El común del que procede este tipo. Su organización lo lee, pero solo el común lo publica o lo modifica. Vacío en los tipos propios. Lo establece el sistema."
     }
   },
   "artifact": {
@@ -100,7 +104,15 @@
     "delete_button": "Eliminar"
   },
   "statusbar": {
-    "breadcrumb_label": "Jerarquía de registros"
+    "breadcrumb_label": "Jerarquía de registros",
+    "unsaved_changes": "Cambios sin guardar",
+    "unsaved_changes_hint": "Guarde {{ entity }} para conservar estos cambios"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Cambios sin guardar",
+    "content": "Hay cambios sin guardar. Si abandona esta página, se perderán.",
+    "cancel_button": "Quedarse",
+    "leave_button": "Salir"
   },
   "tabs": {
     "list": "{{ entity }} - lista",
@@ -140,7 +152,10 @@
   "embedded_components": {
     "save_owner_first": "Guarde este registro antes de añadir {{ entity }}: un componente incrustado se almacena dentro de él.",
     "move_up": "Subir",
-    "move_down": "Bajar"
+    "move_down": "Bajar",
+    "hide_list": "Ocultar la lista",
+    "show_list": "Mostrar la lista",
+    "hidden_count": "{{ count }} oculto(s)"
   },
   "rich_text": {
     "toolbar": {
@@ -202,5 +217,42 @@
       "TIMEOUT": "La lectura de la ubicación tardó demasiado. Inténtelo de nuevo.",
       "UNAVAILABLE": "Este navegador no puede determinar su ubicación."
     }
+  },
+  "working_context": {
+    "search": "Buscar",
+    "recent": "Recientes",
+    "all": "Todos",
+    "no_match": "Sin resultados",
+    "empty_state": "Seleccione: {{ entity }}",
+    "switch_title": "Cambiar: {{ entity }}",
+    "select_to_continue": "Seleccione uno y pulse «Fijar como objeto de contexto» para continuar a la página solicitada.",
+    "show_list": "Mostrar la lista completa",
+    "menu": "Acciones del contexto",
+    "switch": "Cambiar",
+    "open": "Abrir para editar",
+    "clear": "Quitar contexto",
+    "set_active": "Fijar como objeto de contexto",
+    "is_active": "Activo",
+    "confirm_switch": {
+      "title": "¿Salir del contexto activo?",
+      "content": "{{ entity }} sigue en curso. ¿Seguro que desea salir?",
+      "cancel_button": "Quedarse",
+      "confirm_button": "Salir"
+    },
+    "only_active": "Solo el {{context}} activo"
+  },
+  "context_collection": {
+    "add": "Añadir",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "empty": "Todavía no hay nada.",
+    "delete_title": "¿Eliminar este elemento?",
+    "delete_content": "Esta acción no se puede deshacer.",
+    "conflict": "Otra persona lo cambió al mismo tiempo. La lista muestra lo guardado — inténtelo de nuevo."
+  },
+  "list": {
+    "show_retired": "Mostrar registros retirados"
   }
 }

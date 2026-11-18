@@ -16,4 +16,5 @@ export const APP_MODULE_MOUNT_ENTITY_NAME = 'App Module Mount';
 export const APP_NAV_ITEM_ENTITY_NAME = 'App Nav Item';
 export const APP_REGION_ENTITY_NAME = 'App Region';
 export const APP_ROUTE_ENTITY_NAME = 'App Route';
+export const APP_CONTEXT_ENTITY_NAME = 'App Context';
 export const APP_WIDGET_ENTITY_NAME = 'App Widget';

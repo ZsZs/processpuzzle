@@ -51,6 +51,8 @@ export interface BaseEntityQueryCondition {
    * array answer has no pages and comes back as it is.
    */
   allPages?: boolean;
+  /** Also list the retired records of a shared type — the backend honours it for the owner of a record and for the common's own members. */
+  includeRetired?: boolean;
 }
 
 export interface BaseEntityLoadResponse<Entity extends BaseEntity> {

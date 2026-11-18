@@ -3,7 +3,7 @@ import { BaseEntityAttrDescriptor, type Selectable } from '../base-entity/base-e
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { toSelectables } from '../base-entity/selectables';
-import { ENTITY_DEFINITION_STATUSES } from '../base-entity-definition/entity-definition';
+import { ENTITY_DEFINITION_STATUSES, type EntityDefinition } from '../base-entity-definition/entity-definition';
 import { ENTITY_DEFINITION_I18N_SCOPE } from '../i18n/base-entity.i18n';
 import { ENTITY_ATTRIBUTE_ID_FIELD } from './entity-attribute.descriptors';
 import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './entity-authoring-names';
@@ -39,6 +39,10 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   const releaseStateAttr = new BaseEntityAttrDescriptor('releaseState', FormControlType.TEXT_BOX, 'Release');
   releaseStateAttr.disabled = true;
 
+  // Where a type this organization only reads comes from: the common that shares it. Empty for its own types.
+  const sharedFromAttr = new BaseEntityAttrDescriptor('sharedFrom', FormControlType.TEXT_BOX, 'Shared from');
+  sharedFromAttr.disabled = true;
+
   // region containment
   // `isEmbedded` without a `componentParents` entry is a 422 from the backend — an embedded definition has
   // to name the type whose payload carries it. Both are shown side by side so the pair reads as one
@@ -49,6 +53,7 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   // options are a callback re-read on every change detection, so a definition saved a moment ago is already on
   // offer. Without them it accepts free text, and `descriptorOf` drops a code with no definition behind it —
   // the backend rejects one on save either way.
+  const canContextObjectAttr = new BaseEntityAttrDescriptor('canContextObject', FormControlType.CHECKBOX, 'Can be context object');
   const componentParentsAttr = new BaseEntityAttrDescriptor('componentParents', FormControlType.TAGS, 'Component Parents', entityCodes);
   componentParentsAttr.hideInTable = true;
   // endregion
@@ -74,9 +79,9 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   updatedAtAttr.disabled = true;
   // endregion
 
-  const identityRow = new FlexboxDescriptor([codeAttr, nameAttr, statusAttr, releaseStateAttr], FlexDirection.ROW);
+  const identityRow = new FlexboxDescriptor([codeAttr, nameAttr, statusAttr, releaseStateAttr, sharedFromAttr], FlexDirection.ROW);
   identityRow.style = { 'column-gap': '10px' };
-  const containmentRow = new FlexboxDescriptor([isEmbeddedAttr, componentParentsAttr], FlexDirection.ROW);
+  const containmentRow = new FlexboxDescriptor([isEmbeddedAttr, canContextObjectAttr, componentParentsAttr], FlexDirection.ROW);
   containmentRow.style = { 'column-gap': '10px' };
   const revisionRow = new FlexboxDescriptor([versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
@@ -92,5 +97,8 @@ export function createEntityDefinitionDescriptor(entityCodes?: () => Selectable[
     entityName: ENTITY_DEFINITION_ENTITY_NAME,
     attrDescriptors: createEntityDefinitionAttrDescriptors(entityCodes),
     i18nScope: ENTITY_DEFINITION_I18N_SCOPE,
+    // A type of the organization's common is read, not authored here: the common releases it.
+    isEditable: (entity) => !(entity as EntityDefinition).sharedFrom,
+    isDeletable: (entity) => !(entity as EntityDefinition).sharedFrom,
   });
 }

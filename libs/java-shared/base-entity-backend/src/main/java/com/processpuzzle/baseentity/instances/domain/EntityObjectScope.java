@@ -1,12 +1,21 @@
 package com.processpuzzle.baseentity.instances.domain;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-import lombok.RequiredArgsConstructor;
+import com.processpuzzle.baseentity.common.ConflictException;
+import com.processpuzzle.baseentity.common.ForbiddenException;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.core.definition.RecordStates;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort.SharingView;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,27 +24,199 @@ import org.springframework.stereotype.Component;
  * {@code EntityObjectAccess}, the delete guard, the seed loader — goes through here instead of
  * filtering on {@code orgKey} itself.
  *
- * <p><b>Why a seam rather than a {@code WHERE org_key = ?} at each call.</b> Entity types will come in
- * two kinds. A <em>tenant</em> type, the only kind today, keeps its objects per organization. A
- * <em>global</em> type is shared reference data — currencies, countries — whose objects every tenant
- * reads alike. Those will be stored under a reserved organization key ({@code _global}), so
- * {@code org_key} stays not-null and {@code (org_key, code)} stays unique; the definition will carry the
- * flag. When it does, {@link #storageOrgKey} answers {@code _global} for a flagged type and nothing
- * else changes. Who may <em>write</em> a global type — platform staff only, presumably — is a decision for
- * that change, not this class.
+ * <p><b>Why a seam rather than a {@code WHERE org_key = ?} at each call.</b> Entity types come in two kinds.
+ * A <em>tenant</em> type keeps its objects per organization. A <em>shared</em> type belongs to a common — the
+ * organization the platform keeps for a business starter — whose members all read its objects alike; they are stored
+ * under the common's key, so {@code org_key} stays not-null and {@code (org_key, code)} stays unique.
+ * {@link #storageOrgKey} answers which, and nothing else changes; {@link #requireWritable} keeps a member from
+ * writing what is not its own. See {@code docs/shared-data-commons-concept}.
  */
 @Component
-@RequiredArgsConstructor
 public class EntityObjectScope {
 
     private final EntityObjectRepository repository;
+    private final EntityDefinitionLookupPort definitions;
+    private final ObjectProvider<RecordStates> recordStates;
+
+    @Autowired
+    public EntityObjectScope(EntityObjectRepository repository, EntityDefinitionLookupPort definitions,
+                             ObjectProvider<RecordStates> recordStates) {
+        this.repository = repository;
+        this.definitions = definitions;
+        this.recordStates = recordStates;
+    }
+
+    /** A scope of a host without state machines: a type limited to some states is then visible to its owners only. */
+    public EntityObjectScope(EntityObjectRepository repository, EntityDefinitionLookupPort definitions) {
+        this(repository, definitions, null);
+    }
+
+    /** A scope in which no type is shared. */
+    public EntityObjectScope(EntityObjectRepository repository) {
+        this(repository, (orgKey, code, channel) -> Optional.empty());
+    }
 
     /**
      * The organization key the objects of {@code entityDefinitionCode} are stored under, as seen from a
-     * request addressed to {@code orgKey}. Today always {@code orgKey}: every entity type is a tenant type.
+     * request addressed to {@code orgKey}: {@code orgKey} itself for a tenant type, the common's key for a type its
+     * common shares with it.
      */
     public String storageOrgKey(String orgKey, String entityDefinitionCode) {
-        return orgKey;
+        return definitions.sharedFrom(orgKey, entityDefinitionCode).orElse(orgKey);
+    }
+
+    /**
+     * Refuses a write to a shared type from a member, unless the type lets its owners write: the objects of a shared
+     * type are the common's, and a member only reads them. The common's own requests, addressed to its key, write
+     * all of them. For an owner-written type a member may still only change the objects it owns —
+     * {@link #requireOwnedBy}.
+     */
+    public String requireWritable(String orgKey, String entityDefinitionCode) {
+        String storage = storageOrgKey(orgKey, entityDefinitionCode);
+        if (!storage.equals(orgKey) && !sharingOf(orgKey, entityDefinitionCode).is(SharingView::ownerWrites)) {
+            throw new ForbiddenException(
+                "'%s' is shared by '%s' and cannot be changed from '%s'".formatted(entityDefinitionCode, storage, orgKey));
+        }
+        return storage;
+    }
+
+    /**
+     * The key to record as owner of a new object: the member creating it in an owner-written shared type, else none.
+     * For a type whose records follow another record the owner is that record's, and only it — or the common — may
+     * add one.
+     *
+     * @throws ConflictException   if a following type's payload does not name an existing record to follow
+     * @throws ForbiddenException  if the member is not the owner of that record
+     */
+    public Optional<String> ownerForNew(String orgKey, String entityDefinitionCode, Map<String, Object> payload) {
+        String storage = storageOrgKey(orgKey, entityDefinitionCode);
+        Optional<SharingView> sharing = definitions.sharingOf(orgKey, entityDefinitionCode).filter(SharingView::following);
+        if (sharing.isEmpty()) {
+            return storage.equals(orgKey) ? Optional.empty() : Optional.of(orgKey);
+        }
+        EntityObject followed = followedBy(storage, sharing.get(), payload).orElseThrow(() -> new ConflictException(
+            "'%s' must name an existing '%s' in '%s'".formatted(entityDefinitionCode, sharing.get().fromType(), sharing.get().from())));
+        if (!storage.equals(orgKey) && !orgKey.equals(followed.getOwnerOrgKey())) {
+            throw new ForbiddenException("'%s' belongs to another organization; only its owner adds '%s' to it"
+                .formatted(followed.getId(), entityDefinitionCode));
+        }
+        return Optional.ofNullable(followed.getOwnerOrgKey());
+    }
+
+    /**
+     * Refuses the change of the attribute a following type's records follow: a record cannot move to another one, whose
+     * owner may be someone else.
+     */
+    public void requireFollowedUnchanged(String orgKey, String entityDefinitionCode, Map<String, Object> stored, Map<String, Object> submitted) {
+        definitions.sharingOf(orgKey, entityDefinitionCode).filter(SharingView::following).ifPresent(sharing -> {
+            if (!Objects.equals(stored.get(sharing.from()), submitted.get(sharing.from()))) {
+                throw new ConflictException("'%s' of a '%s' cannot change once it exists".formatted(sharing.from(), entityDefinitionCode));
+            }
+        });
+    }
+
+    private Optional<EntityObject> followedBy(String storage, SharingView sharing, Map<String, Object> payload) {
+        Object id = payload == null ? null : payload.get(sharing.from());
+        try {
+            return id == null ? Optional.empty() : repository.findByIdAndOrgKey(UUID.fromString(id.toString()), storage)
+                .filter(found -> found.getEntityDefinitionCode().equals(sharing.fromType()));
+        } catch (IllegalArgumentException notAnId) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Refuses a member the change of an object another member owns. The common's own requests may change any object;
+     * a type without owners has nothing to check, because {@link #requireWritable} has refused the member already.
+     */
+    public void requireOwnedBy(String orgKey, String entityDefinitionCode, EntityObject object) {
+        if (!storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey) && !orgKey.equals(object.getOwnerOrgKey())) {
+            throw new ForbiddenException("'%s' belongs to another organization and cannot be changed from '%s'"
+                .formatted(object.getId(), orgKey));
+        }
+    }
+
+    /**
+     * What a member's reads of a shared type are limited to, beyond the records it owns, which it always sees: nothing
+     * more for an `OWNER_ONLY` type; the records in a visible state for a type with {@code visibleWhen}; nothing at
+     * all — no restriction — for the common's own requests and a type that limits no one.
+     *
+     * @param states        the states in which a record is visible to a non-owner; used when {@code tracking} is set
+     * @param tracking      where a record's state is kept; null when only the owner sees a record
+     * @param followed      for a type whose records follow another: the attribute naming that record
+     * @param followedIds   ...and the ids of the followed records a non-owner may see; their records are visible then
+     */
+    public record ListRestriction(List<String> states, RecordStates.StateTracking tracking, String followed, List<String> followedIds) {
+
+        public ListRestriction(List<String> states, RecordStates.StateTracking tracking) {
+            this(states, tracking, null, List.of());
+        }
+
+        public boolean ownOnly() {
+            return tracking == null && followed == null;
+        }
+    }
+
+    public Optional<ListRestriction> listRestriction(String orgKey, String entityDefinitionCode) {
+        String storage = storageOrgKey(orgKey, entityDefinitionCode);
+        if (storage.equals(orgKey)) {
+            return Optional.empty();
+        }
+        return definitions.sharingOf(orgKey, entityDefinitionCode).flatMap(sharing -> {
+            if (sharing.following()) {
+                return followingRestriction(orgKey, sharing);
+            }
+            if (sharing.ownerOnly()) {
+                return Optional.of(new ListRestriction(List.of(), null));
+            }
+            if (!sharing.limitedByState()) {
+                return Optional.empty();
+            }
+            // Without a state machine to read the state from, nothing can be shown to a non-owner.
+            RecordStates states = recordStates == null ? null : recordStates.getIfAvailable();
+            return Optional.of(new ListRestriction(sharing.visibleWhen(),
+                states == null ? null : states.trackingOf(storage, entityDefinitionCode).orElse(null)));
+        });
+    }
+
+    /** A following type is visible as the records it follows are: own-only where they are, else those of visible ones. */
+    private Optional<ListRestriction> followingRestriction(String orgKey, SharingView sharing) {
+        return listRestriction(orgKey, sharing.fromType()).map(followed -> {
+            if (followed.ownOnly()) {
+                return followed;
+            }
+            List<String> visible = findEvery(orgKey, sharing.fromType()).stream()
+                .filter(each -> isVisibleTo(orgKey, sharing.fromType(), each)).map(each -> each.getId().toString()).toList();
+            return new ListRestriction(List.of(), null, sharing.from(), visible);
+        });
+    }
+
+    /**
+     * Whether {@code orgKey} may see {@code object}: the common's own requests and an object's owner see it; any
+     * other member sees it unless the type is `OWNER_ONLY`, or limited to some states and the object is in another.
+     */
+    public boolean isVisibleTo(String orgKey, String entityDefinitionCode, EntityObject object) {
+        if (orgKey.equals(object.getOwnerOrgKey()) || storageOrgKey(orgKey, entityDefinitionCode).equals(orgKey)) {
+            return true;
+        }
+        Optional<SharingView> following = definitions.sharingOf(orgKey, entityDefinitionCode).filter(SharingView::following);
+        if (following.isPresent()) {
+            return followedBy(object.getOrgKey(), following.get(), object.getPayload())
+                .map(followed -> isVisibleTo(orgKey, following.get().fromType(), followed)).orElse(false);
+        }
+        return listRestriction(orgKey, entityDefinitionCode)
+            .map(restriction -> !restriction.ownOnly() && restriction.states().contains(restriction.tracking().stateIn(object.getPayload())))
+            .orElse(true);
+    }
+
+    private Sharing sharingOf(String orgKey, String entityDefinitionCode) {
+        return new Sharing(definitions.sharingOf(orgKey, entityDefinitionCode));
+    }
+
+    private record Sharing(Optional<SharingView> view) {
+        boolean is(java.util.function.Predicate<SharingView> test) {
+            return view.filter(test).isPresent();
+        }
     }
 
     /**
@@ -45,14 +226,34 @@ public class EntityObjectScope {
      */
     public Optional<EntityObject> find(String orgKey, String entityDefinitionCode, UUID id) {
         return repository.findByIdAndOrgKey(id, storageOrgKey(orgKey, entityDefinitionCode))
-            .filter(object -> object.getEntityDefinitionCode().equals(entityDefinitionCode));
+            .filter(object -> object.getEntityDefinitionCode().equals(entityDefinitionCode))
+            .filter(object -> isVisibleTo(orgKey, entityDefinitionCode, object));
     }
 
+    /** The objects of the type that are not retired. */
     public List<EntityObject> findAll(String orgKey, String entityDefinitionCode) {
+        return findEvery(orgKey, entityDefinitionCode).stream()
+            .filter(object -> !object.isRetired() && isVisibleTo(orgKey, entityDefinitionCode, object)).toList();
+    }
+
+    private List<EntityObject> findEvery(String orgKey, String entityDefinitionCode) {
         return repository.findAllByOrgKeyAndEntityDefinitionCode(storageOrgKey(orgKey, entityDefinitionCode), entityDefinitionCode);
     }
 
-    /** The payloads alone of every object of {@code entityDefinitionCode}, without loading the objects as entities. */
+    /** Whether the type is a shared type as {@code orgKey} sees it — its common's, or its own when it is a common. */
+    public boolean isShared(String orgKey, String entityDefinitionCode) {
+        return definitions.isShared(orgKey, entityDefinitionCode);
+    }
+
+    /**
+     * The organizations whose objects can refer to an object of {@code orgKey}'s: the organization itself and, for a
+     * member, its common. The delete guard looks no further.
+     */
+    public Collection<String> referringOrgKeys(String orgKey, String entityDefinitionCode) {
+        return List.of(orgKey, storageOrgKey(orgKey, entityDefinitionCode)).stream().distinct().toList();
+    }
+
+    /** The payloads alone of every object of {@code entityDefinitionCode}, retired ones included, without loading the objects as entities. */
     public List<Map<String, Object>> payloads(String orgKey, String entityDefinitionCode) {
         return repository.findPayloadsByOrgKeyAndEntityDefinitionCodeIn(storageOrgKey(orgKey, entityDefinitionCode),
                 List.of(entityDefinitionCode)).stream()
@@ -67,11 +268,13 @@ public class EntityObjectScope {
      * made from the old payload fails on the optimistic lock instead of undoing the rewrite. Not validated and
      * publishes no event: the release checks the result, and a migration is not a business event.
      *
+     * @throws ForbiddenException for a shared type: a member's release never rewrites the common's objects
      * @return how many objects were written
      */
     public long rewriteAll(String orgKey, String entityDefinitionCode, UnaryOperator<Map<String, Object>> rewrite) {
+        requireWritable(orgKey, entityDefinitionCode);
         long written = 0;
-        for (EntityObject object : findAll(orgKey, entityDefinitionCode)) {
+        for (EntityObject object : findEvery(orgKey, entityDefinitionCode)) {
             Map<String, Object> rewritten = rewrite.apply(new LinkedHashMap<>(object.getPayload()));
             if (!rewritten.equals(object.getPayload())) {
                 object.setPayload(rewritten);
@@ -80,6 +283,35 @@ public class EntityObjectScope {
             }
         }
         return written;
+    }
+
+    /**
+     * Refuses a payload that repeats the natural key of another non-retired object of the type: one of the type's
+     * {@code identifiers}, the same values in all its attributes. A payload without a value for one of a key's
+     * attributes is not constrained by that key. Compared in the application, over the type's objects — the same for
+     * a shared type as for any other — until the database enforces it.
+     *
+     * @param ownId the object being written, which is not its own duplicate; null for a new one
+     * @throws ConflictException naming the key
+     */
+    public void requireUniqueKeys(String orgKey, String entityDefinitionCode, Map<String, Object> payload, UUID ownId) {
+        List<List<String>> keys = definitions.findByCode(orgKey, entityDefinitionCode)
+            .map(EntityDefinitionView::identifiers).orElse(List.of());
+        if (keys.isEmpty()) {
+            return;
+        }
+        List<List<String>> constrained = keys.stream().filter(key -> NaturalKey.valuesOf(payload, key).isPresent()).toList();
+        if (constrained.isEmpty()) {
+            return;
+        }
+        List<EntityObject> others = findEvery(orgKey, entityDefinitionCode).stream()
+            .filter(object -> !object.isRetired() && !Objects.equals(object.getId(), ownId)).toList();
+        for (List<String> key : constrained) {
+            List<String> values = NaturalKey.valuesOf(payload, key).orElseThrow();
+            if (others.stream().anyMatch(other -> NaturalKey.valuesOf(other.getPayload(), key).filter(values::equals).isPresent())) {
+                throw new ConflictException("Another '%s' already has %s".formatted(entityDefinitionCode, NaturalKey.describe(key, values)));
+            }
+        }
     }
 
     public boolean existsAny(String orgKey, String entityDefinitionCode) {

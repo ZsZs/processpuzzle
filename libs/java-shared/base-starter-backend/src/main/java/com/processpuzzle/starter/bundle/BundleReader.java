@@ -1,5 +1,6 @@
 package com.processpuzzle.starter.bundle;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.processpuzzle.starter.StarterProperties;
@@ -36,6 +37,14 @@ public class BundleReader {
 
     public static final String MANIFEST = "manifest.yaml";
     public static final Set<Integer> SUPPORTED_SCHEMA_VERSIONS = Set.of(1);
+    public static final Set<Integer> SUPPORTED_MANIFEST_VERSIONS = Set.of(1, 2);
+
+    /** What a {@code manifestVersion: 2} manifest may say at its top level; anything else is a misspelling. */
+    private static final Set<String> V2_FIELDS = Set.of("manifestVersion", "kind", "id", "name", "version", "description",
+            "category", "tags", "author", "license", "icon", "definitionSchemaVersion", "platform", "locales", "common",
+            "contents", "migration", "migrations", "integrity");
+    private static final Set<String> COMMON_FIELDS = Set.of("id", "minVersion");
+    private static final Pattern SEMVER = Pattern.compile("\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?");
 
     private static final Pattern SAFE_PATH =
             Pattern.compile("[A-Za-z0-9_-][A-Za-z0-9._-]*(/[A-Za-z0-9_-][A-Za-z0-9._-]*)*");
@@ -56,6 +65,7 @@ public class BundleReader {
         StarterManifest manifest = parseManifest(manifestBytes);
         validateManifest(manifest);
         validateFileList(manifest, entries);
+        validateMigrations(manifest, entries);
         verifyIntegrity(manifest, entries);
         return new StarterBundle(manifest, entries);
     }
@@ -117,26 +127,92 @@ public class BundleReader {
     private StarterManifest parseManifest(byte[] manifestBytes) {
         StarterManifest manifest;
         try {
-            manifest = yamlMapper.readValue(manifestBytes, StarterManifest.class);
+            JsonNode tree = yamlMapper.readTree(manifestBytes);
+            if (tree == null || tree.isNull() || tree.isMissingNode()) {
+                throw BundleRejectedException.invalid(MANIFEST, MANIFEST + " is empty.");
+            }
+            requireKnownFieldsFromVersion2(tree);
+            manifest = yamlMapper.treeToValue(tree, StarterManifest.class);
         } catch (IOException e) {
             throw BundleRejectedException.invalid(MANIFEST, MANIFEST + " is not valid: " + e.getMessage());
         }
-        if (manifest == null) {
-            throw BundleRejectedException.invalid(MANIFEST, MANIFEST + " is empty.");
-        }
         return manifest;
+    }
+
+    /** Version 1 ignored unknown fields; from version 2 a misspelt block fails the bundle instead of being dropped. */
+    private void requireKnownFieldsFromVersion2(JsonNode tree) {
+        if (tree.path("manifestVersion").asInt(1) < 2) {
+            return;
+        }
+        unknownField(tree, V2_FIELDS, "");
+        if (tree.path("common").isObject()) {
+            unknownField(tree.get("common"), COMMON_FIELDS, "common.");
+        }
+    }
+
+    private void unknownField(JsonNode node, Set<String> allowed, String prefix) {
+        for (String name : (Iterable<String>) node::fieldNames) {
+            if (!allowed.contains(name)) {
+                throw BundleRejectedException.invalid(MANIFEST, MANIFEST + " has an unknown field '" + prefix + name
+                        + "' (a manifestVersion 2 manifest accepts only: " + String.join(", ", new java.util.TreeSet<>(allowed)) + ").");
+            }
+        }
     }
 
     private void validateManifest(StarterManifest manifest) {
         if (isBlank(manifest.id()) || isBlank(manifest.version())) {
             throw BundleRejectedException.invalid(MANIFEST, MANIFEST + " must declare 'id' and 'version'.");
         }
+        if (manifest.manifestVersion() != null && !SUPPORTED_MANIFEST_VERSIONS.contains(manifest.manifestVersion())) {
+            throw BundleRejectedException.invalid(MANIFEST, "Unsupported manifestVersion " + manifest.manifestVersion()
+                    + "; supported: " + SUPPORTED_MANIFEST_VERSIONS + ".");
+        }
+        validateKind(manifest);
         if (manifest.definitionSchemaVersion() == null
                 || !SUPPORTED_SCHEMA_VERSIONS.contains(manifest.definitionSchemaVersion())) {
             throw BundleRejectedException.invalid(MANIFEST, "Unsupported definitionSchemaVersion "
                     + manifest.definitionSchemaVersion() + "; supported: " + SUPPORTED_SCHEMA_VERSIONS + ".");
         }
         manifest.contents().values().forEach(paths -> paths.forEach(this::requireSafePath));
+        manifest.migrations().forEach(this::requireSafePath);
+    }
+
+    /** The commons fields, which exist from manifestVersion 2: a common names its own organization, a tenant its common. */
+    private void validateKind(StarterManifest manifest) {
+        boolean v2 = manifest.manifestVersion() != null && manifest.manifestVersion() >= 2;
+        if (!v2) {
+            if (manifest.kind() != null || manifest.common() != null || !manifest.migrations().isEmpty()) {
+                throw BundleRejectedException.invalid(MANIFEST, "'kind', 'common' and 'migrations' need manifestVersion 2.");
+            }
+            return;
+        }
+        if (manifest.kind() != null && !"starter".equals(manifest.kind()) && !manifest.isCommon()) {
+            throw BundleRejectedException.invalid(MANIFEST, "Unknown kind '" + manifest.kind() + "'; use 'starter' or 'common'.");
+        }
+        if (manifest.isCommon()) {
+            validateCommon(manifest);
+        } else if (manifest.common() != null) {
+            validateTenantCommon(manifest);
+        }
+    }
+
+    private void validateCommon(StarterManifest manifest) {
+        if (!CommonKeys.isCommonId(manifest.id())) {
+            throw BundleRejectedException.invalid(MANIFEST, "A common's id must be '<starter id>" + CommonKeys.SUFFIX + "'.");
+        }
+        if (manifest.common() != null) {
+            throw BundleRejectedException.invalid(MANIFEST, "A common has no 'common' block of its own.");
+        }
+    }
+
+    private void validateTenantCommon(StarterManifest manifest) {
+        StarterManifest.Common common = manifest.common();
+        if (!CommonKeys.commonOf(manifest.id()).equals(common.id())) {
+            throw BundleRejectedException.invalid(MANIFEST, "'common.id' must be '" + CommonKeys.commonOf(manifest.id()) + "'.");
+        }
+        if (common.minVersion() == null || !SEMVER.matcher(common.minVersion()).matches()) {
+            throw BundleRejectedException.invalid(MANIFEST, "'common.minVersion' must be a version such as 1.0.0.");
+        }
     }
 
     /** Listed means: a contents file, the icon, or the migration script. Nothing else may ride along. */
@@ -157,9 +233,21 @@ public class BundleReader {
         if (manifest.migration() != null) {
             listed.add(manifest.migration());
         }
+        listed.addAll(manifest.migrations());
         for (String path : entries.keySet()) {
             if (!listed.contains(path)) {
                 throw BundleRejectedException.invalid(path, "'" + path + "' is not listed in " + MANIFEST + ".");
+            }
+        }
+    }
+
+    /** A migration file is checked when the bundle is read, so a malformed one fails the packaging, not an organization's upgrade. */
+    private void validateMigrations(StarterManifest manifest, Map<String, byte[]> entries) {
+        for (String path : manifest.migrations()) {
+            try {
+                MigrationFile.read(path, entries.get(path));
+            } catch (IllegalArgumentException e) {
+                throw BundleRejectedException.invalid(path, "'" + path + "': " + e.getMessage() + ".");
             }
         }
     }

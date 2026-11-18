@@ -3,8 +3,9 @@ import { AppAssetsAttrDescriptor } from './app-assets-control.component';
 import { AppTranslationsAttrDescriptor } from './app-translations-control.component';
 import { APP_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
 import { AppDefinitionStatus, COLOR_SCHEMES, LAYOUT_PRESETS, MATERIAL_THEMES, SIDENAV_MODES } from './app-definition';
-import { APP_DEFINITION_ENTITY_NAME, APP_MODULE_MOUNT_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
+import { APP_CONTEXT_ENTITY_NAME, APP_DEFINITION_ENTITY_NAME, APP_MODULE_MOUNT_ENTITY_NAME, APP_REGION_ENTITY_NAME, APP_ROUTE_ENTITY_NAME } from './app-entity-names';
 import { APP_MODULE_MOUNT_ID_FIELD } from './module-mount.descriptors';
+import { APP_CONTEXT_ID_FIELD } from './working-context.descriptors';
 import { APP_REGION_ID_FIELD } from './region-definition.descriptors';
 import { APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
 
@@ -106,6 +107,12 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   modulesAttr.linkedEntityType = APP_MODULE_MOUNT_ENTITY_NAME;
   modulesAttr.referenceIdField = APP_MODULE_MOUNT_ID_FIELD;
   modulesAttr.hideInTable = true;
+
+  // Working contexts: entities the user selects once and works inside. A route opts in with `requiresContext`.
+  const contextsAttr = new BaseEntityAttrDescriptor('contexts', FormControlType.EMBEDDED_COMPONENTS, 'Contexts');
+  contextsAttr.linkedEntityType = APP_CONTEXT_ENTITY_NAME;
+  contextsAttr.referenceIdField = APP_CONTEXT_ID_FIELD;
+  contextsAttr.hideInTable = true;
   // endregion
 
   // The files the application brings along, named by widgets as app:<path>. Like the module's, not part of the saved
@@ -127,7 +134,7 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   layoutRow.style = { 'column-gap': '10px' };
   const sidenavRow = new FlexboxDescriptor([sidenavCollapsibleAttr, sidenavOpenByDefaultAttr], FlexDirection.ROW);
   sidenavRow.style = { 'column-gap': '10px' };
-  const graphRow = new FlexboxDescriptor([regionsAttr, routesAttr, modulesAttr], FlexDirection.ROW);
+  const graphRow = new FlexboxDescriptor([regionsAttr, routesAttr, modulesAttr, contextsAttr], FlexDirection.ROW);
   graphRow.style = { 'column-gap': '10px' };
 
   const flexBoxContainer = new FlexboxDescriptor(

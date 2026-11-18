@@ -9,3 +9,4 @@ export * from './lib/domain/starter-import.store';
 export * from './lib/feature/import-report.component';
 export * from './lib/feature/installed-starters.component';
 export * from './lib/feature/starter-import.component';
+export * from './lib/feature/upgrade-report.component';

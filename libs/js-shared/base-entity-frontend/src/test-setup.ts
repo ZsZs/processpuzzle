@@ -211,8 +211,14 @@ export function setupMockService({
   return mockService;
 }
 
-export async function setupListComponentTest(attrDescriptors: BaseEntityAttrDescriptor[], entities: TestEntity[], requestPayload?: NavigationPayload) {
+export async function setupListComponentTest(
+  attrDescriptors: BaseEntityAttrDescriptor[],
+  entities: TestEntity[],
+  requestPayload?: NavigationPayload,
+  customizeDescriptor?: (descriptor: BaseEntityDescriptor) => void,
+) {
   const entityDescriptor = createEntityDescriptor(attrDescriptors);
+  customizeDescriptor?.(entityDescriptor);
   const runtimeConfigMock = {
     BASE_CONFIGURATION: { THIRD_PARTY_ROOT: 'http://localhost:4200/services/generic-message/api/v1' },
     LOGGING_CONFIGURATION,

@@ -23,6 +23,10 @@ inputs:
       uses; never for a deployed environment.
     required: false
     default: 'false'
+  browsers:
+    description: 'Comma-separated list of browsers to install and test (e.g. "chromium,firefox,webkit,edge"). Defaults to "chromium".'
+    required: false
+    default: 'chromium'
 runs:
   using: composite
   steps:
@@ -35,7 +39,21 @@ runs:
       shell: bash
 
     - name: Install Playwright Browsers
-      run: npx playwright install chromium --with-deps
+      run: |
+        # The `setup` project and the global setup always run in Chromium, whatever browsers are under test
+        # (playwright.config.ts), so a job for firefox, webkit or edge needs it too: without it they fail at
+        # launch with "Executable doesn't exist ... chromium_headless_shell".
+        echo "Installing Playwright browser: chromium (setup)"
+        npx playwright install chromium --with-deps
+        IFS=',' read -ra BROWSER_LIST <<< "${{ inputs.browsers }}"
+        for browser in "${BROWSER_LIST[@]}"; do
+          browser=$(echo "$browser" | tr -d '[:space:]')
+          [ "$browser" = chromium ] && continue
+          # The config names the project `edge`; Playwright installs it as `msedge`.
+          [ "$browser" = edge ] && browser=msedge
+          echo "Installing Playwright browser: $browser"
+          npx playwright install "$browser" --with-deps
+        done
       shell: bash
 
     - name: Run Playwright tests
@@ -50,10 +68,11 @@ runs:
         ENVIRONMENT: ${{inputs.target_environment}}
         E2E_WORKERS: ${{inputs.workers}}
         E2E_ALLOW_RELEASE: ${{inputs.allow_release}}
+        E2E_BROWSERS: ${{inputs.browsers}}
 
     - uses: actions/upload-artifact@v5
       if: ${{ !cancelled() }}
       with:
-        name: playwright-report-${{ github.sha }}
+        name: playwright-report-${{ inputs.browsers }}-${{ github.sha }}
         path: ${{inputs.base_dir}}/reports/e2e
         retention-days: 30

@@ -1,4 +1,5 @@
 import { BaseEntityRestService } from '../base-entity-service/base-entity-rest.service';
+import { Observable } from 'rxjs';
 import { DynamicEntity } from './entity-definition';
 import { DynamicEntityMapper } from './dynamic-entity.mapper';
 import { ENTITY_SERVICE_ROOT_KEY } from './entity-definition.service';
@@ -28,5 +29,12 @@ export class DynamicEntityService extends BaseEntityRestService<DynamicEntity> {
 
   constructor(entityDefinitionCode: string) {
     super(new DynamicEntityMapper(entityDefinitionCode), ENTITY_SERVICE_ROOT_KEY, `entities/${entityDefinitionCode}`);
+  }
+
+  /** Takes a retired record of a shared type back, so lists show it again. Only the common's own members may. */
+  reinstate(id: string): Observable<unknown> {
+    const fullUrl = this.buildFullUrl(this.resourceUrl + '/%{id}/reinstate', { pathParams: new Map([['id', id]]) });
+    if (!fullUrl) throw new Error('Could not determine the full url');
+    return this.httpClient.post(fullUrl, null, { headers: this.headers });
   }
 }

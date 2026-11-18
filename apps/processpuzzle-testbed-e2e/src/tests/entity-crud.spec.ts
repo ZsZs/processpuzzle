@@ -1,10 +1,13 @@
 import { defineEntityCrudSuite } from '@processpuzzle/e2e-testing';
 import { testConfig } from '../../playwright.config';
+import { removeWorkflowInstancesOfFixture } from '../support/fixture-cleanup';
 import { REGISTRY_PATH } from '../support/global-setup';
 
 defineEntityCrudSuite({
   registryPath: REGISTRY_PATH,
   routePrefix: testConfig.routePrefix,
+  // An order starts a workflow run, and deleting the order does not end it; without this every run of the suite left its runs in the task dashboard.
+  afterFixtureRemoved: removeWorkflowInstancesOfFixture,
   excludedEntities: [
     {
       entityName: 'State Machine Definition',
@@ -78,6 +81,14 @@ defineEntityCrudSuite({
   ],
   fixtureOverrides: [
     {
+      // The generator ticks every checkbox, so a generated definition is embedded AND a context object, which the backend
+      // rejects: a context object is always a stand-alone entity. Pinned off, as the other rule-bound fields are.
+      entityName: 'Entity Definition',
+      create: { canContextObject: 'false' },
+      update: { canContextObject: 'false' },
+      reason: 'canContextObject is only allowed on a stand-alone definition, and the generator ticks Embedded too',
+    },
+    {
       // The generator takes the first Kind, SYSTEM, which is the one kind that keeps the subject fields — but
       // also the first Action, CREATED, while filling State. EventDefinition.validate allows a state only with
       // STATE_CHANGED, so the POST came back 400 and the read-back found State empty. Pinned on both steps,
@@ -86,6 +97,17 @@ defineEntityCrudSuite({
       create: { kind: 'SYSTEM', action: 'STATE_CHANGED' },
       update: { kind: 'SYSTEM', action: 'STATE_CHANGED' },
       reason: "'state' is only meaningful with action STATE_CHANGED",
+    },
+    {
+      // The generator picks the first entity type for Subject Definition and the first Lifecycle, AUTO_CREATE, then
+      // moves on to the next on the update. Writable states are kept only for STATE_BOUND — the mapper drops them
+      // otherwise — so the generated chips would not survive a save under any other lifecycle. Pinned on both steps
+      // to a seeded entity type and STATE_BOUND. Saving does not check the states against the entity's machine; the
+      // release does (ChatDefinitionReleaseParticipant). The key's pattern comes from the descriptor.
+      entityName: 'Chat Definition',
+      create: { subjectDefinition: 'order', lifecycle: 'STATE_BOUND' },
+      update: { subjectDefinition: 'order', lifecycle: 'STATE_BOUND' },
+      reason: 'a chat definition names a real entity type, and only a STATE_BOUND one keeps the writable states the generator fills',
     },
   ],
 });

@@ -130,13 +130,20 @@ export class BaseEntityToolbarComponent<Entity extends BaseEntity> implements On
 
   onDeleteEntities() {
     this.store.selectedEntities().forEach((entity) => {
-      if (entity.id) void this.store.delete(entity.id);
+      const key = this.keyOf(entity);
+      if (key) void this.store.delete(key);
     });
   }
 
   onEditEntity() {
-    const entityId = this.store.currentEntity()?.id;
+    const current = this.store.currentEntity();
+    const entityId = current ? this.keyOf(current) : undefined;
     if (entityId) this.formNavigator.navigateToDetails(this.entityDescriptor().entityName, entityId);
+  }
+
+  /** The row's key as its store knows it: an embedded row is keyed by its `referenceIdField`, which is not always `id`. */
+  private keyOf(entity: Entity): string | undefined {
+    return this.store.keyOf?.(entity) ?? entity.id;
   }
 
   async onExportPdf(): Promise<void> {

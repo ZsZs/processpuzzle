@@ -62,6 +62,9 @@ base-workflow:
   timers:
     enabled: no
 
+base-chat:
+  loadDefaultChatDefinitions: no
+
 base-event:
   loadDefaultEventDefinitions: no
 

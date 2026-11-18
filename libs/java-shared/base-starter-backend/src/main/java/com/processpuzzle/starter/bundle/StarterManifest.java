@@ -19,11 +19,16 @@ import java.util.Map;
  *                     relative to the bundle root
  * @param migration    path of the migration script inside the bundle; a placeholder until the format
  *                     is decided together with upgrades, so it is carried but never run
+ * @param kind         {@code manifestVersion: 2} only: {@code starter} (the default) or {@code common}, a bundle
+ *                     installed once into the organization named by its id and never into a subscriber
+ * @param common       {@code manifestVersion: 2} only: the common a tenant bundle was written against
+ * @param migrations   {@code manifestVersion: 2} only: migration files per upgrade step; carried, not run yet
  * @param integrity    hashes written by CI at packaging time; optional
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record StarterManifest(
         Integer manifestVersion,
+        String kind,
         String id,
         String name,
         String version,
@@ -34,10 +39,24 @@ public record StarterManifest(
         String icon,
         Map<String, List<String>> contents,
         String migration,
+        List<String> migrations,
+        Common common,
         Integrity integrity) {
+
+    public static final String KIND_COMMON = "common";
 
     public StarterManifest {
         contents = contents == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(contents));
+        migrations = migrations == null ? List.of() : List.copyOf(migrations);
+    }
+
+    public boolean isCommon() {
+        return KIND_COMMON.equals(kind);
+    }
+
+    /** The common a tenant bundle needs: its id, and the oldest version its definitions were written against. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Common(String id, String minVersion) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

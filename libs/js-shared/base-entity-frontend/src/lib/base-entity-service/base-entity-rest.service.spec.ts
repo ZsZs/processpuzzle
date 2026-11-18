@@ -57,6 +57,15 @@ describe('BaseEntityService', () => {
     controller.verify();
   });
 
+  it('findByQuery() asks for the retired records only when told to', () => {
+    baseEntityService.findByQuery({ ...queryCondition, includeRetired: true }).subscribe(() => undefined);
+    expect(controller.expectOne((request) => request.url.includes('message/123/node')).request.urlWithParams).toContain('includeRetired=true');
+
+    baseEntityService.findByQuery({ ...queryCondition, includeRetired: false }).subscribe(() => undefined);
+    expect(controller.expectOne((request) => request.url.includes('message/123/node')).request.urlWithParams).not.toContain('includeRetired');
+    controller.verify();
+  });
+
   it('findByQuery() maps response body to array of entities if no page specified.', () => {
     let actualEntities: Array<TestEntity> | undefined;
     baseEntityService.findByQuery(queryCondition).subscribe((entities) => {

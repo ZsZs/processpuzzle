@@ -5,7 +5,7 @@ import { MatSidenav } from '@angular/material/sidenav';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { LayoutService } from '@processpuzzle/util';
-import { APPLICATION_CONTEXT, AppTitleComponent, SidenavAutosizeDirective, ThemeService, WIDGET_REGISTRY } from '@processpuzzle/widgets';
+import { APPLICATION_CONTEXT, AppTitleComponent, SIDENAV_CONTROL, SidenavAutosizeDirective, ThemeService, WIDGET_REGISTRY } from '@processpuzzle/widgets';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppDefinition, RouteDefinition } from '../../domain/app-definition';
@@ -243,6 +243,26 @@ describe('AppShellComponent', () => {
       sidenavHidden.set(false);
       fixture.detectChanges();
       expect(sidenav()?.opened).toBe(true);
+    });
+
+    it('lets a sidenav-toggle widget hide and show the sidenav', async () => {
+      await render(withSidenav());
+      const control = fixture.debugElement.injector.get(SIDENAV_CONTROL);
+
+      expect(control.available()).toBe(true);
+      control.toggle();
+      fixture.detectChanges();
+      expect(sidenav()?.opened).toBe(false);
+
+      control.toggle();
+      fixture.detectChanges();
+      expect(sidenav()?.opened).toBe(true);
+    });
+
+    it('reports the sidenav control unavailable when the application has no sidenav', async () => {
+      await render(new AppDefinition({ id: 'demo-app', name: 'Demo', regions: [{ type: 'header' }] }));
+
+      expect(fixture.debugElement.injector.get(SIDENAV_CONTROL).available()).toBe(false);
     });
 
     // The nav-menu widget stands in for it there, reading the same entries through the APPLICATION_CONTEXT.

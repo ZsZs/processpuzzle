@@ -36,6 +36,28 @@ class AppGraphConverterTest {
     }
 
     @Test
+    void workingContextsAndRequiredContextRoundTripThroughTheColumn() {
+        WorkingContext race = new WorkingContext("race", "Race", "regatta", "/conduct",
+                new WorkingContext.Picker(List.of("name"), 3), new WorkingContext.Display("{{name}}", "state", null),
+                Map.of("state", "Running"), "url");
+        AppGraph graph = new AppGraph(null, null, List.of(),
+                List.of(new AppRoute("participants", "Participants", null, null, List.of(), "race", RouteTarget.ofWidgets(List.of()))),
+                List.of(), List.of(race));
+
+        String column = converter.convertToDatabaseColumn(graph);
+
+        assertThat(converter.convertToEntityAttribute(column)).isEqualTo(graph);
+    }
+
+    @Test
+    void aGraphStoredBeforeContextsExistedReadsBackWithNone() {
+        AppGraph graph = converter.convertToEntityAttribute("{\"regions\":[],\"routes\":[{\"path\":\"home\",\"title\":\"Home\"}],\"modules\":[]}");
+
+        assertThat(graph.contexts()).isEmpty();
+        assertThat(graph.routes().get(0).requiresContext()).isNull();
+    }
+
+    @Test
     void anEmptyGraphRoundTripsToAnEmptyGraph() {
         String column = converter.convertToDatabaseColumn(AppGraph.empty());
 

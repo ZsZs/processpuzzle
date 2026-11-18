@@ -5,8 +5,11 @@ import { setupListComponentTest } from '../../test-setup';
 import { By } from '@angular/platform-browser';
 import { RouteSegments } from '../base-form-navigator/base-form-navigator.store';
 import { MatHeaderCell, MatTable, MatTableDataSource } from '@angular/material/table';
+import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { NavigatorCommand, type NavigationPayload } from '../base-form-navigator/navigation-payload';
+import { TestBed } from '@angular/core/testing';
+import { WorkingContextService } from '../working-context/working-context.service';
 
 describe('EntityListComponent', () => {
   const textboxConfig = new BaseEntityAttrDescriptor('name', FormControlType.TEXT_BOX, 'Project Name');
@@ -103,6 +106,41 @@ describe('EntityListComponent', () => {
       expect(store.deselectEntity).toHaveBeenNthCalledWith(1, testEntity_1.id);
       // there is only 1 entity is selected, so it will be also in store selected
       expect(store.setCurrentEntity).toHaveBeenNthCalledWith(2, testEntity_2.id);
+    });
+
+    it('onChangeSelection() without a row only re-reads how many are selected', async () => {
+      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      vi.spyOn(store, 'selectEntity');
+      vi.spyOn(store, 'deselectEntity');
+      vi.spyOn(store, 'clearCurrentEntity');
+
+      component.onChangeSelection();
+
+      expect(store.selectEntity).not.toHaveBeenCalled();
+      expect(store.deselectEntity).not.toHaveBeenCalled();
+      expect(store.clearCurrentEntity).toHaveBeenCalled();
+    });
+
+    it('identifies a row by the key its store names — an embedded row is not keyed by id', async () => {
+      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      store.keyOf = (entity) => `key-${entity.name}`;
+      vi.spyOn(store, 'selectEntity');
+
+      component.selection.select(testEntity_1);
+      component.onChangeSelection(testEntity_1);
+
+      expect(store.selectEntity).toHaveBeenCalledWith('key-hello');
+    });
+
+    it('falls back to id for a store that names no key', async () => {
+      const { component, store } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      (store as { keyOf?: unknown }).keyOf = undefined;
+      vi.spyOn(store, 'selectEntity');
+
+      component.selection.select(testEntity_1);
+      component.onChangeSelection(testEntity_1);
+
+      expect(store.selectEntity).toHaveBeenCalledWith(testEntity_1.id);
     });
 
     it('navigateToDetails() calls form navigator and sets current entity.', async () => {
@@ -210,6 +248,89 @@ describe('EntityListComponent', () => {
       store.doFilter('A');
       fixture.detectChanges();
       expect(component.dataSource.filter).toEqual('a');
+    });
+  });
+
+  describe('working context button', () => {
+    async function setupWithContext() {
+      const setup = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      const workingContext = TestBed.inject(WorkingContextService);
+      workingContext.register([{ name: 'test', entityName: 'TestEntity' }]);
+      const select = vi.spyOn(workingContext, 'select').mockResolvedValue(true);
+      setup.fixture.detectChanges();
+      return { ...setup, select };
+    }
+
+    it('is absent when the entity is the root of no context', async () => {
+      const { fixture } = await setupListComponentTest([textboxConfig, textareaConfig], MOCK_STORE_RESPONSE);
+      expect(fixture.nativeElement.querySelector('[data-testid="testEntity-set-active-context"]')).toBeNull();
+    });
+
+    it('has no action on the rows, but a button below the list that waits for exactly one selected row', async () => {
+      const { fixture, select } = await setupWithContext();
+      const cells = () => fixture.nativeElement.querySelectorAll('td.mat-mdc-cell:not(.mat-column-select)') as NodeListOf<HTMLElement>;
+      const button = fixture.nativeElement.querySelector('[data-testid="testEntity-set-active-context"]') as HTMLButtonElement;
+      expect(fixture.nativeElement.querySelectorAll('td [data-testid="testEntity-set-active-context"]')).toHaveLength(0);
+      expect(button.disabled).toBe(true);
+
+      cells()[2].click();
+      fixture.detectChanges();
+      expect(button.disabled).toBe(false);
+
+      button.click();
+      expect(select).toHaveBeenCalledWith('test', '2');
+
+      cells()[0].click();
+      fixture.detectChanges();
+      expect(button.disabled).toBe(true);
+    });
+
+    it('sets the row active on double-click and on Enter', async () => {
+      const { fixture, select } = await setupWithContext();
+      const cell = fixture.nativeElement.querySelector('td.mat-mdc-cell:not(.mat-column-select)') as HTMLElement;
+
+      cell.dispatchEvent(new MouseEvent('dblclick'));
+      cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+      expect(select).toHaveBeenCalledTimes(2);
+      expect(select).toHaveBeenCalledWith('test', '1');
+    });
+  });
+
+  describe('retired records of a shared type:', () => {
+    const retired = Object.assign(new TestEntity('3', 'gone', 'no longer used', false, 1, new Date('2024-01-01T00:00:00.000Z'), TestEnum.VALUE_ONE), { retiredAt: '2026-11-16T10:00:00Z' });
+
+    it('offers no toggle for an entity whose records are never retired', async () => {
+      const { fixture } = await setupListComponentTest([textboxConfig], MOCK_STORE_RESPONSE);
+
+      expect(fixture.debugElement.query(By.css('[data-testid="testEntity-show-retired"]'))).toBeNull();
+    });
+
+    it('lists retired records only when asked, and reloads when the toggle is flipped', async () => {
+      const { fixture, component, store } = await setupListComponentTest([textboxConfig], [...MOCK_STORE_RESPONSE, retired], undefined, (descriptor) => {
+        descriptor.reinstate = () => of({});
+      });
+      fixture.detectChanges();
+      expect(fixture.debugElement.query(By.css('[data-testid="testEntity-show-retired"]'))).toBeTruthy();
+      expect(store.load).toHaveBeenLastCalledWith(expect.objectContaining({ includeRetired: false }));
+
+      (component as unknown as { onToggleRetired(on: boolean): void }).onToggleRetired(true);
+      fixture.detectChanges();
+      TestBed.flushEffects();
+
+      expect(store.load).toHaveBeenLastCalledWith(expect.objectContaining({ includeRetired: true }));
+    });
+
+    it('marks a retired row as retired, and no other', async () => {
+      const { fixture } = await setupListComponentTest([textboxConfig], [...MOCK_STORE_RESPONSE, retired], undefined, (descriptor) => {
+        descriptor.reinstate = () => of({});
+      });
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const rows = fixture.debugElement.queryAll(By.css('tr[mat-row]'));
+      expect(rows.filter((row) => row.nativeElement.getAttribute('data-retired') === 'true')).toHaveLength(1);
+      expect(rows.some((row) => row.nativeElement.classList.contains('base-entity-list-row--retired'))).toBe(true);
     });
   });
 });

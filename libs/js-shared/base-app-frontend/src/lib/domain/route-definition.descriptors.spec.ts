@@ -32,7 +32,22 @@ describe('createRouteDefinitionDescriptor', () => {
   });
 
   it('describes the identity, the presentation and the flattened target', () => {
-    expect(attrs.map((attr) => attr.attrName)).toEqual(['path', 'title', 'translocoId', 'icon', 'kind', 'roles', 'documentSlug', 'entityName', 'entityMode', 'rsqlFilter', 'widgets']);
+    expect(attrs.map((attr) => attr.attrName)).toEqual([
+      'path',
+      'title',
+      'translocoId',
+      'icon',
+      'kind',
+      'requiresContext',
+      'roles',
+      'documentSlug',
+      'entityName',
+      'entityMode',
+      'rsqlFilter',
+      'contextPath',
+      'filterByContext',
+      'widgets',
+    ]);
   });
 
   it('declares no children, nesting being derived from the paths rather than authored', () => {
@@ -61,8 +76,16 @@ describe('createRouteDefinitionDescriptor', () => {
 
   it('offers every target kind and entity mode of the contract as a dropdown', () => {
     expect(byName('kind')?.formControlType).toBe(FormControlType.DROPDOWN);
-    expect(byName('kind')?.getSelectables()?.map((selectable) => selectable.key)).toEqual([...ROUTE_TARGET_KINDS]);
-    expect(byName('entityMode')?.getSelectables()?.map((selectable) => selectable.key)).toEqual([...ENTITY_MODES]);
+    expect(
+      byName('kind')
+        ?.getSelectables()
+        ?.map((selectable) => selectable.key),
+    ).toEqual([...ROUTE_TARGET_KINDS]);
+    expect(
+      byName('entityMode')
+        ?.getSelectables()
+        ?.map((selectable) => selectable.key),
+    ).toEqual([...ENTITY_MODES]);
   });
 
   it('contains the widgets of a WIDGETS target, which have no endpoint of their own', () => {

@@ -17,10 +17,12 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * Seeds the bundled default widget definitions on startup, so a fresh deployment serves a catalogue a
@@ -45,14 +47,18 @@ import java.io.InputStream;
  * is subject to the same mapping and the same key and port validation as a definition a designer
  * saves.
  *
- * <p><strong>Existing data is never touched.</strong> A definition whose key is already present is
- * left exactly as it is, so restarting against a persistent database cannot overwrite a designer's
- * edits with the bundled defaults — which is what makes the loader safe to leave enabled outside
- * development.
+ * <p><strong>The file is the source of truth for what it names.</strong> A definition that is already
+ * present is brought back to the file's content when it differs, and left alone when it does not — so
+ * a widget gaining a property or a description in a new release reaches a database seeded by an older
+ * one. It used to be left untouched, which kept a designer's edits but also froze every persistent
+ * deployment at the catalogue it was first created with: stage kept serving widgets without the props
+ * added since. A widget a designer has edited therefore goes back to the file at the next start, which
+ * is the point of seeding the testbed's own catalogue; a tenant whose widgets are its own does not ship
+ * a file here.
  *
  * <p>Seeded definitions are created as drafts and never published here. Publishing is the designer's
  * decision, and a catalogue that arrives already published would leave the Publish action with nothing
- * to demonstrate.
+ * to demonstrate. An update is an edit like any other, so it does not publish either.
  *
  * <p>Nothing here can fail startup: every problem is logged and the next file or definition is
  * attempted.
@@ -120,8 +126,8 @@ public class DefaultWidgetLoader {
         for (WidgetDefinitionInput definition : document.widgetDefinitions()) {
             tally.add(create(orgKey, definition, fileName));
         }
-        LOG.info("Loaded default widget definitions from {} into organization '{}': created={}, already present={}, rejected={}",
-                fileName, orgKey, tally.created, tally.skipped, tally.rejected);
+        LOG.info("Loaded default widget definitions from {} into organization '{}': created={}, updated={}, unchanged={}, rejected={}",
+                fileName, orgKey, tally.created, tally.updated, tally.skipped, tally.rejected);
     }
 
     private Outcome create(String orgKey, WidgetDefinitionInput definition, String fileName) {
@@ -134,7 +140,7 @@ public class DefaultWidgetLoader {
         // as an ERROR with a stack trace for every already-seeded widget on every restart. The catch below
         // stays for the race with a concurrent create.
         if (repository.existsByOrgKeyAndKey(orgKey, definition.getKey())) {
-            return alreadyPresent(definition.getKey(), orgKey);
+            return refresh(orgKey, definition, fileName);
         }
 
         try {
@@ -157,8 +163,40 @@ public class DefaultWidgetLoader {
         }
     }
 
+    /** Brings a stored definition to the file's content, and only when it differs: an update marks the widget edited. */
+    private Outcome refresh(String orgKey, WidgetDefinitionInput definition, String fileName) {
+        try {
+            ResponseEntity<WidgetDefinition> response = endpoint.getWidgetDefinition(orgKey, definition.getKey());
+            WidgetDefinition stored = response == null ? null : response.getBody();
+            if (stored == null || unchanged(stored, definition)) {
+                return alreadyPresent(definition.getKey(), orgKey);
+            }
+            endpoint.updateWidgetDefinition(orgKey, definition.getKey(), definition);
+            LOG.info("Updated default widget definition '{}' in organization '{}' to the content of {}.", definition.getKey(), orgKey, fileName);
+            return Outcome.UPDATED;
+        } catch (WidgetDefinitionInvalidException e) {
+            LOG.warn("Default widget definition '{}' from {} was rejected: {}", definition.getKey(), fileName, e.getMessage());
+            return Outcome.REJECTED;
+        } catch (RuntimeException e) {
+            LOG.warn("Failed to update default widget definition '{}' from {} in organization '{}'.", definition.getKey(), fileName, orgKey, e);
+            return Outcome.REJECTED;
+        }
+    }
+
+    /** Whether the stored widget already says what the file says; every field an update would write. */
+    private static boolean unchanged(WidgetDefinition stored, WidgetDefinitionInput wanted) {
+        return Objects.equals(stored.getName(), wanted.getName())
+                && Objects.equals(stored.getTranslocoId(), wanted.getTranslocoId())
+                && Objects.equals(stored.getDescription(), wanted.getDescription())
+                && Objects.equals(stored.getCategory(), wanted.getCategory())
+                && Objects.equals(stored.getIcon(), wanted.getIcon())
+                && Objects.equals(stored.getPropsSchema(), wanted.getPropsSchema())
+                && Objects.equals(stored.getInputPorts(), wanted.getInputPorts())
+                && Objects.equals(stored.getOutputPorts(), wanted.getOutputPorts());
+    }
+
     private static Outcome alreadyPresent(String key, String orgKey) {
-        LOG.info("Default widget definition '{}' already exists in organization '{}'; left untouched.", key, orgKey);
+        LOG.info("Default widget definition '{}' already exists in organization '{}' with the file's content; left untouched.", key, orgKey);
         return Outcome.SKIPPED;
     }
 
@@ -177,18 +215,20 @@ public class DefaultWidgetLoader {
 
     /** What became of one entry, for the per-file summary. */
     private enum Outcome {
-        CREATED, SKIPPED, REJECTED
+        CREATED, UPDATED, SKIPPED, REJECTED
     }
 
     /** The per-file summary itself. */
     private static final class Tally {
         private int created;
+        private int updated;
         private int skipped;
         private int rejected;
 
         private void add(Outcome outcome) {
             switch (outcome) {
                 case CREATED -> created++;
+                case UPDATED -> updated++;
                 case SKIPPED -> skipped++;
                 case REJECTED -> rejected++;
             }

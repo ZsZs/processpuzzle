@@ -276,6 +276,100 @@ class BundleReaderTest {
                 "empty or not a zip");
     }
 
+    private static Map<String, String> v2(String manifest) {
+        Map<String, String> files = new LinkedHashMap<>();
+        files.put("manifest.yaml", manifest);
+        files.put("entities/item.yaml", "entityDefinitions: []\n");
+        return files;
+    }
+
+    private static final String V2_HEAD = "manifestVersion: 2\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n";
+    private static final String V2_CONTENTS = "contents:\n  entities:\n    - entities/item.yaml\n";
+
+    @Test
+    void readsACommonBundle() {
+        StarterBundle bundle = read(v2(V2_HEAD + "kind: common\nid: inventory-common\n" + V2_CONTENTS + "migrations: []\n"));
+
+        assertThat(bundle.manifest().isCommon()).isTrue();
+        assertThat(bundle.manifest().common()).isNull();
+    }
+
+    @Test
+    void readsATenantBundleThatNamesItsCommon() {
+        StarterBundle bundle = read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: inventory-common\n  minVersion: 1.2.0\n" + V2_CONTENTS));
+
+        assertThat(bundle.manifest().isCommon()).isFalse();
+        assertThat(bundle.manifest().common()).isEqualTo(new StarterManifest.Common("inventory-common", "1.2.0"));
+    }
+
+    @Test
+    void aVersion2ManifestRefusesAMisspeltField() {
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommn:\n  id: inventory-common\n" + V2_CONTENTS)), "unknown field 'commn'");
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: inventory-common\n  minVersoin: 1.0.0\n" + V2_CONTENTS)),
+                "unknown field 'common.minVersoin'");
+    }
+
+    @Test
+    void aVersion1ManifestStillIgnoresWhatItDoesNotKnowAndRefusesTheCommonsFields() {
+        read(v2("manifestVersion: 1\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\nwhatever: 1\n" + V2_CONTENTS));
+
+        assertInvalid(() -> read(v2("manifestVersion: 1\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n"
+                + "kind: common\n" + V2_CONTENTS)), "need manifestVersion 2");
+    }
+
+    @Test
+    void aCommonMustBeNamedAfterItsStarterAndHasNoCommonBlock() {
+        assertInvalid(() -> read(v2(V2_HEAD + "kind: common\nid: inventory\n" + V2_CONTENTS)), "'<starter id>-common'");
+        assertInvalid(() -> read(v2(V2_HEAD + "kind: common\nid: inventory-common\ncommon:\n  id: x-common\n  minVersion: 1.0.0\n" + V2_CONTENTS)),
+                "no 'common' block");
+    }
+
+    @Test
+    void aTenantMustNameItsOwnCommonAndAMinVersion() {
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: other-common\n  minVersion: 1.0.0\n" + V2_CONTENTS)),
+                "'common.id' must be 'inventory-common'");
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\ncommon:\n  id: inventory-common\n  minVersion: latest\n" + V2_CONTENTS)),
+                "'common.minVersion'");
+    }
+
+    @Test
+    void aManifestVersionFromTheFutureIsRefused() {
+        assertInvalid(() -> read(v2("manifestVersion: 3\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n" + V2_CONTENTS)),
+                "Unsupported manifestVersion 3");
+    }
+
+    private static final String MIGRATION = "migration:\n  from: 1.0.0\n  to: 1.1.0\n  steps:\n    - kind: entity\n      key: item\n      operation: fillAttribute\n      subject: status\n";
+
+    private static Map<String, String> withMigration(String path, String content) {
+        Map<String, String> files = v2(V2_HEAD + "id: inventory\n" + V2_CONTENTS + "migrations:\n  - " + path + "\n");
+        files.put(path, content);
+        return files;
+    }
+
+    @Test
+    void readsAMigrationFileThatIsListed() {
+        StarterBundle bundle = read(withMigration("migrations/1.0.0-to-1.1.0.yaml", MIGRATION));
+
+        assertThat(bundle.manifest().migrations()).containsExactly("migrations/1.0.0-to-1.1.0.yaml");
+        assertThat(bundle.files()).containsKey("migrations/1.0.0-to-1.1.0.yaml");
+    }
+
+    @Test
+    void aMalformedMigrationFailsTheBundleWithTheFileNamed() {
+        assertInvalid(() -> read(withMigration("migrations/1.0.0-to-1.1.0.yaml", MIGRATION.replace("to: 1.1.0", "to: 1.2.0"))), "named for 1.0.0 → 1.1.0");
+        assertInvalid(() -> read(withMigration("migrations/upgrade.yaml", MIGRATION)), "migrations/<from>-to-<to>.yaml");
+        assertInvalid(() -> read(withMigration("migrations/1.0.0-to-1.1.0.yaml", MIGRATION.replace("operation: fillAttribute", ""))),
+                "needs a kind, a key and an operation");
+    }
+
+    @Test
+    void aMigrationFileTheManifestDoesNotListIsRefused() {
+        Map<String, String> files = v2(V2_HEAD + "id: inventory\n" + V2_CONTENTS);
+        files.put("migrations/1.0.0-to-1.1.0.yaml", MIGRATION);
+
+        assertInvalid(() -> read(files), "is not listed");
+    }
+
     private StarterBundle read(Map<String, String> files) {
         return reader.read(new ByteArrayInputStream(TestBundles.zip(files)));
     }

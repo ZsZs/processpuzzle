@@ -1,6 +1,23 @@
 @if (store.isLoading()) {
   <mat-progress-bar mode="query"></mat-progress-bar>
 }
+@if (showsContextToggle()) {
+  <div class="base-entity-list-context-filter">
+    <mat-slide-toggle [checked]="onlyActiveContext()" (change)="onToggleContextFilter($event.checked)" [attr.data-testid]="entityDescriptor().createTestId('only-active-context')">
+      {{ 'base_entity.working_context.only_active' | transloco: { context: routeFilter.filterByContext } }}
+    </mat-slide-toggle>
+  </div>
+}
+@if (canShowRetired()) {
+  <div class="base-entity-list-context-filter">
+    <mat-slide-toggle [checked]="showRetired()" (change)="onToggleRetired($event.checked)" [attr.data-testid]="entityDescriptor().createTestId('show-retired')">
+      {{ 'base_entity.list.show_retired' | transloco }}
+    </mat-slide-toggle>
+  </div>
+}
+@if (pendingTarget()) {
+  <p class="base-entity-list-context-hint" data-testid="context-object-hint">{{ 'base_entity.working_context.select_to_continue' | transloco }}</p>
+}
 <div class="base-entity-list mat-elevation-z8">
   <div class="base-entity-list-scroll">
     <table mat-table [dataSource]="dataSource" matSort aria-describedby="base-entity-list">
@@ -17,14 +34,14 @@
       @for (colDescriptor of columnDescriptors(); track colDescriptor.attrName; let i = $index) {
         <ng-container [matColumnDef]="colDescriptor.attrName">
           <th mat-header-cell *matHeaderCellDef mat-sort-header [class.pp-col-autosize]="colDescriptor.autosizeColumn">{{ colDescriptor.i18nKey() | ppLabel: colDescriptor.label }}</th>
-          <td mat-cell [class.pp-col-autosize]="colDescriptor.autosizeColumn" (click)="onRowClick(element)" (keydown.enter)="onRowClick(element)" tabindex="0" role="button" *matCellDef="let element">
+          <td mat-cell [class.pp-col-autosize]="colDescriptor.autosizeColumn" (click)="onRowClick(element)" (dblclick)="onRowDoubleClick(element)" (keydown.enter)="onRowEnter(element)" tabindex="0" role="button" *matCellDef="let element">
             <span class="pp-cell-content">
               @if (colDescriptor.isLinkToDetails) {
-                <a class="link-to-details" (click)="onNavigateToDetails(element)">{{
+                <a class="link-to-details" (click)="onNavigateToDetails(element); $event.stopPropagation()">{{
                   colDescriptor.formControlType === 'DATE' ? (element[colDescriptor.attrName] | ppDate: colDescriptor.dateFormat) : element[colDescriptor.attrName]
                 }}</a>
               } @else if (colDescriptor.linkedEntityType !== undefined) {
-                <a (click)="onNavigateToRelated(colDescriptor, element)">{{ foreignKeyLabel(colDescriptor, element) }}</a>
+                <a (click)="onNavigateToRelated(colDescriptor, element); $event.stopPropagation()">{{ foreignKeyLabel(colDescriptor, element) }}</a>
               } @else if ((colDescriptor.formControlType === 'ARTIFACT' || colDescriptor.formControlType === 'AVATAR') && element[colDescriptor.attrName] !== undefined && element[colDescriptor.attrName] !== null) {
                 @for (artifact of artifactsOf(element[colDescriptor.attrName]); track $index; let last = $last) {
                   <a (click)="onDownloadObject(artifact, $event)">{{
@@ -50,7 +67,7 @@
         </ng-container>
       }
       <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns()" [class.base-entity-list-row--retired]="isRetired(row)" [attr.data-retired]="isRetired(row) ? 'true' : null"></tr>
     </table>
   </div>
   <div class="base-entity-list-footer">
@@ -59,6 +76,21 @@
         <button id="cancel" [attr.data-testid]="entityDescriptor().createTestId('cancel')" type="button" mat-raised-button color="secondary" (click)="onCancelSelectOrCreate()">Cancel</button>
         <button id="select" [attr.data-testid]="entityDescriptor().createTestId('select')" type="button" mat-raised-button color="primary" [disabled]="!canSelectEntity()" (click)="onSelectEntity()">
           Select
+        </button>
+      </div>
+    }
+    @if (!selectOrCreateMode() && workingContexts().length > 0) {
+      <div class="base-entity-list-actions">
+        <button
+          type="button"
+          mat-raised-button
+          color="primary"
+          class="set-active-context"
+          [attr.data-testid]="entityDescriptor().createTestId('set-active-context')"
+          [disabled]="!canSetContextObject()"
+          (click)="onSetSelectedAsContext()"
+        >
+          {{ 'base_entity.working_context.set_active' | transloco }}
         </button>
       </div>
     }

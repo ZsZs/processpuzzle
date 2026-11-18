@@ -33,7 +33,7 @@ class EntityLabelAdapterTest {
 
     @Test
     void namesTheObjectByItsTitleAttribute() {
-        when(objectAccess.find(ORG, "order", ORDER)).thenReturn(new EntityObjectView(ORDER, 1, Map.of("orderNumber", "ORD-1001")));
+        when(objectAccess.findIfPresent(ORG, "order", ORDER)).thenReturn(Optional.of(new EntityObjectView(ORDER, 1, Map.of("orderNumber", "ORD-1001"))));
 
         assertThat(adapter.labelOf(ORG, "order", ORDER.toString())).contains("ORD-1001");
     }
@@ -41,7 +41,7 @@ class EntityLabelAdapterTest {
     @Test
     void answersEmptyRatherThanFailing() {
         when(attributeQuery.titleAttribute(ORG, "note")).thenReturn(Optional.empty());
-        when(objectAccess.find(ORG, "order", ORDER)).thenThrow(new EntityObjectAccessException.NotFound("order", ORDER));
+        when(objectAccess.findIfPresent(ORG, "order", ORDER)).thenReturn(Optional.empty());
 
         assertThat(adapter.labelOf(ORG, "order", ORDER.toString())).isEmpty();
         assertThat(adapter.labelOf(ORG, "order", "not-a-uuid")).isEmpty();
@@ -51,7 +51,7 @@ class EntityLabelAdapterTest {
 
     @Test
     void aBlankTitleIsNoName() {
-        when(objectAccess.find(ORG, "order", ORDER)).thenReturn(new EntityObjectView(ORDER, 1, Map.of("orderNumber", " ")));
+        when(objectAccess.findIfPresent(ORG, "order", ORDER)).thenReturn(Optional.of(new EntityObjectView(ORDER, 1, Map.of("orderNumber", " "))));
 
         assertThat(adapter.labelOf(ORG, "order", ORDER.toString())).isEmpty();
     }

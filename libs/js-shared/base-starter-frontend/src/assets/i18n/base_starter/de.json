@@ -34,7 +34,9 @@
       "module": "Modul",
       "app": "Anwendung",
       "translation": "Übersetzung",
-      "asset": "Datei"
+      "asset": "Datei",
+      "calculation": "Berechnung",
+      "chat": "Chat"
     },
     "catalogEmpty": "Der Katalog enthält noch keine Starter.",
     "version": "Version",
@@ -48,7 +50,34 @@
       "version": "Version",
       "installedAt": "Installiert",
       "installedBy": "Von",
-      "customized": "Angepasste Definitionen"
-    }
+      "customized": "Angepasste Definitionen",
+      "upgrade": "Aktualisierung"
+    },
+    "upToDate": "aktuell",
+    "upgradeTo": "Auf {{version}} aktualisieren"
+  },
+  "upgrade": {
+    "title": "Aktualisierung",
+    "apply": "Aktualisierung anwenden",
+    "status": {
+      "applied": "Aktualisiert",
+      "would-apply": "Würde aktualisieren",
+      "rejected": "Abgelehnt"
+    },
+    "summary": "{{changed}} zu ändern, {{kept}} bleiben unverändert",
+    "drafts": "Die Aktualisierung schreibt Entwürfe: prüfen Sie diese und veröffentlichen Sie sie dann.",
+    "skipped": "Noch nicht aktualisiert, unverändert belassen: {{kinds}}",
+    "column": {
+      "note": "Hinweis"
+    },
+    "action": {
+      "add": "hinzufügen",
+      "replace": "ersetzen",
+      "remove": "entfernen",
+      "keep-customized": "behalten (angepasst)",
+      "keep-deleted": "bleibt gelöscht",
+      "keep-in-use": "behalten (in Verwendung)"
+    },
+    "migrations": "{{count}} Migrationsschritte ändern beim Veröffentlichen die vorhandenen Objekte:"
   }
 }

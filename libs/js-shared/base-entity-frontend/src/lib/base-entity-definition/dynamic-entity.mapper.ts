@@ -6,6 +6,11 @@ const ID = 'id';
 const VERSION = 'version';
 const DEFINITION_CODE = 'entityDefinitionCode';
 const PAYLOAD = 'payload';
+/** Set by the server while a record of a shared type is retired; read, never sent back. */
+const RETIRED_AT = 'retiredAt';
+const RETIRED_BY = 'retiredBy';
+/** Fields that travel beside the payload on a read and are never part of it on a write. */
+const ENVELOPE_ONLY = new Set([ID, VERSION, RETIRED_AT, RETIRED_BY]);
 
 /**
  * Between the contract's `EntityObject` envelope and the flat entity the generated screens bind to.
@@ -46,6 +51,7 @@ export class DynamicEntityMapper implements BaseEntityMapper<DynamicEntity> {
       ...asRecord(envelope[PAYLOAD]),
       ...(typeof envelope[ID] === 'string' ? { [ID]: envelope[ID] } : {}),
       ...(typeof envelope[VERSION] === 'number' ? { [VERSION]: envelope[VERSION] } : {}),
+      ...(typeof envelope[RETIRED_AT] === 'string' ? { [RETIRED_AT]: envelope[RETIRED_AT] } : {}),
     };
   }
 
@@ -62,7 +68,8 @@ export class DynamicEntityMapper implements BaseEntityMapper<DynamicEntity> {
    * create, so a body carrying it could only ever disagree with the URL.
    */
   toDto(entity: DynamicEntity): unknown {
-    const { id: _id, version, ...payload } = entity;
+    const { version } = entity;
+    const payload = Object.fromEntries(Object.entries(entity).filter(([key]) => !ENVELOPE_ONLY.has(key)));
 
     return {
       [DEFINITION_CODE]: this.entityDefinitionCode,

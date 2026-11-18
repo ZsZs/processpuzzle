@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { BASE_APP_ENTITY_FACADES, BASE_APP_FACADE_PROVIDERS } from './base-app.providers';
 import { AppDefinition, ModuleMount, NavItem, RegionDefinition, RouteDefinition, WidgetInstance } from './domain/app-definition';
 import {
+  APP_CONTEXT_ENTITY_NAME,
   APP_DEFINITION_ENTITY_NAME,
   APP_MODULE_MOUNT_ENTITY_NAME,
   APP_NAV_ITEM_ENTITY_NAME,
@@ -40,13 +41,14 @@ describe('BASE_APP facade providers', () => {
 
   const descriptorOf = (entityName: string): BaseEntityDescriptor => injector.get(BASE_APP_ENTITY_FACADES[entityName]).descriptor;
 
-  it('registers the two routable definitions and the five embedded levels below them', () => {
+  it('registers the two routable definitions and the six embedded levels below them', () => {
     expect(Object.keys(BASE_APP_ENTITY_FACADES)).toEqual([
       APP_DEFINITION_ENTITY_NAME,
       MODULE_DEFINITION_ENTITY_NAME,
       APP_REGION_ENTITY_NAME,
       APP_ROUTE_ENTITY_NAME,
       APP_MODULE_MOUNT_ENTITY_NAME,
+      APP_CONTEXT_ENTITY_NAME,
       APP_NAV_ITEM_ENTITY_NAME,
       APP_WIDGET_ENTITY_NAME,
     ]);

@@ -7,6 +7,7 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionValidator;
+import com.processpuzzle.baseentity.definition.domain.EntitySharingValidator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -22,6 +23,7 @@ public class ReplaceEntityDefinitionUseCase {
 
     private final EntityDefinitionRepository repository;
     private final EntityDefinitionValidator validator;
+    private final EntitySharingValidator sharingValidator;
 
     public BaseEntityDefinition replace(String orgKey, String code, BaseEntityDefinition desiredState) {
         BaseEntityDefinition existing = repository.findByOrgKeyAndCodeAndChannel(orgKey, code, Channel.DRAFT)
@@ -36,11 +38,18 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setStatus(desiredState.getStatus());
         existing.setComponentParents(desiredState.getComponentParents());
         existing.setEmbedded(desiredState.isEmbedded());
+        existing.setCanContextObject(desiredState.isCanContextObject());
+        existing.setSharingWrite(desiredState.getSharingWrite());
+        existing.setSharingVisibility(desiredState.getSharingVisibility());
+        existing.setSharingVisibleWhen(desiredState.getSharingVisibleWhen());
+        existing.setSharingFrom(desiredState.getSharingFrom());
+        existing.setIdentifiers(desiredState.getIdentifiers());
         existing.setOrganizationId(desiredState.getOrganizationId());
 
         replaceAttributes(existing, desiredState);
 
         validator.validate(existing);
+        sharingValidator.validate(orgKey, existing);
         return repository.save(existing);
     }
 

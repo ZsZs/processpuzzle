@@ -42,6 +42,18 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
 
     @Override
     @Transactional(readOnly = true)
+    public java.util.Optional<EntityObjectView> findIfPresent(String orgKey, String entityDefinitionCode, UUID objectId) {
+        return scope.find(orgKey, entityDefinitionCode, objectId)
+            .map(entityObject -> new EntityObjectView(entityObject.getId(), version(entityObject), entityObject.getPayload()));
+    }
+
+    /**
+     * {@code noRollbackFor}: a missing object is a normal answer to a read, and the caller may catch it. Without this,
+     * the exception marks a transaction it joined — a chat's unread count, say — rollback-only, and that transaction
+     * then fails on commit although the caller handled the miss.
+     */
+    @Override
+    @Transactional(readOnly = true, noRollbackFor = EntityObjectAccessException.class)
     public EntityObjectView find(String orgKey, String entityDefinitionCode, UUID objectId) {
         EntityObject entityObject = load(orgKey, entityDefinitionCode, objectId);
         return new EntityObjectView(entityObject.getId(), version(entityObject), entityObject.getPayload());
@@ -126,6 +138,7 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
             } else {
                 byKey.put(key, repository.save(EntityObject.builder()
                     .orgKey(scope.storageOrgKey(orgKey, entityDefinitionCode))
+                    .ownerOrgKey(scope.ownerForNew(orgKey, entityDefinitionCode, row).orElse(null))
                     .entityDefinitionCode(entityDefinitionCode)
                     .payload(new LinkedHashMap<>(row))
                     .build()));

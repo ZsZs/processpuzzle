@@ -90,6 +90,9 @@ export class DatepickerComponent<Entity extends BaseEntity> extends BaseFormCont
   }
 
   onTimeChange(date: Date | null): void {
+    // The time field emits its value when it is first given one, which is not a pick: committing it would dirty the
+    // form on every load of a date-time attribute, and the Save button with it.
+    if (date?.getTime() === this.picked()?.getTime()) return;
     this.commit(date);
   }
 

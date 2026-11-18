@@ -97,5 +97,13 @@
   "release": "Kiadás",
   "assistant": "AI tervező",
   "assistant_requirement": "Az asszisztens használatához a definition-designer szerep szükséges. A szervezet adminisztrátora a Szervezeti szerepkörök alatt hozza létre, és a Felhasználók alatt rendeli hozzá.",
-  "assistant_toggle": "Tervezőasszisztens"
+  "assistant_toggle": "Tervezőasszisztens",
+  "chat": "Csevegés",
+  "base-chat_card_title": "Csevegéstervező",
+  "base-chat_card_subtitle": "Beszélgetések a rekordokról",
+  "base-chat_card_content": "Meghatározza, mely entitástípusokhoz tartozik beszélgetés, ki olvashatja, írhatja és indíthatja, és hogy a rekord állapota korlátozza-e az írást.",
+  "base-chat_card_content_1": "Rekordonként egy csevegés, vagy tetszőleges számú címmel ellátott téma",
+  "base-chat_card_content_2": "Olvasás, írás és indítás korlátozása szerepkör szerint",
+  "base-chat_card_content_3": "Az írás lezárása, amint a rekord elhagyja az állapotokat",
+  "base-chat_card_button": "Csevegések meghatározása..."
 }

@@ -9,6 +9,7 @@ import com.processpuzzle.app.model.RouteDefinition;
 import com.processpuzzle.app.model.RegionDefinition;
 import com.processpuzzle.app.model.RegionType;
 import com.processpuzzle.app.model.ThemeDefinition;
+import com.processpuzzle.app.model.WorkingContextDefinition;
 import com.processpuzzle.shared.model.WidgetInstance;
 import com.processpuzzle.app.usecase.AppValidationProblem;
 import com.processpuzzle.app.usecase.port.EntityNameRegistry;
@@ -188,6 +189,144 @@ class AppDefinitionValidatorTest {
         WidgetInstance container = new WidgetInstance("widget-container", "tab-group");
         container.setProps(Map.of("childIds", "widget-grid"));
         input.getRoutes().getFirst().setTarget(AppTestFixtures.widgetsTarget(container));
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void routeRequiringADeclaredContext_isAccepted() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        input.getRoutes().get(0).setRequiresContext("race");
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void routeRequiringAnUndeclaredContext_isReported() {
+        AppDefinitionInput input = validInput();
+        input.getRoutes().get(0).setRequiresContext("race");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.unknown-context");
+    }
+
+    @Test
+    void moduleRoutes_mayRequireAContextOfTheMountingApp() {
+        com.processpuzzle.app.model.ModuleDefinitionInput module = new com.processpuzzle.app.model.ModuleDefinitionInput("conduct", "Conduct");
+        RouteDefinition route = route("participants", "Participants");
+        route.setRequiresContext("race");
+        module.setRoutes(List.of(route));
+
+        assertThat(validator.validateModule("my-org", module)).isEmpty();
+    }
+
+    @Test
+    void routeListingAContextCollection_isAcceptedWhenItRequiresTheContextAndNamesTheItems() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.setRequiresContext("race");
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Round");
+        route.getTarget().setContextPath("rounds");
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void contextPathWithoutARequiredContext_isReported() {
+        AppDefinitionInput input = validInput();
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Round");
+        route.getTarget().setContextPath("rounds");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.context-path-without-context");
+    }
+
+    @Test
+    void contextPathOnARouteThatIsNoEntityRoute_isReported() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.setRequiresContext("race");
+        route.getTarget().setContextPath("rounds");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.context-path-needs-entity");
+    }
+
+    @Test
+    void entityListFilteredByADeclaredContext_isAccepted() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+
+        assertThat(validator.validate("my-org", input)).isEmpty();
+    }
+
+    @Test
+    void filterByAnUndeclaredContext_isReported() {
+        AppDefinitionInput input = validInput();
+        RouteDefinition route = input.getRoutes().get(0);
+        route.getTarget().setKind(com.processpuzzle.app.model.RouteTarget.KindEnum.ENTITY);
+        route.getTarget().setEntityName("Result");
+        route.getTarget().setFilterByContext("race");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.unknown-context");
+    }
+
+    @Test
+    void filterByOnARouteThatIsNoEntityList_isReported() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+        input.getRoutes().get(0).getTarget().setFilterByContext("race");
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.filter-by-context-needs-entity");
+    }
+
+    @Test
+    void duplicateContextNames_areReported() {
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race"), new WorkingContextDefinition("race", "Regatta")));
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.duplicate-context-name");
+    }
+
+    @Test
+    void contextParent_mustExistAndNotLoop() {
+        WorkingContextDefinition race = new WorkingContextDefinition("race", "Race");
+        race.setParent("regatta");
+        WorkingContextDefinition regatta = new WorkingContextDefinition("regatta", "Regatta");
+        AppDefinitionInput input = validInput();
+
+        input.setContexts(List.of(race));
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.unknown-context-parent");
+
+        input.setContexts(List.of(race, regatta));
+        assertThat(validator.validate("my-org", input)).isEmpty();
+
+        regatta.setParent("race");
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.context-parent-cycle");
+    }
+
+    @Test
+    void contextNamingAnUnknownEntity_isReportedWhenARegistryIsAvailable() {
+        EntityNameRegistry registry = mock(EntityNameRegistry.class);
+        when(registry.isKnownEntity("my-org", "Race")).thenReturn(false);
+        when(entityRegistryProvider.getIfAvailable()).thenReturn(registry);
+        AppDefinitionInput input = validInput();
+        input.setContexts(List.of(new WorkingContextDefinition("race", "Race")));
+
+        assertThat(errorIds(validator.validate("my-org", input))).contains("app.validation.unknown-entity-name");
+    }
+
+    @Test
+    void statusbarRegion_isAcceptedWithoutContent() {
+        AppDefinitionInput input = validInput();
+        input.getRegions().add(new RegionDefinition(RegionType.STATUSBAR));
 
         assertThat(validator.validate("my-org", input)).isEmpty();
     }

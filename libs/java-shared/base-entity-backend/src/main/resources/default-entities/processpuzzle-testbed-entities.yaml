@@ -573,6 +573,101 @@ entityDefinitions:
         valueKind: TEXT
         formControlType: TEXT_BOX
 
+  # 7.–9. The Context Object demonstration: three entities that exist only to show a working context (the
+  # testbed's base-entity › Context Object page). An aggregate root, and two entities it embeds. Nothing in them
+  # is specific to a domain — they have a name and a little data, which is all the demonstration needs.
+  - code: demo-component-one
+    name: Demo Component One
+    description: >-
+      The first kind of part an aggregate root embeds, in the Context Object demonstration.
+    status: ACTIVE
+    isEmbedded: true
+    componentParents:
+      - demo-root
+    attributes:
+      - code: name
+        name: Name
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+      - code: quantity
+        name: Quantity
+        displayOrder: 2
+        valueKind: NUMBER
+        formControlType: NUMBER
+      - code: note
+        name: Note
+        displayOrder: 3
+        valueKind: TEXT
+        formControlType: TEXTAREA
+
+  - code: demo-component-two
+    name: Demo Component Two
+    description: >-
+      The second kind of part an aggregate root embeds, in the Context Object demonstration.
+    status: ACTIVE
+    isEmbedded: true
+    componentParents:
+      - demo-root
+    attributes:
+      - code: name
+        name: Name
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+      - code: owner
+        name: Owner
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+      - code: note
+        name: Note
+        displayOrder: 3
+        valueKind: TEXT
+        formControlType: TEXTAREA
+
+  - code: demo-root
+    name: Demo Root
+    description: >-
+      The aggregate root of the Context Object demonstration: select it once, and edit its two kinds of
+      embedded parts without going through it again.
+    status: ACTIVE
+    isEmbedded: false
+    canContextObject: true
+    componentParents: [ ]
+    attributes:
+      - code: name
+        name: Name
+        displayOrder: 1
+        valueKind: TEXT
+        formControlType: TEXT_BOX
+        required: true
+        isLinkToDetails: true
+        indexed: true
+      - code: description
+        name: Description
+        displayOrder: 2
+        valueKind: TEXT
+        formControlType: TEXTAREA
+      - code: componentsOne
+        name: Components One
+        displayOrder: 3
+        valueKind: REFERENCE
+        formControlType: EMBEDDED_COMPONENTS
+        linkedEntityType: demo-component-one
+        multiplicity: '0..n'
+      - code: componentsTwo
+        name: Components Two
+        displayOrder: 4
+        valueKind: REFERENCE
+        formControlType: EMBEDDED_COMPONENTS
+        linkedEntityType: demo-component-two
+        multiplicity: '0..n'
+
 entities:
   # Sample Object 1
   - entityDefinitionCode: dynamic-entity
@@ -849,3 +944,23 @@ entities:
       venue: Kiel
       startDate: "2026-10-17"
       rounds: 2
+
+  # Context Object demonstration: two roots with a few parts each, so there is something to select and edit.
+  - entityDefinitionCode: demo-root
+    payload:
+      name: Demo Root Alpha
+      description: The first sample aggregate root.
+      componentsOne:
+        - { name: Alpha one A, quantity: 3, note: First part of the first kind. }
+        - { name: Alpha one B, quantity: 8 }
+      componentsTwo:
+        - { name: Alpha two A, owner: Sam, note: First part of the second kind. }
+  - entityDefinitionCode: demo-root
+    payload:
+      name: Demo Root Beta
+      description: The second sample aggregate root.
+      componentsOne:
+        - { name: Beta one A, quantity: 1 }
+      componentsTwo:
+        - { name: Beta two A, owner: Kim }
+        - { name: Beta two B, owner: Lee }

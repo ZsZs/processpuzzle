@@ -107,6 +107,12 @@
   "spacer": {
     "name": "Spacer"
   },
+  "sidenav_toggle": {
+    "name": "Sidenav toggle"
+  },
+  "context_actions": {
+    "name": "Context actions"
+  },
   "themes_button": {
     "name": "Themes button"
   },

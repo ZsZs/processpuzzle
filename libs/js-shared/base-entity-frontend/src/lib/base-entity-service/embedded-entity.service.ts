@@ -1,7 +1,8 @@
-import { defer, Observable, of } from 'rxjs';
+import { defer, from, map, Observable, of } from 'rxjs';
 import { BaseEntity, PersistedEntity } from '../base-entity/base-entity';
 import { appendRow, asPersisted, EmbeddedRow, findRow, readRows, removeRow, replaceRow, rowId, writeRows } from '../base-entity-embedded/embedded-aggregate';
 import { EmbeddedAggregateAccessor, ResolvedEmbeddedAggregate } from '../base-entity-embedded/embedded-aggregate.accessor';
+import type { DirectEmbeddedWriter } from '../working-context/direct-embedded-writer';
 import { BaseEntityService } from './base-entity.service';
 
 /**
@@ -21,6 +22,8 @@ export class EmbeddedEntityService<Entity extends BaseEntity> implements BaseEnt
   constructor(
     private readonly entityName: string,
     private readonly accessor: EmbeddedAggregateAccessor,
+    /** Saves a row on its own where the aggregate's root is a working context; absent, every write is staged. */
+    private readonly direct?: DirectEmbeddedWriter,
   ) {}
 
   /**
@@ -31,6 +34,7 @@ export class EmbeddedEntityService<Entity extends BaseEntity> implements BaseEnt
   add(entity: Entity): Observable<PersistedEntity<Entity>> {
     return defer(() => {
       const resolved = this.require();
+      if (this.direct?.handles(resolved)) return from(this.direct.append(resolved, entity as EmbeddedRow)).pipe(map((stored) => asPersisted<Entity>(stored)));
       const rows = this.rowsOf(resolved);
       return this.commit(resolved, appendRow(rows, entity as EmbeddedRow), asPersisted<Entity>(entity as EmbeddedRow));
     });
@@ -41,6 +45,8 @@ export class EmbeddedEntityService<Entity extends BaseEntity> implements BaseEnt
       const resolved = this.require();
       const rows = this.rowsOf(resolved);
       const id = rowId(entity as EmbeddedRow, resolved.context.referenceIdField);
+      const before = findRow(rows, id, resolved.context.referenceIdField);
+      if (this.direct?.handles(resolved) && before) return from(this.direct.patch(resolved, before, entity as EmbeddedRow)).pipe(map((stored) => asPersisted<Entity>(stored)));
       return this.commit(resolved, replaceRow(rows, id, entity as EmbeddedRow, resolved.context.referenceIdField), entity);
     });
   }
@@ -49,6 +55,8 @@ export class EmbeddedEntityService<Entity extends BaseEntity> implements BaseEnt
     return defer(() => {
       const resolved = this.require();
       const rows = this.rowsOf(resolved);
+      const before = findRow(rows, id, resolved.context.referenceIdField);
+      if (this.direct?.handles(resolved) && before) return from(this.direct.remove(resolved, before)).pipe(map(() => undefined));
       return this.commit(resolved, removeRow(rows, id, resolved.context.referenceIdField), undefined);
     });
   }

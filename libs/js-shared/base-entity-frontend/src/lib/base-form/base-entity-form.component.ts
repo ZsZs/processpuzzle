@@ -20,7 +20,11 @@ import { BaseFormNavigatorSingletonStore } from '../base-form-navigator/base-for
 import { BaseEntityStoreApi } from '../base-entity-store/base-entity.store';
 import { EvaluatableRule, RULE_ENGINE, RuleEvaluationResult } from '../rule-engine/rule-engine';
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
-import { Subject, Subscription } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { firstValueFrom, Subject, Subscription } from 'rxjs';
+import { DeleteConfirmationDialog, DeleteConfirmationDialogData } from '../dialogs/delete-confirmation.dialog';
+import { HasUnsavedChanges } from './unsaved-changes/unsaved-changes.guard';
+import { UnsavedChangesRegistry } from './unsaved-changes/unsaved-changes.registry';
 
 @Component({
   selector: 'base-form',
@@ -30,7 +34,7 @@ import { Subject, Subscription } from 'rxjs';
   imports: [BaseFormHostDirective, NgTemplateOutlet, ReactiveFormsModule, MatCard, MatCardContent, MatCardActions, MatButton, MatIcon, RouterOutlet],
   providers: [{ provide: MAT_FORM_FIELD_DEFAULT_OPTIONS, useValue: { appearance: 'outline' } }],
 })
-export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnInit, OnDestroy {
+export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnInit, OnDestroy, HasUnsavedChanges {
   baseEntityForm!: FormGroup;
   entityDescriptor = inject(ROUTER_OUTLET_DATA) as Signal<BaseEntityDescriptor>;
   entity: Signal<Entity> = computed(() => (this.isNewObject() ? this.store().createEntity() : (this.store().loadById(this.entityId()) as Entity)));
@@ -65,6 +69,11 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   // zoneless change detection, where a bare `baseEntityForm.dirty` binding stays stale after signal-less mutations
   // (e.g. the components-list navigator flow that only calls setValue()/markAsDirty()).
   saveDisabled!: Signal<boolean>;
+  /**
+   * Edits made here, or staged in this entity's document by an embedded child or a relationship, that only
+   * this form's Save persists. Read by the status bar indicator and by the leave guard.
+   */
+  hasUnsavedChanges!: Signal<boolean>;
 
   private readonly entityFormBuilder = inject(BaseEntityFormBuilder<Entity>);
   private readonly formBuilder = inject(FormBuilder);
@@ -73,6 +82,11 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
   private readonly ruleEngine = inject(RULE_ENGINE, { optional: true });
   private readonly violationsStore = inject(RuleViolationsSingletonStore);
   private readonly previewMode = inject(EntityPreviewMode);
+  private readonly dialog = inject(MatDialog);
+  private readonly unsavedChanges = inject(UnsavedChangesRegistry);
+  private unregisterUnsavedChanges: (() => void) | undefined;
+  /** Set by Cancel, Delete and a finished Save: leaving is then intended, so the guard stays silent. */
+  private leaveWithoutAsking = false;
   private rules: EvaluatableRule[] = [];
   private readonly fieldsWithRuleErrors = new Set<string>();
   private readonly ruleLoad$ = new Subject<void>();
@@ -85,6 +99,12 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
       formEvents(); // establishes the reactive dependency; child setValue()/markAsDirty() bubble value/status events to the parent group
       return this.baseEntityForm.invalid || !this.baseEntityForm.dirty || this.isAbstract() || this.isReadOnly() || this.hasErrorViolations();
     });
+    this.hasUnsavedChanges = computed(() => {
+      formEvents();
+      if (this.isReadOnly() || this.isAbstract()) return false;
+      return this.baseEntityForm.dirty || (!this.isNewObject() && this.store().hasStagedChanges(this.entityId()));
+    });
+    this.unregisterUnsavedChanges = this.unsavedChanges.register(this.hasUnsavedChanges);
     this.registerEffects();
   }
 
@@ -98,6 +118,7 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
 
   ngOnDestroy(): void {
     // Left without Save — by Cancel, or by navigating elsewhere. A Save that succeeded has already cleared the mark.
+    this.unregisterUnsavedChanges?.();
     void this.discardStagedChanges();
     this.ruleSubscription?.unsubscribe();
     this.ruleLoad$.complete();
@@ -108,13 +129,26 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
 
   // region event handlers
   async onCancel() {
+    this.leaveWithoutAsking = true;
     this.store().setCurrentEntity(undefined);
     await this.discardStagedChanges();
     await this.navigateBack();
   }
 
+  /** Whether the row shown is a retired record of a shared type; it can be reinstated where the entity offers it. */
+  isRetired = computed(() => !this.isNewObject() && !!(this.entity() as { retiredAt?: string } | undefined)?.retiredAt);
+  canReinstate = computed(() => this.isRetired() && !this.entityReadOnly() && !!this.entityDescriptor().reinstate);
+
+  async onReinstate() {
+    const reinstate = this.entityDescriptor().reinstate;
+    if (!reinstate || !this.canReinstate()) return;
+    await firstValueFrom(reinstate(this.entityId()));
+    await this.store().reload(this.entityId());
+  }
+
   async onDelete() {
     if (this.isReadOnly()) return;
+    this.leaveWithoutAsking = true;
     await this.store().delete(this.entityId());
     await this.navigateBack();
   }
@@ -140,6 +174,25 @@ export class BaseEntityFormComponent<Entity extends BaseEntity> implements OnIni
     // Saved: should navigating away fail, the form must not keep offering Save for edits already persisted.
     this.baseEntityForm.markAsPristine();
     await this.navigateBack();
+  }
+
+  /** The route's `canDeactivate` question: asks the user before unsaved changes are thrown away. */
+  async confirmLeave(): Promise<boolean> {
+    if (this.leaveWithoutAsking || !this.hasUnsavedChanges()) return true;
+    // A round trip to a list to choose from is under way: this form keeps its values under its own entity, to be given
+    // back when it is shown again. Nothing is lost by going, so there is nothing to ask.
+    if (this.formNavigator.hasRoundTrip()) {
+      this.formNavigator.keepFormSnapshot(this.entityDescriptor().entityName, this.baseEntityForm.getRawValue());
+      return true;
+    }
+
+    const dialogData: DeleteConfirmationDialogData = {
+      titleKey: 'base_entity.unsaved_changes_dialog.title',
+      contentKey: 'base_entity.unsaved_changes_dialog.content',
+      cancelButtonKey: 'base_entity.unsaved_changes_dialog.cancel_button',
+      confirmButtonKey: 'base_entity.unsaved_changes_dialog.leave_button',
+    };
+    return (await firstValueFrom(this.dialog.open(DeleteConfirmationDialog, { data: dialogData }).afterClosed(), { defaultValue: false })) === true;
   }
   // endregion
 

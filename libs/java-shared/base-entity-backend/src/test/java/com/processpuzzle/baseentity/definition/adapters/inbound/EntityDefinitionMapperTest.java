@@ -60,15 +60,18 @@ class EntityDefinitionMapperTest {
         input.setStatus(EntityDefinitionStatus.ACTIVE);
         input.setComponentParents(List.of());
         input.setIsEmbedded(false);
+        input.setCanContextObject(true);
         input.setAttributes(List.of(attrInput));
 
         BaseEntityDefinition domain = mapper.toDomain(input);
+        assertThat(domain.isCanContextObject()).isTrue();
         assertThat(domain.getCode()).isEqualTo("partner");
         assertThat(domain.getAttributes()).hasSize(1);
         assertThat(domain.getAttributes().get(0).getEntityDefinition()).isSameAs(domain);
 
         com.processpuzzle.baseentity.model.BaseEntityDefinition model = mapper.toModel(domain);
         assertThat(model.getCode()).isEqualTo("partner");
+        assertThat(model.getCanContextObject()).isTrue();
         assertThat(model.getAttributes()).hasSize(1);
         assertThat(model.getAttributes().get(0).getCode()).isEqualTo("name");
     }
@@ -482,5 +485,41 @@ class EntityDefinitionMapperTest {
         com.processpuzzle.baseentity.definition.domain.BaseEntityDescriptor desc = mapper.toDescriptor(def);
         assertThat(desc.getEntityName()).isEqualTo("EmptyDef");
         assertThat(desc.getAttrDescriptors()).isEmpty();
+    }
+
+    @Test
+    void visibleWhen_survivesTheRoundTripThroughTheContract() {
+        com.processpuzzle.baseentity.model.EntitySharing sharing = new com.processpuzzle.baseentity.model.EntitySharing()
+            .write(com.processpuzzle.baseentity.model.EntitySharing.WriteEnum.OWNER_ORG)
+            .visibility(com.processpuzzle.baseentity.model.EntitySharing.VisibilityEnum.PUBLIC)
+            .visibleWhen(new com.processpuzzle.baseentity.model.SharingVisibleWhen().state(java.util.List.of("PUBLISHED", "COMPLETED")));
+        BaseEntityDefinitionInput input = new BaseEntityDefinitionInput().code("race").name("Race").sharing(sharing);
+
+        var definition = mapper.toDomain(input);
+
+        assertThat(definition.getSharingVisibleWhen()).containsExactly("PUBLISHED", "COMPLETED");
+        assertThat(mapper.toModel(definition).getSharing().getVisibleWhen().getState()).containsExactly("PUBLISHED", "COMPLETED");
+    }
+
+    @Test
+    void from_aTypeThatFollowsARecordNeedsNoWriteOrVisibility_andRoundTrips() {
+        BaseEntityDefinitionInput input = new BaseEntityDefinitionInput().code("entry").name("Entry")
+            .sharing(new com.processpuzzle.baseentity.model.EntitySharing().from("race"));
+
+        var definition = mapper.toDomain(input);
+
+        assertThat(definition.getSharingFrom()).isEqualTo("race");
+        assertThat(definition.getSharingWrite()).isEqualTo(com.processpuzzle.baseentity.definition.domain.SharingWrite.OWNER_ORG);
+        assertThat(definition.getSharingVisibility()).isEqualTo(com.processpuzzle.baseentity.definition.domain.SharingVisibility.PUBLIC);
+        assertThat(mapper.toModel(definition).getSharing().getFrom()).isEqualTo("race");
+    }
+
+    @Test
+    void sharingWithNeitherPolicyNorFrom_staysIncomplete() {
+        var definition = mapper.toDomain(new BaseEntityDefinitionInput().code("x").name("X")
+            .sharing(new com.processpuzzle.baseentity.model.EntitySharing()));
+
+        assertThat(definition.getSharingWrite()).isNull();
+        assertThat(definition.getSharingVisibility()).isNull();
     }
 }

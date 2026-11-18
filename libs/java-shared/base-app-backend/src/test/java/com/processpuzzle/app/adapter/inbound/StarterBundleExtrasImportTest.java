@@ -484,4 +484,91 @@ class StarterBundleExtrasImportTest {
     private static byte[] bytes(String text) {
         return text.getBytes(StandardCharsets.UTF_8);
     }
+
+    // --- upgrading ----------------------------------------------------------------------
+
+    @Test
+    void anAssetUpgradeWritesTheDraftOnly_ifItsKeyIsWanted() {
+        assets.apply(ORG, "assets/apps/app/cards/plan-race.svg", bytes(SVG));
+        flushAndClear();
+        var releasedBefore = appAssetRepository.findByOrgKeyAndAppIdAndChannelAndPath(ORG, APP_ID, Channel.RELEASED, "cards/plan-race.svg").orElseThrow();
+
+        assertThat(assets.supportsUpgrade()).isTrue();
+        assertThat(assets.keysIn("assets/apps/app/cards/plan-race.svg", bytes(SVG))).containsExactly("apps/app/cards/plan-race.svg");
+        assertThat(assets.applyOnly(ORG, "assets/apps/app/cards/plan-race.svg", bytes(SVG + "<!-- 2 -->"), Set.of("something-else")).items()).isEmpty();
+        ParticipantResult result = assets.applyOnly(ORG, "assets/apps/app/cards/plan-race.svg", bytes(SVG + "<!-- 2 -->"), Set.of("apps/app/cards/plan-race.svg"));
+        flushAndClear();
+
+        assertThat(result.items()).extracting(ImportedItem::action).containsExactly(ImportedItem.Action.UPDATE);
+        var draft = appAssetRepository.findByOrgKeyAndAppIdAndChannelAndPath(ORG, APP_ID, Channel.DRAFT, "cards/plan-race.svg").orElseThrow();
+        var released = appAssetRepository.findByOrgKeyAndAppIdAndChannelAndPath(ORG, APP_ID, Channel.RELEASED, "cards/plan-race.svg").orElseThrow();
+        assertThat(draft.getSha256()).isNotEqualTo(releasedBefore.getSha256());
+        assertThat(released.getSha256()).as("not released").isEqualTo(releasedBefore.getSha256());
+    }
+
+    @Test
+    void aModuleAssetUpgradeIsADraftToo() {
+        assets.apply(ORG, "assets/modules/plan-race/docs/guide.md", bytes("# Guide"));
+        flushAndClear();
+
+        assets.applyOnly(ORG, "assets/modules/plan-race/docs/guide.md", bytes("# Guide 2"), Set.of("modules/plan-race/docs/guide.md"));
+        flushAndClear();
+
+        var draft = moduleAssetRepository.findByOrgKeyAndModuleKeyAndChannelAndPath(ORG, "plan-race", Channel.DRAFT, "docs/guide.md").orElseThrow();
+        var released = moduleAssetRepository.findByOrgKeyAndModuleKeyAndChannelAndPath(ORG, "plan-race", Channel.RELEASED, "docs/guide.md").orElseThrow();
+        assertThat(draft.getSha256()).isNotEqualTo(released.getSha256());
+    }
+
+    @Test
+    void removingAssetDraftsKeepsTheReleasedRecordAndSweepsTheContent() {
+        assets.apply(ORG, "assets/apps/app/cards/plan-race.svg", bytes(SVG));
+        assets.apply(ORG, "assets/modules/plan-race/docs/guide.md", bytes("# Guide"));
+        flushAndClear();
+
+        var removal = assets.removeDrafts(ORG, new java.util.LinkedHashSet<>(List.of("apps/app/cards/plan-race.svg",
+                "modules/plan-race/docs/guide.md", "modules/plan-race/docs/ghost.md", "garbage")));
+        flushAndClear();
+
+        assertThat(removal.removed()).containsExactly("apps/app/cards/plan-race.svg", "modules/plan-race/docs/guide.md");
+        assertThat(removal.refused()).containsOnlyKeys("modules/plan-race/docs/ghost.md", "garbage");
+        assertThat(appAssetRepository.findByOrgKeyAndAppIdAndChannelAndPath(ORG, APP_ID, Channel.DRAFT, "cards/plan-race.svg")).isEmpty();
+        assertThat(appAssetRepository.findByOrgKeyAndAppIdAndChannelAndPath(ORG, APP_ID, Channel.RELEASED, "cards/plan-race.svg")).isPresent();
+        verify(sweeper, atLeastOnce()).sweep(eq(ORG), org.mockito.ArgumentMatchers.<java.util.Collection<String>>any());
+    }
+
+    @Test
+    void aTranslationUpgradeIsADraftWithoutRelease() {
+        translations.apply(ORG, "translations/modules/plan-race/de.json", bytes("{\"module.name\": \"Rennen planen\"}"));
+        flushAndClear();
+
+        assertThat(translations.supportsUpgrade()).isTrue();
+        assertThat(translations.keysIn("translations/modules/plan-race/de.json", bytes("{}"))).containsExactly("modules/plan-race/de");
+        assertThat(translations.applyOnly(ORG, "translations/modules/plan-race/de.json", bytes("{\"module.name\": \"x\"}"), Set.of("modules/plan-race/hu")).items()).isEmpty();
+        translations.applyOnly(ORG, "translations/modules/plan-race/de.json", bytes("{\"module.name\": \"Regatta planen\"}"), Set.of("modules/plan-race/de"));
+        flushAndClear();
+
+        assertThat(translationRepository.findByOrgKeyAndModuleKeyAndChannelAndLocale(ORG, "plan-race", Channel.DRAFT, "de").orElseThrow().getMessages())
+                .containsEntry("module.name", "Regatta planen");
+        assertThat(translationRepository.findByOrgKeyAndModuleKeyAndChannelAndLocale(ORG, "plan-race", Channel.RELEASED, "de").orElseThrow().getMessages())
+                .as("not released").containsEntry("module.name", "Rennen planen");
+    }
+
+    @Test
+    void anAppTranslationUpgradeIsADraftToo_andItsDraftCanBeRemoved() {
+        translations.apply(ORG, "translations/apps/app/de.json", bytes("{\"hello\": \"Hallo\"}"));
+        flushAndClear();
+
+        translations.applyOnly(ORG, "translations/apps/app/de.json", bytes("{\"hello\": \"Servus\"}"), Set.of("apps/app/de"));
+        flushAndClear();
+        assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannelAndLocale(ORG, APP_ID, Channel.DRAFT, "de").orElseThrow().getMessages())
+                .containsEntry("hello", "Servus");
+
+        var removal = translations.removeDrafts(ORG, new java.util.LinkedHashSet<>(List.of("apps/app/de", "modules/plan-race/fr", "nonsense")));
+        flushAndClear();
+
+        assertThat(removal.removed()).containsExactly("apps/app/de");
+        assertThat(removal.refused()).containsOnlyKeys("modules/plan-race/fr", "nonsense");
+        assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannelAndLocale(ORG, APP_ID, Channel.DRAFT, "de")).isEmpty();
+        assertThat(appTranslationRepository.findByOrgKeyAndAppIdAndChannelAndLocale(ORG, APP_ID, Channel.RELEASED, "de")).isPresent();
+    }
 }

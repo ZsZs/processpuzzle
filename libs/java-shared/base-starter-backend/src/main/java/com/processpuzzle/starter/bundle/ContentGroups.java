@@ -16,6 +16,7 @@ public final class ContentGroups {
             Map.entry("rules", DefinitionKinds.RULE),
             Map.entry("calculations", DefinitionKinds.CALCULATION),
             Map.entry("widgets", DefinitionKinds.WIDGET),
+            Map.entry("chats", DefinitionKinds.CHAT),
             Map.entry("documents", DefinitionKinds.DOCUMENT),
             Map.entry("workflows", DefinitionKinds.WORKFLOW),
             Map.entry("modules", DefinitionKinds.MODULE),

@@ -1,6 +1,7 @@
 import type { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
 import {
+  APP_CONTEXT_ENTITY_NAME,
   APP_DEFINITION_ENTITY_NAME,
   APP_MODULE_MOUNT_ENTITY_NAME,
   APP_NAV_ITEM_ENTITY_NAME,
@@ -9,6 +10,7 @@ import {
   APP_WIDGET_ENTITY_NAME,
   MODULE_DEFINITION_ENTITY_NAME,
 } from './domain/app-entity-names';
+import { AppContextFacade } from './feature/app-context.facade';
 import { AppDefinitionFacade } from './feature/app-definition.facade';
 import { AppModuleMountFacade } from './feature/app-module-mount.facade';
 import { AppNavItemFacade } from './feature/app-nav-item.facade';
@@ -24,7 +26,16 @@ import { ModuleDefinitionFacade } from './feature/module-definition.facade';
  * like any other — that is what gives it a store — and only its repository differs, reading and writing
  * the `App Definition` document rather than an endpoint of its own.
  */
-export const BASE_APP_FACADE_PROVIDERS: Provider[] = [AppDefinitionFacade, ModuleDefinitionFacade, AppRegionFacade, AppRouteFacade, AppModuleMountFacade, AppNavItemFacade, AppWidgetFacade];
+export const BASE_APP_FACADE_PROVIDERS: Provider[] = [
+  AppDefinitionFacade,
+  ModuleDefinitionFacade,
+  AppRegionFacade,
+  AppRouteFacade,
+  AppModuleMountFacade,
+  AppContextFacade,
+  AppNavItemFacade,
+  AppWidgetFacade,
+];
 
 /**
  * The same facades keyed by entity name, to be spread into the application's
@@ -42,6 +53,7 @@ export const BASE_APP_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [APP_REGION_ENTITY_NAME]: AppRegionFacade,
   [APP_ROUTE_ENTITY_NAME]: AppRouteFacade,
   [APP_MODULE_MOUNT_ENTITY_NAME]: AppModuleMountFacade,
+  [APP_CONTEXT_ENTITY_NAME]: AppContextFacade,
   [APP_NAV_ITEM_ENTITY_NAME]: AppNavItemFacade,
   [APP_WIDGET_ENTITY_NAME]: AppWidgetFacade,
 };

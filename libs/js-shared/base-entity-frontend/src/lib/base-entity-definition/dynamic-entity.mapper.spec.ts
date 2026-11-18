@@ -71,6 +71,13 @@ describe('DynamicEntityMapper', () => {
       expect(mapper.toDto({ orderNumber: 'ORD-1004' })).not.toHaveProperty('version');
     });
 
+    it('reads when a record was retired and never sends that back', () => {
+      const entity = mapper.fromDto({ id: 'b7e1', retiredAt: '2026-11-16T10:00:00Z', retiredBy: 'staff', payload: { orderNumber: 'ORD-1001' } });
+
+      expect(entity).toMatchObject({ retiredAt: '2026-11-16T10:00:00Z', orderNumber: 'ORD-1001' });
+      expect(mapper.toDto(entity)).toEqual({ entityDefinitionCode: 'order', payload: { orderNumber: 'ORD-1001' } });
+    });
+
     it('round-trips an entity read from the backend back into the same payload', () => {
       const dto = { id: 'b7e1', version: 3, entityDefinitionCode: 'order', payload: { orderNumber: 'ORD-1001', lineItems: [{ productName: 'Widget A' }] } };
 

@@ -51,22 +51,26 @@
     "description": "Description",
     "status": "Statut",
     "isEmbedded": "Intégrée",
+    "canContextObject": "Objet de contexte",
     "componentParents": "Composants parents",
     "attributes": "Attributs",
     "version": "Version",
     "updatedAt": "Mis à jour le",
     "releaseState": "Publication",
+    "sharedFrom": "Partagé depuis",
     "_tooltips": {
       "code": "Clé unique du type d'entité dans votre organisation, utilisée dans les adresses. Courte, en minuscules et compatible URL, p. ex. order ; évitez de la modifier ensuite.",
       "name": "Le nom d'entité par lequel les pages, routes et menus de l'application désignent ce type, p. ex. Order.",
       "description": "Une note pour vous et les autres concepteurs sur le rôle de ce type d'entité ; les utilisateurs ne la voient pas.",
       "status": "ACTIVE pour un type en usage, DEPRECATED pour le retirer : l'application n'affiche plus un type retiré. Que l'application connaisse le type dépend de sa publication, indiquée sous Publication.",
       "isEmbedded": "Cochez si les enregistrements de ce type n'existent qu'à l'intérieur d'un autre enregistrement, p. ex. les lignes d'une commande. Indiquez alors aussi le parent dans Composants parents.",
+      "canContextObject": "Cochez pour permettre de choisir un enregistrement de ce type comme objet de contexte : ses parties intégrées sont alors listées et modifiées sans le désigner à nouveau. Impossible pour un type intégré.",
       "componentParents": "Pour un type intégré : les codes des types d'entité dont les enregistrements le contiennent, p. ex. order. Obligatoire si Intégrée est cochée.",
       "attributes": "Les champs du type d'entité, une ligne par champ. Ils sont enregistrés avec la définition.",
       "version": "Augmente à chaque enregistrement. Défini par le système.",
       "updatedAt": "Date du dernier enregistrement de la définition. Défini par le système.",
-      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système."
+      "releaseState": "Indique si l'application en service utilise cette définition telle quelle : NEW n'a jamais été publiée, CHANGED diffère de ce qui a été publié, RELEASED est ce qu'utilise l'application. Publiez dans la section Release pour le changer. Défini par le système.",
+      "sharedFrom": "Le commun dont provient ce type. Votre organisation le lit, mais seul le commun le publie ou le modifie. Vide pour vos propres types. Défini par le système."
     }
   },
   "artifact": {
@@ -100,7 +104,15 @@
     "delete_button": "Supprimer"
   },
   "statusbar": {
-    "breadcrumb_label": "Hiérarchie des enregistrements"
+    "breadcrumb_label": "Hiérarchie des enregistrements",
+    "unsaved_changes": "Modifications non enregistrées",
+    "unsaved_changes_hint": "Enregistrez {{ entity }} pour conserver ces modifications"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Modifications non enregistrées",
+    "content": "Des modifications ne sont pas enregistrées. Si vous quittez cette page, elles seront perdues.",
+    "cancel_button": "Rester",
+    "leave_button": "Quitter"
   },
   "tabs": {
     "list": "{{ entity }} - liste",
@@ -140,7 +152,10 @@
   "embedded_components": {
     "save_owner_first": "Enregistrez cet enregistrement avant d'ajouter {{ entity }} — un composant intégré y est stocké.",
     "move_up": "Monter",
-    "move_down": "Descendre"
+    "move_down": "Descendre",
+    "hide_list": "Masquer la liste",
+    "show_list": "Afficher la liste",
+    "hidden_count": "{{ count }} masqué(s)"
   },
   "rich_text": {
     "toolbar": {
@@ -202,5 +217,42 @@
       "TIMEOUT": "La lecture de la position a pris trop de temps. Réessayez.",
       "UNAVAILABLE": "Ce navigateur ne peut pas déterminer votre position."
     }
+  },
+  "working_context": {
+    "search": "Rechercher",
+    "recent": "Récents",
+    "all": "Tous",
+    "no_match": "Aucun résultat",
+    "empty_state": "Sélectionnez : {{ entity }}",
+    "switch_title": "Changer : {{ entity }}",
+    "select_to_continue": "Sélectionnez-en un et appuyez sur « Définir comme objet de contexte » pour continuer vers la page demandée.",
+    "show_list": "Afficher la liste complète",
+    "menu": "Actions du contexte",
+    "switch": "Changer",
+    "open": "Ouvrir pour modifier",
+    "clear": "Effacer le contexte",
+    "set_active": "Définir comme objet de contexte",
+    "is_active": "Actif",
+    "confirm_switch": {
+      "title": "Quitter le contexte actif ?",
+      "content": "{{ entity }} est toujours en cours. Voulez-vous vraiment le quitter ?",
+      "cancel_button": "Rester",
+      "confirm_button": "Quitter"
+    },
+    "only_active": "Seulement le {{context}} actif"
+  },
+  "context_collection": {
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "empty": "Rien pour le moment.",
+    "delete_title": "Supprimer cet élément ?",
+    "delete_content": "Cette action est irréversible.",
+    "conflict": "Quelqu'un d'autre l'a modifié en même temps. La liste montre l'état enregistré — réessayez."
+  },
+  "list": {
+    "show_retired": "Afficher les enregistrements retirés"
   }
 }

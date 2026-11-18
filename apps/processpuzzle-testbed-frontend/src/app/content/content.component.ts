@@ -96,6 +96,15 @@ export class ContentComponent {
       translocoPrefix: 'home',
     },
     {
+      icon: 'forum',
+      title: 'base-chat_card_title',
+      subtitle: 'base-chat_card_subtitle',
+      content: ['base-chat_card_content', 'base-chat_card_content_1', 'base-chat_card_content_2', 'base-chat_card_content_3'],
+      actions: [{ link: '/base-chat', caption: 'base-chat_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'open_in_new', label: 'base-chat_card_button', link: '/base-chat' }],
+      translocoPrefix: 'home',
+    },
+    {
       icon: 'calculate',
       title: 'base-calculation_card_title',
       subtitle: 'base-calculation_card_subtitle',

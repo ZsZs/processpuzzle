@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/cor
 import { MatButton } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { STARTER_IMPORT_I18N_SCOPE } from '../base-starter.i18n';
+import { STARTER_IMPORT_I18N_SCOPE, STARTER_UPGRADE_I18N_SCOPE } from '../base-starter.i18n';
 import { StarterImportStore } from '../domain/starter-import.store';
 import { ImportReportComponent } from './import-report.component';
 import { InstalledStartersComponent } from './installed-starters.component';
+import { UpgradeReportComponent } from './upgrade-report.component';
 
 /**
  * Installs a Business Starter from the catalog into the current organization: pick a starter and version,
@@ -17,7 +18,7 @@ import { InstalledStartersComponent } from './installed-starters.component';
 @Component({
   selector: 'pp-starter-import',
   standalone: true,
-  imports: [TranslocoPipe, MatButton, MatProgressBar, ImportReportComponent, InstalledStartersComponent],
+  imports: [TranslocoPipe, MatButton, MatProgressBar, ImportReportComponent, InstalledStartersComponent, UpgradeReportComponent],
   providers: [StarterImportStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -91,7 +92,16 @@ import { InstalledStartersComponent } from './installed-starters.component';
         <pp-import-report [report]="report" />
       }
 
-      <pp-installed-starters [starters]="store.installed()" />
+      <pp-installed-starters [starters]="store.installed()" [busy]="store.isBusy()" (previewUpgrade)="store.previewUpgrade($event)" />
+
+      @if (store.upgradeReport(); as upgrade) {
+        <pp-upgrade-report [report]="upgrade" />
+        <div class="starter-import__actions">
+          <button mat-flat-button type="button" data-testid="upgrade-apply" [disabled]="!store.canApplyUpgrade()" (click)="store.applyUpgrade()">
+            {{ upgradeScope + '.apply' | transloco }}
+          </button>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -144,6 +154,7 @@ import { InstalledStartersComponent } from './installed-starters.component';
 export class StarterImportComponent implements OnInit {
   protected readonly store = inject(StarterImportStore);
   protected readonly scope = STARTER_IMPORT_I18N_SCOPE;
+  protected readonly upgradeScope = STARTER_UPGRADE_I18N_SCOPE;
 
   ngOnInit(): void {
     void this.store.loadCatalog();

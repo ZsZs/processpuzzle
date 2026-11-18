@@ -16,6 +16,8 @@ import com.processpuzzle.app.usecase.PublishAppDefinition;
 import com.processpuzzle.app.usecase.exception.AppDefinitionInvalidException;
 import com.processpuzzle.core.definition.CanonicalJson;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.DefinitionYaml;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
@@ -78,6 +80,39 @@ public class AppImportParticipant implements DefinitionImportParticipant {
 
     @Override
     public ParticipantResult apply(String orgKey, String fileName, byte[] yaml) {
+        return write(orgKey, fileName, yaml, true);
+    }
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        return DefinitionYaml.keys(yaml, "appDefinitions", "id");
+    }
+
+    /**
+     * Writes the drafts of these apps only. An install publishes a starter's application at once; an upgrade leaves the
+     * new draft for the organization to review and release, and leaves the placeholder alone.
+     */
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        return keysIn(fileName, yaml).stream().noneMatch(keys::contains)
+                ? new ParticipantResult(List.of(), List.of())
+                : write(orgKey, fileName, DefinitionYaml.only(yaml, "appDefinitions", "id", keys), false);
+    }
+
+    /** An organization always keeps an application, so an upgrade never removes one: a dropped app stays, and says so. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        Map<String, String> refused = new LinkedHashMap<>();
+        keys.forEach(key -> refused.put(key, "an organization keeps its application; an upgrade does not remove one"));
+        return new DefinitionRemoval(List.of(), refused);
+    }
+
+    private ParticipantResult write(String orgKey, String fileName, byte[] yaml, boolean publish) {
         List<String> ids;
         try {
             ids = ids(yaml);
@@ -90,7 +125,9 @@ public class AppImportParticipant implements DefinitionImportParticipant {
             if (!outcome.errors().isEmpty()) {
                 return ParticipantResult.rejected(outcome.errors().stream().map(error -> fileName + ": " + error).toList());
             }
-            ids.forEach(id -> publishApp.execute(orgKey, id));
+            if (publish) {
+                ids.forEach(id -> publishApp.execute(orgKey, id));
+            }
         } catch (AppDefinitionInvalidException e) {
             List<String> errors = new ArrayList<>();
             for (AppValidationProblem problem : e.getProblems()) {
@@ -100,7 +137,7 @@ public class AppImportParticipant implements DefinitionImportParticipant {
         } catch (IOException | RuntimeException e) {
             return ParticipantResult.rejected(List.of(fileName + ": " + e.getMessage()));
         }
-        if (!ids.isEmpty() && !ids.contains(StarterAppCreator.STARTER_APP_ID)) {
+        if (publish && !ids.isEmpty() && !ids.contains(StarterAppCreator.STARTER_APP_ID)) {
             untouchedPlaceholder(orgKey).ifPresent(placeholder -> deleteApp.execute(orgKey, placeholder.getId()));
         }
 

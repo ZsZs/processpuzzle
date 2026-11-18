@@ -55,11 +55,14 @@ class RuleImportParticipantTest {
     @Mock
     private ExportRules exportRules;
 
+    @Mock
+    private com.processpuzzle.rule.usecase.DeleteRule deleteRule;
+
     private RuleImportParticipant participant;
 
     @BeforeEach
     void setUp() {
-        participant = new RuleImportParticipant(importRules, exportRules);
+        participant = new RuleImportParticipant(importRules, exportRules, deleteRule);
     }
 
     @Test
@@ -237,5 +240,31 @@ class RuleImportParticipantTest {
         when(importRules.removeAll(ORG)).thenReturn(java.util.List.of("max-quantity"));
 
         assertThat(participant.removeAll(ORG)).containsExactly("max-quantity");
+    }
+
+    @Test
+    void upgradesRuleByRule_keepingTheRestOfTheFileOut() throws Exception {
+        String file = "rules:\n  - id: positive-qty\n    name: A\n  - id: other\n    name: B\n";
+        when(exportRules.execute(ORG, null)).thenReturn(bytes("rules: []\n"));
+        when(importRules.execute(eq(ORG), any())).thenReturn(new ImportOutcome(1, 0, List.of()));
+
+        assertThat(participant.supportsUpgrade()).isTrue();
+        assertThat(participant.keysIn(FILE, bytes(file))).containsExactly("positive-qty", "other");
+        participant.applyOnly(ORG, FILE, bytes(file), Set.of("other"));
+
+        ArgumentCaptor<java.io.InputStream> sent = ArgumentCaptor.forClass(java.io.InputStream.class);
+        verify(importRules).execute(eq(ORG), sent.capture());
+        assertThat(new String(sent.getValue().readAllBytes())).contains("other").doesNotContain("positive-qty");
+        assertThat(participant.applyOnly(ORG, FILE, bytes(file), Set.of("absent")).items()).isEmpty();
+    }
+
+    @Test
+    void removingDrafts_keepsARuleAnotherStillExtends() {
+        org.mockito.Mockito.doThrow(new IllegalStateException("still extended by [child]")).when(deleteRule).execute(ORG, "base");
+
+        var removal = participant.removeDrafts(ORG, Set.of("base"));
+
+        assertThat(removal.removed()).isEmpty();
+        assertThat(removal.refused()).containsEntry("base", "still extended by [child]");
     }
 }

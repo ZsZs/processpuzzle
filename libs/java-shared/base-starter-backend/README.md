@@ -67,5 +67,14 @@ transactional imports. JaCoCo writes the coverage report to `reports/coverage/in
 
 ## Not yet
 
+**Migrations.** A `manifestVersion: 2` bundle may list `migrations/<from>-to-<to>.yaml` files — steps the release machinery runs
+on the existing objects (`kind`, `key`, `operation`, `subject`, `parameters`). An upgrade from `<from>` to `<to>` queues the file of exactly
+that step as pending steps, with the drafts, and reports them; the organization's release runs them before it checks the data.
+
+**Commons.** A `manifestVersion: 2` manifest may be `kind: common` (id `<starter>-common`, installed once into the
+organization of that key, which becomes the starter's data space) or name its common in a `common:` block
+(`id`, `minVersion`); such a tenant bundle is refused while the common is missing or older. Version 2 also refuses
+unknown top-level fields. See `docs/shared-data-commons-concept`.
+
 Upgrades and the migration script (the manifest carries `migration`, nothing runs it), export, and participants
 for widget, document, workflow and app definitions.

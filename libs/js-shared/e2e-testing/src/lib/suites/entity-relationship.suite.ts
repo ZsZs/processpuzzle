@@ -2,7 +2,7 @@ import { test, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import { type FixtureOverride, parentReferenceAttrName, relationshipTestersFor, type RelationshipControlTester } from '../controls/control-tester';
-import { EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
+import { type AfterFixtureRemoved, EntityCrudFixtureManager } from '../data/entity-crud-fixture-manager';
 import { buildCreateDataForContext, buildUpdateDataForContext, identificationAttr } from '../data/test-data-factory';
 import { EntityFormPO } from '../pages/entity-form.po';
 import { EntityListPO } from '../pages/entity-list.po';
@@ -38,6 +38,12 @@ export interface DefineEntityRelationshipSuiteOptions {
    * another — the alternative to excluding the whole relationship. See {@link FixtureOverride}.
    */
   fixtureOverrides?: FixtureOverride[];
+  /**
+   * Called once a fixture the suite created has been removed from the application, with the page to reach its
+   * API through. For what the fixture's existence started somewhere the suite does not look: an order starts a
+   * workflow, and deleting the order does not end it, so each run used to leave its runs behind.
+   */
+  afterFixtureRemoved?: AfterFixtureRemoved;
 }
 
 /** One `<entity>.<attribute>` the suite is told not to exercise, and why. */
@@ -106,7 +112,7 @@ export function defineEntityRelationshipSuite(options: DefineEntityRelationshipS
 
           const linked = linkedDescriptor as BaseEntityDescriptor;
           const suffix = uniqueSuffix(descriptor, tester, testInfo.retry);
-          manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides);
+          manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides, options.afterFixtureRemoved);
 
           const context = { page, routes, descriptorMap, manager, options, suffix };
           switch (tester.kind) {

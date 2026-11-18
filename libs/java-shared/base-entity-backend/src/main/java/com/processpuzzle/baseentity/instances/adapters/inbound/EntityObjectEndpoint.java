@@ -3,6 +3,7 @@ package com.processpuzzle.baseentity.instances.adapters.inbound;
 import com.processpuzzle.baseentity.api.BaseEntitiesApi;
 import com.processpuzzle.baseentity.common.NotFoundException;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
+import com.processpuzzle.baseentity.instances.usecases.inbound.CollectionAddress;
 import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.DeleteEntityInstanceUseCase;
 import com.processpuzzle.baseentity.instances.usecases.inbound.FindEntityInstanceByIdUseCase;
@@ -12,6 +13,7 @@ import com.processpuzzle.baseentity.model.Page;
 import com.processpuzzle.core.logging.LogClass;
 import com.processpuzzle.core.rsql.SortParser;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,8 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     private final com.processpuzzle.baseentity.instances.usecases.inbound.SearchEntityInstancesUseCase searchUseCase;
     private final com.processpuzzle.baseentity.instances.usecases.inbound.UpdateEntityInstanceUseCase updateUseCase;
     private final DeleteEntityInstanceUseCase deleteUseCase;
+    private final com.processpuzzle.baseentity.instances.usecases.inbound.ReinstateEntityInstanceUseCase reinstateUseCase;
+    private final com.processpuzzle.baseentity.instances.usecases.inbound.EmbeddedCollectionUseCase embeddedUseCase;
     private final EntityObjectMapper mapper;
 
     @Override
@@ -44,12 +48,13 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
         String entityDefinitionCode,
         String rsql,
         String sort,
+        Boolean includeRetired,
         Integer page,
         Integer size
     ) {
         Sort sortObj = SortParser.parse(sort);
         Pageable pageable = PageRequest.of(page != null ? page : 0, size != null ? size : 20, sortObj);
-        return ResponseEntity.ok(mapper.toPage(searchUseCase.search(orgKey, entityDefinitionCode, rsql, pageable)));
+        return ResponseEntity.ok(mapper.toPage(searchUseCase.search(orgKey, entityDefinitionCode, rsql, pageable, Boolean.TRUE.equals(includeRetired))));
     }
 
     @Override
@@ -102,5 +107,91 @@ public class EntityObjectEndpoint implements BaseEntitiesApi {
     public ResponseEntity<Void> deleteEntity(String orgKey, String entityDefinitionCode, UUID id, Boolean cascade) {
         deleteUseCase.delete(orgKey, entityDefinitionCode, id, Boolean.TRUE.equals(cascade));
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<com.processpuzzle.baseentity.model.EntityObject> reinstateEntity(String orgKey, String entityDefinitionCode, UUID id) {
+        return ResponseEntity.ok(mapper.toModel(reinstateUseCase.reinstate(orgKey, entityDefinitionCode, id)));
+    }
+
+    @Override
+    public ResponseEntity<List<Map<String, Object>>> listEmbeddedItems(String orgKey, String entityDefinitionCode, UUID id, String attributeCode) {
+        var items = embeddedUseCase.list(orgKey, entityDefinitionCode, id, attributeCode);
+        return ResponseEntity.ok().eTag(etag(items.version())).body(items.items());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> appendEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, Map<String, Object> body) {
+        var result = embeddedUseCase.append(orgKey, entityDefinitionCode, id, attributeCode, body);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{itemId}").buildAndExpand(result.item().get("id")).toUri();
+        return ResponseEntity.created(location).eTag(etag(result.itemVersion())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> patchEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, String itemId,
+                                                                Map<String, Object> body, String ifMatch) {
+        var result = embeddedUseCase.patch(orgKey, entityDefinitionCode, id, attributeCode, itemId, versionOf(ifMatch), body);
+        return ResponseEntity.ok().eTag(etag(result.itemVersion())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode, String itemId, String ifMatch) {
+        var result = embeddedUseCase.remove(orgKey, entityDefinitionCode, id, attributeCode, itemId, versionOf(ifMatch));
+        return ResponseEntity.noContent().build();
+    }
+
+    /** An item's ETag is the item's own version, which is what its If-Match names. */
+    private static String etag(long version) {
+        return "\"" + version + "\"";
+    }
+
+    /** The version an {@code If-Match} header names — `"3"`, `W/"3"` or a bare `3` — or {@code null} when it names none. */
+    private static Long versionOf(String ifMatch) {
+        if (ifMatch == null || ifMatch.isBlank() || "*".equals(ifMatch.trim())) {
+            return null;
+        }
+        String token = ifMatch.trim().replaceFirst("^W/", "").replace("\"", "");
+        try {
+            return Long.valueOf(token);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("If-Match must carry an object version, e.g. \"3\"");
+        }
+    }
+
+    @Override
+    public ResponseEntity<List<Map<String, Object>>> listNestedEmbeddedItems(String orgKey, String entityDefinitionCode, UUID id,
+                                                                            String attributeCode, String itemId, String childAttributeCode) {
+        var items = embeddedUseCase.list(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode));
+        return ResponseEntity.ok().eTag(etag(items.version())).body(items.items());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> appendNestedEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id,
+                                                                        String attributeCode, String itemId, String childAttributeCode,
+                                                                        Map<String, Object> body) {
+        var result = embeddedUseCase.append(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode), body);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{childItemId}").buildAndExpand(result.item().get("id")).toUri();
+        return ResponseEntity.created(location).eTag(etag(result.itemVersion())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> patchNestedEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id,
+                                                                       String attributeCode, String itemId, String childAttributeCode,
+                                                                       String childItemId, Map<String, Object> body, String ifMatch) {
+        var result = embeddedUseCase.patch(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode),
+            childItemId, versionOf(ifMatch), body);
+        return ResponseEntity.ok().eTag(etag(result.itemVersion())).body(result.item());
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteNestedEmbeddedItem(String orgKey, String entityDefinitionCode, UUID id, String attributeCode,
+                                                         String itemId, String childAttributeCode, String childItemId, String ifMatch) {
+        embeddedUseCase.remove(orgKey, entityDefinitionCode, id, nested(attributeCode, itemId, childAttributeCode), childItemId, versionOf(ifMatch));
+        return ResponseEntity.noContent().build();
+    }
+
+    /** The collection of {@code childAttributeCode} inside the item {@code itemId} of {@code attributeCode}. */
+    private static CollectionAddress nested(String attributeCode, String itemId, String childAttributeCode) {
+        return CollectionAddress.of(attributeCode).within(itemId, childAttributeCode);
     }
 }

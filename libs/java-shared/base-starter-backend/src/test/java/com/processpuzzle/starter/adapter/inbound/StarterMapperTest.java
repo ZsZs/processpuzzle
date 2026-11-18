@@ -110,7 +110,7 @@ class StarterMapperTest {
     @Test
     void mapsInstalledStarterProvenanceWithAUtcTimestamp() {
         ListInstalledStarters.View view = new ListInstalledStarters.View("inventory", "1.0.0",
-                Instant.parse("2026-10-06T10:00:00Z"), "alice", 2);
+                Instant.parse("2026-10-06T10:00:00Z"), "alice", 2, "1.1.0", true);
 
         var model = mapper.toModel(view);
 
@@ -118,6 +118,8 @@ class StarterMapperTest {
         assertThat(model.getVersion()).isEqualTo("1.0.0");
         assertThat(model.getInstalledAt()).isEqualTo(OffsetDateTime.parse("2026-10-06T10:00:00Z"));
         assertThat(model.getInstalledBy()).isEqualTo("alice");
+        assertThat(model.getOfferedVersion()).isEqualTo("1.1.0");
+        assertThat(model.getUpgradeAvailable()).isTrue();
         assertThat(model.getCustomizedDefinitions()).isEqualTo(2);
     }
 

@@ -2,7 +2,6 @@ package com.processpuzzle.composition;
 
 import com.processpuzzle.baseentity.api.EntityAttributeQuery;
 import com.processpuzzle.baseentity.api.EntityObjectAccess;
-import com.processpuzzle.baseentity.api.EntityObjectAccessException;
 import com.processpuzzle.workflow.execution.usecases.outbound.EntityLabelPort;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,12 +34,10 @@ public class EntityLabelAdapter implements EntityLabelPort {
         if (titleAttribute.isEmpty() || objectId.isEmpty()) {
             return Optional.empty();
         }
-        try {
-            Object value = objectAccess.find(orgKey, entityType, objectId.get()).payload().get(titleAttribute.get());
-            return value == null || value.toString().isBlank() ? Optional.empty() : Optional.of(value.toString());
-        } catch (EntityObjectAccessException e) {
-            return Optional.empty();
-        }
+        // findIfPresent, not find: a missing object is an answer here, and a thrown one would fail the caller's transaction.
+        Object value = objectAccess.findIfPresent(orgKey, entityType, objectId.get())
+                .map(view -> view.payload().get(titleAttribute.get())).orElse(null);
+        return value == null || value.toString().isBlank() ? Optional.empty() : Optional.of(value.toString());
     }
 
     private static Optional<UUID> parse(String entityId) {

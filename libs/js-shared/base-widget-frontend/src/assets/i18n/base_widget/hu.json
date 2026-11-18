@@ -107,6 +107,12 @@
   "spacer": {
     "name": "Térköz"
   },
+  "sidenav_toggle": {
+    "name": "Oldalsáv-kapcsoló"
+  },
+  "context_actions": {
+    "name": "Kontextus műveletek"
+  },
   "themes_button": {
     "name": "Témaválasztó gomb"
   },

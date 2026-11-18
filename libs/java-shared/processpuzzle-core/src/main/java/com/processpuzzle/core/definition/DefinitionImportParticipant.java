@@ -51,4 +51,34 @@ public interface DefinitionImportParticipant {
      * that does not exist is absent from the result.
      */
     Map<String, String> fingerprints(String orgKey, Set<String> keys);
+
+    /**
+     * Whether this kind can be upgraded definition by definition: {@link #keysIn}, {@link #applyOnly} and
+     * {@link #removeDrafts} are implemented. A kind that cannot is left out of an upgrade, which says so.
+     */
+    default boolean supportsUpgrade() {
+        return false;
+    }
+
+    /** The keys of the definitions {@code yaml} holds, as {@link #fingerprints} knows them. */
+    default Set<String> keysIn(String fileName, byte[] yaml) {
+        throw new UnsupportedOperationException(kind() + " cannot be upgraded definition by definition");
+    }
+
+    /**
+     * As {@link #apply}, for the definitions of the file whose key is in {@code keys} only; the others are neither
+     * read nor written. A file with none of them writes nothing.
+     */
+    default ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        throw new UnsupportedOperationException(kind() + " cannot be upgraded definition by definition");
+    }
+
+    /**
+     * Removes the <em>drafts</em> of these definitions, as the designer's delete would: the released rows stay until
+     * the next release, which then removes them if the data allows. A definition something still depends on is kept,
+     * with the reason, not an error.
+     */
+    default DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        throw new UnsupportedOperationException(kind() + " cannot be upgraded definition by definition");
+    }
 }

@@ -1,6 +1,7 @@
 import type { BaseEntity } from './base-entity';
 import type { TemplateRef, Type } from '@angular/core';
 import type { Route, Routes } from '@angular/router';
+import type { Observable } from 'rxjs';
 import { FormControlType, type AbstractAttrDescriptor } from './abstact-attr.descriptor';
 import type { BaseEntityAttrDescriptor } from './base-entity-attr.descriptor';
 import { filterAttributeDescriptors } from './filter-attr-descriptor';
@@ -109,10 +110,21 @@ export interface BaseEntityDescriptorOptions {
    * without {@link componentParent}, and rejected without it.
    */
   isEmbedded?: boolean;
+  /**
+   * True when a user can pick one object of this entity as the **context object** — the aggregate whose embedded
+   * components are then listed and edited without naming it again. Rejected on an embedded entity: it has no
+   * object of its own to pick.
+   */
+  canContextObject?: boolean;
 }
 
 export class BaseEntityDescriptor {
   store: unknown;
+  /**
+   * Takes a retired row back, when this entity has retired rows (a shared type's deleted records). Assigned by the
+   * facade that knows the repository, like {@link store}; the form offers Reinstate on a retired row only if it is set.
+   */
+  reinstate?: (id: string) => Observable<unknown>;
   attrDescriptors: AbstractAttrDescriptor[];
   entityName: string;
   entityTitle: EntityTitle;
@@ -131,6 +143,7 @@ export class BaseEntityDescriptor {
   /** Normalized {@link BaseEntityDescriptorOptions.componentParent}; empty when this is not a component. */
   readonly componentParents: readonly string[];
   readonly isEmbedded: boolean;
+  readonly canContextObject: boolean;
 
   constructor({
     store,
@@ -151,6 +164,7 @@ export class BaseEntityDescriptor {
     route,
     componentParent,
     isEmbedded,
+    canContextObject,
   }: BaseEntityDescriptorOptions) {
     this.store = store;
     this.attrDescriptors = attrDescriptors;
@@ -170,6 +184,10 @@ export class BaseEntityDescriptor {
     this.route = route;
     this.componentParents = componentParent === undefined ? [] : [componentParent].flat();
     this.isEmbedded = isEmbedded ?? false;
+    this.canContextObject = canContextObject ?? false;
+    if (this.canContextObject && this.isEmbedded) {
+      throw new Error(`'${entityName}' declares canContextObject but is embedded; only a stand-alone entity can be picked as the context object.`);
+    }
     // Descriptors are built at bootstrap, so an embedded declaration without a parent fails loudly here
     // rather than producing a component that has neither an own endpoint nor a payload to travel in.
     if (this.isEmbedded && this.componentParents.length === 0) {

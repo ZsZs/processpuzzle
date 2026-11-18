@@ -57,8 +57,10 @@ public class UpdateEntityInstanceUseCase {
      *               one of another type than {@code entityDefinitionCode}, is not found
      */
     public EntityObject update(String orgKey, String entityDefinitionCode, UUID id, Long expectedVersion, Map<String, Object> payload) {
+        scope.requireWritable(orgKey, entityDefinitionCode);
         EntityObject entityObject = scope.find(orgKey, entityDefinitionCode, id)
             .orElseThrow(() -> new NotFoundException("No entity instance with id '%s'".formatted(id)));
+        scope.requireOwnedBy(orgKey, entityDefinitionCode, entityObject);
 
         if (!entityObject.getVersion().equals(expectedVersion)) {
             throw new ConflictException("version conflict on entity '%s'".formatted(id));
@@ -70,7 +72,10 @@ public class UpdateEntityInstanceUseCase {
         Map<String, Object> effectivePayload = keepManagedAttributes(orgKey, entityObject, payload);
         // Before setPayload: the stored payload is still the old one here, which is what the history is checked against.
         effectivePayload = CommentHistoryGuard.guard(definition, entityObject.getPayload(), effectivePayload);
+        effectivePayload = EmbeddedItemIdentity.withIdentities(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, effectivePayload);
+        scope.requireFollowedUnchanged(orgKey, entityDefinitionCode, entityObject.getPayload(), effectivePayload);
+        scope.requireUniqueKeys(orgKey, entityDefinitionCode, effectivePayload, entityObject.getId());
 
         entityObject.setPayload(effectivePayload);
         EntityObject updated = repository.saveAndFlush(entityObject);

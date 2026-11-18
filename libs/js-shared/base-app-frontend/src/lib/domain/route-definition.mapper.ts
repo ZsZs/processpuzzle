@@ -7,6 +7,7 @@ export interface RouteDefinitionDto {
   translocoId?: string;
   icon?: string;
   roles?: string[];
+  requiresContext?: string;
   target?: RouteTarget;
 }
 
@@ -28,12 +29,15 @@ export function flattenRouteTarget(dto: RouteDefinitionDto): RouteDefinition {
     translocoId: dto.translocoId,
     icon: dto.icon,
     roles: dto.roles,
+    requiresContext: dto.requiresContext,
     kind: target?.kind,
     widgets: target?.widgets,
     documentSlug: target?.documentSlug,
     entityName: target?.entityName,
     entityMode: target?.entityMode,
     rsqlFilter: target?.rsqlFilter,
+    contextPath: target?.contextPath,
+    filterByContext: target?.filterByContext,
     // Kept so nestRouteTarget can merge onto it rather than replace it.
     target,
   });
@@ -57,6 +61,7 @@ export function nestRouteTarget(route: RouteDefinition): RouteDefinitionDto {
     translocoId: route.translocoId,
     icon: route.icon,
     roles: route.roles,
+    requiresContext: route.requiresContext || undefined,
     target: {
       ...route.target,
       kind: route.kind as RouteTarget['kind'],
@@ -65,6 +70,8 @@ export function nestRouteTarget(route: RouteDefinition): RouteDefinitionDto {
       entityName: route.entityName,
       entityMode: route.entityMode,
       rsqlFilter: route.rsqlFilter,
+      contextPath: route.contextPath || undefined,
+      filterByContext: route.filterByContext || undefined,
     },
   };
 }

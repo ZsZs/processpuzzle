@@ -8,6 +8,8 @@ import { RULE_ENGINE, RuleEngine, RuleEvaluationResult } from '../rule-engine/ru
 import { RuleViolationsSingletonStore } from '../rule-engine/rule-violations.store';
 import { setupFormComponentTest } from '../../test-setup';
 import { describe, expect, it, vi } from 'vitest';
+import { MatDialog } from '@angular/material/dialog';
+import { UnsavedChangesRegistry } from './unsaved-changes/unsaved-changes.registry';
 
 describe('GenericEntityFormComponent', () => {
   const labelConfig = new BaseEntityAttrDescriptor('description', FormControlType.LABEL);
@@ -44,6 +46,71 @@ describe('GenericEntityFormComponent', () => {
 
       const label = fixture.debugElement.query(By.css('form > base-label')).nativeElement;
       expect(label).toBeTruthy();
+    });
+  });
+
+  describe('a retired record of a shared type:', () => {
+    const retired = Object.assign(new TestEntity('1', 'test-entity', 'description of the entity', true), { retiredAt: '2026-11-16T10:00:00Z' });
+
+    /** The facade sets `reinstate` before anything renders; the harness renders first, so the descriptor is swapped for a copy that has it. */
+    function reinstatableWith(component: { entityDescriptor: unknown }, reinstate: () => unknown) {
+      const current = (component.entityDescriptor as () => object)();
+      const copy = Object.assign(Object.create(Object.getPrototypeOf(current)), current, { reinstate });
+      (component.entityDescriptor as unknown as { set(value: object): void }).set(copy);
+    }
+
+    it('shows the retired notice, and offers Reinstate only where the entity can be reinstated', async () => {
+      const reinstate = vi.fn().mockReturnValue(of({}));
+      const { fixture, component } = await setupFormComponentTest([labelConfig, checkboxConfig], retired);
+      reinstatableWith(component, reinstate);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fixture.debugElement.query(By.css('[data-testid=retired-notice]'))).toBeTruthy();
+      expect(fixture.debugElement.query(By.css('button#reinstate'))).toBeTruthy();
+    });
+
+    it('offers no Reinstate without a way to reinstate, and no notice for a live record', async () => {
+      const retiredOnly = await setupFormComponentTest([labelConfig, checkboxConfig], retired);
+      expect(retiredOnly.fixture.debugElement.query(By.css('[data-testid=retired-notice]'))).toBeTruthy();
+      expect(retiredOnly.fixture.debugElement.query(By.css('button#reinstate'))).toBeNull();
+
+      TestBed.resetTestingModule();
+      const live = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      reinstatableWith(live.component, vi.fn());
+      live.fixture.detectChanges();
+      expect(live.fixture.debugElement.query(By.css('[data-testid=retired-notice]'))).toBeNull();
+      expect(live.component.canReinstate()).toBe(false);
+    });
+
+    /** The route can render before the store has the row; that must not throw. */
+    it('is not retired while the row is not loaded', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.entity = (() => undefined) as unknown as typeof component.entity;
+
+      expect(component.isRetired()).toBe(false);
+    });
+
+    it('onReinstate() reinstates the record and re-reads it', async () => {
+      const reinstate = vi.fn().mockReturnValue(of({}));
+      const { component, store } = await setupFormComponentTest([labelConfig, checkboxConfig], retired);
+      reinstatableWith(component, reinstate);
+      vi.spyOn(store, 'reload').mockResolvedValue(testEntity);
+
+      await component.onReinstate();
+
+      expect(reinstate).toHaveBeenCalledWith(component.entityId());
+      expect(store.reload).toHaveBeenCalledWith(component.entityId());
+    });
+
+    it('onReinstate() does nothing for a record that is not retired', async () => {
+      const reinstate = vi.fn().mockReturnValue(of({}));
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      reinstatableWith(component, reinstate);
+
+      await component.onReinstate();
+
+      expect(reinstate).not.toHaveBeenCalled();
     });
   });
 
@@ -211,6 +278,81 @@ describe('GenericEntityFormComponent', () => {
 
       expect(deleteSpy).toHaveBeenCalledWith(testEntity.id);
       expect(navSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('unsaved changes:', () => {
+    it('lets the user leave a form with nothing to lose, without asking', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+    });
+
+    it('counts a changed form, and a document with changes staged by an embedded child, as unsaved', async () => {
+      const { fixture, component, store } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(component.hasUnsavedChanges()).toBe(false);
+
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      component.baseEntityForm.markAsDirty();
+      component.baseEntityForm.markAsPristine();
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(TestBed.inject(UnsavedChangesRegistry).hasUnsavedChanges()).toBe(true);
+    });
+
+    it('asks before leaving with unsaved changes, and stays when the user declines', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(false) } as never);
+
+      expect(await component.confirmLeave()).toBe(false);
+      expect(open).toHaveBeenCalled();
+    });
+
+    it('leaves when the user confirms', async () => {
+      const { component } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      vi.spyOn(TestBed.inject(MatDialog), 'open').mockReturnValue({ afterClosed: () => of(true) } as never);
+
+      expect(await component.confirmLeave()).toBe(true);
+    });
+
+    it('keeps its values under its own entity, and does not ask, while a round trip is under way', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      component.baseEntityForm.markAsDirty();
+      formNavigator.beginRoundTrip();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+      expect(formNavigator.popFormSnapshot(component.entityDescriptor().entityName)).toEqual(component.baseEntityForm.getRawValue());
+    });
+
+    it('keeps the values of a form with only staged edits during a round trip, without asking', async () => {
+      const { component, formNavigator, store } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      vi.spyOn(store, 'hasStagedChanges').mockReturnValue(true);
+      formNavigator.beginRoundTrip();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      expect(component.hasUnsavedChanges()).toBe(true);
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
+      expect(formNavigator.popFormSnapshot(component.entityDescriptor().entityName)).toBeDefined();
+    });
+
+    it('does not ask after Cancel, which discards on purpose', async () => {
+      const { component, formNavigator } = await setupFormComponentTest([labelConfig, checkboxConfig], testEntity);
+      vi.spyOn(formNavigator, 'navigateBack').mockResolvedValue(undefined);
+      component.baseEntityForm.markAsDirty();
+      const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+
+      await component.onCancel();
+
+      expect(await component.confirmLeave()).toBe(true);
+      expect(open).not.toHaveBeenCalled();
     });
   });
 

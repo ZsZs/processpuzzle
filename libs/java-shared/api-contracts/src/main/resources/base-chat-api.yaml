@@ -1,0 +1,805 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Chat API (base-chat)
+  description: >-
+    Conversations bound to platform subjects. A ChatDefinition says which kind of subject gets a chat
+    (an instance of the entity `order`), how many conversations one subject may have, when they come
+    into being and which roles read, write and open them. A Conversation is one chat on one subject;
+    its Messages are an append-only log, numbered per conversation by `seq`.
+
+    ## Access
+
+    Nothing about who takes part is stored in a conversation. Every call resolves the definition, the
+    caller's roles and the subject's current state, so a role change takes effect at once. A caller who
+    may not read a conversation gets 404, as for one that does not exist — the answer does not reveal
+    that a subject has a chat. 403 means the caller may read but not do what they asked (post, open).
+    409 means the conversation is not writable (closed or archived), or the binding already exists.
+
+    ## Messages
+
+    `seq` is assigned in the posting transaction under a lock on the conversation, so it is gap-free
+    and follows commit order. A client reads history by cursor — `before` is exclusive, newest first —
+    and posts with a client-generated `clientMessageId`: replaying a post returns the stored message.
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as base-entity-api.yaml and base-rule-api.yaml establish.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  /organizations/{orgKey}/chat/definitions:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listChatDefinitions
+      tags: [ Chat Definitions ]
+      summary: List the chat definitions of an organization
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: Chat definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatDefinition"
+
+  /organizations/{orgKey}/chat/definitions/{definitionKey}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DefinitionKeyParam"
+    get:
+      operationId: getChatDefinition
+      tags: [ Chat Definitions ]
+      summary: Get one chat definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: Chat definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: saveChatDefinition
+      tags: [ Chat Definitions ]
+      summary: Create or replace a chat definition (the draft)
+      description: >-
+        Creates the draft when the key is new, replaces it otherwise. Supply the `version` you last
+        read to be refused with 409 rather than silently overwriting a concurrent edit. Needs the
+        right to author metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatDefinitionInput"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteChatDefinition
+      tags: [ Chat Definitions ]
+      summary: Delete the draft of a chat definition
+      description: >-
+        Removes the draft; the released row stays until the next release, which removes it. Not refused while
+        conversations exist — they are kept, and unreachable once the definition is no longer released. Needs
+        the right to author metadata.
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/chat/conversations:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: findConversations
+      tags: [ Conversations ]
+      summary: Find the conversations of a subject
+      description: >-
+        The conversations of one subject that the caller may read; the others are left out, not
+        reported. `definition` and `subjectDefinition` narrow the result.
+      parameters:
+        - name: subjectType
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/ChatSubjectType"
+        - name: subjectId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: subjectDefinition
+          in: query
+          required: false
+          schema:
+            type: string
+          description: The entity definition code for subjectType ENTITY, the workflow definition id for WORKFLOW_INSTANCE.
+        - name: definition
+          in: query
+          required: false
+          schema:
+            type: string
+          description: The chat definition key.
+      responses:
+        "200":
+          description: Conversations, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    post:
+      operationId: openConversation
+      tags: [ Conversations ]
+      summary: Open a conversation on a subject
+      description: >-
+        Needs one of the definition's `createRoles` (none listed: any reader of the subject). 404 when
+        the definition or the subject is unknown, 409 when the definition allows one conversation per
+        subject and it exists, or the lifecycle does not allow opening by hand.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpenConversationRequest"
+      responses:
+        "201":
+          description: Opened
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /organizations/{orgKey}/chat/conversations/{conversationId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ConversationIdParam"
+    get:
+      operationId: getConversation
+      tags: [ Conversations ]
+      summary: Get one conversation, with what the caller may do in it
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/chat/conversations/{conversationId}/read:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ConversationIdParam"
+    put:
+      operationId: markConversationRead
+      tags: [ Conversations ]
+      summary: Move the caller's read marker forward, which also makes them follow the conversation
+      description: >-
+        The marker only moves forward: a number behind it changes nothing, and one past the newest message is
+        cut back to it. Following is what puts the conversation in `GET /chat/unread` and on the live stream.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkReadRequest"
+      responses:
+        "200":
+          description: Where the caller stands now
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadState"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/chat/conversations/{conversationId}/follow:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ConversationIdParam"
+    delete:
+      operationId: unfollowConversation
+      tags: [ Conversations ]
+      summary: Stop following a conversation
+      description: >-
+        No more live messages and no unread count for it. Idempotent, and it asks nothing of the conversation,
+        so a user can drop one they can no longer read.
+      responses:
+        "204":
+          description: Not following (any more)
+
+  /organizations/{orgKey}/chat/users/{userSub}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - name: userSub
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The identity provider's subject of the user whose chat data is erased.
+    delete:
+      operationId: eraseChatUser
+      tags: [ Chat Privacy ]
+      summary: Erase a user's chat data (GDPR)
+      description: >-
+        Anonymizes what the user wrote and started: their messages keep their place in the conversation but lose
+        author and text (the text becomes "[removed]"), the conversations they opened lose the creator, and their
+        read markers are deleted. Other people's conversations stay readable. Allowed for the user themself and for
+        whoever administers the organization. Not undoable.
+      responses:
+        "200":
+          description: Erased; how much was
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatErasureResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/chat/unread:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listFollowedConversations
+      tags: [ Conversations ]
+      summary: The conversations the caller follows, with their unread counts
+      description: >-
+        For badges and an inbox. Only conversations the caller may still read, at most 200, the most recently
+        touched first. `unread` is `lastSeq - lastReadSeq`, exact because `seq` has no gaps.
+      responses:
+        "200":
+          description: Followed conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+
+  /organizations/{orgKey}/chat/stream:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: streamChatEvents
+      tags: [ Chat Stream ]
+      summary: One live stream per user, for every conversation they follow
+      description: >-
+        Server-sent events, `Content-Type: text/event-stream`. Served by a hand-written endpoint — a generated
+        one cannot return an emitter — so the interface generated for this operation is not implemented.
+
+        **One stream carries all followed conversations**, so a page with unread badges holds one connection,
+        not one per conversation. Send `Accept: text/event-stream, application/json`: a refusal (401, 403) is
+        a JSON error, and a client that accepts only the stream would get 406 instead.
+
+        **Authorization** is decided when the stream opens, from the caller's roles at that moment, and the
+        stream ends when the token expires (and after at most `base-chat.stream.max-age-minutes`, default 15).
+        Nothing re-checks a token while a stream is open, so the client reconnects with a fresh one, which
+        re-authorizes. A role lost mid-stream therefore takes effect at the latest at the next reconnect;
+        history, posting and every other call check afresh each time.
+
+        **Events.** `stream.ready` (once, first; carries `expiresAt` and the heartbeat interval),
+        `message.posted` (`id` is `conversationId:seq`; data `{conversationId, message}` with the same
+        ChatMessage as the history), `read.updated` (the caller's own marker moved or they followed or
+        unfollowed in another session; data `{conversationId, lastReadSeq, following}`), and `resync` (data
+        `{conversationId}`: the client missed too many messages to replay and reloads that history). A comment
+        line (`: keepalive`) is sent about every 25 seconds so proxies keep the connection.
+
+        **Resuming.** `after` lists, per conversation, the newest `seq` the client holds
+        (`<uuid>:<seq>,<uuid>:<seq>`). What it missed is replayed as `message.posted` events right after
+        `stream.ready` — up to 200 per conversation, beyond that a `resync`. A message that arrives live while
+        the replay is read may be sent twice; a client ignores any `seq` it already has.
+      parameters:
+        - name: after
+          in: query
+          required: false
+          schema:
+            type: string
+          description: "`<conversationId>:<seq>` pairs, comma separated."
+      responses:
+        "200":
+          description: The stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/chat/conversations/{conversationId}/messages:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/ConversationIdParam"
+    get:
+      operationId: listMessages
+      tags: [ Conversations ]
+      summary: Page through the history, newest first
+      parameters:
+        - name: before
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Return only messages with a lower `seq`. Omit for the newest page.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        "200":
+          description: Messages, highest `seq` first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      operationId: postMessage
+      tags: [ Conversations ]
+      summary: Post a message
+      description: >-
+        Replaying a post with the same `clientMessageId` by the same author returns the stored message
+        with 200 instead of storing a second one. 403 when the caller may read but not write, 409 when
+        the conversation is not open or — for a STATE_BOUND chat — the subject is not in a writable
+        state, 400 for an empty or too long body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostMessageRequest"
+      responses:
+        "200":
+          description: Already stored — the replay of an earlier post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+        "201":
+          description: Posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          description: The user is posting faster than the rate limit allows (`chat.rate-limited`).
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds until another post is accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+    DefinitionKeyParam:
+      name: definitionKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+    ConversationIdParam:
+      name: conversationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of the definition to read: the draft a designer edits, or the released one the
+        running application uses.
+
+  responses:
+    BadRequest:
+      description: The request is malformed or breaks a rule.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: The caller may not do this.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The resource does not exist, or the caller may not know that it does.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ChatSubjectType:
+      type: string
+      enum: [ ENTITY, WORKFLOW_INSTANCE ]
+      description: >-
+        What kind of object a conversation is about. ENTITY is an instance of a base-entity definition;
+        WORKFLOW_INSTANCE is a run of a workflow definition.
+
+    ChatMultiplicity:
+      type: string
+      enum: [ SINGLE, MANY ]
+      description: >-
+        SINGLE allows one conversation per subject. MANY allows any number, each with a title — the
+        topics of a subject.
+
+    ChatLifecycle:
+      type: string
+      enum: [ AUTO_CREATE, ON_DEMAND, STATE_BOUND ]
+      description: >-
+        AUTO_CREATE conversations come into being with their subject; ON_DEMAND ones when somebody
+        with a create role opens them; STATE_BOUND ones are opened on demand and writable only while
+        the subject is in one of `writableStates`.
+
+    ConversationStatus:
+      type: string
+      enum: [ OPEN, CLOSED, ARCHIVED ]
+
+    MessageKind:
+      type: string
+      enum: [ TEXT ]
+      description: TEXT only for now; SYSTEM and CALL_EVENT are reserved.
+
+    ChatErasureResult:
+      type: object
+      required: [ messages, conversations, readMarkers ]
+      properties:
+        messages:
+          type: integer
+          format: int32
+          description: Messages anonymized.
+        conversations:
+          type: integer
+          format: int32
+          description: Conversations that lost their creator.
+        readMarkers:
+          type: integer
+          format: int32
+          description: Read markers deleted.
+
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released, CHANGED differs from
+        the released row, RELEASED is what the running application uses. Present on drafts only.
+
+    ChatDefinitionInput:
+      type: object
+      required: [ name, subjectType, subjectDefinition ]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        subjectType:
+          $ref: "#/components/schemas/ChatSubjectType"
+        subjectDefinition:
+          type: string
+          description: The definition code of the entity whose instances get this chat (ENTITY), or the id of the workflow whose instances do (WORKFLOW_INSTANCE).
+          example: order
+        multiplicity:
+          $ref: "#/components/schemas/ChatMultiplicity"
+        lifecycle:
+          $ref: "#/components/schemas/ChatLifecycle"
+        writableStates:
+          type: array
+          items:
+            type: string
+          description: STATE_BOUND only — the subject states in which the chat accepts messages.
+        readRoles:
+          type: array
+          items:
+            type: string
+          description: Realm roles that may read. Empty means any member of the organization.
+        writeRoles:
+          type: array
+          items:
+            type: string
+          description: Realm roles that may post. Empty means any member who may read.
+        createRoles:
+          type: array
+          items:
+            type: string
+          description: Realm roles that may open a conversation. Empty means any member who may read.
+        includeSubjectOwner:
+          type: boolean
+          default: false
+          description: >-
+            Also admit the subject's owner, whatever their roles, where the subject kind reports one.
+        retentionDays:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: Delete conversations this many days after they are archived. Omit to keep them.
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one. Omit it to overwrite unconditionally.
+
+    ChatDefinition:
+      type: object
+      required: [ key, name, subjectType, subjectDefinition ]
+      properties:
+        key:
+          type: string
+          example: order-discussion
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        subjectType:
+          $ref: "#/components/schemas/ChatSubjectType"
+        subjectDefinition:
+          type: string
+        multiplicity:
+          $ref: "#/components/schemas/ChatMultiplicity"
+        lifecycle:
+          $ref: "#/components/schemas/ChatLifecycle"
+        writableStates:
+          type: array
+          items:
+            type: string
+        readRoles:
+          type: array
+          items:
+            type: string
+        writeRoles:
+          type: array
+          items:
+            type: string
+        createRoles:
+          type: array
+          items:
+            type: string
+        includeSubjectOwner:
+          type: boolean
+        retentionDays:
+          type: integer
+          nullable: true
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        releaseState:
+          allOf:
+            - $ref: "#/components/schemas/ReleaseState"
+          readOnly: true
+
+    OpenConversationRequest:
+      type: object
+      required: [ definitionKey, subjectId ]
+      properties:
+        definitionKey:
+          type: string
+        subjectId:
+          type: string
+        title:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Required for a MANY definition, ignored for a SINGLE one.
+
+    ConversationPermissions:
+      type: object
+      required: [ canWrite ]
+      description: What the caller may do in this conversation right now.
+      properties:
+        canWrite:
+          type: boolean
+
+    MarkReadRequest:
+      type: object
+      required: [ lastReadSeq ]
+      properties:
+        lastReadSeq:
+          type: integer
+          format: int64
+          minimum: 0
+          description: The `seq` of the newest message the caller has read.
+
+    ReadState:
+      type: object
+      required: [ conversationId, lastReadSeq, lastSeq, unread ]
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        lastReadSeq:
+          type: integer
+          format: int64
+          description: The caller's marker now.
+        lastSeq:
+          type: integer
+          format: int64
+          description: The newest message of the conversation.
+        unread:
+          type: integer
+          format: int64
+
+    Conversation:
+      type: object
+      required: [ id, definitionKey, subjectType, subjectDefinition, subjectId, status, lastSeq, permissions, following, unread ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        definitionKey:
+          type: string
+        subjectType:
+          $ref: "#/components/schemas/ChatSubjectType"
+        subjectDefinition:
+          type: string
+        subjectId:
+          type: string
+        title:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ConversationStatus"
+        lastSeq:
+          type: integer
+          format: int64
+          description: The `seq` of the newest message; 0 for an empty conversation.
+        createdBy:
+          type: string
+          nullable: true
+          description: Display name of whoever opened it, as it was when they did.
+        createdAt:
+          type: string
+          format: date-time
+        permissions:
+          $ref: "#/components/schemas/ConversationPermissions"
+        following:
+          type: boolean
+          description: >-
+            Whether the caller follows it — it is on the live stream and counts unread. Opening, posting and
+            marking read all follow.
+        lastReadSeq:
+          type: integer
+          format: int64
+          nullable: true
+          description: The caller's read marker; absent when they do not follow it.
+        unread:
+          type: integer
+          format: int64
+          description: Messages newer than the caller's marker; 0 when they do not follow it.
+
+    PostMessageRequest:
+      type: object
+      required: [ clientMessageId, body ]
+      properties:
+        clientMessageId:
+          type: string
+          format: uuid
+          description: Generated by the client, once per message; makes the post idempotent.
+        body:
+          type: string
+          description: Plain text, shown escaped. At most `base-chat.max-message-length` characters.
+
+    ChatMessage:
+      type: object
+      required: [ seq, clientMessageId, authorId, kind, body, createdAt ]
+      properties:
+        seq:
+          type: integer
+          format: int64
+        clientMessageId:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          description: The author's subject in the identity provider.
+        authorName:
+          type: string
+          nullable: true
+          description: The author's display name as it was when they posted.
+        kind:
+          $ref: "#/components/schemas/MessageKind"
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+        errorText:
+          type: string

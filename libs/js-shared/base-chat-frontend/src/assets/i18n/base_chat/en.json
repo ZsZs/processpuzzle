@@ -1,0 +1,89 @@
+{
+  "tabs": {
+    "chat": "Chat"
+  },
+  "panel": {
+    "title": "Chat",
+    "no_subject": "Select an item to chat about it.",
+    "loading": "Loading the conversation…",
+    "error": "The conversation could not be loaded.",
+    "reload": "Try again",
+    "no_chat": "This item has no chat.",
+    "start": "Start a chat",
+    "starting": "Starting…",
+    "start_failed": "The chat could not be started.",
+    "start_forbidden": "You are not allowed to start a chat here.",
+    "empty": "No messages yet.",
+    "load_earlier": "Load earlier messages",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "sending": "Sending…",
+    "failed": "Not sent.",
+    "failed_forbidden": "Not sent: you may not post here.",
+    "failed_conflict": "Not sent: the conversation is closed.",
+    "failed_rate_limited": "Not sent: you are posting too fast. Try again in a moment.",
+    "retry": "Retry",
+    "discard": "Discard",
+    "read_only": "You can read this conversation but not write in it.",
+    "reconnecting": "Reconnecting — new messages may be delayed."
+  },
+  "badge": {
+    "label": "{{count}} unread chat messages"
+  },
+  "widgets": {
+    "chat_panel": "Chat panel",
+    "chat_topics": "Chat topics",
+    "unread_badge": "Unread chat messages"
+  },
+  "chat_definition": {
+    "_self": "Chat Definition",
+    "id": "Key",
+    "name": "Name",
+    "description": "Description",
+    "subjectType": "Subject Type",
+    "subjectDefinition": "Subject Definition",
+    "multiplicity": "Multiplicity",
+    "lifecycle": "Lifecycle",
+    "writableStates": "Writable States",
+    "readRoles": "Read Roles",
+    "writeRoles": "Write Roles",
+    "createRoles": "Create Roles",
+    "includeSubjectOwner": "Include Subject Owner",
+    "retentionDays": "Retention Days",
+    "releaseState": "Release",
+    "_tooltips": {
+      "id": "Unique within your organization, lower-case, e.g. order-discussion. Conversations refer to the chat by it, so avoid changing it later.",
+      "name": "The chat's name as people see it, e.g. Order discussion.",
+      "description": "A note on what the chat is for; users do not see it.",
+      "subjectType": "What the chat is about. Only ENTITY — a record of an entity type — exists today.",
+      "subjectDefinition": "The entity type whose records get the chat, e.g. order. It has to exist when the chat is released.",
+      "multiplicity": "SINGLE: one conversation per record. MANY: any number of titled topics per record.",
+      "lifecycle": "AUTO_CREATE: the conversation starts with its record. ON_DEMAND: it starts when somebody with a create role opens it. STATE_BOUND: on demand, and writable only in the states listed below.",
+      "writableStates": "STATE_BOUND only: the states of the record in which the conversation accepts messages. The record's entity type needs a state machine with these states.",
+      "readRoles": "Roles that may read the conversation. Empty: every member of the organization.",
+      "writeRoles": "Roles that may post. Empty: every member who can read.",
+      "createRoles": "Roles that may start a conversation or topic. Empty: every member who can write.",
+      "includeSubjectOwner": "Whether the person who owns the record may take part regardless of the roles above.",
+      "retentionDays": "After how many days without a new message a conversation of this chat is deleted for good, with its messages. Empty: the deployment default, or kept for ever if there is none. Takes effect for the released definition.",
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never released, CHANGED differs from the release, RELEASED is what the application uses. Set by the system."
+    }
+  },
+  "topics": {
+    "title": "Topics",
+    "no_subject": "Select an item to see its topics.",
+    "loading": "Loading the topics…",
+    "error": "The topics could not be loaded.",
+    "reload": "Try again",
+    "empty": "No topics yet.",
+    "new_label": "New topic",
+    "new_placeholder": "Title of the topic",
+    "create": "Start topic",
+    "creating": "Starting…",
+    "create_failed": "The topic could not be started.",
+    "create_forbidden": "You are not allowed to start a topic here.",
+    "create_duplicate": "This record already has a topic with that title.",
+    "select": "Open topic",
+    "unread": "unread",
+    "closed": "closed"
+  }
+}

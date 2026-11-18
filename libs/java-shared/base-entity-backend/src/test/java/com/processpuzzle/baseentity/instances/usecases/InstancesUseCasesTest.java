@@ -82,7 +82,7 @@ class InstancesUseCasesTest {
         EntityObjectScope scope = new EntityObjectScope(repository);
         createUseCase = new CreateEntityInstanceUseCase(repository, scope, definitionLookupPort, payloadValidatorPort, eventPublisher);
         updateUseCase = new UpdateEntityInstanceUseCase(repository, scope, definitionLookupPort, payloadValidatorPort, eventPublisher, ManagedAttributesPort.NONE);
-        deleteUseCase = new DeleteEntityInstanceUseCase(repository, scope, eventPublisher);
+        deleteUseCase = new DeleteEntityInstanceUseCase(repository, scope, eventPublisher, () -> Optional.of("tester"));
         findByIdUseCase = new FindEntityInstanceByIdUseCase(scope);
         searchUseCase = new SearchEntityInstancesUseCase(repository, scope, rsqlAdapter);
     }
@@ -351,7 +351,7 @@ class InstancesUseCasesTest {
         UUID id = UUID.randomUUID();
         EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("partner").build();
         when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
-        when(repository.existsAnyReferenceTo(id.toString())).thenReturn(true);
+        when(repository.existsAnyReferenceTo(id.toString(), List.of(ORG))).thenReturn(true);
 
         assertThatThrownBy(() -> deleteUseCase.delete(ORG, "partner", id, false))
                 .isInstanceOf(ConflictException.class)

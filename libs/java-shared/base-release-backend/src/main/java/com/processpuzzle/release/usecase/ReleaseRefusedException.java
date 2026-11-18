@@ -11,13 +11,18 @@ public class ReleaseRefusedException extends RuntimeException {
     private final Reason reason;
 
     public ReleaseRefusedException(String orgKey, PendingRelease pending, Reason reason) {
-        super("Organization '" + orgKey + "' " + switch (reason) {
+        super(message(orgKey, reason));
+        this.pending = pending;
+        this.reason = reason;
+    }
+
+    private static String message(String orgKey, Reason reason) {
+        String what = switch (reason) {
             case NOTHING_PENDING -> "has nothing to release.";
             case ERRORS -> "cannot be released: its drafts have errors.";
             case UNCONFIRMED_WARNINGS -> "has release warnings that were not confirmed.";
-        });
-        this.pending = pending;
-        this.reason = reason;
+        };
+        return "Organization '" + orgKey + "' " + what;
     }
 
     public PendingRelease getPending() {

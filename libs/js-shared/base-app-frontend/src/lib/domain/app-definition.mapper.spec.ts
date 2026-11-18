@@ -175,4 +175,82 @@ describe('AppDefinitionMapper', () => {
       expect(result.modules).toEqual(dto.modules);
     });
   });
+
+  describe('working contexts', () => {
+    const contextDto = {
+      name: 'race',
+      entityName: 'Race',
+      parent: 'regatta',
+      basePath: '/conduct',
+      persist: 'url' as const,
+      picker: { searchFields: ['name', 'date'], recent: 5 },
+      display: { label: '{{name}}', badge: 'state', extra: 'round {{round}}' },
+      confirmSwitchWhen: { state: 'Running' },
+    };
+
+    it('flattens picker, display and the state condition onto the row', () => {
+      const [row] = mapper.fromDto({ ...dto, contexts: [contextDto] }).contexts ?? [];
+
+      expect(row).toMatchObject({
+        name: 'race',
+        entityName: 'Race',
+        parent: 'regatta',
+        persist: 'url',
+        pickerSearchFields: ['name', 'date'],
+        pickerRecent: 5,
+        displayLabel: '{{name}}',
+        displayBadge: 'state',
+        displayExtra: 'round {{round}}',
+        confirmSwitchStates: ['Running'],
+      });
+    });
+
+    it('round-trips a context unchanged, including what no control writes', () => {
+      const withExtras = { ...contextDto, confirmSwitchWhen: { state: ['Running', 'Paused'], round: 3 }, picker: { ...contextDto.picker, futureField: true } };
+
+      const payload = mapper.toDto(mapper.fromDto({ ...dto, contexts: [withExtras] }));
+
+      expect(payload.contexts).toEqual([withExtras]);
+    });
+
+    it('sends the picker count as a number, and an empty count as nothing', () => {
+      const withCount = mapper.fromDto({ ...dto, contexts: [{ name: 'race', entityName: 'Race', picker: { recent: 5 } }] });
+      Object.assign(withCount.contexts?.[0] ?? {}, { pickerRecent: '7' });
+      expect(mapper.toDto(withCount).contexts?.[0].picker).toEqual({ recent: 7 });
+
+      const emptyCount = mapper.fromDto({ ...dto, contexts: [{ name: 'race', entityName: 'Race', picker: { recent: 5 } }] });
+      Object.assign(emptyCount.contexts?.[0] ?? {}, { pickerRecent: '' });
+      expect(mapper.toDto(emptyCount).contexts?.[0].picker).toBeUndefined();
+    });
+
+    it('sends only what the form filled in, and no empty nested objects', () => {
+      const entity = mapper.fromDto({ ...dto, contexts: [{ name: 'race', entityName: 'Race' }] });
+      Object.assign(entity.contexts?.[0] ?? {}, { displayLabel: '', pickerSearchFields: [], confirmSwitchStates: [] });
+
+      expect(mapper.toDto(entity).contexts).toEqual([{ name: 'race', entityName: 'Race' }]);
+    });
+
+    it('carries requiresContext and contextPath of a route both ways', () => {
+      const entity = mapper.fromDto({ ...dto, routes: [{ path: 'rounds', title: 'Rounds', requiresContext: 'race', target: { kind: 'ENTITY', entityName: 'Round', contextPath: 'rounds' } }] });
+
+      expect(entity.routes?.[0].requiresContext).toBe('race');
+      expect(entity.routes?.[0].contextPath).toBe('rounds');
+      expect(mapper.toDto(entity).routes?.[0].requiresContext).toBe('race');
+      expect(mapper.toDto(entity).routes?.[0].target?.contextPath).toBe('rounds');
+    });
+
+    it('carries filterByContext of a route both ways', () => {
+      const entity = mapper.fromDto({ ...dto, routes: [{ path: 'results', title: 'Results', target: { kind: 'ENTITY', entityName: 'Result', entityMode: 'LIST', filterByContext: 'race' } }] });
+
+      expect(entity.routes?.[0].filterByContext).toBe('race');
+      expect(mapper.toDto(entity).routes?.[0].target?.filterByContext).toBe('race');
+    });
+
+    it('leaves requiresContext out of a route that has none, rather than sending an empty string', () => {
+      const entity = mapper.fromDto({ ...dto, routes: [{ path: 'home', title: 'Home', target: { kind: 'WIDGETS' } }] });
+      Object.assign(entity.routes?.[0] ?? {}, { requiresContext: '' });
+
+      expect(mapper.toDto(entity).routes?.[0].requiresContext).toBeUndefined();
+    });
+  });
 });

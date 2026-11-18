@@ -99,12 +99,74 @@ public class BaseEntityDefinition extends Auditable {
     @Builder.Default
     private boolean isEmbedded = false;
 
+    /**
+     * True: a user can pick one object of this type as the working "context object"; the other
+     * features then address its embedded components without naming the object each time.
+     */
+    @ColumnDefault("false")
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean canContextObject = false;
+
+    /**
+     * Who may write the records of this type, when it is a <em>shared</em> type: one of a common, read by every
+     * organization of its starter. Null for a tenant type, the only kind outside a common.
+     */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(length = 16)
+    private SharingWrite sharingWrite;
+
+    /** Who may read the records of a shared type; set together with {@link #sharingWrite}. */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(length = 16)
+    private SharingVisibility sharingVisibility;
+
+    /**
+     * The states of the type's state machine in which a record of a shared type is visible to the members that do
+     * not own it; empty when it is visible in every state. The owner and the common always see it.
+     */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> sharingVisibleWhen = new ArrayList<>();
+
+    /**
+     * The REFERENCE attribute whose record this type's records follow, for a shared type whose records belong to
+     * another record (a booking to its event): owner and visibility are those of the referenced record, and the
+     * attribute cannot change once the record exists. Such a type is stored as owner-written and public; what its
+     * records may actually be read and written by is read from the referenced record. Null for any other type.
+     */
+    @Column(length = 100)
+    private String sharingFrom;
+
+    /**
+     * Natural keys: each entry names the attributes whose values together identify a record, unique among the
+     * type's non-retired records. Empty when the type has none.
+     */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<List<String>> identifiers = new ArrayList<>();
+
     private UUID organizationId;
 
     @jakarta.persistence.OneToMany(mappedBy = "entityDefinition", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
     @jakarta.persistence.OrderBy("displayOrder ASC")
     @Builder.Default
     private List<BaseEntityAttribute> attributes = new ArrayList<>();
+
+    private static List<List<String>> copyOf(List<List<String>> identifiers) {
+        List<List<String>> copy = new ArrayList<>();
+        if (identifiers != null) {
+            identifiers.forEach(key -> copy.add(new ArrayList<>(key)));
+        }
+        return copy;
+    }
+
+    /** True for a type of a common whose records every organization of the starter reads. */
+    public boolean isShared() {
+        return sharingWrite != null;
+    }
 
     public boolean isComponent() {
         return !componentParents.isEmpty();
@@ -152,6 +214,12 @@ public class BaseEntityDefinition extends Auditable {
         this.status = draft.status;
         this.componentParents = new ArrayList<>(draft.componentParents);
         this.isEmbedded = draft.isEmbedded;
+        this.canContextObject = draft.canContextObject;
+        this.sharingWrite = draft.sharingWrite;
+        this.sharingVisibility = draft.sharingVisibility;
+        this.sharingVisibleWhen = draft.sharingVisibleWhen == null ? new ArrayList<>() : new ArrayList<>(draft.sharingVisibleWhen);
+        this.sharingFrom = draft.sharingFrom;
+        this.identifiers = copyOf(draft.identifiers);
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));
         java.util.Set<String> kept = new java.util.HashSet<>();

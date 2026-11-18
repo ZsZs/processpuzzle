@@ -107,6 +107,12 @@
   "spacer": {
     "name": "Espaceur"
   },
+  "sidenav_toggle": {
+    "name": "Bouton du menu latéral"
+  },
+  "context_actions": {
+    "name": "Actions du contexte"
+  },
   "themes_button": {
     "name": "Bouton de thèmes"
   },

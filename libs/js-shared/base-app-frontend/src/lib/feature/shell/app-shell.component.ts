@@ -4,14 +4,17 @@ import { NgComponentOutlet } from '@angular/common';
 import { Component, computed, contentChild, Directive, effect, inject, input } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
-import { RouterOutlet } from '@angular/router';
+import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { WorkingContextService } from '@processpuzzle/base-entity';
+import { nestWorkingContext } from '../../domain/working-context-row.mapper';
 import { LayoutService } from '@processpuzzle/util';
-import { APPLICATION_CONTEXT, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
+import { APPLICATION_CONTEXT, SIDENAV_CONTROL, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
-import { layoutOf, themeDefaultsOf, themeVarsOf } from './app-shell.model';
+import { layoutOf, themeDefaultsOf, themeVarsOf, trimSlashes } from './app-shell.model';
 import { NavOrientation } from './region-nav.component';
 import { ShellApplicationContext } from './shell-application-context';
+import { ShellSidenavControl } from './shell-sidenav-control';
 import { ShellOverlayContainer } from './shell-overlay-container';
 
 /**
@@ -75,6 +78,8 @@ export class ShellActionsDirective {}
     ThemeService,
     ShellApplicationContext,
     { provide: APPLICATION_CONTEXT, useExisting: ShellApplicationContext },
+    ShellSidenavControl,
+    { provide: SIDENAV_CONTROL, useExisting: ShellSidenavControl },
     { provide: OverlayContainer, useClass: ShellOverlayContainer },
     Dialog,
     MatDialog,
@@ -96,13 +101,18 @@ export class ShellActionsDirective {}
       </div>
     }
 
+    @if (statusbarView(); as view) {
+      <ng-container *ngComponentOutlet="view.component; inputs: view.inputs"></ng-container>
+    }
+
     <mat-sidenav-container class="pp-app-shell__body">
       @if (sidenavView(); as view) {
         <mat-sidenav
           class="pp-app-shell__sidenav"
           ppSidenavAutosize
           [mode]="layout().sidenavMode"
-          [opened]="layout().sidenavOpened && !layoutService.isSidenavHidden()"
+          [opened]="sidenavControl.opened() && !layoutService.isSidenavHidden()"
+          (openedChange)="onSidenavOpenedChange($event)"
           [position]="layout().sidenavPosition"
         >
           <!-- A page such as a content book may take the sidenav over; the outlet keeps the nav one click away. -->
@@ -142,7 +152,10 @@ export class AppShellComponent {
   private readonly regionRenderer = inject(AppRegionRenderer);
   private readonly theme = inject(ThemeService);
   private readonly applicationContext = inject(ShellApplicationContext);
+  private readonly workingContext = inject(WorkingContextService);
+  private readonly hostRoute = inject(ActivatedRoute);
   protected readonly layoutService = inject(LayoutService);
+  protected readonly sidenavControl = inject(ShellSidenavControl);
 
   /** Controls the host projected into the top row; the row is rendered for them alone if need be. */
   protected readonly hostActions = contentChild(ShellActionsDirective);
@@ -160,12 +173,29 @@ export class AppShellComponent {
     this.applicationContext.definition.set(definition);
   });
 
+  /**
+   * Hands the definition's working contexts to the service, with the URL the shell is mounted at in front of
+   * each `basePath` — what lets "Set as active" on an entity's list reach the context's pages from outside them.
+   * Re-run on every edit, and undone on destroy, so a previewed definition's contexts never outlive its preview.
+   */
+  private readonly registerWorkingContexts = effect((onCleanup) => {
+    const contexts = this.definition()?.contexts;
+    if (!contexts?.length) return;
+    const mountedAt = '/' + this.hostRoute.pathFromRoot.flatMap((route) => route.snapshot.url.map((segment) => segment.path)).join('/');
+    const prefix = mountedAt === '/' ? '' : mountedAt;
+    onCleanup(this.workingContext.register(contexts.map((row) => ({ ...nestWorkingContext(row), basePath: prefix + '/' + trimSlashes(row.basePath ?? '') }))));
+  });
+
+  // The definition's default re-applies on every edit, like the theme: a toggle in the Preview is only tried out.
+  private readonly applySidenavDefault = effect(() => this.sidenavControl.opened.set(this.layout().sidenavOpened));
+
   private readonly regionViews = computed(() =>
     (this.definition()?.regions ?? []).map((region) => this.regionRenderer.render(region, this.definition())).filter((view): view is RegionView => view !== undefined),
   );
 
   protected readonly headerView = computed(() => this.viewOf('header'));
   protected readonly footerView = computed(() => this.viewOf('footer'));
+  protected readonly statusbarView = computed(() => this.viewOf('statusbar'));
 
   /**
    * The nav in the sidenav, for the two sidenav presets. Split from {@link topNavView} rather than
@@ -200,6 +230,13 @@ export class AppShellComponent {
   // rows are what narrow it to a rail. See SidenavAutosizeDirective for how the content margin follows.
   protected readonly sidenavInputs = computed(() => ({ ...this.navInputsOf(this.sidenavView(), 'vertical'), compact: this.layoutService.isMediumDevice() }));
   protected readonly topNavInputs = computed(() => this.navInputsOf(this.topNavView(), 'horizontal'));
+
+  private readonly syncSidenavAvailability = effect(() => this.sidenavControl.available.set(this.sidenavView() !== undefined && !this.layoutService.isSidenavHidden()));
+
+  /** A backdrop click or Escape closes an over-mode drawer; a hide request from a page is not the user's choice. */
+  protected onSidenavOpenedChange(opened: boolean): void {
+    if (!this.layoutService.isSidenavHidden()) this.sidenavControl.opened.set(opened);
+  }
 
   private navInputsOf(view: RegionView | undefined, orientation: NavOrientation): Record<string, unknown> {
     return { ...view?.inputs, orientation };

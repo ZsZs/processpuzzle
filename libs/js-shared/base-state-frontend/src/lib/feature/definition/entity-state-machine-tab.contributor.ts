@@ -31,10 +31,11 @@ export class EntityStateMachineTabContributor implements EntityTabContributor {
  * `BASE_STATE_FACADE_PROVIDERS`.
  *
  * Two providers, and both are needed. The contributor is what offers the tab; the transloco scope is what
- * lets its **label** resolve. The label is rendered by `BaseEntityTabsComponent`, which lives on the
- * governed entity's route — under `base-rule` for the samples, under an `AppDefinition`'s shell at run time
- * — and none of those branches register `base_state`. Registering it at the root is the only place that
- * covers all of them, and it is cheap: transloco loads a scope lazily, on the first key that needs it.
+ * lets its **label** resolve. Transloco resolves a scope from the injector of the pipe that asks, and a
+ * multi-provider is not merged across injectors: a route that provides its own `TRANSLOCO_SCOPE` hides the
+ * root's. So registering `base_state` at the root is not enough on its own. Every route that renders a governed
+ * entity's screens — the `BaseEntityTabsComponent` lives on it — must also provide `base_state`, as the testbed's
+ * `base-entity`, `base-rule` and `Order` routes do.
  *
  * The alias is spelled out, as everywhere in this workspace: transloco camel-cases the default alias, so
  * `base_state` would silently become `baseState` and miss every key below it.

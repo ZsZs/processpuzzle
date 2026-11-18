@@ -38,6 +38,21 @@ class EntityDefinitionValidatorTest {
     }
 
     @Test
+    void validate_standaloneContextObject_passes() {
+        validator.validate(BaseEntityDefinition.builder().code("race").name("Race").canContextObject(true).build());
+    }
+
+    @Test
+    void validate_embeddedContextObject_throwsValidationException() {
+        BaseEntityDefinition definition = BaseEntityDefinition.builder()
+                .code("line").name("Line").isEmbedded(true).componentParents(List.of("order")).canContextObject(true).build();
+
+        assertThatThrownBy(() -> validator.validate(definition))
+                .isInstanceOfSatisfying(ValidationException.class, ve ->
+                        assertThat(ve.getViolations().get(0).message()).contains("canContextObject"));
+    }
+
+    @Test
     void validate_dateFormatOnDateKinds_passes() {
         validator.validate(definitionWith(dateAttribute(ValueKind.DATE, new DateFormat(DateStyle.SHORT, TimeStyle.NONE))));
         validator.validate(definitionWith(dateAttribute(ValueKind.DATE_TIME, new DateFormat(DateStyle.MEDIUM, TimeStyle.SHORT))));
@@ -380,5 +395,30 @@ class EntityDefinitionValidatorTest {
 
     private static BaseEntityAttribute textAttribute() {
         return BaseEntityAttribute.builder().code("street").name("Street").valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT_BOX).build();
+    }
+
+    private static BaseEntityDefinition withIdentifiers(List<List<String>> identifiers) {
+        BaseEntityAttribute text = BaseEntityAttribute.builder().code("name").name("Name")
+                .valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT).build();
+        return BaseEntityDefinition.builder().code("club").name("Club").attributes(List.of(text)).identifiers(identifiers).build();
+    }
+
+    @Test
+    void validate_identifiersNamingTheTypesAttributes_pass() {
+        validator.validate(withIdentifiers(List.of(List.of("name"))));
+    }
+
+    @Test
+    void validate_identifierNamingAnUnknownAttribute_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of("name", "country")))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+    }
+
+    @Test
+    void validate_emptyOrRepeatedIdentifier_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of()))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+        assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of("name"), List.of("name")))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
     }
 }

@@ -51,22 +51,26 @@
     "description": "Leírás",
     "status": "Állapot",
     "isEmbedded": "Beágyazott",
+    "canContextObject": "Kontextus objektum",
     "componentParents": "Szülő komponensek",
     "attributes": "Attribútumok",
     "version": "Verzió",
     "updatedAt": "Módosítva",
     "releaseState": "Kiadás",
+    "sharedFrom": "Megosztva innen",
     "_tooltips": {
       "code": "Az entitástípus egyedi kulcsa a szervezeten belül, a címekben is ez szerepel. Rövid, kisbetűs és URL-barát, pl. order; később lehetőleg ne módosítsa.",
       "name": "Az entitásnév, amellyel az alkalmazás oldalai, útvonalai és menüi erre a típusra hivatkoznak, pl. Order.",
       "description": "Megjegyzés Önnek és tervezőtársainak arról, mire szolgál ez az entitástípus; a felhasználók nem látják.",
       "status": "ACTIVE a használatban lévő típushoz, DEPRECATED a kivezetéséhez: a kivezetett típust az alkalmazás már nem jeleníti meg. Hogy az alkalmazás egyáltalán ismeri-e a típust, azt a kiadása dönti el, lásd Kiadás.",
       "isEmbedded": "Jelölje be, ha az ilyen típusú rekordok csak egy másik rekordon belül léteznek, pl. rendelési tételek egy rendelésben. Ekkor a szülőt is adja meg a Szülő komponensek mezőben.",
+      "canContextObject": "Jelölje be, hogy a felhasználók kiválaszthassanak egy ilyen típusú rekordot kontextus objektumnak: a beágyazott részei ezután újabb kiválasztás nélkül listázhatók és szerkeszthetők. Beágyazott típusnál nem használható.",
       "componentParents": "Beágyazott típusnál: azoknak az entitástípusoknak a kódjai, amelyek rekordjai tartalmazzák, pl. order. Kötelező, ha a Beágyazott be van jelölve.",
       "attributes": "Az entitástípus mezői, mezőnként egy sor. A definícióval együtt mentődnek.",
       "version": "Minden mentéssel növekszik. A rendszer állítja be.",
       "updatedAt": "A definíció utolsó mentésének időpontja. A rendszer állítja be.",
-      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be."
+      "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
+      "sharedFrom": "A közös tér, amelyből ez a típus származik. A szervezet olvassa, de csak a közös tér adja ki vagy módosítja. Saját típusoknál üres. A rendszer állítja be."
     }
   },
   "artifact": {
@@ -100,7 +104,15 @@
     "delete_button": "Törlés"
   },
   "statusbar": {
-    "breadcrumb_label": "Rekordok hierarchiája"
+    "breadcrumb_label": "Rekordok hierarchiája",
+    "unsaved_changes": "Nem mentett módosítások",
+    "unsaved_changes_hint": "Mentse a(z) {{ entity }} rekordot a módosítások megtartásához"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Nem mentett módosítások",
+    "content": "Nem mentett módosítások vannak. Ha elhagyja az oldalt, elvesznek.",
+    "cancel_button": "Maradok",
+    "leave_button": "Elhagyom"
   },
   "tabs": {
     "list": "{{ entity }} - lista",
@@ -140,7 +152,10 @@
   "embedded_components": {
     "save_owner_first": "Mentse ezt a rekordot, mielőtt {{ entity }} elemet ad hozzá — a beágyazott komponens ebben tárolódik.",
     "move_up": "Feljebb",
-    "move_down": "Lejjebb"
+    "move_down": "Lejjebb",
+    "hide_list": "Lista elrejtése",
+    "show_list": "Lista megjelenítése",
+    "hidden_count": "{{ count }} elrejtve"
   },
   "rich_text": {
     "toolbar": {
@@ -202,5 +217,42 @@
       "TIMEOUT": "A helymeghatározás túl sokáig tartott. Próbálja újra.",
       "UNAVAILABLE": "A böngésző nem tudja meghatározni a helyzetét."
     }
+  },
+  "working_context": {
+    "search": "Keresés",
+    "recent": "Legutóbbiak",
+    "all": "Összes",
+    "no_match": "Nincs találat",
+    "empty_state": "Válasszon: {{ entity }}",
+    "switch_title": "Váltás: {{ entity }}",
+    "select_to_continue": "Válasszon ki egyet, és nyomja meg a „Beállítás kontextus objektumnak” gombot a kért oldal megnyitásához.",
+    "show_list": "A teljes lista megnyitása",
+    "menu": "Kontextus műveletek",
+    "switch": "Váltás",
+    "open": "Megnyitás szerkesztésre",
+    "clear": "Kontextus törlése",
+    "set_active": "Beállítás kontextus objektumnak",
+    "is_active": "Aktív",
+    "confirm_switch": {
+      "title": "Elhagyja az aktív kontextust?",
+      "content": "{{ entity }} még folyamatban van. Biztosan elhagyja?",
+      "cancel_button": "Maradok",
+      "confirm_button": "Elhagyom"
+    },
+    "only_active": "Csak az aktív {{context}}"
+  },
+  "context_collection": {
+    "add": "Hozzáadás",
+    "edit": "Szerkesztés",
+    "delete": "Törlés",
+    "save": "Mentés",
+    "cancel": "Mégse",
+    "empty": "Még nincs itt semmi.",
+    "delete_title": "Törli ezt az elemet?",
+    "delete_content": "Ez nem vonható vissza.",
+    "conflict": "Valaki más egy időben módosította. A lista a mentett állapotot mutatja — próbálja újra."
+  },
+  "list": {
+    "show_retired": "Kivont rekordok megjelenítése"
   }
 }

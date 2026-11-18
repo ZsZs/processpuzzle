@@ -7,6 +7,8 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.DateFormat;
 import com.processpuzzle.baseentity.definition.domain.DateStyle;
 import com.processpuzzle.baseentity.definition.domain.MapProvider;
+import com.processpuzzle.baseentity.definition.domain.SharingVisibility;
+import com.processpuzzle.baseentity.definition.domain.SharingWrite;
 import com.processpuzzle.baseentity.definition.domain.TimeStyle;
 import com.processpuzzle.baseentity.model.AttributeDateFormat;
 import com.processpuzzle.baseentity.model.BaseEntityAttributeInput;
@@ -34,13 +36,48 @@ public class EntityDefinitionMapper {
             .status(toDomainStatus(input.getStatus()))
             .componentParents(input.getComponentParents() != null ? input.getComponentParents() : List.of())
             .isEmbedded(Boolean.TRUE.equals(input.getIsEmbedded()))
+            .canContextObject(Boolean.TRUE.equals(input.getCanContextObject()))
             .organizationId(input.getOrganizationId())
+            .identifiers(input.getIdentifiers() == null ? new java.util.ArrayList<>()
+                : input.getIdentifiers().stream().<List<String>>map(java.util.ArrayList::new).toList())
+            .sharingWrite(sharingWrite(input.getSharing()))
+            .sharingVisibility(sharingVisibility(input.getSharing()))
+            .sharingFrom(input.getSharing() == null ? null : input.getSharing().getFrom())
+            .sharingVisibleWhen(visibleWhenStates(input.getSharing()))
             .build();
 
         if (input.getAttributes() != null) {
             input.getAttributes().forEach(attrInput -> definition.addAttribute(toDomain(attrInput)));
         }
         return definition;
+    }
+
+    /** A type that follows another record is stored as owner-written and public; the policy proper is the referenced record's. */
+    private static SharingWrite sharingWrite(com.processpuzzle.baseentity.model.EntitySharing sharing) {
+        if (sharing == null) {
+            return null;
+        }
+        if (sharing.getWrite() != null) {
+            return SharingWrite.valueOf(sharing.getWrite().getValue());
+        }
+        return sharing.getFrom() == null ? null : SharingWrite.OWNER_ORG;
+    }
+
+    private static SharingVisibility sharingVisibility(com.processpuzzle.baseentity.model.EntitySharing sharing) {
+        if (sharing == null) {
+            return null;
+        }
+        if (sharing.getVisibility() != null) {
+            return SharingVisibility.valueOf(sharing.getVisibility().getValue());
+        }
+        return sharing.getFrom() == null ? null : SharingVisibility.PUBLIC;
+    }
+
+    private static List<String> visibleWhenStates(com.processpuzzle.baseentity.model.EntitySharing sharing) {
+        if (sharing == null || sharing.getVisibleWhen() == null || sharing.getVisibleWhen().getState() == null) {
+            return new java.util.ArrayList<>();
+        }
+        return new java.util.ArrayList<>(sharing.getVisibleWhen().getState());
     }
 
     public BaseEntityAttribute toDomain(BaseEntityAttributeInput input) {
@@ -84,7 +121,21 @@ public class EntityDefinitionMapper {
         model.setStatus(toModelStatus(definition.getStatus()));
         model.setComponentParents(definition.getComponentParents());
         model.setIsEmbedded(definition.isEmbedded());
+        model.setCanContextObject(definition.isCanContextObject());
+        if (definition.isShared()) {
+            com.processpuzzle.baseentity.model.EntitySharing sharing = new com.processpuzzle.baseentity.model.EntitySharing();
+            sharing.setWrite(com.processpuzzle.baseentity.model.EntitySharing.WriteEnum.fromValue(definition.getSharingWrite().name()));
+            sharing.setVisibility(com.processpuzzle.baseentity.model.EntitySharing.VisibilityEnum.fromValue(definition.getSharingVisibility().name()));
+            sharing.setFrom(definition.getSharingFrom());
+            if (!definition.getSharingVisibleWhen().isEmpty()) {
+                com.processpuzzle.baseentity.model.SharingVisibleWhen visibleWhen = new com.processpuzzle.baseentity.model.SharingVisibleWhen();
+                visibleWhen.setState(new java.util.ArrayList<>(definition.getSharingVisibleWhen()));
+                sharing.setVisibleWhen(visibleWhen);
+            }
+            model.setSharing(sharing);
+        }
         model.setOrganizationId(definition.getOrganizationId());
+        model.setIdentifiers(definition.getIdentifiers() == null || definition.getIdentifiers().isEmpty() ? null : definition.getIdentifiers());
         if (definition.getAttributes() != null) {
             model.setAttributes(definition.getAttributes().stream().map(this::toModel).toList());
         }
@@ -123,6 +174,28 @@ public class EntityDefinitionMapper {
         model.setDefaultCountry(attribute.getDefaultCountry());
         model.setValidationRules(attribute.getValidationRules());
         return model;
+    }
+
+    /** The model as {@code requestOrgKey} sees it: a type of another organization (its common) is marked {@code sharedFrom}. */
+    public com.processpuzzle.baseentity.model.BaseEntityDefinition toModel(BaseEntityDefinition definition, String requestOrgKey) {
+        com.processpuzzle.baseentity.model.BaseEntityDefinition model = toModel(definition);
+        if (model != null && definition.getOrgKey() != null && !definition.getOrgKey().equals(requestOrgKey)) {
+            model.setSharedFrom(definition.getOrgKey());
+        }
+        return model;
+    }
+
+    public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page, String requestOrgKey) {
+        List<Object> content = page.getContent().stream()
+            .map(definition -> toModel(definition, requestOrgKey))
+            .map(Object.class::cast)
+            .toList();
+        return new Page()
+            .content(content)
+            .page(page.getNumber())
+            .size(page.getSize())
+            .totalElements((int) page.getTotalElements())
+            .totalPages(page.getTotalPages());
     }
 
     public Page toPage(org.springframework.data.domain.Page<BaseEntityDefinition> page) {

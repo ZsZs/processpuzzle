@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.common.ConflictException;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionValidator;
+import com.processpuzzle.baseentity.definition.domain.EntitySharingValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ public class CreateEntityDefinitionUseCase {
 
     private final EntityDefinitionRepository repository;
     private final EntityDefinitionValidator validator;
+    private final EntitySharingValidator sharingValidator;
 
     public BaseEntityDefinition create(String orgKey, BaseEntityDefinition definition) {
         definition.setOrgKey(orgKey);
@@ -23,6 +25,7 @@ public class CreateEntityDefinitionUseCase {
             throw new ConflictException("Entity definition '%s' already exists".formatted(definition.getCode()));
         }
         validator.validate(definition);
+        sharingValidator.validate(orgKey, definition);
         return repository.save(definition);
     }
 }

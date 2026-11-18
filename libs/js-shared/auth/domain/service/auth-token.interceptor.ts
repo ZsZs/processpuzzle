@@ -31,8 +31,9 @@ import { AuthService } from './auth.service';
  *
  * `refreshAccessToken` is called before reading the token, so a screen left open past the token's
  * lifetime does not send an expired one. A failed refresh is not an error here: the request goes out
- * unauthenticated and the server answers 401, which reaches the user as "your session ended" rather
- * than as an exception from inside an HTTP pipeline.
+ * unauthenticated and the server answers 401 — which {@link sessionExpiredInterceptor} turns into "your
+ * session ended" rather than an exception from inside an HTTP pipeline. Without that interceptor
+ * registered, nothing reacts to the 401 beyond the caller's own error handling.
  */
 export function authTokenInterceptor(apiRoots: readonly string[] = [], withheldRoots: readonly string[] = []): HttpInterceptorFn {
   return (request, next) => {
@@ -53,7 +54,12 @@ export function authTokenInterceptor(apiRoots: readonly string[] = [], withheldR
 /** Keycloak's own endpoints authenticate by other means; an Authorization header there is noise at best. */
 const IDENTITY_PROVIDER_PATHS = ['/realms/', '/protocol/openid-connect/'];
 
-function shouldAuthorize(request: HttpRequest<unknown>, apiRoots: readonly string[], withheldRoots: readonly string[]): boolean {
+/**
+ * Whether this platform's own API receives `request` — the one rule for "ours", shared with
+ * {@link sessionExpiredInterceptor} so that the requests that carry the token and the requests whose
+ * 401 means "your session ended" cannot drift apart.
+ */
+export function shouldAuthorize(request: HttpRequest<unknown>, apiRoots: readonly string[], withheldRoots: readonly string[]): boolean {
   const url = request.url;
   if (withheldRoots.some((root) => root !== '' && url.startsWith(root))) return false;
   if (IDENTITY_PROVIDER_PATHS.some((path) => url.includes(path))) return false;

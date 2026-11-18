@@ -433,4 +433,36 @@ class ReleaseOrganizationTest {
         factory.addBean("bean", bean);
         return factory.getBeanProvider((Class<T>) bean.getClass());
     }
+
+    // --- steps a starter upgrade brings --------------------------------------------------
+
+    @Test
+    void stepsAnUpgradeBringsGoAfterTheOnesTheDesignerQueued_inTheOrderGiven() {
+        MigratingStepsHolder holder = new MigratingStepsHolder();
+        managePendingSteps.replace(ORG, List.of(fill("currency")));
+
+        holder.queue().enqueue(ORG, List.of(fill("total"), fill("tax")));
+
+        assertThat(managePendingSteps.list(ORG)).extracting(MigrationStep::subject).containsExactly("currency", "total", "tax");
+    }
+
+    @Test
+    void aStepNothingRunsIsRefused_andNothingOfTheBatchIsQueued() {
+        MigratingStepsHolder holder = new MigratingStepsHolder();
+        MigrationStep unknown = new MigrationStep(null, DefinitionKinds.ENTITY, "Claim", "explode", "x", java.util.Map.of());
+        List<MigrationStep> batch = List.of(fill("total"), unknown);
+        com.processpuzzle.core.definition.MigrationStepQueue queue = holder.queue();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> queue.enqueue(ORG, batch))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("explode");
+
+        assertThat(managePendingSteps.list(ORG)).isEmpty();
+    }
+
+    /** The queue over the test's own migration participant and repository. */
+    private final class MigratingStepsHolder {
+        com.processpuzzle.core.definition.MigrationStepQueue queue() {
+            return new QueueMigrationSteps(MigrationParticipants.of(List.of(migration)), stepRepository);
+        }
+    }
 }

@@ -8,12 +8,14 @@ import { EmbeddedDetailFacade } from './content/base-forms/embedded-detail/embed
 import { RelatedEntityFacade } from './content/base-forms/related-entity/related-entity.facade';
 import { TrunkDataFacade } from './content/base-forms/trunk-data/trunk-data.facade';
 import { DYNAMIC_ENTITY_NAME, DYNAMIC_ENTITY_PATH, dynamicEntityScreenRoutes } from './content/base-forms/dynamic-entity/dynamic-entity.routes';
+import { contextObjectRoutes } from './content/base-forms/context-object/context-object.routes';
 import { ORDER_NAME, ORDER_PATH, orderScreenRoutes, SPECIAL_ORDER_NAME, SPECIAL_ORDER_PATH, specialOrderScreenRoutes } from './content/base-rules/rule-sample.routes';
 import { LayoutService } from '@processpuzzle/util';
 import { ContentComponent } from './content/content.component';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
 import { BASE_DOCUMENT_ROUTES, ISSUED_DOCUMENT_ROUTES } from '@processpuzzle/base-document';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
+import { BASE_CHAT_ROUTES } from '@processpuzzle/base-chat';
 import { BASE_EVENT_ROUTES } from '@processpuzzle/base-event';
 import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
@@ -100,7 +102,7 @@ export const appRoutes: Route[] = [
     // The facades are provided once, in `app.config.ts`. Re-providing them here would give this route its own
     // instances — and so its own stores — while `BaseEntityDescriptorRegistry`, which is root-provided, would
     // still resolve the root ones: an embedded child would then read a document nobody has loaded.
-    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
     children: [
       {
         path: '',
@@ -169,6 +171,12 @@ export const appRoutes: Route[] = [
             loadComponent: () => import('./content/base-forms/dynamic-entity/dynamic-entity-container.component').then((comp) => comp.DynamicEntityContainerComponent),
             loadChildren: dynamicEntityScreenRoutes,
           },
+          {
+            // The Context Object sample: three metadata-only entities, so — like Dynamic Entity — its screens are
+            // contributed as routes at run time. Path-less: its routes are the sample buttons' own segments.
+            path: '',
+            loadChildren: contextObjectRoutes,
+          },
         ],
       },
     ],
@@ -181,7 +189,7 @@ export const appRoutes: Route[] = [
     // No `provideBaseRuleEngine()` here any more: the rule engine is bound once, application-wide, in
     // `app.config.ts`. Having it on this route made rule validation a property of the section the user
     // happened to be in rather than of the entity being edited.
-    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
     children: [
       {
         path: '',
@@ -287,6 +295,25 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'base-chat',
+    title: 'ProcessPuzzle Testbed - Base Chat',
+    data: { icon: 'forum', menuTitle: 'base-chat' },
+    loadComponent: () => import('./content/base-chat/base-chat.component').then((comp) => comp.BaseChatComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-chat/overview.component').then((comp) => comp.OverviewComponent) },
+      { path: 'samples', loadComponent: () => import('./content/base-chat/samples.component').then((comp) => comp.SamplesComponent) },
+      {
+        path: 'definitions',
+        loadComponent: () => import('./content/base-chat/definitions.component').then((comp) => comp.DefinitionsComponent),
+        // `BASE_CHAT_ROUTES` brings the `chat-definition` branch and declares its own transloco scopes. Static
+        // children, for the same reason as the base-event branch above.
+        children: BASE_CHAT_ROUTES,
+      },
+    ],
+  },
+  {
     path: 'base-calculation',
     title: 'ProcessPuzzle Testbed - Base Calculation',
     data: { icon: 'calculate', menuTitle: 'base-calculation' },
@@ -367,7 +394,7 @@ export const appRoutes: Route[] = [
           {
             path: ORDER_PATH,
             data: { entityName: ORDER_NAME },
-            providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+            providers: [provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
             loadChildren: orderScreenRoutes,
           },
           ...BASE_DOCUMENT_ROUTES,
@@ -384,7 +411,7 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./content/base-ai/base-ai.component').then((comp) => comp.BaseAiComponent),
     // `base_entity` for the Boat screens' generic tab labels, as on the base-rule branch: `Boat` is
     // resolved at run-time and brings no scope of its own. The profile branch registers its own.
-    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' })],
+    providers: [LayoutService, provideTranslocoScope({ scope: 'base_entity', alias: 'base_entity' }), provideTranslocoScope({ scope: 'base_state', alias: 'base_state' }), provideTranslocoScope({ scope: 'base_chat', alias: 'base_chat' })],
     children: [
       {
         path: '',

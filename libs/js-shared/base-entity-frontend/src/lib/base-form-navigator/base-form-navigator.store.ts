@@ -42,9 +42,10 @@ export interface NavigationState {
   responsePayloads: Map<string, NavigationPayload>;
   requestPayloads: Map<string, NavigationPayload>;
   returnTo: string;
-  formSnapshot: Record<string, unknown> | undefined;
-  /** The entity whose form left the values in {@link NavigationState.formSnapshot}; only that form takes them back. */
-  formSnapshotOwner: string | undefined;
+  /** The values each form left for a round trip, keyed by the entity of the form that left them: each takes its own. */
+  formSnapshots: Record<string, Record<string, unknown>>;
+  /** Set when a picker sends the user to a list to choose from, until the router navigates on its own. */
+  roundTripOpen: boolean;
 }
 
 const INITIAL_NAVIGATION_STATE: NavigationState = {
@@ -58,8 +59,8 @@ const INITIAL_NAVIGATION_STATE: NavigationState = {
   responsePayloads: new Map<string, NavigationPayload>(),
   requestPayloads: new Map<string, NavigationPayload>(),
   returnTo: '',
-  formSnapshot: undefined,
-  formSnapshotOwner: undefined,
+  formSnapshots: {},
+  roundTripOpen: false,
 };
 
 export function snakeCaseName(entityName: string) {
@@ -151,34 +152,44 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       patchState(store, {
         requestPayloads: new Map<string, NavigationPayload>(),
         responsePayloads: new Map<string, NavigationPayload>(),
-        formSnapshot: undefined,
-        formSnapshotOwner: undefined,
+        formSnapshots: {},
+        roundTripOpen: false,
       });
     }
 
     /**
-     * Keeps a form's values while it is left for a list to choose from, to be given back when it is shown again.
-     *
-     * `owner` names the entity of the form being left. A page can show several forms at once — a workflow's form
-     * with the form of one of its start events inside it — and when the page comes back they all ask for the
-     * values; without an owner the first to ask took them, which was the outer form, and the form they were
-     * taken from came back empty.
+     * A picker sends the user to a list to choose from. Until the router navigates on its own, the form being left keeps
+     * its values (see {@link keepFormSnapshot}) and does not ask: the list is a round trip, not a departure.
      */
-    function captureFormSnapshot(snapshot: Record<string, unknown>, owner?: string): void {
-      patchState(store, { formSnapshot: snapshot, formSnapshotOwner: owner });
+    function beginRoundTrip(): void {
+      patchState(store, { roundTripOpen: true });
+    }
+
+    /** Whether a round trip to a list to choose from is under way (see {@link beginRoundTrip}). */
+    function hasRoundTrip(): boolean {
+      return store.roundTripOpen();
     }
 
     /**
-     * The values {@link captureFormSnapshot} kept, once, for the form they belong to. A form of another entity
-     * gets nothing and leaves them where they are; a caller that names no owner, or a snapshot that recorded none,
-     * takes whatever is there, as before.
+     * Keeps the values of the form of `owner` (its entity name) while it is left during a round trip. Each form keeps its
+     * own, so a form never takes the values of another form on the same page, even one it contains.
      */
-    function popFormSnapshot(owner?: string): Record<string, unknown> | undefined {
-      const keptFor = store.formSnapshotOwner();
-      if (owner !== undefined && keptFor !== undefined && owner !== keptFor) return undefined;
-      const snapshot = store.formSnapshot();
-      patchState(store, { formSnapshot: undefined, formSnapshotOwner: undefined });
-      return snapshot;
+    function keepFormSnapshot(owner: string, values: Record<string, unknown>): void {
+      patchState(store, { formSnapshots: { ...store.formSnapshots(), [owner]: values } });
+    }
+
+    /**
+     * The values {@link keepFormSnapshot} kept for `owner`, once. Taking the last of them ends the round trip.
+     */
+    function popFormSnapshot(owner: string): Record<string, unknown> | undefined {
+      const snapshots = store.formSnapshots();
+      const values = snapshots[owner];
+      if (values === undefined) return undefined;
+      const remaining = { ...snapshots };
+      delete remaining[owner];
+      const stillOpen = Object.keys(remaining).length > 0 && store.roundTripOpen();
+      patchState(store, { formSnapshots: remaining, roundTripOpen: stillOpen });
+      return values;
     }
 
     /** Re-derives everything that is read off the URL: which form is open, and the breadcrumb to it. */
@@ -505,7 +516,6 @@ export const BaseFormNavigatorSingletonStore = signalStore(
     }
 
     return {
-      captureFormSnapshot,
       determineCurrentUrl,
       determineOwnerUrl,
       determineActiveRouteSegment,
@@ -522,6 +532,9 @@ export const BaseFormNavigatorSingletonStore = signalStore(
       showsScreenOf,
       destroyNavigationTracking,
       initializeNavigationTracking,
+      beginRoundTrip,
+      hasRoundTrip,
+      keepFormSnapshot,
       popFormSnapshot,
       popRequestPayload,
       popResponsePayload,

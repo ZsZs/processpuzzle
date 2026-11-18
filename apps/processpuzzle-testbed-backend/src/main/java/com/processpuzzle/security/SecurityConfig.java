@@ -87,6 +87,23 @@ public class SecurityConfig {
     };
 
     /**
+     * Chat conversations, messages, read markers, the live stream and the erasure of a user's chat data. Always authenticated, whatever
+     * {@code require-authentication} says: a message has an author, which the use cases take from the token
+     * subject, and an anonymous call has none. The chat <em>definitions</em> are authored metadata like every other
+     * definition and follow {@code require-authentication}.
+     */
+    private static final String[] CHAT_PATHS = {
+            "/api/organizations/*/chat/conversations/**",
+            "/organizations/*/chat/conversations/**",
+            "/api/organizations/*/chat/unread",
+            "/organizations/*/chat/unread",
+            "/api/organizations/*/chat/stream",
+            "/organizations/*/chat/stream",
+            "/api/organizations/*/chat/users/**",
+            "/organizations/*/chat/users/**",
+    };
+
+    /**
      * The vision server's job notifications. Never a user call: each is authenticated by its own
      * per-job {@code X-Callback-Token}, which base-ai-backend checks against the job it names. The token is
      * not a bearer token on purpose — the resource server below would try to parse one as a JWT.
@@ -163,6 +180,7 @@ public class SecurityConfig {
                             .hasAuthority(properties.getPlatformAdminAuthority());
                     requests.requestMatchers(ORG_ADMIN_PATHS).authenticated();
                     requests.requestMatchers(SELF_SERVICE_PATHS).authenticated();
+                    requests.requestMatchers(CHAT_PATHS).authenticated();
                     if (properties.isRequireAuthentication()) {
                         requests.anyRequest().authenticated();
                     } else {

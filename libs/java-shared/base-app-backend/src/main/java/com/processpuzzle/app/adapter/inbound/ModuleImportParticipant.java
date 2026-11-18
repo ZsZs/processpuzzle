@@ -12,6 +12,8 @@ import com.processpuzzle.app.usecase.DeleteModuleDefinition;
 import com.processpuzzle.app.usecase.ImportModuleDefinitions;
 import com.processpuzzle.app.usecase.ImportOutcome;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.DefinitionYaml;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.ParticipantResult;
@@ -64,6 +66,41 @@ public class ModuleImportParticipant implements DefinitionImportParticipant {
 
     @Override
     public ParticipantResult apply(String orgKey, String fileName, byte[] yaml) {
+        ParticipantResult written = write(orgKey, fileName, yaml);
+        if (!written.isRejected()) {
+            release.release(orgKey);
+        }
+        return written;
+    }
+
+    @Override
+    public boolean supportsUpgrade() {
+        return true;
+    }
+
+    @Override
+    public Set<String> keysIn(String fileName, byte[] yaml) {
+        return DefinitionYaml.keys(yaml, "moduleDefinitions", "key");
+    }
+
+    /**
+     * Writes the drafts of these modules only, and does not release them: an install makes a starter's modules live
+     * at once, an upgrade leaves them as drafts for the organization to review and release with everything else.
+     */
+    @Override
+    public ParticipantResult applyOnly(String orgKey, String fileName, byte[] yaml, Set<String> keys) {
+        return keysIn(fileName, yaml).stream().noneMatch(keys::contains)
+                ? new ParticipantResult(List.of(), List.of())
+                : write(orgKey, fileName, DefinitionYaml.only(yaml, "moduleDefinitions", "key", keys));
+    }
+
+    /** The designer's delete of the drafts; the release removes the released rows. */
+    @Override
+    public DefinitionRemoval removeDrafts(String orgKey, Set<String> keys) {
+        return DefinitionRemoval.removing(keys, key -> deleteModule.execute(orgKey, key));
+    }
+
+    private ParticipantResult write(String orgKey, String fileName, byte[] yaml) {
         List<String> keys;
         try {
             keys = keys(yaml);
@@ -80,7 +117,6 @@ public class ModuleImportParticipant implements DefinitionImportParticipant {
         if (!outcome.errors().isEmpty()) {
             return ParticipantResult.rejected(outcome.errors().stream().map(error -> fileName + ": " + error).toList());
         }
-        release.release(orgKey);
 
         List<ImportedItem> items = keys.stream()
                 .map(key -> new ImportedItem(key, existing.contains(key) ? ImportedItem.Action.UPDATE : ImportedItem.Action.CREATE))

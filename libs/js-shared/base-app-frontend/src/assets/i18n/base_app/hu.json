@@ -68,8 +68,10 @@
       "routes": "Az alkalmazás oldalai, oldalanként egy sor. Előbb vedd fel őket, mint a rájuk mutató navigációs elemeket. — Útmutató: Útvonalak",
       "modules": "Az alkalmazás külön elkészített részei, amelyek útvonalai egy alap útvonal alatt jelennek meg. — Útmutató: Modulok",
       "assets": "Az alkalmazás által hozott fájlok, például oldalainak képei. A widget app:<útvonal> alakban hivatkozik rájuk. — Útmutató: Alkalmazások",
-      "translations": "Az alkalmazás saját oldalainak szövegei, például a kezdőlap kártyái, nyelvenként egy fájl. A kulcsok azok, amelyeket a widgetek a translocoPrefix alatt megnevezik. — Útmutató: Alkalmazások"
-    }
+      "translations": "Az alkalmazás saját oldalainak szövegei, például a kezdőlap kártyái, nyelvenként egy fájl. A kulcsok azok, amelyeket a widgetek a translocoPrefix alatt megnevezik. — Útmutató: Alkalmazások",
+      "contexts": "Entitások, amelyeket egyszer kiválasztunk, majd bennük dolgozunk. Az oldal a Kontextust igényel mezővel csatlakozik."
+    },
+    "contexts": "Kontextusok"
   },
   "app_region": {
     "_self": "Régió",
@@ -77,7 +79,7 @@
     "navItems": "Navigációs elemek",
     "widgets": "Widgetek",
     "_tooltips": {
-      "type": "header (fent), sidenav (navigációs panel) vagy footer (lent). Mindegyik típus egyszer használható. — Útmutató: Régiók",
+      "type": "header (fent), sidenav (navigációs panel) vagy footer (lent). Mindegyik típus egyszer használható. A statusbar (a fejléc alatt) az aktív kontextusokat mutatja. — Útmutató: Régiók",
       "navItems": "A sidenav menüpontjai. Csak a sidenav régió használja. — Útmutató: Navigációs elemek",
       "widgets": "A fejléc vagy a lábléc widgetjei, egy sorban, ebben a sorrendben. Egy spacer jobbra tolja az utána következőket. — Útmutató: Fejléc"
     }
@@ -106,8 +108,14 @@
       "documentSlug": "Csak DOCUMENT: a megjelenítendő dokumentum slugja. Még nem jelenik meg. — Útmutató: Dokumentumok",
       "entityName": "Csak ENTITY: az Entitások alatt definiált entitás neve; a listáját és az űrlapját a rendszer generálja. — Útmutató: Entitások",
       "entityMode": "Csak ENTITY: a listán vagy egy rekord részletein nyíljon meg. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások",
-      "rsqlFilter": "Csak ENTITY + LIST: előszűrő, pl. status==OPEN. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások"
-    }
+      "rsqlFilter": "Csak ENTITY + LIST: előszűrő, pl. status==OPEN. Tárolva, de még nincs alkalmazva. — Útmutató: Entitások",
+      "requiresContext": "Az alkalmazás egy kontextusának neve. Az oldal ekkor a ctx/<név>/<id> alatt érhető el, és „Válasszon …” felületet mutat, amíg egy sincs aktív.",
+      "contextPath": "A kontextus entitásának az az attribútuma, amelynek gyűjteményét ez az oldal listázza, pl. zones. Kontextust igényel; az entitás neve ilyenkor az elemek típusa.",
+      "filterByContext": "Csak a kontextus aktív entitásának sorait mutatja, kapcsolóval az összes megjelenítéséhez. A „Kontextust igényel” mezőt hagyja üresen: az oldal kontextus nélkül is működik."
+    },
+    "requiresContext": "Kontextust igényel",
+    "contextPath": "Kontextus útvonal",
+    "filterByContext": "Szűrés kontextus szerint"
   },
   "app_module_mount": {
     "_self": "Modul beépítés",
@@ -260,6 +268,33 @@
     "lifecycle": {
       "title": "Mentés, előnézet és kiadás",
       "body": "<p>Egy új alkalmazás <b>piszkozatként</b> indul. A <b>Mentés</b> eltárolja a módosításait; az <b>Előnézet</b> fül ezután pontosan úgy mutatja a mentett definíciót, ahogy a futó alkalmazás megjeleníti, a témával együtt – ott ellenőrizze, mielőtt továbblép. A felhasználók ebből még semmit nem kapnak meg: a futó alkalmazás csak <b>kiadott</b> definíciókat használ. Nyissa meg a tervező <b>Kiadás</b> részét, hogy lássa mindazt, amit módosított – ezt az alkalmazást, a moduljait és a többi definíciót, amelyet használ –, és tegye <b>közzé</b> őket együtt; a mentett verzió lesz a <b>közzétett verzió</b>. Ezután tovább szerkesztheti és mentheti; a felhasználók csak a következő kiadás után látják a változásokat.</p>"
+    }
+  },
+  "app_context": {
+    "_self": "Kontextus",
+    "name": "Név",
+    "entityName": "Entitás neve",
+    "parent": "Szülő",
+    "basePath": "Alapútvonal",
+    "persist": "Megjegyzés",
+    "pickerSearchFields": "Választó keresőmezői",
+    "pickerRecent": "Legutóbbiak száma",
+    "displayLabel": "Megjelenő szöveg",
+    "displayBadge": "Megjelenő jelvény",
+    "displayExtra": "Kiegészítő szöveg",
+    "confirmSwitchStates": "Megerősítést kérő állapotok",
+    "_tooltips": {
+      "name": "A kontextus neve és URL-szegmense: az oldalai a ctx/<név>/<id> alatt érhetők el.",
+      "entityName": "Az entitástípus, amelyet egyszer kiválasztunk, majd benne dolgozunk, pl. Race.",
+      "parent": "A kontextus, amelybe ez beágyazott. Másik szülő választása törli ezt.",
+      "basePath": "Az útvonal, amely alá a kontextus oldalai kerülnek, pl. /conduct. Üresen az alkalmazás gyökere.",
+      "persist": "Az url csak a címben őrzi a választást; az url-local-storage az utolsót ezen az eszközön is megjegyzi.",
+      "pickerSearchFields": "Az attribútumok, amelyekben a választó keres. Üresen a címattribútum.",
+      "pickerRecent": "Hány legutóbbi elemet kínál fel a választó felül. Alapértelmezés: 3.",
+      "displayLabel": "Az állapotsorban megjelenő szöveg {{attribútum}} helyőrzőkkel. Üresen a címattribútum.",
+      "displayBadge": "Mellette jelvényként mutatott attribútum; a state az állapot attribútumot jelöli.",
+      "displayExtra": "Második, halkabb szöveg {{attribútum}} helyőrzőkkel.",
+      "confirmSwitchStates": "Állapotok, amelyekben az entitás elhagyása előbb megerősítést kér."
     }
   }
 }

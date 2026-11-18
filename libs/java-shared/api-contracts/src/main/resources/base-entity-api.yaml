@@ -281,6 +281,14 @@ paths:
           schema:
             type: string
           example: 'createdAt,desc'
+        - name: includeRetired
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: >
+            Lists the retired objects of a shared type too. Honoured for the common's own members only; a member
+            organization never sees retired objects listed.
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:
@@ -385,7 +393,9 @@ paths:
       summary: Delete an entity instance
       description: >
         Deleting an object that other objects reference via a FOREIGN_KEY attribute
-        value is rejected (409) unless `cascade=true` is passed.
+        value is rejected (409) unless `cascade=true` is passed. An object of a shared type is
+        not deleted but retired (`retiredAt` is set): it still resolves by id, lists leave it out,
+        and `reinstate` takes it back.
       parameters:
         - name: cascade
           in: query
@@ -403,6 +413,377 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetail'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/reinstate:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: reinstateEntity
+      tags: [ Base Entities ]
+      summary: Reinstate a retired object of a shared type
+      description: Lists the object again. An object that is not retired is returned unchanged.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityObject'
+        '403':
+          description: the type is shared and the caller is not a member of its common
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Embedded collections ──
+  # One level of an aggregate: the embedded components an entity instance carries in an
+  # EMBEDDED_COMPONENTS attribute, addressed on their own so that "add a zone" never sends the
+  # whole Warehouse. An item is identified by its `id` member, which the server assigns on append.
+  #
+  # Concurrency. Each item carries an `itemVersion` the server counts, starting at 1 and bumped by every PATCH of that
+  # item; the item endpoints answer it as the `ETag` of the item, and PATCH and DELETE take it back as `If-Match`
+  # (optional — without it the change applies to the stored item). A stale `If-Match` is a 409 for that item only, so two
+  # people editing different zones of one warehouse do not conflict. The object's `version` is the GET list's `ETag`, and the
+  # object-level check still applies underneath every change: a change that loses that race is read and applied again.
+  # Items stored before this had no `itemVersion`; the first write of their object gives them one (and an `id`).
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the entity.
+        schema:
+          type: string
+    get:
+      operationId: listEmbeddedItems
+      tags: [ Base Entities ]
+      summary: List the items of an embedded collection
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    post:
+      operationId: appendEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Append an item to an embedded collection
+      description: The server assigns `id` when the item brings none. The whole object is validated as it would be after the append.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '201':
+          description: Appended; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        description: The item's `id` member.
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        required: false
+        description: The item's version the caller last saw, as the ETag of the item. A different stored item version is a 409.
+        schema:
+          type: string
+    patch:
+      operationId: patchEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Partially update one item of an embedded collection
+      description: >
+        Merge patch of the item: members present in the body replace the stored ones, a `null` member is
+        removed, the rest stay. `id` cannot be changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '200':
+          description: OK; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Remove one item from an embedded collection
+      responses:
+        '204':
+          description: Removed
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ── Nested embedded collections ──
+  # The collection held by an attribute of an item of another collection — the shelves of one zone, say. The same
+  # operations as above, one level down; the item of the outer collection is named by its `id`. The versioning is the
+  # same: each item has its own `itemVersion`, and an item of the nested collection is changed against that.
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}/{childAttributeCode}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the entity.
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        description: The `id` of the item of `attributeCode` the collection is nested in.
+        schema:
+          type: string
+      - name: childAttributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the item's component type.
+        schema:
+          type: string
+    get:
+      operationId: listNestedEmbeddedItems
+      tags: [ Base Entities ]
+      summary: List the items of a collection nested in an item
+      responses:
+        '200':
+          description: OK
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    post:
+      operationId: appendNestedEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Append an item to a collection nested in an item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '201':
+          description: Appended; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/entities/{entityDefinitionCode}/{id}/{attributeCode}/{itemId}/{childAttributeCode}/{childItemId}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - name: entityDefinitionCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the entity.
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        description: The `id` of the item of `attributeCode` the collection is nested in.
+        schema:
+          type: string
+      - name: childAttributeCode
+        in: path
+        required: true
+        description: An EMBEDDED_COMPONENTS attribute of the item's component type.
+        schema:
+          type: string
+      - name: childItemId
+        in: path
+        required: true
+        description: The `id` of the item of `childAttributeCode`.
+        schema:
+          type: string
+      - name: If-Match
+        in: header
+        required: false
+        description: The item's version the caller last saw, as its ETag. A different stored item version is a 409.
+        schema:
+          type: string
+    patch:
+      operationId: patchNestedEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Partially update one item of a collection nested in an item
+      description: Merge patch of the item, as for a top-level item. `id` cannot be changed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbeddedItem'
+      responses:
+        '200':
+          description: OK; the body is the item as stored.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ObjectVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddedItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteNestedEmbeddedItem
+      tags: [ Base Entities ]
+      summary: Remove one item of a collection nested in an item
+      responses:
+        '204':
+          description: Removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
   # ── Translations ──
   # The UI message bundles this feature owns, in the shape the frontend's asset files have. Two
@@ -519,6 +900,12 @@ components:
         minimum: 1
         maximum: 200
         default: 20
+
+  headers:
+    ObjectVersion:
+      description: The version the ETag names, as a quoted value (`"3"`). On the list, the object version; on an item answer, that item's itemVersion.
+      schema:
+        type: string
 
   responses:
     NotFound:
@@ -858,6 +1245,51 @@ components:
               format: uuid
               readOnly: true
 
+    EntitySharing:
+      type: object
+      description: >
+        Present on an entity type of a common (the organization the platform keeps for a business
+        starter): the type is shared, defined once there and read by the organizations of the
+        starter. Rejected (422) on any other organization, on an embedded type, and for a policy that
+        is not supported yet (write SELF). Give `write` and `visibility`, or only `from`.
+      properties:
+        write:
+          type: string
+          enum: [ COMMON_ADMIN, OWNER_ORG, SELF ]
+          description: >
+            Who may write the records. COMMON_ADMIN: the common's own members only. OWNER_ORG: the member that
+            created a record changes and retires it, and the common's members too. SELF is reserved.
+        visibility:
+          type: string
+          enum: [ PUBLIC, OWNER_ONLY ]
+          description: >
+            Who may read the records. PUBLIC: every member. OWNER_ONLY: the owning member, and the common's own
+            members.
+        from:
+          type: string
+          description: >
+            The REFERENCE attribute whose record this type's records follow: a booking follows its event. Owner and
+            visibility are those of the referenced record (one level; the referenced type is a shared type of the same
+            common that follows nothing itself), only the owner of that record — and the common — creates or changes
+            them, and the attribute cannot change afterwards. Replaces `write`, `visibility` and `visibleWhen`,
+            which are then left out.
+        visibleWhen:
+          $ref: '#/components/schemas/SharingVisibleWhen'
+
+    SharingVisibleWhen:
+      type: object
+      required: [ state ]
+      description: >
+        Limits a PUBLIC shared type: the members that do not own a record see it only while it is in one of these
+        states of the type's state machine. The owner and the common's own members always see it. Rejected (422)
+        on an OWNER_ONLY type, where it would add nothing, and with no states.
+      properties:
+        state:
+          type: array
+          minItems: 1
+          items:
+            type: string
+
     BaseEntityDefinitionInput:
       type: object
       required: [ code, name, attributes ]
@@ -884,6 +1316,25 @@ components:
             (no EntityObject rows of its own). False: persisted independently,
             linked back to its parent via a FOREIGN_KEY attribute value. Rejected
             (422) when true and componentParents is empty.
+        canContextObject:
+          type: boolean
+          default: false
+          description: >
+            True: a user can pick one object of this type as the "context object" — the aggregate
+            whose embedded components are then listed and edited without naming it again. Only
+            meaningful for a stand-alone (not embedded) definition.
+        sharing:
+          $ref: '#/components/schemas/EntitySharing'
+        identifiers:
+          type: array
+          description: >
+            Natural keys. Each entry lists attribute codes whose values together identify a record; no two
+            non-retired records of the type may carry the same values (409 on a write that would). A record
+            lacking a value for one of the attributes is not constrained by that key.
+          items:
+            type: array
+            items:
+              type: string
         organizationId:
           type: string
           format: uuid
@@ -926,6 +1377,13 @@ components:
               allOf:
                 - $ref: '#/components/schemas/ReleaseState'
               readOnly: true
+            sharedFrom:
+              type: string
+              readOnly: true
+              description: >
+                Set on a type the organization reads but does not own: the key of the common that
+                shares it. Such a type is released, read-only, and cannot be changed or deleted from
+                here.
 
     BaseEntityDefinitionPage:
       $ref: '#/components/schemas/Page'
@@ -948,6 +1406,11 @@ components:
             definition's attributes (recursively, for embedded components) and
             against base-rule constraints before persistence.
           additionalProperties: true
+
+    EmbeddedItem:
+      type: object
+      description: One item of an embedded collection. Free-form, as the payload is; `id` identifies it.
+      additionalProperties: true
 
     EntityObjectUpdate:
       type: object
@@ -976,6 +1439,14 @@ components:
         payload:
           type: object
           additionalProperties: true
+        retiredAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Set while the object of a shared type is retired; absent otherwise.
+        retiredBy:
+          type: string
+          readOnly: true
         createdAt:
           type: string
           format: date-time

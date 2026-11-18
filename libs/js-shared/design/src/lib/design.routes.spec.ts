@@ -8,6 +8,7 @@ import { DesignWorkbenchComponent } from './workbench/design-workbench.component
 import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
 import { CALCULATION_DESIGNER_TABS } from './calculation-designer/calculation-designer.tabs';
 import { ReleasePanelComponent } from '@processpuzzle/base-release';
+import { BASE_CHAT_ROUTES } from '@processpuzzle/base-chat';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
 import { BASE_STATE_ROUTES } from '@processpuzzle/base-state';
 import { AiDesignerComponent } from './ai-designer/ai-designer.component';
@@ -23,6 +24,7 @@ describe('DESIGN_ROUTES', () => {
   const workflowsRoute = DESIGN_SECTIONS.find((route) => route.path === 'workflows');
   const statesRoute = DESIGN_SECTIONS.find((route) => route.path === 'states');
   const entitiesRoute = DESIGN_SECTIONS.find((route) => route.path === 'entities');
+  const chatsRoute = DESIGN_SECTIONS.find((route) => route.path === 'chats');
   const calculationsRoute = DESIGN_SECTIONS.find((route) => route.path === 'calculations');
 
   it('hosts the application section on the tabbed designer page', () => {
@@ -185,6 +187,26 @@ describe('DESIGN_ROUTES', () => {
 
       expect(sectionPaths).not.toContain('calculation-definition');
       expect(sectionPaths).not.toContain('calculation-runs');
+    });
+  });
+
+  describe('the Chat section', () => {
+    it('hosts the base-chat authoring branch, componentless like the other single-entity sections', () => {
+      expect(chatsRoute?.component).toBeUndefined();
+      expect(chatsRoute?.data).toEqual({ icon: 'forum', menuTitle: 'design.chat' });
+      expect(chatsRoute?.title).toBeDefined();
+      expect(chatsRoute?.providers).toBeUndefined();
+    });
+
+    it('opens the chat definition when the section itself is addressed', () => {
+      expect(chatsRoute?.children?.[0]).toEqual({ path: '', pathMatch: 'full', redirectTo: 'chat-definition' });
+    });
+
+    it('mounts every branch of BASE_CHAT_ROUTES below it, and none beside it', () => {
+      const childPaths = (chatsRoute?.children ?? []).map((child) => child.path);
+
+      expect(childPaths).toEqual(expect.arrayContaining(BASE_CHAT_ROUTES.map((route) => route.path)));
+      expect(DESIGN_SECTIONS.map((route) => route.path)).not.toContain('chat-definition');
     });
   });
 

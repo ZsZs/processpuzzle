@@ -333,4 +333,71 @@ describe('buildAppRoutes', () => {
   it('builds nothing from an empty definition', async () => {
     expect(await buildAppRoutes({}, renderRoute)).toEqual([]);
   });
+
+  describe('working contexts', () => {
+    const bound = (path: string, requiresContext: string) => new RouteDefinition({ path, title: path, kind: 'WIDGETS', requiresContext });
+    const paths = (routes: Routes | undefined) => (routes ?? []).map((route) => route.path);
+
+    it('serves the routes that require a context below ctx/<name>, twice: with the entity and as the empty state', async () => {
+      const routes = await buildAppRoutes({ routes: [bound('participants', 'race'), bound('rounds', 'race'), ...routeDefinitions('home')], contexts: [{ name: 'race' }] }, renderRoute);
+
+      expect(paths(routes)).toEqual(['ctx/race/:contextId', 'ctx/race', 'home']);
+      expect(paths(routes[0].children)).toEqual(['', 'participants', 'rounds']);
+      expect(routes[0].children?.[0].redirectTo).toBe('participants');
+      expect(paths(routes[1].children)).toEqual(['**']);
+    });
+
+    it('mounts the embedded children of a context\'s entity below the context, the screens of its rows', async () => {
+      class ZoneFacade {}
+      const contextChildren = vi.fn(async (entityName: string) => (entityName === 'Warehouse' ? [{ entityName: 'Zone', facade: ZoneFacade as never }] : []));
+
+      const routes = await buildAppRoutes(
+        { routes: [bound('zones', 'warehouse')], contexts: [{ name: 'warehouse', entityName: 'Warehouse' }], contextChildren },
+        renderRoute,
+      );
+
+      expect(contextChildren).toHaveBeenCalledWith('Warehouse');
+      expect(routes[0].data).toMatchObject({ workingContext: 'warehouse', entityName: 'Warehouse' });
+      expect(paths(routes[0].children)).toEqual(['', 'zones', 'zone']);
+    });
+
+    it('asks nothing of a context that names no entity, and mounts no branches', async () => {
+      const contextChildren = vi.fn(async () => []);
+
+      const routes = await buildAppRoutes({ routes: [bound('zones', 'warehouse')], contexts: [{ name: 'warehouse' }], contextChildren }, renderRoute);
+
+      expect(contextChildren).not.toHaveBeenCalled();
+      expect(paths(routes[0].children)).toEqual(['', 'zones']);
+    });
+
+    it('leaves a route that requires no context where it was', async () => {
+      const routes = await buildAppRoutes({ routes: routeDefinitions('home', 'orders'), contexts: [{ name: 'race' }] }, renderRoute);
+
+      expect(paths(routes)).toEqual(['home', 'orders']);
+    });
+
+    it('nests a child context inside its parent, creating the parent where no route names it', async () => {
+      const routes = await buildAppRoutes({ routes: [bound('scores', 'heat')], contexts: [{ name: 'race' }, { name: 'heat', parent: 'race' }] }, renderRoute);
+
+      expect(paths(routes)).toEqual(['ctx/race/:contextId', 'ctx/race']);
+      const raceViews = routes[0].children ?? [];
+      // No landing redirect: the only thing inside the race is the nested context, which is no view to land on.
+      expect(paths(raceViews)).toEqual(['ctx/heat/:contextId', 'ctx/heat']);
+      expect(paths(raceViews[0].children)).toEqual(['', 'scores']);
+    });
+
+    it('treats a context whose parent is not declared as a root', async () => {
+      const routes = await buildAppRoutes({ routes: [bound('scores', 'heat')], contexts: [{ name: 'heat', parent: 'regatta' }] }, renderRoute);
+
+      expect(paths(routes)).toEqual(['ctx/heat/:contextId', 'ctx/heat']);
+    });
+
+    it('groups the routes of a mounted module inside the mount', async () => {
+      const module = { id: 'conduct', routes: [bound('participants', 'race')] } as ModuleDefinition;
+      const routes = await buildAppRoutes({ modules: [{ moduleKey: 'conduct', basePath: 'conduct' }], moduleRoutes: { conduct: module.routes }, contexts: [{ name: 'race' }] }, renderRoute);
+
+      expect(paths(routes)).toEqual(['conduct']);
+      expect(paths(routes[0].children)).toEqual(['ctx/race/:contextId', 'ctx/race']);
+    });
+  });
 });

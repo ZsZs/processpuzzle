@@ -51,22 +51,26 @@
     "description": "Description",
     "status": "Status",
     "isEmbedded": "Embedded",
+    "canContextObject": "Context object",
     "componentParents": "Component Parents",
     "attributes": "Attributes",
     "version": "Version",
     "updatedAt": "Updated At",
     "releaseState": "Release",
+    "sharedFrom": "Shared from",
     "_tooltips": {
       "code": "Unique key of the entity type within your organization, used in addresses. Short, lower-case and URL-safe, e.g. order; avoid changing it later.",
       "name": "The entity name the application's pages, routes and menus refer to this type by, e.g. Order.",
       "description": "A note for you and your fellow designers about what this entity type is for; users do not see it.",
       "status": "ACTIVE for a type in use, DEPRECATED to retire it: the application no longer shows a deprecated type. Whether the application has the type at all is its release, shown under Release.",
       "isEmbedded": "Tick when records of this type exist only inside another record, e.g. order lines inside an order. Then also name the parent under Component Parents.",
+      "canContextObject": "Tick to let users pick one record of this type as the context object: the record whose embedded parts are then listed and edited without naming it again. Not for embedded types.",
       "componentParents": "For an embedded type: the codes of the entity types whose records contain it, e.g. order. Required when Embedded is ticked.",
       "attributes": "The fields of the entity type, one row per field. They are saved together with the definition.",
       "version": "Increases with every save. Set by the system.",
       "updatedAt": "When the definition was last saved. Set by the system.",
-      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system."
+      "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
+      "sharedFrom": "The common this type comes from. Its organization reads the type, but only the common releases or changes it. Empty for your own types. Set by the system."
     }
   },
   "artifact": {
@@ -100,7 +104,15 @@
     "delete_button": "Delete"
   },
   "statusbar": {
-    "breadcrumb_label": "Record hierarchy"
+    "breadcrumb_label": "Record hierarchy",
+    "unsaved_changes": "Unsaved changes",
+    "unsaved_changes_hint": "Save the {{ entity }} to keep these changes"
+  },
+  "unsaved_changes_dialog": {
+    "title": "Unsaved changes",
+    "content": "You have unsaved changes. If you leave this page, they will be lost.",
+    "cancel_button": "Stay",
+    "leave_button": "Leave"
   },
   "tabs": {
     "list": "{{ entity }} - list",
@@ -140,7 +152,10 @@
   "embedded_components": {
     "save_owner_first": "Save this record before adding {{ entity }} — an embedded component is stored inside it.",
     "move_up": "Move up",
-    "move_down": "Move down"
+    "move_down": "Move down",
+    "hide_list": "Hide the list",
+    "show_list": "Show the list",
+    "hidden_count": "{{ count }} hidden"
   },
   "rich_text": {
     "toolbar": {
@@ -202,5 +217,42 @@
       "TIMEOUT": "Reading the location took too long. Try again.",
       "UNAVAILABLE": "This browser cannot tell your location."
     }
+  },
+  "working_context": {
+    "search": "Search",
+    "recent": "Recent",
+    "all": "All",
+    "no_match": "Nothing matches",
+    "empty_state": "Select a {{ entity }}",
+    "switch_title": "Switch {{ entity }}",
+    "select_to_continue": "Select one and press \"Set as context object\" to continue to the page you asked for.",
+    "show_list": "Show the full list",
+    "menu": "Context actions",
+    "switch": "Switch",
+    "open": "Open for editing",
+    "clear": "Clear context",
+    "set_active": "Set as context object",
+    "is_active": "Active",
+    "confirm_switch": {
+      "title": "Leave the active context?",
+      "content": "{{ entity }} is still in progress. Do you really want to leave it?",
+      "cancel_button": "Stay",
+      "confirm_button": "Leave"
+    },
+    "only_active": "Only the active {{context}}"
+  },
+  "context_collection": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "empty": "Nothing here yet.",
+    "delete_title": "Delete this item?",
+    "delete_content": "This cannot be undone.",
+    "conflict": "Someone else changed this at the same time. The list shows what is stored now — please try again."
+  },
+  "list": {
+    "show_retired": "Show retired records"
   }
 }

@@ -75,6 +75,14 @@ export class DesignContentComponent {
       translocoPrefix: 'design',
     },
     {
+      icon: 'forum',
+      title: 'base-chat_card_title',
+      subtitle: 'base-chat_card_subtitle',
+      content: ['base-chat_card_content', 'base-chat_card_content_1', 'base-chat_card_content_2', 'base-chat_card_content_3'],
+      actions: [{ link: `${this.prefix}/design/chats`, caption: 'base-chat_card_button', colour: 'primary' }],
+      translocoPrefix: 'design',
+    },
+    {
       icon: 'web',
       title: 'base-app_card_title',
       subtitle: 'base-app_card_subtitle',

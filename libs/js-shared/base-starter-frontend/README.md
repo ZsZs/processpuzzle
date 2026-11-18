@@ -21,6 +21,20 @@ organization's definitions through every feature's importer in one transaction, 
 3. **Install** is enabled only after a preview of the *same* starter and version came back `would-apply`.
 4. Below, the starter already installed, with how many of its definitions were changed since.
 
+## Upgrading
+
+When the platform has rolled out a newer version of an installed starter, its row in the installed-starters table
+shows **Upgrade to <version>**:
+
+1. **Preview** plans the upgrade (`POST …/starters/{id}/upgrade` with `dryRun`) and shows an `UpgradeReport`:
+   what is *added* or *replaced* (untouched here), *removed* (dropped by the starter and untouched), and what is **kept** —
+   changed here (*customized*, the organization's version stays), deleted here (not brought back), or still in use. Kinds
+   the starter brings that cannot be upgraded yet are named and left as they are.
+2. **Apply upgrade** is enabled only after a preview of that starter came back `would-apply`, and applies exactly the
+   version the preview showed. One published version at a time: when the organization is several versions behind, the
+   row offers the next one again afterwards.
+3. The upgrade writes **drafts**; it releases nothing. Review them in the designer and release when it suits you.
+
 A starter replaces the organization's definitions, so the backend refuses it once the organization holds
 entity objects or workflow instances. A refused install is a report, not an error: the backend answers
 409 / 413 / 422 with the same `ImportReport` shape, and `StarterService` emits it.

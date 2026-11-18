@@ -1,10 +1,13 @@
 import { defineEntityRelationshipSuite } from '@processpuzzle/e2e-testing';
 import { testConfig } from '../../playwright.config';
+import { removeWorkflowInstancesOfFixture } from '../support/fixture-cleanup';
 import { REGISTRY_PATH } from '../support/global-setup';
 
 defineEntityRelationshipSuite({
   registryPath: REGISTRY_PATH,
   routePrefix: testConfig.routePrefix,
+  // An order starts a workflow run, and deleting the order does not end it; without this every run of the suite left its runs in the task dashboard.
+  afterFixtureRemoved: removeWorkflowInstancesOfFixture,
   // 'Order' used to be excluded here for its `lineItems`, whose 'total-matches-line-items' ERROR rule the
   // generated fixture could not satisfy. It needs no exclusion now: the entity moved to metadata in
   // base-entity's processpuzzle-testbed-entities.yaml, so it has no facade and never reaches the registry
@@ -82,6 +85,32 @@ defineEntityRelationshipSuite({
     },
   ],
   fixtureOverrides: [
+    {
+      // The generator ticks every checkbox, so a generated definition is embedded AND a context object, which the backend
+      // rejects: a context object is always a stand-alone entity. Pinned off, as the other rule-bound fields are.
+      entityName: 'Entity Definition',
+      create: { canContextObject: 'false' },
+      update: { canContextObject: 'false' },
+      reason: 'canContextObject is only allowed on a stand-alone definition, and the generator ticks Embedded too',
+    },
+    {
+      // Routes of a module, and of an app, that name a context. The generator fills every field, and the backend rejects
+      // a contextPath on a route that is not an ENTITY route (app.validation.context-path-needs-entity), while a generated
+      // route is WIDGETS. The collection path is optional, so it is left empty.
+      entityName: 'App Route',
+      create: { contextPath: '', filterByContext: '' },
+      update: { contextPath: '', filterByContext: '' },
+      reason: 'contextPath and filterByContext are only meaningful on an ENTITY route, and the generated route takes the first kind, WIDGETS',
+    },
+    {
+      // Working contexts of the app. The generator fills their optional references, and a generated parent names no
+      // declared context, which the backend rejects with app.validation.unknown-context-parent. The count is pinned to a
+      // whole number, which a generated text would not be.
+      entityName: 'App Context',
+      create: { parent: '', basePath: '', pickerRecent: '3' },
+      update: { parent: '', basePath: '', pickerRecent: '3' },
+      reason: 'a parent must name a declared context, and the picker count is a whole number; both are optional',
+    },
     {
       // Reached through [Entity Definition] attributes. The generator would pick the first Value Kind, TEXT
       // (NUMBER on update), and the authoring mapper drops Date Style / Time Style for any kind but DATE /

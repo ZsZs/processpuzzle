@@ -48,6 +48,7 @@ export const MODULE_DEFINITION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.module_
  */
 export const APP_REGION_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_region`;
 export const APP_ROUTE_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_route`;
+export const APP_CONTEXT_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_context`;
 export const APP_MODULE_MOUNT_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_module_mount`;
 export const APP_NAV_ITEM_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_nav_item`;
 export const APP_WIDGET_I18N_SCOPE = `${BASE_APP_TRANSLOCO_SCOPE}.app_widget`;

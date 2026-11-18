@@ -4,7 +4,13 @@ import type { DateFormat } from '../base-entity/date-format';
 import { isBoundedByMaxOccurs, MULTIPLICITIES, type Multiplicity } from '../base-entity/multiplicity';
 import type { ReleaseState } from '@processpuzzle/util';
 import type { MapProvider } from '../base-form/address/address-map';
-import { EntityAttributeDefinition, EntityDefinition, type EntityDefinitionStatus, type EntityValueKind } from '../base-entity-definition/entity-definition';
+import {
+  EntityAttributeDefinition,
+  EntityDefinition,
+  type EntityDefinitionStatus,
+  type EntitySharing,
+  type EntityValueKind,
+} from '../base-entity-definition/entity-definition';
 
 /** `BaseEntityAttributeInput` of `base-entity-api.yaml`, plus the `id` a response carries. */
 interface EntityAttributeDto {
@@ -41,6 +47,10 @@ interface EntityDefinitionDto {
   releaseState?: ReleaseState;
   componentParents?: string[];
   isEmbedded?: boolean;
+  canContextObject?: boolean;
+  sharing?: EntitySharing;
+  identifiers?: string[][];
+  sharedFrom?: string;
   attributes?: EntityAttributeDto[];
   version?: number;
   createdAt?: string;
@@ -85,6 +95,10 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       releaseState: source.releaseState,
       componentParents: source.componentParents,
       isEmbedded: source.isEmbedded,
+      canContextObject: source.canContextObject,
+      sharing: source.sharing,
+      identifiers: source.identifiers,
+      sharedFrom: source.sharedFrom,
       attributes: (source.attributes ?? []).map(toAttribute),
       version: source.version,
       createdAt: source.createdAt,
@@ -102,6 +116,11 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       status: entity.status,
       componentParents: entity.componentParents ?? [],
       isEmbedded: entity.isEmbedded ?? false,
+      canContextObject: entity.canContextObject ?? false,
+      // Carried, not authored here: the form has no control for it, and a save without it would unshare the type.
+      sharing: entity.sharing,
+      // Likewise carried: the natural keys of the type, which only the starter's YAML authors for now.
+      identifiers: entity.identifiers,
       attributes: (entity.attributes ?? []).map(fromAttribute),
     };
   }

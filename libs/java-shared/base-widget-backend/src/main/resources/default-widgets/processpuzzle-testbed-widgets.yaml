@@ -471,6 +471,41 @@ widgetDefinitions:
     - name: themeChange
       type: OBJECT
       description: The selection, preset and colour scheme, after every change the user makes.
+  - key: sidenav-toggle
+    name: Sidenav toggle
+    translocoId: base_widget.sidenav_toggle.name
+    description: >-
+      Shows or hides the application's sidenav. Renders nothing when the application has no sidenav.
+    category: Navigation
+    icon: menu
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+  - key: context-actions
+    name: Context actions
+    translocoId: base_widget.context_actions.name
+    description: >-
+      Buttons for the transitions the active entity of a working context can take, such as Open and Close.
+      Renders nothing without an active context.
+    category: Navigation
+    icon: play_arrow
+    propsSchema:
+      type: object
+      properties:
+        context:
+          type: string
+          title: Context
+          description: Name of the working context whose active entity the buttons act on.
+        triggers:
+          type: array
+          title: Triggers
+          description: The transitions to offer, by trigger, in this order. All available transitions when empty.
+          items:
+            type: string
+      required:
+        - context
+      additionalProperties: false
   - key: like-button
     name: Like button
     translocoId: base_widget.like_button.name
@@ -587,3 +622,87 @@ widgetDefinitions:
     - name: documentSelected
       type: STRING
       description: Slug of the document the reader opens.
+  # Registered by base-chat-frontend rather than base-widget-frontend — a widget that talks to the chat API
+  # would make the widget library depend on a feature library. chat-widgets.contract.spec.ts holds these two
+  # copies to their registrations.
+  - key: chat-panel
+    name: Chat panel
+    translocoId: base_chat.widgets.chat_panel
+    description: >-
+      The conversation of one record — an order, say — live, with a message box. Left without a record it
+      follows the active working context.
+    category: Social
+    icon: forum
+    propsSchema:
+      type: object
+      properties:
+        subjectId:
+          type: string
+          title: Record
+          description: Id of the record to chat about; the active working context when left empty.
+        subjectType:
+          type: string
+          enum: [ENTITY, WORKFLOW_INSTANCE]
+          title: Kind of record
+          description: What the record is — an entity instance, or a workflow instance; an entity instance when left empty.
+        definitionKey:
+          type: string
+          title: Chat definition
+          description: Key of the chat definition to show, and to start from when the record has no conversation yet.
+        conversationId:
+          type: string
+          title: Conversation
+          description: Id of one conversation to show, as the topics list does; the record and definition are then not used to find it.
+      additionalProperties: false
+    inputPorts:
+    - name: subjectId
+      type: STRING
+      required: false
+      description: Id of the record to chat about.
+  - key: chat-topics
+    name: Chat topics
+    translocoId: base_chat.widgets.chat_topics
+    description: >-
+      The titled topics of one record's chat — a protest under a race, say — with a way to start a new one, and the
+      selected topic's conversation beside them.
+    category: Social
+    icon: forum
+    propsSchema:
+      type: object
+      properties:
+        subjectId:
+          type: string
+          title: Record
+          description: Id of the record whose topics are listed; the active working context when left empty.
+        subjectType:
+          type: string
+          enum: [ENTITY, WORKFLOW_INSTANCE]
+          title: Kind of record
+          description: What the record is — an entity instance, or a workflow instance; an entity instance when left empty.
+        definitionKey:
+          type: string
+          title: Chat definition
+          description: Key of the chat definition, which has to be one with several topics per record.
+      additionalProperties: false
+    inputPorts:
+    - name: subjectId
+      type: STRING
+      required: false
+      description: Id of the record whose topics are listed.
+  - key: chat-unread-badge
+    name: Unread chat messages
+    translocoId: base_chat.widgets.unread_badge
+    description: >-
+      A small number showing how many chat messages the user has not read yet, across every conversation they
+      follow. Nothing is shown when there are none.
+    category: Social
+    icon: mark_chat_unread
+    propsSchema:
+      type: object
+      properties:
+        max:
+          type: number
+          title: Largest number shown
+          description: More unread messages than this show as, for example, 99+.
+          default: 99
+      additionalProperties: false

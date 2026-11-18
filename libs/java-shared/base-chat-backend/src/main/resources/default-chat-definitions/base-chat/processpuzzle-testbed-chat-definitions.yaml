@@ -1,0 +1,24 @@
+# Chat definitions the testbed ships. Imported on startup when base-chat.loadDefaultChatDefinitions is on;
+# the import upserts and releases what it writes.
+chat-definitions:
+  - key: order-discussion
+    name: Order discussion
+    description: One conversation per order, for everyone who works on it.
+    subjectType: ENTITY
+    subjectDefinition: order
+    multiplicity: SINGLE
+    lifecycle: ON_DEMAND
+  - key: order-topics
+    name: Order topics
+    description: Any number of titled topics per order, started by anyone who works on it.
+    subjectType: ENTITY
+    subjectDefinition: order
+    multiplicity: MANY
+    lifecycle: ON_DEMAND
+  - key: dynamic-entity-topics
+    name: Dynamic Entity topics
+    description: Any number of titled topics per dynamic entity — the example behind the Chat tab of the Dynamic Entity sample.
+    subjectType: ENTITY
+    subjectDefinition: dynamic-entity
+    multiplicity: MANY
+    lifecycle: ON_DEMAND

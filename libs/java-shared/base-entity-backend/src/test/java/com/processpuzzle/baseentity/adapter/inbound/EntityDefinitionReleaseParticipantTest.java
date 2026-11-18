@@ -64,6 +64,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 class EntityDefinitionReleaseParticipantTest {
 
     private static final String ORG = "my-org";
+    private static final String COMMON = "starter-common";
     private static final ReleaseCandidate EVERYTHING = new ReleaseCandidate() {
         @Override
         public boolean exists(String kind, String key) {
@@ -88,6 +89,26 @@ class EntityDefinitionReleaseParticipantTest {
         @Bean
         SecurityAuditorAware securityAuditorAware() {
             return new SecurityAuditorAware();
+        }
+
+        @Bean
+        Commons commons() {
+            return new Commons();
+        }
+    }
+
+    /** The data spaces of the test: ORG is a member of COMMON, as set. */
+    static class Commons implements com.processpuzzle.core.tenancy.DataSpaceDirectory {
+        boolean member;
+
+        @Override
+        public java.util.Optional<String> commonOf(String orgKey) {
+            return member && ORG.equals(orgKey) ? java.util.Optional.of(COMMON) : java.util.Optional.empty();
+        }
+
+        @Override
+        public boolean isCommon(String orgKey) {
+            return COMMON.equals(orgKey);
         }
     }
 
@@ -118,6 +139,8 @@ class EntityDefinitionReleaseParticipantTest {
     @Autowired
     private Instances instances;
     @Autowired
+    private Commons commons;
+    @Autowired
     private TransactionTemplate transaction;
     @Autowired
     private JdbcTemplate jdbc;
@@ -126,6 +149,53 @@ class EntityDefinitionReleaseParticipantTest {
     void setUp() {
         repository.deleteAll();
         instances.payloads.clear();
+        commons.member = false;
+    }
+
+    private void saveSharedTypeOfCommon(String code) {
+        BaseEntityDefinition shared = BaseEntityDefinition.builder().orgKey(COMMON).code(code).name("Shared " + code)
+            .channel(Channel.RELEASED)
+            .sharingWrite(com.processpuzzle.baseentity.definition.domain.SharingWrite.COMMON_ADMIN)
+            .sharingVisibility(com.processpuzzle.baseentity.definition.domain.SharingVisibility.PUBLIC).build();
+        shared.addAttribute(attribute("label", ValueKind.TEXT));
+        repository.save(shared);
+    }
+
+    @Test
+    void aMembersReferencesCanResolveToTheCommonsSharedTypes() {
+        saveSharedTypeOfCommon("asset");
+        commons.member = true;
+
+        assertThat(participant.referableKeys(ORG)).contains("asset", "Shared asset");
+        assertThat(participant.drafts(ORG)).doesNotContain("asset");
+    }
+
+    @Test
+    void anOrganizationWithoutACommonCannotReferToSharedTypes() {
+        saveSharedTypeOfCommon("asset");
+
+        assertThat(participant.referableKeys(ORG)).doesNotContain("asset");
+    }
+
+    @Test
+    void aReleaseTakesAwayTheCodeAndNameOfARemovedType_andTheOldNameOfARenamedOne() {
+        BaseEntityDefinition claim = definition("claim", attribute("amount", ValueKind.NUMBER));
+        claim.setName("Claim form");
+        BaseEntityDefinition partner = definition("partner", attribute("name", ValueKind.TEXT));
+        partner.setName("Business partner");
+        saveDraft(claim);
+        saveDraft(partner);
+        release();
+        assertThat(participant.removedReferableKeys(ORG)).isEmpty();
+
+        transaction.executeWithoutResult(status -> {
+            repository.delete(draft("partner"));
+            BaseEntityDefinition renamed = draft("claim");
+            renamed.setName("Insurance claim");
+            repository.save(renamed);
+        });
+
+        assertThat(participant.removedReferableKeys(ORG)).containsExactlyInAnyOrder("partner", "Business partner", "Claim form");
     }
 
     @Test

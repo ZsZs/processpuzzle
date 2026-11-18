@@ -31,6 +31,16 @@ import type { MapProvider } from '../base-form/address/address-map';
  */
 export type EntityDefinitionStatus = 'DRAFT' | 'ACTIVE' | 'DEPRECATED';
 
+/** `EntitySharing` of the contract: the policy of a type a common shares with the organizations of its starter. */
+export interface EntitySharing {
+  write: 'COMMON_ADMIN' | 'OWNER_ORG' | 'SELF';
+  visibility: 'PUBLIC' | 'OWNER_ONLY';
+  /** Limits a PUBLIC type: non-owners see a record only in these states of its state machine. */
+  visibleWhen?: { state: string[] };
+  /** The REFERENCE attribute whose record this type's records follow: owner and visibility are that record's. */
+  from?: string;
+}
+
 /** `ValueKind` of the contract: what the attribute's value *is*, as opposed to how it is edited. */
 export type EntityValueKind = 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'DATE_TIME' | 'ENUM' | 'REFERENCE';
 
@@ -192,6 +202,17 @@ export class EntityDefinition implements BaseEntity {
   componentParents?: string[];
   /** True when this definition's payload travels inside its parent's and it has no rows of its own. */
   isEmbedded?: boolean;
+  /** True when a user can pick one object of this type as the context object; see `BaseEntityDescriptorOptions.canContextObject`. */
+  canContextObject?: boolean;
+  /** Set on a type of a common: shared with every organization of its starter. Kept as read so a save does not drop it. */
+  sharing?: EntitySharing;
+  /** Natural keys: attribute codes whose values together are unique among the type's non-retired records. Kept as read. */
+  identifiers?: string[][];
+  /**
+   * Set on a type this organization reads but does not own: the key of the common that shares it. Such a type is
+   * released, shown read-only, and neither changed nor deleted from here. Reported by the backend, never sent back.
+   */
+  sharedFrom?: string;
   attributes?: EntityAttributeDefinition[];
   // region server-assigned
   version?: number;
@@ -210,6 +231,10 @@ export class EntityDefinition implements BaseEntity {
     // to append to.
     this.componentParents = init.componentParents ?? [];
     this.isEmbedded = init.isEmbedded ?? false;
+    this.canContextObject = init.canContextObject ?? false;
+    this.sharing = init.sharing;
+    this.identifiers = init.identifiers;
+    this.sharedFrom = init.sharedFrom;
     this.attributes = init.attributes ?? [];
     this.version = init.version;
     this.createdAt = init.createdAt;
@@ -232,6 +257,8 @@ export class EntityDefinition implements BaseEntity {
 export interface DynamicEntity {
   id?: string;
   version?: number;
+  /** When the record of a shared type was retired — it still resolves, but lists leave it out. */
+  retiredAt?: string;
   [attrName: string]: unknown;
 }
 

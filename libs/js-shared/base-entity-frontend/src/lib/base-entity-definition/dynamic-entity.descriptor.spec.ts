@@ -12,6 +12,19 @@ function attrOf(definition: EntityDefinition, attrName: string) {
 }
 
 describe('descriptorOf', () => {
+  it('is read-only for a type a common shares with the organization, and editable otherwise', () => {
+    expect(descriptorOf(ORDER_DEFINITION, lookup).isReadOnly).toBe(false);
+    expect(descriptorOf(new EntityDefinition({ ...ORDER_DEFINITION, sharedFrom: 'starter-common' }), lookup).isReadOnly).toBe(true);
+  });
+
+  it('shows a retired record without letting it be changed or deleted', () => {
+    const descriptor = descriptorOf(ORDER_DEFINITION, lookup);
+
+    expect(descriptor.isEditable?.({ id: '1' })).toBe(true);
+    expect(descriptor.isEditable?.({ id: '1', retiredAt: '2026-11-16T10:00:00Z' } as never)).toBe(false);
+    expect(descriptor.isDeletable?.({ id: '1', retiredAt: '2026-11-16T10:00:00Z' } as never)).toBe(false);
+  });
+
   it('names the entity by the definition name, not by its code — the descriptor is what URLs and registries are keyed by', () => {
     const descriptor = descriptorOf(ORDER_DEFINITION, lookup);
 

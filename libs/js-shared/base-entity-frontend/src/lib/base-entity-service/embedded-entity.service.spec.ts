@@ -155,3 +155,64 @@ describe('EmbeddedEntityService', () => {
     });
   });
 });
+
+describe('EmbeddedEntityService — in a working context', () => {
+  const rows = [
+    { id: 'z1', name: 'Cold', itemVersion: 2 },
+    { id: 'z2', name: 'Dry', itemVersion: 1 },
+  ];
+
+  function setup(viaWorkingContext: string | undefined) {
+    const resolved = {
+      context: { rootEntityName: 'Warehouse', rootId: 'W1', viaWorkingContext, path: [], attrName: 'zones', entityName: ENTITY_NAME, referenceIdField: 'id' },
+      rootStore: {} as ResolvedEmbeddedAggregate['rootStore'],
+      rootPayload: { id: 'W1', zones: rows },
+    } as ResolvedEmbeddedAggregate;
+    const accessor = { resolve: vi.fn(() => resolved), stageRoot: vi.fn() } as unknown as EmbeddedAggregateAccessor;
+    const direct = {
+      handles: vi.fn((aggregate: ResolvedEmbeddedAggregate) => aggregate.context.viaWorkingContext !== undefined),
+      append: vi.fn(async (_resolved: ResolvedEmbeddedAggregate, row: object) => ({ ...row, id: 'new', itemVersion: 1 })),
+      patch: vi.fn(async (_resolved: ResolvedEmbeddedAggregate, _before: object, after: object) => ({ ...after, itemVersion: 3 })),
+      remove: vi.fn(async () => undefined),
+    };
+    const service: BaseEntityService<EmbeddedComponentRow> = new EmbeddedEntityService<EmbeddedComponentRow>(ENTITY_NAME, accessor, direct as never);
+    return { service, accessor, direct };
+  }
+
+  it('appends through the writer, and stages nothing in the root document', async () => {
+    const { service, accessor, direct } = setup('warehouse');
+
+    const stored = await firstValueFrom(service.add({ name: 'Ambient' } as EmbeddedComponentRow));
+
+    expect(direct.append).toHaveBeenCalledTimes(1);
+    expect(stored).toMatchObject({ id: 'new', itemVersion: 1 });
+    expect(accessor.stageRoot).not.toHaveBeenCalled();
+  });
+
+  it('updates through the writer, handing it the stored row to compare with', async () => {
+    const { service, accessor, direct } = setup('warehouse');
+
+    const stored = await firstValueFrom(service.update({ id: 'z1', name: 'Frozen', itemVersion: 2 } as never));
+
+    expect(direct.patch).toHaveBeenCalledWith(expect.anything(), rows[0], { id: 'z1', name: 'Frozen', itemVersion: 2 });
+    expect(stored).toMatchObject({ name: 'Frozen', itemVersion: 3 });
+    expect(accessor.stageRoot).not.toHaveBeenCalled();
+  });
+
+  it('deletes through the writer', async () => {
+    const { service, direct } = setup('warehouse');
+
+    await firstValueFrom(service.delete('z2'));
+
+    expect(direct.remove).toHaveBeenCalledWith(expect.anything(), rows[1]);
+  });
+
+  it('still stages the whole document where the aggregate is not a working context', async () => {
+    const { service, accessor, direct } = setup(undefined);
+
+    await firstValueFrom(service.delete('z2'));
+
+    expect(direct.remove).not.toHaveBeenCalled();
+    expect(accessor.stageRoot).toHaveBeenCalledTimes(1);
+  });
+});

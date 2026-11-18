@@ -55,6 +55,7 @@ public class ImportBundle {
     private final ImportParticipants participants;
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedStarterRepository;
+    private final CommonRules commonRules;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -63,6 +64,7 @@ public class ImportBundle {
                         ImportParticipants participants,
                         DefinitionProvenanceRepository provenanceRepository,
                         InstalledStarterRepository installedStarterRepository,
+                        CommonRules commonRules,
                         PlatformTransactionManager transactionManager,
                         ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -70,6 +72,7 @@ public class ImportBundle {
         this.participants = participants;
         this.provenanceRepository = provenanceRepository;
         this.installedStarterRepository = installedStarterRepository;
+        this.commonRules = commonRules;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -114,6 +117,7 @@ public class ImportBundle {
 
         List<ImportReport.Error> errors = new ArrayList<>();
         checkExpected(manifest, expected, errors);
+        errors.addAll(commonRules.check(orgKey, manifest));
         Map<DefinitionImportParticipant, List<String>> plan = plan(manifest, errors);
         if (!errors.isEmpty()) {
             throw rejected(dryRun, manifest, errors, ImportRejectedException.Reason.INVALID);
@@ -165,6 +169,7 @@ public class ImportBundle {
             return new ImportReport(true, ImportReport.Status.WOULD_APPLY, manifest.id(), manifest.version(), items, List.of());
         }
         recordProvenance(orgKey, manifest, items, importedBy);
+        commonRules.commonInstalled(manifest);
         return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of());
     }
 

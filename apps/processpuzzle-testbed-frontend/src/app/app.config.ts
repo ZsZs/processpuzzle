@@ -1,9 +1,8 @@
 import { ApplicationConfig, computed, inject, provideZonelessChangeDetection } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { appRoutes } from './app.routes';
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import {
-  centralHttpErrorInterceptor,
   LayoutService,
   provideCentralErrorHandler,
   provideErrorSnackbar,
@@ -14,10 +13,20 @@ import {
   TRANSLATION_SOURCE_REGISTRY,
 } from '@processpuzzle/util';
 import { RuntimeConfiguration } from './runtime-configuration';
+import {
+  BASE_CHAT_ENTITY_FACADES,
+  BASE_CHAT_FACADE_PROVIDERS,
+  BASE_CHAT_TRANSLATION_SOURCE,
+  CHAT_IDENTITY,
+  type ChatIdentity,
+  provideChatWidgets,
+  provideChatWorkingContextSubject,
+  provideEntityChatTab,
+} from '@processpuzzle/base-chat';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
-import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, authTokenInterceptorFor, provideAuthenticationService, provideRoleCatalogSuggestions, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
+import { AUTHENTICATION_CONFIGURATION, AUTHENTICATION_SERVICE, provideAuthenticationService, providePlatformHttp, provideRoleCatalogSuggestions, ROLE_DESCRIPTION_SOURCE } from '@processpuzzle/auth/domain';
 import { OVERLAY_DEFAULT_CONFIG } from '@angular/cdk/overlay';
 import { provideShareButtonsOptions } from 'ngx-sharebuttons';
 import { shareIcons } from 'ngx-sharebuttons/icons';
@@ -66,6 +75,26 @@ export function createDocumentAccessContext(): DocumentAccessContext {
   return { roles: computed(() => auth.currentUser()?.roles ?? []), authenticated: computed(() => auth.currentUser() !== undefined) };
 }
 
+/**
+ * Who is chatting, for base-chat: the live stream is read with `fetch`, which the HTTP interceptors do not see, so the
+ * library asks the application for the token — refreshed first when it is about to expire — and for the user's id,
+ * which is what a message carries as its author. base-chat does not know the auth library; this is where the two meet.
+ */
+export function createChatIdentity(): ChatIdentity {
+  const auth = inject(AUTHENTICATION_SERVICE);
+  return {
+    accessToken: async () => {
+      try {
+        await auth.refreshAccessToken(60);
+      } catch {
+        // A token that could not be refreshed is still the best one there is; the server decides.
+      }
+      return auth.getAccessToken();
+    },
+    userId: () => auth.currentUser()?.id,
+  };
+}
+
 export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): ApplicationConfig {
   return {
     providers: [
@@ -74,15 +103,10 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // The backend validates a bearer token whenever one is sent, and signing a document needs one. Only the
       // platform's own roots are named, and the third-party root (json-server) is withheld explicitly: deployed, it
       // is published under the application's own origin, so the same-origin rule would otherwise send it the token.
-      provideHttpClient(
-        withInterceptors([
-          authTokenInterceptorFor(
-            [runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT],
-            [runtimeConfiguration.BASE_CONFIGURATION.THIRD_PARTY_ROOT],
-          ),
-          centralHttpErrorInterceptor,
-        ]),
-      ),
+      providePlatformHttp({
+        apiRoots: [runtimeConfiguration.BASE_CONFIGURATION.BACKEND_SERVICE_ROOT, runtimeConfiguration.BASE_CONFIGURATION.OBJECT_STORE_SERVICE_ROOT],
+        withheldRoots: [runtimeConfiguration.BASE_CONFIGURATION.THIRD_PARTY_ROOT],
+      }),
       provideLoggingService(runtimeConfiguration.LOGGING_CONFIGURATION),
       provideCentralErrorHandler(),
       provideAppPropertyStore(),
@@ -112,6 +136,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // And for base-event: the routable `Event Definition` catalog. base-workflow's start event names it in
       // a FOREIGN_KEY without importing base-event, so this registration is also what fills that picker.
       ...BASE_EVENT_FACADE_PROVIDERS,
+      ...BASE_CHAT_FACADE_PROVIDERS,
       // And for base-calculation: the routable `Calculation Definition`, whose extra tabs edit its source.
       ...BASE_CALCULATION_FACADE_PROVIDERS,
       // And for base-workflow: three routable aggregates — the `Workflow` a tenant authors, the
@@ -153,6 +178,14 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       provideBaseWidgets(),
       // base-document's one widget, registered by base-document because it reads documents.
       provideContentBookWidget(),
+      // base-chat's two widgets — the chat panel and the unread badge — and the active working context as the record a
+      // panel placed without one chats about.
+      ...provideChatWidgets(),
+      provideChatWorkingContextSubject(),
+      // And base-chat's Chat tab, offered to every entity type some chat definition is about — `Order` and
+      // `Dynamic Entity` in this tenant — on the same contributor arrangement as the tabs above.
+      ...provideEntityChatTab(),
+      { provide: CHAT_IDENTITY, useFactory: createChatIdentity },
       // Which document and book actions to offer, from the signed-in user's roles. base-document does not
       // know the auth library, so the application bridges the two; the backend still decides.
       {
@@ -196,6 +229,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
           ...BASE_WIDGET_ENTITY_FACADES,
           ...BASE_STATE_ENTITY_FACADES,
           ...BASE_EVENT_ENTITY_FACADES,
+          ...BASE_CHAT_ENTITY_FACADES,
           ...BASE_CALCULATION_ENTITY_FACADES,
           ...BASE_WORKFLOW_ENTITY_FACADES,
           ...BASE_AI_ENTITY_FACADES,
@@ -214,6 +248,7 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
         BASE_DOCUMENT_TRANSLATION_SOURCE,
         BASE_STATE_TRANSLATION_SOURCE,
         BASE_EVENT_TRANSLATION_SOURCE,
+        BASE_CHAT_TRANSLATION_SOURCE,
         BASE_CALCULATION_TRANSLATION_SOURCE,
         BASE_WORKFLOW_TRANSLATION_SOURCE,
         BASE_AI_TRANSLATION_SOURCE,

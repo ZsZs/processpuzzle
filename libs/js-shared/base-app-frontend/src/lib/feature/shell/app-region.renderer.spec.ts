@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { AppDefinition, RegionDefinition, RegionType, RouteDefinition } from '../../domain/app-definition';
+import { ModuleDefinition } from '../../domain/module-definition';
 import { AppRegionRenderer } from './app-region.renderer';
 import { RegionFooterComponent } from './region-footer.component';
 import { RegionHeaderComponent } from './region-header.component';
 import { RegionNavComponent } from './region-nav.component';
+import { WorkingContextStatusbarComponent } from '@processpuzzle/base-entity';
 
 describe('AppRegionRenderer', () => {
   // No TestBed: the renderer answers with data, which is the property that makes it worth extracting.
@@ -37,7 +39,7 @@ describe('AppRegionRenderer', () => {
     expect(renderer.render(new RegionDefinition({ type: 'sidenav', navItems }), app)).toEqual({
       slot: 'sidenav',
       component: RegionNavComponent,
-      inputs: { navItems, knownPaths: [] },
+      inputs: { navItems, knownPaths: [], contextLinks: [] },
     });
   });
 
@@ -55,6 +57,24 @@ describe('AppRegionRenderer', () => {
     const view = renderer.render(new RegionDefinition({ type }), app);
 
     expect(view?.inputs['widgets'] ?? view?.inputs['navItems']).toEqual([]);
+  });
+
+  it('renders a statusbar without inputs: it shows what the URL says, not what the region declares', () => {
+    expect(renderer.render(new RegionDefinition({ type: 'statusbar' }), app)).toEqual({ slot: 'statusbar', component: WorkingContextStatusbarComponent, inputs: {} });
+  });
+
+  it('tells the sidenav which routes are bound to a context, those of mounted modules included', () => {
+    const definition = new AppDefinition({
+      name: 'Demo',
+      routes: [new RouteDefinition({ path: 'rounds', title: 'Rounds', kind: 'WIDGETS', requiresContext: 'race' }), new RouteDefinition({ path: 'home', title: 'Home', kind: 'WIDGETS' })],
+      modules: [{ moduleKey: 'conduct', basePath: 'conduct' }],
+      mountedModules: [{ id: 'conduct', routes: [new RouteDefinition({ path: 'participants', title: 'P', kind: 'WIDGETS', requiresContext: 'race' })] } as ModuleDefinition],
+    });
+
+    expect(renderer.render(new RegionDefinition({ type: 'sidenav' }), definition)?.inputs['contextLinks']).toEqual([
+      { base: '', path: 'rounds', context: 'race' },
+      { base: 'conduct', path: 'participants', context: 'race' },
+    ]);
   });
 
   it('omits a region whose type the designer has not chosen yet', () => {
