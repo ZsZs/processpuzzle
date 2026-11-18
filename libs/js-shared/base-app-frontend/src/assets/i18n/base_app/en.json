@@ -28,10 +28,13 @@
     "translations": "Translations",
     "translations_panel": {
       "hint": "One file per supported language holds the texts of the application's own pages. Fill in the values under the keys your widgets name, and upload the zip (or a single file) again.",
-      "download": "Download files",
+      "download": "Download all",
       "upload": "Upload translations",
       "save_first": "Save the application first; the texts belong to the saved application.",
-      "stored": "{{count}} keys stored"
+      "stored": "{{count}} keys stored",
+      "none_stored": "No texts are stored yet.",
+      "key": "Key",
+      "text": "Text"
     },
     "assets": "Assets",
     "assets_panel": {

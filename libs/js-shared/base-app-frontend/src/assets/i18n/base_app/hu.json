@@ -28,10 +28,13 @@
     "translations": "Fordítások",
     "translations_panel": {
       "hint": "Támogatott nyelvenként egy fájl tartalmazza az alkalmazás saját oldalainak szövegeit. Töltse ki az értékeket a widgetek által megnevezett kulcsok alatt, majd töltse fel újra a zipet (vagy egyetlen fájlt).",
-      "download": "Fájlok letöltése",
+      "download": "Összes letöltése",
       "upload": "Fordítások feltöltése",
       "save_first": "Először mentse az alkalmazást; a szövegek a mentett alkalmazáshoz tartoznak.",
-      "stored": "{{count}} kulcs elmentve"
+      "stored": "{{count}} kulcs elmentve",
+      "none_stored": "Még nincsenek elmentett szövegek.",
+      "key": "Kulcs",
+      "text": "Szöveg"
     },
     "assets": "Fájlok",
     "assets_panel": {
