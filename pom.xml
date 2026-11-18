@@ -107,7 +107,7 @@
     <api-contracts.version>1.20.0</api-contracts.version>
     <base-app-backend.version>1.11.0</base-app-backend.version>
     <base-document-backend.version>1.5.1</base-document-backend.version>
-    <base-entity-backend.version>1.10.1</base-entity-backend.version>
+    <base-entity-backend.version>1.11.0</base-entity-backend.version>
     <base-rule-backend.version>1.5.3</base-rule-backend.version>
     <base-starter-backend.version>0.4.0</base-starter-backend.version>
     <base-release-backend.version>0.6.1</base-release-backend.version>
