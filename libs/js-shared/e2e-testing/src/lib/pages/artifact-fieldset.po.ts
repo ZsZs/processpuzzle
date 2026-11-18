@@ -46,7 +46,8 @@ async function describeRefusal(response: Response): Promise<string> {
     .then((text) => text.replace(/\s+/g, ' ').trim())
     .catch(() => '');
   const excerpt = body.length > BODY_EXCERPT_LENGTH ? `${body.slice(0, BODY_EXCERPT_LENGTH)}…` : body;
-  return `POST ${response.url()} → ${response.status()} ${response.statusText()}${excerpt ? `: ${excerpt}` : ''}`;
+  const detail = excerpt ? `: ${excerpt}` : '';
+  return `POST ${response.url()} → ${response.status()} ${response.statusText()}${detail}`;
 }
 
 /**
@@ -377,7 +378,10 @@ export class ArtifactFieldsetPO {
     await this.row(fileName).locator('a').first().click();
 
     const artifactPage = await opened;
-    await artifactPage.waitForLoadState('domcontentloaded').catch(() => undefined);
+    // The URL is all that is wanted, so wait for the navigation to commit, not for a load event. The tab shows an
+    // image document, and Firefox never fires `domcontentloaded` for one: waiting for it used up the whole test
+    // timeout (90 s), whose `.catch` hid it, and the next line then failed with "Test timeout exceeded" instead.
+    await artifactPage.waitForURL((url) => url.protocol.startsWith('http'), { waitUntil: 'commit', timeout: 15_000 });
     const uri = artifactPage.url();
     await artifactPage.close();
     return uri;
