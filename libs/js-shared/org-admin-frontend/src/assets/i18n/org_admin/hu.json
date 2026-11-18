@@ -47,16 +47,37 @@
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Eredet"
   },
-    "administration": {
-      "users": {
-        "title": "Felhasználók",
-        "text": "A szervezet felhasználóinak listázása és szerkesztése, szerepköreik hozzárendelése.",
-        "open": "Felhasználók megnyitása"
-      },
-      "roles": {
-        "title": "Szerepkörök",
-        "text": "A szervezet szerepköreinek listázása és szerkesztése. A ProcessPuzzle és a munkafolyamat-definíciók szerepkörei csak olvashatók.",
-        "open": "Szerepkörök megnyitása"
-      }
+  "administration": {
+    "users": {
+      "title": "Felhasználók",
+      "text": "A szervezet felhasználóinak listázása és szerkesztése, szerepköreik hozzárendelése.",
+      "open": "Felhasználók megnyitása"
+    },
+    "roles": {
+      "title": "Szerepkörök",
+      "text": "A szervezet szerepköreinek listázása és szerkesztése. A ProcessPuzzle és a munkafolyamat-definíciók szerepkörei csak olvashatók.",
+      "open": "Szerepkörök megnyitása"
+    },
+    "ai_subscription": {
+      "title": "MI-előfizetés",
+      "text": "Válassza ki a tervezőasszisztens MI-modell szolgáltatását, és adja meg a szervezet saját API-kulcsát. Nélküle az asszisztens ki van kapcsolva.",
+      "open": "MI-előfizetés megnyitása"
     }
+  },
+  "ai_subscription": {
+    "title": "MI-előfizetés",
+    "active": "Ez a szervezet a saját MI-előfizetését használja a tervezőasszisztenshez.",
+    "none": "Ennek a szervezetnek nincs MI-előfizetése, ezért a tervezőasszisztens ki van kapcsolva. A ProcessPuzzle nem fizeti az MI-használatot.",
+    "provider": "Szolgáltató",
+    "model": "Modell",
+    "baseUrl": "Alap URL",
+    "baseUrlHint": "https, nyilvános cím, pl. https://api.openai.com/v1",
+    "apiKey": "API-kulcs",
+    "keyStored": "Van mentett kulcs. Hagyja üresen a megtartásához.",
+    "keyRequired": "Kötelező. Titkosítva tároljuk, és soha többé nem jelenik meg.",
+    "save": "Mentés",
+    "remove": "Előfizetés törlése",
+    "saved": "MI-előfizetés mentve.",
+    "openaiCompatible": "OpenAI-kompatibilis szolgáltatás"
+  }
 }

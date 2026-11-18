@@ -11,12 +11,13 @@ describe('OrganizationAdministrationComponent', () => {
     return TestBed.createComponent(OrganizationAdministrationComponent).componentInstance;
   }
 
-  it('offers the users and the roles, each on a card with its icon and a button that opens it', () => {
+  it('offers the users, the roles and the AI subscription, each on a card with its icon and a button that opens it', () => {
     const { cards } = create();
 
     expect(cards.map((card) => [card.title, card.icon, card.actions[0].link])).toEqual([
       ['users.title', 'group', '/my-org/admin/organization-user'],
       ['roles.title', 'badge', '/my-org/admin/organization-role'],
+      ['ai_subscription.title', 'smart_toy', '/my-org/admin/ai-subscription'],
     ]);
   });
 

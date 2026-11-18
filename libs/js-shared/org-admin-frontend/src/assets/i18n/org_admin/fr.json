@@ -47,16 +47,37 @@
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Origine"
   },
-    "administration": {
-      "users": {
-        "title": "Utilisateurs",
-        "text": "Consulter et modifier les utilisateurs de l'organisation, et leur attribuer leurs rôles.",
-        "open": "Ouvrir les utilisateurs"
-      },
-      "roles": {
-        "title": "Rôles",
-        "text": "Consulter et modifier les rôles de l'organisation. Les rôles de ProcessPuzzle et des définitions de workflow sont en lecture seule.",
-        "open": "Ouvrir les rôles"
-      }
+  "administration": {
+    "users": {
+      "title": "Utilisateurs",
+      "text": "Consulter et modifier les utilisateurs de l'organisation, et leur attribuer leurs rôles.",
+      "open": "Ouvrir les utilisateurs"
+    },
+    "roles": {
+      "title": "Rôles",
+      "text": "Consulter et modifier les rôles de l'organisation. Les rôles de ProcessPuzzle et des définitions de workflow sont en lecture seule.",
+      "open": "Ouvrir les rôles"
+    },
+    "ai_subscription": {
+      "title": "Abonnement IA",
+      "text": "Choisir le service de modèle d'IA de l'assistant de conception et saisir la clé d'API propre à l'organisation. Sans elle, l'assistant est désactivé.",
+      "open": "Ouvrir l'abonnement IA"
     }
+  },
+  "ai_subscription": {
+    "title": "Abonnement IA",
+    "active": "Cette organisation utilise son propre abonnement IA pour l'assistant de conception.",
+    "none": "Cette organisation n'a pas d'abonnement IA, l'assistant de conception est donc désactivé. ProcessPuzzle ne paie pas l'usage de l'IA.",
+    "provider": "Fournisseur",
+    "model": "Modèle",
+    "baseUrl": "URL de base",
+    "baseUrlHint": "https, adresse publique, p. ex. https://api.openai.com/v1",
+    "apiKey": "Clé d'API",
+    "keyStored": "Une clé est enregistrée. Laisser vide pour la conserver.",
+    "keyRequired": "Obligatoire. Elle est stockée chiffrée et n'est plus jamais affichée.",
+    "save": "Enregistrer",
+    "remove": "Supprimer l'abonnement",
+    "saved": "Abonnement IA enregistré.",
+    "openaiCompatible": "Service compatible OpenAI"
+  }
 }

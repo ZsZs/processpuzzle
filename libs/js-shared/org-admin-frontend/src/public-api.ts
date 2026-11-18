@@ -11,6 +11,8 @@ export { ORG_ADMIN_ORG_KEY, OrganizationRoleService, OrganizationUserService } f
 export { OrganizationUserStore } from './lib/domain/organization-user.store';
 export { ORGANIZATION_USER_ENTITY_NAME, createOrganizationUserDescriptor } from './lib/domain/organization-user.descriptors';
 
+export { AiSubscriptionService, type AiProvider, type AiSubscription, type AiSubscriptionChange } from './lib/domain/ai-subscription.service';
+export { AiSubscriptionComponent } from './lib/feature/ai-subscription.component';
 export { OrganizationUserFacade } from './lib/feature/organization-user.facade';
 export { OrganizationRoleFacade } from './lib/feature/organization-role.facade';
 export { OrganizationRoleContainerComponent } from './lib/feature/organization-role-container.component';

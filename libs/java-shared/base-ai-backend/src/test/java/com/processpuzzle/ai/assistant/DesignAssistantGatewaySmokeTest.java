@@ -51,7 +51,7 @@ class DesignAssistantGatewaySmokeTest {
                 .build())
             .build();
         AssistantSessions sessions = Mockito.mock(AssistantSessions.class);
-        DesignAssistant assistant = new DesignAssistant(ChatClient.create(model),
+        DesignAssistant assistant = new DesignAssistant(organization -> ChatClient.create(model),
             new DefinitionDrafts(List.of(entities)),
             new SecurityContextAssistantAccess(new CurrentPrincipal(new SecurityProperties())),
             new AssistantLimits(5, 3), new LoggingAssistantAuditLog(),

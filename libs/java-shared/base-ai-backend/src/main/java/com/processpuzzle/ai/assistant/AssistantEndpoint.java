@@ -62,6 +62,9 @@ public class AssistantEndpoint {
         } catch (AssistantQuotaExceededException e) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
                 "The organization has used up its design assistant limit for today");
+        } catch (AssistantNotConfiguredException e) {
+            throw new ResponseStatusException(HttpStatus.PRECONDITION_REQUIRED,
+                "The organization has no AI subscription; an administrator has to set one up");
         } catch (AssistantSessionNotFoundException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such design assistant session");
         } catch (UncheckedIOException e) {

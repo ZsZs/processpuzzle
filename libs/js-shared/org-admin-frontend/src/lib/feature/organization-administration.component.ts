@@ -38,5 +38,13 @@ export class OrganizationAdministrationComponent {
       actions: [{ caption: 'roles.open', link: `/${this.orgKey}/admin/organization-role`, buttonType: 'outlined' }],
       translocoPrefix: ADMINISTRATION_TRANSLOCO_PREFIX,
     },
+    {
+      icon: 'smart_toy',
+      title: 'ai_subscription.title',
+      subtitle: '',
+      content: ['ai_subscription.text'],
+      actions: [{ caption: 'ai_subscription.open', link: `/${this.orgKey}/admin/ai-subscription`, buttonType: 'outlined' }],
+      translocoPrefix: ADMINISTRATION_TRANSLOCO_PREFIX,
+    },
   ];
 }
