@@ -332,8 +332,12 @@ jobs:
       - name: Send failure email
         uses: dawidd6/action-send-mail@v3
         with:
-          server_address: smtp.ionos.com
-          server_port: 465
+          # The relay Keycloak sends through (KEYCLOAK_CUSTOM_SMTP_* in tools/docker/env/infrastructure/.env.stage: smtp.ionos.de, port
+          # 587, STARTTLS). IONOS runs separate regional servers, and a mailbox on one answers "535 Authentication credentials
+          # invalid" on the other, whatever the password: this step failed that way against smtp.ionos.com:465.
+          server_address: smtp.ionos.de
+          server_port: 587
+          secure: false
           username: ${{ secrets.SMTP_USER }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "❌ Nightly E2E Tests Failed — ${{ github.repository }}"
