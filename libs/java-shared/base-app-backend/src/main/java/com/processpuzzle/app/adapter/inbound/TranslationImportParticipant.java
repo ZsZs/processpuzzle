@@ -6,7 +6,6 @@ import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.ModuleDefinitionRepository;
 import com.processpuzzle.app.domain.ModuleTranslation;
 import com.processpuzzle.app.domain.ModuleTranslationRepository;
-import com.processpuzzle.app.usecase.ModuleTranslationUploadResult;
 import com.processpuzzle.app.usecase.UploadAppTranslations;
 import com.processpuzzle.app.usecase.UploadModuleTranslations;
 import com.processpuzzle.app.usecase.service.AppTranslationReleases;
@@ -31,10 +30,9 @@ import org.springframework.stereotype.Component;
  * {@code translations/modules/<key>/<locale>.json} and {@code translations/apps/<id>/<locale>.json}, see
  * {@link BundleOwnedPath} — through {@link UploadModuleTranslations} and {@link UploadAppTranslations}, so a file meets
  * the rules of one uploaded from the module or app form: a flat or nested JSON object and a well-formed language. A
- * module's file may hold only the texts the module authored (its name, description and route titles); a key it does
- * not author is refused rather than dropped, so a starter author hears about a text that would never be shown. An
- * app's file holds whatever its widgets name. The key is {@code modules/<key>/<locale>} or
- * {@code apps/<id>/<locale>}.
+ * module's file holds the texts the module authors (its name, description and route titles) and the texts its widgets
+ * name under the module's transloco scope; both are keyed relative to that scope. An app's file holds whatever its
+ * widgets name. The key is {@code modules/<key>/<locale>} or {@code apps/<id>/<locale>}.
  *
  * <p>Runs after the modules and apps, which are released when they are imported, so each file releases its owner
  * again, right after it is stored: the released translations are what the running application loads. A file whose
@@ -165,17 +163,10 @@ public class TranslationImportParticipant implements DefinitionImportParticipant
             return ParticipantResult.rejected(List.of(fileName + ": the bundle defines no module '" + path.ownerKey() + "'."));
         }
         boolean existed = translations.findByOrgKeyAndModuleKeyAndChannelAndLocale(orgKey, path.ownerKey(), Channel.DRAFT, locale).isPresent();
-        ModuleTranslationUploadResult result;
         try {
-            result = upload.execute(orgKey, path.ownerKey(), path.rest(), new ByteArrayInputStream(json));
+            upload.execute(orgKey, path.ownerKey(), path.rest(), new ByteArrayInputStream(json));
         } catch (RuntimeException e) {
             return ParticipantResult.rejected(List.of(fileName + ": " + e.getMessage()));
-        }
-        List<String> errors = new ArrayList<>();
-        result.languages().forEach(language -> language.unknownKeys().forEach(key -> errors.add(fileName + ": '" + key
-                + "' is not a text module '" + path.ownerKey() + "' authors, so it would never be shown.")));
-        if (!errors.isEmpty()) {
-            return ParticipantResult.rejected(errors);
         }
         if (release) {
             moduleRelease.release(orgKey);

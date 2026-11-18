@@ -1,10 +1,19 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Translation, TranslocoLoader, TranslocoLoaderData } from '@jsverse/transloco';
 import { catchError, map, Observable, of } from 'rxjs';
+import { EXPECTED_ERROR_STATUSES } from '../error-handler/central-http-error.interceptor';
 import { RUNTIME_CONFIGURATION } from '../runtime-configuration/configuration.injection-tokens';
 import { serviceRootOf } from '../runtime-configuration/service-root';
 import { TRANSLATION_SOURCE_REGISTRY, translationSourceOf } from './translation-source';
+
+/**
+ * The asset read is a probe: a scope the application does not ship — every designer-authored module's — answers 404
+ * by design, and the loader goes on to the backend. Marking the 404 as expected keeps the central error handler from
+ * logging a healthy load as an error. The browser still lists the request in its network panel; only not asking
+ * would remove that line.
+ */
+const ASSET_PROBE_CONTEXT = new HttpContext().set(EXPECTED_ERROR_STATUSES, [404]);
 
 /**
  * Loads a transloco bundle from the application's assets, falling back to the backend when there is no
@@ -33,7 +42,7 @@ export class TranslocoHttpLoader implements TranslocoLoader {
     const scope = data?.scope;
     const locale = scope && path.startsWith(`${scope}/`) ? path.slice(scope.length + 1) : path;
 
-    return this.http.get<Translation>(`assets/i18n/${path}.json`).pipe(
+    return this.http.get<Translation>(`assets/i18n/${path}.json`, { context: ASSET_PROBE_CONTEXT }).pipe(
       map((asset) => this.requireBundle(asset)),
       catchError(() => this.fromBackend(scope, locale)),
     );

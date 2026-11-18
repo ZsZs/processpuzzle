@@ -78,9 +78,10 @@ Keys the module no longer uses are not written.
 
 - **Rejected:** malformed zip or JSON, non-string values, a language that is not supported, entries
   outside the archive root. Size and entry caps follow the starter-bundle reader (`BundleReader`).
-- **Reported as warnings** in the response (`ModuleTranslationUploadReport`, per language): unknown keys
-  (dropped), missing keys, values identical to the authored text (probably untranslated; never for the
-  default language). A `translocoId` outside the module's scope is simply left out of the files.
+- **Reported** in the response (`ModuleTranslationUploadReport`, per language): additional keys (the texts the
+  module's widgets name under its scope; stored like the rest, and carried by the download so a round trip loses
+  nothing), and, as warnings, missing keys and values identical to the authored text (probably untranslated;
+  never for the default language). A `translocoId` outside the module's scope is simply left out of the files.
 
 ### Coverage
 

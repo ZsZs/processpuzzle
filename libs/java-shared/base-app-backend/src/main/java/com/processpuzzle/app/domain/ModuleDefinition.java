@@ -175,9 +175,13 @@ public class ModuleDefinition {
         this.description = description;
     }
 
-    /** The authored scope, or {@link #key} when none was authored. */
+    /**
+     * The authored scope, or the {@link #key} when none was authored, with its dashes written as underscores:
+     * transloco keys use underscores, and the scope is the first segment of every key a widget names for the module
+     * ({@code conduct_race.participant.title}). An authored scope is returned as typed.
+     */
     public String getTranslocoScope() {
-        return translocoScope == null || translocoScope.isBlank() ? key : translocoScope;
+        return translocoScope == null || translocoScope.isBlank() ? key.replace('-', '_') : translocoScope;
     }
 
     public void setTranslocoScope(String translocoScope) {

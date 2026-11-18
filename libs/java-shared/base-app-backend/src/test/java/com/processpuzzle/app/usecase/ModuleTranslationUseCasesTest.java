@@ -197,14 +197,14 @@ class ModuleTranslationUseCasesTest {
     }
 
     @Test
-    void theReportNamesUnknownMissingAndUntranslatedKeys() throws IOException {
+    void theReportNamesAdditionalMissingAndUntranslatedKeys() throws IOException {
         var report = uploadZip(Map.of("de.json",
                 "{\"module.name\": \"Claims\", \"route.list\": \"Liste\", \"route.gone\": \"x\"}"));
 
         assertThat(report.languages()).singleElement().satisfies(de -> {
             assertThat(de.locale()).isEqualTo("de");
-            assertThat(de.storedKeys()).isEqualTo(2);
-            assertThat(de.unknownKeys()).containsExactly("route.gone");
+            assertThat(de.storedKeys()).isEqualTo(3);
+            assertThat(de.additionalKeys()).containsExactly("route.gone");
             assertThat(de.missingKeys()).containsExactly("route.claim/:id");
             assertThat(de.untranslatedKeys()).containsExactly("module.name");
         });
@@ -218,12 +218,21 @@ class ModuleTranslationUseCasesTest {
     }
 
     @Test
-    void unknownKeysAreDroppedNotStored() throws IOException {
-        uploadZip(Map.of("de.json", "{\"route.gone\": \"x\", \"module.name\": \"Schaeden\"}"));
+    void aKeyTheModuleDoesNotAuthorIsStoredAsAWidgetText() throws IOException {
+        uploadZip(Map.of("de.json", "{\"participant.title\": \"Teilnehmer\", \"module.name\": \"Schaeden\"}"));
         flush();
 
         assertThat(translations.findByOrgKeyAndModuleKeyAndChannelAndLocale(ORG, MODULE, Channel.DRAFT, "de")
-                .orElseThrow().getMessages()).containsOnlyKeys("module.name");
+                .orElseThrow().getMessages()).containsOnlyKeys("participant.title", "module.name");
+    }
+
+    @Test
+    void theDownloadCarriesTheWidgetTextsSoThatARoundTripLosesNothing() throws IOException {
+        uploadZip(Map.of("de.json", "{\"participant.title\": \"Teilnehmer\"}"));
+        flush();
+
+        assertThat(downloaded().get("de")).containsEntry("participant.title", "Teilnehmer").containsEntry("module.name", "Claims");
+        assertThat(downloaded().get("fr")).doesNotContainKey("participant.title");
     }
 
     @Test

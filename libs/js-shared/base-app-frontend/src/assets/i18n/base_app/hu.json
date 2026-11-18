@@ -28,10 +28,13 @@
     "translations": "Fordítások",
     "translations_panel": {
       "hint": "Támogatott nyelvenként egy fájl tartalmazza az alkalmazás saját oldalainak szövegeit. Töltse ki az értékeket a widgetek által megnevezett kulcsok alatt, majd töltse fel újra a zipet (vagy egyetlen fájlt).",
-      "download": "Fájlok letöltése",
+      "download": "Összes letöltése",
       "upload": "Fordítások feltöltése",
       "save_first": "Először mentse az alkalmazást; a szövegek a mentett alkalmazáshoz tartoznak.",
-      "stored": "{{count}} kulcs elmentve"
+      "stored": "{{count}} kulcs elmentve",
+      "none_stored": "Még nincsenek elmentett szövegek.",
+      "key": "Kulcs",
+      "text": "Szöveg"
     },
     "assets": "Fájlok",
     "assets_panel": {
@@ -170,14 +173,14 @@
     "routes": "Útvonalak",
     "translations": "Fordítások",
     "translations_panel": {
-      "hint": "Támogatott nyelvenként egy fájl tartalmazza a modul minden lefordítható szövegét. Fordítsa le az értékeket, a kulcsokat hagyja változatlanul, majd töltse vissza a zipet (vagy egyetlen fájlt).",
+      "hint": "Támogatott nyelvenként egy fájl tartalmazza a modul minden lefordítható szövegét és azokat a szövegeket, amelyeket a widgetjei a modul scope-ja alatt neveznek meg. Fordítsa le az értékeket, tartsa meg a kulcsokat, majd töltse fel újra a zipet (vagy egyetlen fájlt).",
       "language": "Nyelv",
       "translated": "Lefordítva",
       "download": "Fájlok letöltése",
       "upload": "Fordítások feltöltése",
       "save_first": "Először mentse a modult; a fájlok a mentett modulból készülnek.",
       "stored": "{{count}} kulcs elmentve",
-      "unknown": "{{count}} ismeretlen kulcs figyelmen kívül hagyva",
+      "additional": "{{count}} widget-szöveg megtartva",
       "missing": "{{count}} kulcs hiányzik",
       "untranslated": "{{count}} még megegyezik az eredetivel"
     },

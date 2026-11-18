@@ -85,13 +85,16 @@ class ModuleDefinitionCrudTest {
         verify(repository).save(created);
     }
 
-    /** Absent an explicit scope the key is the scope, so a module always has one to load against. */
+    /**
+     * Absent an explicit scope the key is the scope, so a module always has one to load against; its dashes are
+     * written as underscores because transloco keys use them.
+     */
     @Test
-    void createDefaultsTheTranslocoScopeToTheKey() {
+    void createDefaultsTheTranslocoScopeToTheKeyWithUnderscores() {
         ModuleDefinition created = createModuleDefinition.execute(ORG_KEY,
                 AppTestFixtures.validModuleInput(MODULE_KEY));
 
-        assertThat(created.getTranslocoScope()).isEqualTo(MODULE_KEY);
+        assertThat(created.getTranslocoScope()).isEqualTo("claims_module");
     }
 
     /** {@code save} merges for an assigned id, so without the pre-check this would silently overwrite. */

@@ -64,7 +64,7 @@ public class ModuleTranslationEndpoint implements BaseAppModuleTranslationsApi {
                     .map(language -> new ModuleTranslationUploadLanguage()
                             .locale(language.locale())
                             .storedKeys(language.storedKeys())
-                            .unknownKeys(language.unknownKeys())
+                            .additionalKeys(language.additionalKeys())
                             .missingKeys(language.missingKeys())
                             .untranslatedKeys(language.untranslatedKeys()))
                     .toList()));

@@ -63,12 +63,15 @@ export class ModuleDefinition implements BaseEntity {
 }
 
 /**
- * The scope a module's translations load under, applying the contract's default. Kept as a function
+ * The scope a module's translations load under, applying the contract's default: the module key with its dashes
+ * written as underscores (`conduct-race` is `conduct_race`), because transloco keys use underscores and the scope is
+ * the first segment of every key a widget names for the module. The backend derives the same default
+ * (`ModuleDefinition.getTranslocoScope`). Kept as a function
  * rather than resolved in the mapper, so a definition never carries a `translocoScope` the designer did
  * not author — the field stays empty in the form, and the fallback is a rendering decision.
  */
 export function moduleTranslocoScope(definition: ModuleDefinition): string {
-  return definition.translocoScope?.trim() || definition.id;
+  return definition.translocoScope?.trim() || definition.id.replaceAll('-', '_');
 }
 
 /**

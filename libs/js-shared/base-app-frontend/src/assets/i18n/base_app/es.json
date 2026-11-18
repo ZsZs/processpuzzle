@@ -28,10 +28,13 @@
     "translations": "Traducciones",
     "translations_panel": {
       "hint": "Un archivo por idioma admitido contiene los textos de las páginas propias de la aplicación. Rellene los valores bajo las claves que nombran sus widgets y suba de nuevo el zip (o un solo archivo).",
-      "download": "Descargar archivos",
+      "download": "Descargar todo",
       "upload": "Subir traducciones",
       "save_first": "Guarde primero la aplicación; los textos pertenecen a la aplicación guardada.",
-      "stored": "{{count}} claves guardadas"
+      "stored": "{{count}} claves guardadas",
+      "none_stored": "Todavía no hay textos guardados.",
+      "key": "Clave",
+      "text": "Texto"
     },
     "assets": "Archivos",
     "assets_panel": {
@@ -170,14 +173,14 @@
     "routes": "Rutas",
     "translations": "Traducciones",
     "translations_panel": {
-      "hint": "Un archivo por idioma admitido contiene todos los textos traducibles del módulo. Traduzca los valores, conserve las claves y vuelva a subir el zip (o un solo archivo).",
+      "hint": "Un archivo por idioma admitido contiene todos los textos traducibles del módulo y los textos que sus widgets nombran bajo el ámbito del módulo. Traduzca los valores, conserve las claves y suba de nuevo el zip (o un solo archivo).",
       "language": "Idioma",
       "translated": "Traducido",
       "download": "Descargar archivos",
       "upload": "Subir traducciones",
       "save_first": "Guarde primero el módulo; los archivos se preparan a partir del módulo guardado.",
       "stored": "{{count}} claves guardadas",
-      "unknown": "{{count}} claves desconocidas ignoradas",
+      "additional": "{{count}} textos de widgets conservados",
       "missing": "{{count}} claves ausentes",
       "untranslated": "{{count}} aún iguales al original"
     },

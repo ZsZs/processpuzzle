@@ -350,13 +350,17 @@ class StarterBundleExtrasImportTest {
     }
 
     @Test
-    void aTextTheModuleDoesNotAuthorIsRefusedRatherThanDropped() {
+    void aTextOfAWidgetOfTheModuleIsStoredAndReleasedWithTheModulesOwn() {
         ParticipantResult result = translations.apply(ORG, "translations/modules/plan-race/de.json",
-                bytes("{\"module.name\": \"A\", \"card.title\": \"B\"}"));
+                bytes("{\"module.name\": \"A\", \"race\": { \"title\": \"Rennen\" }}"));
+        flushAndClear();
 
-        assertThat(result.isRejected()).isTrue();
-        assertThat(result.errors()).singleElement().asString()
-                .startsWith("translations/modules/plan-race/de.json: ").contains("'card.title'");
+        assertThat(result.isRejected()).isFalse();
+        for (Channel channel : Channel.values()) {
+            assertThat(translationRepository.findByOrgKeyAndModuleKeyAndChannelAndLocale(ORG, "plan-race", channel, "de"))
+                    .get().extracting(ModuleTranslation::getMessages)
+                    .isEqualTo(Map.of("module.name", "A", "race.title", "Rennen"));
+        }
     }
 
     @Test
