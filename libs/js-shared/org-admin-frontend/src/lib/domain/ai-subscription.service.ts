@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
-import { catchError, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { ORG_ADMIN_ORG_KEY } from './organization-user.service';
 
 export type AiProvider = 'MISTRAL' | 'OPENAI_COMPATIBLE';
@@ -45,6 +45,14 @@ export class AiSubscriptionService {
 
   save(change: AiSubscriptionChange): Observable<AiSubscription> {
     return this.http.put<AiSubscription>(this.url, change);
+  }
+
+  /**
+   * The models the provider offers this key, asked of the provider itself. A blank `apiKey` means the stored one, so the
+   * list can be loaded again without retyping it. Nothing is saved.
+   */
+  listModels(request: Omit<AiSubscriptionChange, 'model'>): Observable<string[]> {
+    return this.http.post<{ models: string[] }>(`${this.url}/models`, request).pipe(map((response) => response.models));
   }
 
   remove(): Observable<void> {

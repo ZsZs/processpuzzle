@@ -78,6 +78,9 @@
     "save": "Save",
     "remove": "Remove subscription",
     "saved": "AI subscription saved.",
-    "openaiCompatible": "OpenAI-compatible service"
+    "openaiCompatible": "OpenAI-compatible service",
+    "loadModels": "Load models",
+    "modelsLoaded": "{{count}} models loaded",
+    "modelHint": "Pick one from the list, or type a model name"
   }
 }

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,6 +56,22 @@ public class OrganizationAiSubscriptionEndpoint {
         }
     }
 
+    /**
+     * The models the key may use, from the provider itself. A POST because the body carries the key; a blank key means
+     * the stored one. Nothing is saved.
+     */
+    @PostMapping(PATH + "/models")
+    public ModelsResponse models(@PathVariable String orgKey, @RequestBody AiSubscriptionRequest request) {
+        guard.requireAdministration(orgKey);
+        try {
+            return new ModelsResponse(subscriptions.listModels(orgKey, request.provider(), request.baseUrl(), request.apiKey()));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (ModelLister.ModelListException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, e.getMessage());
+        }
+    }
+
     @DeleteMapping(PATH)
     public ResponseEntity<Void> delete(@PathVariable String orgKey) {
         guard.requireAdministration(orgKey);
@@ -64,6 +81,9 @@ public class OrganizationAiSubscriptionEndpoint {
 
     /** {@code apiKey} may be blank when only the other fields change. */
     public record AiSubscriptionRequest(AiProvider provider, String model, String baseUrl, String apiKey) {
+    }
+
+    public record ModelsResponse(java.util.List<String> models) {
     }
 
     public record AiSubscriptionResponse(AiProvider provider, String model, String baseUrl, boolean keySet,

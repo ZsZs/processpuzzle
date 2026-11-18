@@ -78,6 +78,9 @@
     "save": "Enregistrer",
     "remove": "Supprimer l'abonnement",
     "saved": "Abonnement IA enregistré.",
-    "openaiCompatible": "Service compatible OpenAI"
+    "openaiCompatible": "Service compatible OpenAI",
+    "loadModels": "Charger les modèles",
+    "modelsLoaded": "{{count}} modèles chargés",
+    "modelHint": "Choisir dans la liste ou saisir un nom de modèle"
   }
 }

@@ -6,6 +6,7 @@ import com.processpuzzle.ai.assistant.AssistantAccess;
 import com.processpuzzle.ai.assistant.AssistantAuditLog;
 import com.processpuzzle.ai.assistant.AssistantLimits;
 import com.processpuzzle.ai.assistant.AssistantModels;
+import com.processpuzzle.ai.assistant.HttpModelLister;
 import com.processpuzzle.ai.assistant.OrganizationAiSubscriptions;
 import com.processpuzzle.ai.assistant.AssistantSessionPurger;
 import com.processpuzzle.ai.assistant.AssistantSessions;
@@ -94,7 +95,7 @@ public class AiConfiguration {
     @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
     public OrganizationAiSubscriptions organizationAiSubscriptions(OrganizationAiSubscriptionRepository repository,
                                                                    AiSecretCipher cipher) {
-        return new OrganizationAiSubscriptions(repository, cipher, Clock.systemUTC());
+        return new OrganizationAiSubscriptions(repository, cipher, Clock.systemUTC(), new HttpModelLister());
     }
 
     /**
