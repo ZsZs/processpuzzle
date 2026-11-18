@@ -85,4 +85,47 @@ describe('AiSubscriptionComponent', () => {
     expect(component.error()).toContain('https');
     expect(component.busy()).toBe(false);
   });
+
+  it('loads the models of the provider with the typed key and offers the ones matching what is typed', () => {
+    render();
+    controller.expectOne(url).flush(null, { status: 404, statusText: 'Not Found' });
+    const component = fixture.componentInstance;
+    expect(component.canLoadModels()).toBe(false);
+    component.form.patchValue({ apiKey: 'sk-typed' });
+    expect(component.canLoadModels()).toBe(true);
+
+    component.onLoadModels();
+    const request = controller.expectOne(`${url}/models`);
+    expect(request.request.body).toEqual({ provider: 'MISTRAL', baseUrl: undefined, apiKey: 'sk-typed' });
+    request.flush({ models: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'] });
+    component.form.controls.model.setValue('small');
+
+    expect(component.models()).toHaveLength(3);
+    expect(component.filteredModels()).toEqual(['mistral-small-latest']);
+  });
+
+  it('lists with the stored key when the key field is blank, but not after the provider is changed', () => {
+    render();
+    controller.expectOne(url).flush({ provider: 'MISTRAL', model: 'm', keySet: true, updatedAt: '2026-11-18T10:00:00Z', updatedBy: 'Ada' });
+    const component = fixture.componentInstance;
+    expect(component.canLoadModels()).toBe(true);
+
+    component.form.patchValue({ provider: 'OPENAI_COMPATIBLE', baseUrl: 'https://api.example.com/v1' });
+
+    expect(component.canLoadModels()).toBe(false);
+  });
+
+  it('shows why the models could not be listed and keeps no stale list', () => {
+    render();
+    controller.expectOne(url).flush(null, { status: 404, statusText: 'Not Found' });
+    const component = fixture.componentInstance;
+    component.models.set(['old']);
+    component.form.patchValue({ apiKey: 'bad' });
+
+    component.onLoadModels();
+    controller.expectOne(`${url}/models`).flush({ message: 'The provider rejected the API key' }, { status: 502, statusText: 'Bad Gateway' });
+
+    expect(component.error()).toContain('rejected');
+    expect(component.models()).toEqual([]);
+  });
 });

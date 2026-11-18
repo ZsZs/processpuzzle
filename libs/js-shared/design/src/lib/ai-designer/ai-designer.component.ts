@@ -14,7 +14,7 @@ import { AssistantPanelComponent } from '@processpuzzle/base-ai';
   providers: [provideTranslocoScope({ scope: 'design' })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <p class="pp-ai-designer__requirement">{{ 'assistant_requirement' | transloco }}</p>
+    <p class="pp-ai-designer__requirement">{{ 'design.assistant_requirement' | transloco }}</p>
     <pp-assistant-panel class="pp-ai-designer" />
   `,
   styles: [
