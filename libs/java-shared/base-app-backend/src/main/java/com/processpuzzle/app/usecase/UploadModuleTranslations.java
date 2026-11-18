@@ -68,15 +68,10 @@ public class UploadModuleTranslations {
     private ModuleTranslationUploadResult.Language store(String orgKey, String moduleKey, String locale,
                                                          Map<String, String> messages, Map<String, String> authored,
                                                          boolean isDefault) {
-        Map<String, String> stored = new LinkedHashMap<>();
-        List<String> unknown = new ArrayList<>();
-        messages.forEach((key, value) -> {
-            if (authored.containsKey(key)) {
-                stored.put(key, value);
-            } else {
-                unknown.add(key);
-            }
-        });
+        // Every key is kept: besides the module's own texts, a bundle holds the texts of its widgets, which no
+        // definition lists and which the designer names under the module's scope.
+        Map<String, String> stored = new LinkedHashMap<>(messages);
+        List<String> additional = stored.keySet().stream().filter(key -> !authored.containsKey(key)).toList();
         List<String> missing = authored.keySet().stream().filter(key -> !stored.containsKey(key)).toList();
         List<String> untranslated = isDefault
                 ? List.of()
@@ -86,6 +81,6 @@ public class UploadModuleTranslations {
         translations.findByOrgKeyAndModuleKeyAndChannelAndLocale(orgKey, moduleKey, Channel.DRAFT, locale)
                 .ifPresentOrElse(existing -> existing.setMessages(stored),
                         () -> translations.save(new ModuleTranslation(orgKey, moduleKey, Channel.DRAFT, locale, stored)));
-        return new ModuleTranslationUploadResult.Language(locale, stored.size(), unknown, missing, untranslated);
+        return new ModuleTranslationUploadResult.Language(locale, stored.size(), additional, missing, untranslated);
     }
 }

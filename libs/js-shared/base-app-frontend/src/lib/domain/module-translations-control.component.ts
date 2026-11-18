@@ -71,8 +71,8 @@ export class ModuleTranslationsAttrDescriptor extends BaseEntityAttrDescriptor {
               <li>
                 <strong>{{ language.locale }}</strong
                 >: {{ scope + '.stored' | transloco: { count: language.storedKeys } }}
-                @if (language.unknownKeys.length) {
-                  <span class="pp-module-translations__warning" [title]="language.unknownKeys.join(', ')">{{ scope + '.unknown' | transloco: { count: language.unknownKeys.length } }}</span>
+                @if (language.additionalKeys.length) {
+                  <span class="pp-module-translations__note" [title]="language.additionalKeys.join(', ')">{{ scope + '.additional' | transloco: { count: language.additionalKeys.length } }}</span>
                 }
                 @if (language.missingKeys.length) {
                   <span class="pp-module-translations__warning" [title]="language.missingKeys.join(', ')">{{ scope + '.missing' | transloco: { count: language.missingKeys.length } }}</span>
@@ -127,6 +127,11 @@ export class ModuleTranslationsAttrDescriptor extends BaseEntityAttrDescriptor {
       .pp-module-translations__report {
         margin: 0;
         padding-left: 16px;
+      }
+      .pp-module-translations__note {
+        margin-left: 8px;
+        font-size: 12px;
+        opacity: 0.7;
       }
       .pp-module-translations__warning {
         margin-left: 8px;

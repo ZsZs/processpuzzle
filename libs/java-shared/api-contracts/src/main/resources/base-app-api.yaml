@@ -400,8 +400,10 @@ paths:
   # ── Module translations ──
   # The prepared translation files of one module. The app is not a translation editor: the user
   # downloads one file per supported language, translates off-line and uploads them again. The files
-  # hold every translatable item of the module (its name and its route titles), keyed relative to
-  # the module's transloco scope. Distinct from `/app/translations/**` above, which serves the
+  # hold every translatable item of the module (its name and its route titles) and whatever else is
+  # stored for it — the texts its widgets name under the module's scope, e.g. `participant.title`
+  # read as `conduct_race.participant.title` — all keyed relative to the module's transloco scope.
+  # Distinct from `/app/translations/**` above, which serves the
   # framework's own seeded bundles.
   /organizations/{orgKey}/modules/{moduleKey}/translations:
     parameters:
@@ -1490,9 +1492,10 @@ components:
           type: string
           nullable: true
           description: >-
-            Transloco scope the module's translations load under; defaults to `key`. The frontend
-            must register it with an **explicit alias** — both `-` and `_` in a scope name are
-            camel-cased into a default alias that will not match the authored keys.
+            Transloco scope the module's translations load under; defaults to `key` with its dashes
+            written as underscores (`conduct-race` is `conduct_race`), since transloco keys use
+            underscores. The frontend must register it with an **explicit alias** — both `-` and `_`
+            in a scope name are camel-cased into a default alias that will not match the authored keys.
           example: claims
         routes:
           type: array
@@ -1513,16 +1516,18 @@ components:
 
     ModuleTranslationUploadLanguage:
       type: object
-      required: [ locale, storedKeys, unknownKeys, missingKeys, untranslatedKeys ]
+      required: [ locale, storedKeys, additionalKeys, missingKeys, untranslatedKeys ]
       properties:
         locale:
           type: string
         storedKeys:
           type: integer
-          description: How many keys were stored.
-        unknownKeys:
+          description: How many keys were stored, the additional ones included.
+        additionalKeys:
           type: array
-          description: Keys the module does not have. Dropped.
+          description: >-
+            Keys of the file the module does not author itself: the texts its widgets name under the
+            module's scope. Stored like the rest.
           items:
             type: string
         missingKeys:

@@ -141,8 +141,9 @@ Two callers, one per stack that installs:
   (`assets/apps/app/cards/plan-race.svg` is the app file `app:cards/plan-race.svg`; `assets/modules/plan-race/docs/guide.md`
   is `module:docs/guide.md`). They are written through the use cases a designer's upload uses, so the same path, size
   and count rules hold, and the module's text rules too: a translation is `translations/modules/<key>/<locale>.json` and
-  holds only texts the module authors (its name and route titles) — any other key refuses the install rather than
-  being dropped. An application's texts are `translations/apps/<app id>/<locale>.json`: the texts of its own pages,
+  holds the texts the module authors (its name and route titles) and the texts its widgets name under the module's
+  transloco scope — the module key with its dashes written as underscores (`conduct-race` is `conduct_race`) — all keyed
+  relative to that scope, so `participant.title` is read as `conduct_race.participant.title`. An application's texts are `translations/apps/<app id>/<locale>.json`: the texts of its own pages,
   such as a home page's cards, under whatever keys its widgets name (letters, digits, `_`, `-` and `.`), so nothing is
   checked against the definition. An owner the bundle does not define refuses the install as well. Each file is
   released as it is stored, so the running application serves it at once. A bundle file is capped like every other
