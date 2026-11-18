@@ -47,16 +47,37 @@
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Origin"
   },
-    "administration": {
-      "users": {
-        "title": "Users",
-        "text": "List and edit the users of the organization, and assign their roles.",
-        "open": "Open users"
-      },
-      "roles": {
-        "title": "Roles",
-        "text": "List and edit the roles of the organization. Roles of ProcessPuzzle and of workflow definitions are read-only.",
-        "open": "Open roles"
-      }
+  "administration": {
+    "users": {
+      "title": "Users",
+      "text": "List and edit the users of the organization, and assign their roles.",
+      "open": "Open users"
+    },
+    "roles": {
+      "title": "Roles",
+      "text": "List and edit the roles of the organization. Roles of ProcessPuzzle and of workflow definitions are read-only.",
+      "open": "Open roles"
+    },
+    "ai_subscription": {
+      "title": "AI subscription",
+      "text": "Choose the AI model service for the design assistant and enter the organization's own API key. Without it the assistant is off.",
+      "open": "Open AI subscription"
     }
+  },
+  "ai_subscription": {
+    "title": "AI subscription",
+    "active": "This organization uses its own AI subscription for the design assistant.",
+    "none": "This organization has no AI subscription, so the design assistant is off. ProcessPuzzle does not pay for AI use.",
+    "provider": "Provider",
+    "model": "Model",
+    "baseUrl": "Base URL",
+    "baseUrlHint": "https, public address, e.g. https://api.openai.com/v1",
+    "apiKey": "API key",
+    "keyStored": "A key is stored. Leave empty to keep it.",
+    "keyRequired": "Required. It is stored encrypted and never shown again.",
+    "save": "Save",
+    "remove": "Remove subscription",
+    "saved": "AI subscription saved.",
+    "openaiCompatible": "OpenAI-compatible service"
+  }
 }

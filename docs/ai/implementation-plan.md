@@ -1,6 +1,6 @@
 # AI Definition Generator: Implementation Plan
 
-Status: plan, 2026-10-26. Implements [ai-definition-generator-v2.md](ai-definition-generator-v2.md); where this plan deviates, it says so.
+Status: plan, 2026-10-26; the model and its cost moved to each organization on 2026-11-18, see [Organization AI subscription](#organization-ai-subscription-2026-11-18) (it supersedes the *LLM vendor* and *LiteLLM* rows below and the gateway wording in Phases 0 and 2). Implements [ai-definition-generator-v2.md](ai-definition-generator-v2.md); where this plan deviates, it says so.
 
 ## Decisions
 
@@ -125,3 +125,36 @@ Done 2026-10-27 (PRs #1128, #1135, #1136, #1138, #1143, #1148):
   double's marker `schema:entity`, and answered with a schema of its own instead of calling `save_draft`; the day
   before, the same prompt without streaming led to a save. The smoke test now gives the model a real-looking schema,
   runs at temperature 0 and asks for the saved result. Tool-calling reliability is Phase 6's measurement.
+
+## Organization AI subscription (2026-11-18)
+
+The platform no longer pays for assistant use. Each organization brings its own model service and key; an organization
+without a subscription has no assistant. This replaces the shared-gateway design of the *LLM vendor* and *LiteLLM*
+decisions above.
+
+| Topic | Decision |
+|---|---|
+| Who pays | The organization. There is no platform key and no fallback: `AiProperties.Assistant` lost `baseUrl`, `apiKey` and `model` |
+| Providers | `MISTRAL` (fixed address `https://api.mistral.ai/v1`) and `OPENAI_COMPATIBLE` (the organization's own https base URL: OpenAI, Scaleway, a gateway of its own). Both go through Spring AI's OpenAI client |
+| Gateway | Direct. The backend calls the provider with the organization's key; LiteLLM is not on the path (it would only hold a key the platform no longer has). The `litellm` service and `pp-designer` alias stay in the infrastructure stack for the Phase 0/2 smoke tests and can be removed once nothing else uses them |
+| Who edits | Organization administrators only (`OrganizationGuard.requireAdministration`), in org-admin: `/{org}/admin/ai-subscription`. Plans are not involved; a plan limit for AI is a possible later step |
+| Storage | Table `ai_organization_subscriptions` (one row per organization): provider, model, base URL, sealed key, who and when. Erased with the tenant (`TenantDataCleaner`) |
+| Key handling | AES-256-GCM, the organization bound in as associated data, under a master key from `processpuzzle.ai.assistant.secret-key` (`openssl rand -base64 32`). Startup fails without it while the assistant is enabled. The key is write-only: no read returns it, and a blank key on update keeps the stored one. Changing the master key makes every stored key unreadable, so organizations have to enter theirs again |
+| Address check | The backend makes the call, so an organization must not be able to aim it at the platform's network: https only, no credentials in the URL, and every address the host resolves to must be public (no loopback, link-local, site-local, unique-local or multicast). Checked on save and again on every call |
+| Unconfigured | A turn of an organization with no subscription answers `428 Precondition Required` before any model call; the quotas below still apply to the ones with a subscription |
+| Quotas | Kept: `maxTurnsPerDay` and `maxTokensPerDay` per organization remain an abuse guard, now on the organization's own spend |
+
+API: `GET`, `PUT` and `DELETE /organizations/{orgKey}/ai-subscription`. `PUT` takes `provider`, `model`, `baseUrl` (only for
+`OPENAI_COMPATIBLE`) and `apiKey`; `GET` returns everything but the key, with `keySet`, and `404` when there is none.
+
+Code: `base-ai-backend` (`assistant.OrganizationAiSubscriptions` implements the `AssistantModels` port that `DesignAssistant`
+asks for the organization's `ChatClient` on every turn; `AiSecretCipher`, `AiEndpointPolicy`, `OrganizationAiSubscriptionEndpoint`)
+and `org-admin-frontend` (`AiSubscriptionComponent`, the card on the Administration overview, five locales).
+
+Deploying: every application that enables the assistant sets `PROCESSPUZZLE_AI_ASSISTANT_SECRET_KEY` (a secret, per
+environment). `PROCESSPUZZLE_AI_ASSISTANT_BASE_URL`, `_API_KEY` and `_MODEL` are gone, and so are the `SPRING_AI_OPENAI_*`
+settings the stacks passed for the gateway; `SPRING_AI_MODEL_CHAT` still has to stay `none`, because the chat model is built
+per organization and not by Spring AI's auto-configuration.
+
+Not built: a test-connection button, and hiding the screen from members who are not administrators (the backend refuses
+them with 403).

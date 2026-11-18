@@ -47,16 +47,37 @@
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Origen"
   },
-    "administration": {
-      "users": {
-        "title": "Usuarios",
-        "text": "Ver y editar los usuarios de la organización y asignarles sus roles.",
-        "open": "Abrir usuarios"
-      },
-      "roles": {
-        "title": "Roles",
-        "text": "Ver y editar los roles de la organización. Los roles de ProcessPuzzle y de las definiciones de flujo son de solo lectura.",
-        "open": "Abrir roles"
-      }
+  "administration": {
+    "users": {
+      "title": "Usuarios",
+      "text": "Ver y editar los usuarios de la organización y asignarles sus roles.",
+      "open": "Abrir usuarios"
+    },
+    "roles": {
+      "title": "Roles",
+      "text": "Ver y editar los roles de la organización. Los roles de ProcessPuzzle y de las definiciones de flujo son de solo lectura.",
+      "open": "Abrir roles"
+    },
+    "ai_subscription": {
+      "title": "Suscripción de IA",
+      "text": "Elija el servicio de modelo de IA del asistente de diseño e introduzca la clave de API propia de la organización. Sin ella el asistente está desactivado.",
+      "open": "Abrir suscripción de IA"
     }
+  },
+  "ai_subscription": {
+    "title": "Suscripción de IA",
+    "active": "Esta organización usa su propia suscripción de IA para el asistente de diseño.",
+    "none": "Esta organización no tiene suscripción de IA, por lo que el asistente de diseño está desactivado. ProcessPuzzle no paga el uso de IA.",
+    "provider": "Proveedor",
+    "model": "Modelo",
+    "baseUrl": "URL base",
+    "baseUrlHint": "https, dirección pública, p. ej. https://api.openai.com/v1",
+    "apiKey": "Clave de API",
+    "keyStored": "Hay una clave guardada. Déjelo vacío para conservarla.",
+    "keyRequired": "Obligatoria. Se guarda cifrada y no se vuelve a mostrar.",
+    "save": "Guardar",
+    "remove": "Quitar suscripción",
+    "saved": "Suscripción de IA guardada.",
+    "openaiCompatible": "Servicio compatible con OpenAI"
+  }
 }

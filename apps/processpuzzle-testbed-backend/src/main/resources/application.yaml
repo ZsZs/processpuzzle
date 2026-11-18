@@ -2,8 +2,8 @@ spring:
   application:
     name: processpuzzle-testbed-backend
   # Spring AI (base-ai assistant). Its OpenAI starter auto-configures six models and fails startup
-  # without an API key, so every model is off until the assistant is configured: chat is switched on
-  # by SPRING_AI_MODEL_CHAT=openai together with the gateway URL and key. The rest are never used.
+  # without an API key, so every model is off. The assistant builds its chat model itself, per organization, from
+  # the organization's own AI subscription (docs/ai/implementation-plan.md), so SPRING_AI_MODEL_CHAT stays none.
   ai:
     model:
       chat: ${SPRING_AI_MODEL_CHAT:none}

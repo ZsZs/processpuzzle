@@ -114,6 +114,14 @@ class AssistantEndpointTest {
     }
 
     @Test
+    void aTurnOfAnOrganizationWithoutAnAiSubscriptionIsPreconditionRequired() throws Exception {
+        when(assistant.respond(any(UUID.class), anyString(), any())).thenThrow(new AssistantNotConfiguredException("acme"));
+
+        mvc.perform(post(TURN).contentType(MediaType.APPLICATION_JSON).content("{\"message\":\"Define invoice.\"}"))
+            .andExpect(status().isPreconditionRequired());
+    }
+
+    @Test
     void aTurnOverTheOrganizationsDailyLimitIsTooManyRequests() throws Exception {
         when(assistant.respond(any(UUID.class), anyString(), any())).thenThrow(new AssistantQuotaExceededException("acme"));
 

@@ -47,16 +47,37 @@
     "platformManaged": "Managed by ProcessPuzzle",
     "origin": "Ursprung"
   },
-    "administration": {
-      "users": {
-        "title": "Benutzer",
-        "text": "Benutzer der Organisation anzeigen und bearbeiten sowie ihre Rollen zuweisen.",
-        "open": "Benutzer öffnen"
-      },
-      "roles": {
-        "title": "Rollen",
-        "text": "Rollen der Organisation anzeigen und bearbeiten. Rollen von ProcessPuzzle und aus Workflow-Definitionen sind schreibgeschützt.",
-        "open": "Rollen öffnen"
-      }
+  "administration": {
+    "users": {
+      "title": "Benutzer",
+      "text": "Benutzer der Organisation anzeigen und bearbeiten sowie ihre Rollen zuweisen.",
+      "open": "Benutzer öffnen"
+    },
+    "roles": {
+      "title": "Rollen",
+      "text": "Rollen der Organisation anzeigen und bearbeiten. Rollen von ProcessPuzzle und aus Workflow-Definitionen sind schreibgeschützt.",
+      "open": "Rollen öffnen"
+    },
+    "ai_subscription": {
+      "title": "KI-Abonnement",
+      "text": "KI-Modelldienst für den Design-Assistenten wählen und den eigenen API-Schlüssel der Organisation eintragen. Ohne ihn ist der Assistent aus.",
+      "open": "KI-Abonnement öffnen"
     }
+  },
+  "ai_subscription": {
+    "title": "KI-Abonnement",
+    "active": "Diese Organisation nutzt für den Design-Assistenten ihr eigenes KI-Abonnement.",
+    "none": "Diese Organisation hat kein KI-Abonnement, daher ist der Design-Assistent aus. ProcessPuzzle bezahlt keine KI-Nutzung.",
+    "provider": "Anbieter",
+    "model": "Modell",
+    "baseUrl": "Basis-URL",
+    "baseUrlHint": "https, öffentliche Adresse, z. B. https://api.openai.com/v1",
+    "apiKey": "API-Schlüssel",
+    "keyStored": "Ein Schlüssel ist gespeichert. Leer lassen, um ihn zu behalten.",
+    "keyRequired": "Erforderlich. Er wird verschlüsselt gespeichert und nie wieder angezeigt.",
+    "save": "Speichern",
+    "remove": "Abonnement entfernen",
+    "saved": "KI-Abonnement gespeichert.",
+    "openaiCompatible": "OpenAI-kompatibler Dienst"
+  }
 }

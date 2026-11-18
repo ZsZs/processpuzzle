@@ -1,12 +1,16 @@
 package com.processpuzzle.ai;
 
 import com.processpuzzle.ai.adapter.outbound.HttpVisionServer;
+import com.processpuzzle.ai.assistant.AiSecretCipher;
 import com.processpuzzle.ai.assistant.AssistantAccess;
 import com.processpuzzle.ai.assistant.AssistantAuditLog;
 import com.processpuzzle.ai.assistant.AssistantLimits;
+import com.processpuzzle.ai.assistant.AssistantModels;
+import com.processpuzzle.ai.assistant.OrganizationAiSubscriptions;
 import com.processpuzzle.ai.assistant.AssistantSessionPurger;
 import com.processpuzzle.ai.assistant.AssistantSessions;
 import com.processpuzzle.ai.domain.AssistantSessionRepository;
+import com.processpuzzle.ai.domain.OrganizationAiSubscriptionRepository;
 import com.processpuzzle.ai.assistant.AssistantQuota;
 import com.processpuzzle.ai.assistant.InMemoryAssistantQuota;
 import com.processpuzzle.ai.assistant.DefinitionDrafts;
@@ -18,9 +22,6 @@ import com.processpuzzle.ai.usecase.port.VisionServer;
 import com.processpuzzle.core.definition.DefinitionAuthoringParticipant;
 import com.processpuzzle.core.security.CurrentPrincipal;
 import java.time.Clock;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.openai.OpenAiChatModel;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -81,27 +82,33 @@ public class AiConfiguration {
         return new InMemoryAssistantQuota(Clock.systemUTC(), assistant.getMaxTurnsPerDay(), assistant.getMaxTokensPerDay());
     }
 
+    /** Seals the organizations' API keys; the application must supply the master key when the assistant is on. */
+    @Bean
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public AiSecretCipher aiSecretCipher(AiProperties properties) {
+        return new AiSecretCipher(properties.getAssistant().getSecretKey());
+    }
+
+    /** The organizations' AI subscriptions, which are also where the assistant gets its model from. */
+    @Bean
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public OrganizationAiSubscriptions organizationAiSubscriptions(OrganizationAiSubscriptionRepository repository,
+                                                                   AiSecretCipher cipher) {
+        return new OrganizationAiSubscriptions(repository, cipher, Clock.systemUTC());
+    }
+
     /**
-     * The design assistant, built only when enabled: the gateway's chat model is then built here rather than by Spring
-     * AI's auto-configuration, which would need a key even when the assistant is off. Authorization comes from the
-     * application's {@link AssistantAccess} bean, or the default; the authoring participants come from the kinds it has.
+     * The design assistant, built only when enabled. Each turn reaches the model its organization subscribed to, with
+     * that organization's key. Authorization comes from the application's {@link AssistantAccess} bean, or the
+     * default; the authoring participants come from the kinds it has.
      */
     @Bean
     @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
-    public DesignAssistant designAssistant(AiProperties properties, AssistantAccess access, AssistantAuditLog audit,
-                                           AssistantQuota quota, AssistantSessions sessions,
+    public DesignAssistant designAssistant(AiProperties properties, AssistantModels models, AssistantAccess access,
+                                           AssistantAuditLog audit, AssistantQuota quota, AssistantSessions sessions,
                                            ObjectProvider<DefinitionAuthoringParticipant> participants) {
         AiProperties.Assistant assistant = properties.getAssistant();
-        OpenAiChatModel model = OpenAiChatModel.builder()
-            .options(OpenAiChatOptions.builder()
-                .baseUrl(assistant.getBaseUrl())
-                .apiKey(assistant.getApiKey())
-                .model(assistant.getModel())
-                // The gateway reports the tokens on the stream's last chunk only when asked to.
-                .streamUsage(true)
-                .build())
-            .build();
-        return new DesignAssistant(ChatClient.create(model),
+        return new DesignAssistant(models,
             new DefinitionDrafts(participants.orderedStream().toList()), access,
             new AssistantLimits(assistant.getMaxToolCalls(), assistant.getMaxRepairRounds()), audit, quota, sessions);
     }
