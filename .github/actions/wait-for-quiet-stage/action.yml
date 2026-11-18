@@ -1,0 +1,56 @@
+name: Wait for a quiet stage
+description: >-
+  Waits until no build or deploy of develop is queued or running, so a job that tests stage does not have the stack
+  restarted under it. Gives up after the timeout, with a warning, and lets the job go on.
+
+inputs:
+  token:
+    description: Token that may read the repository's workflow runs.
+    required: true
+  repository:
+    description: Owner and name of the repository.
+    required: true
+  timeout_minutes:
+    description: How long to wait before going on anyway.
+    required: false
+    default: '60'
+
+runs:
+  using: composite
+  steps:
+    # A stage deploy is a run of one of these four workflows on develop: the build workflows call the deploy ones as their
+    # `deploy-stage` job, and the deploy ones can also be started by hand. The infrastructure workflow counts too — it
+    # recreates Keycloak, the database and the proxy that every test goes through.
+    #
+    # This waits, it does not take the deploy's concurrency group: a group keeps one running and one pending run and
+    # cancels an older pending one, so holding it from here could cancel a queued deploy. It is a step of every job that
+    # tests stage, and not only of a gate, because re-running only the failed jobs skips the gate: a Firefox re-run that
+    # started a minute after two merges ran straight into their deploys. A deploy that starts after the wait has ended is
+    # not prevented.
+    - name: Wait for builds and deploys of develop to finish
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPOSITORY: ${{ inputs.repository }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout_minutes }}
+      run: |
+        deadline=$((SECONDS + TIMEOUT_MINUTES * 60))
+        while true; do
+          busy=0
+          for workflow in build-testbed-apps.yml deploy-testbed-apps.yml build-infrastructure.yml deploy-infrastructure.yml; do
+            for state in queued in_progress waiting pending; do
+              count=$(gh api "repos/$REPOSITORY/actions/workflows/$workflow/runs?status=$state&per_page=100" --jq '[.workflow_runs[] | select(.head_branch == "develop")] | length')
+              busy=$((busy + count))
+            done
+          done
+          if [ "$busy" -eq 0 ]; then
+            echo "No build or deploy of develop is running. Going on."
+            break
+          fi
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            echo "::warning::A build or deploy of develop was still running after ${TIMEOUT_MINUTES} minutes; going on anyway."
+            break
+          fi
+          echo "$busy build or deploy run(s) of develop are going; stage may restart. Waiting a minute."
+          sleep 60
+        done
