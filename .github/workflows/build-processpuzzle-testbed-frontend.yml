@@ -103,3 +103,14 @@ jobs:
           workers: 3
           # The stack was started by this job and is thrown away with it, so a spec may release what it created.
           allow_release: 'true'
+
+      # `restart: unless-stopped` hides a dead backend: it comes back two seconds later, and all the log shows is a second
+      # "Starting ProcessPuzzleTestbedBackendApplication" after a run of 502s. Say what Docker knows about it, so the next
+      # time the cause is on the page and not inferred from a missing shutdown line.
+      - name: Report restarts of the backend
+        if: always()
+        run: |
+          docker inspect testbed-backend --format 'testbed-backend: restarts={{.RestartCount}} oomKilled={{.State.OOMKilled}} exitCode={{.State.ExitCode}} startedAt={{.State.StartedAt}}' || true
+          if [ "$(docker inspect testbed-backend --format '{{.RestartCount}}' 2>/dev/null || echo 0)" != "0" ]; then
+            echo "::warning::testbed-backend restarted during this job; the e2e failures above may be its 502s."
+          fi

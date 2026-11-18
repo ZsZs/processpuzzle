@@ -59,3 +59,11 @@ services:
         condition: service_healthy
       keycloak-init:
         condition: service_completed_successfully
+    # More room than stage gives it. docker-compose-apps.yaml caps this container at 768m — "deliberately close" to the
+    # 692MiB it measured, because the stage host is 3.8GiB and shared — and `restart: unless-stopped` turns a kill into a
+    # silent restart. CI runs the e2e suite against it with three workers on a 16GiB runner; on 3 of 32 runs of
+    # Build-ProcessPuzzle-Testbed-Frontend the backend vanished mid-run (no shutdown line, a second "Starting
+    # ProcessPuzzleTestbedBackendApplication" two seconds after the last request), every request in between answered 502,
+    # and the tests behind it failed or never ran. Stage and prod never read this file, so their limit is untouched.
+    # MaxRAMPercentage stays 65, so the heap grows with it (~830MiB) and the headroom outside the heap stays ~450MiB.
+    mem_limit: 1280m
