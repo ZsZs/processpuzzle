@@ -28,7 +28,7 @@ function seededDefinitions(): SeededDefinition[] {
  * Widgets the seed catalogue carries but another library registers — a widget aware of documents cannot live
  * here without closing a dependency cycle. Each is held to the same contract by a spec in its own library.
  */
-const WIDGETS_REGISTERED_ELSEWHERE = ['content-book'];
+const WIDGETS_REGISTERED_ELSEWHERE = ['chat-panel', 'chat-topics', 'chat-unread-badge', 'content-book'];
 
 const cases = BASE_WIDGET_REGISTRATIONS.map((registration) => [registration.type, registration] as const);
 
@@ -65,7 +65,7 @@ describe('widget contract', () => {
   });
 
   it.each(cases)('%s: the seeded definition is a copy of its registration', (type, registration) => {
-    const { key: _key, ...seeded } = seededDefinitions().find((definition) => definition.key === type) ?? { key: type };
+    const { key, ...seeded } = seededDefinitions().find((definition) => definition.key === type) ?? { key: type };
 
     // Through JSON, so an optional field the registration leaves undefined compares equal to one the YAML omits.
     expect(seeded).toEqual(JSON.parse(JSON.stringify(registration.definition)));
