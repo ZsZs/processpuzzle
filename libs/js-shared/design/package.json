@@ -22,7 +22,7 @@
     "@angular/router": "~22.0.5",
     "@jsverse/transloco": "8.4.0",
     "@ngrx/signals": "^21.1.1",
-    "@processpuzzle/base-ai": "^0.2.0",
+    "@processpuzzle/base-ai": "^0.3.0",
     "@processpuzzle/base-app": "^0.3.0",
     "@processpuzzle/base-calculation": "^0.1.0",
     "@processpuzzle/base-chat": "^0.1.0",
