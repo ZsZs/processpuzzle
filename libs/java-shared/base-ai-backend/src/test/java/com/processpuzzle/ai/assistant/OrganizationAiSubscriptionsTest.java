@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.processpuzzle.ai.domain.AiProvider;
@@ -14,6 +15,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,7 @@ class OrganizationAiSubscriptionsTest {
     private OrganizationAiSubscription stored;
     private AiSecretCipher cipher;
     private OrganizationAiSubscriptions subscriptions;
+    private final ModelLister lister = mock(ModelLister.class);
 
     @BeforeEach
     void setUp() {
@@ -34,7 +37,7 @@ class OrganizationAiSubscriptionsTest {
         when(repository.findById(any())).thenAnswer(i -> Optional.ofNullable(stored));
         when(repository.save(any())).thenAnswer(i -> stored = i.getArgument(0));
         subscriptions = new OrganizationAiSubscriptions(repository, cipher,
-            Clock.fixed(Instant.parse("2026-11-18T10:00:00Z"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-11-18T10:00:00Z"), ZoneOffset.UTC), lister);
     }
 
     @Test
@@ -111,6 +114,42 @@ class OrganizationAiSubscriptionsTest {
         assertThatThrownBy(() -> subscriptions.save("acme", noModel, "Ada")).hasMessageContaining("model");
         assertThatThrownBy(() -> subscriptions.save("acme", longModel, "Ada")).hasMessageContaining("model");
         assertThatThrownBy(() -> subscriptions.save("acme", longKey, "Ada")).hasMessageContaining("too long");
+    }
+
+    @Test
+    void theModelsAreListedWithTheTypedKeyAtMistralsAddress() {
+        when(lister.list("https://api.mistral.ai/v1", "sk-typed")).thenReturn(List.of("a", "b"));
+
+        assertThat(subscriptions.listModels("acme", AiProvider.MISTRAL, "https://ignored", " sk-typed ")).containsExactly("a", "b");
+    }
+
+    @Test
+    void aBlankKeyListsWithTheStoredKeyOfTheSameProvider() {
+        subscriptions.save("acme", change("sk-secret"), "Ada");
+        when(lister.list("https://api.mistral.ai/v1", "sk-secret")).thenReturn(List.of("a"));
+
+        assertThat(subscriptions.listModels("acme", AiProvider.MISTRAL, null, "")).containsExactly("a");
+    }
+
+    @Test
+    void aBlankKeyDoesNotBorrowTheStoredKeyOfAnotherProvider() {
+        subscriptions.save("acme", change("sk-secret"), "Ada");
+
+        assertThatThrownBy(() -> subscriptions.listModels("acme", AiProvider.OPENAI_COMPATIBLE, "https://8.8.8.8/v1", null))
+            .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("API key");
+        verifyNoInteractions(lister);
+    }
+
+    @Test
+    void listingNeedsAProviderAKeyAndAPublicAddress() {
+        assertThatThrownBy(() -> subscriptions.listModels("acme", null, null, "k")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> subscriptions.listModels("acme", AiProvider.MISTRAL, null, null))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> subscriptions.listModels("acme", AiProvider.OPENAI_COMPATIBLE, "https://10.0.0.1/v1", "k"))
+            .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> subscriptions.listModels("acme", AiProvider.MISTRAL, null, "k".repeat(1001)))
+            .hasMessageContaining("too long");
+        verifyNoInteractions(lister);
     }
 
     @Test

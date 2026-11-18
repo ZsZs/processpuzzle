@@ -5,6 +5,7 @@ import com.processpuzzle.ai.domain.OrganizationAiSubscription;
 import com.processpuzzle.ai.domain.OrganizationAiSubscriptionRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -25,12 +26,45 @@ public class OrganizationAiSubscriptions implements AssistantModels {
     private final OrganizationAiSubscriptionRepository repository;
     private final AiSecretCipher cipher;
     private final Clock clock;
+    private final ModelLister modelLister;
 
     public OrganizationAiSubscriptions(OrganizationAiSubscriptionRepository repository, AiSecretCipher cipher,
-                                       Clock clock) {
+                                       Clock clock, ModelLister modelLister) {
         this.repository = repository;
         this.cipher = cipher;
         this.clock = clock;
+        this.modelLister = modelLister;
+    }
+
+    /**
+     * The models the key may use, asked of the provider. A blank {@code apiKey} means the stored one, so an
+     * administrator can list the models again without typing the key; it is then the stored provider's key, never
+     * another's, and the address is checked like a saved one.
+     *
+     * @throws IllegalArgumentException    when the provider, address or key is missing or refused
+     * @throws ModelLister.ModelListException when the provider cannot be asked
+     */
+    @Transactional(readOnly = true)
+    public List<String> listModels(String organization, AiProvider provider, String baseUrl, String apiKey) {
+        if (provider == null) {
+            throw new IllegalArgumentException("The provider is required");
+        }
+        String url = MISTRAL_BASE_URL;
+        if (provider == AiProvider.OPENAI_COMPATIBLE) {
+            url = baseUrl == null ? "" : baseUrl.trim();
+            AiEndpointPolicy.require(url);
+        }
+        String key = apiKey == null ? "" : apiKey.trim();
+        if (key.isEmpty()) {
+            OrganizationAiSubscription stored = repository.findById(organization)
+                .filter(s -> s.getProvider() == provider)
+                .orElseThrow(() -> new IllegalArgumentException("Enter the API key to list the models"));
+            key = cipher.open(organization, stored.getSealedKey());
+        }
+        if (key.length() > MAX_KEY_LENGTH) {
+            throw new IllegalArgumentException("The API key is too long");
+        }
+        return modelLister.list(url, key);
     }
 
     /** What an administrator may read back: everything but the key. */
@@ -83,16 +117,23 @@ public class OrganizationAiSubscriptions implements AssistantModels {
         if (subscription.getProvider() != AiProvider.MISTRAL) {
             AiEndpointPolicy.require(baseUrl);
         }
-        OpenAiChatModel model = OpenAiChatModel.builder()
+        return chatClient(baseUrl, cipher.open(organization, subscription.getSealedKey()), subscription.getModel());
+    }
+
+    /**
+     * The chat client for one provider. {@code streamUsage} is deliberately left unset: Spring AI then streams with
+     * {@code stream_options.include_usage} alone, which reports the tokens. Setting it, either way, also sends
+     * {@code include_obfuscation}, which Mistral rejects with a 422 (the shared gateway used to strip it).
+     */
+    static ChatClient chatClient(String baseUrl, String apiKey, String model) {
+        OpenAiChatModel chatModel = OpenAiChatModel.builder()
             .options(OpenAiChatOptions.builder()
                 .baseUrl(baseUrl)
-                .apiKey(cipher.open(organization, subscription.getSealedKey()))
-                .model(subscription.getModel())
-                // Providers report the tokens on the stream's last chunk only when asked to.
-                .streamUsage(true)
+                .apiKey(apiKey)
+                .model(model)
                 .build())
             .build();
-        return ChatClient.create(model);
+        return ChatClient.create(chatModel);
     }
 
     private String sealedKeyFor(String organization, OrganizationAiSubscription existing, String apiKey) {

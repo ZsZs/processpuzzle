@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -87,6 +88,29 @@ class OrganizationAiSubscriptionEndpointTest {
     }
 
     @Test
+    void anAdministratorListsTheModelsOfAProvider() throws Exception {
+        when(subscriptions.listModels("acme", AiProvider.MISTRAL, null, "sk-typed")).thenReturn(java.util.List.of("a", "b"));
+
+        mvc.perform(post(PATH + "/models").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"provider\":\"MISTRAL\",\"apiKey\":\"sk-typed\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.models[0]").value("a"))
+            .andExpect(jsonPath("$.models[1]").value("b"));
+        verify(guard).requireAdministration("acme");
+    }
+
+    @Test
+    void aRefusedRequestToListIsBadRequestAndAFailingProviderIsBadGateway() throws Exception {
+        when(subscriptions.listModels(any(), any(), any(), any())).thenThrow(new IllegalArgumentException("Enter the API key"))
+            .thenThrow(new ModelLister.ModelListException("The provider rejected the API key"));
+
+        mvc.perform(post(PATH + "/models").contentType(MediaType.APPLICATION_JSON).content("{\"provider\":\"MISTRAL\"}"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(post(PATH + "/models").contentType(MediaType.APPLICATION_JSON).content("{\"provider\":\"MISTRAL\"}"))
+            .andExpect(status().isBadGateway());
+    }
+
+    @Test
     void anAdministratorRemovesTheSubscription() throws Exception {
         mvc.perform(delete(PATH)).andExpect(status().isNoContent());
 
@@ -102,6 +126,9 @@ class OrganizationAiSubscriptionEndpointTest {
         mvc.perform(put(PATH).contentType(MediaType.APPLICATION_JSON).content("{\"provider\":\"MISTRAL\",\"model\":\"m\"}"))
             .andExpect(status().isForbidden());
         mvc.perform(delete(PATH)).andExpect(status().isForbidden());
+        mvc.perform(post(PATH + "/models").contentType(MediaType.APPLICATION_JSON).content("{\"provider\":\"MISTRAL\"}"))
+            .andExpect(status().isForbidden());
+        verify(subscriptions, never()).listModels(any(), any(), any(), any());
         verify(subscriptions, never()).find(any());
         verify(subscriptions, never()).save(any(), any(), any());
         verify(subscriptions, never()).delete(any());

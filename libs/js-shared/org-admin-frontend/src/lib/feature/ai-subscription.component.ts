@@ -2,10 +2,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
+import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatSelect, MatOption } from '@angular/material/select';
+import { MatSelect } from '@angular/material/select';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiProvider, AiSubscription, AiSubscriptionService } from '../domain/ai-subscription.service';
 
@@ -22,7 +23,7 @@ export const AI_SUBSCRIPTION_TRANSLOCO_PREFIX = 'org_admin.ai_subscription';
 @Component({
   selector: 'pp-ai-subscription',
   standalone: true,
-  imports: [ReactiveFormsModule, MatButton, MatFormField, MatHint, MatLabel, MatInput, MatProgressBar, MatSelect, MatOption, TranslocoPipe],
+  imports: [ReactiveFormsModule, MatButton, MatFormField, MatHint, MatLabel, MatInput, MatProgressBar, MatSelect, MatOption, MatAutocomplete, MatAutocompleteTrigger, TranslocoPipe],
   template: `
     @if (loading()) {
       <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -40,7 +41,13 @@ export const AI_SUBSCRIPTION_TRANSLOCO_PREFIX = 'org_admin.ai_subscription';
           </mat-form-field>
           <mat-form-field>
             <mat-label>{{ 'org_admin.ai_subscription.model' | transloco }}</mat-label>
-            <input id="ai-model" matInput formControlName="model" autocomplete="off" />
+            <input id="ai-model" matInput formControlName="model" autocomplete="off" [matAutocomplete]="modelList" />
+            <mat-autocomplete #modelList="matAutocomplete">
+              @for (name of filteredModels(); track name) {
+                <mat-option [value]="name">{{ name }}</mat-option>
+              }
+            </mat-autocomplete>
+            <mat-hint>{{ 'org_admin.ai_subscription.modelHint' | transloco }}</mat-hint>
           </mat-form-field>
           @if (needsBaseUrl()) {
             <mat-form-field>
@@ -54,6 +61,14 @@ export const AI_SUBSCRIPTION_TRANSLOCO_PREFIX = 'org_admin.ai_subscription';
             <input id="ai-api-key" matInput type="password" formControlName="apiKey" autocomplete="new-password" />
             <mat-hint>{{ (current() ? 'org_admin.ai_subscription.keyStored' : 'org_admin.ai_subscription.keyRequired') | transloco }}</mat-hint>
           </mat-form-field>
+          <div class="ai-subscription__models">
+            <button id="load-ai-models" type="button" mat-stroked-button [disabled]="busy() || !canLoadModels()" (click)="onLoadModels()">
+              {{ 'org_admin.ai_subscription.loadModels' | transloco }}
+            </button>
+            @if (models().length > 0) {
+              <span id="ai-models-loaded">{{ 'org_admin.ai_subscription.modelsLoaded' | transloco: { count: models().length } }}</span>
+            }
+          </div>
           @if (error()) {
             <p id="ai-error" class="ai-subscription__error">{{ error() }}</p>
           }
@@ -93,6 +108,13 @@ export const AI_SUBSCRIPTION_TRANSLOCO_PREFIX = 'org_admin.ai_subscription';
         column-gap: 8px;
       }
 
+      .ai-subscription__models {
+        display: flex;
+        align-items: center;
+        column-gap: 12px;
+        margin-bottom: 12px;
+      }
+
       .ai-subscription__error {
         color: var(--mat-sys-error, #b3261e);
       }
@@ -118,8 +140,21 @@ export class AiSubscriptionComponent implements OnInit {
   readonly needsBaseUrl = computed(() => this.provider() === 'OPENAI_COMPATIBLE');
   private readonly formState = signal(0);
 
+  /** The models the provider listed for the key, offered as the model field's suggestions. */
+  readonly models = signal<string[]>([]);
+  private readonly typedModel = signal('');
+  /** The suggestions that match what is typed; any text may still be entered, as a provider may offer more than it lists. */
+  readonly filteredModels = computed(() => {
+    const typed = this.typedModel().trim().toLowerCase();
+    return this.models().filter((name) => name.toLowerCase().includes(typed));
+  });
+
   constructor() {
-    this.form.controls.provider.valueChanges.subscribe((value) => this.provider.set(value));
+    this.form.controls.provider.valueChanges.subscribe((value) => {
+      this.provider.set(value);
+      this.models.set([]);
+    });
+    this.form.controls.model.valueChanges.subscribe((value) => this.typedModel.set(value));
     this.form.valueChanges.subscribe(() => this.formState.update((n) => n + 1));
   }
 
@@ -129,6 +164,33 @@ export class AiSubscriptionComponent implements OnInit {
     const value = this.form.getRawValue();
     return value.model.trim() !== '' && (!this.needsBaseUrl() || value.baseUrl.trim() !== '') && (this.current() !== null || value.apiKey.trim() !== '');
   });
+
+  /** Whether the provider can be asked: a key was typed or one is stored, and an address when one is needed. */
+  readonly canLoadModels = computed(() => {
+    this.formState();
+    const value = this.form.getRawValue();
+    const storedKeyUsable = this.current()?.provider === value.provider;
+    return (value.apiKey.trim() !== '' || storedKeyUsable) && (!this.needsBaseUrl() || value.baseUrl.trim() !== '');
+  });
+
+  onLoadModels(): void {
+    const value = this.form.getRawValue();
+    this.busy.set(true);
+    this.error.set('');
+    this.service
+      .listModels({ provider: value.provider, baseUrl: value.provider === 'OPENAI_COMPATIBLE' ? value.baseUrl.trim() : undefined, apiKey: value.apiKey.trim() || undefined })
+      .subscribe({
+        next: (names) => {
+          this.models.set(names);
+          this.busy.set(false);
+        },
+        error: (failure: HttpErrorResponse) => {
+          this.models.set([]);
+          this.error.set(failure.error?.message ?? failure.error?.detail ?? 'The models could not be listed.');
+          this.busy.set(false);
+        },
+      });
+  }
 
   ngOnInit(): void {
     this.service.find().subscribe({
@@ -190,5 +252,6 @@ export class AiSubscriptionComponent implements OnInit {
     this.current.set(subscription);
     this.form.reset({ provider: subscription?.provider ?? 'MISTRAL', model: subscription?.model ?? '', baseUrl: subscription?.baseUrl ?? '', apiKey: '' });
     this.provider.set(this.form.controls.provider.value);
+    this.typedModel.set(this.form.controls.model.value);
   }
 }

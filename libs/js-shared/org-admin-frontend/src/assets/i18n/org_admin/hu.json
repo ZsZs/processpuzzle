@@ -78,6 +78,9 @@
     "save": "Mentés",
     "remove": "Előfizetés törlése",
     "saved": "MI-előfizetés mentve.",
-    "openaiCompatible": "OpenAI-kompatibilis szolgáltatás"
+    "openaiCompatible": "OpenAI-kompatibilis szolgáltatás",
+    "loadModels": "Modellek betöltése",
+    "modelsLoaded": "{{count}} modell betöltve",
+    "modelHint": "Válasszon a listából, vagy írjon be egy modellnevet"
   }
 }

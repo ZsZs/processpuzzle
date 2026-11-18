@@ -78,6 +78,9 @@
     "save": "Speichern",
     "remove": "Abonnement entfernen",
     "saved": "KI-Abonnement gespeichert.",
-    "openaiCompatible": "OpenAI-kompatibler Dienst"
+    "openaiCompatible": "OpenAI-kompatibler Dienst",
+    "loadModels": "Modelle laden",
+    "modelsLoaded": "{{count}} Modelle geladen",
+    "modelHint": "Aus der Liste wählen oder einen Modellnamen eingeben"
   }
 }
