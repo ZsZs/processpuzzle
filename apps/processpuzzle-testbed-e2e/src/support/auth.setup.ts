@@ -2,6 +2,7 @@ import { expect, test as setup } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { AUTH_DIRECTORY, authFilesFor, E2eUser } from './auth.paths';
+import { signInThroughLoginPage } from './login-page';
 import { serviceRoots } from './race-sample.api';
 
 /**
@@ -36,9 +37,7 @@ setup('register and sign in a test user', async ({ page, request, baseURL }, tes
 
   await page.goto('/auth/login');
   // The branded sign-in is an Angular Element; its plain fallback form shows until that bundle has registered.
-  await page.locator('#username, #pp-fallback-username').first().fill(user.email);
-  await page.locator('#password, #pp-fallback-password').first().fill(user.password);
-  await page.locator('form [type=submit]').first().click();
+  await signInThroughLoginPage(page, user.email, user.password);
 
   await page.waitForURL((url) => url.origin === new URL(baseURL as string).origin);
   // The application boots again after the redirect (a development server compiles on the first request).
