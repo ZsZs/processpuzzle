@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { Translation } from '@jsverse/transloco';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { EXPECTED_ERROR_STATUSES } from '../error-handler/central-http-error.interceptor';
 import { RUNTIME_CONFIGURATION } from '../runtime-configuration/configuration.injection-tokens';
 import { TranslocoHttpLoader } from './transloco.loader';
 import { TRANSLATION_SOURCE_REGISTRY, TranslationSource } from './translation-source';
@@ -67,6 +68,17 @@ describe('TranslocoHttpLoader', () => {
     http.expectOne(`${APP_ROOT}/app/translations/order_admin/en`).flush({ module: { name: 'Order administration' } });
 
     expect(result.value).toEqual({ module: { name: 'Order administration' } });
+  });
+
+  // The asset read of a scope the application does not ship is a probe: its 404 is the normal answer, and the
+  // central error handler must not log it as an error.
+  it('marks a missing asset as an expected 404, so it is not reported as an error', () => {
+    load('order_admin/en', 'order_admin');
+
+    const probe = http.expectOne('assets/i18n/order_admin/en.json');
+
+    expect(probe.request.context.get(EXPECTED_ERROR_STATUSES)).toEqual([404]);
+    probe.flush({});
   });
 
   it('asks the backend for the root bundle without a scope segment', () => {
