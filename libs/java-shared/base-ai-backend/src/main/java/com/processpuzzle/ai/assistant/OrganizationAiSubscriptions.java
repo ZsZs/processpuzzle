@@ -132,6 +132,8 @@ public class OrganizationAiSubscriptions implements AssistantModels {
                 .apiKey(apiKey)
                 .model(model)
                 .build())
+            // Newer Mistral models answer with a list of typed parts where the OpenAI client expects a string.
+            .httpClientBuilderCustomizer(client -> client.interceptor(new ContentPartsFlattener()))
             .build();
         return ChatClient.create(chatModel);
     }
