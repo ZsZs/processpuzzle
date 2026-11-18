@@ -173,14 +173,14 @@
     "routes": "Routen",
     "translations": "Übersetzungen",
     "translations_panel": {
-      "hint": "Eine Datei je unterstützter Sprache enthält jeden übersetzbaren Text des Moduls. Übersetzen Sie die Werte, lassen Sie die Schlüssel unverändert und laden Sie das Zip (oder eine einzelne Datei) wieder hoch.",
+      "hint": "Eine Datei je unterstützter Sprache enthält alle übersetzbaren Texte des Moduls und die Texte, die seine Widgets unter dem Scope des Moduls nennen. Übersetzen Sie die Werte, behalten Sie die Schlüssel und laden Sie das Zip (oder eine einzelne Datei) wieder hoch.",
       "language": "Sprache",
       "translated": "Übersetzt",
       "download": "Dateien herunterladen",
       "upload": "Übersetzungen hochladen",
       "save_first": "Speichern Sie zuerst das Modul; die Dateien werden aus dem gespeicherten Modul erstellt.",
       "stored": "{{count}} Schlüssel gespeichert",
-      "unknown": "{{count}} unbekannte Schlüssel ignoriert",
+      "additional": "{{count}} Widget-Texte behalten",
       "missing": "{{count}} Schlüssel fehlen",
       "untranslated": "{{count}} noch gleich dem Original"
     },

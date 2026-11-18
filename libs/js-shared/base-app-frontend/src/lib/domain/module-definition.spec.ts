@@ -41,6 +41,16 @@ describe('moduleTranslocoScope', () => {
     expect(moduleTranslocoScope(new ModuleDefinition({ id: 'claims' }))).toBe('claims');
     expect(moduleTranslocoScope(new ModuleDefinition({ id: 'claims', translocoScope: '   ' }))).toBe('claims');
   });
+
+  // Transloco keys use underscores, and the scope is the first segment of every key a widget names for the module.
+  it('writes the dashes of the key as underscores, as the backend does', () => {
+    expect(moduleTranslocoScope(new ModuleDefinition({ id: 'conduct-race' }))).toBe('conduct_race');
+    expect(moduleTranslocoScope(new ModuleDefinition({ id: 'a-b-c' }))).toBe('a_b_c');
+  });
+
+  it('keeps an authored scope as typed', () => {
+    expect(moduleTranslocoScope(new ModuleDefinition({ id: 'conduct-race', translocoScope: 'orders-v2' }))).toBe('orders-v2');
+  });
 });
 
 describe('moduleRouteTranslocoId', () => {

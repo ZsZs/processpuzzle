@@ -48,15 +48,21 @@ class ModuleTranslationKeysTest {
     }
 
     @Test
-    void theScopeDefaultsToTheModuleKey() {
-        assertThat(ModuleTranslationKeys.scopeOf(module(" ", null))).isEqualTo("order-admin");
+    void theScopeDefaultsToTheModuleKeyWithItsDashesWrittenAsUnderscores() {
+        assertThat(ModuleTranslationKeys.scopeOf(module(" ", null))).isEqualTo("order_admin");
+        assertThat(ModuleTranslationKeys.scopeOf(module(null, null))).isEqualTo("order_admin");
+    }
+
+    @Test
+    void anAuthoredScopeIsKeptAsTyped() {
         assertThat(ModuleTranslationKeys.scopeOf(module("order_admin", null))).isEqualTo("order_admin");
+        assertThat(ModuleTranslationKeys.scopeOf(module("orders-v2", null))).isEqualTo("orders-v2");
     }
 
     @Test
     void theFirstElementToClaimAKeyKeepsIt() {
         var keys = ModuleTranslationKeys.of(module(null, null,
-                route("a", "First", "order-admin.shared"), route("b", "Second", "order-admin.shared")));
+                route("a", "First", "order_admin.shared"), route("b", "Second", "order_admin.shared")));
 
         assertThat(keys).containsEntry("shared", "First");
     }

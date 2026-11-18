@@ -21,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
  * the module draft. Each value is the uploaded translation when there is one, else the authored text — so
  * the default language is complete and every other one shows what is left to translate.
  *
- * <p>The keys come from the module, not from what was stored, so a key the module dropped is not written
- * and a stored value for it is simply left behind.
+ * <p>The module's own keys come from the module. A file also carries what was stored beyond them — the texts of
+ * the module's widgets, which no definition lists — so that downloading, editing and uploading again loses nothing.
  */
 @Service
 @Transactional(readOnly = true)
@@ -54,8 +54,10 @@ public class DownloadModuleTranslations {
         Map<String, Map<String, String>> files = new LinkedHashMap<>();
         for (String locale : languages.prepared(orgKey)) {
             Map<String, String> own = stored.getOrDefault(locale, Map.of());
-            files.put(locale, authored.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                    entry -> translated(own.get(entry.getKey()), entry.getValue()), (a, b) -> a, LinkedHashMap::new)));
+            Map<String, String> file = authored.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
+                    entry -> translated(own.get(entry.getKey()), entry.getValue()), (a, b) -> a, LinkedHashMap::new));
+            own.forEach(file::putIfAbsent);
+            files.put(locale, file);
         }
         return ModuleTranslationFiles.zip(files);
     }

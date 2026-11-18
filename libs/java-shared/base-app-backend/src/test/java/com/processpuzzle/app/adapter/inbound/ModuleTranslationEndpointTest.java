@@ -52,7 +52,7 @@ class ModuleTranslationEndpointTest {
         assertThat(report.getLanguages()).singleElement().satisfies(de -> {
             assertThat(de.getLocale()).isEqualTo("de");
             assertThat(de.getStoredKeys()).isEqualTo(2);
-            assertThat(de.getUnknownKeys()).containsExactly("x");
+            assertThat(de.getAdditionalKeys()).containsExactly("x");
             assertThat(de.getMissingKeys()).containsExactly("y");
             assertThat(de.getUntranslatedKeys()).containsExactly("z");
         });

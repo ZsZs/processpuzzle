@@ -13,12 +13,12 @@ export interface ModuleTranslationCoverage {
   readonly missingKeys: string[];
 }
 
-/** What an upload stored for one language; the problems of content are reported, not refused. */
+/** What an upload stored for one language: every key of the file, reported by how it relates to what the module authors. */
 export interface ModuleTranslationUploadLanguage {
   readonly locale: string;
   readonly storedKeys: number;
-  /** Keys of the file the module does not have; dropped. */
-  readonly unknownKeys: string[];
+  /** Keys of the file the module does not author itself — the texts its widgets name under its scope; stored like the rest. */
+  readonly additionalKeys: string[];
   readonly missingKeys: string[];
   /** Stored keys whose value still equals the authored text. */
   readonly untranslatedKeys: string[];

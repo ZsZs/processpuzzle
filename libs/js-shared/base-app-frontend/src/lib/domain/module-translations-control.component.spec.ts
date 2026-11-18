@@ -103,7 +103,7 @@ describe('ModuleTranslationsControlComponent', () => {
 
   it('uploads the chosen file, reports what was stored and refreshes the coverage', () => {
     const report: ModuleTranslationUploadReport = {
-      languages: [{ locale: 'de', storedKeys: 2, unknownKeys: ['route.gone'], missingKeys: ['route.list'], untranslatedKeys: [] }],
+      languages: [{ locale: 'de', storedKeys: 2, additionalKeys: ['participant.title'], missingKeys: ['route.list'], untranslatedKeys: [] }],
     };
     service.upload.mockReturnValue(of(report));
     const { fixture, element } = render('claims', 3);
@@ -117,6 +117,24 @@ describe('ModuleTranslationsControlComponent', () => {
     expect(service.upload).toHaveBeenCalledWith('claims', file);
     expect(service.coverage).toHaveBeenCalledTimes(2);
     expect(element('module-translations-report')?.textContent).toContain('de');
+  });
+
+  // Widget texts are not a problem to warn about: the report notes them, with the keys on hover, and says no warning.
+  it('notes the additional keys of an upload as widget texts, not as a warning', () => {
+    const report: ModuleTranslationUploadReport = {
+      languages: [{ locale: 'de', storedKeys: 2, additionalKeys: ['participant.title'], missingKeys: [], untranslatedKeys: [] }],
+    };
+    service.upload.mockReturnValue(of(report));
+    const { fixture, element } = render('claims', 3);
+    const input = element('module-translations-file') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { value: { item: () => new File(['{}'], 'de.json') } });
+
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const note = element('module-translations-report')?.querySelector('.pp-module-translations__note');
+    expect(note?.getAttribute('title')).toBe('participant.title');
+    expect(element('module-translations-report')?.querySelector('.pp-module-translations__warning')).toBeNull();
   });
 
   it('shows the reason the backend refused an upload', () => {

@@ -173,14 +173,14 @@
     "routes": "Routes",
     "translations": "Translations",
     "translations_panel": {
-      "hint": "One file per supported language holds every translatable text of the module. Translate the values, keep the keys, and upload the zip (or a single file) again.",
+      "hint": "One file per supported language holds every translatable text of the module, and the texts its widgets name under the module's scope. Translate the values, keep the keys, and upload the zip (or a single file) again.",
       "language": "Language",
       "translated": "Translated",
       "download": "Download files",
       "upload": "Upload translations",
       "save_first": "Save the module first; the files are prepared from the saved module.",
       "stored": "{{count}} keys stored",
-      "unknown": "{{count}} unknown keys ignored",
+      "additional": "{{count}} widget texts kept",
       "missing": "{{count}} keys missing",
       "untranslated": "{{count}} still equal to the original"
     },
