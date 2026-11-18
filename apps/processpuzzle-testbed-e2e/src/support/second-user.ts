@@ -1,6 +1,7 @@
 import { APIRequestContext, Browser, BrowserContext, expect, test } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { E2eUser } from './auth.paths';
+import { signInThroughLoginPage } from './login-page';
 import { serviceRoots } from './race-sample.api';
 
 /**
@@ -37,9 +38,7 @@ export async function registerAndSignInSecondUser(
   const context = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto('/auth/login');
-  await page.locator('#username, #pp-fallback-username').first().fill(user.email);
-  await page.locator('#password, #pp-fallback-password').first().fill(user.password);
-  await page.locator('form [type=submit]').first().click();
+  await signInThroughLoginPage(page, user.email, user.password);
   await page.waitForURL((url) => url.origin === new URL(baseURL).origin);
   await expect(page.locator('pp-auth-button .avatar')).toBeVisible({ timeout: 30_000 });
   await page.close();
