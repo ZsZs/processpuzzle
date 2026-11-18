@@ -5,6 +5,7 @@ on:
       - "release/base-chat-frontend/*"
     paths:
       - 'libs/js-shared/base-chat-frontend/**'
+      - '.github/workflows/release-base-chat-frontend.yml'
 permissions:
   id-token: none
   contents: write
