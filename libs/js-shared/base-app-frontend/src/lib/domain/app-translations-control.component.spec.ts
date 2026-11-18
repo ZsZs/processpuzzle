@@ -12,7 +12,7 @@ import { AppTranslationService } from './app-translation.service';
 import { AppTranslationsAttrDescriptor, AppTranslationsControlComponent } from './app-translations-control.component';
 
 describe('AppTranslationsControlComponent', () => {
-  const service = { download: vi.fn(), upload: vi.fn() };
+  const service = { download: vi.fn(), upload: vi.fn(), bundle: vi.fn() };
 
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -20,6 +20,7 @@ describe('AppTranslationsControlComponent', () => {
   });
 
   function render(id: string | undefined, version: number | undefined) {
+    if (!service.bundle.getMockImplementation()) service.bundle.mockReturnValue(of({}));
     TestBed.configureTestingModule({
       imports: [AppTranslationsControlComponent],
       providers: [
@@ -119,5 +120,69 @@ describe('AppTranslationsControlComponent', () => {
     choose(element('app-translations-file') as HTMLInputElement, null);
 
     expect(service.upload).not.toHaveBeenCalled();
+  });
+
+  describe('the stored texts', () => {
+    const storedIn = (bundles: Record<string, Record<string, string>>) =>
+      service.bundle.mockImplementation((_appId: string, locale: string) => of(bundles[locale] ?? {}));
+
+    it('reads nothing before the application is saved', () => {
+      render('demo', undefined);
+
+      expect(service.bundle).not.toHaveBeenCalled();
+    });
+
+    it('lists each offered language that holds texts, from the draft, with its count', () => {
+      storedIn({ en: { 'shop.home.title': 'Home', 'shop.home.content': 'Welcome' } });
+      const { element } = render('demo', 3);
+
+      expect(service.bundle).toHaveBeenCalledWith('demo', 'en', 'draft');
+      expect(service.bundle).toHaveBeenCalledWith('demo', 'de', 'draft');
+      expect(element('app-translations-language-en')?.textContent).toContain('en');
+      expect(element('app-translations-language-de')).toBeNull();
+    });
+
+    it('says so when no language holds texts', () => {
+      const { element } = render('demo', 3);
+
+      expect(element('app-translations-none')).not.toBeNull();
+      expect(element('app-translations-languages')).toBeNull();
+    });
+
+    it('shows the keys and texts of a language, sorted by key, on a click and hides them on the next', () => {
+      storedIn({ en: { 'shop.b': 'Second', 'shop.a': 'First' } });
+      const { fixture, element } = render('demo', 3);
+
+      element('app-translations-language-en')?.click();
+      fixture.detectChanges();
+      const cells = Array.from(element('app-translations-texts')?.querySelectorAll('tbody td') ?? []).map((cell) => cell.textContent?.trim());
+      expect(cells).toEqual(['shop.a', 'First', 'shop.b', 'Second']);
+
+      element('app-translations-language-en')?.click();
+      fixture.detectChanges();
+      expect(element('app-translations-texts')).toBeNull();
+    });
+
+    it('leaves out a language whose read fails, rather than failing the list', () => {
+      service.bundle.mockImplementation((_appId: string, locale: string) =>
+        locale === 'de' ? throwError(() => new HttpErrorResponse({ status: 500 })) : of({ 'shop.title': 'Shop' }),
+      );
+      const { element } = render('demo', 3);
+
+      expect(element('app-translations-language-en')).not.toBeNull();
+      expect(element('app-translations-language-de')).toBeNull();
+    });
+
+    it('reads again after an upload, so the new language turns up', () => {
+      const { fixture, element } = render('demo', 3);
+      expect(element('app-translations-none')).not.toBeNull();
+      storedIn({ de: { 'shop.title': 'Laden' } });
+      service.upload.mockReturnValue(of({ languages: [{ locale: 'de', storedKeys: 1 }] }));
+
+      choose(element('app-translations-file') as HTMLInputElement, new File(['{}'], 'de.json'));
+      fixture.detectChanges();
+
+      expect(element('app-translations-language-de')).not.toBeNull();
+    });
   });
 });

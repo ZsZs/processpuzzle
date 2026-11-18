@@ -28,10 +28,13 @@
     "translations": "Traducciones",
     "translations_panel": {
       "hint": "Un archivo por idioma admitido contiene los textos de las páginas propias de la aplicación. Rellene los valores bajo las claves que nombran sus widgets y suba de nuevo el zip (o un solo archivo).",
-      "download": "Descargar archivos",
+      "download": "Descargar todo",
       "upload": "Subir traducciones",
       "save_first": "Guarde primero la aplicación; los textos pertenecen a la aplicación guardada.",
-      "stored": "{{count}} claves guardadas"
+      "stored": "{{count}} claves guardadas",
+      "none_stored": "Todavía no hay textos guardados.",
+      "key": "Clave",
+      "text": "Texto"
     },
     "assets": "Archivos",
     "assets_panel": {

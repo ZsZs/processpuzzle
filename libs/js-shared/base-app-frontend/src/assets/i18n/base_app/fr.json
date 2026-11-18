@@ -28,10 +28,13 @@
     "translations": "Traductions",
     "translations_panel": {
       "hint": "Un fichier par langue prise en charge contient les textes des pages propres à l’application. Renseignez les valeurs sous les clés que nomment vos widgets, puis renvoyez le zip (ou un seul fichier).",
-      "download": "Télécharger les fichiers",
+      "download": "Tout télécharger",
       "upload": "Envoyer les traductions",
       "save_first": "Enregistrez d’abord l’application ; les textes appartiennent à l’application enregistrée.",
-      "stored": "{{count}} clés enregistrées"
+      "stored": "{{count}} clés enregistrées",
+      "none_stored": "Aucun texte n’est encore enregistré.",
+      "key": "Clé",
+      "text": "Texte"
     },
     "assets": "Fichiers",
     "assets_panel": {

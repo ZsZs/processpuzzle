@@ -28,10 +28,13 @@
     "translations": "Übersetzungen",
     "translations_panel": {
       "hint": "Eine Datei je unterstützter Sprache enthält die Texte der eigenen Seiten der Anwendung. Tragen Sie die Werte unter den Schlüsseln ein, die Ihre Widgets nennen, und laden Sie das Zip (oder eine einzelne Datei) wieder hoch.",
-      "download": "Dateien herunterladen",
+      "download": "Alle herunterladen",
       "upload": "Übersetzungen hochladen",
       "save_first": "Speichern Sie zuerst die Anwendung; die Texte gehören zur gespeicherten Anwendung.",
-      "stored": "{{count}} Schlüssel gespeichert"
+      "stored": "{{count}} Schlüssel gespeichert",
+      "none_stored": "Es sind noch keine Texte gespeichert.",
+      "key": "Schlüssel",
+      "text": "Text"
     },
     "assets": "Dateien",
     "assets_panel": {
