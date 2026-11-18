@@ -46,7 +46,8 @@ async function describeRefusal(response: Response): Promise<string> {
     .then((text) => text.replace(/\s+/g, ' ').trim())
     .catch(() => '');
   const excerpt = body.length > BODY_EXCERPT_LENGTH ? `${body.slice(0, BODY_EXCERPT_LENGTH)}…` : body;
-  return `POST ${response.url()} → ${response.status()} ${response.statusText()}${excerpt ? `: ${excerpt}` : ''}`;
+  const detail = excerpt ? `: ${excerpt}` : '';
+  return `POST ${response.url()} → ${response.status()} ${response.statusText()}${detail}`;
 }
 
 /**
