@@ -159,7 +159,7 @@ class DesignAssistantTest {
 
     private static DesignAssistant assistant(ChatModel model, AssistantSessions sessions, AssistantAuditLog audit,
                                              AssistantQuota quota) {
-        return new DesignAssistant(ChatClient.create(model),
+        return new DesignAssistant(organization -> ChatClient.create(model),
             new DefinitionDrafts(List.of(new InMemoryAuthoringParticipant("entity"))), new FixedAccess(),
             new AssistantLimits(5, 3), audit, quota, sessions);
     }

@@ -642,7 +642,9 @@ services:
     restart: unless-stopped
   litellm:
     logging: *default-logging
-    # The LLM gateway behind the AI assistant (docs/ai/implementation-plan.md): one OpenAI-compatible
+    # NOT used by the AI assistant any more: since 2026-11-18 each organization calls its own provider with its own
+    # key (docs/ai/implementation-plan.md). Kept for the gateway smoke tests; remove it when nothing needs it.
+    # Formerly the LLM gateway behind the assistant: one OpenAI-compatible
     # endpoint in front of whichever vendor the model aliases in litellm/config.yaml name. Shared by every
     # stack's backend, like Keycloak and MinIO, because it holds no tenant data; the provider key lives
     # here and nowhere else, so a backend never sees it. Only application stacks that enable the

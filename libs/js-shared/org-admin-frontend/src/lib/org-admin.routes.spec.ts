@@ -13,8 +13,8 @@ import { RoleAssignmentComponent } from './feature/role-assignment.component';
 describe('ORG_ADMIN_ROUTES', () => {
   const userRoute = ORG_ADMIN_ROUTES.find((route) => route.path === 'organization-user');
 
-  it('mounts the users and the roles screens under an overview of the branch root', () => {
-    expect(ORG_ADMIN_ROUTES.map((route) => route.path)).toEqual(['', 'organization-user', 'organization-role']);
+  it('mounts the users, roles and AI subscription screens under an overview of the branch root', () => {
+    expect(ORG_ADMIN_ROUTES.map((route) => route.path)).toEqual(['', 'organization-user', 'organization-role', 'ai-subscription']);
     expect(ORG_ADMIN_ROUTES[0].component).toBe(OrganizationAdministrationComponent);
     expect(ORG_ADMIN_ROUTES[0].pathMatch).toBe('full');
   });

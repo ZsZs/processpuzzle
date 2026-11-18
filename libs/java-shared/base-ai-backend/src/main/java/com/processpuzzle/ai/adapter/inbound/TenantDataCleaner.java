@@ -3,6 +3,7 @@ package com.processpuzzle.ai.adapter.inbound;
 import com.processpuzzle.ai.domain.AssistantSessionRepository;
 import com.processpuzzle.ai.domain.EnrollmentPhotoRepository;
 import com.processpuzzle.ai.domain.MediaUploadRepository;
+import com.processpuzzle.ai.domain.OrganizationAiSubscriptionRepository;
 import com.processpuzzle.ai.domain.RecognitionProfileRepository;
 import com.processpuzzle.ai.domain.RecognitionRepository;
 import com.processpuzzle.ai.domain.VisionJobTicket;
@@ -58,19 +59,21 @@ public class TenantDataCleaner {
     private final VisionJobTicketRepository tickets;
     private final RecognitionProfileRepository profiles;
     private final AssistantSessionRepository assistantSessions;
+    private final OrganizationAiSubscriptionRepository aiSubscriptions;
     private final MediaStores stores;
     private final VisionServer visionServer;
 
     public TenantDataCleaner(RecognitionRepository recognitions, EnrollmentPhotoRepository photos,
                              MediaUploadRepository uploads, VisionJobTicketRepository tickets,
                              RecognitionProfileRepository profiles, AssistantSessionRepository assistantSessions,
-                             MediaStores stores, VisionServer visionServer) {
+                             OrganizationAiSubscriptionRepository aiSubscriptions, MediaStores stores, VisionServer visionServer) {
         this.recognitions = recognitions;
         this.photos = photos;
         this.uploads = uploads;
         this.tickets = tickets;
         this.profiles = profiles;
         this.assistantSessions = assistantSessions;
+        this.aiSubscriptions = aiSubscriptions;
         this.stores = stores;
         this.visionServer = visionServer;
     }
@@ -91,6 +94,7 @@ public class TenantDataCleaner {
         int erasedProfiles = profiles.eraseByOrgKey(orgKey);
         assistantSessions.deleteMessagesOfOrganization(orgKey);
         int erasedSessions = assistantSessions.deleteByOrganization(orgKey);
+        aiSubscriptions.deleteByOrganization(orgKey);
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override

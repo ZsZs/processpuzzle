@@ -10,6 +10,7 @@ import { OrganizationAdministrationComponent } from './feature/organization-admi
 import { ORGANIZATION_ROLE_ENTITY_NAME } from './domain/organization-role.descriptors';
 import { OrganizationRoleContainerComponent } from './feature/organization-role-container.component';
 import { OrganizationRoleFacade } from './feature/organization-role.facade';
+import { AiSubscriptionComponent } from './feature/ai-subscription.component';
 
 /**
  * A tenant's own administration branch, mounted by `processpuzzle-biz-frontend` under `/{orgKey}/admin`.
@@ -47,6 +48,14 @@ export const ORG_ADMIN_ROUTES: Routes = [
     component: OrganizationRoleContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrganizationRoleFacade }, adminScopes()],
     children: baseEntityRoutes([]),
+  },
+  // The organization's own AI model subscription for the design assistant; the backend allows administrators only.
+  {
+    path: 'ai-subscription',
+    title: 'ProcessPuzzle - AI subscription',
+    data: { icon: 'smart_toy' },
+    component: AiSubscriptionComponent,
+    providers: [adminScopes()],
   },
 ];
 

@@ -72,12 +72,12 @@ public class AiProperties {
     @Setter
     public static class Assistant {
         private boolean enabled = false;
-        /** The LiteLLM gateway's OpenAI-compatible root, e.g. {@code http://processpuzzle-litellm:4000/v1}. */
-        private String baseUrl;
-        /** The gateway's master key, sent as the API key; never logged. */
-        private String apiKey;
-        /** The model alias the gateway routes, see tools/docker/litellm/config.yaml. */
-        private String model = "pp-designer";
+        /**
+         * The master key that seals the organizations' API keys: 32 random bytes, Base64 encoded
+         * ({@code openssl rand -base64 32}). Required when the assistant is enabled; changing it makes the stored keys
+         * unreadable, so the organizations have to enter theirs again.
+         */
+        private String secretKey;
         /** Tool calls one conversation turn may make before the assistant is told to stop and report. */
         private int maxToolCalls = 20;
         /** Times one draft may be sent back with issues in one turn before the assistant must report instead. */
