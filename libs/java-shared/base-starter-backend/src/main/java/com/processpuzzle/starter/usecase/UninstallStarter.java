@@ -1,7 +1,9 @@
 package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionRemoval;
+import com.processpuzzle.core.definition.ModuleMountPort;
 import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.domain.DefinitionProvenance;
@@ -15,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -41,15 +44,17 @@ public class UninstallStarter {
     private final ImportParticipants participants;
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedRepository;
+    private final ObjectProvider<ModuleMountPort> mountPort;
     private final TransactionTemplate transactionTemplate;
 
     public UninstallStarter(OrganizationGuard guard, ImportParticipants participants,
                             DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
-                            PlatformTransactionManager transactionManager) {
+                            ObjectProvider<ModuleMountPort> mountPort, PlatformTransactionManager transactionManager) {
         this.guard = guard;
         this.participants = participants;
         this.provenanceRepository = provenanceRepository;
         this.installedRepository = installedRepository;
+        this.mountPort = mountPort;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -82,13 +87,14 @@ public class UninstallStarter {
                 status.setRollbackOnly();
                 return ImportReport.rejected(dryRun, starterId, version, kept);
             }
+            List<String> warnings = unmount(orgKey, owned, items);
             if (dryRun) {
                 status.setRollbackOnly();
-                return new ImportReport(true, ImportReport.Status.WOULD_APPLY, starterId, version, items, List.of());
+                return new ImportReport(true, ImportReport.Status.WOULD_APPLY, starterId, version, items, List.of(), warnings);
             }
             provenanceRepository.deleteByOrgKeyAndStarterId(orgKey, starterId);
             installedRepository.delete(installed);
-            return new ImportReport(false, ImportReport.Status.APPLIED, starterId, version, items, List.of());
+            return new ImportReport(false, ImportReport.Status.APPLIED, starterId, version, items, List.of(), warnings);
         });
         if (report.status() == ImportReport.Status.REJECTED) {
             throw new ImportRejectedException(report, ImportRejectedException.Reason.CONFLICT);
@@ -143,6 +149,20 @@ public class UninstallStarter {
                     "The " + participant.kind() + " '" + key + "' stays: " + reason)));
         }
         return kept;
+    }
+
+    /** Takes the starter's modules out of the application's mounts and sidenav, as the install put them in. */
+    private List<String> unmount(String orgKey, Map<String, Set<String>> owned, List<ImportReport.Item> items) {
+        Set<String> modules = owned.getOrDefault(DefinitionKinds.MODULE, Set.of());
+        ModuleMountPort port = mountPort.getIfAvailable();
+        if (modules.isEmpty() || port == null) {
+            return List.of();
+        }
+        ModuleMountPort.MountOutcome outcome = port.unmount(orgKey, modules);
+        outcome.done().forEach(key -> items.add(new ImportReport.Item(ImportReport.MOUNT, key, ImportReport.Action.DELETE)));
+        return !outcome.done().isEmpty() && !outcome.released()
+                ? List.of("The mounts are removed from the draft of the application; release it to remove them from the live one.")
+                : List.of();
     }
 
     private static ImportRejectedException rejected(boolean dryRun, String starterId, String version,

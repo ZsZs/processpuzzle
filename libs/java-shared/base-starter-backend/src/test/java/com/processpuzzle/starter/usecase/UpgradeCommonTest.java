@@ -105,7 +105,7 @@ class UpgradeCommonTest {
         publish("2.0.0", "item\nbarn\n");
         CommonRules commonRules = new CommonRules(dataSpaceRepository, installedRepository, new RegisterDataSpace(dataSpaceRepository));
         ImportBundle importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
-                provenanceRepository, installedRepository, commonRules, new KeyPrefixRules(participants), transactionManager, provider(null));
+                provenanceRepository, installedRepository, commonRules, new KeyPrefixRules(participants), new org.springframework.beans.factory.support.StaticListableBeanFactory().getBeanProvider(com.processpuzzle.core.definition.ModuleMountPort.class), transactionManager, provider(null));
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         UpgradeStarter upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
                 new UpgradePlanner(participants, provenanceRepository), commonRules, new KeyPrefixRules(participants), provenanceRepository,

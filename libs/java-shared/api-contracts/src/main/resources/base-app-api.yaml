@@ -1639,6 +1639,35 @@ components:
             same basePath, or a basePath colliding with an app-level route, is an error.
           pattern: '^[a-z0-9][a-z0-9\-/]*$'
           example: claims
+        launcher:
+          $ref: "#/components/schemas/ModuleLauncher"
+
+    ModuleLauncher:
+      type: object
+      description: >-
+        The card the application's `module-launcher` widget draws for a mounted module. Set from a domain starter's
+        mount hint; the application owner may change or clear it. Texts are keys of the module's own translations,
+        relative to its transloco scope.
+      required: [ titleKey ]
+      properties:
+        image:
+          type: string
+          description: An asset of the module, `module:<path>`.
+          example: 'module:launcher.svg'
+        titleKey:
+          type: string
+          example: launcher.title
+        subtitleKey:
+          type: string
+        contentKeys:
+          type: array
+          description: The first entry is a paragraph, the rest a bulleted list.
+          items:
+            type: string
+        link:
+          type: string
+          description: The module route the card opens, relative to the mount; the module's first route when absent.
+          example: overview
 
     NavItem:
       type: object

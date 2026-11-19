@@ -6,9 +6,13 @@ import java.util.List;
  * What an import did, or would do, or why it was refused.
  *
  * @param starterId null when the bundle was refused before its manifest could be read
+ * @param warnings  what was not done for want of a place, such as a module installed but not mounted; never a refusal
  */
 public record ImportReport(boolean dryRun, Status status, String starterId, String version,
-                           List<Item> items, List<Error> errors) {
+                           List<Item> items, List<Error> errors, List<String> warnings) {
+
+    /** The kind of an item that is a module mounted into, or taken out of, the application — not a definition. */
+    public static final String MOUNT = "mount";
 
     public enum Status {
         APPLIED, WOULD_APPLY, REJECTED
@@ -33,6 +37,11 @@ public record ImportReport(boolean dryRun, Status status, String starterId, Stri
     public ImportReport {
         items = items == null ? List.of() : List.copyOf(items);
         errors = errors == null ? List.of() : List.copyOf(errors);
+        warnings = warnings == null ? List.of() : List.copyOf(warnings);
+    }
+
+    public ImportReport(boolean dryRun, Status status, String starterId, String version, List<Item> items, List<Error> errors) {
+        this(dryRun, status, starterId, version, items, errors, List.of());
     }
 
     public static ImportReport rejected(boolean dryRun, String starterId, String version, List<Error> errors) {

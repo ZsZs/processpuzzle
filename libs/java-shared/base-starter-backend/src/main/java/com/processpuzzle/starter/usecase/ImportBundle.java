@@ -4,6 +4,7 @@ import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.InstanceDataProbe;
+import com.processpuzzle.core.definition.ModuleMountPort;
 import com.processpuzzle.core.definition.ParticipantResult;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
@@ -63,6 +64,7 @@ public class ImportBundle {
     private final InstalledStarterRepository installedStarterRepository;
     private final CommonRules commonRules;
     private final KeyPrefixRules keyPrefixRules;
+    private final ObjectProvider<ModuleMountPort> mountPort;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -73,6 +75,7 @@ public class ImportBundle {
                         InstalledStarterRepository installedStarterRepository,
                         CommonRules commonRules,
                         KeyPrefixRules keyPrefixRules,
+                        ObjectProvider<ModuleMountPort> mountPort,
                         PlatformTransactionManager transactionManager,
                         ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -82,6 +85,7 @@ public class ImportBundle {
         this.installedStarterRepository = installedStarterRepository;
         this.commonRules = commonRules;
         this.keyPrefixRules = keyPrefixRules;
+        this.mountPort = mountPort;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -183,14 +187,47 @@ public class ImportBundle {
             }
         }
         removed.forEach((kind, keys) -> keys.forEach(key -> items.add(new ImportReport.Item(kind, key, ImportReport.Action.DELETE))));
+        List<String> warnings = additive ? mount(orgKey, manifest, items) : List.of();
 
         if (dryRun) {
             status.setRollbackOnly();
-            return new ImportReport(true, ImportReport.Status.WOULD_APPLY, manifest.id(), manifest.version(), items, List.of());
+            return new ImportReport(true, ImportReport.Status.WOULD_APPLY, manifest.id(), manifest.version(), items, List.of(), warnings);
         }
         recordProvenance(orgKey, manifest, items, additive, importedBy);
         commonRules.commonInstalled(manifest);
-        return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of());
+        return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of(), warnings);
+    }
+
+    /**
+     * Mounts the modules the manifest's {@code mounts} name into the organization's application, through the port
+     * {@code base-app} provides. Never a refusal: the modules are installed either way, so what could not be mounted, and
+     * what is left for the application's owner to release, comes back as warnings.
+     */
+    private List<String> mount(String orgKey, StarterManifest manifest, List<ImportReport.Item> items) {
+        if (manifest.mounts().isEmpty()) {
+            return List.of();
+        }
+        ModuleMountPort port = mountPort.getIfAvailable();
+        if (port == null) {
+            return List.of("The starter's modules are installed but not mounted: this application cannot mount modules.");
+        }
+        List<ModuleMountPort.MountHint> hints = manifest.mounts().stream().map(ImportBundle::hintOf).toList();
+        ModuleMountPort.MountOutcome outcome = port.mount(orgKey, hints);
+        outcome.done().forEach(key -> items.add(new ImportReport.Item(ImportReport.MOUNT, key, ImportReport.Action.CREATE)));
+        List<String> warnings = new ArrayList<>();
+        outcome.skipped().forEach((key, reason) ->
+                warnings.add("The module '" + key + "' is installed but not mounted: " + reason + "."));
+        if (!outcome.done().isEmpty() && !outcome.released()) {
+            warnings.add("The mounts are drafts of the application; release it to show them.");
+        }
+        return warnings;
+    }
+
+    private static ModuleMountPort.MountHint hintOf(StarterManifest.Mount mount) {
+        ModuleMountPort.Nav nav = mount.nav() == null ? null : new ModuleMountPort.Nav(mount.nav().icon(), mount.nav().labelKey());
+        StarterManifest.Launcher launcher = mount.launcher();
+        return new ModuleMountPort.MountHint(mount.moduleKey(), mount.basePath(), nav, launcher == null ? null
+                : new ModuleMountPort.Launcher(launcher.image(), launcher.titleKey(), launcher.subtitleKey(), launcher.contentKeys(), launcher.link()));
     }
 
     /** Every participant's definitions, dependents first; by kind, the keys that were removed. */
@@ -311,7 +348,7 @@ public class ImportBundle {
 
         Instant now = clock.instant();
         Map<String, Set<String>> keysByKind = items.stream()
-                .filter(item -> item.action() != ImportReport.Action.DELETE)
+                .filter(item -> item.action() != ImportReport.Action.DELETE && !ImportReport.MOUNT.equals(item.kind()))
                 .collect(Collectors.groupingBy(
                         ImportReport.Item::kind, LinkedHashMap::new,
                         Collectors.mapping(ImportReport.Item::key, Collectors.toCollection(LinkedHashSet::new))));

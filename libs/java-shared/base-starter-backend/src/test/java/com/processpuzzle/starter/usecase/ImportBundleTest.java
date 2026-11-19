@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.InstanceDataProbe;
+import com.processpuzzle.core.definition.ModuleMountPort;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
@@ -68,6 +69,8 @@ class ImportBundleTest {
     private OrganizationAccessPolicy policy;
     private FakeParticipant entities;
     private FakeParticipant rules;
+    private FakeParticipant modules;
+    private final RecordingMountPort mountPort = new RecordingMountPort();
     private long entityObjects;
     private final Map<String, Long> objectsByType = new java.util.HashMap<>();
     private ImportBundle importBundle;
@@ -83,6 +86,8 @@ class ImportBundleTest {
         OrganizationGuard guard = new OrganizationGuard(provider(policy));
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         rules = new FakeParticipant(DefinitionKinds.RULE, DefinitionKinds.RULE_ORDER, calls);
+        modules = new FakeParticipant(DefinitionKinds.MODULE, DefinitionKinds.MODULE_ORDER, calls);
+        mountPort.reset();
         entityObjects = 0;
         objectsByType.clear();
         InstanceDataProbe objects = new InstanceDataProbe() {
@@ -110,15 +115,17 @@ class ImportBundleTest {
         StaticListableBeanFactory factory = new StaticListableBeanFactory();
         factory.addBean("rules", rules);
         factory.addBean("entities", entities);
+        factory.addBean("modules", modules);
         factory.addBean("objects", objects);
         ImportParticipants participants = new ImportParticipants(factory.getBeanProvider(DefinitionImportParticipant.class),
                 factory.getBeanProvider(InstanceDataProbe.class));
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
-                provenanceRepository, installedStarterRepository, commonRules(), new KeyPrefixRules(participants), transactionManager, provider(null));
+                provenanceRepository, installedStarterRepository, commonRules(), new KeyPrefixRules(participants), provider(mountPort), transactionManager, provider(null));
         listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants, offeredRepository);
-        uninstallStarter = new UninstallStarter(guard, participants, provenanceRepository, installedStarterRepository, transactionManager);
+        uninstallStarter = new UninstallStarter(guard, participants, provenanceRepository, installedStarterRepository, provider(mountPort), transactionManager);
         entities.upgradeable = true;
         rules.upgradeable = true;
+        modules.upgradeable = true;
     }
 
     @Test
@@ -128,7 +135,7 @@ class ImportBundleTest {
         assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
         assertThat(report.created()).isEqualTo(3);
         assertThat(calls).containsExactly(
-                "rule:removeAll", "entity:removeAll", "entity:entities/item.yaml", "rule:rules/item-rules.yaml");
+                "module:removeAll", "rule:removeAll", "entity:removeAll", "entity:entities/item.yaml", "rule:rules/item-rules.yaml");
         assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key)
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("entity", "item"),
@@ -317,7 +324,7 @@ class ImportBundleTest {
         small.getBundle().setMaxFileBytes(4);
         ImportBundle strict = new ImportBundle(new OrganizationGuard(provider(policy)), new BundleReader(small),
                 ImportParticipants.of(List.of(entities)), provenanceRepository, installedStarterRepository,
-                commonRules(), new KeyPrefixRules(ImportParticipants.of(List.of(entities))), transactionManager, provider(null));
+                commonRules(), new KeyPrefixRules(ImportParticipants.of(List.of(entities))), provider(null), transactionManager, provider(null));
 
         assertThatThrownBy(() -> strict.execute("acme", bundle("item\n", ""), false, null))
                 .isInstanceOfSatisfying(ImportRejectedException.class,
@@ -700,6 +707,119 @@ class ImportBundleTest {
 
         assertThatThrownBy(() -> uninstallStarter.execute("acme", "inventory", false)).isInstanceOf(OrganizationAccessDeniedException.class);
         assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isPresent();
+    }
+
+    // --- Mounting the modules into the application ---------------------------------------------------------------
+
+    private static final String MOUNT = "mounts:\n  - moduleKey: inv-stock\n    basePath: stock\n"
+            + "    nav: { icon: inventory, labelKey: nav.title }\n    launcher: { titleKey: launcher.title, link: overview }\n";
+
+    private static ByteArrayInputStream mountingStarter(String mounts) {
+        String manifest = DOMAIN_MANIFEST.replace("  rules:", "  modules:\n    - modules/m.yaml\n  rules:") + mounts;
+        return zip(Map.of("manifest.yaml", manifest, "entities/item.yaml", "inv-item\n", "rules/item-rules.yaml", "inv-positive\n",
+                "modules/m.yaml", "inv-stock\n"));
+    }
+
+    @Test
+    void theManifestsMountsReachThePortAsHintsAndTheReportCountsThemAsMounts() {
+        mountPort.next = new ModuleMountPort.MountOutcome(List.of("inv-stock"), Map.of(), true);
+
+        ImportReport report = importBundle.execute("acme", mountingStarter(MOUNT), false, null);
+
+        assertThat(mountPort.mountCalls).singleElement().satisfies(hints -> assertThat(hints).singleElement().satisfies(hint -> {
+            assertThat(hint.moduleKey()).isEqualTo("inv-stock");
+            assertThat(hint.basePath()).isEqualTo("stock");
+            assertThat(hint.nav()).isEqualTo(new ModuleMountPort.Nav("inventory", "nav.title"));
+            assertThat(hint.launcher().titleKey()).isEqualTo("launcher.title");
+            assertThat(hint.launcher().link()).isEqualTo("overview");
+        }));
+        assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key, ImportReport.Item::action)
+                .contains(org.assertj.core.groups.Tuple.tuple("mount", "inv-stock", ImportReport.Action.CREATE));
+        assertThat(report.warnings()).isEmpty();
+        // a mount is not a definition: no provenance row, so an upgrade or uninstall never mistakes it for one
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "inventory")).extracting(DefinitionProvenance::getKind)
+                .doesNotContain("mount");
+    }
+
+    @Test
+    void whatCouldNotBeMountedAndWhatIsLeftToReleaseAreWarningsNotRefusals() {
+        mountPort.next = new ModuleMountPort.MountOutcome(List.of(), Map.of("inv-stock", "the path 'stock' is taken"), false);
+
+        ImportReport skipped = importBundle.execute("acme", mountingStarter(MOUNT), false, null);
+
+        assertThat(skipped.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(skipped.warnings()).containsExactly("The module 'inv-stock' is installed but not mounted: the path 'stock' is taken.");
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isPresent();
+    }
+
+    @Test
+    void mountsLeftAsDraftsAreSaidSo() {
+        mountPort.next = new ModuleMountPort.MountOutcome(List.of("inv-stock"), Map.of(), false);
+
+        ImportReport report = importBundle.execute("acme", mountingStarter(MOUNT), false, null);
+
+        assertThat(report.warnings()).containsExactly("The mounts are drafts of the application; release it to show them.");
+    }
+
+    @Test
+    void aDryRunAsksThePortToo_itsWritesRollBackWithTheInstall() {
+        mountPort.next = new ModuleMountPort.MountOutcome(List.of("inv-stock"), Map.of(), true);
+
+        ImportReport report = importBundle.execute("acme", mountingStarter(MOUNT), true, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.WOULD_APPLY);
+        assertThat(mountPort.mountCalls).hasSize(1);
+        assertThat(report.items()).extracting(ImportReport.Item::kind).contains("mount");
+    }
+
+    @Test
+    void theManifestsWithoutMountsAndReplacingStartersNeverCallThePort() {
+        importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null);
+        importBundle.execute("other", bundle("item\n", "positive\n"), false, null);
+
+        assertThat(mountPort.mountCalls).isEmpty();
+    }
+
+    @Test
+    void anUninstallTakesTheStartersModulesOutOfTheApplication() {
+        mountPort.next = new ModuleMountPort.MountOutcome(List.of("inv-stock"), Map.of(), true);
+        importBundle.execute("acme", mountingStarter(MOUNT), false, null);
+        mountPort.next = new ModuleMountPort.MountOutcome(List.of("inv-stock"), Map.of(), false);
+
+        ImportReport report = uninstallStarter.execute("acme", "inventory", false);
+
+        assertThat(mountPort.unmountCalls).singleElement().satisfies(keys -> assertThat(keys).containsExactly("inv-stock"));
+        assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key, ImportReport.Item::action)
+                .contains(org.assertj.core.groups.Tuple.tuple("mount", "inv-stock", ImportReport.Action.DELETE),
+                        org.assertj.core.groups.Tuple.tuple("module", "inv-stock", ImportReport.Action.DELETE));
+        assertThat(report.warnings()).containsExactly(
+                "The mounts are removed from the draft of the application; release it to remove them from the live one.");
+    }
+
+    /** Records what the starter asks of base-app, and answers {@link #next}. */
+    private static final class RecordingMountPort implements ModuleMountPort {
+
+        final List<List<MountHint>> mountCalls = new ArrayList<>();
+        final List<java.util.Collection<String>> unmountCalls = new ArrayList<>();
+        MountOutcome next = MountOutcome.nothing();
+
+        void reset() {
+            mountCalls.clear();
+            unmountCalls.clear();
+            next = MountOutcome.nothing();
+        }
+
+        @Override
+        public MountOutcome mount(String orgKey, List<MountHint> hints) {
+            mountCalls.add(hints);
+            return next;
+        }
+
+        @Override
+        public MountOutcome unmount(String orgKey, java.util.Collection<String> moduleKeys) {
+            unmountCalls.add(List.copyOf(moduleKeys));
+            return next;
+        }
     }
 
     private ByteArrayInputStream bundle(String entityFile, String ruleFile) {

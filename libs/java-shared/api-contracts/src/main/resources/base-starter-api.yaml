@@ -309,7 +309,7 @@ components:
     DefinitionKind:
       type: string
       description: The kinds the importer knows; a bundle naming any other is rejected.
-      enum: [ entity, state, rule, calculation, widget, chat, document, event, artifact, role, tool, task, workflow, module, app, translation, asset ]
+      enum: [ entity, state, rule, calculation, widget, chat, document, event, artifact, role, tool, task, workflow, module, app, translation, asset, mount ]
 
     ImportReport:
       type: object
@@ -334,6 +334,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ImportError"
+        warnings:
+          type: array
+          description: >-
+            What the install did not do for want of a place: a module installed but not mounted into the application, and
+            why; or that the mounts are drafts of the application, left for its owner to release.
+          items:
+            type: string
 
     ImportSummary:
       type: object
