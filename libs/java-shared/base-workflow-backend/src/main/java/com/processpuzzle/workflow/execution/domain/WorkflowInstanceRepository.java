@@ -19,6 +19,9 @@ public interface WorkflowInstanceRepository
 
     long countByOrgKey(String orgKey);
 
+    /** Finished instances count: each still names the definition it ran. */
+    long countByOrgKeyAndWorkflowIdIn(String orgKey, Collection<String> workflowIds);
+
     /**
      * The instance, row-locked until the transaction ends. Taken before deciding whether to close
      * the instance, so that two transactions finishing its last two nodes decide one after the
