@@ -67,7 +67,6 @@ describe('widget contract', () => {
   it.each(cases)('%s: the seeded definition is a copy of its registration', (type, registration) => {
     const seededDefinition = seededDefinitions().find((definition) => definition.key === type);
     const seeded = seededDefinition ? { ...seededDefinition, key: undefined } : {};
-    // @ts-expect-error -- key is intentionally excluded for comparison
     delete (seeded as { key?: string }).key;
 
     // Through JSON, so an optional field the registration leaves undefined compares equal to one the YAML omits.

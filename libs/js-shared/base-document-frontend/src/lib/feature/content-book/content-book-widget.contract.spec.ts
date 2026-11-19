@@ -35,7 +35,6 @@ describe('content-book widget contract', () => {
     const catalogue = parse(readFileSync(resolve(process.cwd(), SEED_CATALOGUE), 'utf-8')) as { widgetDefinitions: Array<{ key: string }> };
     const seededDefinition = catalogue.widgetDefinitions.find((definition) => definition.key === CONTENT_BOOK_WIDGET);
     const seeded = seededDefinition ? { ...seededDefinition, key: undefined } : {};
-    // @ts-expect-error -- key is intentionally excluded for comparison
     delete (seeded as { key?: string }).key;
 
     expect(seeded).toEqual(JSON.parse(JSON.stringify(registration.definition)));
