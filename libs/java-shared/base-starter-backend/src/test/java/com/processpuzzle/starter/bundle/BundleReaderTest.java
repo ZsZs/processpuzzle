@@ -334,8 +334,8 @@ class BundleReaderTest {
 
     @Test
     void aManifestVersionFromTheFutureIsRefused() {
-        assertInvalid(() -> read(v2("manifestVersion: 3\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n" + V2_CONTENTS)),
-                "Unsupported manifestVersion 3");
+        assertInvalid(() -> read(v2("manifestVersion: 4\nid: inventory\nname: Inventory\nversion: 1.0.0\ndefinitionSchemaVersion: 1\n" + V2_CONTENTS)),
+                "Unsupported manifestVersion 4");
     }
 
     private static final String MIGRATION = "migration:\n  from: 1.0.0\n  to: 1.1.0\n  steps:\n    - kind: entity\n      key: item\n      operation: fillAttribute\n      subject: status\n";
@@ -368,6 +368,74 @@ class BundleReaderTest {
         files.put("migrations/1.0.0-to-1.1.0.yaml", MIGRATION);
 
         assertInvalid(() -> read(files), "is not listed");
+    }
+
+    private static final String V3_HEAD = "manifestVersion: 3\nid: inventory\nname: Inventory\nversion: 1.0.0\n"
+            + "definitionSchemaVersion: 1\nkeyPrefix: inv\n";
+    private static final String MOUNT = "mounts:\n  - moduleKey: inv-stock\n    basePath: stock\n"
+            + "    nav: { icon: inventory, labelKey: nav.title }\n"
+            + "    launcher: { image: 'module:launcher.svg', titleKey: launcher.title, contentKeys: [launcher.content], link: overview }\n";
+
+    @Test
+    void readsADomainStarterWithItsKeyPrefixAndMounts() {
+        StarterManifest manifest = read(v2(V3_HEAD + V2_CONTENTS + MOUNT)).manifest();
+
+        assertThat(manifest.isDomainStarter()).isTrue();
+        assertThat(manifest.keyPrefix()).isEqualTo("inv");
+        assertThat(manifest.mounts()).singleElement().satisfies(mount -> {
+            assertThat(mount.moduleKey()).isEqualTo("inv-stock");
+            assertThat(mount.basePath()).isEqualTo("stock");
+            assertThat(mount.nav()).isEqualTo(new StarterManifest.Nav("inventory", "nav.title"));
+            assertThat(mount.launcher().image()).isEqualTo("module:launcher.svg");
+            assertThat(mount.launcher().contentKeys()).containsExactly("launcher.content");
+        });
+    }
+
+    @Test
+    void aDomainStarterNeedsAWellFormedKeyPrefix() {
+        assertInvalid(() -> read(v2(V3_HEAD.replace("keyPrefix: inv\n", "") + V2_CONTENTS)), "needs a 'keyPrefix'");
+        assertInvalid(() -> read(v2(V3_HEAD.replace("keyPrefix: inv", "keyPrefix: in-v") + V2_CONTENTS)), "needs a 'keyPrefix'");
+        assertInvalid(() -> read(v2(V3_HEAD.replace("keyPrefix: inv", "keyPrefix: Inv") + V2_CONTENTS)), "needs a 'keyPrefix'");
+    }
+
+    @Test
+    void aDomainStarterCarriesNoApplication() {
+        Map<String, String> withApp = v2(V3_HEAD + V2_CONTENTS + "  apps:\n    - apps/app.yaml\n");
+        withApp.put("apps/app.yaml", "appDefinitions: []\n");
+        assertInvalid(() -> read(withApp), "carries no application ('apps')");
+
+        Map<String, String> appText = v2(V3_HEAD + V2_CONTENTS + "  translations:\n    - translations/apps/app/en.json\n");
+        appText.put("translations/apps/app/en.json", "{}");
+        assertInvalid(() -> read(appText), "belongs to an application");
+    }
+
+    @Test
+    void aDomainStarterRefusesMalformedMounts() {
+        assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("basePath: stock", "basePath: Stock"))), "needs a 'basePath'");
+        assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT + MOUNT.substring("mounts:\n".length()))), "'inv-stock' is named twice");
+        assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("'module:launcher.svg'", "'app:launcher.svg'"))),
+                "a launcher image is an asset of the module");
+        assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("labelKey: nav.title", "label: Stock"))),
+                "unknown field 'mounts[0].nav.label'");
+        assertInvalid(() -> read(v2(V3_HEAD.replace("id: inventory", "id: inventory-common\nkind: common") + V2_CONTENTS + MOUNT)),
+                "has no 'mounts'");
+    }
+
+    @Test
+    void aMountBasePathIsLowerCaseSegmentsOfWords() {
+        for (String good : new String[] {"stock", "plan-race", "plan-race/overview", "a1/b2-c3"}) {
+            read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("basePath: stock", "basePath: " + good)));
+        }
+        for (String bad : new String[] {"-stock", "stock-", "/stock", "stock/", "plan--race", "plan//race", "plan-/race", "plan/-race", "Stock", "plan_race"}) {
+            assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("basePath: stock", "basePath: '" + bad + "'"))), "needs a 'basePath'");
+        }
+    }
+
+    @Test
+    void keyPrefixAndMountsNeedManifestVersion3() {
+        assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\nkeyPrefix: inv\n" + V2_CONTENTS)), "unknown field 'keyPrefix'");
+        assertInvalid(() -> read(v2(V3_HEAD.replace("manifestVersion: 3", "manifestVersion: 1") + V2_CONTENTS)),
+                "need manifestVersion 3");
     }
 
     private StarterBundle read(Map<String, String> files) {

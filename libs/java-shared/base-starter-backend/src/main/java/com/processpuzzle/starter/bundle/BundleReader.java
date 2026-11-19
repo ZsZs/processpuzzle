@@ -37,13 +37,31 @@ public class BundleReader {
 
     public static final String MANIFEST = "manifest.yaml";
     public static final Set<Integer> SUPPORTED_SCHEMA_VERSIONS = Set.of(1);
-    public static final Set<Integer> SUPPORTED_MANIFEST_VERSIONS = Set.of(1, 2);
+    public static final Set<Integer> SUPPORTED_MANIFEST_VERSIONS = Set.of(1, 2, 3);
 
     /** What a {@code manifestVersion: 2} manifest may say at its top level; anything else is a misspelling. */
     private static final Set<String> V2_FIELDS = Set.of("manifestVersion", "kind", "id", "name", "version", "description",
             "category", "tags", "author", "license", "icon", "definitionSchemaVersion", "platform", "locales", "common",
             "contents", "migration", "migrations", "integrity");
+    /** Version 3 adds the domain-starter fields (business-starters design, decision 11). */
+    private static final Set<String> V3_FIELDS = union(V2_FIELDS, Set.of("keyPrefix", "mounts"));
     private static final Set<String> COMMON_FIELDS = Set.of("id", "minVersion");
+    private static final String LAUNCHER = "launcher";
+    private static final Set<String> MOUNT_FIELDS = Set.of("moduleKey", "basePath", "nav", LAUNCHER);
+    private static final Set<String> NAV_FIELDS = Set.of("icon", "labelKey");
+    private static final Set<String> LAUNCHER_FIELDS = Set.of("image", "titleKey", "subtitleKey", "contentKeys", "link");
+    /** Short, lower case, no dash: the dash is what separates it from the rest of a key. */
+    private static final Pattern KEY_PREFIX = Pattern.compile("[a-z][a-z0-9]{1,15}");
+    /**
+     * A base path is lower-case segments joined by '/', each made of words joined by '-', such as plan-race/overview. Checked
+     * as a character set, no two separators in a row and none at either end, rather than as a nested repetition, which
+     * the regex engine matches recursively.
+     */
+    private static final Pattern BASE_PATH_CHARACTERS = Pattern.compile("[a-z0-9/-]+");
+    private static final Pattern ADJACENT_SEPARATORS = Pattern.compile("[/-]{2}");
+    private static final String MODULE_ASSET = "module:";
+    /** The owner kind of an application's translations and assets: {@code <group>/apps/<app id>/<path>}. */
+    private static final String APP_OWNED = "apps";
     private static final Pattern SEMVER = Pattern.compile("\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?");
 
     private static final Pattern SAFE_PATH =
@@ -141,12 +159,27 @@ public class BundleReader {
 
     /** Version 1 ignored unknown fields; from version 2 a misspelt block fails the bundle instead of being dropped. */
     private void requireKnownFieldsFromVersion2(JsonNode tree) {
-        if (tree.path("manifestVersion").asInt(1) < 2) {
+        int version = tree.path("manifestVersion").asInt(1);
+        if (version < 2) {
             return;
         }
-        unknownField(tree, V2_FIELDS, "");
+        unknownField(tree, version >= 3 ? V3_FIELDS : V2_FIELDS, "");
         if (tree.path("common").isObject()) {
             unknownField(tree.get("common"), COMMON_FIELDS, "common.");
+        }
+        JsonNode mounts = tree.path("mounts");
+        for (int index = 0; index < mounts.size(); index++) {
+            requireKnownMountFields(mounts.get(index), "mounts[" + index + "].");
+        }
+    }
+
+    private void requireKnownMountFields(JsonNode mount, String prefix) {
+        unknownField(mount, MOUNT_FIELDS, prefix);
+        if (mount.path("nav").isObject()) {
+            unknownField(mount.get("nav"), NAV_FIELDS, prefix + "nav.");
+        }
+        if (mount.path(LAUNCHER).isObject()) {
+            unknownField(mount.get(LAUNCHER), LAUNCHER_FIELDS, prefix + LAUNCHER + ".");
         }
     }
 
@@ -154,7 +187,7 @@ public class BundleReader {
         for (String name : (Iterable<String>) node::fieldNames) {
             if (!allowed.contains(name)) {
                 throw BundleRejectedException.invalid(MANIFEST, MANIFEST + " has an unknown field '" + prefix + name
-                        + "' (a manifestVersion 2 manifest accepts only: " + String.join(", ", new java.util.TreeSet<>(allowed)) + ").");
+                        + "' (accepted here: " + String.join(", ", new java.util.TreeSet<>(allowed)) + ").");
             }
         }
     }
@@ -168,6 +201,7 @@ public class BundleReader {
                     + "; supported: " + SUPPORTED_MANIFEST_VERSIONS + ".");
         }
         validateKind(manifest);
+        validateDomainStarter(manifest);
         if (manifest.definitionSchemaVersion() == null
                 || !SUPPORTED_SCHEMA_VERSIONS.contains(manifest.definitionSchemaVersion())) {
             throw BundleRejectedException.invalid(MANIFEST, "Unsupported definitionSchemaVersion "
@@ -183,6 +217,9 @@ public class BundleReader {
         if (!v2) {
             if (manifest.kind() != null || manifest.common() != null || !manifest.migrations().isEmpty()) {
                 throw BundleRejectedException.invalid(MANIFEST, "'kind', 'common' and 'migrations' need manifestVersion 2.");
+            }
+            if (manifest.keyPrefix() != null || !manifest.mounts().isEmpty()) {
+                throw BundleRejectedException.invalid(MANIFEST, "'keyPrefix' and 'mounts' need manifestVersion 3.");
             }
             return;
         }
@@ -212,6 +249,67 @@ public class BundleReader {
         }
         if (common.minVersion() == null || !SEMVER.matcher(common.minVersion()).matches()) {
             throw BundleRejectedException.invalid(MANIFEST, "'common.minVersion' must be a version such as 1.0.0.");
+        }
+    }
+
+    /**
+     * A version 3 manifest is a domain starter: it declares its key prefix, carries no application — neither an
+     * {@code apps} group nor translations or assets an application owns — and its mount hints are well formed.
+     * Whether the keys really start with the prefix, and the mounts name the bundle's modules, is checked by the
+     * import, which asks each feature for its keys ({@code KeyPrefixRules}).
+     */
+    private void validateDomainStarter(StarterManifest manifest) {
+        if (!manifest.isDomainStarter()) {
+            return;
+        }
+        if (manifest.keyPrefix() == null || !KEY_PREFIX.matcher(manifest.keyPrefix()).matches()) {
+            throw BundleRejectedException.invalid(MANIFEST, "A manifestVersion 3 manifest needs a 'keyPrefix' of 2 to 16 "
+                    + "lower-case letters and digits, starting with a letter.");
+        }
+        if (manifest.contents().containsKey("apps")) {
+            throw BundleRejectedException.invalid(MANIFEST, "A manifestVersion 3 starter carries no application ('apps'); "
+                    + "its modules are mounted into the customer's application from 'mounts'.");
+        }
+        for (String group : List.of("translations", "assets")) {
+            for (String path : manifest.contents().getOrDefault(group, List.of())) {
+                String[] segments = path.split("/");
+                if (segments.length > 1 && APP_OWNED.equals(segments[1])) {
+                    throw BundleRejectedException.invalid(path, "'" + path + "' belongs to an application, which a "
+                            + "manifestVersion 3 starter does not carry; give it to a module.");
+                }
+            }
+        }
+        if (manifest.isCommon() && !manifest.mounts().isEmpty()) {
+            throw BundleRejectedException.invalid(MANIFEST, "A common is mounted nowhere, so it has no 'mounts'.");
+        }
+        Set<String> modules = new LinkedHashSet<>();
+        Set<String> paths = new LinkedHashSet<>();
+        manifest.mounts().forEach(mount -> validateMount(mount, modules, paths));
+    }
+
+    private void validateMount(StarterManifest.Mount mount, Set<String> modules, Set<String> paths) {
+        if (isBlank(mount.moduleKey()) || !modules.add(mount.moduleKey())) {
+            throw BundleRejectedException.invalid(MANIFEST, "Every mount names a module, each module once"
+                    + (isBlank(mount.moduleKey()) ? "." : "; '" + mount.moduleKey() + "' is named twice."));
+        }
+        String where = "The mount of '" + mount.moduleKey() + "'";
+        if (!isBasePath(mount.basePath()) || !paths.add(mount.basePath())) {
+            throw BundleRejectedException.invalid(MANIFEST, where + " needs a 'basePath' of its own, of lower-case "
+                    + "segments such as plan-race.");
+        }
+        if (mount.nav() != null && isBlank(mount.nav().labelKey())) {
+            throw BundleRejectedException.invalid(MANIFEST, where + " has a nav item without a 'labelKey'.");
+        }
+        StarterManifest.Launcher launcher = mount.launcher();
+        if (launcher == null) {
+            return;
+        }
+        if (isBlank(launcher.titleKey())) {
+            throw BundleRejectedException.invalid(MANIFEST, where + " has a launcher without a 'titleKey'.");
+        }
+        if (launcher.image() != null && !launcher.image().startsWith(MODULE_ASSET)) {
+            throw BundleRejectedException.invalid(MANIFEST, where + ": a launcher image is an asset of the module, '"
+                    + MODULE_ASSET + "<path>'.");
         }
     }
 
@@ -285,6 +383,17 @@ public class BundleReader {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }
+    }
+
+    private static boolean isBasePath(String path) {
+        return path != null && BASE_PATH_CHARACTERS.matcher(path).matches() && !ADJACENT_SEPARATORS.matcher(path).find()
+                && Character.isLetterOrDigit(path.charAt(0)) && Character.isLetterOrDigit(path.charAt(path.length() - 1));
+    }
+
+    private static Set<String> union(Set<String> left, Set<String> right) {
+        Set<String> union = new LinkedHashSet<>(left);
+        union.addAll(right);
+        return Set.copyOf(union);
     }
 
     private static boolean isBlank(String value) {

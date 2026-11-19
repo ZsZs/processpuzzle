@@ -56,6 +56,7 @@ public class ImportBundle {
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedStarterRepository;
     private final CommonRules commonRules;
+    private final KeyPrefixRules keyPrefixRules;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -65,6 +66,7 @@ public class ImportBundle {
                         DefinitionProvenanceRepository provenanceRepository,
                         InstalledStarterRepository installedStarterRepository,
                         CommonRules commonRules,
+                        KeyPrefixRules keyPrefixRules,
                         PlatformTransactionManager transactionManager,
                         ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -73,6 +75,7 @@ public class ImportBundle {
         this.provenanceRepository = provenanceRepository;
         this.installedStarterRepository = installedStarterRepository;
         this.commonRules = commonRules;
+        this.keyPrefixRules = keyPrefixRules;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -119,6 +122,7 @@ public class ImportBundle {
         checkExpected(manifest, expected, errors);
         errors.addAll(commonRules.check(orgKey, manifest));
         Map<DefinitionImportParticipant, List<String>> plan = plan(manifest, errors);
+        errors.addAll(keyPrefixRules.check(bundle));
         if (!errors.isEmpty()) {
             throw rejected(dryRun, manifest, errors, ImportRejectedException.Reason.INVALID);
         }

@@ -56,6 +56,14 @@ contents:
     - assets/apps/race-office/cards/plan-race.svg  # an app file, named by widgets as app:cards/plan-race.svg
     - assets/modules/race-planning/docs/guide.md   # a module file, named as module:docs/guide.md
 
+# --- Domain starter (manifestVersion 3; replaces `apps` and the translations/assets an app owns) ---
+# keyPrefix: race                       # every key starts with `race-`; no two starters share a prefix
+# mounts:                               # where the starter's modules suggest to go in the customer's application
+#   - moduleKey: race-planning
+#     basePath: plan-race
+#     nav: { icon: event, labelKey: nav.title }
+#     launcher: { image: 'module:launcher.svg', titleKey: launcher.title, subtitleKey: launcher.subtitle, contentKeys: [launcher.content], link: overview }
+
 # --- Migration (placeholder; format decided together with upgrades) ----
 migration: null
 

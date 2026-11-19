@@ -101,7 +101,7 @@ class ImportBundleTest {
         ImportParticipants participants = new ImportParticipants(factory.getBeanProvider(DefinitionImportParticipant.class),
                 factory.getBeanProvider(InstanceDataProbe.class));
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
-                provenanceRepository, installedStarterRepository, commonRules(), transactionManager, provider(null));
+                provenanceRepository, installedStarterRepository, commonRules(), new KeyPrefixRules(participants), transactionManager, provider(null));
         listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants, offeredRepository);
     }
 
@@ -301,7 +301,7 @@ class ImportBundleTest {
         small.getBundle().setMaxFileBytes(4);
         ImportBundle strict = new ImportBundle(new OrganizationGuard(provider(policy)), new BundleReader(small),
                 ImportParticipants.of(List.of(entities)), provenanceRepository, installedStarterRepository,
-                commonRules(), transactionManager, provider(null));
+                commonRules(), new KeyPrefixRules(ImportParticipants.of(List.of(entities))), transactionManager, provider(null));
 
         assertThatThrownBy(() -> strict.execute("acme", bundle("item\n", ""), false, null))
                 .isInstanceOfSatisfying(ImportRejectedException.class,
@@ -432,6 +432,53 @@ class ImportBundleTest {
         assertThatThrownBy(() -> importBundle.execute("inventory-common", tenantBundle("1.0.0"), false, null))
                 .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
                         .extracting(ImportReport.Error::message).singleElement().asString().contains("is a common"));
+    }
+
+    private static final String DOMAIN_MANIFEST = "manifestVersion: 3\nid: inventory\nname: Inventory\nversion: 1.0.0\n"
+            + "definitionSchemaVersion: 1\nkeyPrefix: inv\n"
+            + "contents:\n  entities:\n    - entities/item.yaml\n  rules:\n    - rules/item-rules.yaml\n";
+
+    private ByteArrayInputStream domainBundle(String manifestTail, String entityFile, String ruleFile) {
+        return zip(Map.of("manifest.yaml", DOMAIN_MANIFEST + manifestTail, "entities/item.yaml", entityFile,
+                "rules/item-rules.yaml", ruleFile));
+    }
+
+    @Test
+    void aDomainStarterWhoseKeysCarryItsPrefixIsApplied() {
+        ImportReport report = importBundle.execute("acme", domainBundle("", "inv-item\ninv-location\n", "inv-positive\n"), false, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(report.created()).isEqualTo(3);
+    }
+
+    @Test
+    void aDomainStarterWithAKeyOutsideItsPrefixIsRefusedBeforeAnythingIsWritten() {
+        assertThatThrownBy(() -> importBundle.execute("acme", domainBundle("", "inv-item\nlocation\n", "positive\n"), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::file, ImportReport.Error::message)
+                        .containsExactly(
+                                org.assertj.core.groups.Tuple.tuple("entities/item.yaml",
+                                        "The entity 'location' does not start with the starter's key prefix 'inv-'."),
+                                org.assertj.core.groups.Tuple.tuple("rules/item-rules.yaml",
+                                        "The rule 'positive' does not start with the starter's key prefix 'inv-'.")));
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void aDomainStarterWhoseMountNamesNoModuleOfTheBundleIsRefused() {
+        String mount = "mounts:\n  - moduleKey: inv-stock\n    basePath: stock\n";
+
+        assertThatThrownBy(() -> importBundle.execute("acme", domainBundle(mount, "inv-item\n", "inv-positive\n"), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::message).singleElement().asString()
+                        .contains("names the module 'inv-stock', which the bundle does not define"));
+    }
+
+    @Test
+    void aBundleBelowVersion3IsNotHeldToAPrefix() {
+        ImportReport report = importBundle.execute("acme", bundle("item\n", "positive\n"), false, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
     }
 
     private ByteArrayInputStream bundle(String entityFile, String ruleFile) {
