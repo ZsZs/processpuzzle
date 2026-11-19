@@ -12,4 +12,6 @@ public interface DefinitionProvenanceRepository extends JpaRepository<Definition
     List<DefinitionProvenance> findByOrgKeyAndStarterId(String orgKey, String starterId);
 
     void deleteByOrgKey(String orgKey);
+
+    void deleteByOrgKeyAndStarterId(String orgKey, String starterId);
 }

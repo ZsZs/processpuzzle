@@ -1,7 +1,9 @@
 package com.processpuzzle.baseentity.adapter.inbound;
 
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
+import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.InstanceDataProbe;
+import java.util.Collection;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,5 +27,15 @@ public class EntityObjectDataProbe implements InstanceDataProbe {
     @Override
     public long count(String orgKey) {
         return repository.countByOrgKey(orgKey);
+    }
+
+    @Override
+    public String definitionKind() {
+        return DefinitionKinds.ENTITY;
+    }
+
+    @Override
+    public long count(String orgKey, Collection<String> definitionKeys) {
+        return definitionKeys.isEmpty() ? 0 : repository.countByOrgKeyAndEntityDefinitionCodeIn(orgKey, definitionKeys);
     }
 }

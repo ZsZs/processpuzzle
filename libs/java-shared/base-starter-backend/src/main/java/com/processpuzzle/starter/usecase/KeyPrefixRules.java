@@ -69,7 +69,8 @@ public class KeyPrefixRules {
         return errors;
     }
 
-    private static Set<String> keysIn(DefinitionImportParticipant participant, String file, byte[] content) {
+    /** The keys {@code participant} reads from {@code content}; none for a file it cannot read, which the import reports. */
+    static Set<String> keysIn(DefinitionImportParticipant participant, String file, byte[] content) {
         try {
             return participant.keysIn(file, content);
         } catch (UncheckedIOException | IllegalArgumentException | UnsupportedOperationException e) {

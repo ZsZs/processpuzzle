@@ -39,9 +39,24 @@ public class InstalledStarter {
 
     private String installedBy;
 
+    /**
+     * Whether it was installed as a domain starter (manifestVersion 3), which is added to the organization and can be
+     * removed again, not as one that replaced the organization's definitions. Null for a row written before the flag:
+     * those replaced.
+     */
+    private Boolean domainStarter;
+
     public InstalledStarter(String orgKey, String starterId) {
         this.orgKey = orgKey;
         this.starterId = starterId;
+    }
+
+    public boolean isDomainStarter() {
+        return Boolean.TRUE.equals(domainStarter);
+    }
+
+    public void markDomainStarter() {
+        this.domainStarter = true;
     }
 
     public void recordInstall(String version, Instant installedAt, String installedBy) {
