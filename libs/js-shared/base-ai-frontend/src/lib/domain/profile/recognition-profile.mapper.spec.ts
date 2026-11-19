@@ -18,6 +18,7 @@ describe('RecognitionProfileMapper', () => {
 
     expect(profile.id).toBe('boat');
     expect(profile.galleryAttributeKey).toBe('photos');
+    // eslint-disable-next-line sonarjs/no-floating-point-equality -- test verifies exact mapper output
     expect(profile.identifierWeight).toBe(0.7);
     expect(profile.sampleFps).toBe(2);
     expect(profile.version).toBe(3);

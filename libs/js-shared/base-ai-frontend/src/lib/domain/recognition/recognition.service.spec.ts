@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Recognition, RECOGNITION_MAX_FRAMES } from './recognition';
 import { RECOGNITION_MAX_POLLS, RECOGNITION_POLL_MS, RecognitionService } from './recognition.service';
 
+// eslint-disable-next-line sonarjs/no-clear-text-protocols -- test backend URL is inherently HTTP
 const ROOT = 'http://backend/organizations/processpuzzle-testbed';
 
 function recognition(status: Recognition['status'], extra: Partial<Recognition> = {}): Partial<Recognition> {
@@ -39,7 +40,9 @@ describe('RecognitionService', () => {
   async function uploadFrame(index: number, frame: Blob, fileName: string): Promise<TestRequest> {
     const slot = await waitFor(() => http.match(`${ROOT}/media-uploads`)[0]);
     expect(slot.request.body).toEqual({ purpose: 'RECOGNITION_FRAME', fileName, contentType: frame.type, sizeBytes: frame.size });
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test presigned URLs are inherently HTTP
     slot.flush({ mediaKey: `m-${index}`, uploadUrl: `http://minio/put/${index}?sig=x`, expiresAt: '' });
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test presigned URLs are inherently HTTP
     const put = await waitFor(() => http.match(`http://minio/put/${index}?sig=x`)[0]);
     expect(put.request.body).toBe(frame);
     put.flush('');
@@ -54,9 +57,11 @@ describe('RecognitionService', () => {
     expect(slot.request.body).toEqual({ purpose: 'RECOGNITION_FRAME', fileName: 'shot.jpg', contentType: 'image/jpeg', sizeBytes: 4 });
     // The user's token reached the backend call, as it should…
     expect(slot.request.headers.get('Authorization')).toBe('Bearer user-token');
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test presigned URLs are inherently HTTP
     slot.flush({ mediaKey: 'm-1', uploadUrl: 'http://minio/put?sig=x', requiredHeaders: { 'x-amz-meta-purpose': 'recognition' }, expiresAt: '' });
 
     // …but not the PUT to storage, which goes straight to HttpBackend, past every interceptor.
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test presigned URLs are inherently HTTP
     const put = await waitFor(() => http.match('http://minio/put?sig=x')[0]);
     expect(put.request.method).toBe('PUT');
     expect(put.request.headers.has('Authorization')).toBe(false);
@@ -127,7 +132,9 @@ describe('RecognitionService', () => {
     const started = service.start('boat', [frame, frame], ['o-1']);
     const rejected = expect(started).rejects.toMatchObject({ status: 403 });
     const slot = await waitFor(() => http.match(`${ROOT}/media-uploads`)[0]);
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test presigned URLs are inherently HTTP
     slot.flush({ mediaKey: 'm-1', uploadUrl: 'http://minio/denied' });
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test presigned URLs are inherently HTTP
     const put = await waitFor(() => http.match('http://minio/denied')[0]);
     put.flush('expired', { status: 403, statusText: 'Forbidden' });
 

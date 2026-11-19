@@ -153,6 +153,7 @@ describe('RecognitionCameraComponent', () => {
     recognize.mockResolvedValue(
       answer({
         outcome: 'NEEDS_REVIEW',
+        // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test image URL is inherently HTTP
         cropUrl: 'http://minio/crop.jpg',
         candidates: [
           { objectId: 'o-3', score: 0.55 },
@@ -167,6 +168,7 @@ describe('RecognitionCameraComponent', () => {
 
     expect(hits).toEqual([]);
     expect(element.textContent).toContain(en.recognition_camera.whoIsIt);
+    // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test image URL is inherently HTTP
     expect(element.querySelector('img')?.getAttribute('src')).toBe('http://minio/crop.jpg');
     // A candidate without a label is shown by its id.
     expect(choices(element).map((choice) => choice.textContent?.trim())).toEqual(['Hullám · 55%', 'Vihar · 52%', 'unknown · 20%']);
@@ -312,6 +314,7 @@ describe('RecognitionCameraComponent', () => {
     expect(element.querySelector('mat-progress-bar')).toBeNull();
     expect(element.querySelector<HTMLButtonElement>('[data-testid="pick-frames"]')?.disabled).toBe(false);
 
+    // eslint-disable-next-line sonarjs/no-extra-arguments -- finish() is a mock that accepts arguments despite its signature
     finish(answer({ outcome: 'MATCHED', objectId: 'o-1', score: 0.9 }));
     await fixture.whenStable();
     fixture.detectChanges();

@@ -7,11 +7,13 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { RecognitionProfileService } from './recognition-profile.service';
 
 describe('RecognitionProfileService', () => {
+  // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test backend URL is inherently HTTP
   const root = 'http://backend/organizations/testbed';
   let http: HttpTestingController;
 
   afterEach(() => http.verify());
 
+  // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test backend URL is inherently HTTP
   it.each([{ AI_SERVICE_ROOT: root, BACKEND_SERVICE_ROOT: 'http://unused' }, { BACKEND_SERVICE_ROOT: root }])('uses the configured AI root or backend fallback (%j)', async (configuration) => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: configuration } }],

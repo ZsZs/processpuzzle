@@ -18,6 +18,7 @@ describe('RecognitionProfileFacade', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        // eslint-disable-next-line sonarjs/no-clear-text-protocols -- test backend URL is inherently HTTP
         { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { AI_SERVICE_ROOT: 'http://backend/organizations/testbed' } } },
         ...BASE_AI_FACADE_PROVIDERS,
       ],

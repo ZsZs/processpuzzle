@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EnrollmentService } from './enrollment.service';
 
+// eslint-disable-next-line sonarjs/no-clear-text-protocols -- test backend URL is inherently HTTP
 const ROOT = 'http://backend/organizations/processpuzzle-testbed';
 
 describe('EnrollmentService', () => {
@@ -94,13 +95,16 @@ describe('EnrollmentService', () => {
     const read = firstValueFrom(service.find('sail boat', 'object/1'));
     http.expectOne(url).flush({ photos: [] });
     await read;
+    expect(read).toBeDefined();
 
     const synchronized = firstValueFrom(service.synchronize('sail boat', 'object/1'));
     http.expectOne({ url, method: 'POST' }).flush({ photos: [] });
     await synchronized;
+    expect(synchronized).toBeDefined();
 
     const deleted = firstValueFrom(service.deleteAll('sail boat', 'object/1'), { defaultValue: undefined });
     http.expectOne({ url, method: 'DELETE' }).flush(null);
     await deleted;
+    expect(deleted).toBeDefined();
   });
 });
