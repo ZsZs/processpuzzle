@@ -14,7 +14,7 @@ public interface DataSpaceRepository extends JpaRepository<DataSpace, String> {
         + "(select d.starterId from DataSpace d where d.commonKey = :commonKey) order by i.orgKey")
     java.util.List<String> findMemberKeysOf(@Param("commonKey") String commonKey);
 
-    /** The common of the first starter {@code orgKey} installed that has one. */
+    /** The commons of the starters {@code orgKey} installed that have one, by key. */
     @Query("select d.commonKey from DataSpace d where d.starterId in "
         + "(select i.starterId from InstalledStarter i where i.orgKey = :orgKey) order by d.commonKey")
     java.util.List<String> findCommonKeysOf(@Param("orgKey") String orgKey);

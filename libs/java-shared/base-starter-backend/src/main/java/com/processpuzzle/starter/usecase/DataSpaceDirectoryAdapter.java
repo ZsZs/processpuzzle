@@ -2,10 +2,12 @@ package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import com.processpuzzle.starter.domain.DataSpaceRepository;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Membership of a common is what an organization has installed: it is a member of the common of each starter it
@@ -18,10 +20,11 @@ public class DataSpaceDirectoryAdapter implements DataSpaceDirectory {
 
     private final DataSpaceRepository dataSpaces;
 
-    /** An organization has zero or one starter, so zero or one common; with several, the first by key. */
+    /** The common of each installed starter that has one, by key; a common is not a member of itself. */
     @Override
-    public Optional<String> commonOf(String orgKey) {
-        return dataSpaces.findCommonKeysOf(orgKey).stream().filter(common -> !common.equals(orgKey)).findFirst();
+    public Set<String> commonsOf(String orgKey) {
+        return dataSpaces.findCommonKeysOf(orgKey).stream().filter(common -> !common.equals(orgKey))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override

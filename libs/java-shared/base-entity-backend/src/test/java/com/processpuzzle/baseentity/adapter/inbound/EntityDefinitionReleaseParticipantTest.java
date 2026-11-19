@@ -65,6 +65,7 @@ class EntityDefinitionReleaseParticipantTest {
 
     private static final String ORG = "my-org";
     private static final String COMMON = "starter-common";
+    private static final String OTHER_COMMON = "billing-common";
     private static final ReleaseCandidate EVERYTHING = new ReleaseCandidate() {
         @Override
         public boolean exists(String kind, String key) {
@@ -100,10 +101,15 @@ class EntityDefinitionReleaseParticipantTest {
     /** The data spaces of the test: ORG is a member of COMMON, as set. */
     static class Commons implements com.processpuzzle.core.tenancy.DataSpaceDirectory {
         boolean member;
+        /** ORG also installed a second starter with a common. */
+        boolean second;
 
         @Override
-        public java.util.Optional<String> commonOf(String orgKey) {
-            return member && ORG.equals(orgKey) ? java.util.Optional.of(COMMON) : java.util.Optional.empty();
+        public java.util.Set<String> commonsOf(String orgKey) {
+            if (!(member && ORG.equals(orgKey))) {
+                return java.util.Set.of();
+            }
+            return second ? new java.util.LinkedHashSet<>(java.util.List.of(COMMON, OTHER_COMMON)) : java.util.Set.of(COMMON);
         }
 
         @Override
@@ -150,10 +156,15 @@ class EntityDefinitionReleaseParticipantTest {
         repository.deleteAll();
         instances.payloads.clear();
         commons.member = false;
+        commons.second = false;
     }
 
     private void saveSharedTypeOfCommon(String code) {
-        BaseEntityDefinition shared = BaseEntityDefinition.builder().orgKey(COMMON).code(code).name("Shared " + code)
+        saveSharedTypeOf(COMMON, code);
+    }
+
+    private void saveSharedTypeOf(String common, String code) {
+        BaseEntityDefinition shared = BaseEntityDefinition.builder().orgKey(common).code(code).name("Shared " + code)
             .channel(Channel.RELEASED)
             .sharingWrite(com.processpuzzle.baseentity.definition.domain.SharingWrite.COMMON_ADMIN)
             .sharingVisibility(com.processpuzzle.baseentity.definition.domain.SharingVisibility.PUBLIC).build();
@@ -168,6 +179,27 @@ class EntityDefinitionReleaseParticipantTest {
 
         assertThat(participant.referableKeys(ORG)).contains("asset", "Shared asset");
         assertThat(participant.drafts(ORG)).doesNotContain("asset");
+    }
+
+    /** A member of two commons refers to what both share; a common of a starter it did not install is not in reach. */
+    @Test
+    void aMembersReferencesResolveToTheSharedTypesOfEverySeveralCommons() {
+        saveSharedTypeOf(COMMON, "asset");
+        saveSharedTypeOf(OTHER_COMMON, "invoice");
+        commons.member = true;
+        commons.second = true;
+
+        assertThat(participant.referableKeys(ORG)).contains("asset", "invoice");
+        assertThat(participant.drafts(ORG)).doesNotContain("asset", "invoice");
+    }
+
+    @Test
+    void aCommonOfAStarterTheOrganizationDidNotInstallIsNotReferable() {
+        saveSharedTypeOf(COMMON, "asset");
+        saveSharedTypeOf(OTHER_COMMON, "invoice");
+        commons.member = true;
+
+        assertThat(participant.referableKeys(ORG)).contains("asset").doesNotContain("invoice");
     }
 
     @Test
