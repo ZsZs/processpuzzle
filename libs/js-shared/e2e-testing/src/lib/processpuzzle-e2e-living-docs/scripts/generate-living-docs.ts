@@ -81,24 +81,15 @@ function renderStepSection(step: ScenarioStep, runInfo: StepRunInfo | undefined)
   else badge = '❌';
   const durationNote = runInfo ? ` _(${runInfo.duration}ms)_` : ' _(not yet run)_';
 
-  lines.push(`### ${badge} ${step.title}${durationNote}`);
-  lines.push('');
-  lines.push(step.kind === 'provision' ? '_Provisions platform metadata:_' : '_Exercises the running platform:_');
-  lines.push('');
+  lines.push(`### ${badge} ${step.title}${durationNote}`, '', step.kind === 'provision' ? '_Provisions platform metadata:_' : '_Exercises the running platform:_', '');
 
   for (const fixturePath of step.fixtures ?? []) {
     const record = loadMetadataFixtureRecord(fixturePath);
     const data = record.data as { description?: string };
     if (data?.description) {
-      lines.push(`> ${data.description}`);
-      lines.push('');
+      lines.push(`> ${data.description}`, '');
     }
-    lines.push(`_Fixture: \`${record.relativePath}\`_`);
-    lines.push('');
-    lines.push('```yaml');
-    lines.push(record.raw.trim());
-    lines.push('```');
-    lines.push('');
+    lines.push(`_Fixture: \`${record.relativePath}\`_`, '', '```yaml', record.raw.trim(), '```', '');
   }
 
   return lines.join('\n');
