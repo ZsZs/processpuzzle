@@ -4,6 +4,7 @@ import { Document, DocumentInputPort, DocumentKind, DocumentOutputPort } from '.
 
 @Injectable({ providedIn: 'root' })
 export class BaseDocumentMapper implements BaseEntityMapper<Document> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO shape is dynamic and not fully typed
   fromDto(dto: any): Document {
     return new Document(
       dto.id,
@@ -21,10 +22,12 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
       dto.readerRoles ?? [],
       dto.editorRoles ?? [],
       dto.publisherRoles ?? [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- port shape is dynamic and not fully typed
       (dto.inputPorts ?? []).map((p: any) => new DocumentInputPort(
         p.name, p.type, p.required, p.description, p.defaultValue,
         p.entityType, p.attributeVisibility, p.defaultRsqlFilter,
       )),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- port shape is dynamic and not fully typed
       (dto.outputPorts ?? []).map((p: any) => new DocumentOutputPort(
         p.name, p.type, p.description, p.entityType, p.attributeVisibility,
       )),
@@ -47,6 +50,7 @@ export class BaseDocumentMapper implements BaseEntityMapper<Document> {
    * a `DocumentPropertiesInput`-shaped body by hand so that a save cannot reach the block list even by
    * accident.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO shape is dynamic and not fully typed
   toDto(entity: Document): any {
     return { ...entity };
   }

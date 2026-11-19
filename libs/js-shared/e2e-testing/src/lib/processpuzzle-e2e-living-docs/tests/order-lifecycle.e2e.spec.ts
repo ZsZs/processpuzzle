@@ -13,4 +13,5 @@ test('Order lifecycle: entity, document, rules, state machine, workflow', async 
       await step.run(platform, state);
     });
   }
+  expect(orderLifecycleManifest.length).toBeGreaterThan(0);
 });

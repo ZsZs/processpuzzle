@@ -65,7 +65,7 @@ describe('createPngBuffer', () => {
     const [, idat] = readChunks(createPngBuffer(64, 32))[1];
 
     // A scanline is `1 + width * 3` bytes: the filter type, then RGB triples.
-    expect(inflateSync(idat).length).toBe(32 * (1 + 64 * 3));
+    expect(inflateSync(idat)).toHaveLength(32 * (1 + 64 * 3));
   });
 
   it('filters every scanline with type 0, which is what makes the pixel bytes literal', () => {

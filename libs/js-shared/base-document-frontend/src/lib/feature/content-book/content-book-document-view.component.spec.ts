@@ -176,7 +176,7 @@ describe('ContentBookDocumentViewComponent', () => {
     fixture.detectChanges();
     expect(byTestId('editor')).toBeNull();
 
-    release(translation('de', 2));
+    (release as (value: unknown) => void)(translation('de', 2));
     await settle();
     expect(byTestId('editor')?.textContent).toBe('de:true');
   });
@@ -213,7 +213,7 @@ describe('ContentBookDocumentViewComponent', () => {
     fixture.componentRef.setInput('locale', 'fr');
     await settle();
 
-    releaseFirst(translation('en', 1));
+    (releaseFirst as (value: unknown) => void)(translation('en', 1));
     await settle();
 
     expect(byTestId('reader')?.textContent).toBe('fr:5');

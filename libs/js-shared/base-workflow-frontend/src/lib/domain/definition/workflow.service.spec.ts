@@ -93,6 +93,8 @@ describe('WorkflowService', () => {
 
     fallbackService.delete('order-fulfillment-workflow').subscribe();
 
-    fallbackController.expectOne(`${serviceRoot}/workflows/order-fulfillment-workflow`).flush(null);
+    const request = fallbackController.expectOne(`${serviceRoot}/workflows/order-fulfillment-workflow`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 });

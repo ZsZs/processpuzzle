@@ -47,7 +47,7 @@ describe('ElementPaletteComponent', () => {
   it('wraps every symbol in a draggable palette item', () => {
     const wrappers = (fixture.nativeElement as HTMLElement).querySelectorAll('ng-diagram-palette-item');
 
-    expect(wrappers.length).toBe(3);
+    expect(wrappers).toHaveLength(3);
     expect(Array.from(wrappers).every((wrapper) => wrapper.contains(wrapper.querySelector('[data-testid^="palette-"]')))).toBe(true);
   });
 

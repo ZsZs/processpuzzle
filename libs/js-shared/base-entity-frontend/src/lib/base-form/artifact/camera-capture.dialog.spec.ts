@@ -7,7 +7,9 @@ import { CameraCaptureDialog } from './camera-capture.dialog';
 
 class FakeMediaRecorder {
   static readonly isTypeSupported = vi.fn((type: string) => type === 'video/webm');
-  static last: FakeMediaRecorder | null = null;
+  private static _last: FakeMediaRecorder | null = null;
+  static get last(): FakeMediaRecorder | null { return FakeMediaRecorder._last; }
+  static set last(value: FakeMediaRecorder | null) { FakeMediaRecorder._last = value; }
   state: 'inactive' | 'recording' = 'inactive';
   ondataavailable: ((event: { data: Blob }) => void) | null = null;
   onstop: (() => void) | null = null;

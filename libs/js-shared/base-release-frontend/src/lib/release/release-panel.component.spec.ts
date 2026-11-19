@@ -58,7 +58,7 @@ describe('ReleasePanelComponent', () => {
     expect(byTestId(element, 'release-change-module-orders')).not.toBeNull();
     expect(byTestId(element, 'release-change-app-app')).not.toBeNull();
     const kindCells = [...element.querySelectorAll('[data-testid="release-changes"] tbody tr td:first-child')].map((cell) => cell.textContent?.trim());
-    expect(kindCells.filter((text) => text).length).toBe(2);
+    expect(kindCells.filter((text) => text)).toHaveLength(2);
   });
 
   it('lists the release history', async () => {

@@ -91,6 +91,8 @@ describe('StateMachineDefinitionService', () => {
 
     fallbackService.delete('order').subscribe();
 
-    fallbackController.expectOne(`${serviceRoot}/state-machines/order`).flush(null);
+    const request = fallbackController.expectOne(`${serviceRoot}/state-machines/order`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 });

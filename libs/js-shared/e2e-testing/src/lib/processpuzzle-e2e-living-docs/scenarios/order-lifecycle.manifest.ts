@@ -71,6 +71,7 @@ export const orderLifecycleManifest: ScenarioStep[] = [
     title: 'Start review — a workflow task instance is created',
     kind: 'behavior',
     async run(ctx, state) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- orderId is set in the previous step
       await ctx.states.trigger('order', state.orderId!, 'startReview');
       await ctx.workflows.expectTaskInstance('reviewOrderUse', { status: 'ACTIVE' });
     },
@@ -79,6 +80,7 @@ export const orderLifecycleManifest: ScenarioStep[] = [
     title: 'Attempt to approve without a signed document — blocked by rule order-requires-signed-document',
     kind: 'behavior',
     async run(ctx, state) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- orderId is set in the previous step
       await ctx.states.triggerExpectingViolation('order', state.orderId!, 'approve', 'order-requires-signed-document');
     },
   },
@@ -88,6 +90,7 @@ export const orderLifecycleManifest: ScenarioStep[] = [
     async run(ctx, state) {
       await ctx.entities.update('orderDocument', state.docId ?? 'doc-1', { signed: true });
       await ctx.workflows.completeTask('reviewOrderUse');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- orderId is set in the previous step
       await ctx.states.expectState('order', state.orderId!, 'APPROVED');
     },
   },
@@ -95,7 +98,9 @@ export const orderLifecycleManifest: ScenarioStep[] = [
     title: 'Fulfill the order',
     kind: 'behavior',
     async run(ctx, state) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- orderId is set in the previous step
       await ctx.states.trigger('order', state.orderId!, 'fulfill');
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- orderId is set in the previous step
       await ctx.states.expectState('order', state.orderId!, 'FULFILLED');
     },
   },

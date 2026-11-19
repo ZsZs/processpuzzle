@@ -42,7 +42,9 @@ describe('ToolDefinitionService', () => {
   it('addresses a single tool by its author-chosen id', () => {
     service.delete('automated-check-tool').subscribe();
 
-    controller.expectOne(`${serviceRoot}/tools/automated-check-tool`).flush(null);
+    const request = controller.expectOne(`${serviceRoot}/tools/automated-check-tool`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 
   // The nested `auth` object has to arrive re-nested, and the chips have to arrive as numbers — both are

@@ -13,7 +13,11 @@ function keysOf(bundle: object, prefix = ''): string[] {
 }
 
 function attrNames(descriptors: AbstractAttrDescriptor[]): string[] {
-  return descriptors.flatMap((descriptor) => (descriptor instanceof FlexboxDescriptor ? attrNames(descriptor.attrDescriptors) : descriptor instanceof BaseEntityAttrDescriptor ? [descriptor.attrName] : []));
+  return descriptors.flatMap((descriptor) => {
+    if (descriptor instanceof FlexboxDescriptor) return attrNames(descriptor.attrDescriptors);
+    if (descriptor instanceof BaseEntityAttrDescriptor) return [descriptor.attrName];
+    return [];
+  });
 }
 
 describe('base-ai translations', () => {

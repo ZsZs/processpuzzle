@@ -60,6 +60,7 @@ describe('EntityDefinitionRegistry', () => {
     const lookups = Promise.all([registry.byName('Order'), registry.byName('Order Line'), registry.load()]);
     controller.expectOne(ENTITY_DEFINITIONS_URL).flush({ content: TEST_ENTITY_DEFINITIONS });
     await lookups;
+    expect(lookups).toBeDefined();
 
     await registry.load();
     controller.verify();
@@ -102,6 +103,7 @@ describe('EntityDefinitionRegistry', () => {
     const loaded = registry.load();
     controller.expectOne(ENTITY_DEFINITIONS_URL).flush({ content: [] });
     await loaded;
+    expect(loaded).toBeDefined();
 
     await registry.load();
     controller.verify();
