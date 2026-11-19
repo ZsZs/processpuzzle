@@ -1,3 +1,45 @@
 {
-  "title": "Kalender"
+  "title": "Kalender",
+  "loading": "Der Kalender wird geladen…",
+  "no_calendar": "Kein Kalender ausgewählt.",
+  "busy": "Belegt",
+  "widgets": {
+    "calendar": "Kalender"
+  },
+  "errors": {
+    "not_found": "Dieser Kalender ist nicht verfügbar.",
+    "forbidden": "Dazu haben Sie keine Berechtigung.",
+    "conflict": "Jemand hat diesen Eintrag inzwischen geändert. Laden Sie den Kalender neu und versuchen Sie es erneut.",
+    "invalid": "Der Eintrag passt nicht zu den Regeln dieses Kalenders.",
+    "unavailable": "Der Kalender ist nicht erreichbar.",
+    "kind_change": "Ein Eintrag lässt sich nicht per Ziehen von zeitgebunden in ganztägig oder zurück ändern. Bearbeiten Sie ihn stattdessen."
+  },
+  "entry": {
+    "new": "Neuer Eintrag",
+    "edit": "Eintrag bearbeiten",
+    "view": "Eintrag",
+    "calendar": "Kalender",
+    "kind": "Art",
+    "kind_timed": "Mit Uhrzeit",
+    "kind_all_day": "Ganztägig",
+    "title": "Titel",
+    "description": "Beschreibung",
+    "location": "Ort",
+    "category": "Kategorie",
+    "visibility": "Sichtbarkeit",
+    "visibility_public": "Für alle sichtbar, die den Kalender sehen",
+    "visibility_private": "Privat - andere sehen nur, dass Sie belegt sind",
+    "start": "Beginn",
+    "end": "Ende",
+    "first_day": "Erster Tag",
+    "last_day": "Letzter Tag",
+    "organizer": "Organisator",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "close": "Schließen",
+    "cancel": "Eintrag absagen",
+    "confirm_cancel": "Diesen Eintrag endgültig absagen?",
+    "cancel_confirmed": "Ja, absagen",
+    "keep": "Behalten"
+  }
 }

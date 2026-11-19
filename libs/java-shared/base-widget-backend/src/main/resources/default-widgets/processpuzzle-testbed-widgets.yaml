@@ -716,3 +716,62 @@ widgetDefinitions:
           description: More unread messages than this show as, for example, 99+.
           default: 99
       additionalProperties: false
+  # Registered by base-calendar-frontend rather than base-widget-frontend — a widget that talks to the calendar
+  # API would make the widget library depend on a feature library. calendar-widgets.contract.spec.ts holds these two
+  # copies to their registrations.
+  - key: calendar
+    name: Calendar
+    translocoId: base_calendar.widgets.calendar
+    description: >-
+      One or more calendars as a day, week, month or list view, with booking. Who sees and books what is set on the
+      calendars themselves.
+    category: Content
+    icon: calendar_month
+    propsSchema:
+      type: object
+      properties:
+        calendarKeys:
+          type: array
+          title: Calendars
+          description: Keys of the calendars to show, overlaid in their own colors. A calendar the visitor may not read is left out.
+          items:
+            type: string
+        defaultView:
+          type: string
+          enum: [day, week, month, list]
+          title: First view
+          description: The view shown first; the week when left empty.
+        views:
+          type: array
+          title: Views
+          description: The views the visitor can switch between, from day, week, month and list; all four when left empty.
+          items:
+            type: string
+        firstDayOfWeek:
+          type: integer
+          title: First day of the week
+          description: 0 for Sunday, 1 for Monday; Monday when left empty.
+        slotMinTime:
+          type: string
+          title: Day starts at
+          description: The earliest hour the day and week views show, as HH:mm; 07:00 when left empty.
+        slotMaxTime:
+          type: string
+          title: Day ends at
+          description: The latest hour the day and week views show, as HH:mm; 20:00 when left empty.
+        readOnly:
+          type: boolean
+          title: Read only
+          description: Show the calendar without letting the visitor book, move or resize anything.
+        height:
+          type: string
+          title: Height
+          description: A CSS length such as 640px; the height of the content when left empty.
+      additionalProperties: false
+    outputPorts:
+    - name: entrySelected
+      type: STRING
+      description: Id of the entry the visitor clicked.
+    - name: slotSelected
+      type: OBJECT
+      description: 'The empty slot the visitor clicked or dragged: its start, its exclusive end and whether it is a whole day.'
