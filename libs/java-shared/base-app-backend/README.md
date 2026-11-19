@@ -39,9 +39,9 @@ implements here (business-starters design §11.3):
   still the untouched default shell (`AppDefinition.isUntouchedShell()`: seeded by the platform, never saved by a
   designer — `replaceDraft` clears it, `mergeDraft` does not, and rows that predate the flag count as touched);
   otherwise the owner releases it, and the install says so in its report.
-- **Default shell.** With `base-app.default-shell=true` a new organization's application is `DefaultShell` instead of
-  empty — logo, title, sidenav, version button and a home page holding one `module-launcher` widget — published at once.
-  Off by default until the widget exists in the frontend.
+- **Default shell.** A new organization's application is `DefaultShell` instead of empty — logo, title, sidenav, version
+  button and a home page holding one `module-launcher` widget (base-widget-frontend) — published at once. On by default;
+  `base-app.default-shell=false` seeds the empty application as before.
 
 ## Technologies
 

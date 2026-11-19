@@ -125,6 +125,9 @@
   "app_title": {
     "name": "Alkalmazás címe"
   },
+  "module_launcher": {
+    "name": "Modulindító"
+  },
   "nav_bar": {
     "name": "Navigációs sáv"
   },

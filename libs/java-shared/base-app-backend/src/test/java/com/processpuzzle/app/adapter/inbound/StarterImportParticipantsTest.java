@@ -6,6 +6,7 @@ import com.processpuzzle.app.domain.AppDefinitionTranslationRepository;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
+import com.processpuzzle.app.usecase.service.DefaultShell;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.app.domain.ModuleAssetRepository;
 import com.processpuzzle.app.domain.ModuleDefinition;
@@ -236,6 +237,44 @@ class StarterImportParticipantsTest {
         assertThat(result.items()).containsExactly(new ImportedItem("sail-rc", ImportedItem.Action.CREATE));
         assertThat(appRepository.findByOrgKey(ORG)).extracting(AppDefinition::getId).containsExactly("sail-rc");
         assertThat(appRepository.findByOrgKeyAndId(ORG, "sail-rc").orElseThrow().isPublished()).isTrue();
+    }
+
+    @Test
+    void anAppWithAnotherIdRemovesTheUntouchedDefaultShellToo() {
+        AppDefinition shell = new AppDefinition(ORG, PLACEHOLDER, "Acme", null, null, DefaultShell.graph());
+        shell.markDefaultShell();
+        shell.publish();
+        appRepository.save(shell);
+
+        apps.apply(ORG, "apps/home.yaml", bytes(APP.formatted("sail-rc")));
+        flushAndClear();
+
+        assertThat(appRepository.findByOrgKey(ORG)).extracting(AppDefinition::getId).containsExactly("sail-rc");
+    }
+
+    @Test
+    void aDefaultShellADesignerHasSavedStays() {
+        AppDefinition shell = new AppDefinition(ORG, PLACEHOLDER, "Acme", null, null, DefaultShell.graph());
+        shell.markDefaultShell();
+        shell.publish();
+        shell.replaceDraft("Mine", null, null, DefaultShell.graph());
+        appRepository.save(shell);
+
+        apps.apply(ORG, "apps/home.yaml", bytes(APP.formatted("sail-rc")));
+        flushAndClear();
+
+        assertThat(appRepository.findByOrgKey(ORG)).extracting(AppDefinition::getId).containsExactlyInAnyOrder(PLACEHOLDER, "sail-rc");
+    }
+
+    @Test
+    void anUntouchedDefaultShellIsNotReportedAsRemovedByARemoveAll() {
+        AppDefinition shell = new AppDefinition(ORG, PLACEHOLDER, "Acme", null, null, DefaultShell.graph());
+        shell.markDefaultShell();
+        shell.publish();
+        appRepository.save(shell);
+        flushAndClear();
+
+        assertThat(apps.removeAll(ORG)).isEmpty();
     }
 
     @Test

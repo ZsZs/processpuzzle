@@ -201,10 +201,18 @@ public class AppImportParticipant implements DefinitionImportParticipant {
                 .filter(AppImportParticipant::isUntouchedPlaceholder);
     }
 
-    /** What sign-up created and nobody has edited, saved or published since: the placeholder's id, an empty graph, the first revision. */
+    /**
+     * What sign-up created and nobody has edited since, under the placeholder's id: the empty application — an empty
+     * graph, the first revision, never published — or the platform's default shell, which is seeded published and
+     * with a graph of its own, and which only a designer's save makes the customer's.
+     */
     private static boolean isUntouchedPlaceholder(AppDefinition app) {
         return StarterAppCreator.STARTER_APP_ID.equals(app.getId())
-                && !app.hasPublishedRevision()
+                && (app.isUntouchedShell() || isEmptyPlaceholder(app));
+    }
+
+    private static boolean isEmptyPlaceholder(AppDefinition app) {
+        return !app.hasPublishedRevision()
                 && app.getRevision() != null && app.getRevision() == 1L
                 && AppGraph.empty().equals(app.getDraftGraph());
     }

@@ -279,6 +279,20 @@ export class WorkingContextRow implements BaseEntity {
 }
 
 /**
+ * The card the application's `module-launcher` widget draws for a mounted module. Set from a business starter's mount
+ * hint; the application owner may change or clear it. Texts are keys of the module's own translations, relative to its
+ * transloco scope, `image` an asset of the module (`module:<path>`) and `link` the module route the card opens, relative
+ * to the mount.
+ */
+export interface ModuleLauncher {
+  image?: string;
+  titleKey: string;
+  subtitleKey?: string;
+  contentKeys?: string[];
+  link?: string;
+}
+
+/**
  * Mounts a module's routes under {@link basePath}. The one place route structure composes, and it
  * composes exactly one level deep: a module cannot mount modules.
  */
@@ -292,10 +306,17 @@ export class ModuleMount implements BaseEntity {
    */
   moduleKey: string;
   basePath: string;
+  /**
+   * Not a form field — the launcher is set by a starter's mount hint — but part of the row, so that saving the mount
+   * from the form does not drop it.
+   */
+  declare launcher?: ModuleLauncher;
 
   constructor(init: Partial<ModuleMount> = {}) {
     this.moduleKey = init.moduleKey ?? '';
     this.basePath = init.basePath ?? '';
+    // Only when there is one, so that the row's own keys stay the form's two fields.
+    if (init.launcher) this.launcher = init.launcher;
   }
 }
 

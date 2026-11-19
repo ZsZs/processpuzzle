@@ -159,6 +159,15 @@ describe('ModuleMount', () => {
     expect(mount.moduleKey).toBe('claims');
     expect(mount.basePath).toBe('claims-handling');
   });
+
+  it('keeps the launcher card of a starter hint, which no form field edits, when the row is rebuilt', () => {
+    const launcher = { image: 'module:launcher.svg', titleKey: 'launcher.title', contentKeys: ['launcher.content'], link: 'overview' };
+
+    const rebuilt = new ModuleMount({ ...new ModuleMount({ moduleKey: 'inv-stock', basePath: 'stock', launcher }), basePath: 'stock-keeping' });
+
+    expect(rebuilt.launcher).toEqual(launcher);
+    expect(Object.keys(new ModuleMount({ moduleKey: 'a', basePath: 'a' }))).not.toContain('launcher');
+  });
 });
 
 describe('NavItem', () => {
