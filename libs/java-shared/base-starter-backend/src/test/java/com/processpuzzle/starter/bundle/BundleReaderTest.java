@@ -422,6 +422,16 @@ class BundleReaderTest {
     }
 
     @Test
+    void aMountBasePathIsLowerCaseSegmentsOfWords() {
+        for (String good : new String[] {"stock", "plan-race", "plan-race/overview", "a1/b2-c3"}) {
+            read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("basePath: stock", "basePath: " + good)));
+        }
+        for (String bad : new String[] {"-stock", "stock-", "/stock", "stock/", "plan--race", "plan//race", "plan-/race", "plan/-race", "Stock", "plan_race"}) {
+            assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("basePath: stock", "basePath: '" + bad + "'"))), "needs a 'basePath'");
+        }
+    }
+
+    @Test
     void keyPrefixAndMountsNeedManifestVersion3() {
         assertInvalid(() -> read(v2(V2_HEAD + "id: inventory\nkeyPrefix: inv\n" + V2_CONTENTS)), "unknown field 'keyPrefix'");
         assertInvalid(() -> read(v2(V3_HEAD.replace("manifestVersion: 3", "manifestVersion: 1") + V2_CONTENTS)),

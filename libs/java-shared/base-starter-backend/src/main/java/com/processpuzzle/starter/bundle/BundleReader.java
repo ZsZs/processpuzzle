@@ -46,12 +46,19 @@ public class BundleReader {
     /** Version 3 adds the domain-starter fields (business-starters design, decision 11). */
     private static final Set<String> V3_FIELDS = union(V2_FIELDS, Set.of("keyPrefix", "mounts"));
     private static final Set<String> COMMON_FIELDS = Set.of("id", "minVersion");
-    private static final Set<String> MOUNT_FIELDS = Set.of("moduleKey", "basePath", "nav", "launcher");
+    private static final String LAUNCHER = "launcher";
+    private static final Set<String> MOUNT_FIELDS = Set.of("moduleKey", "basePath", "nav", LAUNCHER);
     private static final Set<String> NAV_FIELDS = Set.of("icon", "labelKey");
     private static final Set<String> LAUNCHER_FIELDS = Set.of("image", "titleKey", "subtitleKey", "contentKeys", "link");
     /** Short, lower case, no dash: the dash is what separates it from the rest of a key. */
     private static final Pattern KEY_PREFIX = Pattern.compile("[a-z][a-z0-9]{1,15}");
-    private static final Pattern BASE_PATH = Pattern.compile("[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*");
+    /**
+     * A base path is lower-case segments joined by '/', each made of words joined by '-', such as plan-race/overview. Checked
+     * as a character set, no two separators in a row and none at either end, rather than as a nested repetition, which
+     * the regex engine matches recursively.
+     */
+    private static final Pattern BASE_PATH_CHARACTERS = Pattern.compile("[a-z0-9/-]+");
+    private static final Pattern ADJACENT_SEPARATORS = Pattern.compile("[/-]{2}");
     private static final String MODULE_ASSET = "module:";
     /** The owner kind of an application's translations and assets: {@code <group>/apps/<app id>/<path>}. */
     private static final String APP_OWNED = "apps";
@@ -171,8 +178,8 @@ public class BundleReader {
         if (mount.path("nav").isObject()) {
             unknownField(mount.get("nav"), NAV_FIELDS, prefix + "nav.");
         }
-        if (mount.path("launcher").isObject()) {
-            unknownField(mount.get("launcher"), LAUNCHER_FIELDS, prefix + "launcher.");
+        if (mount.path(LAUNCHER).isObject()) {
+            unknownField(mount.get(LAUNCHER), LAUNCHER_FIELDS, prefix + LAUNCHER + ".");
         }
     }
 
@@ -286,7 +293,7 @@ public class BundleReader {
                     + (isBlank(mount.moduleKey()) ? "." : "; '" + mount.moduleKey() + "' is named twice."));
         }
         String where = "The mount of '" + mount.moduleKey() + "'";
-        if (mount.basePath() == null || !BASE_PATH.matcher(mount.basePath()).matches() || !paths.add(mount.basePath())) {
+        if (!isBasePath(mount.basePath()) || !paths.add(mount.basePath())) {
             throw BundleRejectedException.invalid(MANIFEST, where + " needs a 'basePath' of its own, of lower-case "
                     + "segments such as plan-race.");
         }
@@ -376,6 +383,11 @@ public class BundleReader {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }
+    }
+
+    private static boolean isBasePath(String path) {
+        return path != null && BASE_PATH_CHARACTERS.matcher(path).matches() && !ADJACENT_SEPARATORS.matcher(path).find()
+                && Character.isLetterOrDigit(path.charAt(0)) && Character.isLetterOrDigit(path.charAt(path.length() - 1));
     }
 
     private static Set<String> union(Set<String> left, Set<String> right) {
