@@ -99,10 +99,12 @@ public class EntitySharingValidator {
     }
 
     private void validateNotReserved(String orgKey, BaseEntityDefinition definition, DataSpaceDirectory directory) {
-        Optional<String> common = directory.commonOf(orgKey);
-        if (common.isPresent() && sharedByCommon(common.get(), definition.getCode())) {
-            throw violation("'%s' is an entity type shared by '%s'; a member defines its own types under other codes."
-                .formatted(definition.getCode(), common.get()));
+        // Reserved by every common of the organization — one for each starter it installed that has one.
+        for (String common : directory.commonsOf(orgKey)) {
+            if (sharedByCommon(common, definition.getCode())) {
+                throw violation("'%s' is an entity type shared by '%s'; a member defines its own types under other codes."
+                    .formatted(definition.getCode(), common));
+            }
         }
     }
 

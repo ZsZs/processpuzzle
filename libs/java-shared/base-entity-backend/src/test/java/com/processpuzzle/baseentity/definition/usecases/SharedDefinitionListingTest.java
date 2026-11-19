@@ -14,7 +14,9 @@ import com.processpuzzle.baseentity.definition.usecases.inbound.FindAllEntityDef
 import com.processpuzzle.baseentity.definition.usecases.inbound.FindEntityDefinitionByCodeUseCase;
 import com.processpuzzle.core.definition.Channel;
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
-import java.util.Optional;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -43,7 +45,10 @@ import org.springframework.test.context.TestPropertySource;
 class SharedDefinitionListingTest {
 
     private static final String COMMON = "starter-common";
+    private static final String OTHER_COMMON = "billing-common";
     private static final String MEMBER = "club";
+    /** Installed two starters that each have a common. */
+    private static final String GUILD = "guild";
 
     @Configuration
     @SpringBootConfiguration
@@ -66,8 +71,8 @@ class SharedDefinitionListingTest {
         repository.deleteAll();
         DataSpaceDirectory directory = new DataSpaceDirectory() {
             @Override
-            public Optional<String> commonOf(String orgKey) {
-                return MEMBER.equals(orgKey) ? Optional.of(COMMON) : Optional.empty();
+            public Set<String> commonsOf(String orgKey) {
+                return MEMBER.equals(orgKey) ? Set.of(COMMON) : GUILD.equals(orgKey) ? new LinkedHashSet<>(List.of(COMMON, OTHER_COMMON)) : Set.of();
             }
 
             @Override
@@ -86,6 +91,10 @@ class SharedDefinitionListingTest {
         save(COMMON, "asset", Channel.RELEASED, true);
         save(COMMON, "asset", Channel.DRAFT, true);
         save(COMMON, "internal", Channel.RELEASED, false);
+        save(OTHER_COMMON, "invoice", Channel.RELEASED, true);
+        save(OTHER_COMMON, "invoice", Channel.DRAFT, true);
+        save(OTHER_COMMON, "ledger-note", Channel.RELEASED, false);
+        save(GUILD, "roster", Channel.DRAFT, false);
     }
 
     private void save(String orgKey, String code, Channel channel, boolean shared) {
@@ -116,6 +125,34 @@ class SharedDefinitionListingTest {
         var page = findAll.findAll(COMMON, Channel.DRAFT, null, null, PageRequest.of(0, 20));
 
         assertThat(page.getContent()).extracting(BaseEntityDefinition::getCode).containsExactlyInAnyOrder("asset");
+    }
+
+    /** Starters add to one application, so a member of two commons sees what both of them share — and nothing else of either. */
+    @Test
+    void aMemberOfSeveralCommonsListsTheSharedTypesOfAllOfThem() {
+        var page = findAll.findAll(GUILD, Channel.DRAFT, null, null, PageRequest.of(0, 20));
+
+        assertThat(page.getContent()).extracting(BaseEntityDefinition::getOrgKey, BaseEntityDefinition::getCode, d -> d.getChannel())
+            .containsExactlyInAnyOrder(
+                org.assertj.core.groups.Tuple.tuple(GUILD, "roster", Channel.DRAFT),
+                org.assertj.core.groups.Tuple.tuple(COMMON, "asset", Channel.RELEASED),
+                org.assertj.core.groups.Tuple.tuple(OTHER_COMMON, "invoice", Channel.RELEASED));
+    }
+
+    @Test
+    void aMemberOfSeveralCommonsReadsASharedTypeOfEachByCodeAndNoCommonsOwnType() {
+        assertThat(findByCode.findByCode(GUILD, "asset", Channel.DRAFT).getOrgKey()).isEqualTo(COMMON);
+        assertThat(findByCode.findByCode(GUILD, "invoice", Channel.DRAFT).getOrgKey()).isEqualTo(OTHER_COMMON);
+        assertThatThrownBy(() -> findByCode.findByCode(GUILD, "internal", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> findByCode.findByCode(GUILD, "ledger-note", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
+    }
+
+    /** The common of a starter the organization did not install is not its common: its shared types stay out of sight. */
+    @Test
+    void aMemberOfOneCommonDoesNotSeeTheSharedTypesOfAnother() {
+        assertThatThrownBy(() -> findByCode.findByCode(MEMBER, "invoice", Channel.DRAFT)).isInstanceOf(NotFoundException.class);
+        assertThat(findAll.findAll(MEMBER, Channel.RELEASED, null, null, PageRequest.of(0, 20)).getContent())
+            .extracting(BaseEntityDefinition::getCode).doesNotContain("invoice");
     }
 
     @Test

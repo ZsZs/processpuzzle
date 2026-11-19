@@ -49,18 +49,33 @@ class EntityDefinitionLookupAdapterTest {
     void findByCode_fallsBackToTheCommonsSharedType() {
         when(repository.findByOrgKeyAndCodeAndChannel("club", "asset", Channel.RELEASED)).thenReturn(java.util.Optional.empty());
         when(dataSpaces.getIfAvailable()).thenReturn(directory);
-        when(directory.commonOf("club")).thenReturn(java.util.Optional.of("starter-common"));
+        when(directory.commonsOf("club")).thenReturn(java.util.Set.of("starter-common"));
         when(repository.findByOrgKeyAndCodeAndChannel("starter-common", "asset", Channel.RELEASED))
             .thenReturn(java.util.Optional.of(shared("starter-common", "asset")));
 
         assertThat(adapter.findByCode("club", "asset")).isPresent();
     }
 
+    /** A member of several commons finds a shared type in whichever defines it, and the lookup names that one. */
+    @Test
+    void findByCode_andSharedFrom_findTheTypeInTheCommonThatDefinesIt() {
+        when(repository.findByOrgKeyAndCodeAndChannel("club", "invoice", Channel.RELEASED)).thenReturn(java.util.Optional.empty());
+        when(repository.existsByOrgKeyAndCodeAndChannel("club", "invoice", Channel.RELEASED)).thenReturn(false);
+        when(dataSpaces.getIfAvailable()).thenReturn(directory);
+        when(directory.commonsOf("club")).thenReturn(new java.util.LinkedHashSet<>(java.util.List.of("starter-common", "billing-common")));
+        when(repository.findByOrgKeyAndCodeAndChannel("starter-common", "invoice", Channel.RELEASED)).thenReturn(java.util.Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel("billing-common", "invoice", Channel.RELEASED))
+            .thenReturn(java.util.Optional.of(shared("billing-common", "invoice")));
+
+        assertThat(adapter.findByCode("club", "invoice")).isPresent();
+        assertThat(adapter.sharedFrom("club", "invoice")).contains("billing-common");
+    }
+
     @Test
     void findByCode_ignoresACommonTypeThatIsNotShared() {
         when(repository.findByOrgKeyAndCodeAndChannel("club", "internal", Channel.RELEASED)).thenReturn(java.util.Optional.empty());
         when(dataSpaces.getIfAvailable()).thenReturn(directory);
-        when(directory.commonOf("club")).thenReturn(java.util.Optional.of("starter-common"));
+        when(directory.commonsOf("club")).thenReturn(java.util.Set.of("starter-common"));
         when(repository.findByOrgKeyAndCodeAndChannel("starter-common", "internal", Channel.RELEASED))
             .thenReturn(java.util.Optional.of(BaseEntityDefinition.builder().orgKey("starter-common").code("internal").name("i").build()));
 
@@ -71,7 +86,7 @@ class EntityDefinitionLookupAdapterTest {
     void sharedFrom_namesTheCommon() {
         when(repository.existsByOrgKeyAndCodeAndChannel("club", "asset", Channel.RELEASED)).thenReturn(false);
         when(dataSpaces.getIfAvailable()).thenReturn(directory);
-        when(directory.commonOf("club")).thenReturn(java.util.Optional.of("starter-common"));
+        when(directory.commonsOf("club")).thenReturn(java.util.Set.of("starter-common"));
         when(repository.findByOrgKeyAndCodeAndChannel("starter-common", "asset", Channel.RELEASED))
             .thenReturn(java.util.Optional.of(shared("starter-common", "asset")));
 
@@ -205,7 +220,7 @@ class EntityDefinitionLookupAdapterTest {
     void sharingOf_answersTheCommonsPolicyForAMember() {
         when(repository.findByOrgKeyAndCodeAndChannel("club", "boat", Channel.RELEASED)).thenReturn(Optional.empty());
         when(dataSpaces.getIfAvailable()).thenReturn(directory);
-        when(directory.commonOf("club")).thenReturn(Optional.of("starter-common"));
+        when(directory.commonsOf("club")).thenReturn(java.util.Set.of("starter-common"));
         BaseEntityDefinition boat = shared("starter-common", "boat");
         boat.setSharingWrite(com.processpuzzle.baseentity.definition.domain.SharingWrite.OWNER_ORG);
         boat.setSharingVisibility(com.processpuzzle.baseentity.definition.domain.SharingVisibility.OWNER_ONLY);

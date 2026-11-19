@@ -117,18 +117,19 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
     }
 
     /**
-     * The types the organization's common shares, as released: the organization may refer to them but does not release
-     * them, so they are referable without being among its {@linkplain #drafts drafts}.
+     * The types the organization's commons share, as released — of every starter it installed that has a common: the
+     * organization may refer to them but does not release them, so they are referable without being among its
+     * {@linkplain #drafts drafts}.
      */
     private List<BaseEntityDefinition> sharedTypesOfCommon(String orgKey) {
         DataSpaceDirectory directory = dataSpaces.getIfAvailable();
         if (directory == null) {
             return List.of();
         }
-        return directory.commonOf(orgKey)
-            .map(common -> repository.findAllByOrgKeyAndChannel(common, Channel.RELEASED).stream()
-                .filter(BaseEntityDefinition::isShared).toList())
-            .orElse(List.of());
+        return directory.commonsOf(orgKey).stream()
+            .flatMap(common -> repository.findAllByOrgKeyAndChannel(common, Channel.RELEASED).stream())
+            .filter(BaseEntityDefinition::isShared)
+            .toList();
     }
 
     @Override

@@ -23,21 +23,36 @@ class DataSpaceDirectoryAdapterTest {
     void member_isInTheCommonOfItsStarter() {
         when(dataSpaces.findCommonKeysOf("club")).thenReturn(List.of("starter-common"));
 
-        assertThat(directory.commonOf("club")).contains("starter-common");
+        assertThat(directory.commonsOf("club")).containsExactly("starter-common");
+    }
+
+    /** An organization may install several starters, so it is a member of the common of each, in key order. */
+    @Test
+    void member_isInTheCommonOfEveryStarterItInstalled() {
+        when(dataSpaces.findCommonKeysOf("club")).thenReturn(List.of("billing-common", "starter-common"));
+
+        assertThat(directory.commonsOf("club")).containsExactly("billing-common", "starter-common");
     }
 
     @Test
     void organizationWithoutAStarterWithACommon_hasNone() {
         when(dataSpaces.findCommonKeysOf("club")).thenReturn(List.of());
 
-        assertThat(directory.commonOf("club")).isEmpty();
+        assertThat(directory.commonsOf("club")).isEmpty();
     }
 
     @Test
     void theCommonItself_isNotItsOwnMember() {
         when(dataSpaces.findCommonKeysOf("starter-common")).thenReturn(List.of("starter-common"));
 
-        assertThat(directory.commonOf("starter-common")).isEmpty();
+        assertThat(directory.commonsOf("starter-common")).isEmpty();
+    }
+
+    @Test
+    void aCommonThatInstalledAnotherStartersCommonIsStillNotItsOwnMember() {
+        when(dataSpaces.findCommonKeysOf("starter-common")).thenReturn(List.of("billing-common", "starter-common"));
+
+        assertThat(directory.commonsOf("starter-common")).containsExactly("billing-common");
     }
 
     @Test

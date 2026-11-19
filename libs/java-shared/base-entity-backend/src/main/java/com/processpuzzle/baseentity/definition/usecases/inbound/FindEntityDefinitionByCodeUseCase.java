@@ -21,9 +21,7 @@ public class FindEntityDefinitionByCodeUseCase {
     @Transactional(readOnly = true)
     public BaseEntityDefinition findByCode(String orgKey, String code, Channel channel) {
         return repository.findByOrgKeyAndCodeAndChannel(orgKey, code, channel)
-            .or(() -> SharedTypes.commonOf(dataSpaces, orgKey)
-                .flatMap(common -> repository.findByOrgKeyAndCodeAndChannel(common, code, Channel.RELEASED))
-                .filter(BaseEntityDefinition::isShared))
+            .or(() -> SharedTypes.sharedIn(repository, SharedTypes.commonsOf(dataSpaces, orgKey), code))
             .orElseThrow(() -> new NotFoundException("No entity definition with code '%s'".formatted(code)));
     }
 }

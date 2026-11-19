@@ -46,8 +46,8 @@ implemented), scoped to one starter. The commons replace `_global`; the javadoc 
 An organization is a member of a common exactly when it has the common's starter installed —
 `starter_installed (org_key, starter_id)`, which the seed already writes. No membership table, no
 provisioning step to forget. `processpuzzle-core` declares a `DataSpaceDirectory` port
-(`commonOf(orgKey)`, `isCommon(orgKey)`; with several starters per organization — business starters design,
-decision 11 — `commonOf` becomes `commonsOf(orgKey)`, see its §11.5 phase 4); `base-starter-backend` implements it, so base-entity depends on no
+(`commonsOf(orgKey)`, `isCommon(orgKey)`; with several starters per organization — business starters design,
+decision 11 — the port answers `commonsOf(orgKey)`, every common of the organization, one for each installed starter that has one); `base-starter-backend` implements it, so base-entity depends on no
 starter code.
 
 ### 3.3 Shared entity types
