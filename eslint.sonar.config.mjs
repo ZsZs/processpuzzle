@@ -20,5 +20,9 @@ export default [
   // own reason so the gap stays in the report. Set here rather than with disable comments in the suites: only this config
   // knows the sonarjs rules, so `nx lint` reports a comment naming one as an error.
   { files: ['libs/js-shared/e2e-testing/src/lib/suites/**/*.ts'], rules: { 'sonarjs/assertions-in-tests': 'off', 'sonarjs/no-skipped-tests': 'off' } },
+  // E2E testing helpers interact with a single Playwright page sequentially — filling form fields, asserting values,
+  // or creating fixtures one after another. Parallelizing these awaits would break the tests, so the await-in-loop
+  // rule is suppressed for the entire e2e-testing library.
+  { files: ['libs/js-shared/e2e-testing/src/lib/**/*.ts'], rules: { 'sonarjs/no-await-in-loop': 'off' } },
   { ignores: ['**/dist', '**/reports', '**/coverage', 'tools/mock-backend'] },
 ];
