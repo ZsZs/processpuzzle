@@ -134,21 +134,26 @@ public class UninstallStarter {
         List<ImportReport.Error> kept = new ArrayList<>();
         for (DefinitionImportParticipant participant : participants.inRemovalOrder()) {
             Set<String> keys = owned.getOrDefault(participant.kind(), Set.of());
-            if (keys.isEmpty()) {
-                continue;
+            if (!keys.isEmpty()) {
+                removeKind(participant, orgKey, keys, items, kept);
             }
-            if (!participant.supportsUpgrade()) {
-                kept.add(new ImportReport.Error(null, "The " + participant.kind() + " definitions of the starter cannot be removed "
-                        + "one by one on this platform."));
-                continue;
-            }
-            DefinitionRemoval removal = participant.removeDrafts(orgKey, keys);
-            removal.removed().forEach(key ->
-                    items.add(new ImportReport.Item(participant.kind(), key, ImportReport.Action.DELETE)));
-            removal.refused().forEach((key, reason) -> kept.add(new ImportReport.Error(null,
-                    "The " + participant.kind() + " '" + key + "' stays: " + reason)));
         }
         return kept;
+    }
+
+    /** Removes one kind's definitions of the starter; what cannot go, or cannot be removed one by one, is an error. */
+    private void removeKind(DefinitionImportParticipant participant, String orgKey, Set<String> keys,
+                            List<ImportReport.Item> items, List<ImportReport.Error> kept) {
+        if (!participant.supportsUpgrade()) {
+            kept.add(new ImportReport.Error(null, "The " + participant.kind() + " definitions of the starter cannot be removed "
+                    + "one by one on this platform."));
+            return;
+        }
+        DefinitionRemoval removal = participant.removeDrafts(orgKey, keys);
+        removal.removed().forEach(key ->
+                items.add(new ImportReport.Item(participant.kind(), key, ImportReport.Action.DELETE)));
+        removal.refused().forEach((key, reason) -> kept.add(new ImportReport.Error(null,
+                "The " + participant.kind() + " '" + key + "' stays: " + reason)));
     }
 
     /** Takes the starter's modules out of the application's mounts and sidenav, as the install put them in. */

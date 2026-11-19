@@ -154,6 +154,32 @@ public class ImportBundle {
         return report;
     }
 
+    /**
+     * Applies the bundle's files kind by kind, appending what each wrote to {@code items}. Stops at the first refusal and
+     * answers its errors: a participant that failed mid-write may have left the persistence context in a state later
+     * participants should not build on. Empty when every file was written.
+     */
+    private Optional<List<ImportReport.Error>> write(String orgKey, StarterBundle bundle,
+                                                     Map<DefinitionImportParticipant, List<String>> plan,
+                                                     Map<String, Set<String>> removed, List<ImportReport.Item> items) {
+        for (Map.Entry<DefinitionImportParticipant, List<String>> step : plan.entrySet()) {
+            DefinitionImportParticipant participant = step.getKey();
+            Set<String> removedOfKind = removed.computeIfAbsent(participant.kind(), kind -> new LinkedHashSet<>());
+            for (String file : step.getValue()) {
+                ParticipantResult result = participant.apply(orgKey, file, bundle.file(file));
+                if (result.isRejected()) {
+                    return Optional.of(result.errors().stream().map(message -> new ImportReport.Error(file, message)).toList());
+                }
+                for (ImportedItem item : result.items()) {
+                    boolean existed = removedOfKind.remove(item.key()) || item.action() == ImportedItem.Action.UPDATE;
+                    items.add(new ImportReport.Item(participant.kind(), item.key(),
+                            existed ? ImportReport.Action.UPDATE : ImportReport.Action.CREATE));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     /** Whether the bundle is added to the organization rather than replacing its definitions. */
     static boolean isAdditive(StarterManifest manifest) {
         return manifest.isDomainStarter() && !manifest.isCommon();
@@ -165,26 +191,10 @@ public class ImportBundle {
         Map<String, Set<String>> removed = additive ? new LinkedHashMap<>() : removeAll(orgKey);
 
         List<ImportReport.Item> items = new ArrayList<>();
-        for (Map.Entry<DefinitionImportParticipant, List<String>> step : plan.entrySet()) {
-            DefinitionImportParticipant participant = step.getKey();
-            Set<String> removedOfKind = removed.computeIfAbsent(participant.kind(), kind -> new LinkedHashSet<>());
-            for (String file : step.getValue()) {
-                ParticipantResult result = participant.apply(orgKey, file, bundle.file(file));
-                if (result.isRejected()) {
-                    // Stop at the first refusal: a participant that failed mid-write may have left the
-                    // persistence context in a state later participants should not build on.
-                    status.setRollbackOnly();
-                    List<ImportReport.Error> errors = result.errors().stream()
-                            .map(message -> new ImportReport.Error(file, message))
-                            .toList();
-                    return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), errors);
-                }
-                for (ImportedItem item : result.items()) {
-                    boolean existed = removedOfKind.remove(item.key()) || item.action() == ImportedItem.Action.UPDATE;
-                    items.add(new ImportReport.Item(participant.kind(), item.key(),
-                            existed ? ImportReport.Action.UPDATE : ImportReport.Action.CREATE));
-                }
-            }
+        Optional<List<ImportReport.Error>> refusal = write(orgKey, bundle, plan, removed, items);
+        if (refusal.isPresent()) {
+            status.setRollbackOnly();
+            return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), refusal.get());
         }
         removed.forEach((kind, keys) -> keys.forEach(key -> items.add(new ImportReport.Item(kind, key, ImportReport.Action.DELETE))));
         List<String> warnings = additive ? mount(orgKey, manifest, items) : List.of();
