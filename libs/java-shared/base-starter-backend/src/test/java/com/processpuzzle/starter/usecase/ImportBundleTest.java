@@ -69,7 +69,9 @@ class ImportBundleTest {
     private FakeParticipant entities;
     private FakeParticipant rules;
     private long entityObjects;
+    private final Map<String, Long> objectsByType = new java.util.HashMap<>();
     private ImportBundle importBundle;
+    private UninstallStarter uninstallStarter;
     private ListInstalledStarters listInstalledStarters;
 
     @BeforeEach
@@ -82,6 +84,7 @@ class ImportBundleTest {
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         rules = new FakeParticipant(DefinitionKinds.RULE, DefinitionKinds.RULE_ORDER, calls);
         entityObjects = 0;
+        objectsByType.clear();
         InstanceDataProbe objects = new InstanceDataProbe() {
             @Override
             public String label() {
@@ -91,6 +94,16 @@ class ImportBundleTest {
             @Override
             public long count(String orgKey) {
                 return entityObjects;
+            }
+
+            @Override
+            public String definitionKind() {
+                return DefinitionKinds.ENTITY;
+            }
+
+            @Override
+            public long count(String orgKey, java.util.Collection<String> definitionKeys) {
+                return definitionKeys.stream().mapToLong(key -> objectsByType.getOrDefault(key, 0L)).sum();
             }
         };
         // Deliberately registered out of order: the importer must sort.
@@ -103,6 +116,9 @@ class ImportBundleTest {
         importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
                 provenanceRepository, installedStarterRepository, commonRules(), new KeyPrefixRules(participants), transactionManager, provider(null));
         listInstalledStarters = new ListInstalledStarters(guard, installedStarterRepository, provenanceRepository, participants, offeredRepository);
+        uninstallStarter = new UninstallStarter(guard, participants, provenanceRepository, installedStarterRepository, transactionManager);
+        entities.upgradeable = true;
+        rules.upgradeable = true;
     }
 
     @Test
@@ -479,6 +495,211 @@ class ImportBundleTest {
         ImportReport report = importBundle.execute("acme", bundle("item\n", "positive\n"), false, null);
 
         assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+    }
+
+    // --- Domain starters are added, not replacing (business-starters design, decision 11) -------------------
+
+    private static ByteArrayInputStream domainStarter(String id, String prefix, String entityFile, String ruleFile) {
+        String manifest = DOMAIN_MANIFEST.replace("id: inventory", "id: " + id).replace("keyPrefix: inv", "keyPrefix: " + prefix);
+        return zip(Map.of("manifest.yaml", manifest, "entities/item.yaml", entityFile, "rules/item-rules.yaml", ruleFile));
+    }
+
+    private void installBoth() {
+        importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\ninv-location\n", "inv-positive\n"), false, "alice");
+        importBundle.execute("acme", domainStarter("billing", "bil", "bil-invoice\n", "bil-total\n"), false, "alice");
+    }
+
+    private static void assertRejected(org.assertj.core.api.ThrowableAssert.ThrowingCallable call, ImportRejectedException.Reason reason,
+                                       String message) {
+        assertThatThrownBy(call).isInstanceOfSatisfying(ImportRejectedException.class, e -> {
+            assertThat(e.getReason()).isEqualTo(reason);
+            assertThat(e.getReport().errors()).extracting(ImportReport.Error::message).anyMatch(text -> text.contains(message));
+        });
+    }
+
+    @Test
+    void severalDomainStartersShareAnOrganizationAndNothingIsRemoved() {
+        installBoth();
+
+        assertThat(calls).noneMatch(call -> call.endsWith(":removeAll"));
+        assertThat(installedStarterRepository.findByOrgKeyOrderByStarterId("acme"))
+                .extracting(starter -> starter.getStarterId() + ":" + starter.isDomainStarter())
+                .containsExactly("billing:true", "inventory:true");
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "inventory")).hasSize(3);
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "billing")).hasSize(2);
+        assertThat(entities.store.get("acme")).containsKeys("inv-item", "inv-location", "bil-invoice");
+    }
+
+    @Test
+    void aDomainStarterIsAddedEvenWhereTheOrganizationHoldsData() {
+        entityObjects = 12;
+
+        ImportReport report = importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(report.deleted()).isZero();
+    }
+
+    @Test
+    void aDomainStarterThatWouldOverwriteTheCustomersDefinitionIsRefusedAndNothingIsWritten() {
+        entities.store.put("acme", new java.util.LinkedHashMap<>(Map.of("inv-item", "{\"key\":\"inv-item\"}")));
+
+        assertRejected(() -> importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\ninv-location\n", "inv-positive\n"),
+                false, null), ImportRejectedException.Reason.CONFLICT, "The entity 'inv-item' exists already; it belongs to the organization.");
+        assertThat(calls).isEmpty();
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isEmpty();
+    }
+
+    @Test
+    void aCollisionWithAnotherStartersDefinitionNamesThatStarter() {
+        importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null);
+        calls.clear();
+
+        // Same prefix on purpose: the packager forbids it, the importer must not rely on that.
+        assertRejected(() -> importBundle.execute("acme", domainStarter("billing", "inv", "inv-item\n", "inv-total\n"), false, null),
+                ImportRejectedException.Reason.CONFLICT, "belongs to the starter 'inventory'");
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void everyCollisionIsListedSoThatADryRunShowsThemAll() {
+        entities.store.put("acme", new java.util.LinkedHashMap<>(Map.of("inv-item", "{}", "inv-location", "{}")));
+        rules.store.put("acme", new java.util.LinkedHashMap<>(Map.of("inv-positive", "{}")));
+
+        assertThatThrownBy(() -> importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\ninv-location\n", "inv-positive\n"),
+                true, null)).isInstanceOfSatisfying(ImportRejectedException.class, e ->
+                assertThat(e.getReport().errors()).extracting(ImportReport.Error::message).hasSize(3));
+    }
+
+    @Test
+    void aDomainStarterThatIsInstalledAlreadyIsToBeUpgradedNotInstalledAgain() {
+        importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null);
+
+        assertRejected(() -> importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null),
+                ImportRejectedException.Reason.CONFLICT, "installed already; upgrade it instead");
+    }
+
+    @Test
+    void aDryRunOfADomainStarterWritesNoProvenanceAndNoInstallRow() {
+        ImportReport report = importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), true, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.WOULD_APPLY);
+        assertThat(installedStarterRepository.findByOrgKeyOrderByStarterId("acme")).isEmpty();
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "inventory")).isEmpty();
+    }
+
+    @Test
+    void aReplacingStarterIsRefusedWhileTheOrganizationHoldsADomainStarter() {
+        importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null);
+        calls.clear();
+
+        assertRejected(() -> importBundle.execute("acme", bundle("item\n", "positive\n"), false, null),
+                ImportRejectedException.Reason.CONFLICT, "would remove the domain starters inventory");
+        assertThat(calls).isEmpty();
+    }
+
+    @Test
+    void aReplacingStarterStillReplacesWhereThereIsNoDomainStarter() {
+        importBundle.execute("acme", bundle("item\n", "positive\n"), false, null);
+
+        ImportReport report = importBundle.execute("acme", bundle("other\n", "positive\n"), false, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(installedStarterRepository.findByOrgKeyOrderByStarterId("acme")).singleElement()
+                .satisfies(starter -> assertThat(starter.isDomainStarter()).isFalse());
+    }
+
+    // --- Uninstall ---------------------------------------------------------------------------------------------
+
+    @Test
+    void uninstallingRemovesTheStartersOwnDefinitionsAndLeavesTheRest() {
+        installBoth();
+        entities.store.get("acme").put("customer-thing", "{}");
+        calls.clear();
+
+        ImportReport report = uninstallStarter.execute("acme", "inventory", false);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key, ImportReport.Item::action)
+                .containsExactlyInAnyOrder(
+                        org.assertj.core.groups.Tuple.tuple("rule", "inv-positive", ImportReport.Action.DELETE),
+                        org.assertj.core.groups.Tuple.tuple("entity", "inv-item", ImportReport.Action.DELETE),
+                        org.assertj.core.groups.Tuple.tuple("entity", "inv-location", ImportReport.Action.DELETE));
+        // dependents first, and only this starter's keys asked for
+        assertThat(calls).containsExactly("rule:removeDrafts:inv-positive", "entity:removeDrafts:inv-item,inv-location");
+        assertThat(entities.store.get("acme")).containsOnlyKeys("bil-invoice", "customer-thing");
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isEmpty();
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "inventory")).isEmpty();
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "billing")).isPresent();
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "billing")).hasSize(2);
+    }
+
+    @Test
+    void aDryRunOfAnUninstallChangesNothing() {
+        installBoth();
+
+        ImportReport report = uninstallStarter.execute("acme", "inventory", true);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.WOULD_APPLY);
+        assertThat(report.deleted()).isEqualTo(3);
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isPresent();
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "inventory")).hasSize(3);
+    }
+
+    @Test
+    void anUninstallIsRefusedWhileTheOrganizationHoldsDataOfTheStartersEntityTypes() {
+        installBoth();
+        objectsByType.put("inv-item", 4L);
+        calls.clear();
+
+        assertRejected(() -> uninstallStarter.execute("acme", "inventory", false),
+                ImportRejectedException.Reason.HOLDS_INSTANCE_DATA, "4 entity objects");
+        assertThat(calls).isEmpty();
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isPresent();
+    }
+
+    @Test
+    void dataOfAnotherStartersTypeDoesNotStopAnUninstall() {
+        installBoth();
+        objectsByType.put("bil-invoice", 9L);
+
+        assertThat(uninstallStarter.execute("acme", "inventory", false).status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertRejected(() -> uninstallStarter.execute("acme", "billing", false),
+                ImportRejectedException.Reason.HOLDS_INSTANCE_DATA, "9 entity objects");
+    }
+
+    @Test
+    void aDefinitionSomethingElseStillNeedsStopsTheWholeUninstall() {
+        installBoth();
+        entities.refusals.put("inv-item", "a state machine of the customer refers to it");
+
+        assertRejected(() -> uninstallStarter.execute("acme", "inventory", false),
+                ImportRejectedException.Reason.CONFLICT, "The entity 'inv-item' stays: a state machine of the customer refers to it");
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isPresent();
+        assertThat(provenanceRepository.findByOrgKeyAndStarterId("acme", "inventory")).hasSize(3);
+    }
+
+    @Test
+    void aStarterThatReplacedTheOrganizationsDefinitionsCannotBeUninstalled() {
+        importBundle.execute("acme", bundle("item\n", "positive\n"), false, null);
+
+        assertRejected(() -> uninstallStarter.execute("acme", "inventory", false),
+                ImportRejectedException.Reason.INVALID, "replaced the organization's definitions");
+    }
+
+    @Test
+    void anUninstallOfAStarterTheOrganizationDoesNotHoldIsNotFound() {
+        assertThatThrownBy(() -> uninstallStarter.execute("acme", "inventory", false))
+                .isInstanceOf(StarterNotFoundException.class);
+    }
+
+    @Test
+    void anUninstallNeedsDesignRights() {
+        installBoth();
+        doThrow(new OrganizationAccessDeniedException("acme")).when(policy).requireDesign("acme");
+
+        assertThatThrownBy(() -> uninstallStarter.execute("acme", "inventory", false)).isInstanceOf(OrganizationAccessDeniedException.class);
+        assertThat(installedStarterRepository.findByOrgKeyAndStarterId("acme", "inventory")).isPresent();
     }
 
     private ByteArrayInputStream bundle(String entityFile, String ruleFile) {

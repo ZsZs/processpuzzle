@@ -18,7 +18,7 @@ class StarterApiExceptionHandlerTest {
     private final StarterApiExceptionHandler handler = new StarterApiExceptionHandler(new StarterMapper());
 
     @ParameterizedTest
-    @CsvSource({"TOO_LARGE, 413", "HOLDS_INSTANCE_DATA, 409", "INVALID, 422"})
+    @CsvSource({"TOO_LARGE, 413", "HOLDS_INSTANCE_DATA, 409", "CONFLICT, 409", "INVALID, 422"})
     void mapsEachRejectionToItsHttpStatusAndPreservesTheReport(ImportRejectedException.Reason reason, int status) {
         ImportReport report = ImportReport.rejected(true, "inventory", "1.0.0",
                 List.of(new ImportReport.Error("manifest.yaml", "Import refused")));

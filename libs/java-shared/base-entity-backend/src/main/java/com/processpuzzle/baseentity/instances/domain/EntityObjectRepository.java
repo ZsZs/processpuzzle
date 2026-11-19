@@ -16,6 +16,9 @@ public interface EntityObjectRepository
 
     long countByOrgKey(String orgKey);
 
+    /** Retired objects count, as for {@link #existsByOrgKeyAndEntityDefinitionCode}. */
+    long countByOrgKeyAndEntityDefinitionCodeIn(String orgKey, Collection<String> entityDefinitionCodes);
+
     /** Retired objects count: they are data the type still has. */
     boolean existsByOrgKeyAndEntityDefinitionCode(String orgKey, String entityDefinitionCode);
 

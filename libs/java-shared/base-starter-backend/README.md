@@ -32,15 +32,31 @@ CI builds the bucket's content with [`tools/business-starters/package-starters.m
 2. `BundleReader` reads the zip in memory, under the `base-starter.bundle` limits on the *uncompressed* size,
    and rejects unsafe paths, files the manifest does not list, mismatching `integrity` hashes and an
    unsupported `definitionSchemaVersion`. `ImportBundle` refuses a bundle that is not the requested starter.
-3. A starter **replaces** the organization's definitions, so `ImportBundle` refuses (409) an organization for
-   which any `InstanceDataProbe` counts data — entity objects (base-entity), workflow instances
-   (base-workflow).
-4. In one transaction: every `DefinitionImportParticipant` removes its kind's definitions, in reverse kind
-   order, then the bundle's files are applied in kind order — entity, state, rule, widget, document, workflow,
-   app. Any refusal rolls everything back. A **dry run** is the same transaction rolled back, so it validates
-   exactly what an apply would; its report lists definitions to create, update and delete.
-5. On apply, the importer replaces the organization's **provenance** — starter id, version and the sha256 of
-   each definition's canonical fingerprint — and its installed starter.
+3. A **domain starter** (`manifestVersion: 3`) is *added*. `ImportBundle` refuses (409) one that is installed
+   already (upgrade it) or whose definitions exist in the organization — the customer's own or another
+   starter's: each participant's `fingerprints` says which keys exist, `keysIn` which the bundle brings, and
+   every collision is listed. Keys are never rewritten; the `keyPrefix` convention keeps official starters apart.
+   Nothing existing is touched, so no data check is needed.
+   Any other starter **replaces** the organization's definitions, so it is refused (409) for an organization
+   for which any `InstanceDataProbe` counts data — entity objects (base-entity), workflow instances
+   (base-workflow) — and for one that holds a domain starter, which the replacement would remove.
+4. In one transaction: for a replacing starter every `DefinitionImportParticipant` removes its kind's
+   definitions, in reverse kind order; then the bundle's files are applied in kind order — entity, state, rule,
+   widget, document, workflow, app. Any refusal rolls everything back. A **dry run** is the same transaction
+   rolled back, so it validates exactly what an apply would; its report lists definitions to create, update and
+   delete.
+5. On apply, a replacing starter replaces the organization's **provenance** — starter id, version and the sha256
+   of each definition's canonical fingerprint — and its installed starter; a domain starter adds its own rows,
+   marked as a domain starter, and leaves the others.
+
+`DELETE /organizations/{orgKey}/starters/{starterId}` (`UninstallStarter`, `dryRun` optional) removes a domain
+starter again: the definitions its provenance rows name, and nothing else. It is refused (409) while the
+organization holds data of the starter's own entity types or workflows — `InstanceDataProbe.definitionKind()` and
+the keyed `count(orgKey, keys)` tell them from the rest — and while a definition is still needed by something
+else, each participant's `removeDrafts` giving its reason; the report lists every reason and nothing is written.
+The definitions go as drafts, as with a designer's delete or a version that drops them, and the released rows
+follow with the organization's next release. A starter that replaced the organization's definitions, and a
+common, are refused (422).
 
 `InstallStarter.provision(orgKey, starterId, version, installedBy)` runs steps 1–5 without the design-rights
 check and never as a dry run. It is for an application's seed use case, which installs the starter a
@@ -55,7 +71,7 @@ its current fingerprint no longer hashes to the stored value.
 
 `libs/java-shared/api-contracts/src/main/resources/base-starter-api.yaml`. A refused install answers 409, 413 or
 422 with the same `ImportReport` a successful one returns; an unknown starter is 404 and an unreadable
-registry 503. `POST /organizations/{orgKey}/definitions/import` is the byte-level entry point the install runs
+registry 503; a domain starter that collides with a definition is 409. `POST /organizations/{orgKey}/definitions/import` is the byte-level entry point the install runs
 on; it is not offered to users.
 
 ## Tests
