@@ -28,7 +28,7 @@ function seededDefinitions(): SeededDefinition[] {
  * Widgets the seed catalogue carries but another library registers — a widget aware of documents cannot live
  * here without closing a dependency cycle. Each is held to the same contract by a spec in its own library.
  */
-const WIDGETS_REGISTERED_ELSEWHERE = ['chat-panel', 'chat-topics', 'chat-unread-badge', 'content-book'];
+const WIDGETS_REGISTERED_ELSEWHERE = ['chat-panel', 'chat-topics', 'chat-unread-badge', 'content-book', 'auth-button', 'admin-button'];
 
 const cases = BASE_WIDGET_REGISTRATIONS.map((registration) => [registration.type, registration] as const);
 

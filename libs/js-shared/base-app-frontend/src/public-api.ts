@@ -30,6 +30,7 @@ export {
   type ThemeDefinition,
   type WidgetPlacement,
 } from './lib/domain/app-definition';
+export { regionWidgetTypes } from './lib/domain/region-widget-types';
 export { ModuleDefinition, moduleRouteTranslocoId, moduleTranslocoScope } from './lib/domain/module-definition';
 export type { ModuleTranslationBundle, ModuleTranslationCoverage, ModuleTranslationUploadLanguage, ModuleTranslationUploadReport } from './lib/domain/module-translation';
 export { ModuleTranslationService } from './lib/domain/module-translation.service';
