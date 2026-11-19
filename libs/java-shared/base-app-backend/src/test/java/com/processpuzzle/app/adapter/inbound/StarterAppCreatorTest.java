@@ -63,6 +63,29 @@ class StarterAppCreatorTest {
         assertThat(starterApp.getDraftGraph().layout()).isNull();
     }
 
+    @Test
+    void withTheDefaultShellOnTheStarterAppIsTheShellPublishedAtOnceAndUntouched() {
+        new StarterAppCreator(repository, true).onOrganizationProvisioned(EVENT);
+
+        AppDefinition app = saved();
+        assertThat(app.getDraftGraph().regions()).extracting(region -> region.type()).containsExactly("header", "sidenav", "footer");
+        assertThat(app.getDraftGraph().routes()).singleElement().satisfies(route -> {
+            assertThat(route.path()).isEqualTo("home");
+            assertThat(route.target().widgets()).extracting(widget -> widget.type()).containsExactly("module-launcher");
+        });
+        assertThat(app.getDraftGraph().modules()).isEmpty();
+        assertThat(app.isPublished()).isTrue();
+        assertThat(app.getPublishedGraph()).isEqualTo(app.getDraftGraph());
+        assertThat(app.isUntouchedShell()).isTrue();
+    }
+
+    @Test
+    void anEmptyStarterAppIsNotAnUntouchedShell() {
+        creator.onOrganizationProvisioned(EVENT);
+
+        assertThat(saved().isUntouchedShell()).isFalse();
+    }
+
     /**
      * The event carries the key the organization was actually committed with, already normalised by
      * {@code ProvisionOrganization}. Nothing here re-normalises it: two independent normalisations

@@ -38,7 +38,8 @@ class StarterEndpointTest {
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final StarterMapper mapper = new StarterMapper();
     private final com.processpuzzle.starter.usecase.UpgradeStarter upgrader = mock(com.processpuzzle.starter.usecase.UpgradeStarter.class);
-    private final StarterEndpoint endpoint = new StarterEndpoint(catalog, installer, importer, installed, upgrader, mapper, request);
+    private final com.processpuzzle.starter.usecase.UninstallStarter uninstaller = mock(com.processpuzzle.starter.usecase.UninstallStarter.class);
+    private final StarterEndpoint endpoint = new StarterEndpoint(catalog, installer, importer, installed, upgrader, uninstaller, mapper, request);
 
     @Test
     void listsAndFindsCatalogStarters() {
@@ -178,5 +179,23 @@ class StarterEndpointTest {
         endpoint.upgradeStarter("acme", "inventory", null);
 
         verify(upgrader).execute("acme", "inventory", null, false, null);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(booleans = {true, false})
+    void anUninstallPassesTheDryRunFlagAndAnswersTheReport(Boolean dryRun) {
+        var report = new com.processpuzzle.starter.usecase.ImportReport(Boolean.TRUE.equals(dryRun),
+                Boolean.TRUE.equals(dryRun) ? com.processpuzzle.starter.usecase.ImportReport.Status.WOULD_APPLY
+                        : com.processpuzzle.starter.usecase.ImportReport.Status.APPLIED,
+                "inventory", "1.0.0", List.of(new com.processpuzzle.starter.usecase.ImportReport.Item("entity", "inv-item",
+                        com.processpuzzle.starter.usecase.ImportReport.Action.DELETE)), List.of());
+        when(uninstaller.execute("acme", "inventory", Boolean.TRUE.equals(dryRun))).thenReturn(report);
+
+        var response = endpoint.uninstallStarter("acme", "inventory", dryRun);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getDryRun()).isEqualTo(Boolean.TRUE.equals(dryRun));
+        assertThat(response.getBody().getItems()).singleElement().satisfies(item -> assertThat(item.getKey()).isEqualTo("inv-item"));
     }
 }

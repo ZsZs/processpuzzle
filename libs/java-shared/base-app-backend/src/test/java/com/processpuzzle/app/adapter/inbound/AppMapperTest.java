@@ -43,6 +43,29 @@ class AppMapperTest {
     private final AppMapper mapper = new AppMapper();
 
     @Test
+    void aMountsLauncherCardSurvivesTheRoundTripThroughTheApi() {
+        com.processpuzzle.app.model.ModuleLauncher launcher = new com.processpuzzle.app.model.ModuleLauncher("launcher.title");
+        launcher.setImage("module:launcher.svg");
+        launcher.setSubtitleKey("launcher.subtitle");
+        launcher.setContentKeys(List.of("launcher.content", "launcher.more"));
+        launcher.setLink("overview");
+        com.processpuzzle.app.model.ModuleMount withCard = new com.processpuzzle.app.model.ModuleMount("inv-stock", "stock");
+        withCard.setLauncher(launcher);
+        AppDefinitionInput input = fullInput();
+        input.setModules(List.of(withCard, new com.processpuzzle.app.model.ModuleMount("plain", "plain")));
+
+        AppGraph graph = mapper.toDomainGraph(input);
+
+        assertThat(graph.modules().getFirst().launcher()).isEqualTo(new com.processpuzzle.app.domain.ModuleMount.Launcher(
+                "module:launcher.svg", "launcher.title", "launcher.subtitle", List.of("launcher.content", "launcher.more"), "overview"));
+        assertThat(graph.modules().getLast().launcher()).isNull();
+        com.processpuzzle.app.model.AppDefinition model = mapper.toModel(
+                new com.processpuzzle.app.domain.AppDefinition("my-org", "app", "App", null, null, graph));
+        assertThat(model.getModules().getFirst().getLauncher()).isEqualTo(launcher);
+        assertThat(model.getModules().getLast().getLauncher()).isNull();
+    }
+
+    @Test
     void workingContextsAndRequiresContext_roundTripThroughTheGraph() {
         com.processpuzzle.app.model.WorkingContextDefinition race = new com.processpuzzle.app.model.WorkingContextDefinition("race", "Race");
         race.setParent("regatta");

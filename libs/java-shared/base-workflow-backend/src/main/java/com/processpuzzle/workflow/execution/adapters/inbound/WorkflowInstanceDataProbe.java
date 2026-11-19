@@ -1,7 +1,9 @@
 package com.processpuzzle.workflow.execution.adapters.inbound;
 
+import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.workflow.execution.domain.WorkflowInstanceRepository;
+import java.util.Collection;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,5 +27,15 @@ public class WorkflowInstanceDataProbe implements InstanceDataProbe {
     @Override
     public long count(String orgKey) {
         return repository.countByOrgKey(orgKey);
+    }
+
+    @Override
+    public String definitionKind() {
+        return DefinitionKinds.WORKFLOW;
+    }
+
+    @Override
+    public long count(String orgKey, Collection<String> definitionKeys) {
+        return definitionKeys.isEmpty() ? 0 : repository.countByOrgKeyAndWorkflowIdIn(orgKey, definitionKeys);
     }
 }

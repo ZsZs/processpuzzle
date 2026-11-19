@@ -25,6 +25,24 @@ them together with the routes that name them. See [the plan](../../../docs/modul
   records and never files. Content is streamed by `GET /modules/{key}/assets/content?path=` with an `ETag`; SVG is sandboxed and HTML is a download.
   Objects nothing names any more are removed after the transaction commits (`ModuleAssetSweeper`).
 
+## Domain starters: mounts and the default shell
+
+A domain starter (`manifestVersion: 3`) carries no application. Its modules reach the customer's application through
+`ModuleMountPort`, which `processpuzzle-core` declares, `base-starter-backend` calls and `AppModuleMountAdapter`
+implements here (business-starters design §11.3):
+
+- **Mount.** For each `mounts:` hint of the manifest the application gets a `ModuleMount` (carrying the hint's
+  `launcher` card), and its sidenav an entry named for the module, leading to the mount's landing route. Nothing else
+  of the application is touched. A hint whose module is missing, already mounted or whose path is taken is skipped and
+  reported, never an error. `ModuleMountMerger` is the pure part, `unmount` its inverse (used by the starter's uninstall).
+- **Draft or released.** Mounts go to the application's *draft*. The application is released with them only when it is
+  still the untouched default shell (`AppDefinition.isUntouchedShell()`: seeded by the platform, never saved by a
+  designer — `replaceDraft` clears it, `mergeDraft` does not, and rows that predate the flag count as touched);
+  otherwise the owner releases it, and the install says so in its report.
+- **Default shell.** With `base-app.default-shell=true` a new organization's application is `DefaultShell` instead of
+  empty — logo, title, sidenav, version button and a home page holding one `module-launcher` widget — published at once.
+  Off by default until the widget exists in the frontend.
+
 ## Technologies
 
 - **Java 25**

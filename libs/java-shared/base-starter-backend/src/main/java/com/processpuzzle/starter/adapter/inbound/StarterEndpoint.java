@@ -14,6 +14,7 @@ import com.processpuzzle.starter.usecase.ImportBundle;
 import com.processpuzzle.starter.usecase.InstallStarter;
 import com.processpuzzle.starter.usecase.ListInstalledStarters;
 import com.processpuzzle.starter.usecase.StarterNotFoundException;
+import com.processpuzzle.starter.usecase.UninstallStarter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,13 +35,15 @@ public class StarterEndpoint implements BaseStarterApi {
     private final ImportBundle importBundle;
     private final ListInstalledStarters listInstalledStarters;
     private final UpgradeStarter upgradeStarter;
+    private final UninstallStarter uninstallStarter;
     private final StarterMapper mapper;
     private final HttpServletRequest request;
 
     public StarterEndpoint(BrowseCatalog browseCatalog, InstallStarter installStarter, ImportBundle importBundle,
-                           ListInstalledStarters listInstalledStarters, UpgradeStarter upgradeStarter, StarterMapper mapper,
-                           HttpServletRequest request) {
+                           ListInstalledStarters listInstalledStarters, UpgradeStarter upgradeStarter,
+                           UninstallStarter uninstallStarter, StarterMapper mapper, HttpServletRequest request) {
         this.upgradeStarter = upgradeStarter;
+        this.uninstallStarter = uninstallStarter;
         this.browseCatalog = browseCatalog;
         this.installStarter = installStarter;
         this.importBundle = importBundle;
@@ -84,6 +87,11 @@ public class StarterEndpoint implements BaseStarterApi {
         com.processpuzzle.starter.model.UpgradeReport model = mapper.toModel(report);
         return report.status() == UpgradeReport.Status.REJECTED
                 ? ResponseEntity.unprocessableEntity().body(model) : ResponseEntity.ok(model);
+    }
+
+    @Override
+    public ResponseEntity<ImportReport> uninstallStarter(String orgKey, String starterId, Boolean dryRun) {
+        return ResponseEntity.ok(mapper.toModel(uninstallStarter.execute(orgKey, starterId, Boolean.TRUE.equals(dryRun))));
     }
 
     @Override

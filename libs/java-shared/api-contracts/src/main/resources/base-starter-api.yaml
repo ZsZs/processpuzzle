@@ -79,11 +79,13 @@ paths:
       - $ref: "#/components/parameters/OrgKeyParam"
     post:
       operationId: installStarter
-      summary: Install a catalog starter into the organization, replacing its definitions
+      summary: Install a catalog starter into the organization
       description: >-
-        Requires design rights on the organization. Refused while the organization holds entity
-        objects or workflow instances. With dryRun the install is validated and reported, and
-        nothing is written.
+        Requires design rights on the organization. A domain starter (manifestVersion 3) is added next to what the
+        organization holds and refused with 409 when it would overwrite an existing definition or is installed
+        already. Any other starter replaces the organization's definitions, and is refused while the organization
+        holds entity objects or workflow instances, or a domain starter. With dryRun the install is validated and
+        reported, and nothing is written.
       tags: [ Base Starter ]
       requestBody:
         required: true
@@ -103,7 +105,9 @@ paths:
         "404":
           description: No such starter or version in the catalog.
         "409":
-          description: The organization holds instance data the install would orphan; nothing was written.
+          description: >-
+            The organization holds instance data the install would orphan, a domain starter it would remove, or a
+            definition the starter would overwrite; nothing was written.
           content:
             application/json:
               schema:
@@ -189,6 +193,53 @@ paths:
         "403":
           description: The authenticated principal may not act on this organization.
 
+  /organizations/{orgKey}/starters/{starterId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/StarterIdParam"
+    delete:
+      operationId: uninstallStarter
+      summary: Remove an installed domain starter from the organization
+      description: >-
+        Requires design rights on the organization. Removes the definitions the starter brought — recorded in
+        provenance — and nothing else: not what the organization made, not another starter's. They go the way a
+        designer's delete does, as drafts, and the released rows follow with the organization's next release. Refused
+        with 409 while the organization holds data of the starter's own entity types or workflows, or while something
+        else still needs one of its definitions; the report lists every reason. A starter installed as a replacement,
+        and a common, is refused with 422. With dryRun the removal is planned and reported, and nothing is written.
+      tags: [ Base Starter ]
+      parameters:
+        - name: dryRun
+          in: query
+          required: false
+          description: Plan and report what would be removed, write nothing.
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Report of a dry run or of an applied removal; every item is a DELETE
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "403":
+          description: The authenticated principal may not author metadata for this organization.
+        "404":
+          description: The organization has not installed this starter.
+        "409":
+          description: The starter's definitions still have data, or something else needs them; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+        "422":
+          description: The starter cannot be removed — it replaced the organization's definitions, or it is a common.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportReport"
+
   /organizations/{orgKey}/starters/{starterId}/upgrade:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -258,7 +309,7 @@ components:
     DefinitionKind:
       type: string
       description: The kinds the importer knows; a bundle naming any other is rejected.
-      enum: [ entity, state, rule, calculation, widget, chat, document, event, artifact, role, tool, task, workflow, module, app, translation, asset ]
+      enum: [ entity, state, rule, calculation, widget, chat, document, event, artifact, role, tool, task, workflow, module, app, translation, asset, mount ]
 
     ImportReport:
       type: object
@@ -283,6 +334,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ImportError"
+        warnings:
+          type: array
+          description: >-
+            What the install did not do for want of a place: a module installed but not mounted into the application, and
+            why; or that the mounts are drafts of the application, left for its owner to release.
+          items:
+            type: string
 
     ImportSummary:
       type: object
