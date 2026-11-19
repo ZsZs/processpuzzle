@@ -2,6 +2,8 @@ package com.processpuzzle.app.adapter.inbound;
 
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
+import com.processpuzzle.app.domain.Region;
+import com.processpuzzle.app.domain.Widget;
 import com.processpuzzle.shared.event.OrganizationProvisionedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,10 +70,10 @@ class StarterAppCreatorTest {
         new StarterAppCreator(repository, true).onOrganizationProvisioned(EVENT);
 
         AppDefinition app = saved();
-        assertThat(app.getDraftGraph().regions()).extracting(region -> region.type()).containsExactly("header", "sidenav", "footer");
+        assertThat(app.getDraftGraph().regions()).extracting(Region::type).containsExactly("header", "sidenav", "footer");
         assertThat(app.getDraftGraph().routes()).singleElement().satisfies(route -> {
             assertThat(route.path()).isEqualTo("home");
-            assertThat(route.target().widgets()).extracting(widget -> widget.type()).containsExactly("module-launcher");
+            assertThat(route.target().widgets()).extracting(Widget::type).containsExactly("module-launcher");
         });
         assertThat(app.getDraftGraph().modules()).isEmpty();
         assertThat(app.isPublished()).isTrue();
