@@ -110,6 +110,7 @@
       "base-starter-frontend",
       "base-event-frontend",
       "base-chat-frontend",
+      "base-calendar-frontend",
       "base-calculation-frontend",
       "base-release-frontend",
       "auth",
