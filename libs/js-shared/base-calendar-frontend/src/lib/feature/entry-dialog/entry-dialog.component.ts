@@ -29,6 +29,8 @@ interface Failure {
   text?: string;
 }
 
+const TITLE_KEY_OF_MODE: Record<EntryDialogData['mode'], string> = { create: 'new', edit: 'edit', view: 'view' };
+
 const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
   forbidden: 'base_calendar.errors.forbidden',
   'not-found': 'base_calendar.errors.not_found',
@@ -51,7 +53,7 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provideTranslocoScope({ scope: BASE_CALENDAR_TRANSLOCO_SCOPE, alias: BASE_CALENDAR_TRANSLOCO_ALIAS })],
   template: `
-    <h2 mat-dialog-title data-testid="entry-dialog-title">{{ titleKey() | transloco }}</h2>
+    <h2 mat-dialog-title data-testid="entry-dialog-title">{{ titleKey | transloco }}</h2>
     <mat-dialog-content class="pp-entry-dialog">
       @if (editable()) {
         <form id="pp-entry-form" class="pp-entry-dialog__form" (ngSubmit)="save()">
@@ -215,7 +217,7 @@ export class EntryDialogComponent {
   protected readonly complete = computed(() => isFormComplete(this.value()));
   /** The entry as shown read-only; none when the dialog edits. */
   protected readonly shown = computed(() => (this.data.mode === 'view' ? this.data.entry : null));
-  protected readonly titleKey = computed(() => `base_calendar.entry.${this.data.mode === 'create' ? 'new' : this.data.mode === 'edit' ? 'edit' : 'view'}`);
+  protected readonly titleKey = `base_calendar.entry.${TITLE_KEY_OF_MODE[this.data.mode]}`;
 
   protected patch(change: Partial<EntryFormValue>): void {
     this.value.update((current) => ({ ...current, ...change }));

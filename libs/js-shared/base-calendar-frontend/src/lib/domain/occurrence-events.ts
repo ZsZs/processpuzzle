@@ -31,6 +31,13 @@ export function calendarColor(index: number): string {
   return `var(--pp-calendar-color-${Math.max(0, index) % CALENDAR_COLOR_COUNT})`;
 }
 
+/** Unique across calendars and, for a recurring entry, across its occurrences. */
+function eventId(occurrence: Occurrence): string {
+  const parts = [occurrence.calendarKey, occurrence.entryId];
+  if (occurrence.recurrenceId) parts.push(occurrence.recurrenceId);
+  return parts.join(':');
+}
+
 /**
  * One occurrence as a calendar event. A busy occurrence carries no title from the server, so it shows
  * {@code busyLabel}; it is never editable, whatever else says so.
@@ -44,7 +51,7 @@ export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busy
   if (occurrence.busy) classNames.push('pp-calendar__event--busy');
   if (occurrence.mine) classNames.push('pp-calendar__event--mine');
   return {
-    id: `${occurrence.calendarKey}:${occurrence.entryId}${occurrence.recurrenceId ? `:${occurrence.recurrenceId}` : ''}`,
+    id: eventId(occurrence),
     title: occurrence.busy ? busyLabel : (occurrence.title ?? ''),
     start: (allDay ? occurrence.startDate : occurrence.start) ?? '',
     end: (allDay ? occurrence.endDate : occurrence.end) ?? '',

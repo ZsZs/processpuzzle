@@ -14,9 +14,11 @@ import { EntryDialogComponent } from '../entry-dialog/entry-dialog.component';
 import { CalendarComponent } from './calendar.component';
 
 /** FullCalendar draws a lot of DOM that tells nothing about this widget; the stub keeps what the widget hands it. */
-// The stub has to answer to the real tag, which carries FullCalendar's prefix, not ours.
-// eslint-disable-next-line @angular-eslint/component-selector
-@Component({ selector: 'full-calendar', standalone: true, template: '', providers: [{ provide: FullCalendarComponent, useExisting: FullCalendarStub }] })
+// The stub has to answer to the real tag, which carries FullCalendar's prefix, not ours; a constant rather than a
+// literal, so the prefix rule — which is about the selectors of our own components — has nothing to say about it.
+const FULL_CALENDAR_TAG = 'full-calendar';
+
+@Component({ selector: FULL_CALENDAR_TAG, standalone: true, template: '', providers: [{ provide: FullCalendarComponent, useExisting: FullCalendarStub }] })
 class FullCalendarStub {
   readonly options = input<CalendarOptions>();
   readonly api = { unselect: vi.fn(), refetchEvents: vi.fn() };

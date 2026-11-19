@@ -25,6 +25,12 @@ export interface EntryFormValue {
   lastDay: string;
 }
 
+/** All-day for a whole-day click when the calendar takes all-day entries, else timed when it takes those, else what it takes. */
+function kindForSlot(kinds: readonly EntryKind[], allDay: boolean): EntryKind {
+  if (allDay && kinds.includes('ALL_DAY')) return 'ALL_DAY';
+  return kinds.includes('TIMED') ? 'TIMED' : kinds[0];
+}
+
 /** How long a new timed entry lasts when the user only clicked: a slot of the calendar, else an hour. */
 function defaultMinutes(calendar: CalendarInfo): number {
   return Math.max(calendar.slotMinutes ?? 60, calendar.minDurationMinutes ?? 0, 15);
@@ -34,7 +40,7 @@ function defaultMinutes(calendar: CalendarInfo): number {
 export function formForSlot(calendar: CalendarInfo, slot: CalendarSlot): EntryFormValue {
   const zone = calendar.effectiveTimeZone;
   const kinds = bookableKinds(calendar);
-  const kind: EntryKind = slot.allDay && kinds.includes('ALL_DAY') ? 'ALL_DAY' : kinds.includes('TIMED') ? 'TIMED' : kinds[0];
+  const kind = kindForSlot(kinds, slot.allDay);
   const base = { kind, title: '', description: '', location: '', category: '', visibility: 'PUBLIC' as EntryVisibility };
 
   if (slot.allDay) {

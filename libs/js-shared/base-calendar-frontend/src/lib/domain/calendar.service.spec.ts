@@ -71,8 +71,8 @@ describe('CalendarService', () => {
   it('encodes a key that is not path-safe', async () => {
     const promise = service.getCalendar('a/b c');
 
-    http.expectOne(`${ROOT}/calendar/calendars/a%2Fb%20c`).flush({});
-    await promise;
+    http.expectOne(`${ROOT}/calendar/calendars/a%2Fb%20c`).flush({ key: 'a/b c' });
+    await expect(promise).resolves.toEqual({ key: 'a/b c' });
   });
 });
 
