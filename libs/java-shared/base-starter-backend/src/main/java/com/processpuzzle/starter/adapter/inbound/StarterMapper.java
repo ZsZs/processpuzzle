@@ -56,7 +56,8 @@ public class StarterMapper {
                 .installedBy(view.installedBy())
                 .customizedDefinitions(view.customizedDefinitions())
                 .offeredVersion(view.offeredVersion())
-                .upgradeAvailable(view.upgradeAvailable());
+                .upgradeAvailable(view.upgradeAvailable())
+                .domainStarter(view.domainStarter());
     }
 
     public com.processpuzzle.starter.model.UpgradeReport toModel(com.processpuzzle.starter.usecase.UpgradeReport report) {

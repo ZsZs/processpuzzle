@@ -5,7 +5,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { INSTALLED_STARTERS_I18N_SCOPE } from '../base-starter.i18n';
 import { InstalledStarter } from '../domain/starter';
 
-/** The starters installed in the organization, with how many of their definitions were changed since. */
+/**
+ * The starters installed in the organization, with how many of their definitions were changed since, and for each a way
+ * to upgrade it and — for a domain starter, which was added rather than replacing what the organization had — to remove it.
+ */
 @Component({
   selector: 'pp-installed-starters',
   standalone: true,
@@ -25,6 +28,7 @@ import { InstalledStarter } from '../domain/starter';
             <th>{{ scope + '.column.installedBy' | transloco }}</th>
             <th>{{ scope + '.column.customized' | transloco }}</th>
             <th>{{ scope + '.column.upgrade' | transloco }}</th>
+            <th>{{ scope + '.column.remove' | transloco }}</th>
           </tr>
         </thead>
         <tbody>
@@ -48,6 +52,21 @@ import { InstalledStarter } from '../domain/starter';
                   </button>
                 } @else {
                   <span class="installed__current">{{ scope + '.upToDate' | transloco }}</span>
+                }
+              </td>
+              <td>
+                @if (starter.domainStarter) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [attr.data-testid]="'uninstall-' + starter.starterId"
+                    [disabled]="busy()"
+                    (click)="previewUninstall.emit(starter.starterId)"
+                  >
+                    {{ scope + '.remove' | transloco }}
+                  </button>
+                } @else {
+                  <span class="installed__current" [attr.data-testid]="'not-removable-' + starter.starterId" [attr.title]="scope + '.notRemovable' | transloco">—</span>
                 }
               </td>
             </tr>
@@ -89,5 +108,7 @@ export class InstalledStartersComponent {
   readonly busy = input(false);
   /** The user asked to see what upgrading the starter to the version on offer would do. */
   readonly previewUpgrade = output<string>();
+  /** The user asked to see what removing the starter would do. Offered for a domain starter only. */
+  readonly previewUninstall = output<string>();
   protected readonly scope = INSTALLED_STARTERS_I18N_SCOPE;
 }

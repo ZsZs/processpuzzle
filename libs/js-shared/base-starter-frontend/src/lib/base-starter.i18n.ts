@@ -17,3 +17,6 @@ export const INSTALLED_STARTERS_I18N_SCOPE = `${BASE_STARTER_TRANSLOCO_SCOPE}.in
 
 /** Key root of the upgrade report and its actions. */
 export const STARTER_UPGRADE_I18N_SCOPE = `${BASE_STARTER_TRANSLOCO_SCOPE}.upgrade`;
+
+/** Removing a domain starter again: its report's status and summary words, and the button that applies it. */
+export const STARTER_UNINSTALL_I18N_SCOPE = `${BASE_STARTER_TRANSLOCO_SCOPE}.uninstall`;

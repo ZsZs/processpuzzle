@@ -9,6 +9,7 @@ export type DefinitionKind =
   | 'state'
   | 'rule'
   | 'calculation'
+  | 'chat'
   | 'widget'
   | 'document'
   | 'event'
@@ -20,7 +21,9 @@ export type DefinitionKind =
   | 'module'
   | 'app'
   | 'translation'
-  | 'asset';
+  | 'asset'
+  /** Not a definition: a module mounted into, or taken out of, the application. */
+  | 'mount';
 
 export type ImportStatus = 'applied' | 'would-apply' | 'rejected';
 
@@ -51,6 +54,11 @@ export interface ImportReport {
   readonly summary?: { readonly created?: number; readonly updated?: number; readonly deleted?: number };
   readonly items?: readonly ImportReportItem[];
   readonly errors?: readonly ImportError[];
+  /**
+   * What was not done for want of a place — a module installed but not mounted into the application, and why — or that
+   * the mounts are drafts of the application, left for its owner to release. Never a refusal.
+   */
+  readonly warnings?: readonly string[];
 }
 
 export interface InstalledStarter {
@@ -64,6 +72,11 @@ export interface InstalledStarter {
   readonly offeredVersion?: string;
   /** Whether a newer version is on offer; {@link StarterService.upgrade} applies it. */
   readonly upgradeAvailable?: boolean;
+  /**
+   * Whether it was added to the organization — and so can be removed with {@link StarterService.uninstall} — rather
+   * than having replaced what the organization had, which cannot be removed.
+   */
+  readonly domainStarter?: boolean;
 }
 
 /**

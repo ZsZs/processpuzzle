@@ -60,7 +60,8 @@ public class ListInstalledStarters {
         String offeredVersion = offered.findById(installed.getStarterId()).map(OfferedVersion::getVersion).orElse(null);
         boolean upgradeAvailable = offeredVersion != null && StarterVersions.compare(offeredVersion, installed.getVersion()) > 0;
         return new View(installed.getStarterId(), installed.getVersion(), installed.getInstalledAt(), installed.getInstalledBy(),
-                customized(orgKey, installed), upgradeAvailable ? offeredVersion : null, upgradeAvailable);
+                customized(orgKey, installed), upgradeAvailable ? offeredVersion : null, upgradeAvailable,
+                installed.isDomainStarter());
     }
 
     private int customized(String orgKey, InstalledStarter installed) {
@@ -89,8 +90,16 @@ public class ListInstalledStarters {
     /**
      * @param offeredVersion   the version the platform offers when it is newer than the installed one; otherwise null
      * @param upgradeAvailable whether an upgrade is on offer
+     * @param domainStarter    whether it was added to the organization — and can be uninstalled — rather than replacing
+     *                         what the organization had
      */
     public record View(String starterId, String version, Instant installedAt, String installedBy,
-                       int customizedDefinitions, String offeredVersion, boolean upgradeAvailable) {
+                       int customizedDefinitions, String offeredVersion, boolean upgradeAvailable, boolean domainStarter) {
+
+        /** A starter that replaced the organization's definitions. */
+        public View(String starterId, String version, Instant installedAt, String installedBy,
+                    int customizedDefinitions, String offeredVersion, boolean upgradeAvailable) {
+            this(starterId, version, installedAt, installedBy, customizedDefinitions, offeredVersion, upgradeAvailable, false);
+        }
     }
 }

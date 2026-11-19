@@ -21,6 +21,12 @@ type StarterImportState = {
   upgradePreview: UpgradeReport | undefined;
   /** The applied upgrade. */
   upgradeApplied: UpgradeReport | undefined;
+  /** The installed starter that is being previewed or removed. */
+  uninstallStarterId: string | undefined;
+  /** The dry run of removing {@link StarterImportState.uninstallStarterId}. */
+  uninstallPreview: ImportReport | undefined;
+  /** The applied removal. */
+  uninstallApplied: ImportReport | undefined;
   isBusy: boolean;
   /** A failure that carried no report — no network, 403, 404, 503. A refused install is a report, not this. */
   error: string | undefined;
@@ -35,6 +41,9 @@ const initialState: StarterImportState = {
   upgradeStarterId: undefined,
   upgradePreview: undefined,
   upgradeApplied: undefined,
+  uninstallStarterId: undefined,
+  uninstallPreview: undefined,
+  uninstallApplied: undefined,
   isBusy: false,
   error: undefined,
 };
@@ -59,6 +68,12 @@ export const StarterImportStore = signalStore(
     /** Applying is possible only for the target a dry run just showed, and only if that dry run would apply. */
     canApplyUpgrade: computed(
       () => !!store.upgradeStarterId() && !store.isBusy() && !store.upgradeApplied() && store.upgradePreview()?.status === 'would-apply',
+    ),
+    /** The removal report to show: the applied one once there is one, the preview before. */
+    uninstallReport: computed(() => store.uninstallApplied() ?? store.uninstallPreview()),
+    /** Removing is possible only for the starter a dry run just showed, and only if that dry run would apply. */
+    canApplyUninstall: computed(
+      () => !!store.uninstallStarterId() && !store.isBusy() && !store.uninstallApplied() && store.uninstallPreview()?.status === 'would-apply',
     ),
     selectedStarter: computed(() => store.catalog().find((starter) => starter.id === store.selection()?.starterId)),
   })),
@@ -87,6 +102,21 @@ export const StarterImportStore = signalStore(
         const version = dryRun ? undefined : store.upgradePreview()?.toVersion;
         const report = await firstValueFrom(service.upgrade(starterId, dryRun, version));
         patchState(store, dryRun ? { upgradePreview: report } : { upgradeApplied: report });
+        if (!dryRun && report.status === 'applied') await loadInstalled();
+      } catch (error: unknown) {
+        patchState(store, { error: httpErrorMessage(error) });
+      } finally {
+        patchState(store, { isBusy: false });
+      }
+    }
+
+    async function runUninstall(dryRun: boolean): Promise<void> {
+      const starterId = store.uninstallStarterId();
+      if (!starterId) return;
+      patchState(store, { isBusy: true, error: undefined });
+      try {
+        const report = await firstValueFrom(service.uninstall(starterId, dryRun));
+        patchState(store, dryRun ? { uninstallPreview: report } : { uninstallApplied: report });
         if (!dryRun && report.status === 'applied') await loadInstalled();
       } catch (error: unknown) {
         patchState(store, { error: httpErrorMessage(error) });
@@ -127,6 +157,16 @@ export const StarterImportStore = signalStore(
         return runUpgrade(true);
       },
       applyUpgrade: () => runUpgrade(false),
+      /** Plans the removal of an installed domain starter, writing nothing. */
+      previewUninstall(starterId: string): Promise<void> {
+        patchState(store, { uninstallStarterId: starterId, uninstallPreview: undefined, uninstallApplied: undefined, error: undefined });
+        return runUninstall(true);
+      },
+      applyUninstall: () => runUninstall(false),
+      /** Drops the removal being previewed or reported. */
+      cancelUninstall(): void {
+        patchState(store, { uninstallStarterId: undefined, uninstallPreview: undefined, uninstallApplied: undefined });
+      },
       loadCatalog,
       loadInstalled,
     };

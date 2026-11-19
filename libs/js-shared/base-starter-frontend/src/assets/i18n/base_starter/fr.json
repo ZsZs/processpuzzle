@@ -1,7 +1,7 @@
 {
   "import": {
     "title": "Business Starters",
-    "hint": "Installez un Business Starter depuis le catalogue. Il remplace toutes les définitions de cette organisation et ne peut donc être installé que tant que l'organisation ne contient aucune donnée. Prévisualisez-le d'abord : l'aperçu exécute toute l'installation et n'écrit rien.",
+    "hint": "Installez un Business Starter du catalogue. Un starter ajoute un domaine à l'application propre de cette organisation, à côté des autres que vous avez installés ; un starter de l'ancien type remplace toutes les définitions de l'organisation et ne s'installe que tant qu'elle ne contient aucune donnée. Regardez d'abord l'aperçu : il exécute toute l'installation et n'écrit rien.",
     "preview": "Aperçu",
     "apply": "Installer",
     "status": {
@@ -36,7 +36,8 @@
       "translation": "Traduction",
       "asset": "Fichier",
       "calculation": "Calcul",
-      "chat": "Chat"
+      "chat": "Chat",
+      "mount": "Montage"
     },
     "catalogEmpty": "Le catalogue ne contient encore aucun starter.",
     "version": "Version",
@@ -51,10 +52,13 @@
       "installedAt": "Installé",
       "installedBy": "Par",
       "customized": "Définitions modifiées",
-      "upgrade": "Mise à niveau"
+      "upgrade": "Mise à niveau",
+      "remove": "Retirer"
     },
     "upToDate": "à jour",
-    "upgradeTo": "Passer à {{version}}"
+    "upgradeTo": "Passer à {{version}}",
+    "remove": "Retirer",
+    "notRemovable": "Ce starter a remplacé les définitions de l'organisation ; il ne peut donc pas être retiré."
   },
   "upgrade": {
     "title": "Mise à niveau",
@@ -79,5 +83,16 @@
       "keep-in-use": "conservé (utilisé)"
     },
     "migrations": "{{count}} étapes de migration modifieront les objets existants à la publication :"
+  },
+  "uninstall": {
+    "title": "Retirer un starter",
+    "apply": "Retirer le starter",
+    "cancel": "Annuler",
+    "status": {
+      "applied": "Retiré",
+      "would-apply": "Serait retiré",
+      "rejected": "Ne peut pas être retiré"
+    },
+    "summary": "{{removed}} à retirer"
   }
 }

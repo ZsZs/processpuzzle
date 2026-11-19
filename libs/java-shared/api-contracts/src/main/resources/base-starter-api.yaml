@@ -400,6 +400,12 @@ components:
         upgradeAvailable:
           type: boolean
           description: Whether a newer version is on offer; the upgrade endpoint applies it.
+        domainStarter:
+          type: boolean
+          description: >-
+            Whether it was installed as a domain starter — added to the organization next to what it holds, and so
+            removable with `uninstallStarter` — and not as one that replaced the organization's definitions, which
+            cannot be removed.
 
     CatalogStarter:
       type: object

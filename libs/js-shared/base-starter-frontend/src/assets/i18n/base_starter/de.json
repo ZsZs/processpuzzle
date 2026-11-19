@@ -1,7 +1,7 @@
 {
   "import": {
     "title": "Business Starter",
-    "hint": "Installieren Sie einen Business Starter aus dem Katalog. Er ersetzt alle Definitionen dieser Organisation und kann daher nur installiert werden, solange die Organisation keine Daten enthält. Sehen Sie ihn zuerst in der Vorschau an: Die Vorschau führt die gesamte Installation aus und schreibt nichts.",
+    "hint": "Installieren Sie einen Business Starter aus dem Katalog. Ein Starter fügt der eigenen Anwendung dieser Organisation eine Domäne hinzu, neben den anderen, die Sie installiert haben; einer der alten Art ersetzt alle Definitionen der Organisation und lässt sich nur installieren, solange sie keine Daten enthält. Sehen Sie sich zuerst die Vorschau an: Sie führt die ganze Installation aus und schreibt nichts.",
     "preview": "Vorschau",
     "apply": "Installieren",
     "status": {
@@ -36,7 +36,8 @@
       "translation": "Übersetzung",
       "asset": "Datei",
       "calculation": "Berechnung",
-      "chat": "Chat"
+      "chat": "Chat",
+      "mount": "Einbindung"
     },
     "catalogEmpty": "Der Katalog enthält noch keine Starter.",
     "version": "Version",
@@ -51,10 +52,13 @@
       "installedAt": "Installiert",
       "installedBy": "Von",
       "customized": "Angepasste Definitionen",
-      "upgrade": "Aktualisierung"
+      "upgrade": "Aktualisierung",
+      "remove": "Entfernen"
     },
     "upToDate": "aktuell",
-    "upgradeTo": "Auf {{version}} aktualisieren"
+    "upgradeTo": "Auf {{version}} aktualisieren",
+    "remove": "Entfernen",
+    "notRemovable": "Dieser Starter hat die Definitionen der Organisation ersetzt und kann daher nicht entfernt werden."
   },
   "upgrade": {
     "title": "Aktualisierung",
@@ -79,5 +83,16 @@
       "keep-in-use": "behalten (in Verwendung)"
     },
     "migrations": "{{count}} Migrationsschritte ändern beim Veröffentlichen die vorhandenen Objekte:"
+  },
+  "uninstall": {
+    "title": "Starter entfernen",
+    "apply": "Starter entfernen",
+    "cancel": "Abbrechen",
+    "status": {
+      "applied": "Entfernt",
+      "would-apply": "Würde entfernen",
+      "rejected": "Kann nicht entfernt werden"
+    },
+    "summary": "{{removed}} zu entfernen"
   }
 }

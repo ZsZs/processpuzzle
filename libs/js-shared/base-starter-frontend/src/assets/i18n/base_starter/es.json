@@ -1,7 +1,7 @@
 {
   "import": {
     "title": "Business Starters",
-    "hint": "Instale un Business Starter del catálogo. Sustituye todas las definiciones de esta organización, por lo que solo se puede instalar mientras la organización no contenga datos. Previsualícelo primero: la vista previa ejecuta toda la instalación y no escribe nada.",
+    "hint": "Instala un Business Starter del catálogo. Un starter añade un dominio a la propia aplicación de esta organización, junto a los demás que hayas instalado; uno del tipo antiguo sustituye todas las definiciones de la organización y solo se puede instalar mientras no contenga datos. Mira primero la vista previa: ejecuta toda la instalación y no escribe nada.",
     "preview": "Vista previa",
     "apply": "Instalar",
     "status": {
@@ -36,7 +36,8 @@
       "translation": "Traducción",
       "asset": "Archivo",
       "calculation": "Cálculo",
-      "chat": "Chat"
+      "chat": "Chat",
+      "mount": "Montaje"
     },
     "catalogEmpty": "El catálogo aún no tiene starters.",
     "version": "Versión",
@@ -51,10 +52,13 @@
       "installedAt": "Instalado",
       "installedBy": "Por",
       "customized": "Definiciones modificadas",
-      "upgrade": "Actualización"
+      "upgrade": "Actualización",
+      "remove": "Quitar"
     },
     "upToDate": "al día",
-    "upgradeTo": "Actualizar a {{version}}"
+    "upgradeTo": "Actualizar a {{version}}",
+    "remove": "Quitar",
+    "notRemovable": "Este starter sustituyó las definiciones de la organización, por lo que no se puede quitar."
   },
   "upgrade": {
     "title": "Actualización",
@@ -79,5 +83,16 @@
       "keep-in-use": "se mantiene (en uso)"
     },
     "migrations": "{{count}} pasos de migración cambiarán los objetos existentes al publicar:"
+  },
+  "uninstall": {
+    "title": "Quitar un starter",
+    "apply": "Quitar starter",
+    "cancel": "Cancelar",
+    "status": {
+      "applied": "Quitado",
+      "would-apply": "Se quitaría",
+      "rejected": "No se puede quitar"
+    },
+    "summary": "{{removed}} por quitar"
   }
 }
