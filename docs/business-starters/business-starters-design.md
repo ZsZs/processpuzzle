@@ -258,7 +258,7 @@ Next:
 
 ## 11. Domain starters — design, status and plan (decision 11)
 
-Status 2026-11-19: phases 1–3 are built and on `develop` (core PRs #1377, #1380, #1383); 4–7 are open.
+Status 2026-11-19: phases 1–3 are built and on `develop` (core PRs #1377, #1380, #1383); 6 and 7 are in review in `processpuzzle-biz` (#201, #202); 4 and 5 are open.
 
 ### 11.1 What changes
 
@@ -355,7 +355,7 @@ placeholder; a shell a designer has saved stays.
 | 3b. Launcher (frontend) | `base-widget-frontend`, `base-app-frontend` | **Done** (#1383). `module-launcher` widget, shell context, `ModuleMount.launcher` in TypeScript, default shell on by default, legacy import replaces an untouched shell. |
 | 4. Commons | core, `base-starter-backend`, base-entity | Open. `DataSpaceDirectory.commonsOf(orgKey)` instead of `commonOf`; a shared type resolves to the common of the starter that defines it; reserved codes checked against all of the org's commons (the prefix convention keeps them apart). |
 | 5. Sign-up, Admin, Designer | processpuzzle-biz | Open. Sign-up multi-select; SeedJob `starter_ids[]`, installed one by one, failures recorded per starter; Designer lists installed starters with install, uninstall and the warnings an install reports. |
-| 6. SailRC 1.0.0 | processpuzzle-biz `business-starters/` | Open. Prefix `sailrc`; drop `apps/`; home cards become launcher hints with module assets and texts; the app's nav texts move into the modules. Existing stage organizations keep their app (11c). Needs the core submodule bump first. |
-| 7. CI gate | `publish-business-starters.yml` | Open. Dry-run each bundle into an org with the default shell, then all official starters into one org, to catch collisions. Rework the gate for commons at the same time (a common bundle is rolled out first, not dry-run as a tenant). |
+| 6. SailRC 1.0.0 | processpuzzle-biz `business-starters/` | **In review** (biz #201, draft). Prefix `sailrc`; no `apps/`; the home cards became each module's launcher (`launcher.svg` and a `launcher` block of texts in five languages); mounts in the manifest. Packages with the v3 packager; not merged until core is released and the biz library versions and the core submodule are bumped. Existing stage organizations keep their app (11c); 1.0.0 is a different set of keys, not an upgrade of 0.x. |
+| 7. CI gate | `publish-business-starters.yml` | **In review** (biz #202). The gate still dry-runs each bundle on its own, and a domain starter's dry run now includes mounting its modules: a module "installed but not mounted" fails the gate (`check-dry-run-report.mjs`). There is **no all-starters dry run**: a dry run is rolled back, so it cannot show two starters clashing, and a real install would leave data in the gate organization. Keys cannot clash (prefix convention, unique prefixes in the packager); what remains — entity names and mount base paths, including the default shell's `home` — is compared across all domain starters by `check-coexistence.mjs` on every pull request (§11.2's known limit, as far as it can be checked before an install). Commons are unchanged: skipped by the gate and installed by the platform's rollout. |
 
 Phases 1–3 make domain starters usable; 4–7 follow independently.
