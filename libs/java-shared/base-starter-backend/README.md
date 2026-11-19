@@ -76,5 +76,11 @@ organization of that key, which becomes the starter's data space) or name its co
 (`id`, `minVersion`); such a tenant bundle is refused while the common is missing or older. Version 2 also refuses
 unknown top-level fields. See `docs/shared-data-commons-concept`.
 
+**Domain starters.** A `manifestVersion: 3` manifest declares a `keyPrefix` and optional `mounts` and carries no
+application (no `apps` group, no application translations or assets). Every definition key must start with
+`<keyPrefix>-`, which `KeyPrefixRules` checks at install and upgrade through each participant's `keysIn`, and every
+mount must name a module of the bundle. `mounts` is validated and carried; nothing acts on it yet, and an install
+still replaces the organization's definitions. See `docs/business-starters/business-starters-design.md` §11.
+
 Upgrades and the migration script (the manifest carries `migration`, nothing runs it), export, and participants
 for widget, document, workflow and app definitions.

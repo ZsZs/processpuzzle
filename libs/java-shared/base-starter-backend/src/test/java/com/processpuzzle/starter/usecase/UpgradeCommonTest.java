@@ -105,10 +105,10 @@ class UpgradeCommonTest {
         publish("2.0.0", "item\nbarn\n");
         CommonRules commonRules = new CommonRules(dataSpaceRepository, installedRepository, new RegisterDataSpace(dataSpaceRepository));
         ImportBundle importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
-                provenanceRepository, installedRepository, commonRules, transactionManager, provider(null));
+                provenanceRepository, installedRepository, commonRules, new KeyPrefixRules(participants), transactionManager, provider(null));
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         UpgradeStarter upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
-                new UpgradePlanner(participants, provenanceRepository), commonRules, provenanceRepository,
+                new UpgradePlanner(participants, provenanceRepository), commonRules, new KeyPrefixRules(participants), provenanceRepository,
                 installedRepository, offeredRepository, provider(null), transactionManager, provider(null));
         upgradeCommon = new UpgradeCommon(upgrade, releaserProvider(), dataSpaceRepository, transactionManager);
         installer.provision(COMMON, COMMON, "1.0.0", "seed");

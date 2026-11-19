@@ -18,6 +18,10 @@
  * A starter that shares data has a `common/` folder beside its manifest: a second bundle, `kind: common`, id
  * `<starter id>-common`, packaged and versioned on its own (docs/shared-data-commons-concept §5.1).
  *
+ * From manifestVersion 3 a starter is a domain starter (docs/business-starters/business-starters-design.md §11): it
+ * carries no application, every key it defines starts with its `keyPrefix` and a dash, and `mounts` suggest where its
+ * modules go in the customer's application. No two starters of the catalog share a prefix; a starter and its common do.
+ *
  * The checks here are structural only (manifest fields, safe paths, listed files present). Whether the
  * definitions import is the dry-run gate's job, against a running backend, before the upload.
  */
@@ -30,15 +34,33 @@ import { parse, stringify } from 'yaml';
 
 export const CATALOG_VERSION = 1;
 export const SUPPORTED_SCHEMA_VERSIONS = [1];
-export const SUPPORTED_MANIFEST_VERSIONS = [1, 2];
+export const SUPPORTED_MANIFEST_VERSIONS = [1, 2, 3];
 const COMMON_SUFFIX = '-common';
 // What a manifestVersion 2 manifest may say at its top level; BundleReader refuses anything else the same way.
 const V2_FIELDS = [
   'manifestVersion', 'kind', 'id', 'name', 'version', 'description', 'category', 'tags', 'author', 'license', 'icon',
   'definitionSchemaVersion', 'platform', 'locales', 'common', 'contents', 'migration', 'migrations', 'integrity',
 ];
+// Version 3 adds the domain-starter fields; BundleReader accepts the same.
+const V3_FIELDS = [...V2_FIELDS, 'keyPrefix', 'mounts'];
+const MOUNT_FIELDS = ['moduleKey', 'basePath', 'nav', 'launcher'];
+const NAV_FIELDS = ['icon', 'labelKey'];
+const LAUNCHER_FIELDS = ['image', 'titleKey', 'subtitleKey', 'contentKeys', 'link'];
+const KEY_PREFIX = /^[a-z][a-z0-9]{1,15}$/;
+const BASE_PATH = /^[a-z0-9]+(-[a-z0-9]+)*(\/[a-z0-9]+(-[a-z0-9]+)*)*$/;
+const MODULE_ASSET = 'module:';
+// The groups whose keys the packager reads to check the prefix early: the list field and the key of each entry, as
+// the feature's import participant reads them. The importer checks every kind again, calculations included.
+const KEYED_GROUPS = {
+  entities: ['entityDefinitions', 'code'],
+  states: ['stateMachines', 'entityName'],
+  rules: ['rules', 'id'],
+  chats: ['chat-definitions', 'key'],
+  modules: ['moduleDefinitions', 'key'],
+};
 const CONTENT_GROUPS = [
-  'entities', 'states', 'rules', 'calculations', 'widgets', 'documents', 'workflows', 'modules', 'apps', 'translations', 'assets',
+  'entities', 'states', 'rules', 'calculations', 'widgets', 'chats', 'documents', 'workflows', 'modules', 'apps', 'translations',
+  'assets',
 ];
 // What the files of the last two groups say about where they belong, as BundleOwnedPath in base-app-backend reads it.
 const OWNED_GROUPS = ['translations', 'assets'];
@@ -68,6 +90,7 @@ export function readStarter(folder) {
     if (!SAFE_PATH.test(path) || path.split('/').includes('..')) throw new StarterError(`${where}: unsafe path '${path}'`);
     if (!existsSync(join(folder, path))) throw new StarterError(`${where}: lists '${path}', which does not exist`);
   }
+  checkDomainStarter(manifest, folder, where);
   checkOwnedFiles(folder, contents, where);
   return { manifest, files: [...new Set([...files, ...extras])].sort() };
 }
@@ -122,10 +145,16 @@ function checkCommons(manifest, folder, where) {
     for (const field of ['kind', 'common', 'migrations']) {
       if (field in manifest) throw new StarterError(`${where}: '${field}' needs manifestVersion 2`);
     }
-    return;
   }
+  if (version < 3) {
+    for (const field of ['keyPrefix', 'mounts']) {
+      if (field in manifest) throw new StarterError(`${where}: '${field}' needs manifestVersion 3`);
+    }
+  }
+  if (version < 2) return;
+  const fields = version >= 3 ? V3_FIELDS : V2_FIELDS;
   for (const field of Object.keys(manifest)) {
-    if (!V2_FIELDS.includes(field)) throw new StarterError(`${where}: unknown field '${field}'`);
+    if (!fields.includes(field)) throw new StarterError(`${where}: unknown field '${field}'`);
   }
   if (manifest.kind !== undefined && !['starter', 'common'].includes(manifest.kind)) {
     throw new StarterError(`${where}: unknown kind '${manifest.kind}'`);
@@ -156,6 +185,106 @@ function checkTenantCommon(manifest, folder, where) {
   if (common.version && compareVersions(common.version, manifest.common.minVersion) < 0) {
     throw new StarterError(`${where}: needs ${manifest.common.id} ${manifest.common.minVersion}, and common/ is at ${common.version}`);
   }
+  if (manifest.keyPrefix && common.keyPrefix !== manifest.keyPrefix) {
+    throw new StarterError(`${where}: common/ must declare the starter's keyPrefix '${manifest.keyPrefix}'`);
+  }
+}
+
+/**
+ * A manifestVersion 3 manifest is a domain starter: a key prefix, no application, keys under the prefix, and mounts
+ * that name the starter's own modules. The same rules as BundleReader and KeyPrefixRules in base-starter-backend.
+ */
+function checkDomainStarter(manifest, folder, where) {
+  if ((manifest.manifestVersion ?? 1) < 3) return;
+  const contents = manifest.contents ?? {};
+  if (!KEY_PREFIX.test(manifest.keyPrefix ?? '')) {
+    throw new StarterError(`${where}: 'keyPrefix' must be 2 to 16 lower-case letters and digits, starting with a letter`);
+  }
+  if ('apps' in contents) {
+    throw new StarterError(`${where}: a manifestVersion 3 starter carries no application ('apps'); mount its modules with 'mounts'`);
+  }
+  for (const group of OWNED_GROUPS) {
+    for (const path of contents[group] ?? []) {
+      if (path.split('/')[1] === 'apps') throw new StarterError(`${where}: '${path}' belongs to an application; give it to a module`);
+    }
+  }
+  const prefix = `${manifest.keyPrefix}-`;
+  const modules = new Map();
+  for (const [group, [list, keyField]] of Object.entries(KEYED_GROUPS)) {
+    for (const path of contents[group] ?? []) {
+      for (const entry of parse(readFileSync(join(folder, path), 'utf8'))?.[list] ?? []) {
+        const key = entry?.[keyField];
+        if (typeof key !== 'string') continue; // the importer reports a definition without a key
+        if (!key.startsWith(prefix)) throw new StarterError(`${where}: '${key}' in '${path}' does not start with '${prefix}'`);
+        if (group === 'modules') modules.set(key, entry);
+      }
+    }
+  }
+  for (const [key, module] of modules) {
+    const scope = module.translocoScope ?? key.replaceAll('-', '_');
+    if (!scope.startsWith(`${manifest.keyPrefix}_`)) {
+      throw new StarterError(`${where}: module '${key}' has the transloco scope '${scope}', which does not start with '${manifest.keyPrefix}_'`);
+    }
+  }
+  if (manifest.kind === 'common' && (manifest.mounts ?? []).length > 0) {
+    throw new StarterError(`${where}: a common is mounted nowhere, so it has no 'mounts'`);
+  }
+  checkMounts(manifest.mounts ?? [], modules, contents, where);
+}
+
+function checkMounts(mounts, modules, contents, where) {
+  const named = new Set();
+  const paths = new Set();
+  mounts.forEach((mount, index) => {
+    const at = `${where}: mounts[${index}]`;
+    unknownFields(mount, MOUNT_FIELDS, at);
+    if (!modules.has(mount.moduleKey)) throw new StarterError(`${at} names '${mount.moduleKey}', which the starter does not define`);
+    if (named.has(mount.moduleKey)) throw new StarterError(`${at} names '${mount.moduleKey}' a second time`);
+    named.add(mount.moduleKey);
+    if (!BASE_PATH.test(mount.basePath ?? '') || paths.has(mount.basePath)) {
+      throw new StarterError(`${at} needs a 'basePath' of its own, of lower-case segments such as plan-race`);
+    }
+    paths.add(mount.basePath);
+    if (mount.nav !== undefined) {
+      unknownFields(mount.nav, NAV_FIELDS, `${at}.nav`);
+      if (!mount.nav.labelKey) throw new StarterError(`${at}.nav needs a 'labelKey'`);
+    }
+    if (mount.launcher !== undefined) checkLauncher(mount, contents, `${at}.launcher`);
+  });
+}
+
+function checkLauncher(mount, contents, at) {
+  const { launcher } = mount;
+  unknownFields(launcher, LAUNCHER_FIELDS, at);
+  if (!launcher.titleKey) throw new StarterError(`${at} needs a 'titleKey'`);
+  if (launcher.image === undefined) return;
+  if (!launcher.image.startsWith(MODULE_ASSET)) throw new StarterError(`${at}: the image is an asset of the module, '${MODULE_ASSET}<path>'`);
+  const asset = `assets/modules/${mount.moduleKey}/${launcher.image.slice(MODULE_ASSET.length)}`;
+  if (!(contents.assets ?? []).includes(asset)) throw new StarterError(`${at}: the image '${launcher.image}' needs '${asset}' listed under assets`);
+}
+
+function unknownFields(object, allowed, at) {
+  if (object === null || typeof object !== 'object' || Array.isArray(object)) throw new StarterError(`${at} must be a mapping`);
+  for (const field of Object.keys(object)) {
+    if (!allowed.includes(field)) throw new StarterError(`${at}: unknown field '${field}'`);
+  }
+}
+
+/**
+ * No two starters share a key prefix — it is what keeps their keys apart in an organization that installs both. A
+ * starter and its common are one starter here. `catalog` knows the published starters, `manifests` the ones in hand.
+ */
+export function checkPrefixes(catalog, manifests) {
+  const owners = new Map();
+  const claim = (prefix, id) => {
+    if (!prefix) return;
+    const starter = id.endsWith(COMMON_SUFFIX) ? id.slice(0, -COMMON_SUFFIX.length) : id;
+    const owner = owners.get(prefix);
+    if (owner && owner !== starter) throw new StarterError(`${id}: the keyPrefix '${prefix}' is already ${owner}'s`);
+    owners.set(prefix, starter);
+  };
+  for (const starter of catalog?.starters ?? []) claim(starter.keyPrefix, starter.id);
+  for (const manifest of manifests) claim(manifest.keyPrefix, manifest.id);
 }
 
 /**
@@ -281,8 +410,9 @@ export function packageStarters({ source, out, catalog, publishedAt }) {
     .sort()
     // A starter's common is a bundle of its own, authored in the starter's folder.
     .flatMap((path) => (existsSync(join(path, 'common', 'manifest.yaml')) ? [path, join(path, 'common')] : [path]));
-  for (const folder of folders) {
-    const { manifest, bytes, sha256: hash } = bundleOf(folder);
+  const bundles = folders.map((folder) => ({ folder, ...bundleOf(folder) }));
+  checkPrefixes(merged, bundles.map((bundle) => bundle.manifest));
+  for (const { folder, manifest, bytes, sha256: hash } of bundles) {
     let starter = merged.starters.find((candidate) => candidate.id === manifest.id);
     const existing = starter?.versions?.find((version) => version.version === manifest.version);
     if (existing) {
@@ -320,6 +450,7 @@ export function packageStarters({ source, out, catalog, publishedAt }) {
       license: manifest.license,
       category: manifest.category,
       tags: manifest.tags,
+      keyPrefix: manifest.keyPrefix,
       icon,
     };
     if (!starter) {

@@ -102,10 +102,10 @@ class UpgradeStarterTest {
         publish("2.0.0", "item\nbarn\n", "positive\n");
         CommonRules commonRules = new CommonRules(dataSpaceRepository, installedRepository, new RegisterDataSpace(dataSpaceRepository));
         ImportBundle importBundle = new ImportBundle(guard, new BundleReader(new StarterProperties()), participants,
-                provenanceRepository, installedRepository, commonRules, transactionManager, provider());
+                provenanceRepository, installedRepository, commonRules, new KeyPrefixRules(participants), transactionManager, provider());
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
-                new UpgradePlanner(participants, provenanceRepository), commonRules, provenanceRepository,
+                new UpgradePlanner(participants, provenanceRepository), commonRules, new KeyPrefixRules(participants), provenanceRepository,
                 installedRepository, offeredRepository, queueProvider(), transactionManager, provider());
         offer = new OfferStarterVersion(new BrowseCatalog(registry), installer, new BundleReader(new StarterProperties()), commonRules,
                 offeredRepository, provider());
