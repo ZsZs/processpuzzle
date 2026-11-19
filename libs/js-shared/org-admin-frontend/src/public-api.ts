@@ -30,3 +30,6 @@ export {
   ROLE_ASSIGNMENT_I18N_SCOPE,
 } from './lib/org-admin.i18n';
 export { ORG_ADMIN_ENTITY_FACADES, ORG_ADMIN_FACADE_PROVIDERS, ORG_ADMIN_ROUTES } from './lib/org-admin.routes';
+
+export { AdminButtonComponent } from './lib/feature/admin-button/admin-button.component';
+export { ADMIN_BUTTON_WIDGET, ADMIN_BUTTON_WIDGET_REGISTRATION, provideAdminButtonWidget } from './lib/feature/admin-button/admin-button.widget';

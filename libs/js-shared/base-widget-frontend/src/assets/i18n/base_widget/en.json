@@ -80,6 +80,12 @@
   "entity_table": {
     "name": "Entity table"
   },
+  "auth_button": {
+    "name": "Sign-in button"
+  },
+  "admin_button": {
+    "name": "Administration button"
+  },
   "design_button": {
     "name": "Design button"
   },
