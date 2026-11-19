@@ -80,6 +80,12 @@
   "entity_table": {
     "name": "Entitástáblázat"
   },
+  "auth_button": {
+    "name": "Bejelentkezés gomb"
+  },
+  "admin_button": {
+    "name": "Adminisztráció gomb"
+  },
   "design_button": {
     "name": "Tervező gomb"
   },
