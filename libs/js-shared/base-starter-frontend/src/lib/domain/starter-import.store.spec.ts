@@ -23,11 +23,17 @@ const catalog: CatalogStarter[] = [
 ];
 
 describe('StarterImportStore', () => {
-  let service: { upgrade: ReturnType<typeof vi.fn>; install: ReturnType<typeof vi.fn>; listInstalled: ReturnType<typeof vi.fn>; listCatalog: ReturnType<typeof vi.fn> };
+  let service: {
+    upgrade: ReturnType<typeof vi.fn>;
+    uninstall: ReturnType<typeof vi.fn>;
+    install: ReturnType<typeof vi.fn>;
+    listInstalled: ReturnType<typeof vi.fn>;
+    listCatalog: ReturnType<typeof vi.fn>;
+  };
   let store: InstanceType<typeof StarterImportStore>;
 
   beforeEach(async () => {
-    service = { upgrade: vi.fn(), install: vi.fn(), listInstalled: vi.fn(() => of(installed)), listCatalog: vi.fn(() => of(catalog)) };
+    service = { upgrade: vi.fn(), uninstall: vi.fn(), install: vi.fn(), listInstalled: vi.fn(() => of(installed)), listCatalog: vi.fn(() => of(catalog)) };
     TestBed.configureTestingModule({ providers: [StarterImportStore, { provide: StarterService, useValue: service }] });
     store = TestBed.inject(StarterImportStore);
     await store.loadCatalog();
@@ -191,6 +197,64 @@ describe('StarterImportStore', () => {
       await store.applyUpgrade();
 
       expect(service.upgrade).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removing a domain starter', () => {
+    const removal: ImportReport = { dryRun: true, status: 'would-apply', items: [{ kind: 'entity', key: 'inv-item', action: 'delete' }] };
+
+    it('previews first, and can apply only what the preview showed', async () => {
+      expect(store.canApplyUninstall()).toBe(false);
+      service.uninstall.mockReturnValueOnce(of(removal));
+
+      await store.previewUninstall('inventory');
+
+      expect(service.uninstall).toHaveBeenCalledWith('inventory', true);
+      expect(store.uninstallStarterId()).toBe('inventory');
+      expect(store.uninstallReport()).toEqual(removal);
+      expect(store.canApplyUninstall()).toBe(true);
+    });
+
+    it('removes for real, then shows the applied report and reloads what is installed', async () => {
+      service.uninstall.mockReturnValueOnce(of(removal));
+      await store.previewUninstall('inventory');
+      service.uninstall.mockReturnValueOnce(of({ ...removal, dryRun: false, status: 'applied' }));
+      service.listInstalled.mockClear();
+
+      await store.applyUninstall();
+
+      expect(service.uninstall).toHaveBeenLastCalledWith('inventory', false);
+      expect(store.uninstallReport()?.status).toBe('applied');
+      expect(service.listInstalled).toHaveBeenCalledOnce();
+      expect(store.canApplyUninstall()).toBe(false);
+    });
+
+    it('cannot remove what the dry run refused, and shows why', async () => {
+      const refused: ImportReport = { dryRun: true, status: 'rejected', errors: [{ message: 'still has data' }] };
+      service.uninstall.mockReturnValueOnce(of(refused));
+
+      await store.previewUninstall('inventory');
+
+      expect(store.uninstallReport()).toEqual(refused);
+      expect(store.canApplyUninstall()).toBe(false);
+    });
+
+    it('drops the previous removal when another is previewed or the removal is cancelled', async () => {
+      service.uninstall.mockReturnValueOnce(of(removal));
+      await store.previewUninstall('inventory');
+      service.uninstall.mockReturnValueOnce(throwError(() => new HttpErrorResponse({ status: 503 })));
+
+      await store.previewUninstall('sail');
+
+      expect(store.uninstallStarterId()).toBe('sail');
+      expect(store.uninstallReport()).toBeUndefined();
+      expect(store.error()).toBeDefined();
+
+      service.uninstall.mockReturnValueOnce(of(removal));
+      await store.previewUninstall('inventory');
+      store.cancelUninstall();
+      expect(store.uninstallStarterId()).toBeUndefined();
+      expect(store.uninstallReport()).toBeUndefined();
     });
   });
 });

@@ -24,6 +24,16 @@ const translations = {
     'base_starter.installed.empty': 'No starter yet.',
     'base_starter.installed.upgradeTo': 'Upgrade to {{version}}',
     'base_starter.installed.upToDate': 'up to date',
+    'base_starter.installed.remove': 'Remove',
+    'base_starter.installed.notRemovable': 'It replaced the definitions, so it cannot be removed.',
+    'base_starter.import.kind.mount': 'Mount',
+    'base_starter.import.kind.module': 'Module',
+    'base_starter.uninstall.apply': 'Remove starter',
+    'base_starter.uninstall.cancel': 'Cancel',
+    'base_starter.uninstall.status.would-apply': 'Would remove',
+    'base_starter.uninstall.status.applied': 'Removed',
+    'base_starter.uninstall.status.rejected': 'Cannot remove',
+    'base_starter.uninstall.summary': '{{removed}} to remove',
     'base_starter.upgrade.apply': 'Apply upgrade',
     'base_starter.upgrade.status.would-apply': 'Would upgrade',
     'base_starter.upgrade.status.applied': 'Upgraded',
@@ -66,10 +76,16 @@ const installed: InstalledStarter[] = [{ starterId: 'inventory', version: '1.1.0
 
 describe('StarterImportComponent', () => {
   let fixture: ComponentFixture<StarterImportComponent>;
-  let service: { upgrade: ReturnType<typeof vi.fn>; install: ReturnType<typeof vi.fn>; listInstalled: ReturnType<typeof vi.fn>; listCatalog: ReturnType<typeof vi.fn> };
+  let service: {
+    upgrade: ReturnType<typeof vi.fn>;
+    uninstall: ReturnType<typeof vi.fn>;
+    install: ReturnType<typeof vi.fn>;
+    listInstalled: ReturnType<typeof vi.fn>;
+    listCatalog: ReturnType<typeof vi.fn>;
+  };
 
   async function create(starters: CatalogStarter[], installedStarters: InstalledStarter[] = []): Promise<void> {
-    service = { upgrade: vi.fn(), install: vi.fn(), listInstalled: vi.fn(() => of(installedStarters)), listCatalog: vi.fn(() => of(starters)) };
+    service = { upgrade: vi.fn(), uninstall: vi.fn(), install: vi.fn(), listInstalled: vi.fn(() => of(installedStarters)), listCatalog: vi.fn(() => of(starters)) };
     await TestBed.configureTestingModule({
       imports: [StarterImportComponent],
       providers: [provideTranslocoTesting({ translations }), { provide: StarterService, useValue: service }],
@@ -223,6 +239,110 @@ describe('StarterImportComponent', () => {
       expect(byTestId('upgrade-report-errors')?.textContent).toContain('Upgrade to 1.0.5 first');
       expect(byTestId('upgrade-report-drafts')).toBeNull();
       expect((byTestId('upgrade-apply') as HTMLButtonElement).disabled).toBe(true);
+    });
+  });
+
+  describe('warnings of an install', () => {
+    beforeEach(() => create(catalog));
+
+    it('shows what the install could not do for want of a place, and the mounts it made', async () => {
+      await change('catalog-select-inventory');
+      service.install.mockReturnValueOnce(
+        of({
+          ...wouldApply,
+          items: [...(wouldApply.items ?? []), { kind: 'mount', key: 'inv-stock', action: 'create' }],
+          warnings: ["The module 'inv-orders' is installed but not mounted: the path 'orders' is taken."],
+        }),
+      );
+
+      await click('starter-preview');
+
+      expect(byTestId('import-report-warnings')?.textContent).toContain("'inv-orders' is installed but not mounted");
+      expect(byTestId('import-report-items')?.textContent).toContain('Mount');
+      expect(byTestId('import-report-items')?.textContent).toContain('inv-stock');
+    });
+
+    it('shows no warnings list when there are none', async () => {
+      await change('catalog-select-inventory');
+      service.install.mockReturnValueOnce(of(wouldApply));
+
+      await click('starter-preview');
+
+      expect(byTestId('import-report-warnings')).toBeNull();
+    });
+  });
+
+  describe('removing a domain starter', () => {
+    const domain: InstalledStarter = { starterId: 'inventory', version: '1.0.0', installedAt: '2026-10-05T10:00:00Z', installedBy: 'alice', domainStarter: true };
+    const replaced: InstalledStarter = { starterId: 'sail', version: '0.3.0', installedAt: '2026-10-05T10:00:00Z', installedBy: 'alice', domainStarter: false };
+    const removal: ImportReport = {
+      dryRun: true,
+      status: 'would-apply',
+      starterId: 'inventory',
+      version: '1.0.0',
+      items: [
+        { kind: 'entity', key: 'inv-item', action: 'delete' },
+        { kind: 'mount', key: 'inv-stock', action: 'delete' },
+      ],
+      warnings: ['The mounts are removed from the draft of the application; release it to remove them from the live one.'],
+    };
+
+    beforeEach(() => create([], [domain, replaced]));
+
+    it('offers Remove for a domain starter only', () => {
+      expect(byTestId('uninstall-inventory')).not.toBeNull();
+      expect(byTestId('uninstall-sail')).toBeNull();
+      expect(byTestId('not-removable-sail')).not.toBeNull();
+    });
+
+    it('previews what would go, in the words of a removal, and keeps Remove disabled until there is a preview', async () => {
+      expect(byTestId('uninstall-report')).toBeNull();
+      service.uninstall.mockReturnValueOnce(of(removal));
+
+      await click('uninstall-inventory');
+
+      expect(service.uninstall).toHaveBeenCalledWith('inventory', true);
+      const report = byTestId('uninstall-report')!;
+      expect(report.textContent).toContain('Would remove');
+      expect(report.textContent).not.toContain('Would install');
+      expect(report.textContent).toContain('2 to remove');
+      expect(report.textContent).toContain('inv-stock');
+      expect(report.textContent).toContain('release it to remove them from the live one');
+      expect((byTestId('uninstall-apply') as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it('removes the starter once confirmed, and the list loses it', async () => {
+      service.uninstall.mockReturnValueOnce(of(removal));
+      await click('uninstall-inventory');
+      service.uninstall.mockReturnValueOnce(of({ ...removal, dryRun: false, status: 'applied' }));
+      service.listInstalled.mockReturnValue(of([replaced]));
+
+      await click('uninstall-apply');
+
+      expect(service.uninstall).toHaveBeenLastCalledWith('inventory', false);
+      expect(byTestId('uninstall-report')?.textContent).toContain('Removed');
+      expect(byTestId('installed-starter-inventory')).toBeNull();
+      expect((byTestId('uninstall-apply') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('shows why a removal is refused and cannot be confirmed', async () => {
+      service.uninstall.mockReturnValueOnce(of({ dryRun: true, status: 'rejected', errors: [{ message: 'The starter\'s definitions still have data: 4 entity objects.' }] }));
+
+      await click('uninstall-inventory');
+
+      expect(byTestId('uninstall-report')?.textContent).toContain('Cannot remove');
+      expect(byTestId('uninstall-report')?.textContent).toContain('still have data');
+      expect((byTestId('uninstall-apply') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('drops the removal when cancelled', async () => {
+      service.uninstall.mockReturnValueOnce(of(removal));
+      await click('uninstall-inventory');
+
+      await click('uninstall-cancel');
+
+      expect(byTestId('uninstall-report')).toBeNull();
+      expect(service.uninstall).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -1,7 +1,7 @@
 {
   "import": {
     "title": "Business Starters",
-    "hint": "Install a Business Starter from the catalog. It replaces every definition of this organization, so it can only be installed while the organization holds no data. Preview it first: the preview runs the whole install and writes nothing.",
+    "hint": "Install a Business Starter from the catalog. A starter adds a domain to this organization's own application, next to the others you have installed; one of the old kind replaces every definition of the organization and can only be installed while it holds no data. Preview first: the preview runs the whole install and writes nothing.",
     "preview": "Preview",
     "apply": "Install",
     "status": {
@@ -36,7 +36,8 @@
       "translation": "Translation",
       "asset": "File",
       "calculation": "Calculation",
-      "chat": "Chat"
+      "chat": "Chat",
+      "mount": "Mount"
     },
     "catalogEmpty": "The catalog has no starters yet.",
     "version": "Version",
@@ -51,10 +52,13 @@
       "installedAt": "Installed",
       "installedBy": "By",
       "customized": "Customized definitions",
-      "upgrade": "Upgrade"
+      "upgrade": "Upgrade",
+      "remove": "Remove"
     },
     "upToDate": "up to date",
-    "upgradeTo": "Upgrade to {{version}}"
+    "upgradeTo": "Upgrade to {{version}}",
+    "remove": "Remove",
+    "notRemovable": "This starter replaced the definitions of the organization, so it cannot be removed."
   },
   "upgrade": {
     "title": "Upgrade",
@@ -79,5 +83,16 @@
       "keep-in-use": "kept (in use)"
     },
     "migrations": "{{count}} migration steps will change the existing objects when you release:"
+  },
+  "uninstall": {
+    "title": "Remove a starter",
+    "apply": "Remove starter",
+    "cancel": "Cancel",
+    "status": {
+      "applied": "Removed",
+      "would-apply": "Would remove",
+      "rejected": "Cannot remove"
+    },
+    "summary": "{{removed}} to remove"
   }
 }

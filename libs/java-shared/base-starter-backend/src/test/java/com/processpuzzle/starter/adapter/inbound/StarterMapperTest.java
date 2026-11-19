@@ -121,6 +121,15 @@ class StarterMapperTest {
         assertThat(model.getOfferedVersion()).isEqualTo("1.1.0");
         assertThat(model.getUpgradeAvailable()).isTrue();
         assertThat(model.getCustomizedDefinitions()).isEqualTo(2);
+        assertThat(model.getDomainStarter()).as("a starter that replaced the organization's definitions").isFalse();
+    }
+
+    @Test
+    void mapsWhetherAnInstalledStarterIsADomainStarter() {
+        ListInstalledStarters.View view = new ListInstalledStarters.View("inventory", "1.0.0",
+                Instant.parse("2026-10-06T10:00:00Z"), "alice", 0, null, false, true);
+
+        assertThat(mapper.toModel(view).getDomainStarter()).isTrue();
     }
 
     /**

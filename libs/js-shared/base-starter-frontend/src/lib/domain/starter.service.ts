@@ -53,6 +53,20 @@ export class StarterService {
     );
   }
 
+  /**
+   * Removes an installed domain starter — the definitions it brought, and its mounts — as a dry run or for real. The
+   * definitions go as drafts, as with a designer's delete: the released ones follow with the organization's next release.
+   *
+   * Like {@link install}, a refusal is the report it carries, not an error: 409 while the starter's own entity types or
+   * workflows hold data, or something still needs one of its definitions; 422 for a starter that replaced the
+   * organization's definitions, or a common.
+   */
+  uninstall(starterId: string, dryRun: boolean): Observable<ImportReport> {
+    return this.http
+      .delete<ImportReport>(`${this.root}/starters/${encodeURIComponent(starterId)}`, { params: { dryRun: String(dryRun) } })
+      .pipe(catchError((error: unknown) => (error instanceof HttpErrorResponse && isImportReport(error.error) ? of(error.error) : throwError(() => error))));
+  }
+
   listInstalled(): Observable<InstalledStarter[]> {
     return this.http.get<InstalledStarter[]>(`${this.root}/starters`);
   }

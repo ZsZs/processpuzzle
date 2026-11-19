@@ -357,6 +357,19 @@ class ImportBundleTest {
         assertThat(listInstalledStarters.execute("other")).isEmpty();
     }
 
+    /** Only a starter that was added can be removed again; the list says which, so the designer offers Remove only there. */
+    @Test
+    void theListSaysWhichInstalledStartersAreDomainStarters() {
+        importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, "alice");
+        importBundle.execute("acme", domainStarter("billing", "bil", "bil-invoice\n", "bil-total\n"), false, "alice");
+        importBundle.execute("other", bundle("item\n", "positive\n"), false, "alice");
+
+        assertThat(listInstalledStarters.execute("acme")).extracting(ListInstalledStarters.View::starterId, ListInstalledStarters.View::domainStarter)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("billing", true), org.assertj.core.groups.Tuple.tuple("inventory", true));
+        assertThat(listInstalledStarters.execute("other")).singleElement()
+                .satisfies(view -> assertThat(view.domainStarter()).as("it replaced the definitions").isFalse());
+    }
+
     private CommonRules commonRules() {
         return new CommonRules(dataSpaceRepository, installedStarterRepository, new RegisterDataSpace(dataSpaceRepository));
     }

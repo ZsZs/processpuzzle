@@ -1,9 +1,13 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { STARTER_IMPORT_I18N_SCOPE } from '../base-starter.i18n';
+import { STARTER_IMPORT_I18N_SCOPE, STARTER_UNINSTALL_I18N_SCOPE } from '../base-starter.i18n';
 import { ImportAction, ImportReport } from '../domain/starter';
 
-/** One `ImportReport`: its outcome, the definitions it touched, or why it was refused. Presentational. */
+/**
+ * One `ImportReport`: its outcome, the definitions it touched, or why it was refused, and what the install could not do
+ * for want of a place. Presentational. The report of removing a starter has the same shape and takes its status and summary
+ * words from the uninstall scope: "would install" would be wrong for it.
+ */
 @Component({
   selector: 'pp-import-report',
   standalone: true,
@@ -13,12 +17,12 @@ import { ImportAction, ImportReport } from '../domain/starter';
     @let r = report();
     <section class="report" [class]="'report report--' + r.status" data-testid="import-report">
       <header class="report__header">
-        <strong data-testid="import-report-status">{{ scope + '.status.' + r.status | transloco }}</strong>
+        <strong data-testid="import-report-status">{{ wordScope() + '.status.' + r.status | transloco }}</strong>
         @if (r.starterId) {
           <span class="report__starter">{{ r.starterId }} {{ r.version }}</span>
         }
         @if (r.status !== 'rejected') {
-          <span data-testid="import-report-summary">{{ scope + '.summary' | transloco: { created: count('create'), updated: count('update'), deleted: count('delete') } }}</span>
+          <span data-testid="import-report-summary">{{ wordScope() + '.summary' | transloco: { created: count('create'), updated: count('update'), deleted: count('delete'), removed: count('delete') } }}</span>
         }
       </header>
 
@@ -31,6 +35,14 @@ import { ImportAction, ImportReport } from '../domain/starter';
               }
               {{ error.message }}
             </li>
+          }
+        </ul>
+      }
+
+      @if (r.warnings?.length) {
+        <ul class="report__warnings" data-testid="import-report-warnings">
+          @for (warning of r.warnings; track $index) {
+            <li>{{ warning }}</li>
           }
         </ul>
       }
@@ -87,6 +99,11 @@ import { ImportAction, ImportReport } from '../domain/starter';
       padding-left: 20px;
       color: #c62828;
     }
+    .report__warnings {
+      margin: 0;
+      padding-left: 20px;
+      color: #ef6c00;
+    }
     .report__items {
       border-collapse: collapse;
       font-size: 13px;
@@ -110,7 +127,14 @@ import { ImportAction, ImportReport } from '../domain/starter';
 })
 export class ImportReportComponent {
   readonly report = input.required<ImportReport>();
+  /** Whether this is the report of removing a starter, not of installing one. */
+  readonly uninstall = input(false);
   protected readonly scope = STARTER_IMPORT_I18N_SCOPE;
+
+  /** Where the status and summary words come from; the kinds, actions and columns are shared. */
+  protected wordScope(): string {
+    return this.uninstall() ? STARTER_UNINSTALL_I18N_SCOPE : this.scope;
+  }
 
   /** From the items rather than `summary`, which the contract leaves optional. */
   protected count(action: ImportAction): number {

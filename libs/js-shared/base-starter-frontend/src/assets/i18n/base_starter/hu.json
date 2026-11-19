@@ -1,7 +1,7 @@
 {
   "import": {
     "title": "Üzleti kezdőcsomagok",
-    "hint": "Telepítsen egy Business Startert a katalógusból. A szervezet összes definícióját lecseréli, ezért csak addig telepíthető, amíg a szervezet nem tartalmaz adatot. Először nézze meg az előnézetet: az előnézet a teljes telepítést lefuttatja, de semmit sem ír.",
+    "hint": "Telepítsen egy üzleti kezdőcsomagot a katalógusból. A kezdőcsomag egy területet ad a szervezet saját alkalmazásához, a már telepítettek mellé; a régi fajta minden definíciót lecserél, és csak akkor telepíthető, ha a szervezet nem tartalmaz adatot. Előbb nézze meg az előnézetet: az a teljes telepítést lefuttatja, és nem ír semmit.",
     "preview": "Előnézet",
     "apply": "Telepítés",
     "status": {
@@ -36,7 +36,8 @@
       "translation": "Fordítás",
       "asset": "Fájl",
       "calculation": "Számítás",
-      "chat": "Csevegés"
+      "chat": "Csevegés",
+      "mount": "Beillesztés"
     },
     "catalogEmpty": "A katalógusban még nincs starter.",
     "version": "Verzió",
@@ -51,10 +52,13 @@
       "installedAt": "Telepítve",
       "installedBy": "Telepítette",
       "customized": "Módosított definíciók",
-      "upgrade": "Frissítés"
+      "upgrade": "Frissítés",
+      "remove": "Eltávolítás"
     },
     "upToDate": "naprakész",
-    "upgradeTo": "Frissítés erre: {{version}}"
+    "upgradeTo": "Frissítés erre: {{version}}",
+    "remove": "Eltávolítás",
+    "notRemovable": "Ez a kezdőcsomag lecserélte a szervezet definícióit, ezért nem távolítható el."
   },
   "upgrade": {
     "title": "Frissítés",
@@ -79,5 +83,16 @@
       "keep-in-use": "megtartva (használatban)"
     },
     "migrations": "{{count}} migrációs lépés módosítja a meglévő objektumokat a közzétételkor:"
+  },
+  "uninstall": {
+    "title": "Kezdőcsomag eltávolítása",
+    "apply": "Kezdőcsomag eltávolítása",
+    "cancel": "Mégse",
+    "status": {
+      "applied": "Eltávolítva",
+      "would-apply": "Eltávolítaná",
+      "rejected": "Nem távolítható el"
+    },
+    "summary": "{{removed}} eltávolítandó"
   }
 }
