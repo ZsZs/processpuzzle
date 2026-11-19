@@ -216,6 +216,7 @@
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
     "@fortawesome/free-brands-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "@fullcalendar/angular": "^7.1.5",
     "@jsverse/transloco": "8.4.0",
     "@lezer/highlight": "^1.2.5",
     "@ngrx/component-store": "^22.0.1",
@@ -232,6 +233,7 @@
     "es6-dynamic-template": "^2.0.0",
     "eslint-plugin-import": "^2.32.0",
     "flag-icons": "^7.6.0",
+    "fullcalendar": "^7.1.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
@@ -248,6 +250,7 @@
     "node-fetch": "^3.3.2",
     "prismjs": "^1.30.0",
     "rxjs": "~7.8.2",
+    "temporal-polyfill": "^1.0.8",
     "tslib": "^2.9.1",
     "uuid": "^14.0.3",
     "yaml": "^2.9.1"
