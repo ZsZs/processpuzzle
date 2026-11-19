@@ -302,7 +302,8 @@ describe('StarterImportComponent', () => {
       await click('uninstall-inventory');
 
       expect(service.uninstall).toHaveBeenCalledWith('inventory', true);
-      const report = byTestId('uninstall-report')!;
+      const report = byTestId('uninstall-report');
+      if (!report) throw new Error('uninstall-report element not found');
       expect(report.textContent).toContain('Would remove');
       expect(report.textContent).not.toContain('Would install');
       expect(report.textContent).toContain('2 to remove');
