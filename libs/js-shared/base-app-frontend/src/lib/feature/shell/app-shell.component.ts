@@ -8,12 +8,13 @@ import { ActivatedRoute, RouterOutlet } from '@angular/router';
 import { WorkingContextService } from '@processpuzzle/base-entity';
 import { nestWorkingContext } from '../../domain/working-context-row.mapper';
 import { LayoutService } from '@processpuzzle/util';
-import { APPLICATION_CONTEXT, SIDENAV_CONTROL, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
+import { APPLICATION_CONTEXT, MODULE_LAUNCHER_CONTEXT, SIDENAV_CONTROL, SidenavAutosizeDirective, SidenavContentOutletComponent, ThemeService } from '@processpuzzle/widgets';
 import { AppDefinition } from '../../domain/app-definition';
 import { AppRegionRenderer, RegionView } from './app-region.renderer';
 import { layoutOf, themeDefaultsOf, themeVarsOf, trimSlashes } from './app-shell.model';
 import { NavOrientation } from './region-nav.component';
 import { ShellApplicationContext } from './shell-application-context';
+import { ShellModuleLauncherContext } from './shell-module-launcher-context';
 import { ShellSidenavControl } from './shell-sidenav-control';
 import { ShellOverlayContainer } from './shell-overlay-container';
 
@@ -78,6 +79,8 @@ export class ShellActionsDirective {}
     ThemeService,
     ShellApplicationContext,
     { provide: APPLICATION_CONTEXT, useExisting: ShellApplicationContext },
+    ShellModuleLauncherContext,
+    { provide: MODULE_LAUNCHER_CONTEXT, useExisting: ShellModuleLauncherContext },
     ShellSidenavControl,
     { provide: SIDENAV_CONTROL, useExisting: ShellSidenavControl },
     { provide: OverlayContainer, useClass: ShellOverlayContainer },

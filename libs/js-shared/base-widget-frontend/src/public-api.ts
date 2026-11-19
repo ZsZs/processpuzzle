@@ -18,6 +18,7 @@ export {
   LANGUAGE_SELECTOR_WIDGET,
   LIKE_BUTTON_WIDGET,
   MARKDOWN_PAGE_WIDGET,
+  MODULE_LAUNCHER_WIDGET,
   NAV_BAR_WIDGET,
   NAV_MENU_WIDGET,
   NAVIGATE_BACK_WIDGET,
@@ -41,6 +42,7 @@ export {
   provideLanguageSelectorWidget,
   provideLikeButtonWidget,
   provideMarkdownPageWidget,
+  provideModuleLauncherWidget,
   provideNavBarWidget,
   provideNavMenuWidget,
   provideNavigateBackWidget,
@@ -54,6 +56,9 @@ export {
   provideVersionButtonWidget,
 } from './base-widget.providers';
 export { ApplicationPropertyStore } from './app-property/app-property.store';
+export { launcherCardsOf, MODULE_LAUNCHER_CONTEXT } from './module-launcher/module-launcher-context';
+export type { ModuleLauncherContext, ModuleLauncherEntry } from './module-launcher/module-launcher-context';
+export { ModuleLauncherComponent } from './module-launcher/module-launcher.component';
 export { CopyrightComponent } from './copyright/copyright.component';
 export { EntityFormComponent } from './entity-form/entity-form.component';
 export { EntityTableComponent } from './entity-table/entity-table.component';

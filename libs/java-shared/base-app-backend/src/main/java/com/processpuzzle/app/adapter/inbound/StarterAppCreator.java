@@ -38,8 +38,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
  *
  * <p>The definition is deliberately almost empty — a name and an empty graph — because choosing
  * theme, layout and navigation is the designer's first job, not something to guess here. With
- * {@code base-app.default-shell=true} it is the platform's {@link DefaultShell} instead, published at once and marked as
- * untouched: the customer's own frame, to which a domain starter adds its modules (business-starters design §11.4).
+ * {@code base-app.default-shell} on, which is the default, it is the platform's {@link DefaultShell} instead, published at once
+ * and marked as untouched: the customer's own frame, to which a domain starter adds its modules (business-starters design §11.4).
  */
 @Component
 public class StarterAppCreator {
@@ -52,14 +52,14 @@ public class StarterAppCreator {
     private final AppDefinitionRepository appDefinitionRepository;
     private final boolean defaultShell;
 
-    /** An empty application. */
+    /** An empty application: the form the tests and a host that wants no default shell use. */
     public StarterAppCreator(AppDefinitionRepository appDefinitionRepository) {
         this(appDefinitionRepository, false);
     }
 
     @Autowired
     public StarterAppCreator(AppDefinitionRepository appDefinitionRepository,
-                             @Value("${base-app.default-shell:false}") boolean defaultShell) {
+                             @Value("${base-app.default-shell:true}") boolean defaultShell) {
         this.appDefinitionRepository = appDefinitionRepository;
         this.defaultShell = defaultShell;
     }
