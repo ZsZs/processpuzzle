@@ -1,6 +1,6 @@
 # base-calendar – Design Plan
 
-2026-11-19 · status: phase 1 (scaffold) built, see [Phase 1 as built](#11-phase-1-as-built-2026-11-19)
+2026-11-19 · status: phases 1 (scaffold) and 2 (core API) built, see §11 and §12
 
 Smaller organizations need a shared calendar as much as they need lists and forms: who is on duty, when the
 meeting room is free, which boat is booked for Saturday. `base-calendar` gives a ProcessPuzzle application any
@@ -307,3 +307,39 @@ scripts; `tsconfig.base.json`; both release scripts; the four workflows; the tes
   import-direction lint; the testbed does not copy the i18n assets yet — that comes with the widget in phase 3.
 - **Not done:** the Sonar projects (`processpuzzle_base_calendar_backend` / `_frontend`) are configured in
   `sonar-project.properties` but not yet created on SonarCloud, and CI has not run.
+
+
+## 12. Phase 2 as built (2026-11-19)
+
+The contract is `api-contracts/.../base-calendar-api.yaml`: definitions (list, get, `PUT`-by-key, delete the draft),
+`GET calendars/{key}`, entries (book, get, replace, cancel) and `GET occurrences`. Where the build differs from the
+plan, and why:
+
+- **Anonymous means anonymous, not "the guard let it through".** `OrganizationGuard` and `hasAnyRole` treat a caller
+  without a token as permitted and as holding every role — the tenant API's open-by-default compromise. A calendar
+  cannot use that, so `ResolveCalendarAccess` reads `CurrentPrincipal` directly: a caller is a *member* only with a
+  valid token from this organization's realm (or as platform staff). No token, or another tenant's, is an outsider
+  who sees only `PUBLIC` calendars and never books. Tests pin each cell of that matrix, and a mutation of the rule
+  fails three of them.
+- **Filter chain.** `GET` on `calendar/calendars/**` and `calendar/occurrences` is `permitAll`, also when
+  `require-authentication` is set; every other method under `calendar/calendars/**` needs a token. The definitions
+  follow `require-authentication` like every definition. Both modes are tested over HTTP.
+- **Cautious defaults.** A definition that names no visibility is `AUTHENTICATED` and no detail is `BUSY_ONLY`; the
+  mapper, the importer and the entity builder agree.
+- **Managers can read what they manage**, even on a `ROLES` calendar whose read roles they lack; an empty manage list
+  makes nobody a manager but an entry's organizer and platform staff.
+- **Organizers need the booking role to edit their own entries** (`mayEdit`): losing the role stops editing.
+- **Deferred inside this phase:** `RECURRING` is accepted in a definition's `allowedKinds` but entries of that kind
+  are refused (422, "not supported yet"); `capacity` is stored and validated but not enforced; there is no release
+  participant, so `releaseState` is not reported and nothing releases a designer's draft yet (the seed importer
+  writes both rows, as chat's does); no `RolesReferenced` for the role lists.
+- **Stripping is the use case's decision, applied by the mapper.** `EntryViews` computes `busy`, `mine` and
+  `canEdit` once, for one entry, a list or a window; the mapper drops title, description, location, category,
+  organizer and visibility from a busy view. The organizer's subject is in no DTO.
+- **Errors.** 404 (`calendar.not-found`) for a missing or unreadable calendar, the same answer for both; 403 for
+  book / edit / cancel without the right; 409 for a stale `version`; 422 (`calendar.booking.invalid`) for a broken
+  rule, listing every violation; 400 for a bad window (empty, reversed, longer than 100 days).
+- **Window query.** All-day entries are matched by local day in the organization's zone, timed ones by instant; the
+  end of both is exclusive, which `CalendarEntryPersistenceTest` checks at every edge.
+- **Seed:** `default-calendar-definitions/base-calendar/processpuzzle-testbed-calendar-definitions.yaml` ships a
+  public events calendar, a team calendar and a room, loaded by `base-calendar.loadDefaultCalendarDefinitions`.

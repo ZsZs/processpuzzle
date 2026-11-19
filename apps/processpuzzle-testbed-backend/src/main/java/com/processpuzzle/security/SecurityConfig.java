@@ -104,6 +104,30 @@ public class SecurityConfig {
     };
 
     /**
+     * What an anonymous visitor may read of a calendar: the calendar itself, its entries and the occurrences of a
+     * time window. Open at the filter chain, whatever {@code require-authentication} says, because a calendar can be
+     * public: who may actually see a given calendar is decided per calendar by base-calendar's use cases, which
+     * answer 404 for one the caller may not read. Only {@code GET} is open; see {@link #CALENDAR_PATHS}.
+     */
+    private static final String[] CALENDAR_READ_PATHS = {
+            "/api/organizations/*/calendar/calendars/**",
+            "/organizations/*/calendar/calendars/**",
+            "/api/organizations/*/calendar/occurrences",
+            "/organizations/*/calendar/occurrences",
+    };
+
+    /**
+     * Booking, changing and cancelling entries. Always authenticated, whatever {@code require-authentication} says: an
+     * entry has an organizer, which the use cases take from the token subject, and an anonymous call has none. Matched
+     * after {@link #CALENDAR_READ_PATHS}, so only the non-{@code GET} requests reach it. The calendar
+     * <em>definitions</em> are authored metadata like every other definition and follow {@code require-authentication}.
+     */
+    private static final String[] CALENDAR_PATHS = {
+            "/api/organizations/*/calendar/calendars/**",
+            "/organizations/*/calendar/calendars/**",
+    };
+
+    /**
      * The vision server's job notifications. Never a user call: each is authenticated by its own
      * per-job {@code X-Callback-Token}, which base-ai-backend checks against the job it names. The token is
      * not a bearer token on purpose — the resource server below would try to parse one as a JWT.
@@ -181,6 +205,8 @@ public class SecurityConfig {
                     requests.requestMatchers(ORG_ADMIN_PATHS).authenticated();
                     requests.requestMatchers(SELF_SERVICE_PATHS).authenticated();
                     requests.requestMatchers(CHAT_PATHS).authenticated();
+                    requests.requestMatchers(HttpMethod.GET, CALENDAR_READ_PATHS).permitAll();
+                    requests.requestMatchers(CALENDAR_PATHS).authenticated();
                     if (properties.isRequireAuthentication()) {
                         requests.anyRequest().authenticated();
                     } else {
