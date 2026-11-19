@@ -35,7 +35,7 @@ Sample data that demonstrates a starter lives in the Testbed instead.
 
 > **Decision 11 (2026-11-19) changes what a starter is:** a starter is a *domain* starter — the definitions and
 > modules of one business domain, never an application shell — and an organization may install several. Sections
-> 4, 6 and 7 below describe what is built today (manifest v1); the target design and the plan are in §11.
+> 4, 6 and 7 below describe what is built today (manifest v1, and v2 for commons); the target design and the plan are in §11.
 
 ## 3. Layers
 
@@ -204,7 +204,7 @@ Two callers, one per stack that installs:
       keys collide with another starter's or the customer's own definitions is refused (409, listed in the dry-run
       report); keys are never rewritten. Official starters follow a **key-prefix convention** (§11.2), and CI
       checks every official starter against every other.
-    - **Existing applications stay as they are** (11c). Organizations that installed a v1 starter keep their
+    - **Existing applications stay as they are** (11c). Organizations that installed a starter below manifest v3 keep their
       application; it is the customer's from then on and is never replaced by an upgrade.
 
 Postponed:
@@ -258,7 +258,7 @@ Next:
 
 ### 11.1 What changes
 
-| Aspect | Manifest v1 (today) | Manifest v2 (target) |
+| Aspect | Manifest v1 and v2 (today) | Manifest v3 (target) |
 |---|---|---|
 | Content | Definitions, modules **and an app** | Definitions and modules; no `apps/`, no `translations/apps/**`, no `assets/apps/**` |
 | Per organization | Zero or one starter | Zero or more starters |
@@ -268,15 +268,25 @@ Next:
 | Application | Starter's app replaces the placeholder `app` | Sign-up seeds a default shell; install adds mounts to the app's draft (11a) |
 | Common membership | One common per org | One common per installed starter that has one |
 
-v1 bundles stay installable, the v1 way, until SailRC 1.0.0 is published; then v1 is refused.
+Bundles below v3 stay installable, the old way, until SailRC 1.0.0 is published; then they are refused. (v2 is
+the commons manifest — `kind`, `common`, `migrations`; v3 keeps those and adds `keyPrefix` and `mounts`.)
 
 ### 11.2 Key-prefix convention
 
-Every key a starter defines — entity codes, state machines, rules, widgets, documents, workflows, events, module
-keys and so also transloco scopes — starts with a short prefix the manifest declares (`keyPrefix: sailrc`), for
-example `sailrc-race`, module `sailrc-plan-race`, scope `sailrc_plan_race`. The packager refuses a v2 bundle with a
-key outside its prefix, and a prefix already taken by another starter in the catalog. Customer-authored keys are
-not checked against the convention; a collision with them is refused at install (11b).
+Every key a starter defines starts with a short prefix the manifest declares (`keyPrefix: sailrc`) and a dash:
+entity codes, rule ids, calculation ids, chats, module keys, and so on — the key is what each feature's import
+participant reports from `keysIn`, which is also what provenance records. A state machine's key is its entity's code,
+so it follows by itself. A module's transloco scope starts with the prefix and an underscore, which the default (the
+module key with dashes as underscores) does by itself. Example: entity `sailrc-race`, module `sailrc-plan-race`,
+scope `sailrc_plan_race`. Translations and assets are keyed by their owner, so they need no prefix of their own.
+
+The importer refuses a v3 bundle with a key outside its prefix — it asks every participant for its keys, so no
+format is parsed twice — and the packager refuses a prefix another starter of the catalog already holds (a
+starter and its common share one). Customer-authored keys are not checked against the convention; a collision
+with them is refused at install (11b).
+
+Caveat for phase 2: rules name their entity by its *name* (`context: Race`), not its code, so two starters with
+an entity of the same name would bind each other's rules. The collision check covers entity names as well.
 
 ### 11.3 Mount hints
 
@@ -310,7 +320,7 @@ use it on any page, or replace the home page altogether.
 
 | Phase | Where | Content |
 |---|---|---|
-| 1. Manifest v2 | core: packager, manifest schema | `manifestVersion: 2`, `keyPrefix`, `mounts`; refuses app content and keys outside the prefix; catalog-wide prefix uniqueness. |
+| 1. Manifest v3 | core: packager, `BundleReader`, `ImportBundle` | `manifestVersion: 3`, `keyPrefix`, `mounts`; refuses app content and keys outside the prefix; catalog-wide prefix uniqueness. The install itself still replaces, as in v2. |
 | 2. Additive importer | `base-starter-backend`, SPI | Install scoped by provenance `starterId`; collision check against all definitions of the org (dry-run report lists them); per-starter data gate through a keyed `InstanceDataProbe.count(orgKey, kind, key)` — the same probe as the delete guards (§10 item 4); uninstall endpoint; `GET …/starters` returns a list; `starter_installed` holds one row per starter. |
 | 3. App integration | `base-app` backend + frontend | Mount merge into the draft (11a, with the untouched-shell exception); default shell seed; `module-launcher` widget; sidenav items from mounts. |
 | 4. Commons | core, `base-starter-backend`, base-entity | `DataSpaceDirectory.commonsOf(orgKey)` instead of `commonOf`; a shared type resolves to the common of the starter that defines it; reserved codes checked against all of the org's commons (the prefix convention keeps them apart). |
