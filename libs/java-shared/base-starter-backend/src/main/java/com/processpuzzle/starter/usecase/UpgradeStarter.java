@@ -56,6 +56,7 @@ public class UpgradeStarter {
     private final BundleReader reader;
     private final UpgradePlanner planner;
     private final CommonRules commonRules;
+    private final KeyPrefixRules keyPrefixRules;
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedRepository;
     private final OfferedVersionRepository offered;
@@ -64,7 +65,7 @@ public class UpgradeStarter {
     private final Clock clock;
 
     public UpgradeStarter(OrganizationGuard guard, InstallStarter installer, StarterRegistry registry, BundleReader reader,
-                          UpgradePlanner planner, CommonRules commonRules,
+                          UpgradePlanner planner, CommonRules commonRules, KeyPrefixRules keyPrefixRules,
                           DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
                           OfferedVersionRepository offered, ObjectProvider<MigrationStepQueue> queue,
                           PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
@@ -74,6 +75,7 @@ public class UpgradeStarter {
         this.reader = reader;
         this.planner = planner;
         this.commonRules = commonRules;
+        this.keyPrefixRules = keyPrefixRules;
         this.provenanceRepository = provenanceRepository;
         this.installedRepository = installedRepository;
         this.offered = offered;
@@ -118,6 +120,7 @@ public class UpgradeStarter {
                 List.of(new ImportReport.Error(e.getFile(), e.getMessage())));
         }
         List<ImportReport.Error> problems = problems(orgKey, starterId, version, bundle.manifest());
+        problems.addAll(keyPrefixRules.check(bundle));
         if (!problems.isEmpty()) {
             return UpgradeReport.rejected(dryRun, starterId, installed.getVersion(), version, problems);
         }

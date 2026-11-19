@@ -44,6 +44,7 @@ public class StarterMapper {
                     case DELETE -> ImportReportItem.ActionEnum.DELETE;
                 })));
         report.errors().forEach(error -> model.addErrorsItem(new ImportError().file(error.file()).message(error.message())));
+        report.warnings().forEach(model::addWarningsItem);
         return model;
     }
 
@@ -55,7 +56,8 @@ public class StarterMapper {
                 .installedBy(view.installedBy())
                 .customizedDefinitions(view.customizedDefinitions())
                 .offeredVersion(view.offeredVersion())
-                .upgradeAvailable(view.upgradeAvailable());
+                .upgradeAvailable(view.upgradeAvailable())
+                .domainStarter(view.domainStarter());
     }
 
     public com.processpuzzle.starter.model.UpgradeReport toModel(com.processpuzzle.starter.usecase.UpgradeReport report) {

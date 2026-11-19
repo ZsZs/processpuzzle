@@ -1,8 +1,10 @@
 package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
+import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.InstanceDataProbe;
+import com.processpuzzle.core.definition.ModuleMountPort;
 import com.processpuzzle.core.definition.ParticipantResult;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
@@ -33,12 +35,17 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Installs one Business Starter bundle into one organization, replacing the definitions it had.
+ * Installs one Business Starter bundle into one organization.
  *
- * <p>A starter is all or nothing, so it is not merged into what the organization holds: every
- * participant first removes its kind's definitions, in reverse import order, and then the bundle is
- * applied. That is only safe while nothing refers to a definition, so an organization for which any
- * {@link InstanceDataProbe} counts instance data is refused before anything is touched.
+ * <p>A <em>domain starter</em> ({@code manifestVersion: 3}, not a common) is added to the organization: its
+ * definitions are written next to what the organization and its other starters hold, nothing is removed, and it is
+ * refused (409) when it would overwrite a definition that exists already or when it is installed already — upgrade
+ * it then. Nothing existing is touched, so no instance data can be orphaned and none is checked.
+ *
+ * <p>Any other bundle replaces: it is all or nothing, so every participant first removes its kind's definitions, in
+ * reverse import order, and then the bundle is applied. That is only safe while nothing refers to a definition, so
+ * an organization for which any {@link InstanceDataProbe} counts instance data is refused before anything is
+ * touched — and so is one that holds a domain starter, which the replacement would remove.
  *
  * <p>Every definition kind is written by the feature that owns it, through its
  * {@link DefinitionImportParticipant}, in the participants' {@code order()} and inside one
@@ -56,6 +63,8 @@ public class ImportBundle {
     private final DefinitionProvenanceRepository provenanceRepository;
     private final InstalledStarterRepository installedStarterRepository;
     private final CommonRules commonRules;
+    private final KeyPrefixRules keyPrefixRules;
+    private final ObjectProvider<ModuleMountPort> mountPort;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -65,6 +74,8 @@ public class ImportBundle {
                         DefinitionProvenanceRepository provenanceRepository,
                         InstalledStarterRepository installedStarterRepository,
                         CommonRules commonRules,
+                        KeyPrefixRules keyPrefixRules,
+                        ObjectProvider<ModuleMountPort> mountPort,
                         PlatformTransactionManager transactionManager,
                         ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -73,6 +84,8 @@ public class ImportBundle {
         this.provenanceRepository = provenanceRepository;
         this.installedStarterRepository = installedStarterRepository;
         this.commonRules = commonRules;
+        this.keyPrefixRules = keyPrefixRules;
+        this.mountPort = mountPort;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -119,41 +132,43 @@ public class ImportBundle {
         checkExpected(manifest, expected, errors);
         errors.addAll(commonRules.check(orgKey, manifest));
         Map<DefinitionImportParticipant, List<String>> plan = plan(manifest, errors);
+        errors.addAll(keyPrefixRules.check(bundle));
         if (!errors.isEmpty()) {
             throw rejected(dryRun, manifest, errors, ImportRejectedException.Reason.INVALID);
         }
-        List<ImportReport.Error> instanceData = instanceData(orgKey);
+        boolean additive = isAdditive(manifest);
+        List<ImportReport.Error> conflicts = additive ? conflicts(orgKey, bundle, plan) : replacesDomainStarters(orgKey);
+        if (!conflicts.isEmpty()) {
+            throw rejected(dryRun, manifest, conflicts, ImportRejectedException.Reason.CONFLICT);
+        }
+        List<ImportReport.Error> instanceData = additive ? List.of() : instanceData(orgKey);
         if (!instanceData.isEmpty()) {
             throw rejected(dryRun, manifest, instanceData, ImportRejectedException.Reason.HOLDS_INSTANCE_DATA);
         }
 
         ImportReport report = transactionTemplate.execute(status ->
-                apply(orgKey, bundle, plan, dryRun, importedBy, status));
+                apply(orgKey, bundle, plan, additive, dryRun, importedBy, status));
         if (report.status() == ImportReport.Status.REJECTED) {
             throw new ImportRejectedException(report, ImportRejectedException.Reason.INVALID);
         }
         return report;
     }
 
-    private ImportReport apply(String orgKey, StarterBundle bundle, Map<DefinitionImportParticipant, List<String>> plan,
-                               boolean dryRun, String importedBy, TransactionStatus status) {
-        StarterManifest manifest = bundle.manifest();
-        Map<String, Set<String>> removed = removeAll(orgKey);
-
-        List<ImportReport.Item> items = new ArrayList<>();
+    /**
+     * Applies the bundle's files kind by kind, appending what each wrote to {@code items}. Stops at the first refusal and
+     * answers its errors: a participant that failed mid-write may have left the persistence context in a state later
+     * participants should not build on. Empty when every file was written.
+     */
+    private Optional<List<ImportReport.Error>> write(String orgKey, StarterBundle bundle,
+                                                     Map<DefinitionImportParticipant, List<String>> plan,
+                                                     Map<String, Set<String>> removed, List<ImportReport.Item> items) {
         for (Map.Entry<DefinitionImportParticipant, List<String>> step : plan.entrySet()) {
             DefinitionImportParticipant participant = step.getKey();
             Set<String> removedOfKind = removed.computeIfAbsent(participant.kind(), kind -> new LinkedHashSet<>());
             for (String file : step.getValue()) {
                 ParticipantResult result = participant.apply(orgKey, file, bundle.file(file));
                 if (result.isRejected()) {
-                    // Stop at the first refusal: a participant that failed mid-write may have left the
-                    // persistence context in a state later participants should not build on.
-                    status.setRollbackOnly();
-                    List<ImportReport.Error> errors = result.errors().stream()
-                            .map(message -> new ImportReport.Error(file, message))
-                            .toList();
-                    return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), errors);
+                    return Optional.of(result.errors().stream().map(message -> new ImportReport.Error(file, message)).toList());
                 }
                 for (ImportedItem item : result.items()) {
                     boolean existed = removedOfKind.remove(item.key()) || item.action() == ImportedItem.Action.UPDATE;
@@ -162,15 +177,67 @@ public class ImportBundle {
                 }
             }
         }
+        return Optional.empty();
+    }
+
+    /** Whether the bundle is added to the organization rather than replacing its definitions. */
+    static boolean isAdditive(StarterManifest manifest) {
+        return manifest.isDomainStarter() && !manifest.isCommon();
+    }
+
+    private ImportReport apply(String orgKey, StarterBundle bundle, Map<DefinitionImportParticipant, List<String>> plan,
+                               boolean additive, boolean dryRun, String importedBy, TransactionStatus status) {
+        StarterManifest manifest = bundle.manifest();
+        Map<String, Set<String>> removed = additive ? new LinkedHashMap<>() : removeAll(orgKey);
+
+        List<ImportReport.Item> items = new ArrayList<>();
+        Optional<List<ImportReport.Error>> refusal = write(orgKey, bundle, plan, removed, items);
+        if (refusal.isPresent()) {
+            status.setRollbackOnly();
+            return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), refusal.get());
+        }
         removed.forEach((kind, keys) -> keys.forEach(key -> items.add(new ImportReport.Item(kind, key, ImportReport.Action.DELETE))));
+        List<String> warnings = additive ? mount(orgKey, manifest, items) : List.of();
 
         if (dryRun) {
             status.setRollbackOnly();
-            return new ImportReport(true, ImportReport.Status.WOULD_APPLY, manifest.id(), manifest.version(), items, List.of());
+            return new ImportReport(true, ImportReport.Status.WOULD_APPLY, manifest.id(), manifest.version(), items, List.of(), warnings);
         }
-        recordProvenance(orgKey, manifest, items, importedBy);
+        recordProvenance(orgKey, manifest, items, additive, importedBy);
         commonRules.commonInstalled(manifest);
-        return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of());
+        return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of(), warnings);
+    }
+
+    /**
+     * Mounts the modules the manifest's {@code mounts} name into the organization's application, through the port
+     * {@code base-app} provides. Never a refusal: the modules are installed either way, so what could not be mounted, and
+     * what is left for the application's owner to release, comes back as warnings.
+     */
+    private List<String> mount(String orgKey, StarterManifest manifest, List<ImportReport.Item> items) {
+        if (manifest.mounts().isEmpty()) {
+            return List.of();
+        }
+        ModuleMountPort port = mountPort.getIfAvailable();
+        if (port == null) {
+            return List.of("The starter's modules are installed but not mounted: this application cannot mount modules.");
+        }
+        List<ModuleMountPort.MountHint> hints = manifest.mounts().stream().map(ImportBundle::hintOf).toList();
+        ModuleMountPort.MountOutcome outcome = port.mount(orgKey, hints);
+        outcome.done().forEach(key -> items.add(new ImportReport.Item(ImportReport.MOUNT, key, ImportReport.Action.CREATE)));
+        List<String> warnings = new ArrayList<>();
+        outcome.skipped().forEach((key, reason) ->
+                warnings.add("The module '" + key + "' is installed but not mounted: " + reason + "."));
+        if (!outcome.done().isEmpty() && !outcome.released()) {
+            warnings.add("The mounts are drafts of the application; release it to show them.");
+        }
+        return warnings;
+    }
+
+    private static ModuleMountPort.MountHint hintOf(StarterManifest.Mount mount) {
+        ModuleMountPort.Nav nav = mount.nav() == null ? null : new ModuleMountPort.Nav(mount.nav().icon(), mount.nav().labelKey());
+        StarterManifest.Launcher launcher = mount.launcher();
+        return new ModuleMountPort.MountHint(mount.moduleKey(), mount.basePath(), nav, launcher == null ? null
+                : new ModuleMountPort.Launcher(launcher.image(), launcher.titleKey(), launcher.subtitleKey(), launcher.contentKeys(), launcher.link()));
     }
 
     /** Every participant's definitions, dependents first; by kind, the keys that were removed. */
@@ -180,6 +247,54 @@ public class ImportBundle {
             removed.put(participant.kind(), new LinkedHashSet<>(participant.removeAll(orgKey)));
         }
         return removed;
+    }
+
+    /**
+     * What stops a domain starter from being added: it is installed already, or a definition it brings exists in the
+     * organization — the customer's own, or another starter's. Keys are never rewritten, so the install is refused
+     * whole and every collision is listed, which is what a dry run is for. Translations and assets belong to a module,
+     * whose key is checked.
+     */
+    private List<ImportReport.Error> conflicts(String orgKey, StarterBundle bundle,
+                                               Map<DefinitionImportParticipant, List<String>> plan) {
+        String starterId = bundle.manifest().id();
+        if (installedStarterRepository.findByOrgKeyAndStarterId(orgKey, starterId).isPresent()) {
+            return List.of(new ImportReport.Error(BundleReader.MANIFEST,
+                    "The starter '" + starterId + "' is installed already; upgrade it instead."));
+        }
+        List<ImportReport.Error> conflicts = new ArrayList<>();
+        plan.forEach((participant, files) -> {
+            if (DefinitionKinds.TRANSLATION.equals(participant.kind()) || DefinitionKinds.ASSET.equals(participant.kind())) {
+                return;
+            }
+            for (String file : files) {
+                Set<String> keys = KeyPrefixRules.keysIn(participant, file, bundle.file(file));
+                if (keys.isEmpty()) {
+                    continue;
+                }
+                for (String key : participant.fingerprints(orgKey, keys).keySet()) {
+                    String owner = provenanceRepository.findByOrgKeyAndKindAndKey(orgKey, participant.kind(), key)
+                            .map(provenance -> "the starter '" + provenance.getStarterId() + "'")
+                            .orElse("the organization");
+                    conflicts.add(new ImportReport.Error(file, "The " + participant.kind() + " '" + key
+                            + "' exists already; it belongs to " + owner + "."));
+                }
+            }
+        });
+        return conflicts;
+    }
+
+    /** A replacing install would remove the definitions of every domain starter the organization holds. */
+    private List<ImportReport.Error> replacesDomainStarters(String orgKey) {
+        List<String> held = installedStarterRepository.findByOrgKeyOrderByStarterId(orgKey).stream()
+                .filter(InstalledStarter::isDomainStarter)
+                .map(InstalledStarter::getStarterId)
+                .toList();
+        if (held.isEmpty()) {
+            return List.of();
+        }
+        return List.of(new ImportReport.Error(BundleReader.MANIFEST, "This starter replaces the organization's definitions, "
+                + "which would remove the domain starters " + String.join(", ", held) + "; uninstall them first."));
     }
 
     private List<ImportReport.Error> instanceData(String orgKey) {
@@ -228,19 +343,22 @@ public class ImportBundle {
 
     /**
      * Replaces the organization's provenance with this starter's: the definitions an earlier starter
-     * brought are gone. Hashes each definition's fingerprint taken <em>after</em> the write, so the
-     * stored hash describes what the database holds rather than the bundle's text — two spellings of
-     * one definition are the same definition.
+     * brought are gone. A domain starter only adds its own rows. Hashes each definition's fingerprint taken
+     * <em>after</em> the write, so the stored hash describes what the database holds rather than the bundle's text —
+     * two spellings of one definition are the same definition.
      */
-    private void recordProvenance(String orgKey, StarterManifest manifest, List<ImportReport.Item> items, String importedBy) {
-        provenanceRepository.deleteByOrgKey(orgKey);
-        installedStarterRepository.deleteByOrgKey(orgKey);
-        // Flushed now: Hibernate orders inserts before deletes, and the rows below reuse the keys.
-        provenanceRepository.flush();
+    private void recordProvenance(String orgKey, StarterManifest manifest, List<ImportReport.Item> items, boolean additive,
+                                  String importedBy) {
+        if (!additive) {
+            provenanceRepository.deleteByOrgKey(orgKey);
+            installedStarterRepository.deleteByOrgKey(orgKey);
+            // Flushed now: Hibernate orders inserts before deletes, and the rows below reuse the keys.
+            provenanceRepository.flush();
+        }
 
         Instant now = clock.instant();
         Map<String, Set<String>> keysByKind = items.stream()
-                .filter(item -> item.action() != ImportReport.Action.DELETE)
+                .filter(item -> item.action() != ImportReport.Action.DELETE && !ImportReport.MOUNT.equals(item.kind()))
                 .collect(Collectors.groupingBy(
                         ImportReport.Item::kind, LinkedHashMap::new,
                         Collectors.mapping(ImportReport.Item::key, Collectors.toCollection(LinkedHashSet::new))));
@@ -253,13 +371,18 @@ public class ImportBundle {
                     throw new IllegalStateException(
                             "The " + kind + " participant imported '" + key + "' but reports no fingerprint for it.");
                 }
-                DefinitionProvenance provenance = new DefinitionProvenance(orgKey, kind, key);
+                // A row can outlive its definition when a designer deleted it; this install owns the key now.
+                DefinitionProvenance provenance = provenanceRepository.findByOrgKeyAndKindAndKey(orgKey, kind, key)
+                        .orElseGet(() -> new DefinitionProvenance(orgKey, kind, key));
                 provenance.recordImport(manifest.id(), manifest.version(), hash(fingerprint), now, importedBy);
                 provenanceRepository.save(provenance);
             }
         });
 
         InstalledStarter installed = new InstalledStarter(orgKey, manifest.id());
+        if (additive) {
+            installed.markDomainStarter();
+        }
         installed.recordInstall(manifest.version(), now, importedBy);
         installedStarterRepository.save(installed);
     }

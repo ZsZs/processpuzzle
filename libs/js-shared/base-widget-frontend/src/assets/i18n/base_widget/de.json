@@ -125,6 +125,9 @@
   "app_title": {
     "name": "Anwendungstitel"
   },
+  "module_launcher": {
+    "name": "Modul-Übersicht"
+  },
   "nav_bar": {
     "name": "Navigationsleiste"
   },

@@ -261,7 +261,7 @@ type DateFormat = { dateStyle: DateStyle; timeStyle: TimeStyle };
  * it. A URL without one is the default language, which the testbed and the biz applications both make `en`.
  */
 function pageLang(page: Page): string {
-  const [first] = new URL(page.url()).pathname.split('/').filter((segment) => segment !== '');
+  const first = new URL(page.url()).pathname.split('/').find((segment) => segment !== '');
   return first && /^[a-z]{2}(-[A-Z]{2})?$/.test(first) ? first : 'en';
 }
 

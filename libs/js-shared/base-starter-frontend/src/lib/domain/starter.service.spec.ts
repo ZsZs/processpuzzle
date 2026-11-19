@@ -102,6 +102,43 @@ describe('StarterService', () => {
     });
   });
 
+  describe('uninstall', () => {
+    const removal: ImportReport = { dryRun: true, status: 'would-apply', items: [{ kind: 'entity', key: 'inv-item', action: 'delete' }] };
+
+    it("deletes the starter's resource, asking for a dry run in the query", async () => {
+      const result = firstValueFrom(service.uninstall('inventory', true));
+      const request = http.expectOne(`${ROOT}/starters/inventory?dryRun=true`);
+      expect(request.request.method).toBe('DELETE');
+      request.flush(removal);
+
+      await expect(result).resolves.toEqual(removal);
+    });
+
+    it('removes for real when it is not a dry run', async () => {
+      const result = firstValueFrom(service.uninstall('inventory', false));
+      const request = http.expectOne(`${ROOT}/starters/inventory?dryRun=false`);
+      expect(request.request.method).toBe('DELETE');
+      request.flush({ ...removal, dryRun: false, status: 'applied' });
+
+      await expect(result).resolves.toMatchObject({ status: 'applied' });
+    });
+
+    it('emits the report a 409 or a 422 carries instead of failing', async () => {
+      const refused: ImportReport = { dryRun: true, status: 'rejected', errors: [{ message: 'The starter\'s definitions still have data: 4 entity objects.' }] };
+      const result = firstValueFrom(service.uninstall('inventory', true));
+      http.expectOne(`${ROOT}/starters/inventory?dryRun=true`).flush(refused, { status: 409, statusText: 'Conflict' });
+
+      await expect(result).resolves.toEqual(refused);
+    });
+
+    it('fails on an error without a report, and encodes the starter id', async () => {
+      const result = firstValueFrom(service.uninstall('a b', true));
+      http.expectOne(`${ROOT}/starters/a%20b?dryRun=true`).flush({ message: 'denied' }, { status: 403, statusText: 'Forbidden' });
+
+      await expect(result).rejects.toBeDefined();
+    });
+  });
+
   it('lists the installed starters', async () => {
     const result = firstValueFrom(service.listInstalled());
     http.expectOne(`${ROOT}/starters`).flush([{ starterId: 'inventory', version: '1.0.0', installedAt: '2026-10-05T10:00:00Z', customizedDefinitions: 1 }]);

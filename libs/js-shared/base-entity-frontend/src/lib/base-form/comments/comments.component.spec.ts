@@ -28,7 +28,9 @@ async function setupComments(options: { value?: unknown; disabled?: boolean; use
   if (options.user) harness.fixture.debugElement.injector.get(EntityUserContext).set(options.user);
   harness.fixture.detectChanges();
   const component = harness.component as CommentsComponent<TestEntity>;
-  return { ...harness, component, control: component.formGroup.get('comments')!, element: harness.fixture.nativeElement as HTMLElement };
+  const control = component.formGroup.get('comments');
+  if (!control) throw new Error('Comments control not found');
+  return { ...harness, component, control, element: harness.fixture.nativeElement as HTMLElement };
 }
 
 describe('CommentsComponent', () => {
@@ -52,7 +54,7 @@ describe('CommentsComponent', () => {
     const { component, element } = await setupComments({ value: 'garbage' });
 
     expect(component.history()).toEqual([]);
-    expect(element.querySelectorAll('[data-testid="comment-card"]').length).toBe(0);
+    expect(element.querySelectorAll('[data-testid="comment-card"]')).toHaveLength(0);
   });
 
   it('offers an editor for a new comment', async () => {
@@ -66,7 +68,7 @@ describe('CommentsComponent', () => {
 
     expect(component.isEditable()).toBe(false);
     expect(element.querySelector('.pp-comments__new')).toBeNull();
-    expect(element.querySelectorAll('[data-testid="comment-card"]').length).toBe(2);
+    expect(element.querySelectorAll('[data-testid="comment-card"]')).toHaveLength(2);
   });
 
   it('appends the draft stamped with the current user and time, and dirties the control', async () => {

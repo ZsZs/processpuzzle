@@ -201,8 +201,13 @@ public class AppMapper {
             return List.of();
         }
         return mounts.stream().filter(Objects::nonNull)
-                .map(mount -> new ModuleMount(mount.getModuleKey(), mount.getBasePath()))
+                .map(mount -> new ModuleMount(mount.getModuleKey(), mount.getBasePath(), toDomainLauncher(mount.getLauncher())))
                 .toList();
+    }
+
+    private ModuleMount.Launcher toDomainLauncher(com.processpuzzle.app.model.ModuleLauncher launcher) {
+        return launcher == null ? null : new ModuleMount.Launcher(launcher.getImage(), launcher.getTitleKey(),
+                launcher.getSubtitleKey(), launcher.getContentKeys(), launcher.getLink());
     }
 
     // --- domain -> model -----------------------------------------------------------------
@@ -438,8 +443,22 @@ public class AppMapper {
             return List.of();
         }
         return mounts.stream()
-                .map(mount -> new com.processpuzzle.app.model.ModuleMount(mount.moduleKey(), mount.basePath()))
+                .map(this::toModelMount)
                 .toList();
+    }
+
+    private com.processpuzzle.app.model.ModuleMount toModelMount(ModuleMount mount) {
+        com.processpuzzle.app.model.ModuleMount model = new com.processpuzzle.app.model.ModuleMount(mount.moduleKey(), mount.basePath());
+        ModuleMount.Launcher launcher = mount.launcher();
+        if (launcher != null) {
+            com.processpuzzle.app.model.ModuleLauncher modelLauncher = new com.processpuzzle.app.model.ModuleLauncher(launcher.titleKey());
+            modelLauncher.setImage(launcher.image());
+            modelLauncher.setSubtitleKey(launcher.subtitleKey());
+            modelLauncher.setContentKeys(launcher.contentKeys());
+            modelLauncher.setLink(launcher.link());
+            model.setLauncher(modelLauncher);
+        }
+        return model;
     }
 
     // --- modules -------------------------------------------------------------------------

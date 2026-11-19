@@ -3,9 +3,12 @@ package com.processpuzzle.app.adapter.inbound;
 import com.processpuzzle.app.domain.AppDefinition;
 import com.processpuzzle.app.domain.AppDefinitionRepository;
 import com.processpuzzle.app.domain.AppGraph;
+import com.processpuzzle.app.usecase.service.DefaultShell;
 import com.processpuzzle.shared.event.OrganizationProvisionedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -34,7 +37,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * itself what that means for its own data.
  *
  * <p>The definition is deliberately almost empty — a name and an empty graph — because choosing
- * theme, layout and navigation is the designer's first job, not something to guess here.
+ * theme, layout and navigation is the designer's first job, not something to guess here. With
+ * {@code base-app.default-shell} on, which is the default, it is the platform's {@link DefaultShell} instead, published at once
+ * and marked as untouched: the customer's own frame, to which a domain starter adds its modules (business-starters design §11.4).
  */
 @Component
 public class StarterAppCreator {
@@ -45,16 +50,30 @@ public class StarterAppCreator {
     private static final Logger LOG = LoggerFactory.getLogger(StarterAppCreator.class);
 
     private final AppDefinitionRepository appDefinitionRepository;
+    private final boolean defaultShell;
 
+    /** An empty application: the form the tests and a host that wants no default shell use. */
     public StarterAppCreator(AppDefinitionRepository appDefinitionRepository) {
+        this(appDefinitionRepository, false);
+    }
+
+    @Autowired
+    public StarterAppCreator(AppDefinitionRepository appDefinitionRepository,
+                             @Value("${base-app.default-shell:true}") boolean defaultShell) {
         this.appDefinitionRepository = appDefinitionRepository;
+        this.defaultShell = defaultShell;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrganizationProvisioned(OrganizationProvisionedEvent event) {
         LOG.info("Organization '{}' provisioned; creating its starter app definition '{}'.",
                 event.orgKey(), STARTER_APP_ID);
-        appDefinitionRepository.save(new AppDefinition(
-                event.orgKey(), STARTER_APP_ID, event.organizationName(), null, null, AppGraph.empty()));
+        AppDefinition app = new AppDefinition(event.orgKey(), STARTER_APP_ID, event.organizationName(), null, null,
+                defaultShell ? DefaultShell.graph() : AppGraph.empty());
+        if (defaultShell) {
+            app.markDefaultShell();
+            app.publish();
+        }
+        appDefinitionRepository.save(app);
     }
 }

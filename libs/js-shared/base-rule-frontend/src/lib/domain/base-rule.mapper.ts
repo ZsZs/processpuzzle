@@ -30,7 +30,8 @@ export class BaseRuleMapper implements BaseEntityMapper<BaseRule> {
 
   /** Everything but the release state, which only the backend reports. */
   toDto(entity: BaseRule): unknown {
-    const { releaseState: _releaseState, ...dto } = entity;
+    const dto = { ...entity };
+    delete dto.releaseState;
     return dto;
   }
 }

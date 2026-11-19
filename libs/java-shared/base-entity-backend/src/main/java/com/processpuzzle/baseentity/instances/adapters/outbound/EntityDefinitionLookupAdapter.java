@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.instances.adapters.outbound;
 
 import com.processpuzzle.core.definition.Channel;
+import com.processpuzzle.baseentity.definition.domain.SharedTypes;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
@@ -80,9 +81,7 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
         if (directory == null) {
             return Optional.empty();
         }
-        return directory.commonOf(orgKey)
-            .flatMap(common -> entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(common, code, Channel.RELEASED))
-            .filter(BaseEntityDefinition::isShared);
+        return SharedTypes.sharedIn(entityDefinitionRepository, directory.commonsOf(orgKey), code);
     }
 
     private EntityDefinitionView toView(BaseEntityDefinition definition) {

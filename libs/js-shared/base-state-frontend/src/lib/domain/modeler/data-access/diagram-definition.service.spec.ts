@@ -88,10 +88,14 @@ describe('DiagramDefinitionService', () => {
     const layout = new DiagramDefinition({ entityName: 'order' });
 
     service.add(layout).subscribe();
-    controller.expectOne((request) => request.url === `${serviceRoot}/diagrams/order` && request.method === 'PUT').flush(DIAGRAM_DEFINITION_DTO);
+    const addRequest = controller.expectOne((request) => request.url === `${serviceRoot}/diagrams/order` && request.method === 'PUT');
+    expect(addRequest.request.method).toBe('PUT');
+    addRequest.flush(DIAGRAM_DEFINITION_DTO);
 
     service.update(layout as PersistedEntity<DiagramDefinition>).subscribe();
-    controller.expectOne((request) => request.url === `${serviceRoot}/diagrams/order` && request.method === 'PUT').flush(DIAGRAM_DEFINITION_DTO);
+    const updateRequest = controller.expectOne((request) => request.url === `${serviceRoot}/diagrams/order` && request.method === 'PUT');
+    expect(updateRequest.request.method).toBe('PUT');
+    updateRequest.flush(DIAGRAM_DEFINITION_DTO);
   });
 
   it('refuses to write a layout that names no state machine', () => {

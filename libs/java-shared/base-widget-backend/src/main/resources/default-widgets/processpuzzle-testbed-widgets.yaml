@@ -527,6 +527,16 @@ widgetDefinitions:
       type: object
       properties: {}
       additionalProperties: false
+  - key: module-launcher
+    name: Module launcher
+    translocoId: base_widget.module_launcher.name
+    description: A card for every module mounted into the application that brought one, such as the modules of an installed business starter.
+    category: Navigation
+    icon: apps
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
   - key: version-button
     name: Version button
     translocoId: base_widget.version_button.name

@@ -40,6 +40,8 @@ describe('RoleDefinitionService', () => {
   it('addresses a single role by its author-chosen id', () => {
     service.delete('clerk').subscribe();
 
-    controller.expectOne(`${serviceRoot}/roles/clerk`).flush(null);
+    const request = controller.expectOne(`${serviceRoot}/roles/clerk`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 });

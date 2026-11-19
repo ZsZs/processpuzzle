@@ -312,7 +312,7 @@ describe('RecognitionCameraComponent', () => {
     expect(element.querySelector('mat-progress-bar')).toBeNull();
     expect(element.querySelector<HTMLButtonElement>('[data-testid="pick-frames"]')?.disabled).toBe(false);
 
-    finish(answer({ outcome: 'MATCHED', objectId: 'o-1', score: 0.9 }));
+    (finish as (answer: Recognition) => void)(answer({ outcome: 'MATCHED', objectId: 'o-1', score: 0.9 }));
     await fixture.whenStable();
     fixture.detectChanges();
     expect(hits).toEqual([]);

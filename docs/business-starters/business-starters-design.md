@@ -35,7 +35,9 @@ Sample data that demonstrates a starter lives in the Testbed instead.
 
 > **Decision 11 (2026-11-19) changes what a starter is:** a starter is a *domain* starter — the definitions and
 > modules of one business domain, never an application shell — and an organization may install several. Sections
-> 4, 6 and 7 below describe what is built today (manifest v1); the target design and the plan are in §11.
+> 4, 6 and 7 below describe the install that *replaces* the organization's definitions (manifest v1 and v2), which
+> remains for starters of the old kind until they are converted; how a domain starter is added, mounted and removed, and
+> what is built, is in §11.
 
 ## 3. Layers
 
@@ -254,29 +256,45 @@ Next:
    Align the workflow rule with the importer's (finished instances count too). The frontend deletes without
    confirmation and does not show the 409; fix that alongside.
 
-## 11. Domain starters — target design and plan (decision 11)
+## 11. Domain starters — design, status and plan (decision 11)
+
+Status 2026-11-19: phases 1–4 are built and on `develop` (core PRs #1377, #1380, #1383, and phase 4's); 6 and 7 are in review in `processpuzzle-biz` (#201, #202); 5 is built across core (#1388, in review) and `processpuzzle-biz` (#203, #204 merged; #205 in review).
 
 ### 11.1 What changes
 
-| Aspect | Manifest v1 (today) | Manifest v2 (target) |
+| Aspect | Manifest v1 and v2 | Manifest v3 (domain starter) |
 |---|---|---|
 | Content | Definitions, modules **and an app** | Definitions and modules; no `apps/`, no `translations/apps/**`, no `assets/apps/**` |
 | Per organization | Zero or one starter | Zero or more starters |
-| Install | Replaces every definition of the org; only into an org without data | Adds this starter's definitions, or replaces its own (reinstall, upgrade); others untouched |
-| Data gate | Org-wide: no entity objects, no workflow instances | Per starter: no objects of *this starter's* entity types, no instances of *its* workflows |
-| Uninstall | None | `DELETE /organizations/{orgKey}/starters/{starterId}`, same per-starter data gate |
-| Application | Starter's app replaces the placeholder `app` | Sign-up seeds a default shell; install adds mounts to the app's draft (11a) |
-| Common membership | One common per org | One common per installed starter that has one |
+| Install | Replaces every definition of the org; only into an org without data | **Adds** the starter's definitions; nothing is removed; refused (409) when it is installed already or a definition it brings exists |
+| Data gate | Org-wide: no entity objects, no workflow instances | None on install (only new keys are written); on uninstall, per starter: no objects of *its* entity types, no instances of *its* workflows |
+| Uninstall | None | `DELETE /organizations/{orgKey}/starters/{starterId}` |
+| Application | Starter's app replaces the placeholder `app` | A default shell is seeded; install adds mounts to the app's draft (11a) |
+| Common membership | One common per org | One common per installed starter that has one (phase 4) |
 
-v1 bundles stay installable, the v1 way, until SailRC 1.0.0 is published; then v1 is refused.
+v2 is the commons manifest (`kind`, `common`, `migrations`); v3 keeps those fields and adds `keyPrefix` and `mounts`.
+Bundles below v3 stay installable, the replacing way, until SailRC 1.0.0 is published; a replacing install is refused
+while the organization holds a domain starter, which it would remove. A starter installed the replacing way cannot be
+uninstalled.
 
 ### 11.2 Key-prefix convention
 
-Every key a starter defines — entity codes, state machines, rules, widgets, documents, workflows, events, module
-keys and so also transloco scopes — starts with a short prefix the manifest declares (`keyPrefix: sailrc`), for
-example `sailrc-race`, module `sailrc-plan-race`, scope `sailrc_plan_race`. The packager refuses a v2 bundle with a
-key outside its prefix, and a prefix already taken by another starter in the catalog. Customer-authored keys are
-not checked against the convention; a collision with them is refused at install (11b).
+Every key a starter defines starts with a short prefix the manifest declares (`keyPrefix: sailrc`) and a dash: entity
+codes, rule ids, calculation ids, chats, module keys, and so on — the key is what each feature's import participant
+reports from `keysIn`, which is also what provenance records. A state machine's key is its entity's code, so it follows
+by itself. A module's transloco scope starts with the prefix and an underscore, which the default (the module key with
+dashes as underscores) does by itself. Example: entity `sailrc-race`, module `sailrc-plan-race`, scope
+`sailrc_plan_race`. Translations and assets are keyed by their owner, so they need no prefix of their own.
+
+The importer refuses a v3 bundle with a key outside its prefix (`KeyPrefixRules`, run by install and upgrade — it asks
+every participant for its keys, so no format is parsed twice); the packager makes the same checks earlier, and also
+refuses a prefix another starter of the catalog already holds (a starter and its common share one). Customer-authored
+keys are not checked against the convention; a collision with them is refused at install (11b).
+
+**Known limit.** Rules name their entity by *name* (`context: Race`), not by code, and the participant SPI exposes keys
+only, so two starters that define an entity of the same name could bind each other's rules. The collision check does
+not cover names, and the prefix convention does not either; an official starter should give its entities distinctive
+names until this is closed.
 
 ### 11.3 Mount hints
 
@@ -284,7 +302,7 @@ not checked against the convention; a collision with them is refused at install 
 mounts:
   - moduleKey: sailrc-plan-race
     basePath: plan-race          # suggestion; on a taken path the mount is skipped and reported
-    nav: { icon: event, labelKey: nav.title }          # relative to the module's transloco scope
+    nav: { icon: event, labelKey: nav.title }
     launcher:                                          # card on the default shell's home page
       image: module:launcher.svg
       titleKey: launcher.title
@@ -293,29 +311,51 @@ mounts:
       link: overview
 ```
 
-Hints are data, not app definitions: the install turns them into a `ModuleMount` and a nav item in the app's
-draft. The customer may move or remove them; a reinstall does not re-add what the customer removed (the mount's
-provenance records that it came from the starter). The texts and the image are the module's, so a module carries
-everything it needs to appear in any application.
+Hints are data, not app definitions. After the starter's definitions are written the install calls `ModuleMountPort`
+(declared in `processpuzzle-core`, implemented by `base-app`), which adds to the application's **draft** a `ModuleMount`
+carrying the `launcher` card, and a sidenav entry named for the module that leads to the mount's landing route. Nothing
+else of the application is touched. A hint whose module is missing, mounted already or whose path is taken — or an
+organization without an application — is **skipped and reported as a warning**, never an error. The customer may move or
+remove the mounts and entries afterwards. Uninstalling the starter takes its mounts and entries out again, by the same
+rule. A mount is not a definition: it has no provenance row.
+
+The launcher's texts (`titleKey`, `subtitleKey`, `contentKeys`) are keys of the module's own translations, relative to its
+scope, and `image` is an asset of the module, so a module carries everything it needs to appear in any application.
+The sidenav entry is labelled with the module's name, untranslated: module scopes load lazily, so a translation key would
+render as itself (a follow-up could preload them).
+
+**Release rule (11a), as built.** The mounts are draft changes. The application is released with them only while it is
+the *untouched default shell* — `AppDefinition.shellCustomized` is `false`: seeded by the platform and never saved by a
+designer (`replaceDraft` marks it touched, the platform's `mergeDraft` does not; rows that predate the flag count as
+touched). Every other application keeps the mounts as draft changes for its owner to release, and the install report
+says so. This is why an install can never release a customer's unreleased edits as a side effect.
 
 ### 11.4 Default shell and `module-launcher`
 
-Sign-up seeds the organization's `app` as a platform default shell: logo, title and the account widgets in the
-header, a sidenav filled from the mounts' nav items, the version button in the footer, and a `home` route holding
-one `module-launcher` widget. `module-launcher` renders a card per mounted module from that module's launcher hint,
-in mount order — today's SailRC home page, without the starter owning it. It is an ordinary widget: a customer may
-use it on any page, or replace the home page altogether.
+A new organization's `app` is the platform default shell (`DefaultShell`, `base-app.default-shell`, on by default):
+logo, title and a spacer in the header, a sidenav with Home, the version button in the footer, and a `home` route holding
+one `module-launcher` widget; it is published at once and marked untouched. `module-launcher` (base-widget-frontend)
+draws a card per mounted module that brought a launcher card, in mount order — today's SailRC home page, without the
+starter owning it. It reads the shell's `MODULE_LAUNCHER_CONTEXT`: the entries from the definition's mounts, each module's
+stored texts for the language in use, and its picture, fetched with the user's credentials. A text or picture that
+cannot be had leaves the card with the module's name, never without the card. It is an ordinary widget: a customer may
+use it on any page (it expects to sit on a route of the application itself, since its links climb out of the page's own
+segments), or replace the home page altogether.
 
-### 11.5 Plan
+A starter of the old kind whose app has another id replaces an *untouched* default shell, as it replaces the empty
+placeholder; a shell a designer has saved stays.
 
-| Phase | Where | Content |
+### 11.5 Plan and status
+
+| Phase | Where | Status |
 |---|---|---|
-| 1. Manifest v2 | core: packager, manifest schema | `manifestVersion: 2`, `keyPrefix`, `mounts`; refuses app content and keys outside the prefix; catalog-wide prefix uniqueness. |
-| 2. Additive importer | `base-starter-backend`, SPI | Install scoped by provenance `starterId`; collision check against all definitions of the org (dry-run report lists them); per-starter data gate through a keyed `InstanceDataProbe.count(orgKey, kind, key)` — the same probe as the delete guards (§10 item 4); uninstall endpoint; `GET …/starters` returns a list; `starter_installed` holds one row per starter. |
-| 3. App integration | `base-app` backend + frontend | Mount merge into the draft (11a, with the untouched-shell exception); default shell seed; `module-launcher` widget; sidenav items from mounts. |
-| 4. Commons | core, `base-starter-backend`, base-entity | `DataSpaceDirectory.commonsOf(orgKey)` instead of `commonOf`; a shared type resolves to the common of the starter that defines it; reserved codes checked against all of the org's commons (the prefix convention keeps them apart). |
-| 5. Sign-up, Admin, Designer | processpuzzle-biz | Sign-up multi-select; SeedJob `starter_ids[]`, installed one by one, failures recorded per starter; Designer lists installed starters with install, reinstall and uninstall. |
-| 6. SailRC 1.0.0 | processpuzzle-biz `business-starters/` | Prefix `sailrc`; drop `apps/`; home cards become launcher hints with module assets and texts; the app's nav texts move into the modules. Existing stage organizations keep their app (11c). |
-| 7. CI gate | `publish-business-starters.yml` | Dry-run each bundle into an org with the default shell, then all official starters into one org, to catch collisions. Rework the gate for commons at the same time (a common bundle is rolled out first, not dry-run as a tenant). |
+| 1. Manifest v3 | core: packager, `BundleReader`, `ImportBundle` | **Done** (#1377). `manifestVersion: 3`, `keyPrefix`, `mounts`; refuses app content and keys outside the prefix (`KeyPrefixRules`); catalog-wide prefix uniqueness in the packager. |
+| 2. Additive importer | `base-starter-backend`, SPI | **Done** (#1380). Additive install with collision and already-installed refusals (409), per-starter provenance, `starter_installed.domain_starter`; keyed `InstanceDataProbe.definitionKind()` / `count(orgKey, keys)`; uninstall endpoint; replacing installs refused while a domain starter exists. Uninstall removes drafts only, as an upgrade does; released rows follow with the next release. |
+| 3a. Mounting (backend) | `base-app-backend` | **Done** (#1380). `ModuleMountPort`, `ModuleMountMerger`, `AppModuleMountAdapter`, the release rule of 11a, `ModuleMount.launcher` in the contract, `DefaultShell`, report `warnings`. |
+| 3b. Launcher (frontend) | `base-widget-frontend`, `base-app-frontend` | **Done** (#1383). `module-launcher` widget, shell context, `ModuleMount.launcher` in TypeScript, default shell on by default, legacy import replaces an untouched shell. |
+| 4. Commons | core, `base-starter-backend`, base-entity | **Done.** `DataSpaceDirectory.commonsOf(orgKey)` replaces `commonOf`: an organization is a member of the common of *each* starter it installed that has one (by key; a common is not a member of itself). Every consumer sees all of them: the designer lists and reads the shared types of all the member's commons, a shared type resolves to the common that defines it (a code is shared by at most one, the keys of two starters never meet), a release resolves references to any of them, the storage seam names the right common, and a code is reserved against every common of the organization. A common of a starter the organization did not install stays out of sight. |
+| 5. Sign-up, Admin, Designer | processpuzzle-biz | Open. Sign-up multi-select; SeedJob `starter_ids[]`, installed one by one, failures recorded per starter; Designer lists installed starters with install, uninstall and the warnings an install reports. |
+| 6. SailRC 1.0.0 | processpuzzle-biz `business-starters/` | **In review** (biz #201, draft). Prefix `sailrc`; no `apps/`; the home cards became each module's launcher (`launcher.svg` and a `launcher` block of texts in five languages); mounts in the manifest. Packages with the v3 packager; not merged until core is released and the biz library versions and the core submodule are bumped. Existing stage organizations keep their app (11c); 1.0.0 is a different set of keys, not an upgrade of 0.x. |
+| 7. CI gate | `publish-business-starters.yml` | **In review** (biz #202). The gate still dry-runs each bundle on its own, and a domain starter's dry run now includes mounting its modules: a module "installed but not mounted" fails the gate (`check-dry-run-report.mjs`). There is **no all-starters dry run**: a dry run is rolled back, so it cannot show two starters clashing, and a real install would leave data in the gate organization. Keys cannot clash (prefix convention, unique prefixes in the packager); what remains — entity names and mount base paths, including the default shell's `home` — is compared across all domain starters by `check-coexistence.mjs` on every pull request (§11.2's known limit, as far as it can be checked before an install). Commons are unchanged: skipped by the gate and installed by the platform's rollout. |
 
 Phases 1–3 make domain starters usable; 4–7 follow independently.

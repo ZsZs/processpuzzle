@@ -50,10 +50,14 @@ describe('WorkflowInstanceService', () => {
   // a 21st run would be invisible to it.
   it('asks for a page large enough to hold every run unless the caller names a size', () => {
     void firstValueFrom(service.findByQuery({ page: 1, pageSize: 5 }));
-    controller.expectOne(`${serviceRoot}/instances?page=1&size=5`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+    const request1 = controller.expectOne(`${serviceRoot}/instances?page=1&size=5`);
+    expect(request1.request.method).toBe('GET');
+    request1.flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
 
     void firstValueFrom(service.findByQuery({ page: 1 }));
-    controller.expectOne(`${serviceRoot}/instances?page=1&size=200`).flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
+    const request2 = controller.expectOne(`${serviceRoot}/instances?page=1&size=200`);
+    expect(request2.request.method).toBe('GET');
+    request2.flush(pageOfWorkflowInstances(WORKFLOW_INSTANCE_DTO));
   });
 
   it('addresses a single instance by its server-minted id', () => {

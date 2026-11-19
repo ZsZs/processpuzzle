@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -26,11 +27,12 @@ public class FindAllEntityDefinitionsUseCase {
                                               Pageable pageable) {
         Specification<BaseEntityDefinition> specification = (root, query, cb) ->
             cb.and(cb.equal(root.get("orgKey"), orgKey), cb.equal(root.get("channel"), channel));
-        // A member also sees the types its common shares, as released: it reads them but never drafts them.
-        String common = SharedTypes.commonOf(dataSpaces, orgKey).orElse(null);
-        if (common != null) {
+        // A member also sees the types its commons share, as released: it reads them but never drafts them. One common for
+        // each starter it installed that has one.
+        Set<String> commons = SharedTypes.commonsOf(dataSpaces, orgKey);
+        if (!commons.isEmpty()) {
             specification = specification.or((root, query, cb) -> cb.and(
-                cb.equal(root.get("orgKey"), common), cb.equal(root.get("channel"), Channel.RELEASED),
+                root.get("orgKey").in(commons), cb.equal(root.get("channel"), Channel.RELEASED),
                 cb.isNotNull(root.get("sharingWrite"))));
         }
         if (status != null) {

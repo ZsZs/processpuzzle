@@ -18,7 +18,7 @@ describe('RecognitionProfileMapper', () => {
 
     expect(profile.id).toBe('boat');
     expect(profile.galleryAttributeKey).toBe('photos');
-    expect(profile.identifierWeight).toBe(0.7);
+    expect(profile.identifierWeight).toBeCloseTo(0.7);
     expect(profile.sampleFps).toBe(2);
     expect(profile.version).toBe(3);
   });

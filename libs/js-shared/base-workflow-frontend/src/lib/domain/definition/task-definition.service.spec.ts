@@ -42,7 +42,9 @@ describe('TaskDefinitionService', () => {
   it('addresses a single task by its author-chosen id', () => {
     service.delete('review-order').subscribe();
 
-    controller.expectOne(`${serviceRoot}/tasks/review-order`).flush(null);
+    const request = controller.expectOne(`${serviceRoot}/tasks/review-order`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 
   // The task's children have no endpoint of their own, so they have to reach the wire inside this

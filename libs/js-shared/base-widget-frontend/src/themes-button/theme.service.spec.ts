@@ -61,7 +61,7 @@ describe('ThemeService', () => {
       service.persistUnder(null);
       service.selectPreset('purple-green');
 
-      expect(localStorage.length).toBe(0);
+      expect(localStorage).toHaveLength(0);
       expect(service.selection().preset).toBe('purple-green');
     });
 

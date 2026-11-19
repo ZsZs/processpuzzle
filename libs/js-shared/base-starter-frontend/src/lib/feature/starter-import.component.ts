@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/cor
 import { MatButton } from '@angular/material/button';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { STARTER_IMPORT_I18N_SCOPE, STARTER_UPGRADE_I18N_SCOPE } from '../base-starter.i18n';
+import { STARTER_IMPORT_I18N_SCOPE, STARTER_UNINSTALL_I18N_SCOPE, STARTER_UPGRADE_I18N_SCOPE } from '../base-starter.i18n';
 import { StarterImportStore } from '../domain/starter-import.store';
 import { ImportReportComponent } from './import-report.component';
 import { InstalledStartersComponent } from './installed-starters.component';
@@ -12,8 +12,12 @@ import { UpgradeReportComponent } from './upgrade-report.component';
  * Installs a Business Starter from the catalog into the current organization: pick a starter and version,
  * preview what it would do (a dry run), then install it. Below, the starter the organization has.
  *
- * Installing replaces the organization's definitions, and the backend refuses it once the organization holds
- * entity objects or workflow instances — the preview says so before anything is written.
+ * A domain starter is added to the organization, next to what it holds and next to other starters, and can be removed
+ * again; a starter of the old kind replaces the organization's definitions, and the backend refuses it once the
+ * organization holds entity objects or workflow instances. The preview says so before anything is written — and what the
+ * install could not do for want of a place, such as a module it could not mount into the application, as warnings.
+ *
+ * Removing a starter is previewed the same way, then confirmed: the dry run lists what would go, and what stands in the way.
  */
 @Component({
   selector: 'pp-starter-import',
@@ -92,7 +96,26 @@ import { UpgradeReportComponent } from './upgrade-report.component';
         <pp-import-report [report]="report" />
       }
 
-      <pp-installed-starters [starters]="store.installed()" [busy]="store.isBusy()" (previewUpgrade)="store.previewUpgrade($event)" />
+      <pp-installed-starters
+        [starters]="store.installed()"
+        [busy]="store.isBusy()"
+        (previewUpgrade)="store.previewUpgrade($event)"
+        (previewUninstall)="store.previewUninstall($event)"
+      />
+
+      @if (store.uninstallReport(); as removal) {
+        <div class="starter-import__uninstall" data-testid="uninstall-report">
+          <pp-import-report [report]="removal" [uninstall]="true" />
+          <div class="starter-import__actions">
+            <button mat-flat-button type="button" data-testid="uninstall-apply" [disabled]="!store.canApplyUninstall()" (click)="store.applyUninstall()">
+              {{ uninstallScope + '.apply' | transloco }}
+            </button>
+            <button mat-stroked-button type="button" data-testid="uninstall-cancel" [disabled]="store.isBusy()" (click)="store.cancelUninstall()">
+              {{ uninstallScope + '.cancel' | transloco }}
+            </button>
+          </div>
+        </div>
+      }
 
       @if (store.upgradeReport(); as upgrade) {
         <pp-upgrade-report [report]="upgrade" />
@@ -149,12 +172,18 @@ import { UpgradeReportComponent } from './upgrade-report.component';
     .starter-import__error {
       color: #c62828;
     }
+    .starter-import__uninstall {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
   `,
 })
 export class StarterImportComponent implements OnInit {
   protected readonly store = inject(StarterImportStore);
   protected readonly scope = STARTER_IMPORT_I18N_SCOPE;
   protected readonly upgradeScope = STARTER_UPGRADE_I18N_SCOPE;
+  protected readonly uninstallScope = STARTER_UNINSTALL_I18N_SCOPE;
 
   ngOnInit(): void {
     void this.store.loadCatalog();

@@ -105,6 +105,8 @@ describe('TaskActionService', () => {
   it('encodes ids into the path', () => {
     service.assign('run/1', 'task 2', 'user').subscribe();
 
-    controller.expectOne(`${serviceRoot}/instances/run%2F1/tasks/task%202/assign`).flush({});
+    const request = controller.expectOne(`${serviceRoot}/instances/run%2F1/tasks/task%202/assign`);
+    expect(request.request.method).toBe('POST');
+    request.flush({});
   });
 });

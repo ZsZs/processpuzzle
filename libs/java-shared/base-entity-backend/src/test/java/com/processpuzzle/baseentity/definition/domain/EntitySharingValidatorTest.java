@@ -108,7 +108,7 @@ class EntitySharingValidatorTest {
 
     @Test
     void memberType_underASharedCode_isRefused() {
-        when(directory.commonOf(MEMBER)).thenReturn(Optional.of(COMMON));
+        when(directory.commonsOf(MEMBER)).thenReturn(java.util.Set.of(COMMON));
         when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "asset", Channel.RELEASED))
             .thenReturn(Optional.of(type(COMMON, "asset", SharingWrite.COMMON_ADMIN, SharingVisibility.PUBLIC)));
 
@@ -116,9 +116,30 @@ class EntitySharingValidatorTest {
             .satisfies(e -> refusedWith(e, "shared by"));
     }
 
+    /** Starters add to one application, so a member may have several commons, and a code any of them shares is taken. */
+    @Test
+    void memberType_underACodeSharedByAnyOfSeveralCommons_isRefused() {
+        when(directory.commonsOf(MEMBER)).thenReturn(new java.util.LinkedHashSet<>(java.util.List.of("billing-common", COMMON)));
+        // the first common does not share the code, so the validator goes on to the next
+        when(repository.findByOrgKeyAndCodeAndChannel("billing-common", "asset", Channel.RELEASED)).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel("billing-common", "asset", Channel.DRAFT)).thenReturn(Optional.empty());
+        when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "asset", Channel.RELEASED))
+            .thenReturn(Optional.of(type(COMMON, "asset", SharingWrite.COMMON_ADMIN, SharingVisibility.PUBLIC)));
+
+        assertThatThrownBy(() -> validator.validate(MEMBER, type(MEMBER, "asset", null, null)))
+            .satisfies(e -> refusedWith(e, COMMON));
+    }
+
+    @Test
+    void memberType_underACodeNoneOfSeveralCommonsShares_isAccepted() {
+        when(directory.commonsOf(MEMBER)).thenReturn(new java.util.LinkedHashSet<>(java.util.List.of("billing-common", COMMON)));
+
+        assertThatCode(() -> validator.validate(MEMBER, type(MEMBER, "profile", null, null))).doesNotThrowAnyException();
+    }
+
     @Test
     void memberType_underAnotherCode_isAccepted() {
-        when(directory.commonOf(MEMBER)).thenReturn(Optional.of(COMMON));
+        when(directory.commonsOf(MEMBER)).thenReturn(java.util.Set.of(COMMON));
         when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "profile", Channel.RELEASED)).thenReturn(Optional.empty());
         when(repository.findByOrgKeyAndCodeAndChannel(COMMON, "profile", Channel.DRAFT)).thenReturn(Optional.empty());
 
@@ -127,7 +148,7 @@ class EntitySharingValidatorTest {
 
     @Test
     void organizationWithoutACommon_isUnrestricted() {
-        when(directory.commonOf(MEMBER)).thenReturn(Optional.empty());
+        when(directory.commonsOf(MEMBER)).thenReturn(java.util.Set.of());
 
         assertThatCode(() -> validator.validate(MEMBER, type(MEMBER, "asset", null, null))).doesNotThrowAnyException();
     }

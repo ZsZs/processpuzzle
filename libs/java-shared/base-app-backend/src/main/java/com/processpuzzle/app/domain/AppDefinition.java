@@ -81,6 +81,14 @@ public class AppDefinition {
     @Column(nullable = false)
     private Long revision = 1L;
 
+    /**
+     * {@code false} for a default shell no designer has touched, {@code true} once one has saved the application, and
+     * null for rows that predate the flag, which count as touched. Decides whether an install of a domain starter may
+     * release the mounts it adds at once: only an untouched shell holds no draft of the customer's to release with them.
+     */
+    @Column(name = "shell_customized")
+    private Boolean shellCustomized;
+
     @Column(name = "published_revision")
     private Long publishedRevision;
 
@@ -127,6 +135,26 @@ public class AppDefinition {
         this.description = newDescription;
         this.draftGraph = newGraph == null ? AppGraph.empty() : newGraph;
         this.revision = this.revision == null ? 1L : this.revision + 1L;
+        this.shellCustomized = true;
+    }
+
+    /**
+     * Replaces the draft graph as the platform does — mounting a starter's modules — which bumps the revision like an edit
+     * but is not the customer's: an untouched default shell stays untouched.
+     */
+    public void mergeDraft(AppGraph newGraph) {
+        this.draftGraph = newGraph == null ? AppGraph.empty() : newGraph;
+        this.revision = this.revision == null ? 1L : this.revision + 1L;
+    }
+
+    /** Marks this as a default shell, as seeded for a new organization and not yet edited by anyone. */
+    public void markDefaultShell() {
+        this.shellCustomized = false;
+    }
+
+    /** Whether this is a default shell nobody has edited since it was seeded. */
+    public boolean isUntouchedShell() {
+        return Boolean.FALSE.equals(shellCustomized);
     }
 
     /** Promotes the current draft to the published revision. Deliberately does not touch {@code revision}. */

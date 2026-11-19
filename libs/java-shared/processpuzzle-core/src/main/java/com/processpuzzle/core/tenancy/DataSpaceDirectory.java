@@ -1,6 +1,5 @@
 package com.processpuzzle.core.tenancy;
 
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -8,16 +7,24 @@ import java.util.Set;
  *
  * <p>A common is an ordinary organization, kept by the platform for one business starter: the entity types it
  * shares are defined and released once, there, and every organization that installed the starter is a member who
- * reads them. The directory answers the two questions the features ask, and nothing about what is shared. Membership
- * is derived from what is installed, so there is nothing to keep in step.
+ * reads them. An organization may install several starters, so it may be a member of several commons — one for each
+ * starter that has one — and sees the shared types of all of them. The directory answers the two questions the features
+ * ask, and nothing about what is shared. Membership is derived from what is installed, so there is nothing to keep in
+ * step.
  *
  * <p>The module that knows what is installed implements this; a host without one has no commons, which the feature
  * modules take as "nothing is shared". See {@code docs/shared-data-commons-concept}.
  */
 public interface DataSpaceDirectory {
 
-    /** The common {@code orgKey} is a member of; empty for an organization without one, and for a common itself. */
-    Optional<String> commonOf(String orgKey);
+    /**
+     * The commons {@code orgKey} is a member of — one for each installed starter that has one — in a stable order (by
+     * key); empty for an organization without one, and for a common itself.
+     *
+     * <p>A shared type belongs to the common of the starter that defines it, and the keys of two starters never meet
+     * (every key starts with its starter's prefix), so a code is shared by at most one of them.
+     */
+    Set<String> commonsOf(String orgKey);
 
     /** Whether {@code orgKey} is a common, that is, the home of shared definitions and records. */
     boolean isCommon(String orgKey);

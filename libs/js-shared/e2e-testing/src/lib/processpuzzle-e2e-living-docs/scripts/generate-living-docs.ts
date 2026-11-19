@@ -41,6 +41,7 @@ interface RawStep {
 }
 
 /** Walks the JSON report and returns a title -> {status, duration} map for every test.step(). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Playwright report shape is not fully typed
 function flattenStepResults(report: any): Map<string, StepRunInfo> {
   const byTitle = new Map<string, StepRunInfo>();
 
@@ -51,6 +52,7 @@ function flattenStepResults(report: any): Map<string, StepRunInfo> {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Playwright suite shape is not fully typed
   const visitSuite = (suite: any) => {
     for (const spec of suite.specs ?? []) {
       for (const t of spec.tests ?? []) {
@@ -73,27 +75,21 @@ function flattenStepResults(report: any): Map<string, StepRunInfo> {
 
 function renderStepSection(step: ScenarioStep, runInfo: StepRunInfo | undefined): string {
   const lines: string[] = [];
-  const badge = !runInfo ? '⏳' : runInfo.status === 'passed' ? '✅' : '❌';
+  let badge: string;
+  if (!runInfo) badge = '⏳';
+  else if (runInfo.status === 'passed') badge = '✅';
+  else badge = '❌';
   const durationNote = runInfo ? ` _(${runInfo.duration}ms)_` : ' _(not yet run)_';
 
-  lines.push(`### ${badge} ${step.title}${durationNote}`);
-  lines.push('');
-  lines.push(step.kind === 'provision' ? '_Provisions platform metadata:_' : '_Exercises the running platform:_');
-  lines.push('');
+  lines.push(`### ${badge} ${step.title}${durationNote}`, '', step.kind === 'provision' ? '_Provisions platform metadata:_' : '_Exercises the running platform:_', '');
 
   for (const fixturePath of step.fixtures ?? []) {
     const record = loadMetadataFixtureRecord(fixturePath);
     const data = record.data as { description?: string };
     if (data?.description) {
-      lines.push(`> ${data.description}`);
-      lines.push('');
+      lines.push(`> ${data.description}`, '');
     }
-    lines.push(`_Fixture: \`${record.relativePath}\`_`);
-    lines.push('');
-    lines.push('```yaml');
-    lines.push(record.raw.trim());
-    lines.push('```');
-    lines.push('');
+    lines.push(`_Fixture: \`${record.relativePath}\`_`, '', '```yaml', record.raw.trim(), '```', '');
   }
 
   return lines.join('\n');

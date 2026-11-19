@@ -6,6 +6,7 @@ import { NAV_BAR_WIDGET_REGISTRATION } from './nav-bar/nav-bar.widget';
 import { NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
 import { NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
 import { CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
+import { MODULE_LAUNCHER_WIDGET_REGISTRATION } from './module-launcher/module-launcher.widget';
 import { CONTEXT_ACTIONS_WIDGET_REGISTRATION } from './context-actions/context-actions.widget';
 import { COPYRIGHT_WIDGET_REGISTRATION } from './copyright/copyright.widget';
 import { DESIGN_BUTTON_WIDGET_REGISTRATION } from './design-button/design-button.widget';
@@ -31,6 +32,7 @@ import { provideWidget, WidgetRegistration } from './widget-registry/widget-regi
 export { APP_LOGO_WIDGET } from './app-logo/app-logo.widget';
 export { APP_TITLE_WIDGET } from './app-title/app-title.widget';
 export { CARDS_GRID_WIDGET } from './mat-cards-grid/cards-grid.widget';
+export { MODULE_LAUNCHER_WIDGET } from './module-launcher/module-launcher.widget';
 export { CONTEXT_ACTIONS_WIDGET } from './context-actions/context-actions.widget';
 export { COPYRIGHT_WIDGET } from './copyright/copyright.widget';
 export { DESIGN_BUTTON_WIDGET } from './design-button/design-button.widget';
@@ -94,6 +96,10 @@ export function provideNavigateBackWidget(): Provider[] {
 
 export function provideCardsGridWidget(): Provider[] {
   return provideWidget(CARDS_GRID_WIDGET_REGISTRATION);
+}
+
+export function provideModuleLauncherWidget(): Provider[] {
+  return provideWidget(MODULE_LAUNCHER_WIDGET_REGISTRATION);
 }
 
 export function provideCopyrightWidget(): Provider[] {
@@ -173,6 +179,7 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   LANGUAGE_SELECTOR_WIDGET_REGISTRATION,
   LIKE_BUTTON_WIDGET_REGISTRATION,
   MARKDOWN_PAGE_WIDGET_REGISTRATION,
+  MODULE_LAUNCHER_WIDGET_REGISTRATION,
   NAV_BAR_WIDGET_REGISTRATION,
   NAV_MENU_WIDGET_REGISTRATION,
   NAVIGATE_BACK_WIDGET_REGISTRATION,
