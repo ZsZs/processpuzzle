@@ -225,6 +225,7 @@ describe('StateModelerTabComponent', () => {
     flushDiagramList();
     flushLayout();
     await fixture.whenStable();
+    expect(fixture).toBeDefined();
 
     saveButton().click();
     controller.expectOne(`${SERVICE_ROOT}/diagrams/order`).flush(null, { status: 409, statusText: 'Conflict' });

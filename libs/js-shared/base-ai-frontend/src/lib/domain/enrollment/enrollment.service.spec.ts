@@ -94,13 +94,16 @@ describe('EnrollmentService', () => {
     const read = firstValueFrom(service.find('sail boat', 'object/1'));
     http.expectOne(url).flush({ photos: [] });
     await read;
+    expect(read).toBeDefined();
 
     const synchronized = firstValueFrom(service.synchronize('sail boat', 'object/1'));
     http.expectOne({ url, method: 'POST' }).flush({ photos: [] });
     await synchronized;
+    expect(synchronized).toBeDefined();
 
     const deleted = firstValueFrom(service.deleteAll('sail boat', 'object/1'), { defaultValue: undefined });
     http.expectOne({ url, method: 'DELETE' }).flush(null);
     await deleted;
+    expect(deleted).toBeDefined();
   });
 });

@@ -198,6 +198,7 @@ export class DocumentContentStore {
     if (!this.documentId || !this.locale) return;
     const current = this.blocksById().get(blockId);
     if (!current) return; // deleted locally before the debounce fired — nothing to save
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- id is destructured to exclude it from the patch body
     const { id, ...withoutId } = { ...current, ...patch };
     const saved = await this.contentService.replaceBlock(this.documentId, this.locale, blockId, withoutId);
     this.patchLocalBlock(blockId, saved);

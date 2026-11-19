@@ -42,7 +42,9 @@ describe('ArtifactDefinitionService', () => {
   it('addresses a single artifact by its author-chosen id', () => {
     service.delete('order-entity').subscribe();
 
-    controller.expectOne(`${serviceRoot}/artifacts/order-entity`).flush(null);
+    const request = controller.expectOne(`${serviceRoot}/artifacts/order-entity`);
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
   });
 
   it('sends the bindings into base-entity and base-state on update', () => {

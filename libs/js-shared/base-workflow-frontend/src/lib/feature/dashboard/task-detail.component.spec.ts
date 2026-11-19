@@ -82,7 +82,9 @@ describe('TaskDetailComponent', () => {
     it('completes the task through the run that owns it', () => {
       required<HTMLButtonElement>(render(), '[data-testid="complete-task"]').click();
 
-      controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances/${RUN_ID}/tasks/approve-shipment/complete`).flush({ accepted: true });
+      const request = controller.expectOne(`${DASHBOARD_SERVICE_ROOT}/instances/${RUN_ID}/tasks/approve-shipment/complete`);
+      expect(request.request.method).toBe('POST');
+      request.flush({ accepted: true });
     });
 
     // Skip is a manager override, not a peer of Complete.

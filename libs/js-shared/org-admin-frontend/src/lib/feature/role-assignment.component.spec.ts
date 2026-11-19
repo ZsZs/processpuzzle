@@ -254,7 +254,9 @@ describe('RoleAssignmentComponent', () => {
     TestBed.resetTestingModule();
     configure(null);
     render();
-    controller.expectOne(`${ADMIN_URL}/roles`).flush(REALM_ROLE_DTOS);
+    const request = controller.expectOne(`${ADMIN_URL}/roles`);
+    expect(request.request.method).toBe('GET');
+    request.flush(REALM_ROLE_DTOS);
 
     required<HTMLButtonElement>(render(), '#save-roles').click();
     fixture.componentInstance.onSave();

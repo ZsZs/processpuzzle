@@ -141,6 +141,6 @@ describe('WorkflowElementNodeComponent', () => {
   it('offers an anchor on each side', () => {
     render({ kind: 'role', label: 'Order Clerk' });
 
-    expect(Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('ng-diagram-port')).length).toBe(4);
+    expect(Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('ng-diagram-port'))).toHaveLength(4);
   });
 });
