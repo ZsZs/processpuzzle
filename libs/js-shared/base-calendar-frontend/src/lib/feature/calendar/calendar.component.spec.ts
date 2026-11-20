@@ -234,20 +234,22 @@ describe('CalendarComponent', () => {
       show([calendar('team')], () => fixture.componentRef.setInput('readOnly', true));
 
       (options().select as (info: unknown) => void)(slot);
-      (options().dateClick as (info: unknown) => void)({ dateStr: '2026-12-01T10:00:00+01:00', allDay: false });
 
       expect(dialog.open).not.toHaveBeenCalled();
     });
 
-    it('opens a whole-day slot for a click in the month and a timed one for a click in the week', () => {
+    it('opens a whole-day slot for a click in the month, which arrives as a one-day selection', () => {
       show();
-      const click = options().dateClick as (info: unknown) => void;
 
-      click({ dateStr: '2026-12-24', allDay: true });
-      click({ dateStr: '2026-12-01T10:00:00+01:00', allDay: false });
+      (options().select as (info: unknown) => void)({ startStr: '2026-12-24', endStr: '2026-12-25', allDay: true });
 
       expect(dialog.open.mock.calls[0][1].data.slot).toEqual({ start: '2026-12-24', end: '2026-12-25', allDay: true });
-      expect(dialog.open.mock.calls[1][1].data.slot).toEqual({ start: '2026-12-01T10:00:00+01:00', end: '2026-12-01T10:00:00+01:00', allDay: false });
+    });
+
+    it('registers no date-click handler besides the selection, because FullCalendar fires both for one click and two dialogs opened', () => {
+      show();
+
+      expect(options().dateClick).toBeUndefined();
     });
 
     it('reads the calendar again when the dialog changed something, and not when it was only closed', () => {

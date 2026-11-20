@@ -14,7 +14,8 @@ export interface CalendarEventInput {
   /** Whether the caller may drag and resize it; FullCalendar then offers the handles. */
   editable: boolean;
   color: string;
-  classNames: string[];
+  /** Space separated. FullCalendar 7 calls it `className` and takes a string; v6's `classNames` and its arrays are silently ignored. */
+  className: string;
   extendedProps: {
     entryId: string;
     calendarKey: string;
@@ -47,9 +48,9 @@ function eventId(occurrence: Occurrence): string {
 export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busyLabel: string): CalendarEventInput {
   const allDay = occurrence.allDay;
   const canEdit = !occurrence.busy && occurrence.canEdit === true;
-  const classNames = ['pp-calendar__event'];
-  if (occurrence.busy) classNames.push('pp-calendar__event--busy');
-  if (occurrence.mine) classNames.push('pp-calendar__event--mine');
+  const className = ['pp-calendar__event'];
+  if (occurrence.busy) className.push('pp-calendar__event--busy');
+  if (occurrence.mine) className.push('pp-calendar__event--mine');
   return {
     id: eventId(occurrence),
     title: occurrence.busy ? busyLabel : (occurrence.title ?? ''),
@@ -58,7 +59,7 @@ export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busy
     allDay,
     editable: canEdit,
     color: calendarColor(colorIndex),
-    classNames,
+    className: className.join(' '),
     extendedProps: {
       entryId: occurrence.entryId,
       calendarKey: occurrence.calendarKey,
