@@ -220,6 +220,23 @@ describe('KeyValuePairComponent', () => {
       expect(component.selectedValue()).toBe('');
     });
 
+    it('names a property by its label, and by its key when it has none', async () => {
+      const { component } = await setupControl(allowedConfig());
+      expect(component.labelOf('--sidenav')).toBe('Sidenav background');
+      expect(component.labelOf('--density')).toBe('--density');
+      expect(component.labelOf('--unknown')).toBe('--unknown');
+    });
+
+    it('uses the color editor for a property that names it', async () => {
+      const config = allowedConfig();
+      config.allowedProperties = [{ key: '--sidenav', label: 'Sidenav background', valueEditor: 'color' }, ...(config.allowedProperties ?? [])];
+      const { component } = await setupControl(config);
+      component.selectKey('--sidenav');
+      expect(component.editorOfSelected()).toBe('color');
+      component.selectKey('--density');
+      expect(component.editorOfSelected()).toBeUndefined();
+    });
+
     it('adds nothing until a key is picked', async () => {
       const { component } = await setupControl(allowedConfig(), {});
       component.addSelected();

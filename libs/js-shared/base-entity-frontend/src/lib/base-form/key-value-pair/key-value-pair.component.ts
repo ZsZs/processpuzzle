@@ -4,6 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOption, MatSelect } from '@angular/material/select';
+import { ColorPickerComponent } from '@processpuzzle/util';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { BaseFormControlComponent } from '../base-form-control.component';
@@ -27,7 +28,7 @@ interface KeyValueEntry {
             @for (entry of entries(); track entry.key) {
               <li>
                 <span class="entry">
-                  <span class="key">{{ entry.key }}</span
+                  <span class="key">{{ labelOf(entry.key) }}</span
                   >: <span class="value">{{ entry.value }}</span>
                 </span>
                 <button
@@ -49,7 +50,7 @@ interface KeyValueEntry {
                   <mat-label>key</mat-label>
                   <mat-select data-testid="property-key" [value]="selectedKey()" (selectionChange)="selectKey($event.value)">
                     @for (property of allowed(); track property.key) {
-                      <mat-option [value]="property.key">{{ property.label ? property.label + ' (' + property.key + ')' : property.key }}</mat-option>
+                      <mat-option [value]="property.key">{{ property.label ?? property.key }}</mat-option>
                     }
                   </mat-select>
                 </mat-form-field>
@@ -61,6 +62,8 @@ interface KeyValueEntry {
                         <mat-option [value]="value">{{ value }}</mat-option>
                       }
                     </mat-select>
+                  } @else if (editorOfSelected() === 'color') {
+                    <pp-color-picker data-testid="property-value" [label]="selectedLabel()" [(value)]="selectedValue" />
                   } @else {
                     <input matInput #chosenValue data-testid="property-value" [value]="selectedValue()" (input)="selectedValue.set(chosenValue.value)" (keydown.enter)="addSelected()" />
                   }
@@ -115,7 +118,7 @@ interface KeyValueEntry {
       }
     `,
   ],
-  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatIconButton, MatIcon, EntityLabelPipe],
+  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatIconButton, ColorPickerComponent, MatIcon, EntityLabelPipe],
 })
 export class KeyValuePairComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly editing = signal(false);
@@ -123,6 +126,14 @@ export class KeyValuePairComponent<Entity extends BaseEntity> extends BaseFormCo
   readonly selectedValue = signal('');
   readonly allowed = computed(() => this.config().allowedProperties ?? []);
   readonly valuesOfSelected = computed(() => this.allowed().find((property) => property.key === this.selectedKey())?.values ?? []);
+
+  readonly editorOfSelected = computed(() => this.allowed().find((property) => property.key === this.selectedKey())?.valueEditor);
+  readonly selectedLabel = computed(() => this.labelOf(this.selectedKey()) || 'value');
+
+  /** The name a user knows the property by: its label when the descriptor gives one, else the key. */
+  labelOf(key: string): string {
+    return this.allowed().find((property) => property.key === key)?.label ?? key;
+  }
 
   selectKey(key: string): void {
     this.selectedKey.set(key);
