@@ -28,7 +28,8 @@
   },
   "module_launcher": {
     "empty": "Todavía no hay nada aquí. Los módulos de un Business Starter aparecen en esta página cuando se añade uno.",
-    "browse": "Ver los Business Starters"
+    "browse": "Ver los Business Starters",
+    "go": "Ir..."
   },
   "sidenav_content": {
     "show_menu": "Mostrar el menú",

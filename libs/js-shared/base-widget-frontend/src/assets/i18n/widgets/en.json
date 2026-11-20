@@ -28,7 +28,8 @@
   },
   "module_launcher": {
     "empty": "Nothing here yet. The modules of a Business Starter appear on this page once one is added.",
-    "browse": "Browse Business Starters"
+    "browse": "Browse Business Starters",
+    "go": "Go..."
   },
   "sidenav_content": {
     "show_menu": "Show the menu",

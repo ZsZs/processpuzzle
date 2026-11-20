@@ -60,6 +60,7 @@ export class ModuleLauncherComponent {
   private readonly createdUrls = new Set<string>();
 
   private readonly language = toSignal(this.transloco.langChanges$, { initialValue: this.transloco.getActiveLang() });
+  private readonly goCaption = toSignal(this.transloco.selectTranslate('module_launcher.go', {}, 'widgets'), { initialValue: 'Go...' });
   protected readonly entries = computed(() => this.context?.entries() ?? []);
 
   private readonly texts = toSignal(
@@ -79,7 +80,7 @@ export class ModuleLauncherComponent {
     // Texts and pictures arrive after the entries do; each is used only while it still belongs to them.
     const texts = this.texts().entries === entries ? this.texts().texts : [];
     const urls = this.images().entries === entries ? this.images().urls : [];
-    return launcherCardsOf(entries, texts, urls, this.routeDepth);
+    return launcherCardsOf(entries, texts, urls, this.routeDepth, this.goCaption());
   });
 
   constructor() {
