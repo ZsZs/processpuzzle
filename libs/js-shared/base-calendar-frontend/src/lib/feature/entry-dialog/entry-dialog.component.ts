@@ -250,16 +250,25 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
   `,
   styles: `
     .pp-entry-dialog__form {
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      min-width: min(34rem, 80vw);
+      max-width: 100%;
+      width: min(36rem, 90vw);
     }
+    .pp-entry-dialog__form mat-form-field {
+      display: block;
+      min-width: 0;
+      width: 100%;
+    }
+    /* Two fields side by side may shrink below an input's intrinsic width, or a date-time input overflows the dialog. */
     .pp-entry-dialog__row {
       display: flex;
       gap: 1rem;
     }
     .pp-entry-dialog__row mat-form-field {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
     }
     .pp-entry-dialog__name {
       margin: 0 0 0.25rem;
