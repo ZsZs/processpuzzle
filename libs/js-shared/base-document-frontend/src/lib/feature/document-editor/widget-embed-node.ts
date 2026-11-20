@@ -1,5 +1,5 @@
-import { createComponent, EnvironmentInjector, Signal, effect, runInInjectionContext } from '@angular/core';
-import { resolveWidgetInputs, widgetOutputBindings, WidgetPortEvent, WidgetRegistration } from '@processpuzzle/widgets';
+import { createComponent, EnvironmentInjector, Signal, Type, effect, runInInjectionContext } from '@angular/core';
+import { loadedWidgetComponent, loadWidgetComponent, resolveWidgetInputs, widgetOutputBindings, WidgetPortEvent, WidgetRegistration } from '@processpuzzle/widgets';
 import { Node, mergeAttributes } from '@tiptap/core';
 import { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { NodeView } from '@tiptap/pm/view';
@@ -58,6 +58,8 @@ class WidgetEmbedNodeView implements NodeView {
   /** What the mounted component is bound *to*; a change re-mounts it, since output bindings are fixed at creation. */
   private currentShape: string | null = null;
   private effectRef: ReturnType<typeof effect> | null = null;
+  /** Bumped by every teardown, so a lazy widget that loads late is not mounted into a node that has moved on. */
+  private generation = 0;
 
   constructor(
     private node: ProseMirrorNode,
@@ -106,9 +108,29 @@ class WidgetEmbedNodeView implements NodeView {
       return;
     }
 
+    const ready = loadedWidgetComponent(registration);
+    if (ready) {
+      this.mount(block, ready);
+      return;
+    }
+    // A lazy widget: its class is fetched the first time it is placed. A load that finishes after the node was
+    // re-rendered or destroyed is dropped, because teardown() moved the generation on.
+    const generation = this.generation;
+    this.mountPoint.replaceChildren(loadingPlaceholder());
+    loadWidgetComponent(registration).then(
+      (type) => {
+        if (generation === this.generation) this.mount(block, type);
+      },
+      () => {
+        if (generation === this.generation) this.renderProblem(`The widget type '${block.type}' could not be loaded. Re-select the block to try again.`);
+      },
+    );
+  }
+
+  private mount(block: DocumentBlock, type: Type<unknown>) {
     // Outputs can only be bound at creation, which is why a change to them re-mounts — see currentShape.
-    const bindings = widgetOutputBindings(block, registration.component, this.deps.publishOutput);
-    this.componentRef = createComponent(registration.component, { environmentInjector: this.deps.environmentInjector, bindings });
+    const bindings = widgetOutputBindings(block, type, this.deps.publishOutput);
+    this.componentRef = createComponent(type, { environmentInjector: this.deps.environmentInjector, bindings });
     this.currentShape = shapeOf(block);
     this.applyProps(block);
     this.mountPoint.replaceChildren(this.componentRef.location.nativeElement);
@@ -134,6 +156,7 @@ class WidgetEmbedNodeView implements NodeView {
   }
 
   private teardown() {
+    this.generation++;
     this.componentRef?.destroy();
     this.componentRef = null;
     this.currentShape = null;
@@ -161,6 +184,13 @@ class WidgetEmbedNodeView implements NodeView {
     this.effectRef?.destroy();
     this.teardown();
   }
+}
+
+function loadingPlaceholder(): HTMLElement {
+  const placeholder = document.createElement('div');
+  placeholder.classList.add('pp-widget-embed-loading');
+  placeholder.setAttribute('aria-busy', 'true');
+  return placeholder;
 }
 
 function shapeOf(block: DocumentBlock): string {

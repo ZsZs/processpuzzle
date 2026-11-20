@@ -2,6 +2,7 @@ import { reflectComponentType } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { loadWidgetComponent } from './widget-registry/widget-component-loader';
 import { parse } from 'yaml';
 import { BASE_WIDGET_REGISTRATIONS } from './base-widget.providers';
 
@@ -33,14 +34,14 @@ const WIDGETS_REGISTERED_ELSEWHERE = ['chat-panel', 'chat-topics', 'chat-unread-
 const cases = BASE_WIDGET_REGISTRATIONS.map((registration) => [registration.type, registration] as const);
 
 describe('widget contract', () => {
-  it.each(cases)('%s: its inputs are exactly the properties of its props schema', (_type, registration) => {
-    const inputs = reflectComponentType(registration.component)?.inputs.map((input) => input.templateName) ?? [];
+  it.each(cases)('%s: its inputs are exactly the properties of its props schema', async (_type, registration) => {
+    const inputs = reflectComponentType(await loadWidgetComponent(registration))?.inputs.map((input) => input.templateName) ?? [];
 
     expect(inputs.sort()).toEqual(Object.keys(registration.definition.propsSchema?.properties ?? {}).sort());
   });
 
-  it.each(cases)('%s: its outputs are exactly its output ports', (_type, registration) => {
-    const outputs = reflectComponentType(registration.component)?.outputs.map((output) => output.templateName) ?? [];
+  it.each(cases)('%s: its outputs are exactly its output ports', async (_type, registration) => {
+    const outputs = reflectComponentType(await loadWidgetComponent(registration))?.outputs.map((output) => output.templateName) ?? [];
 
     expect(outputs.sort()).toEqual((registration.definition.outputPorts ?? []).map((port) => port.name).sort());
   });
@@ -51,8 +52,8 @@ describe('widget contract', () => {
     expect(props).toEqual(expect.arrayContaining((registration.definition.inputPorts ?? []).map((port) => port.name)));
   });
 
-  it.each(cases)('%s: its selector carries the pp- prefix', (_type, registration) => {
-    expect(reflectComponentType(registration.component)?.selector).toMatch(/^pp-/);
+  it.each(cases)('%s: its selector carries the pp- prefix', async (_type, registration) => {
+    expect(reflectComponentType(await loadWidgetComponent(registration))?.selector).toMatch(/^pp-/);
   });
 
   it('seeds exactly the widgets this library registers', () => {

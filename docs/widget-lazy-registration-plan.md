@@ -1,6 +1,6 @@
 # Lazy widget registration – plan
 
-2026-11-20 · status: planned, not started · follows [Widget Embedding](widget-embedding-spec.md) §7, where
+2026-11-20 · status: phases 1–3 done 2026-11-20 (see §8), phase 4 not started · follows [Widget Embedding](widget-embedding-spec.md) §7, where
 "Lazy `loadComponent`" was deferred "until the widget count warrants it".
 
 ## 1. Why now
@@ -100,3 +100,22 @@ the new range cannot run on an old widgets library, and that is the intended fai
 
 Lazy *definitions* (they are small and the designer UI needs them synchronously), module federation, and registering widgets
 from the server.
+
+## 8. As built (2026-11-20)
+
+- **Phase 1:** `WidgetRegistration` is `component` *or* `loadComponent`. `loadWidgetComponent` / `loadedWidgetComponent`
+  (`widget-registry/widget-component-loader.ts`) memoize per registration and do not cache a rejection. `WidgetHostComponent`
+  shows a `loading` placeholder, or a `load-failed` one that retries on the next placement; a late load is cached but not
+  rendered. The clash rule compares the class or the loader. Host tests cover the loading state, failure then retry, and a
+  second placement rendering at once.
+- **Phase 2:** the document node view mounts a lazy widget once loaded; a generation counter, bumped by every teardown,
+  drops a load that finishes after the node was re-rendered or removed.
+- **Phase 3:** `calendar.widget.ts` uses `loadComponent`. The main entry point of base-calendar re-exports the component
+  **type only**: a value re-export kept it in the initial chunk, which the build warned about. The testbed samples page
+  places the calendar through `pp-widget-host` instead of importing the component. The production build splits
+  `calendar-component` (327 kB raw, 80 kB transferred) out of the initial chunk; **initial total 9.96 MB**.
+- **Budget:** kept at the 11 MB error budget. Lowering it to 10 MB would leave 40 kB of headroom, so the next small
+  change would fail the build.
+- **Not done:** phase 4 (preload). Package versions were not bumped: the release order in §5 applies when the packages are
+  published.
+

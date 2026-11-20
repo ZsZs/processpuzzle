@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Type } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { CalendarComponent, CalendarService } from '@processpuzzle/base-calendar';
+import { CALENDAR_WIDGET_REGISTRATION, CalendarService, provideCalendarWidget, type CalendarComponent } from '@processpuzzle/base-calendar';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
+import { loadWidgetComponent } from '@processpuzzle/widgets';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SamplesComponent } from './samples.component';
 
@@ -15,8 +17,9 @@ describe('SamplesComponent', () => {
   const translations = { en: { 'base-calendar.sample_public': 'Public events', 'base-calendar.sample_team': 'Team calendar', 'base-calendar.sample_overlay': 'Team and room' } };
   let getCalendar: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<SamplesComponent>;
+  let calendarClass: Type<unknown>;
 
-  const widget = () => fixture.debugElement.query(By.directive(CalendarComponent)).componentInstance as CalendarComponent;
+  const widget = () => fixture.debugElement.query(By.directive(calendarClass)).componentInstance as CalendarComponent;
   const select = () => fixture.nativeElement.querySelector('[data-testid="calendar-sample-select"]') as HTMLSelectElement;
   const options = () => Array.from(select().querySelectorAll('option')) as HTMLOptionElement[];
 
@@ -26,13 +29,17 @@ describe('SamplesComponent', () => {
     fixture.detectChanges();
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // The widget loads its class when it is first placed; the page's calendar is found once that has happened.
+    calendarClass = await loadWidgetComponent(CALENDAR_WIDGET_REGISTRATION);
     getCalendar = vi.fn().mockRejectedValue(new HttpErrorResponse({ status: 404 }));
     TestBed.configureTestingModule({
       imports: [SamplesComponent],
-      providers: [provideTranslocoTesting({ translations }), { provide: CalendarService, useValue: { getCalendar } }],
+      providers: [provideTranslocoTesting({ translations }), provideCalendarWidget(), { provide: CalendarService, useValue: { getCalendar } }],
     });
     fixture = TestBed.createComponent(SamplesComponent);
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
   });
 

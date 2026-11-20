@@ -38,11 +38,23 @@ export type WidgetDescription = Pick<WidgetDefinition, 'name'> & Partial<Pick<Wi
  * Declared beside the component, in the widget's own `<name>.widget.ts`, so the three cannot drift apart
  * unnoticed.
  */
-export interface WidgetRegistration {
+export type WidgetRegistration = {
   /** The registry key — what `WidgetInstance.type` names, and the `key` of the matching `WidgetDefinition`. */
   type: string;
-  component: Type<unknown>;
   definition: WidgetDescription;
+} & (
+  /** A small widget: the class is in the application's initial bundle. */
+  | { component: Type<unknown>; loadComponent?: never }
+  /**
+   * A heavy widget: the class is fetched the first time a page places it, so its dependencies (a calendar library, a
+   * chart engine) stay out of the initial bundle. Write it as `() => import('./x.component').then((m) => m.XComponent)`.
+   */
+  | { component?: never; loadComponent: () => Promise<Type<unknown>> }
+);
+
+/** The class, or for a lazy registration its loader: the identity two registrations of one type must share. */
+function implementationOf(registration: WidgetRegistration): unknown {
+  return registration.component ?? registration.loadComponent;
 }
 
 /**
@@ -84,7 +96,7 @@ export function provideWidget(registration: WidgetRegistration): Provider[] {
         const map = new Map(inherited ?? []);
         for (const registration of registrations) {
           const existing = map.get(registration.type);
-          if (existing && existing.component !== registration.component) {
+          if (existing && implementationOf(existing) !== implementationOf(registration)) {
             throw new Error(`WIDGET_REGISTRY: '${registration.type}' is already registered to a different component.`);
           }
           map.set(registration.type, registration);

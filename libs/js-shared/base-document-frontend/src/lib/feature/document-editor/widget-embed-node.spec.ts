@@ -1,4 +1,4 @@
-import { Component, EnvironmentInjector, input, OnDestroy, output, signal } from '@angular/core';
+import { Component, EnvironmentInjector, input, OnDestroy, output, signal, Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { WidgetRegistration } from '@processpuzzle/widgets';
 import { Editor } from '@tiptap/core';
@@ -48,7 +48,7 @@ describe('widgetEmbed node', () => {
     TestBed.tick();
   }
 
-  function render(blocks: DocumentBlock[], blockId: string | null = 'widget-1') {
+  function render(blocks: DocumentBlock[], blockId: string | null = 'widget-1', registry: ReadonlyMap<string, WidgetRegistration> = REGISTRY) {
     blocksById.set(new Map(blocks.map((block) => [block.id, block])));
     editor = new Editor({
       element: document.createElement('div'),
@@ -56,7 +56,7 @@ describe('widgetEmbed node', () => {
         StarterKit,
         createWidgetEmbedExtension({
           environmentInjector: TestBed.inject(EnvironmentInjector),
-          widgetRegistry: REGISTRY,
+          widgetRegistry: registry,
           blocksById,
           resolveBinding,
           publishOutput,
@@ -190,5 +190,38 @@ describe('widgetEmbed node', () => {
     setBlocks([widget({ props: { label: 'Too late' } })]);
 
     expect(destroyed).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a lazy widget', () => {
+    const lazyRegistry = (loadComponent: () => Promise<Type<unknown>>) =>
+      new Map<string, WidgetRegistration>([['test-widget', { type: 'test-widget', definition: { name: 'test-widget' }, loadComponent }]]);
+    /** A plain promise is not tracked by the zoneless scheduler: wait for it, then let the editor's effects run. */
+    const settle = async () => {
+      await new Promise((resolve) => setTimeout(resolve));
+      TestBed.tick();
+    };
+
+    it('shows a placeholder until the widget has loaded, then renders it', async () => {
+      render([widget()], 'widget-1', lazyRegistry(() => Promise.resolve(EmbedTestWidgetComponent)));
+
+      expect(editor.view.dom.querySelector('.pp-widget-embed-loading')).not.toBeNull();
+      expect(button()).toBeNull();
+
+      await settle();
+      expect(button()?.textContent).toBe('Hello');
+    });
+
+    it('mounts nothing when the node is removed before the widget has loaded', async () => {
+      const loading: { finish?: (type: Type<unknown>) => void } = {};
+      render([widget()], 'widget-1', lazyRegistry(() => new Promise((resolve) => (loading.finish = resolve))));
+
+      editor.commands.setContent({ type: 'doc', content: [{ type: 'paragraph' }] });
+      TestBed.tick();
+      loading.finish?.(EmbedTestWidgetComponent);
+      await settle();
+
+      expect(button()).toBeNull();
+      expect(editor.view.dom.querySelector('.pp-widget-embed-loading')).toBeNull();
+    });
   });
 });
