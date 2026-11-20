@@ -343,3 +343,31 @@ plan, and why:
   end of both is exclusive, which `CalendarEntryPersistenceTest` checks at every edge.
 - **Seed:** `default-calendar-definitions/base-calendar/processpuzzle-testbed-calendar-definitions.yaml` ships a
   public events calendar, a team calendar and a room, loaded by `base-calendar.loadDefaultCalendarDefinitions`.
+
+## 13. Phase 3a as built (attendees)
+
+Contract: `base-calendar-api.yaml` gains `attendees` on entries, `invited`/`canRespond`, the answer endpoint
+(`PUT …/entries/{id}/attendance`), `GET …/directory/users`, `GET …/my-occurrences` and `DELETE …/users/{userSub}`.
+Where the build differs from §4a, and why:
+
+- **The organizer is an invitee, accepted, from the start.** That is what lets "my calendar" and the detail rule
+  treat the organizer and the invitees alike; the organizer cannot be removed from the list.
+- **Only a PUT that names invitees replaces them.** A change that omits `attendees` keeps them as they are; the
+  reschedule path of the widget relies on this, so a drag cannot wipe the invitations.
+- **Moving the time resets every invitee's answer**, but not the organizer's, who made the move.
+- **Invitations by name are checked against the directory and take the name from it.** A subject the directory does
+  not know is refused (422, naming the invitation), so no invitation can carry a name nobody checked. Without a
+  directory adapter nobody can be invited by name (`EmptyDirectory`).
+- **The directory is exposed as `org-admin :: port`** (a named interface, so the testbed composition can adapt it).
+  The adapter passes only subject and name, not e-mail or roles, and drops disabled accounts. The realm of an
+  organization is its key.
+- **Roles count only for members of the organization** (`CallerMembership`): a role of another realm invites nobody.
+- **Erasure removes a user's invitations and anonymizes the entries they organized** (organizer becomes `erased`).
+  §4a said "anonymize the attendee snapshots"; removing the invitation is the cleaner act, because a second
+  anonymized row would collide with the first on the same entry's key.
+- **Visibility:** an invitee sees a private entry in full, and answers without the booking right. Invitees are hidden
+  in a busy view. An invitee's subject is sent only to people who may edit the entry.
+- **Directory search** needs a token and at least two characters, and returns at most 20 matches.
+- **Still out of 3a:** recurring entries (`RECURRING` stays refused), and the events for answers and erasure (only
+  booking, change and cancellation publish facts).
+
