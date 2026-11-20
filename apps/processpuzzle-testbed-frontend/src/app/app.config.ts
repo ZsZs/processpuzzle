@@ -23,6 +23,7 @@ import {
   provideChatWorkingContextSubject,
   provideEntityChatTab,
 } from '@processpuzzle/base-chat';
+import { provideCalendarWidgets } from '@processpuzzle/base-calendar';
 import { CLIPBOARD_OPTIONS, ClipboardButtonComponent, MERMAID_OPTIONS, provideMarkdown } from 'ngx-markdown';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { BASE_WIDGET_ENTITY_FACADES, BASE_WIDGET_FACADE_PROVIDERS, BASE_WIDGET_TRANSLATION_SOURCE, provideAppPropertyStore, provideBaseWidgets } from '@processpuzzle/widgets';
@@ -182,10 +183,10 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // panel placed without one chats about.
       ...provideChatWidgets(),
       provideChatWorkingContextSubject(),
-      // base-calendar's `calendar` widget is not registered here, on purpose. The widget registry holds component
-      // references, so registering it would put FullCalendar in the initial bundle: +410 kB on a build that is
-      // 9.86 MB against a 10 MB error budget. The Base Calendar page loads it lazily, with its route. Registering it
-      // (`...provideCalendarWidgets()`) needs lazy widget registration or a larger budget first.
+      // base-calendar's `calendar` widget. The registry holds component references, so this puts FullCalendar in the
+      // initial bundle (+410 kB raw, about +90 kB transferred); the error budget in project.json went from 10 to
+      // 11 MB for it. Lazy widget registration would take it out again: docs/widget-lazy-registration-plan.md.
+      ...provideCalendarWidgets(),
       // And base-chat's Chat tab, offered to every entity type some chat definition is about — `Order` and
       // `Dynamic Entity` in this tenant — on the same contributor arrangement as the tabs above.
       ...provideEntityChatTab(),
