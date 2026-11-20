@@ -599,6 +599,17 @@ class ImportBundleTest {
                 ImportRejectedException.Reason.CONFLICT, "installed already; upgrade it instead");
     }
 
+    /** An application of its own is not exchanged for modules in the customer's: the refusal says so, rather than pointing at an upgrade that cannot exist. */
+    @Test
+    void aStarterInstalledAsAnApplicationOfItsOwnIsNotUpgradedToItsDomainForm() {
+        importBundle.execute("acme", bundle("item\n", "positive\n"), false, null);
+
+        assertRejected(() -> importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null),
+                ImportRejectedException.Reason.CONFLICT, "as an application of its own");
+        assertRejected(() -> importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), false, null),
+                ImportRejectedException.Reason.CONFLICT, "use a new organization");
+    }
+
     @Test
     void aDryRunOfADomainStarterWritesNoProvenanceAndNoInstallRow() {
         ImportReport report = importBundle.execute("acme", domainStarter("inventory", "inv", "inv-item\n", "inv-positive\n"), true, null);

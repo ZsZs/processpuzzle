@@ -26,6 +26,10 @@
     "auto": "Systemeinstellung",
     "reset": "Auf Standard zurücksetzen"
   },
+  "module_launcher": {
+    "empty": "Noch nichts hier. Die Module eines Business Starters erscheinen auf dieser Seite, sobald einer hinzugefügt ist.",
+    "browse": "Business Starter ansehen"
+  },
   "sidenav_content": {
     "show_menu": "Menü anzeigen",
     "show_content": "Inhalt anzeigen"

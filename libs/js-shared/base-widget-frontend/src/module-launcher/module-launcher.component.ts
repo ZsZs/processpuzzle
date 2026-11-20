@@ -1,7 +1,8 @@
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
-import { TranslocoService } from '@jsverse/transloco';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
+import { DESIGN_ROUTE_PREFIX } from '@processpuzzle/util';
 import { catchError, combineLatest, forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { MatCardsGridComponent } from '../mat-cards-grid/mat-cards-grid.component';
 import { moduleAssetPathOf } from '../module-asset/module-asset-context';
@@ -22,7 +23,8 @@ interface LoadedImages {
  * business starter's modules appear without the starter owning the application (business-starters design §11.4).
  *
  * The cards come from the {@link MODULE_LAUNCHER_CONTEXT} the shell provides; outside an application there is none and
- * the widget draws nothing. Each module's texts are read for the language in use and again when the user switches, a
+ * the widget draws nothing. Inside an application with no module mounted yet it says so and points at the Business Starters,
+ * so that a new organization that chose none does not land on a blank page. Each module's texts are read for the language in use and again when the user switches, a
  * picture is fetched with the user's credentials and shown from an object URL that is revoked when the page goes. A text
  * or picture that cannot be had leaves the card with the module's name and no picture, never without the card.
  *
@@ -32,21 +34,33 @@ interface LoadedImages {
 @Component({
   selector: 'pp-module-launcher',
   standalone: true,
-  imports: [MatCardsGridComponent],
+  imports: [MatCardsGridComponent, RouterLink, TranslocoDirective],
+  providers: [provideTranslocoScope({ scope: 'widgets' })],
   template: `
     @if (cards().length) {
       <pp-cards-grid [cards]="cards()" />
+    } @else if (context && !entries().length) {
+      <p class="module-launcher__empty" *transloco="let t; prefix: 'module_launcher'">
+        {{ t('empty') }}
+        <a [routerLink]="[designPrefix + '/design/starters']">{{ t('browse') }}</a>
+      </p>
+    }
+  `,
+  styles: `
+    .module-launcher__empty {
+      margin: 24px;
     }
   `,
 })
 export class ModuleLauncherComponent {
-  private readonly context = inject(MODULE_LAUNCHER_CONTEXT, { optional: true });
+  protected readonly context = inject(MODULE_LAUNCHER_CONTEXT, { optional: true });
+  protected readonly designPrefix = inject(DESIGN_ROUTE_PREFIX);
   private readonly transloco = inject(TranslocoService);
   private readonly routeDepth = inject(ActivatedRoute).snapshot.url.length;
   private readonly createdUrls = new Set<string>();
 
   private readonly language = toSignal(this.transloco.langChanges$, { initialValue: this.transloco.getActiveLang() });
-  private readonly entries = computed(() => this.context?.entries() ?? []);
+  protected readonly entries = computed(() => this.context?.entries() ?? []);
 
   private readonly texts = toSignal(
     toObservable(computed(() => ({ entries: this.entries(), lang: this.language() }))).pipe(

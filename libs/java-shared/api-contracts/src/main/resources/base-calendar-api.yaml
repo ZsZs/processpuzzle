@@ -1,0 +1,767 @@
+openapi: 3.0.3
+info:
+  title: ProcessPuzzle Calendar API (base-calendar)
+  description: >-
+    Team and resource calendars. A CalendarDefinition says what a calendar is (a team's, or a resource such as a
+    room), who may see it — anybody, any signed-in member, or holders of named roles — who may book, and the
+    rules a booking has to keep. A CalendarEntry is one booking on one calendar; an Occurrence is what a
+    calendar shows for a time window.
+
+    ## Access
+
+    The read paths — a calendar, its entries and the occurrences of a window — are the only ones an
+    anonymous caller can use, and only on a calendar whose visibility is `PUBLIC`. Everything that writes
+    needs a token. A caller who may not read a calendar gets 404, as for one that does not exist: the answer does
+    not reveal that a calendar is there. 403 means the caller may read but not do what they asked (book, edit
+    somebody else's entry). A caller whose token comes from another organization is treated as anonymous.
+
+    ## Detail
+
+    A reader who may not book sees what the calendar's `publicDetail` allows: with `BUSY_ONLY`, the times of an
+    entry and nothing else. An entry marked `PRIVATE` is shown as busy to everyone but its organizer and the
+    calendar's managers. The server strips the fields; they are not hidden in the client.
+
+    ## Time
+
+    A timed entry is a UTC instant range plus the IANA zone it was entered in. An all-day entry is a local date
+    range whose end date is exclusive, with no zone. Organizations work in one time zone, reported as
+    `effectiveTimeZone`; all-day boundaries and booking rules are evaluated in it.
+
+    ## Errors
+
+    400 for a malformed request, 404 for what the caller may not know of, 403 for what they may not do, 409 for
+    a stale `version`, 422 for a booking that breaks the calendar's rules (kind not allowed, duration, horizon,
+    slot alignment).
+
+    ## Multi-tenancy
+
+    Scoped by {orgKey} exactly as base-entity-api.yaml and base-rule-api.yaml establish.
+  version: 0.1.0
+
+servers:
+  - url: 'http://localhost:8080/api/v1'
+
+paths:
+
+  /organizations/{orgKey}/calendar/definitions:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listCalendarDefinitions
+      tags: [ Calendar Definitions ]
+      summary: List the calendar definitions of an organization
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: Calendar definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarDefinition"
+
+  /organizations/{orgKey}/calendar/definitions/{definitionKey}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/DefinitionKeyParam"
+    get:
+      operationId: getCalendarDefinition
+      tags: [ Calendar Definitions ]
+      summary: Get one calendar definition
+      parameters:
+        - $ref: "#/components/parameters/RevisionParam"
+      responses:
+        "200":
+          description: Calendar definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarDefinition"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: saveCalendarDefinition
+      tags: [ Calendar Definitions ]
+      summary: Create or replace a calendar definition (the draft)
+      description: >-
+        Creates the draft when the key is new, replaces it otherwise. Supply the `version` you last read to be
+        refused with 409 rather than silently overwriting a concurrent edit. Needs the right to author metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarDefinitionInput"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarDefinition"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+    delete:
+      operationId: deleteCalendarDefinition
+      tags: [ Calendar Definitions ]
+      summary: Delete the draft of a calendar definition
+      description: >-
+        Removes the draft; the released row stays until the next release, which removes it. Not refused while
+        entries exist — they are kept, and unreachable once the definition is no longer released. Needs the right
+        to author metadata.
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calendar/calendars/{calendarKey}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalendarKeyParam"
+    get:
+      operationId: getCalendar
+      tags: [ Calendars ]
+      summary: A released calendar, as the caller sees it
+      description: >-
+        What a widget needs to draw the calendar and to know what the caller may do with it. The role lists of
+        the definition are not part of it. 404 when the caller may not read the calendar.
+      responses:
+        "200":
+          description: The calendar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarView"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calendar/calendars/{calendarKey}/entries:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalendarKeyParam"
+    post:
+      operationId: bookEntry
+      tags: [ Calendar Entries ]
+      summary: Book an entry on a calendar
+      description: >-
+        The caller becomes the organizer. Needs a token and a booking role of the calendar. The entry has to keep
+        the calendar's rules (422 otherwise).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarEntryInput"
+      responses:
+        "201":
+          description: Booked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+
+  /organizations/{orgKey}/calendar/calendars/{calendarKey}/entries/{entryId}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalendarKeyParam"
+      - $ref: "#/components/parameters/EntryIdParam"
+    get:
+      operationId: getEntry
+      tags: [ Calendar Entries ]
+      summary: One entry, at the detail the caller may see
+      responses:
+        "200":
+          description: The entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEntry"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateEntry
+      tags: [ Calendar Entries ]
+      summary: Replace an entry
+      description: >-
+        Allowed for the organizer and for the calendar's managers. Supply the `version` you last read to be refused
+        with 409 rather than overwriting a concurrent edit. The kind of an entry cannot change.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarEntryInput"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/Unprocessable"
+    delete:
+      operationId: cancelEntry
+      tags: [ Calendar Entries ]
+      summary: Cancel an entry
+      description: Allowed for the organizer and for the calendar's managers.
+      responses:
+        "204":
+          description: Cancelled
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calendar/occurrences:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listOccurrences
+      tags: [ Calendars ]
+      summary: What the calendars show in a time window
+      description: >-
+        The occurrences that overlap `[from, to)` on the listed calendars, in start order. A calendar the caller
+        may not read is left out, not reported, so the answer does not reveal that it exists. The window may not
+        be longer than 100 days.
+      parameters:
+        - name: calendars
+          in: query
+          required: true
+          style: form
+          explode: false
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 20
+            items:
+              type: string
+          description: Calendar keys, comma separated.
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Occurrences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Occurrence"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+components:
+
+  parameters:
+    OrgKeyParam:
+      name: orgKey
+      in: path
+      required: true
+      schema:
+        type: string
+    DefinitionKeyParam:
+      name: definitionKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+    CalendarKeyParam:
+      name: calendarKey
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z][a-z0-9-]*$"
+    EntryIdParam:
+      name: entryId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RevisionParam:
+      name: revision
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ draft, released ]
+        default: draft
+      description: >-
+        Which row of the definition to read: the draft a designer edits, or the released one the
+        running application uses.
+
+  responses:
+    BadRequest:
+      description: The request is malformed.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: The caller may not do this.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The resource does not exist, or the caller may not know that it does.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The request conflicts with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unprocessable:
+      description: The entry is well formed but breaks a rule of its calendar.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    CalendarKind:
+      type: string
+      enum: [ TEAM, RESOURCE ]
+      description: >-
+        TEAM entries may overlap freely. RESOURCE entries are bookings of something with a `capacity`, such as a
+        room (the capacity check arrives with the resource phase of the plan).
+
+    CalendarVisibility:
+      type: string
+      enum: [ PUBLIC, AUTHENTICATED, ROLES ]
+      description: >-
+        PUBLIC is readable by anybody, anonymous callers included. AUTHENTICATED by any member of the
+        organization. ROLES by members holding one of `readRoles`.
+
+    PublicDetail:
+      type: string
+      enum: [ FULL, BUSY_ONLY ]
+      description: >-
+        What a reader who may not book sees of an entry: everything, or only when it takes place.
+
+    EntryKind:
+      type: string
+      enum: [ TIMED, ALL_DAY, RECURRING ]
+      description: >-
+        TIMED has a start and an end instant. ALL_DAY has a start date and an exclusive end date. RECURRING is
+        reserved: it is accepted in a definition's `allowedKinds` but entries of that kind are refused (422) until
+        the recurrence phase of the plan.
+
+    EntryVisibility:
+      type: string
+      enum: [ PUBLIC, PRIVATE ]
+      description: A PRIVATE entry is shown as busy to everyone but its organizer and the calendar's managers.
+
+    ReleaseState:
+      type: string
+      enum: [ NEW, CHANGED, RELEASED ]
+      description: >-
+        Where a draft stands against what its organization released: NEW was never released, CHANGED differs from
+        the released row, RELEASED is what the running application uses. Present on drafts only.
+
+    CalendarDefinitionInput:
+      type: object
+      required: [ name ]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        kind:
+          $ref: "#/components/schemas/CalendarKind"
+        visibility:
+          $ref: "#/components/schemas/CalendarVisibility"
+        readRoles:
+          type: array
+          items:
+            type: string
+          description: Realm roles that may read. Required for ROLES, ignored otherwise.
+        bookRoles:
+          type: array
+          items:
+            type: string
+          description: >-
+            Realm roles that may book and edit their own entries. Empty means any member who may read.
+        manageRoles:
+          type: array
+          items:
+            type: string
+          description: >-
+            Realm roles that may edit and cancel anybody's entries. Empty means nobody does, but the organizer
+            of an entry and platform staff.
+        publicDetail:
+          $ref: "#/components/schemas/PublicDetail"
+        allowedKinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryKind"
+          description: The kinds of entry the calendar accepts. Empty means TIMED and ALL_DAY.
+        capacity:
+          type: integer
+          minimum: 1
+          default: 1
+          description: RESOURCE only — how many bookings may overlap.
+        slotMinutes:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 1440
+          description: A timed entry starts and ends on a multiple of this many minutes. Omit for any time.
+        minDurationMinutes:
+          type: integer
+          nullable: true
+          minimum: 1
+        maxDurationMinutes:
+          type: integer
+          nullable: true
+          minimum: 1
+        horizonDays:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: How far ahead an entry may start. Omit for no limit.
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read. When supplied, the write is refused with 409 unless it
+            still matches the stored one. Omit it to overwrite unconditionally.
+
+    CalendarDefinition:
+      type: object
+      required: [ key, name, kind, visibility ]
+      properties:
+        key:
+          type: string
+          example: meeting-room-a
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        kind:
+          $ref: "#/components/schemas/CalendarKind"
+        visibility:
+          $ref: "#/components/schemas/CalendarVisibility"
+        readRoles:
+          type: array
+          items:
+            type: string
+        bookRoles:
+          type: array
+          items:
+            type: string
+        manageRoles:
+          type: array
+          items:
+            type: string
+        publicDetail:
+          $ref: "#/components/schemas/PublicDetail"
+        allowedKinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryKind"
+        capacity:
+          type: integer
+        slotMinutes:
+          type: integer
+          nullable: true
+        minDurationMinutes:
+          type: integer
+          nullable: true
+        maxDurationMinutes:
+          type: integer
+          nullable: true
+        horizonDays:
+          type: integer
+          nullable: true
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        releaseState:
+          allOf:
+            - $ref: "#/components/schemas/ReleaseState"
+          readOnly: true
+
+    CalendarPermissions:
+      type: object
+      required: [ canBook, canManage ]
+      properties:
+        canBook:
+          type: boolean
+          description: The caller may book entries and edit their own.
+        canManage:
+          type: boolean
+          description: The caller may edit and cancel anybody's entries.
+
+    CalendarView:
+      type: object
+      required: [ key, name, kind, effectiveTimeZone, permissions ]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        kind:
+          $ref: "#/components/schemas/CalendarKind"
+        effectiveTimeZone:
+          type: string
+          example: Europe/Budapest
+          description: The organization's time zone, in which all-day boundaries and booking rules apply.
+        allowedKinds:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntryKind"
+        capacity:
+          type: integer
+        slotMinutes:
+          type: integer
+          nullable: true
+        minDurationMinutes:
+          type: integer
+          nullable: true
+        maxDurationMinutes:
+          type: integer
+          nullable: true
+        horizonDays:
+          type: integer
+          nullable: true
+        permissions:
+          $ref: "#/components/schemas/CalendarPermissions"
+
+    CalendarEntryInput:
+      type: object
+      required: [ kind, title ]
+      properties:
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 4000
+          description: Markdown.
+        location:
+          type: string
+          nullable: true
+          maxLength: 200
+        category:
+          type: string
+          nullable: true
+          maxLength: 64
+        visibility:
+          $ref: "#/components/schemas/EntryVisibility"
+        start:
+          type: string
+          format: date-time
+          nullable: true
+          description: TIMED — the first instant.
+        end:
+          type: string
+          format: date-time
+          nullable: true
+          description: TIMED — the instant the entry ends, exclusive.
+        timeZone:
+          type: string
+          nullable: true
+          example: Europe/Budapest
+          description: TIMED — the zone the entry is entered in. Defaults to the organization's.
+        startDate:
+          type: string
+          format: date
+          nullable: true
+          description: ALL_DAY — the first day.
+        endDate:
+          type: string
+          format: date
+          nullable: true
+          description: ALL_DAY — the day after the last day. A one-day entry ends on the next date.
+        version:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The version the caller last read; on an update, a mismatch is refused with 409. Ignored when booking.
+
+    CalendarEntry:
+      type: object
+      required: [ id, calendarKey, kind, busy ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        calendarKey:
+          type: string
+        kind:
+          $ref: "#/components/schemas/EntryKind"
+        busy:
+          type: boolean
+          description: >-
+            True when the caller sees only the times: `title`, `description`, `location`, `category` and
+            `organizerDisplayName` are then absent.
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        visibility:
+          $ref: "#/components/schemas/EntryVisibility"
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        timeZone:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        organizerDisplayName:
+          type: string
+          nullable: true
+        mine:
+          type: boolean
+          description: The caller is the organizer.
+        canEdit:
+          type: boolean
+          description: The caller may replace or cancel the entry.
+        version:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Occurrence:
+      type: object
+      required: [ entryId, calendarKey, allDay, busy ]
+      properties:
+        entryId:
+          type: string
+          format: uuid
+        calendarKey:
+          type: string
+        recurrenceId:
+          type: string
+          nullable: true
+          description: Which occurrence of a recurring entry; absent for a single entry.
+        allDay:
+          type: boolean
+        busy:
+          type: boolean
+          description: The caller sees only when it takes place; `title`, `location` and `category` are then absent.
+        title:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        start:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timed occurrences.
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        startDate:
+          type: string
+          format: date
+          nullable: true
+          description: All-day occurrences.
+        endDate:
+          type: string
+          format: date
+          nullable: true
+          description: All-day occurrences — exclusive.
+        mine:
+          type: boolean
+        canEdit:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required: [ errorId, errorText ]
+      properties:
+        errorId:
+          type: string
+        errorText:
+          type: string

@@ -69,12 +69,12 @@ class DefaultWidgetLoaderTest {
         loader.loadDefaults();
 
         // The catalogue holds exactly the keys base-widget-frontend's provideBaseWidgets() registers, plus
-        // base-document-frontend's content-book, and base-chat-frontend's chat-panel and chat-unread-badge; a palette entry with no component behind it only fails when
+        // base-document-frontend's content-book, and base-chat-frontend's chat-panel and chat-unread-badge, and base-calendar-frontend's calendar; a palette entry with no component behind it only fails when
         // an app is previewed. See the file header.
         assertThat(capturedDefinitions()).extracting(WidgetDefinitionInput::getKey)
                 .containsExactly("cards-grid", "markdown-page", "entity-table", "entity-form", "image-zoom", "photo-album", "app-logo", "app-title", "nav-bar",
                         "nav-menu", "spacer", "navigate-back", "language-selector", "themes-button", "sidenav-toggle", "context-actions", "like-button", "share-button", "module-launcher", "version-button",
-                        "auth-button", "admin-button", "design-button", "task-dashboard-button", "copyright", "content-book", "chat-panel", "chat-topics", "chat-unread-badge");
+                        "auth-button", "admin-button", "design-button", "task-dashboard-button", "copyright", "content-book", "chat-panel", "chat-topics", "chat-unread-badge", "calendar");
     }
 
     @Test

@@ -433,6 +433,29 @@
             </configuration>
           </execution>
           <execution>
+            <id>generate-calendar-api</id>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <inputSpec>${project.basedir}/src/main/resources/base-calendar-api.yaml</inputSpec>
+              <generatorName>spring</generatorName>
+              <skipValidateSpec>true</skipValidateSpec>
+              <apiPackage>com.processpuzzle.calendar.api</apiPackage>
+              <modelPackage>com.processpuzzle.calendar.model</modelPackage>
+              <schemaMappings>
+                ErrorResponse=com.processpuzzle.shared.model.ErrorResponse
+              </schemaMappings>
+              <configOptions>
+                <delegatePattern>false</delegatePattern>
+                <interfaceOnly>true</interfaceOnly>
+                <useSpringBoot3>true</useSpringBoot3>
+                <useTags>true</useTags>
+                <openApiNullable>false</openApiNullable>
+              </configOptions>
+            </configuration>
+          </execution>
+          <execution>
             <id>generate-calculation-api</id>
             <goals>
               <goal>generate</goal>

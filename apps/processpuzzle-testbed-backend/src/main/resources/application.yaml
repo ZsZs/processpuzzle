@@ -188,6 +188,14 @@ base-chat:
     # The period for a definition that sets none; 0 keeps such conversations for ever. A definition's own period wins.
     default-days: 0
 
+base-calendar:
+  # The calendar definitions the testbed ships. The import upserts and releases what it writes, so an edited seed
+  # file reaches an already-seeded stack.
+  loadDefaultCalendarDefinitions: yes
+  # The organization time zone until the organization record carries one (IANA id). Entries keep the zone they were
+  # entered in, so changing this moves no existing entry.
+  default-time-zone: UTC
+
 base-event:
   # The event catalog workflows' TRIGGERING_EVENT start events name. The import upserts, so an
   # edited seed file reaches an already-seeded stack.

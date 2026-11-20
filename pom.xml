@@ -54,6 +54,7 @@
     <module>libs/java-shared/base-release-backend</module>
     <module>libs/java-shared/base-event-backend</module>
     <module>libs/java-shared/base-chat-backend</module>
+    <module>libs/java-shared/base-calendar-backend</module>
     <module>libs/java-shared/base-calculation-backend</module>
     <module>libs/java-shared/base-state-backend</module>
     <module>libs/java-shared/base-widget-backend</module>
@@ -109,10 +110,11 @@
     <base-document-backend.version>1.5.1</base-document-backend.version>
     <base-entity-backend.version>1.11.1</base-entity-backend.version>
     <base-rule-backend.version>1.6.0</base-rule-backend.version>
-    <base-starter-backend.version>0.5.1</base-starter-backend.version>
+    <base-starter-backend.version>0.5.2</base-starter-backend.version>
     <base-release-backend.version>0.7.0</base-release-backend.version>
     <base-event-backend.version>0.4.1</base-event-backend.version>
     <base-chat-backend.version>0.2.0</base-chat-backend.version>
+    <base-calendar-backend.version>0.0.1</base-calendar-backend.version>
     <base-calculation-backend.version>0.4.0</base-calculation-backend.version>
     <base-state-backend.version>1.9.0</base-state-backend.version>
     <base-workflow-backend.version>1.9.1</base-workflow-backend.version>
@@ -230,6 +232,11 @@
         <groupId>com.processpuzzle</groupId>
         <artifactId>base-chat-backend</artifactId>
         <version>${base-chat-backend.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.processpuzzle</groupId>
+        <artifactId>base-calendar-backend</artifactId>
+        <version>${base-calendar-backend.version}</version>
       </dependency>
       <dependency>
         <groupId>com.processpuzzle</groupId>

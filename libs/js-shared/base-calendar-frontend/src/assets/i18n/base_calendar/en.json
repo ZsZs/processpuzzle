@@ -1,0 +1,45 @@
+{
+  "title": "Calendar",
+  "loading": "Loading the calendar…",
+  "no_calendar": "No calendar selected.",
+  "busy": "Busy",
+  "widgets": {
+    "calendar": "Calendar"
+  },
+  "errors": {
+    "not_found": "This calendar is not available.",
+    "forbidden": "You are not allowed to do that.",
+    "conflict": "Somebody changed this entry in the meantime. Reload the calendar and try again.",
+    "invalid": "The entry does not fit the rules of this calendar.",
+    "unavailable": "The calendar could not be reached.",
+    "kind_change": "An entry cannot be turned from timed into all-day, or back, by dragging. Edit it instead."
+  },
+  "entry": {
+    "new": "New entry",
+    "edit": "Edit entry",
+    "view": "Entry",
+    "calendar": "Calendar",
+    "kind": "Type",
+    "kind_timed": "Timed",
+    "kind_all_day": "All day",
+    "title": "Title",
+    "description": "Description",
+    "location": "Location",
+    "category": "Category",
+    "visibility": "Visibility",
+    "visibility_public": "Shown to everyone who sees the calendar",
+    "visibility_private": "Private - others see only that you are busy",
+    "start": "Starts",
+    "end": "Ends",
+    "first_day": "First day",
+    "last_day": "Last day",
+    "organizer": "Organizer",
+    "save": "Save",
+    "saving": "Saving…",
+    "close": "Close",
+    "cancel": "Cancel entry",
+    "confirm_cancel": "Cancel this entry for good?",
+    "cancel_confirmed": "Yes, cancel it",
+    "keep": "Keep it"
+  }
+}

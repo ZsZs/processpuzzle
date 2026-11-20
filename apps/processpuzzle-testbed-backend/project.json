@@ -19,6 +19,7 @@
     "base-release-backend",
     "base-event-backend",
     "base-chat-backend",
+    "base-calendar-backend",
     "base-calculation-backend",
     "org-admin-backend"
   ],

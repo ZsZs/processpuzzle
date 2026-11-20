@@ -1,0 +1,45 @@
+{
+  "title": "Calendrier",
+  "loading": "Chargement du calendrier…",
+  "no_calendar": "Aucun calendrier sélectionné.",
+  "busy": "Occupé",
+  "widgets": {
+    "calendar": "Calendrier"
+  },
+  "errors": {
+    "not_found": "Ce calendrier n'est pas disponible.",
+    "forbidden": "Vous n'avez pas le droit de faire cela.",
+    "conflict": "Quelqu'un a modifié cette entrée entre-temps. Rechargez le calendrier et réessayez.",
+    "invalid": "L'entrée ne respecte pas les règles de ce calendrier.",
+    "unavailable": "Le calendrier est injoignable.",
+    "kind_change": "Une entrée ne peut pas passer d'horaire à sur toute la journée, ni l'inverse, par glisser-déposer. Modifiez-la plutôt."
+  },
+  "entry": {
+    "new": "Nouvelle entrée",
+    "edit": "Modifier l'entrée",
+    "view": "Entrée",
+    "calendar": "Calendrier",
+    "kind": "Type",
+    "kind_timed": "Avec horaire",
+    "kind_all_day": "Toute la journée",
+    "title": "Titre",
+    "description": "Description",
+    "location": "Lieu",
+    "category": "Catégorie",
+    "visibility": "Visibilité",
+    "visibility_public": "Visible par tous ceux qui voient le calendrier",
+    "visibility_private": "Privée - les autres voient seulement que vous êtes occupé",
+    "start": "Début",
+    "end": "Fin",
+    "first_day": "Premier jour",
+    "last_day": "Dernier jour",
+    "organizer": "Organisateur",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "close": "Fermer",
+    "cancel": "Annuler l'entrée",
+    "confirm_cancel": "Annuler définitivement cette entrée ?",
+    "cancel_confirmed": "Oui, annuler",
+    "keep": "Conserver"
+  }
+}
