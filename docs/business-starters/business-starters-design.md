@@ -208,6 +208,12 @@ Two callers, one per stack that installs:
       checks every official starter against every other.
     - **Existing applications stay as they are** (11c). Organizations that installed a v1 starter keep their
       application; it is the customer's from then on and is never replaced by an upgrade.
+      **Decided 2026-11-20: there is no migration from a v1/v2 install to the domain form of the same starter.** The
+      two are not versions of one thing — an application of its own against modules added to the customer's — and an
+      upgrade works within one set of keys. The importer refuses the domain form over a legacy install (409), and the
+      upgrade refuses a change of kind in either direction; both say why and point to a new organization, rather
+      than to an upgrade that cannot exist. A legacy install cannot be removed either, so such an organization keeps
+      its starter as it is.
 
 Postponed:
 

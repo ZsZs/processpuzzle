@@ -248,6 +248,27 @@ class UpgradeStarterTest {
                 .satisfies(error -> assertThat(error.message()).contains("not installed"));
     }
 
+    /** The installed 1.0.0 is an application of its own; a domain-kind 2.0.0 adds modules to the customer's: not an upgrade. */
+    @Test
+    void anUpgradeThatWouldChangeTheKindOfTheStarterIsRefused() {
+        byte[] domain = TestBundles.zip(Map.of("manifest.yaml",
+                "manifestVersion: 3\nid: inventory\nname: Inventory\nversion: 2.0.0\ndefinitionSchemaVersion: 1\nkeyPrefix: inv\n"
+                        + "contents:\n  entities:\n    - entities/item.yaml\n  rules:\n    - rules/item-rules.yaml\n",
+                "entities/item.yaml", "inv-item\n", "rules/item-rules.yaml", "inv-positive\n"));
+        bundles.put("inventory/2.0.0/bundle.zip", domain);
+        List<StarterCatalog.Version> versions = new ArrayList<>(catalog.starters().getFirst().versions());
+        versions.replaceAll(version -> version.version().equals("2.0.0")
+                ? new StarterCatalog.Version("2.0.0", null, null, 1, BundleReader.sha256(domain), "inventory/2.0.0/bundle.zip") : version);
+        catalog = new StarterCatalog(1, List.of(new StarterCatalog.Starter("inventory", "Inventory", null, null, null, null, null, null, versions)));
+
+        UpgradeReport report = upgrade.provision(ORG, "inventory", "2.0.0", "staff");
+
+        assertThat(report.errors()).extracting(ImportReport.Error::message)
+                .anySatisfy(message -> assertThat(message).contains("an application of its own").contains("cannot be exchanged by an upgrade"));
+        assertThat(installedRepository.findByOrgKeyAndStarterId(ORG, "inventory")).hasValueSatisfying(
+                installed -> assertThat(installed.getVersion()).isEqualTo("1.0.0"));
+    }
+
     @Test
     void anUpgradeBundleThatIsNotTheRequestedStarterIsRefused() {
         byte[] other = TestBundles.zip(Map.of("manifest.yaml", TestBundles.MANIFEST.replace("id: inventory", "id: other").replace("version: 1.0.0", "version: 2.0.0"),
