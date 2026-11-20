@@ -24,6 +24,7 @@ export type { LoggingConfiguration } from './lib/logging/logging.service';
 export { provideCentralErrorHandler } from './lib/error-handler/provide-central-error-handler';
 export { provideLocaleRouting } from './lib/transloco/provide-locale-routing';
 export { provideLoggingService } from './lib/logging/provide-logging.service';
+export { ColorPickerComponent, swatchColor } from './lib/color-picker/color-picker.component';
 export { NavigateBackComponent } from './lib/navigate-back/navigate-back.component';
 export { NavigateBackService } from './lib/navigate-back/navigate-back.service';
 export { SessionUser } from './lib/session-user/session-user';

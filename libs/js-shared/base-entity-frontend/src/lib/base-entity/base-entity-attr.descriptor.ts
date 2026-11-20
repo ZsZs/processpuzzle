@@ -7,6 +7,9 @@ import type { MapProvider } from '../base-form/address/address-map';
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
 
+/** How a property's value is edited: free text when absent, or one of these editors. */
+export type ValueEditor = 'color';
+
 /** One property `ADDITIONAL_PROPERTIES` offers: its key, a readable name, and optionally the values it may take. */
 export interface AllowedProperty {
   key: string;
@@ -14,6 +17,8 @@ export interface AllowedProperty {
   label?: string;
   /** The values to pick from; free text when absent or empty. */
   values?: string[];
+  /** The editor for the value when it is not picked from {@link values}; a plain text field when absent. */
+  valueEditor?: ValueEditor;
 }
 
 export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {

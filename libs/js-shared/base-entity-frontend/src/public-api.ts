@@ -10,7 +10,7 @@ export { BaseEntityContainerComponent } from './lib/base-entity-container.compon
 export { BaseEntityContainerStore } from './lib/base-entity-container.store'; // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
 export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/base-entity/base-entity';
-export { BaseEntityAttrDescriptor, type AllowedProperty, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
+export { BaseEntityAttrDescriptor, type AllowedProperty, type Selectable, type SelectablesInput, type ValueEditor } from './lib/base-entity/base-entity-attr.descriptor';
 export { toSelectables } from './lib/base-entity/selectables';
 export {
   isBoundedByMaxOccurs,
