@@ -78,12 +78,26 @@ describe('ModuleLauncherComponent', () => {
     const { fixture } = await setUp();
 
     expect(fixture.nativeElement.querySelector('pp-cards-grid')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.module-launcher__empty')).toBeNull();
   });
 
-  it('draws nothing while no mounted module brought a card', async () => {
+  it('says so, and points at the Business Starters, while no mounted module brought a card', async () => {
     const { fixture } = await setUp(contextOf([]).context);
 
     expect(fixture.nativeElement.querySelector('pp-cards-grid')).toBeNull();
+    const empty = fixture.nativeElement.querySelector('.module-launcher__empty');
+    expect(empty).not.toBeNull();
+    expect(empty.querySelector('a')?.getAttribute('href')).toBe('/design/starters');
+  });
+
+  it('takes the empty note away once a module brings a card', async () => {
+    const { context, entriesSignal } = contextOf([]);
+    const { fixture } = await setUp(context);
+    entriesSignal.set([STOCK]);
+    fixture.detectChanges();
+
+    expect(await screen.findByText('Stock')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.module-launcher__empty')).toBeNull();
   });
 
   it('keeps the card when its texts cannot be read', async () => {

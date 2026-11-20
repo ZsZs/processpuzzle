@@ -26,6 +26,10 @@
     "auto": "Follow system",
     "reset": "Reset to default"
   },
+  "module_launcher": {
+    "empty": "Nothing here yet. The modules of a Business Starter appear on this page once one is added.",
+    "browse": "Browse Business Starters"
+  },
   "sidenav_content": {
     "show_menu": "Show the menu",
     "show_content": "Show the contents"
