@@ -5,7 +5,7 @@ import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-
 import { BaseEntity } from '../base-entity/base-entity';
 import { BaseFormControlComponent } from './base-form-control.component';
 import { AbstractControl, FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
-import { AdditionalPropertiesComponent } from './additional-properties/additional-properties.component';
+import { KeyValuePairComponent } from './key-value-pair/key-value-pair.component';
 import { ArtifactComponent } from './artifact/artifact.component';
 import { AvatarComponent } from './avatar/avatar.component';
 import { LabelComponent } from './label/label.component';
@@ -39,7 +39,7 @@ import { ENTITY_CALCULATED_CONTROL } from './calculated/entity-calculated-contro
 type AnyFormControlComponent = Type<BaseFormControlComponent<BaseEntity>>;
 
 const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormControlComponent>>> = {
-  [FormControlType.ADDITIONAL_PROPERTIES]: AdditionalPropertiesComponent,
+  [FormControlType.ADDITIONAL_PROPERTIES]: KeyValuePairComponent,
   [FormControlType.ADDRESS]: AddressComponent,
   [FormControlType.ARTIFACT]: ArtifactComponent,
   [FormControlType.AVATAR]: AvatarComponent,
