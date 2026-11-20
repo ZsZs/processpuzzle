@@ -1,7 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
 import { CalendarComponent } from '@processpuzzle/base-calendar';
-import { CALENDAR_SAMPLES } from './calendar-samples';
+import { CALENDAR_SAMPLES, CalendarSample } from './calendar-samples';
 
 /**
  * The `calendar` widget on the calendars the testbed seeds. What it shows and allows is decided by the calendar
@@ -21,7 +21,7 @@ import { CALENDAR_SAMPLES } from './calendar-samples';
             {{ t('sample_label') }}
             <select data-testid="calendar-sample-select" (change)="pick($any($event.target).value)">
               @for (option of samples; track option.id) {
-                <option [value]="option.id" [selected]="option.id === sampleId()">{{ t(option.labelKey) }}</option>
+                <option [value]="option.id" [selected]="option.id === sample().id">{{ t(option.labelKey) }}</option>
               }
             </select>
           </label>
@@ -55,10 +55,11 @@ import { CALENDAR_SAMPLES } from './calendar-samples';
 })
 export class SamplesComponent {
   protected readonly samples = CALENDAR_SAMPLES;
-  protected readonly sampleId = signal(CALENDAR_SAMPLES[0].id);
-  protected readonly sample = computed(() => CALENDAR_SAMPLES.find((candidate) => candidate.id === this.sampleId()) ?? CALENDAR_SAMPLES[0]);
+  protected readonly sample = signal<CalendarSample>(CALENDAR_SAMPLES[0]);
 
+  /** An id the page does not offer is ignored, so the widget never loses the calendars it shows. */
   protected pick(id: string): void {
-    this.sampleId.set(id);
+    const chosen = CALENDAR_SAMPLES.find((candidate) => candidate.id === id);
+    if (chosen) this.sample.set(chosen);
   }
 }

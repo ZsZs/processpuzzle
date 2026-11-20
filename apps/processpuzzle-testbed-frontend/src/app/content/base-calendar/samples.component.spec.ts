@@ -1,52 +1,69 @@
-import { Component, input } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { CalendarComponent } from '@processpuzzle/base-calendar';
+import { CalendarComponent, CalendarService } from '@processpuzzle/base-calendar';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SamplesComponent } from './samples.component';
 
-/** The real widget talks to the backend; the page only has to hand it the right inputs. */
-@Component({ selector: 'pp-calendar', standalone: true, template: '' })
-class CalendarStub {
-  readonly calendarKeys = input<string[]>([]);
-  readonly defaultView = input<string>('week');
-  readonly height = input<string>('auto');
-}
-
+/**
+ * The page is tested with the real widget, whose calendar service is faked to answer 404: the widget then shows its
+ * "not available" line and draws no calendar, so nothing heavy runs, and the page keeps its compiled template.
+ * Replacing the widget with a stub (`overrideComponent`) recompiles the page and loses the coverage of that template.
+ */
 describe('SamplesComponent', () => {
   const translations = { en: { 'base-calendar.sample_public': 'Public events', 'base-calendar.sample_team': 'Team calendar', 'base-calendar.sample_overlay': 'Team and room' } };
+  let getCalendar: ReturnType<typeof vi.fn>;
   let fixture: ComponentFixture<SamplesComponent>;
 
-  const stub = () => fixture.debugElement.query(By.directive(CalendarStub)).componentInstance as CalendarStub;
+  const widget = () => fixture.debugElement.query(By.directive(CalendarComponent)).componentInstance as CalendarComponent;
+  const select = () => fixture.nativeElement.querySelector('[data-testid="calendar-sample-select"]') as HTMLSelectElement;
+  const options = () => Array.from(select().querySelectorAll('option')) as HTMLOptionElement[];
+
+  function pick(id: string) {
+    select().value = id;
+    select().dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [SamplesComponent], providers: [provideTranslocoTesting({ translations })] });
-    TestBed.overrideComponent(SamplesComponent, { remove: { imports: [CalendarComponent] }, add: { imports: [CalendarStub] } });
+    getCalendar = vi.fn().mockRejectedValue(new HttpErrorResponse({ status: 404 }));
+    TestBed.configureTestingModule({
+      imports: [SamplesComponent],
+      providers: [provideTranslocoTesting({ translations }), { provide: CalendarService, useValue: { getCalendar } }],
+    });
     fixture = TestBed.createComponent(SamplesComponent);
     fixture.detectChanges();
   });
 
   it('starts with the public calendar in the month view, which a visitor can read without signing in', () => {
-    expect(stub().calendarKeys()).toEqual(['public-events']);
-    expect(stub().defaultView()).toBe('month');
-    expect(stub().height()).toBe('700px');
+    expect(widget().calendarKeys()).toEqual(['public-events']);
+    expect(widget().defaultView()).toBe('month');
+    expect(widget().height()).toBe('700px');
   });
 
-  it('offers every sample in the drop-down', () => {
-    const options = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="calendar-sample-select"] option')) as HTMLOptionElement[];
+  it('asks the backend for the calendars it shows', () => {
+    expect(getCalendar).toHaveBeenCalledWith('public-events');
+  });
 
-    expect(options.map((option) => option.value)).toEqual(['public', 'team', 'overlay']);
+  it('offers every sample in the drop-down, under its translated name, with the first selected', () => {
+    expect(options().map((option) => option.value)).toEqual(['public', 'team', 'overlay']);
+    expect(options().map((option) => option.textContent?.trim())).toEqual(['Public events', 'Team calendar', 'Team and room']);
+    expect(options().map((option) => option.selected)).toEqual([true, false, false]);
   });
 
   it('puts the chosen calendars into the widget', () => {
-    const select = fixture.nativeElement.querySelector('[data-testid="calendar-sample-select"]') as HTMLSelectElement;
+    pick('overlay');
 
-    select.value = 'overlay';
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    expect(widget().calendarKeys()).toEqual(['team-calendar', 'meeting-room-a']);
+    expect(widget().defaultView()).toBe('week');
+    expect(options().map((option) => option.selected)).toEqual([false, false, true]);
+  });
 
-    expect(stub().calendarKeys()).toEqual(['team-calendar', 'meeting-room-a']);
-    expect(stub().defaultView()).toBe('week');
+  it('ignores an id the page does not offer, so the widget keeps what it shows', () => {
+    pick('team');
+    pick('nonsense');
+
+    expect(widget().calendarKeys()).toEqual(['team-calendar']);
   });
 });
