@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
-import { MatInput } from '@angular/material/input';
 
 /** `#rgb` or `#rrggbb`, the only forms a native color input can show. */
 const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -18,11 +17,14 @@ export function swatchColor(value: string): string {
  * A color value: a swatch that opens the browser's color picker, and a text field beside it for what the picker
  * cannot say — a color name, `rgb(…)`, `var(--pp-color-white)`. The two edit one value, which is the text; picking
  * a color writes its `#rrggbb` into the field.
+ *
+ * It is a plain control, not a Material form-field control: put it beside its own label, not inside a `mat-form-field`,
+ * which would find no control in its content and fail.
  */
 @Component({
   selector: 'pp-color-picker',
   standalone: true,
-  imports: [MatInput],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span class="pp-color-picker">
@@ -35,7 +37,7 @@ export function swatchColor(value: string): string {
         (input)="value.set($any($event.target).value)"
       />
       <input
-        matInput
+        type="text"
         class="pp-color-picker__text"
         data-testid="color-text"
         [attr.aria-label]="label()"
@@ -62,6 +64,13 @@ export function swatchColor(value: string): string {
     .pp-color-picker__text {
       flex: 1;
       min-width: 0;
+      height: 28px;
+      padding: 0 8px;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      font: inherit;
+      background: transparent;
+      color: inherit;
     }
   `,
 })
