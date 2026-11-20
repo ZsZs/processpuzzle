@@ -508,13 +508,39 @@ components:
       description: >-
         What a reader who may not book sees of an entry: everything, or only when it takes place.
 
+    CalendarRecurrence:
+      type: object
+      description: >-
+        A preset repetition. DAILY repeats every day; WEEKLY on the weekday of the template; MONTHLY on its day of the
+        month (a month without that day has no occurrence). Ends after `count` occurrences or on `until`, or never when
+        neither is given. The server refuses both together.
+      required: [ frequency ]
+      properties:
+        frequency:
+          $ref: "#/components/schemas/RecurrenceFrequency"
+        count:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 500
+          nullable: true
+          description: The number of occurrences, the template included.
+        until:
+          type: string
+          format: date
+          nullable: true
+          description: The last day an occurrence may fall on, inclusive.
+
+    RecurrenceFrequency:
+      type: string
+      enum: [ DAILY, WEEKLY, MONTHLY ]
+
     EntryKind:
       type: string
       enum: [ TIMED, ALL_DAY, RECURRING ]
       description: >-
-        TIMED has a start and an end instant. ALL_DAY has a start date and an exclusive end date. RECURRING is
-        reserved: it is accepted in a definition's `allowedKinds` but entries of that kind are refused (422) until
-        the recurrence phase of the plan.
+        TIMED has a start and an end instant. ALL_DAY has a start date and an exclusive end date. RECURRING is a TIMED
+        or ALL_DAY template repeated by `recurrence`; the template is the first occurrence.
 
     EntryVisibility:
       type: string
@@ -758,6 +784,9 @@ components:
           format: date
           nullable: true
           description: ALL_DAY — the day after the last day. A one-day entry ends on the next date.
+        recurrence:
+          $ref: "#/components/schemas/CalendarRecurrence"
+          description: RECURRING — how the template repeats. Required for that kind, refused for the others.
         attendees:
           type: array
           maxItems: 50
@@ -777,6 +806,9 @@ components:
       type: object
       required: [ id, calendarKey, kind, busy ]
       properties:
+        recurrence:
+          $ref: "#/components/schemas/CalendarRecurrence"
+          description: Present for a RECURRING entry.
         id:
           type: string
           format: uuid
@@ -864,7 +896,7 @@ components:
         recurrenceId:
           type: string
           nullable: true
-          description: Which occurrence of a recurring entry; absent for a single entry.
+          description: For a recurring entry, the local date of the occurrence in the entry's zone; absent for a single entry.
         allDay:
           type: boolean
         busy:

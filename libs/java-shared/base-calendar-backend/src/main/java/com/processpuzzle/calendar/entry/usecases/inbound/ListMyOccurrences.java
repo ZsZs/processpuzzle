@@ -3,7 +3,7 @@ package com.processpuzzle.calendar.entry.usecases.inbound;
 import com.processpuzzle.calendar.entry.domain.CalendarAccess;
 import com.processpuzzle.calendar.entry.domain.CalendarEntry;
 import com.processpuzzle.calendar.entry.domain.CalendarEntryRepository;
-import com.processpuzzle.calendar.entry.domain.EntryView;
+import com.processpuzzle.calendar.entry.domain.OccurrenceView;
 import com.processpuzzle.calendar.entry.usecases.exception.InvalidEntryRequestException;
 import java.time.Duration;
 import java.time.Instant;
@@ -52,7 +52,7 @@ public class ListMyOccurrences {
     /**
      * @throws InvalidEntryRequestException for a window that is empty, reversed or longer than the calendars' own cap
      */
-    public List<EntryView> list(String orgKey, Instant from, Instant to) {
+    public List<OccurrenceView> list(String orgKey, Instant from, Instant to) {
         if (!to.isAfter(from)) {
             throw new InvalidEntryRequestException("'to' must be after 'from'");
         }
@@ -70,11 +70,15 @@ public class ListMyOccurrences {
         LocalDate lastDay = to.minusNanos(1).atZone(zone).toLocalDate();
 
         Map<String, CalendarAccess> readable = new HashMap<>();
-        List<CalendarEntry> mine = entries.findMine(orgKey, subject.get(), roleParameter, from, to, firstDay, lastDay);
+        // One day either side: a series is found by its days, and a timed occurrence's local day is in its own zone.
+        List<CalendarEntry> mine = entries.findMine(orgKey, subject.get(), roleParameter, from, to, firstDay.minusDays(1), lastDay.plusDays(1));
         return mine.stream()
                 .filter(entry -> readable.computeIfAbsent(entry.getCalendarKey(), key -> accessTo(orgKey, key)) != CalendarAccess.NONE)
-                .sorted(Comparator.comparing((CalendarEntry entry) -> entry.startsAt(zone)).thenComparing(CalendarEntry::getId))
-                .map(entry -> views.of(entry, readable.get(entry.getCalendarKey())))
+                .flatMap(entry -> entry.spansWithin(from, to, zone).stream()
+                        .filter(span -> span.overlaps(from, to, firstDay, lastDay))
+                        .map(span -> new OccurrenceView(views.of(entry, readable.get(entry.getCalendarKey())), span)))
+                .sorted(Comparator.comparing((OccurrenceView occurrence) -> occurrence.span().startsAt(zone))
+                        .thenComparing(occurrence -> occurrence.view().entry().getId()))
                 .toList();
     }
 

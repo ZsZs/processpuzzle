@@ -14,7 +14,7 @@ calendar-definitions:
     kind: TEAM
     visibility: AUTHENTICATED
     publicDetail: FULL
-    allowedKinds: [TIMED, ALL_DAY]
+    allowedKinds: [TIMED, ALL_DAY, RECURRING]
   - key: meeting-room-a
     name: Meeting room A
     description: Bookable room. Members see when it is taken, and by whom only when they hold the booking role.

@@ -26,7 +26,9 @@ public interface CalendarEntryRepository extends JpaRepository<CalendarEntry, UU
               and ((e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.TIMED
                     and e.startUtc < :to and e.endUtc > :from)
                 or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.ALL_DAY
-                    and e.startDate <= :lastDay and e.endDate > :firstDay))
+                    and e.startDate <= :lastDay and e.endDate > :firstDay)
+                or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.RECURRING
+                    and e.seriesFirstDay <= :lastDay and (e.seriesLastDay is null or e.seriesLastDay >= :firstDay)))
             """)
     List<CalendarEntry> findOverlapping(@Param("orgKey") String orgKey,
                                         @Param("calendarKeys") Collection<String> calendarKeys,
@@ -46,7 +48,9 @@ public interface CalendarEntryRepository extends JpaRepository<CalendarEntry, UU
               and ((e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.TIMED
                     and e.startUtc < :to and e.endUtc > :from)
                 or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.ALL_DAY
-                    and e.startDate <= :lastDay and e.endDate > :firstDay))
+                    and e.startDate <= :lastDay and e.endDate > :firstDay)
+                or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.RECURRING
+                    and e.seriesFirstDay <= :lastDay and (e.seriesLastDay is null or e.seriesLastDay >= :firstDay)))
             """)
     List<CalendarEntry> findMine(@Param("orgKey") String orgKey, @Param("subject") String subject,
                                  @Param("roles") Collection<String> roles,

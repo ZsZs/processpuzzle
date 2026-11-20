@@ -60,9 +60,9 @@ class PeopleQueriesTest {
         var mine = wiring.myOccurrences().list(ORG, FROM, TO);
 
         assertThat(mine).singleElement().satisfies(view -> {
-            assertThat(view.invited()).isTrue();
-            assertThat(view.busy()).as("invited, so the detail is theirs").isFalse();
-            assertThat(view.canRespond()).isTrue();
+            assertThat(view.view().invited()).isTrue();
+            assertThat(view.view().busy()).as("invited, so the detail is theirs").isFalse();
+            assertThat(view.view().canRespond()).isTrue();
         });
     }
 
@@ -73,7 +73,7 @@ class PeopleQueriesTest {
         EntryWiring member = new EntryWiring(member(BOB, "staff"), calendar(CalendarVisibility.AUTHENTICATED, PublicDetail.BUSY_ONLY));
         when(member.repository.findMine(eq(ORG), eq(BOB), anyCollection(), any(), any(), any(), any())).thenReturn(List.of(roleEntry));
 
-        assertThat(member.myOccurrences().list(ORG, FROM, TO)).singleElement().satisfies(view -> assertThat(view.invited()).isTrue());
+        assertThat(member.myOccurrences().list(ORG, FROM, TO)).singleElement().satisfies(view -> assertThat(view.view().invited()).isTrue());
 
         EntryWiring foreigner = new EntryWiring(EntryFixtures.foreigner(BOB, "staff"), calendar(CalendarVisibility.PUBLIC, PublicDetail.FULL));
         when(foreigner.repository.findMine(eq(ORG), any(), anyCollection(), any(), any(), any(), any())).thenReturn(List.of(roleEntry));
@@ -90,7 +90,7 @@ class PeopleQueriesTest {
         when(wiring.repository.findMine(eq(ORG), eq(BOB), anyCollection(), any(), any(), any(), any())).thenReturn(List.of(readable, hidden));
 
         assertThat(wiring.myOccurrences().list(ORG, FROM, TO)).singleElement()
-                .satisfies(view -> assertThat(view.entry().getCalendarKey()).isEqualTo(CALENDAR));
+                .satisfies(view -> assertThat(view.view().entry().getCalendarKey()).isEqualTo(CALENDAR));
     }
 
     @Test
