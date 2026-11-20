@@ -1,10 +1,10 @@
 import { Component, computed, signal } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatPrefix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { ColorPickerComponent } from '@processpuzzle/util';
+import { ColorSwatchComponent } from '@processpuzzle/util';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { BaseFormControlComponent } from '../base-form-control.component';
@@ -57,18 +57,22 @@ interface KeyValueEntry {
                 @if (valuesOfSelected().length) {
                   <mat-form-field>
                     <mat-label>value</mat-label>
-                    <mat-select data-testid="property-value" [value]="selectedValue()" (selectionChange)="selectedValue.set($event.value)">
+                    <mat-select data-testid="property-value" [value]="selectedValue()" (selectionChange)="setSelectedValue($event.value)">
                       @for (value of valuesOfSelected(); track value) {
                         <mat-option [value]="value">{{ value }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>
                 } @else if (editorOfSelected() === 'color') {
-                  <pp-color-picker data-testid="property-value" [label]="selectedLabel()" [(value)]="selectedValue" />
+                  <mat-form-field>
+                    <mat-label>value</mat-label>
+                    <pp-color-swatch matPrefix [label]="selectedLabel()" [value]="selectedValue()" (valueChange)="setSelectedValue($event)" />
+                    <input matInput #colorText data-testid="property-value" [value]="selectedValue()" (input)="setSelectedValue(colorText.value)" (keydown.enter)="addSelected()" />
+                  </mat-form-field>
                 } @else {
                   <mat-form-field>
                     <mat-label>value</mat-label>
-                    <input matInput #chosenValue data-testid="property-value" [value]="selectedValue()" (input)="selectedValue.set(chosenValue.value)" (keydown.enter)="addSelected()" />
+                    <input matInput #chosenValue data-testid="property-value" [value]="selectedValue()" (input)="setSelectedValue(chosenValue.value)" (keydown.enter)="addSelected()" />
                   </mat-form-field>
                 }
                 <button mat-icon-button type="button" aria-label="add property" [disabled]="!selectedKey()" (click)="addSelected()">
@@ -121,7 +125,7 @@ interface KeyValueEntry {
       }
     `,
   ],
-  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatIconButton, ColorPickerComponent, MatIcon, EntityLabelPipe],
+  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatIconButton, MatPrefix, ColorSwatchComponent, MatIcon, EntityLabelPipe],
 })
 export class KeyValuePairComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly editing = signal(false);
@@ -138,9 +142,22 @@ export class KeyValuePairComponent<Entity extends BaseEntity> extends BaseFormCo
     return this.allowed().find((property) => property.key === key)?.label ?? key;
   }
 
+  /** Picks a property; its current value, if the record has one, is what the editor starts from. */
   selectKey(key: string): void {
     this.selectedKey.set(key);
-    this.selectedValue.set('');
+    this.selectedValue.set(key ? (this.record()[key] ?? '') : '');
+  }
+
+  /**
+   * The editor's value changed. With a property picked it is applied at once, so that a color picked or a value typed
+   * is in the form — which is then dirty and can be saved — without a further press of the add button.
+   */
+  setSelectedValue(value: string): void {
+    this.selectedValue.set(value);
+    const key = this.selectedKey();
+    if (key && value.trim()) {
+      this.setRecord({ ...this.record(), [key]: value.trim() });
+    }
   }
 
   addSelected(): void {
