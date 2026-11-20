@@ -1,6 +1,5 @@
 import { Provider } from '@angular/core';
 import { provideWidget, WidgetRegistration } from '@processpuzzle/widgets';
-import { CalendarComponent } from './calendar.component';
 
 export const CALENDAR_WIDGET = 'calendar';
 
@@ -14,7 +13,8 @@ export const CALENDAR_WIDGET = 'calendar';
  */
 export const CALENDAR_WIDGET_REGISTRATION: WidgetRegistration = {
   type: CALENDAR_WIDGET,
-  component: CalendarComponent,
+  // Lazy: FullCalendar and its time-zone polyfill are fetched when a page first places the calendar, not with the app.
+  loadComponent: () => import('./calendar.component').then((module) => module.CalendarComponent),
   definition: {
     name: 'Calendar',
     translocoId: 'base_calendar.widgets.calendar',

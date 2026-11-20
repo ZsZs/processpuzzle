@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { TranslocoDirective } from '@jsverse/transloco';
-import { CalendarComponent } from '@processpuzzle/base-calendar';
+import { CALENDAR_WIDGET } from '@processpuzzle/base-calendar';
+import { HostedWidget, WidgetHostComponent } from '@processpuzzle/widgets';
 import { CALENDAR_SAMPLES, CalendarSample } from './calendar-samples';
 
 /**
@@ -10,7 +11,7 @@ import { CALENDAR_SAMPLES, CalendarSample } from './calendar-samples';
 @Component({
   selector: 'base-calendar-samples',
   standalone: true,
-  imports: [TranslocoDirective, CalendarComponent],
+  imports: [TranslocoDirective, WidgetHostComponent],
   template: `
     <ng-container *transloco="let t; prefix: 'base-calendar'">
       <section class="samples">
@@ -26,7 +27,7 @@ import { CALENDAR_SAMPLES, CalendarSample } from './calendar-samples';
             </select>
           </label>
         </div>
-        <pp-calendar data-testid="calendar-sample" [calendarKeys]="sample().calendarKeys" [defaultView]="sample().defaultView" height="700px" />
+        <pp-widget-host data-testid="calendar-sample" [widget]="widget()" />
       </section>
     </ng-container>
   `,
@@ -56,6 +57,12 @@ import { CALENDAR_SAMPLES, CalendarSample } from './calendar-samples';
 export class SamplesComponent {
   protected readonly samples = CALENDAR_SAMPLES;
   protected readonly sample = signal<CalendarSample>(CALENDAR_SAMPLES[0]);
+  /** Placed as the widget, so the calendar's code is loaded the way a page's placement loads it. */
+  protected readonly widget = computed<HostedWidget>(() => ({
+    id: 'calendar-sample',
+    type: CALENDAR_WIDGET,
+    props: { calendarKeys: this.sample().calendarKeys, defaultView: this.sample().defaultView, height: '700px' },
+  }));
 
   /** An id the page does not offer is ignored, so the widget never loses the calendars it shows. */
   protected pick(id: string): void {

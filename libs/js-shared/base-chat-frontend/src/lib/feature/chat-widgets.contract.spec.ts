@@ -1,7 +1,8 @@
 import { reflectComponentType } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { loadWidgetComponent } from '@processpuzzle/widgets';
 import { parse } from 'yaml';
 import { CHAT_PANEL_WIDGET, CHAT_PANEL_WIDGET_REGISTRATION } from './panel/chat-panel.widget';
 import { CHAT_TOPICS_WIDGET, CHAT_TOPICS_WIDGET_REGISTRATION } from './topics/chat-topics.widget';
@@ -18,7 +19,10 @@ describe.each([
   [CHAT_TOPICS_WIDGET, CHAT_TOPICS_WIDGET_REGISTRATION],
   [CHAT_UNREAD_BADGE_WIDGET, CHAT_UNREAD_BADGE_WIDGET_REGISTRATION],
 ])('%s widget contract', (key, registration) => {
-  const mirror = reflectComponentType(registration.component);
+  let mirror: ReturnType<typeof reflectComponentType>;
+  beforeAll(async () => {
+    mirror = reflectComponentType(await loadWidgetComponent(registration));
+  });
 
   it('is registered under its own key', () => {
     expect(registration.type).toBe(key);

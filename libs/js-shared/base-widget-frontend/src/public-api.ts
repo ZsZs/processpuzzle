@@ -139,6 +139,7 @@ export { WidgetInputPortFacade } from './widget-definition/widget-input-port.fac
 export { WidgetOutputPortFacade } from './widget-definition/widget-output-port.facade';
 export { WIDGET_REGISTRY, provideWidget } from './widget-registry/widget-registry.token';
 export type { WidgetDescription, WidgetRegistration } from './widget-registry/widget-registry.token';
+export { loadedWidgetComponent, loadWidgetComponent } from './widget-registry/widget-component-loader';
 export { WidgetHostComponent } from './widget-host/widget-host.component';
 export { resolveWidgetInputs, widgetOutputBindings } from './widget-host/widget-bindings';
 export type { HostedWidget, WidgetBindingResolver, WidgetPortEvent } from './widget-host/widget-bindings';

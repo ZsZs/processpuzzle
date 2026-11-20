@@ -1,4 +1,5 @@
-import { Component, ComponentRef, computed, effect, inject, input, output, untracked, viewChild, ViewContainerRef } from '@angular/core';
+import { Component, ComponentRef, computed, effect, inject, input, output, signal, untracked, viewChild, ViewContainerRef } from '@angular/core';
+import { loadedWidgetComponent, loadWidgetComponent } from '../widget-registry/widget-component-loader';
 import { WIDGET_REGISTRY, WidgetRegistration } from '../widget-registry/widget-registry.token';
 import { HostedWidget, resolveWidgetInputs, WidgetBindingResolver, widgetOutputBindings, WidgetPortEvent } from './widget-bindings';
 
@@ -26,8 +27,15 @@ import { HostedWidget, resolveWidgetInputs, WidgetBindingResolver, widgetOutputB
   template: `
     @if (registration()) {
       <ng-container #outlet />
-    } @else {
-      <span class="pp-widget-host__unregistered" [attr.data-testid]="'unregistered-' + widget().id" [title]="explanation()">{{ widget().type }}</span>
+    }
+    @if (!componentType()) {
+      @if (loadFailed()) {
+        <span class="pp-widget-host__unregistered" [attr.data-testid]="'load-failed-' + widget().id" [title]="loadFailure()">{{ widget().type }}</span>
+      } @else if (registration()) {
+        <span class="pp-widget-host__loading" [attr.data-testid]="'loading-' + widget().id" aria-busy="true"></span>
+      } @else {
+        <span class="pp-widget-host__unregistered" [attr.data-testid]="'unregistered-' + widget().id" [title]="explanation()">{{ widget().type }}</span>
+      }
     }
   `,
   styles: [
@@ -38,6 +46,10 @@ import { HostedWidget, resolveWidgetInputs, WidgetBindingResolver, widgetOutputB
       .pp-widget-host__unregistered {
         font-style: italic;
         opacity: 0.6;
+      }
+      .pp-widget-host__loading {
+        display: block;
+        min-height: 1px;
       }
     `,
   ],
@@ -59,22 +71,44 @@ export class WidgetHostComponent {
     return type ? this.registry.get(type) : undefined;
   });
 
-  private readonly inputs = computed(() => {
+  /** The widget's class once known. A lazy widget's class arrives later; `loadedTick` is bumped when it does. */
+  private readonly loadedTick = signal(0);
+  private readonly failedRegistration = signal<WidgetRegistration | undefined>(undefined);
+  protected readonly componentType = computed(() => {
+    this.loadedTick();
     const registration = this.registration();
-    return registration ? resolveWidgetInputs(this.widget(), registration.component, this.bindingResolver()) : {};
+    return registration ? loadedWidgetComponent(registration) : undefined;
+  });
+  protected readonly loadFailed = computed(() => !!this.registration() && this.failedRegistration() === this.registration());
+
+  private readonly inputs = computed(() => {
+    const type = this.componentType();
+    return type ? resolveWidgetInputs(this.widget(), type, this.bindingResolver()) : {};
   });
 
   /** What forces a re-creation. A string, so that an equal shape recomputed from a new object is still equal. */
   private readonly shape = computed(() => {
     const widget = this.widget();
-    return `${widget.type}|${Object.keys(this.inputs())
+    // Whether the class is known is part of the shape: a lazy widget with no inputs must still mount once it arrives.
+    return `${widget.type}|${this.componentType() ? 'loaded' : 'pending'}|${Object.keys(this.inputs())
       .sort((left, right) => left.localeCompare(right))
       .join(',')}|${JSON.stringify(widget.outputBindings ?? {})}`;
   });
 
   protected readonly explanation = computed(() => `No component is registered for widget type '${this.widget().type}' — check the provideWidget() calls of this application.`);
+  protected readonly loadFailure = computed(() => `The component for widget type '${this.widget().type}' could not be loaded. It is tried again the next time the page shows it.`);
 
   constructor() {
+    // Starts the fetch of a lazy widget. A result that arrives after the placement moved on is cached by the loader and
+    // simply not rendered: `componentType` only reads the registration it is given.
+    effect(() => {
+      const registration = this.registration();
+      if (!registration || loadedWidgetComponent(registration)) return;
+      loadWidgetComponent(registration).then(
+        () => this.loadedTick.update((tick) => tick + 1),
+        () => this.failedRegistration.set(registration),
+      );
+    });
     effect(() => {
       const outlet = this.outlet();
       this.shape();
@@ -91,10 +125,10 @@ export class WidgetHostComponent {
   private mount(outlet: ViewContainerRef | undefined): void {
     outlet?.clear();
     this.componentRef = undefined;
-    const registration = this.registration();
-    if (!outlet || !registration) return;
-    const bindings = widgetOutputBindings(this.widget(), registration.component, (event) => this.portEmit.emit(event));
-    const componentRef = outlet.createComponent(registration.component, { bindings });
+    const type = this.componentType();
+    if (!outlet || !type) return;
+    const bindings = widgetOutputBindings(this.widget(), type, (event) => this.portEmit.emit(event));
+    const componentRef = outlet.createComponent(type, { bindings });
     // Set before the widget's first check, so a required input is never read unset.
     for (const [name, value] of Object.entries(this.inputs())) componentRef.setInput(name, value);
     this.componentRef = componentRef;
