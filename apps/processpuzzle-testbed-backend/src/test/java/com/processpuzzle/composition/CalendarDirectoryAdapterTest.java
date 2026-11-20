@@ -53,6 +53,12 @@ class CalendarDirectoryAdapterTest {
     }
 
     @Test
+    void aSearchFindsAPersonByAnyPartOfTheirNameAndCannotBeWidenedByAnAsterisk() {
+        assertThat(CalendarDirectoryAdapter.infix("ee0f4a8e")).isEqualTo("*ee0f4a8e*");
+        assertThat(CalendarDirectoryAdapter.infix(" b*ob ")).isEqualTo("*bob*");
+    }
+
+    @Test
     void theOrganizationKeyIsTheRealm() {
         UserDirectoryPort directory = mock(UserDirectoryPort.class);
         when(directory.findUser(any(), any())).thenReturn(Optional.empty());

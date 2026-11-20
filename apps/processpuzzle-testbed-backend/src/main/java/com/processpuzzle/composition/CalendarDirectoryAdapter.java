@@ -26,7 +26,7 @@ public class CalendarDirectoryAdapter implements CalendarDirectoryPort {
 
     @Override
     public List<DirectoryMatch> search(String orgKey, String text) {
-        return directory.findUsers(orgKey, text, 0, MAX_RESULTS).content().stream()
+        return directory.findUsers(orgKey, infix(text), 0, MAX_RESULTS).content().stream()
                 .filter(DirectoryUser::enabled)
                 .map(CalendarDirectoryAdapter::match)
                 .limit(MAX_RESULTS)
@@ -41,6 +41,14 @@ public class CalendarDirectoryAdapter implements CalendarDirectoryPort {
     private static DirectoryMatch match(DirectoryUser user) {
         String name = (nonBlank(user.firstName()) + " " + nonBlank(user.lastName())).strip();
         return new DirectoryMatch(user.id(), name.isEmpty() ? nonBlank(user.username()) : name);
+    }
+
+    /**
+     * Keycloak matches a search term at the start of a field unless it is wrapped in asterisks, so a person is found by
+     * any part of their name or username. A typed asterisk is removed, so the wrapping cannot be widened by the user.
+     */
+    static String infix(String text) {
+        return "*" + text.replace("*", "").strip() + "*";
     }
 
     private static String nonBlank(String value) {
