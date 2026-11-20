@@ -13,17 +13,17 @@ class CalendarAccessTest {
 
     @Test
     void aPrivateEntryIsBusyToEveryoneButItsOrganizerAndTheManagers() {
-        assertThat(FULL_READER.seesBusyOnly(false, EntryVisibility.PRIVATE)).isTrue();
-        assertThat(BOOKER.seesBusyOnly(false, EntryVisibility.PRIVATE)).isTrue();
-        assertThat(BOOKER.seesBusyOnly(true, EntryVisibility.PRIVATE)).isFalse();
-        assertThat(MANAGER.seesBusyOnly(false, EntryVisibility.PRIVATE)).isFalse();
+        assertThat(FULL_READER.seesBusyOnly(false, false, EntryVisibility.PRIVATE)).isTrue();
+        assertThat(BOOKER.seesBusyOnly(false, false, EntryVisibility.PRIVATE)).isTrue();
+        assertThat(BOOKER.seesBusyOnly(true, false, EntryVisibility.PRIVATE)).isFalse();
+        assertThat(MANAGER.seesBusyOnly(false, false, EntryVisibility.PRIVATE)).isFalse();
     }
 
     @Test
     void aPublicEntryIsBusyOnlyToAReaderTheCalendarGivesNoDetail() {
-        assertThat(BUSY_READER.seesBusyOnly(false, EntryVisibility.PUBLIC)).isTrue();
-        assertThat(FULL_READER.seesBusyOnly(false, EntryVisibility.PUBLIC)).isFalse();
-        assertThat(BUSY_READER.seesBusyOnly(true, EntryVisibility.PUBLIC)).as("the organizer always sees their own").isFalse();
+        assertThat(BUSY_READER.seesBusyOnly(false, false, EntryVisibility.PUBLIC)).isTrue();
+        assertThat(FULL_READER.seesBusyOnly(false, false, EntryVisibility.PUBLIC)).isFalse();
+        assertThat(BUSY_READER.seesBusyOnly(true, false, EntryVisibility.PUBLIC)).as("the organizer always sees their own").isFalse();
     }
 
     @Test

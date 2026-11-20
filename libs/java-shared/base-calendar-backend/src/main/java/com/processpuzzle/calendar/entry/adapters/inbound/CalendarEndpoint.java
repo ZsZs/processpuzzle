@@ -2,6 +2,7 @@ package com.processpuzzle.calendar.entry.adapters.inbound;
 
 import com.processpuzzle.calendar.api.CalendarsApi;
 import com.processpuzzle.calendar.entry.usecases.inbound.GetCalendar;
+import com.processpuzzle.calendar.entry.usecases.inbound.ListMyOccurrences;
 import com.processpuzzle.calendar.entry.usecases.inbound.ListOccurrences;
 import com.processpuzzle.calendar.model.CalendarView;
 import com.processpuzzle.calendar.model.Occurrence;
@@ -16,9 +17,12 @@ public class CalendarEndpoint implements CalendarsApi {
 
     private final GetCalendar getCalendar;
     private final ListOccurrences listOccurrences;
+    private final ListMyOccurrences myOccurrences;
     private final EntryMapper mapper;
 
-    public CalendarEndpoint(GetCalendar getCalendar, ListOccurrences listOccurrences, EntryMapper mapper) {
+    public CalendarEndpoint(GetCalendar getCalendar, ListOccurrences listOccurrences, ListMyOccurrences myOccurrences,
+                            EntryMapper mapper) {
+        this.myOccurrences = myOccurrences;
         this.getCalendar = getCalendar;
         this.listOccurrences = listOccurrences;
         this.mapper = mapper;
@@ -34,5 +38,10 @@ public class CalendarEndpoint implements CalendarsApi {
                                                             OffsetDateTime to) {
         return ResponseEntity.ok(listOccurrences.list(orgKey, calendars, from.toInstant(), to.toInstant()).stream()
                 .map(mapper::toOccurrence).toList());
+    }
+
+    @Override
+    public ResponseEntity<List<Occurrence>> listMyOccurrences(String orgKey, OffsetDateTime from, OffsetDateTime to) {
+        return ResponseEntity.ok(myOccurrences.list(orgKey, from.toInstant(), to.toInstant()).stream().map(mapper::toOccurrence).toList());
     }
 }
