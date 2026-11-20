@@ -182,6 +182,10 @@ export function createAppConfig(runtimeConfiguration: RuntimeConfiguration): App
       // panel placed without one chats about.
       ...provideChatWidgets(),
       provideChatWorkingContextSubject(),
+      // base-calendar's `calendar` widget is not registered here, on purpose. The widget registry holds component
+      // references, so registering it would put FullCalendar in the initial bundle: +410 kB on a build that is
+      // 9.86 MB against a 10 MB error budget. The Base Calendar page loads it lazily, with its route. Registering it
+      // (`...provideCalendarWidgets()`) needs lazy widget registration or a larger budget first.
       // And base-chat's Chat tab, offered to every entity type some chat definition is about — `Order` and
       // `Dynamic Entity` in this tenant — on the same contributor arrangement as the tabs above.
       ...provideEntityChatTab(),
