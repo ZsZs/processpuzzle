@@ -131,7 +131,10 @@ services:
     # but only `mem_limit` also applies under `docker stack`, and it is the form Coolify passes
     # through unchanged. Setting it is also what makes MaxRAMPercentage below meaningful — the JVM
     # reads the cgroup limit, so the percentage is of THIS number rather than of the host.
-    mem_limit: 640m
+    #
+    # 2026-11-20: raised from 640m to 1024m with the stage host at 16GiB. Keycloak sat at ~95% of 640m
+    # under the nightly E2E load, and the stalls showed up as sign-in and waitForURL timeouts.
+    mem_limit: 1024m
     environment:
       # 60%, not the 75% a JVM alone on a box would take: Keycloak's non-heap footprint (metaspace,
       # code cache, Quarkus' direct buffers, thread stacks) runs 150-200MiB, and a container killed
