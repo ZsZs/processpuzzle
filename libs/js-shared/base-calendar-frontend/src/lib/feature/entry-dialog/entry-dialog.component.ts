@@ -9,8 +9,8 @@ import { provideTranslocoScope, TranslocoPipe, TranslocoService } from '@jsverse
 import { BASE_CALENDAR_TRANSLOCO_ALIAS, BASE_CALENDAR_TRANSLOCO_SCOPE } from '../../base-calendar.i18n';
 import { failureKindOf, failureTextOf } from '../../domain/calendar.service';
 import { CalendarStore } from '../../domain/calendar.store';
-import { AttendanceAnswerValue, AttendeeDraft, CalendarEntry, CalendarFailureKind, CalendarInfo, CalendarSlot, DirectoryMatch, EntryKind } from '../../domain/calendar.types';
-import { bookableKinds, EntryFormValue, formForEntry, formForSlot, isFormComplete, toEntryInput } from '../../domain/entry-form';
+import { AttendanceAnswerValue, AttendeeDraft, CalendarEntry, CalendarFailureKind, CalendarInfo, CalendarRecurrence, CalendarSlot, DirectoryMatch, EntryKind } from '../../domain/calendar.types';
+import { bookableKinds, EntryFormValue, formForEntry, formForSlot, isFormComplete, RepeatForm, RepeatFrequency, repeatsAllowed, toEntryInput, templateKindOf } from '../../domain/entry-form';
 
 /**
  * What the dialog is opened with: `create` from a slot, `edit` for an entry the caller may change, `view` for one
@@ -32,6 +32,9 @@ const SEARCH_DEBOUNCE_MS = 300;
 const SEARCH_MIN_LENGTH = 2;
 
 const TITLE_KEY_OF_MODE: Record<EntryDialogData['mode'], string> = { create: 'new', edit: 'edit', view: 'view' };
+
+/** The choices of the Repeats control, in the order they are offered. */
+const REPEAT_OPTIONS: readonly RepeatFrequency[] = ['NEVER', 'DAILY', 'WEEKLY', 'MONTHLY'];
 
 const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
   forbidden: 'base_calendar.errors.forbidden',
@@ -106,6 +109,39 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
               </mat-form-field>
             </div>
           }
+          @if (repeatAllowed()) {
+            <mat-form-field>
+              <mat-label>{{ 'base_calendar.entry.repeat.title' | transloco }}</mat-label>
+              <mat-select name="repeat" data-testid="entry-repeat" [ngModel]="value().repeat.frequency" (ngModelChange)="patchRepeat({ frequency: $event })">
+                @for (option of repeatOptions; track option) {
+                  <mat-option [value]="option">{{ 'base_calendar.entry.repeat.' + option | transloco }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            @if (value().repeat.frequency !== 'NEVER') {
+              <div class="pp-entry-dialog__row">
+                <mat-form-field>
+                  <mat-label>{{ 'base_calendar.entry.repeat.ends' | transloco }}</mat-label>
+                  <mat-select name="repeatEnds" data-testid="entry-repeat-ends" [ngModel]="value().repeat.ends" (ngModelChange)="patchRepeat({ ends: $event })">
+                    <mat-option value="NEVER">{{ 'base_calendar.entry.repeat.ends_never' | transloco }}</mat-option>
+                    <mat-option value="AFTER_COUNT">{{ 'base_calendar.entry.repeat.ends_after' | transloco }}</mat-option>
+                    <mat-option value="ON_DATE">{{ 'base_calendar.entry.repeat.ends_on' | transloco }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                @if (value().repeat.ends === 'AFTER_COUNT') {
+                  <mat-form-field>
+                    <mat-label>{{ 'base_calendar.entry.repeat.count' | transloco }}</mat-label>
+                    <input matInput type="number" min="1" max="500" step="1" name="repeatCount" data-testid="entry-repeat-count" [ngModel]="value().repeat.count" (ngModelChange)="patchRepeat({ count: $event })" />
+                  </mat-form-field>
+                } @else if (value().repeat.ends === 'ON_DATE') {
+                  <mat-form-field>
+                    <mat-label>{{ 'base_calendar.entry.repeat.until' | transloco }}</mat-label>
+                    <input matInput type="date" name="repeatUntil" data-testid="entry-repeat-until" [ngModel]="value().repeat.until" (ngModelChange)="patchRepeat({ until: $event })" />
+                  </mat-form-field>
+                }
+              </div>
+            }
+          }
           <mat-form-field>
             <mat-label>{{ 'base_calendar.entry.location' | transloco }}</mat-label>
             <input matInput name="location" data-testid="entry-location" maxlength="200" [ngModel]="value().location" (ngModelChange)="patch({ location: $event })" />
@@ -178,9 +214,15 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
         @if (entry.busy) {
           <p data-testid="entry-busy">{{ 'base_calendar.busy' | transloco }}</p>
           <p class="pp-entry-dialog__when">{{ when(entry) }}</p>
+          @if (entry.recurrence; as recurrence) {
+            <p class="pp-entry-dialog__when" data-testid="entry-view-repeat">{{ repeatSummary(recurrence) }}</p>
+          }
         } @else {
           <h3 class="pp-entry-dialog__name" data-testid="entry-view-title">{{ entry.title }}</h3>
           <p class="pp-entry-dialog__when" data-testid="entry-view-when">{{ when(entry) }}</p>
+          @if (entry.recurrence; as recurrence) {
+            <p class="pp-entry-dialog__when" data-testid="entry-view-repeat">{{ repeatSummary(recurrence) }}</p>
+          }
           @if (entry.location) {
             <p data-testid="entry-view-location">{{ entry.location }}</p>
           }
@@ -327,6 +369,9 @@ export class EntryDialogComponent {
 
   protected readonly editable = computed(() => this.data.mode !== 'view');
   protected readonly kinds = computed(() => bookableKinds(this.calendar()));
+  /** The Repeats control: offered when the calendar takes repeating entries, or when this entry already repeats. */
+  protected readonly repeatAllowed = computed(() => repeatsAllowed(this.calendar()) || this.value().repeat.frequency !== 'NEVER');
+  protected readonly repeatOptions = REPEAT_OPTIONS;
   protected readonly complete = computed(() => isFormComplete(this.value()));
   /** The entry as shown read-only; none when the dialog edits. */
   protected readonly shown = this.viewed.asReadonly();
@@ -393,7 +438,11 @@ export class EntryDialogComponent {
     this.value.update((current) => ({ ...current, ...change }));
   }
 
-  /** Switches the calendar of a new entry; the kind falls back to one the new calendar accepts. */
+  protected patchRepeat(change: Partial<RepeatForm>): void {
+    this.value.update((current) => ({ ...current, repeat: { ...current.repeat, ...change } }));
+  }
+
+  /** Switches the calendar of a new entry; the kind falls back to one the new calendar accepts, and a repetition the calendar does not take is dropped. */
   protected pickCalendar(key: string): void {
     const next = this.data.calendars.find((candidate) => candidate.key === key);
     if (!next) return;
@@ -401,6 +450,21 @@ export class EntryDialogComponent {
     if (!bookableKinds(next).includes(this.value().kind)) {
       this.patch({ kind: bookableKinds(next)[0] });
     }
+    if (!repeatsAllowed(next)) {
+      this.patchRepeat({ frequency: 'NEVER', ends: 'NEVER' });
+    }
+  }
+
+  /** What a series says about itself, in the user's language: how often, and how many times or until when. */
+  protected repeatSummary(recurrence: CalendarRecurrence): string {
+    const frequency = this.transloco.translate(`base_calendar.entry.repeat.frequency.${recurrence.frequency}`);
+    if (recurrence.count != null) return this.transloco.translate('base_calendar.entry.repeat.summary_count', { frequency, count: recurrence.count });
+    if (recurrence.until) return this.transloco.translate('base_calendar.entry.repeat.summary_until', { frequency, date: this.formatDay(recurrence.until) });
+    return this.transloco.translate('base_calendar.entry.repeat.summary', { frequency });
+  }
+
+  private formatDay(day: string): string {
+    return new Intl.DateTimeFormat(this.transloco.getActiveLang(), { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
   }
 
   protected async save(): Promise<void> {
@@ -433,7 +497,7 @@ export class EntryDialogComponent {
   /** When the entry takes place, written the way the user's language writes it, in the organization's zone. */
   protected when(entry: CalendarEntry): string {
     const locale = this.transloco.getActiveLang();
-    if (entry.kind === 'ALL_DAY' && entry.startDate && entry.endDate) {
+    if (templateKindOf(entry) === 'ALL_DAY' && entry.startDate && entry.endDate) {
       const format = new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC' });
       const first = new Date(`${entry.startDate}T00:00:00Z`);
       const last = new Date(new Date(`${entry.endDate}T00:00:00Z`).getTime() - 24 * 3600 * 1000);

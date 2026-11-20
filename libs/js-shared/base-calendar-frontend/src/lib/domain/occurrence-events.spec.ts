@@ -57,6 +57,16 @@ describe('toCalendarEvent', () => {
     expect(toCalendarEvent({ ...TIMED, recurrenceId: '2026-12-08' }, 0, 'Busy').id).toBe('team:e-1:2026-12-08');
   });
 
+  it('is never draggable, though the caller may edit the series from its dialog', () => {
+    const occurrence = { ...TIMED, recurrenceId: '2026-12-08' };
+
+    const event = toCalendarEvent(occurrence, 0, 'Busy');
+
+    expect(event.editable).toBe(false);
+    expect(event.extendedProps.canEdit).toBe(true);
+    expect(event.className.split(' ')).toContain('pp-calendar__event--recurring');
+  });
+
   it('is not editable without the server saying so', () => {
     expect(toCalendarEvent({ ...TIMED, canEdit: undefined }, 0, 'Busy').editable).toBe(false);
   });

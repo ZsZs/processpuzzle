@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { CalendarService, failureKindOf } from './calendar.service';
 import { AttendanceAnswerValue, CalendarEntry, CalendarEntryInput, CalendarFailureKind, CalendarInfo, DirectoryMatch, Occurrence } from './calendar.types';
+import { templateKindOf } from './entry-form';
 
 function occurrenceId(occurrence: Occurrence): string {
   return `${occurrence.calendarKey}:${occurrence.entryId}:${occurrence.recurrenceId ?? ''}`;
@@ -130,7 +131,7 @@ export class CalendarStore {
    */
   async reschedule(calendarKey: string, entryId: string, times: Reschedule): Promise<CalendarEntry> {
     const entry = await this.service.getEntry(calendarKey, entryId);
-    if (times.allDay !== (entry.kind === 'ALL_DAY')) {
+    if (times.allDay !== (templateKindOf(entry) === 'ALL_DAY')) {
       throw new KindChangeError();
     }
     const input: CalendarEntryInput = {
@@ -141,6 +142,7 @@ export class CalendarStore {
       category: entry.category ?? null,
       visibility: entry.visibility ?? 'PUBLIC',
       version: entry.version ?? null,
+      ...(entry.recurrence ? { recurrence: entry.recurrence } : {}),
       ...(times.allDay ? { startDate: times.startDate, endDate: times.endDate } : { start: times.start, end: times.end, timeZone: entry.timeZone ?? null }),
     };
     return this.service.updateEntry(calendarKey, entryId, input);

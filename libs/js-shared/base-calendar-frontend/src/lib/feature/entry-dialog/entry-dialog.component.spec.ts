@@ -193,6 +193,67 @@ describe('EntryDialogComponent', () => {
     });
   });
 
+  describe('repetition', () => {
+    const SERIES_CALENDAR: CalendarInfo = { ...TEAM, allowedKinds: ['TIMED', 'ALL_DAY', 'RECURRING'] };
+
+    /** The Repeats choices are mat-selects, which a spec sets through the form rather than by opening their overlays. */
+    async function setRepeat(change: Record<string, unknown>) {
+      (fixture.componentInstance as unknown as { patchRepeat(change: Record<string, unknown>): void }).patchRepeat(change);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('is offered only on a calendar that takes recurring entries', async () => {
+      await open({ mode: 'create', calendars: [TEAM], slot: SLOT });
+      expect(q('entry-repeat')).toBeNull();
+      TestBed.resetTestingModule();
+
+      await open({ mode: 'create', calendars: [SERIES_CALENDAR], slot: SLOT });
+      expect(q('entry-repeat')).not.toBeNull();
+      expect(q('entry-repeat-ends')).toBeNull();
+    });
+
+    it('books a series with the count of occurrences it was given, as a RECURRING template', async () => {
+      await open({ mode: 'create', calendars: [SERIES_CALENDAR], slot: SLOT });
+      await setRepeat({ frequency: 'WEEKLY', ends: 'AFTER_COUNT' });
+      expect(q('entry-repeat-until')).toBeNull();
+      await type('entry-repeat-count', '3');
+      await type('entry-title', 'Standup');
+
+      await submit();
+
+      expect(store.book).toHaveBeenCalledWith(
+        'team',
+        expect.objectContaining({ kind: 'RECURRING', title: 'Standup', start: '2026-12-01T09:00:00Z', end: '2026-12-01T10:00:00Z', recurrence: { frequency: 'WEEKLY', count: 3 } }),
+      );
+      expect(dialogRef.close).toHaveBeenCalledWith('saved');
+    });
+
+    it('books nothing while a series that ends on a date has no date', async () => {
+      await open({ mode: 'create', calendars: [SERIES_CALENDAR], slot: SLOT });
+      await setRepeat({ frequency: 'DAILY', ends: 'ON_DATE' });
+      await type('entry-title', 'Standup');
+
+      await submit();
+
+      expect(store.book).not.toHaveBeenCalled();
+    });
+
+    it('shows the repetition of a series in view, in words', async () => {
+      await open({ mode: 'view', calendars: [SERIES_CALENDAR], entry: { ...ENTRY, kind: 'RECURRING', canEdit: false, recurrence: { frequency: 'WEEKLY', count: 3 } } });
+
+      expect(text('entry-view-repeat')).toBe('Repeats weekly, 3 times');
+    });
+
+    it('loads the repetition of a series into the form when it is edited', async () => {
+      await open({ mode: 'edit', calendars: [SERIES_CALENDAR], entry: { ...ENTRY, kind: 'RECURRING', recurrence: { frequency: 'MONTHLY', until: '2027-01-31' } } });
+
+      expect((q('entry-repeat-until') as HTMLInputElement).value).toBe('2027-01-31');
+      expect(q('entry-repeat-count')).toBeNull();
+    });
+  });
+
   describe('an entry the caller may change', () => {
     it('shows its values in the organization wall clock', async () => {
       await open({ mode: 'edit', calendars: [TEAM], entry: ENTRY });

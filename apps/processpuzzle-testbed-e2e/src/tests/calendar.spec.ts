@@ -166,7 +166,7 @@ test.describe('Calendar @auth', () => {
     });
 
     expect(refused.status()).toBe(422);
-    expect((await refused.json()).errorText).toContain('recurring entries are not supported yet');
+    expect((await refused.json()).errorText).toContain('does not accept RECURRING entries');
   });
 
   // Opt-in, like the two-person chat test: it registers a second account and signs it in through the login form.

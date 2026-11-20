@@ -41,15 +41,18 @@ function eventId(occurrence: Occurrence): string {
 
 /**
  * One occurrence as a calendar event. A busy occurrence carries no title from the server, so it shows
- * {@code busyLabel}; it is never editable, whatever else says so.
+ * {@code busyLabel}; it is never editable, whatever else says so. Nor is an occurrence of a recurring entry: a drag
+ * would move one occurrence, and the series is edited whole, from the entry dialog.
  *
  * @param colorIndex position of the occurrence's calendar among the calendars shown
  */
 export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busyLabel: string): CalendarEventInput {
   const allDay = occurrence.allDay;
+  const recurring = Boolean(occurrence.recurrenceId);
   const canEdit = !occurrence.busy && occurrence.canEdit === true;
   const className = ['pp-calendar__event'];
   if (occurrence.busy) className.push('pp-calendar__event--busy');
+  if (recurring) className.push('pp-calendar__event--recurring');
   if (occurrence.mine) className.push('pp-calendar__event--mine');
   if (occurrence.invited) className.push('pp-calendar__event--invited');
   return {
@@ -58,7 +61,7 @@ export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busy
     start: (allDay ? occurrence.startDate : occurrence.start) ?? '',
     end: (allDay ? occurrence.endDate : occurrence.end) ?? '',
     allDay,
-    editable: canEdit,
+    editable: canEdit && !recurring,
     color: calendarColor(colorIndex),
     className: className.join(' '),
     extendedProps: {
