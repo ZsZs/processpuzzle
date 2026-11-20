@@ -54,20 +54,23 @@ interface KeyValueEntry {
                     }
                   </mat-select>
                 </mat-form-field>
-                <mat-form-field>
-                  <mat-label>value</mat-label>
-                  @if (valuesOfSelected().length) {
+                @if (valuesOfSelected().length) {
+                  <mat-form-field>
+                    <mat-label>value</mat-label>
                     <mat-select data-testid="property-value" [value]="selectedValue()" (selectionChange)="selectedValue.set($event.value)">
                       @for (value of valuesOfSelected(); track value) {
                         <mat-option [value]="value">{{ value }}</mat-option>
                       }
                     </mat-select>
-                  } @else if (editorOfSelected() === 'color') {
-                    <pp-color-picker data-testid="property-value" [label]="selectedLabel()" [(value)]="selectedValue" />
-                  } @else {
+                  </mat-form-field>
+                } @else if (editorOfSelected() === 'color') {
+                  <pp-color-picker data-testid="property-value" [label]="selectedLabel()" [(value)]="selectedValue" />
+                } @else {
+                  <mat-form-field>
+                    <mat-label>value</mat-label>
                     <input matInput #chosenValue data-testid="property-value" [value]="selectedValue()" (input)="selectedValue.set(chosenValue.value)" (keydown.enter)="addSelected()" />
-                  }
-                </mat-form-field>
+                  </mat-form-field>
+                }
                 <button mat-icon-button type="button" aria-label="add property" [disabled]="!selectedKey()" (click)="addSelected()">
                   <mat-icon>add</mat-icon>
                 </button>

@@ -237,6 +237,20 @@ describe('KeyValuePairComponent', () => {
       expect(component.editorOfSelected()).toBeUndefined();
     });
 
+    it('renders the editing row for each kind of value without failing', async () => {
+      const config = allowedConfig();
+      config.allowedProperties = [{ key: '--sidenav', label: 'Sidenav background', valueEditor: 'color' }, ...(config.allowedProperties ?? [])];
+      const { fixture, component } = await setupControl(config);
+      component.enterEditMode();
+      for (const key of ['--sidenav', '--density', '--sidenav', '']) {
+        component.selectKey(key);
+        expect(() => fixture.detectChanges()).not.toThrow();
+      }
+      component.selectKey('--sidenav');
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('pp-color-picker')).not.toBeNull();
+    });
+
     it('adds nothing until a key is picked', async () => {
       const { component } = await setupControl(allowedConfig(), {});
       component.addSelected();
