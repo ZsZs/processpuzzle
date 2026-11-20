@@ -258,9 +258,13 @@ public class ImportBundle {
     private List<ImportReport.Error> conflicts(String orgKey, StarterBundle bundle,
                                                Map<DefinitionImportParticipant, List<String>> plan) {
         String starterId = bundle.manifest().id();
-        if (installedStarterRepository.findByOrgKeyAndStarterId(orgKey, starterId).isPresent()) {
-            return List.of(new ImportReport.Error(BundleReader.MANIFEST,
-                    "The starter '" + starterId + "' is installed already; upgrade it instead."));
+        Optional<InstalledStarter> installed = installedStarterRepository.findByOrgKeyAndStarterId(orgKey, starterId);
+        if (installed.isPresent()) {
+            return List.of(new ImportReport.Error(BundleReader.MANIFEST, installed.get().isDomainStarter()
+                    ? "The starter '" + starterId + "' is installed already; upgrade it instead."
+                    : "The starter '" + starterId + "' is installed here as an application of its own (version " + installed.get().getVersion()
+                            + "), which version " + bundle.manifest().version() + " no longer is: its modules are added to the organization's own application. "
+                            + "The two cannot be exchanged by an upgrade; use a new organization for version " + bundle.manifest().version() + "."));
         }
         List<ImportReport.Error> conflicts = new ArrayList<>();
         plan.forEach((participant, files) -> {
