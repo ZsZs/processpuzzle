@@ -81,8 +81,9 @@ mat-card-actions button {
     margin-left: 40%;
 }
 
-/* The picture's drawing sits bottom-left, so the buttons go to the right, 5px from the card's right and bottom edges. */
+/* The picture's drawing sits bottom-left, so the buttons go to the right. The inset is measured from the card's edge,
+   and the pictures' hand-drawn frame already takes about 5px of it, so 16px leaves about 10px clear of the frame. */
 .default-mat-card.has-image mat-card-actions {
     justify-content: flex-end;
-    padding: 0 5px 5px 0;
+    padding: 0 16px 16px 0;
 }
