@@ -1,0 +1,78 @@
+/*
+ * Ties FullCalendar's "classic" theme to the platform's tokens, so a calendar follows the application's look —
+ * brand colors, Material theme presets, light and dark — without a stylesheet of its own.
+ *
+ * Add to an application's `styles`, in this order, before its own global styles:
+ *
+ *   "@fullcalendar/angular/skeleton.css",
+ *   "@fullcalendar/angular/themes/classic/theme.css",
+ *   "libs/js-shared/base-calendar-frontend/src/theme/pp-calendar-theme.css"     (or the published package path)
+ *
+ * It stands in for FullCalendar's own `classic/palette.css`, so that file must not be added as well.
+ *
+ * Declared on `.pp-calendar`, not on `:root`: a custom property that refers to another is resolved where it is
+ * declared, and an application shell wears its Material theme on a subtree (see `pp-material-themes.scss`), which
+ * a declaration on `:root` would never see. Every fallback is the value FullCalendar's own palette uses.
+ */
+.pp-calendar {
+  /* The colors of the calendars of one widget, in the order they were asked for. */
+  --pp-calendar-color-0: var(--pp-button-primary-bg, var(--mat-sys-primary, #3788d8));
+  --pp-calendar-color-1: var(--mat-sys-tertiary, #7d5260);
+  --pp-calendar-color-2: var(--mat-sys-secondary, #625b71);
+  --pp-calendar-color-3: #1b7f5c;
+  --pp-calendar-color-4: #b3541e;
+  --pp-calendar-color-5: #6a4bb5;
+
+  /* buttons */
+  --fc-classic-button: var(--pp-button-primary-bg, var(--mat-sys-primary, #334155));
+  --fc-classic-button-border: var(--pp-button-primary-bg, var(--mat-sys-primary, #334155));
+  --fc-classic-button-strong: color-mix(in srgb, var(--pp-button-primary-bg, var(--mat-sys-primary, #1e293b)) 80%, black);
+  --fc-classic-button-strong-border: color-mix(in srgb, var(--pp-button-primary-bg, var(--mat-sys-primary, #0f172a)) 65%, black);
+  --fc-classic-button-outline: color-mix(in srgb, var(--pp-button-primary-bg, var(--mat-sys-primary, #475569)) 50%, transparent);
+  --fc-classic-button-foreground: var(--pp-button-primary-text, var(--mat-sys-on-primary, #fff));
+
+  /* primary */
+  --fc-classic-primary: var(--pp-calendar-color-0);
+  --fc-classic-primary-foreground: var(--pp-button-primary-text, var(--mat-sys-on-primary, #fff));
+
+  /* calendar content */
+  --fc-classic-event: var(--pp-calendar-color-0);
+  --fc-classic-event-contrast: #fff;
+  --fc-classic-background-event: var(--mat-sys-tertiary, #22c55e);
+  --fc-classic-background-event-opacity: 15%;
+  --fc-classic-background-event-foreground-opacity: 50%;
+  --fc-classic-highlight: color-mix(in srgb, var(--mat-sys-primary, #06b6d4) 20%, transparent);
+  --fc-classic-today: color-mix(in srgb, var(--mat-sys-secondary-container, #facc15) 45%, transparent);
+  --fc-classic-now: var(--mat-sys-error, #ef4444);
+  --fc-classic-small-dot-width: 8px;
+  --fc-classic-large-dot-width: 10px;
+
+  /* neutral backgrounds */
+  --fc-classic-background: var(--mat-sys-surface, #fff);
+  --fc-classic-faint: color-mix(in srgb, var(--mat-sys-on-surface, #000) 4%, transparent);
+  --fc-classic-muted: color-mix(in srgb, var(--mat-sys-on-surface, #000) 8%, transparent);
+  --fc-classic-strong: color-mix(in srgb, var(--mat-sys-on-surface, #000) 14%, transparent);
+
+  /* neutral foregrounds */
+  --fc-classic-foreground: var(--mat-sys-on-surface, #030712);
+  --fc-classic-faint-foreground: color-mix(in srgb, var(--mat-sys-on-surface, #9ca3af) 45%, transparent);
+  --fc-classic-muted-foreground: var(--mat-sys-on-surface-variant, #6b7280);
+
+  /* neutral borders */
+  --fc-classic-border: var(--mat-sys-outline-variant, #ddd);
+  --fc-classic-strong-border: var(--mat-sys-outline, #9ca3af);
+
+  color: var(--fc-classic-foreground);
+}
+
+/* Busy time: the entry is somebody else's and shows nothing but when. Hatched, so it reads as "taken", not as an event. */
+.pp-calendar .pp-calendar__event--busy {
+  opacity: 0.75;
+  background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 255 255 / 25%) 6px 12px);
+  font-style: italic;
+}
+
+/* An entry of the caller's own is a little stronger than the rest. */
+.pp-calendar .pp-calendar__event--mine {
+  font-weight: 600;
+}

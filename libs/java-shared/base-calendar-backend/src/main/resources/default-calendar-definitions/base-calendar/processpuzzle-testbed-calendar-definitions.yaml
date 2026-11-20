@@ -1,0 +1,30 @@
+# Calendar definitions the testbed ships. Imported on startup when base-calendar.loadDefaultCalendarDefinitions is on;
+# the import upserts and releases what it writes.
+calendar-definitions:
+  - key: public-events
+    name: Public events
+    description: Events anyone can see, anonymous visitors included. Only members book.
+    kind: TEAM
+    visibility: PUBLIC
+    publicDetail: FULL
+    allowedKinds: [TIMED, ALL_DAY]
+  - key: team-calendar
+    name: Team calendar
+    description: What the team is doing. Any member sees and books; anonymous visitors do not see it at all.
+    kind: TEAM
+    visibility: AUTHENTICATED
+    publicDetail: FULL
+    allowedKinds: [TIMED, ALL_DAY]
+  - key: meeting-room-a
+    name: Meeting room A
+    description: Bookable room. Members see when it is taken, and by whom only when they hold the booking role.
+    kind: RESOURCE
+    visibility: AUTHENTICATED
+    publicDetail: BUSY_ONLY
+    bookRoles: [staff]
+    manageRoles: [office-admin]
+    allowedKinds: [TIMED]
+    slotMinutes: 30
+    minDurationMinutes: 30
+    maxDurationMinutes: 480
+    horizonDays: 180

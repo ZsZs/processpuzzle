@@ -65,6 +65,9 @@ base-workflow:
 base-chat:
   loadDefaultChatDefinitions: no
 
+base-calendar:
+  loadDefaultCalendarDefinitions: no
+
 base-event:
   loadDefaultEventDefinitions: no
 

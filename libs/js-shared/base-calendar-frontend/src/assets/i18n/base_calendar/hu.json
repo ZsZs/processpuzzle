@@ -1,0 +1,45 @@
+{
+  "title": "Naptár",
+  "loading": "A naptár betöltése…",
+  "no_calendar": "Nincs kiválasztott naptár.",
+  "busy": "Foglalt",
+  "widgets": {
+    "calendar": "Naptár"
+  },
+  "errors": {
+    "not_found": "Ez a naptár nem érhető el.",
+    "forbidden": "Ehhez nincs jogosultsága.",
+    "conflict": "Időközben valaki módosította ezt a bejegyzést. Töltse újra a naptárat, és próbálja újra.",
+    "invalid": "A bejegyzés nem felel meg a naptár szabályainak.",
+    "unavailable": "A naptár nem érhető el.",
+    "kind_change": "Húzással nem lehet egy bejegyzést időponthoz kötöttből egésznaposra változtatni, vagy vissza. Szerkessze inkább."
+  },
+  "entry": {
+    "new": "Új bejegyzés",
+    "edit": "Bejegyzés szerkesztése",
+    "view": "Bejegyzés",
+    "calendar": "Naptár",
+    "kind": "Típus",
+    "kind_timed": "Időponthoz kötött",
+    "kind_all_day": "Egész napos",
+    "title": "Cím",
+    "description": "Leírás",
+    "location": "Helyszín",
+    "category": "Kategória",
+    "visibility": "Láthatóság",
+    "visibility_public": "Mindenki látja, aki látja a naptárat",
+    "visibility_private": "Privát - mások csak azt látják, hogy foglalt",
+    "start": "Kezdete",
+    "end": "Vége",
+    "first_day": "Első nap",
+    "last_day": "Utolsó nap",
+    "organizer": "Szervező",
+    "save": "Mentés",
+    "saving": "Mentés…",
+    "close": "Bezárás",
+    "cancel": "Bejegyzés lemondása",
+    "confirm_cancel": "Véglegesen lemondja ezt a bejegyzést?",
+    "cancel_confirmed": "Igen, lemondom",
+    "keep": "Megtartom"
+  }
+}
