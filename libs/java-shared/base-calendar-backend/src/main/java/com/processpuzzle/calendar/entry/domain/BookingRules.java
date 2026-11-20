@@ -41,20 +41,59 @@ public final class BookingRules {
             violations.add("'kind' is required");
             return violations;
         }
-        if (request.kind() == EntryKind.RECURRING) {
-            violations.add("recurring entries are not supported yet");
-            return violations;
-        }
         if (!definition.accepts(request.kind())) {
             violations.add("this calendar does not accept " + request.kind() + " entries");
             return violations;
         }
-        if (request.kind() == EntryKind.TIMED) {
+        if (request.kind() == EntryKind.RECURRING) {
+            checkRecurrence(request, organizationZone, violations);
+        } else if (request.recurrence() != null) {
+            violations.add("'recurrence' is only for a recurring entry");
+        }
+        if (hasTimedTemplate(request)) {
             checkTimed(definition, request, organizationZone, now, violations);
         } else {
             checkAllDay(definition, request, organizationZone, now, violations);
         }
         return violations;
+    }
+
+    /** A recurring entry's template is timed when the request gives instants, as {@link CalendarEntry} decides it. */
+    private static boolean hasTimedTemplate(BookingRequest request) {
+        return request.kind() == EntryKind.TIMED || request.kind() == EntryKind.RECURRING && request.start() != null;
+    }
+
+    private static void checkRecurrence(BookingRequest request, ZoneId zone, List<String> violations) {
+        Recurrence rule = request.recurrence();
+        if (rule == null) {
+            violations.add("a recurring entry needs a 'recurrence'");
+            return;
+        }
+        if (rule.frequency() == null) {
+            violations.add("'recurrence.frequency' is required");
+            return;
+        }
+        if (rule.count() != null && rule.until() != null) {
+            violations.add("'recurrence' takes a 'count' or an 'until', not both");
+            return;
+        }
+        if (rule.count() != null && (rule.count() < 1 || rule.count() > Recurrence.MAX_COUNT)) {
+            violations.add("'recurrence.count' must be between 1 and " + Recurrence.MAX_COUNT);
+            return;
+        }
+        LocalDate first = templateDay(request, zone);
+        if (rule.until() != null && first != null && rule.until().isBefore(first)) {
+            violations.add("'recurrence.until' must not be before the first occurrence");
+        }
+    }
+
+    /** The day the template falls on, in the zone it is entered in; null when the request gives no time at all. */
+    private static LocalDate templateDay(BookingRequest request, ZoneId organizationZone) {
+        if (request.start() == null) {
+            return request.startDate();
+        }
+        boolean named = request.timeZone() != null && !request.timeZone().isBlank() && isZone(request.timeZone());
+        return request.start().atZone(named ? ZoneId.of(request.timeZone()) : organizationZone).toLocalDate();
     }
 
     private static void checkText(BookingRequest request, List<String> violations) {

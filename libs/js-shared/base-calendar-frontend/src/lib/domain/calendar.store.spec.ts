@@ -178,6 +178,14 @@ describe('CalendarStore', () => {
       expect(service.updateEntry.mock.calls[0][2]).not.toHaveProperty('start');
     });
 
+    it('writes a series back with its recurrence, and judges its kind by the template', async () => {
+      service.getEntry.mockResolvedValue({ ...TIMED, kind: 'RECURRING', recurrence: { frequency: 'WEEKLY', count: 3 } });
+
+      await store.reschedule('team', 'e-1', { allDay: false, start: '2026-12-02T09:00:00Z', end: '2026-12-02T10:00:00Z' });
+
+      expect(service.updateEntry).toHaveBeenCalledWith('team', 'e-1', expect.objectContaining({ kind: 'RECURRING', recurrence: { frequency: 'WEEKLY', count: 3 } }));
+    });
+
     it('refuses to turn a timed entry into an all-day one, or back, and writes nothing', async () => {
       service.getEntry.mockResolvedValue(TIMED);
       await expect(store.reschedule('team', 'e-1', { allDay: true, startDate: '2026-12-02', endDate: '2026-12-03' })).rejects.toBeInstanceOf(KindChangeError);

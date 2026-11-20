@@ -4,8 +4,20 @@
 
 export type CalendarKind = 'TEAM' | 'RESOURCE';
 
-/** RECURRING is reserved: a calendar may allow it, but entries of that kind are refused until recurrence exists. */
+/** RECURRING is a TIMED or ALL_DAY template repeated by a {@link CalendarRecurrence}; a calendar must allow it. */
 export type EntryKind = 'TIMED' | 'ALL_DAY' | 'RECURRING';
+
+export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+
+/**
+ * How a RECURRING entry repeats. `count` and `until` are never both set; neither means the series never ends.
+ * `count` includes the template, `until` is the last day an occurrence may fall on.
+ */
+export interface CalendarRecurrence {
+  frequency: RecurrenceFrequency;
+  count?: number | null;
+  until?: string | null;
+}
 
 export type EntryVisibility = 'PUBLIC' | 'PRIVATE';
 
@@ -91,6 +103,8 @@ export interface CalendarEntry {
   startDate?: string | null;
   /** ALL_DAY: the day after the last day. */
   endDate?: string | null;
+  /** RECURRING: how the template repeats. */
+  recurrence?: CalendarRecurrence | null;
   organizerDisplayName?: string | null;
   mine?: boolean;
   canEdit?: boolean;
@@ -117,13 +131,18 @@ export interface CalendarEntryInput {
   timeZone?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  /** RECURRING only, and required for it. */
+  recurrence?: CalendarRecurrence;
   /** At most 50. Omit it on an update to keep the current invitees. */
   attendees?: AttendeeInput[];
   /** On an update, the version last read; a mismatch is refused with 409. */
   version?: number | null;
 }
 
-/** What a calendar shows for a window: one entry, or one occurrence of a recurring one. */
+/**
+ * What a calendar shows for a window: one entry, or one occurrence of a recurring one. A recurring entry's
+ * occurrences share `entryId` and differ by `recurrenceId`, the occurrence's local date; a single entry has none.
+ */
 export interface Occurrence {
   entryId: string;
   calendarKey: string;

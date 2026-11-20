@@ -33,6 +33,27 @@
     "end": "Vége",
     "first_day": "Első nap",
     "last_day": "Utolsó nap",
+    "repeat": {
+      "title": "Ismétlődés",
+      "NEVER": "Soha",
+      "DAILY": "Naponta",
+      "WEEKLY": "Hetente",
+      "MONTHLY": "Havonta",
+      "ends": "Vége",
+      "ends_never": "Soha",
+      "ends_after": "Meghatározott számú alkalom után",
+      "ends_on": "Adott dátumon",
+      "count": "Alkalmak száma",
+      "until": "Utolsó nap",
+      "frequency": {
+        "DAILY": "naponta",
+        "WEEKLY": "hetente",
+        "MONTHLY": "havonta"
+      },
+      "summary": "{{frequency}} ismétlődik",
+      "summary_count": "{{frequency}} ismétlődik, {{count}} alkalommal",
+      "summary_until": "{{frequency}} ismétlődik eddig: {{date}}"
+    },
     "organizer": "Szervező",
     "save": "Mentés",
     "saving": "Mentés…",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarEntry, CalendarInfo } from './calendar.types';
-import { bookableKinds, EntryFormValue, formForEntry, formForSlot, isFormComplete, toEntryInput } from './entry-form';
+import { bookableKinds, EntryFormValue, formForEntry, formForSlot, isFormComplete, NO_REPEAT, repeatsAllowed, toEntryInput } from './entry-form';
 
 const CALENDAR: CalendarInfo = {
   key: 'team',
@@ -23,6 +23,7 @@ function value(overrides: Partial<EntryFormValue> = {}): EntryFormValue {
     endLocal: '2026-12-01T11:00',
     startDay: '2026-12-01',
     lastDay: '2026-12-01',
+    repeat: { ...NO_REPEAT },
     attendees: [],
     hadAttendees: false,
     ...overrides,
@@ -208,5 +209,92 @@ describe('isFormComplete', () => {
     expect(isFormComplete(value({ endLocal: '2026-12-01T09:00' }))).toBe(false);
     expect(isFormComplete(value({ kind: 'ALL_DAY', startDay: '2026-12-02', lastDay: '2026-12-01' }))).toBe(false);
     expect(isFormComplete(value({ kind: 'ALL_DAY', startDay: '2026-12-01', lastDay: '2026-12-01' }))).toBe(true);
+  });
+});
+
+describe('repetition', () => {
+  const SERIES: CalendarInfo = { ...CALENDAR, allowedKinds: ['TIMED', 'ALL_DAY', 'RECURRING'] };
+  const weekly = (ends: Partial<EntryFormValue['repeat']>): EntryFormValue => value({ repeat: { frequency: 'WEEKLY', ends: 'NEVER', count: 10, until: '', ...ends } });
+
+  it('is offered only by a calendar that takes recurring entries', () => {
+    expect(repeatsAllowed(SERIES)).toBe(true);
+    expect(repeatsAllowed(CALENDAR)).toBe(false);
+  });
+
+  it('sends a series that never ends as a RECURRING template with its frequency only', () => {
+    const input = toEntryInput(weekly({}), SERIES);
+
+    expect(input).toMatchObject({
+      kind: 'RECURRING',
+      start: '2026-12-01T09:00:00Z',
+      end: '2026-12-01T10:00:00Z',
+      timeZone: 'Europe/Budapest',
+      recurrence: { frequency: 'WEEKLY' },
+    });
+    expect(input?.recurrence).not.toHaveProperty('count');
+    expect(input?.recurrence).not.toHaveProperty('until');
+  });
+
+  it('sends the count of occurrences, or the last day, never both', () => {
+    expect(toEntryInput(weekly({ ends: 'AFTER_COUNT', count: 3 }), SERIES)?.recurrence).toEqual({ frequency: 'WEEKLY', count: 3 });
+    expect(toEntryInput(weekly({ ends: 'ON_DATE', until: '2027-01-31' }), SERIES)?.recurrence).toEqual({ frequency: 'WEEKLY', until: '2027-01-31' });
+  });
+
+  it('sends an all-day series as a RECURRING template with the day after the last day as its end', () => {
+    const input = toEntryInput(value({ kind: 'ALL_DAY', startDay: '2026-12-24', lastDay: '2026-12-24', repeat: { frequency: 'DAILY', ends: 'AFTER_COUNT', count: 2, until: '' } }), SERIES);
+
+    expect(input).toMatchObject({ kind: 'RECURRING', startDate: '2026-12-24', endDate: '2026-12-25', recurrence: { frequency: 'DAILY', count: 2 } });
+    expect(input).not.toHaveProperty('start');
+  });
+
+  it('sends an entry that does not repeat as a single entry, with no recurrence', () => {
+    expect(toEntryInput(value(), SERIES)).not.toHaveProperty('recurrence');
+    expect(toEntryInput(value(), SERIES)?.kind).toBe('TIMED');
+  });
+
+  it('is complete only with a count from 1 to 500, or a last day on or after the first', () => {
+    expect(isFormComplete(weekly({ ends: 'AFTER_COUNT', count: 1 }))).toBe(true);
+    expect(isFormComplete(weekly({ ends: 'AFTER_COUNT', count: 500 }))).toBe(true);
+    expect(isFormComplete(weekly({ ends: 'AFTER_COUNT', count: 0 }))).toBe(false);
+    expect(isFormComplete(weekly({ ends: 'AFTER_COUNT', count: 501 }))).toBe(false);
+    expect(isFormComplete(weekly({ ends: 'AFTER_COUNT', count: null }))).toBe(false);
+    expect(isFormComplete(weekly({ ends: 'ON_DATE', until: '' }))).toBe(false);
+    expect(isFormComplete(weekly({ ends: 'ON_DATE', until: '2026-11-30' }))).toBe(false);
+    expect(isFormComplete(weekly({ ends: 'ON_DATE', until: '2026-12-01' }))).toBe(true);
+  });
+
+  it('loads the repetition of a timed series back into the form, and sends it unchanged', () => {
+    const series: CalendarEntry = {
+      id: 'e-9',
+      calendarKey: 'team',
+      kind: 'RECURRING',
+      busy: false,
+      title: 'Standup',
+      start: '2026-12-01T09:00:00Z',
+      end: '2026-12-01T09:15:00Z',
+      timeZone: 'Europe/Budapest',
+      recurrence: { frequency: 'MONTHLY', until: '2027-06-30' },
+      version: 5,
+    };
+
+    const form = formForEntry(SERIES, series);
+
+    expect(form).toMatchObject({ kind: 'TIMED', startLocal: '2026-12-01T10:00', repeat: { frequency: 'MONTHLY', ends: 'ON_DATE', until: '2027-06-30' } });
+    expect(toEntryInput(form, SERIES, 5)).toMatchObject({ kind: 'RECURRING', recurrence: { frequency: 'MONTHLY', until: '2027-06-30' }, version: 5 });
+  });
+
+  it('reads an all-day series as all-day, with its count', () => {
+    const series: CalendarEntry = {
+      id: 'e-8',
+      calendarKey: 'team',
+      kind: 'RECURRING',
+      busy: false,
+      title: 'Payday',
+      startDate: '2026-12-25',
+      endDate: '2026-12-26',
+      recurrence: { frequency: 'MONTHLY', count: 4 },
+    };
+
+    expect(formForEntry(SERIES, series)).toMatchObject({ kind: 'ALL_DAY', startDay: '2026-12-25', lastDay: '2026-12-25', repeat: { frequency: 'MONTHLY', ends: 'AFTER_COUNT', count: 4 } });
   });
 });

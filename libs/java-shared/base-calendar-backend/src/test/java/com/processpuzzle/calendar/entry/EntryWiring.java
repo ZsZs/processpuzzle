@@ -26,6 +26,7 @@ import com.processpuzzle.calendar.entry.usecases.inbound.GetEntry;
 import com.processpuzzle.calendar.entry.usecases.inbound.ListOccurrences;
 import com.processpuzzle.calendar.entry.usecases.inbound.OrganizationTimeZone;
 import com.processpuzzle.calendar.entry.usecases.inbound.ResolveCalendarAccess;
+import com.processpuzzle.calendar.entry.usecases.inbound.ResourceCapacity;
 import com.processpuzzle.calendar.entry.usecases.inbound.UpdateEntry;
 import com.processpuzzle.core.security.CurrentPrincipal;
 import java.time.Clock;
@@ -49,6 +50,7 @@ public final class EntryWiring {
     public final EntryViews views;
     public final CalendarDirectoryPort directory;
     public final AttendeeResolver attendees;
+    private final ResourceCapacity capacity;
     public final CallerMembership membership;
     private final CurrentPrincipal principal;
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
@@ -63,6 +65,7 @@ public final class EntryWiring {
         when(definitions.released(ORG, CALENDAR)).thenReturn(Optional.of(calendar));
         this.principal = principal;
         this.access = new ResolveCalendarAccess(definitions, principal);
+        this.capacity = new ResourceCapacity(repository, access);
         this.membership = new CallerMembership(principal);
         this.views = new EntryViews(membership);
         this.directory = directory;
@@ -70,11 +73,11 @@ public final class EntryWiring {
     }
 
     public BookEntry book() {
-        return new BookEntry(repository, access, zones, principal, views, facts, attendees, provider(clock));
+        return new BookEntry(repository, access, zones, principal, views, facts, attendees, capacity, provider(clock));
     }
 
     public UpdateEntry update() {
-        return new UpdateEntry(repository, access, zones, principal, views, facts, attendees, provider(clock));
+        return new UpdateEntry(repository, access, zones, principal, views, facts, attendees, capacity, provider(clock));
     }
 
     public RespondToInvitation respond() {

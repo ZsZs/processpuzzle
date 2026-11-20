@@ -41,12 +41,14 @@ public class UpdateEntry {
     private final EntryViews views;
     private final EntryPlatformFacts facts;
     private final AttendeeResolver attendees;
+    private final ResourceCapacity capacity;
     private final Clock clock;
 
     public UpdateEntry(CalendarEntryRepository entries, ResolveCalendarAccess access, OrganizationTimeZone zones,
                        CurrentPrincipal principal, EntryViews views, EntryPlatformFacts facts, AttendeeResolver attendees,
-                       ObjectProvider<Clock> clock) {
+                       ResourceCapacity capacity, ObjectProvider<Clock> clock) {
         this.entries = entries;
+        this.capacity = capacity;
         this.access = access;
         this.zones = zones;
         this.principal = principal;
@@ -77,6 +79,10 @@ public class UpdateEntry {
             throw new InvalidBookingException(List.of("the kind of an entry cannot change"));
         }
         CalendarEntry replacement = CalendarEntry.of(orgKey, calendarKey, request, zone);
+        List<String> full = capacity.violations(orgKey, calendar.definition(), replacement, entryId, zone);
+        if (!full.isEmpty()) {
+            throw new InvalidBookingException(full);
+        }
         boolean timeMoved = entry.timeDiffersFrom(replacement);
         List<Attendee> invited = request.attendees() == null
                 ? keepInvitees(entry)
