@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
 import { authRoutes } from '../auth.routes';
+import { HIDDEN_AUTH_ROUTES } from './hidden-auth-routes.token';
 import { SubstringPipe } from '@processpuzzle/util';
 import { provideTranslocoScope, TranslocoDirective } from '@jsverse/transloco';
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
@@ -71,7 +72,8 @@ import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth/domain';
 export class AuthButtonComponent {
   private readonly authService = inject(AUTHENTICATION_SERVICE);
   isAuthenticated = computed(() => this.authService.isAuthenticated());
-  readonly routes = authRoutes.filter((item) => item.title !== null && item.title !== undefined);
+  private readonly hiddenRoutes = inject(HIDDEN_AUTH_ROUTES, { optional: true }) ?? [];
+  readonly routes = authRoutes.filter((item) => item.title !== null && item.title !== undefined && !this.hiddenRoutes.includes(item.path ?? ''));
 
   private readonly currentUser = computed(() => this.authService.currentUser());
   readonly photoUrl = computed(() => this.currentUser()?.photoUrl || undefined);

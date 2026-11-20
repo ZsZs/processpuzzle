@@ -118,7 +118,7 @@
     <base-calculation-backend.version>0.4.0</base-calculation-backend.version>
     <base-state-backend.version>1.9.0</base-state-backend.version>
     <base-workflow-backend.version>1.9.1</base-workflow-backend.version>
-    <base-widget-backend.version>1.6.1</base-widget-backend.version>
+    <base-widget-backend.version>1.7.0</base-widget-backend.version>
     <org-admin-backend.version>1.5.0</org-admin-backend.version>
     <processpuzzle-core.version>1.18.1</processpuzzle-core.version>
     <processpuzzle-store.version>1.2.2</processpuzzle-store.version>

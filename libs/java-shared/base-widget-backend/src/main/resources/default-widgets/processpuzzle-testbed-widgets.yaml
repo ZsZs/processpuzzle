@@ -547,6 +547,26 @@ widgetDefinitions:
       type: object
       properties: {}
       additionalProperties: false
+  - key: auth-button
+    name: Sign-in button
+    translocoId: base_widget.auth_button.name
+    description: The signed-in user's avatar with the menu to sign in, sign out and open the profile.
+    category: Navigation
+    icon: account_circle
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
+  - key: admin-button
+    name: Administration button
+    translocoId: base_widget.admin_button.name
+    description: Opens the administration of the organization, with its users, roles and subscription.
+    category: Navigation
+    icon: admin_panel_settings
+    propsSchema:
+      type: object
+      properties: {}
+      additionalProperties: false
   - key: design-button
     name: Design button
     translocoId: base_widget.design_button.name

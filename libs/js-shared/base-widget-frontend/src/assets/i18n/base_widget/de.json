@@ -80,6 +80,12 @@
   "entity_table": {
     "name": "Entitätstabelle"
   },
+  "auth_button": {
+    "name": "Anmelde-Schaltfläche"
+  },
+  "admin_button": {
+    "name": "Administrations-Schaltfläche"
+  },
   "design_button": {
     "name": "Design-Schaltfläche"
   },

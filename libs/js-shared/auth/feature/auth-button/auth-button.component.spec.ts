@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, screen } from '@testing-library/angular';
 import { AuthButtonComponent } from './auth-button.component';
+import { HIDDEN_AUTH_ROUTES } from './hidden-auth-routes.token';
 import { AUTHENTICATION_SERVICE, User } from '@processpuzzle/auth/domain';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { RouterLink } from '@angular/router';
-import { ANIMATION_MODULE_TYPE, Signal, signal } from '@angular/core';
+import { ANIMATION_MODULE_TYPE, Provider, Signal, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { mockLanguageConfig, setUpTranslocoTestBed, TranslocoTestConfig } from '@processpuzzle/test-util';
@@ -33,7 +34,7 @@ describe('AuthButtonComponent', () => {
   };
 
   // Helper function to render the component with different auth states
-  const renderComponent = async (isAuthenticated: boolean, user?: User) => {
+  const renderComponent = async (isAuthenticated: boolean, user?: User, extraProviders: Provider[] = []) => {
     const mockAuthService = createMockAuthService(isAuthenticated, user);
 
     return await setUpTranslocoTestBed(AuthButtonComponent, testConfig, {
@@ -43,7 +44,8 @@ describe('AuthButtonComponent', () => {
         { provide: AUTHENTICATION_SERVICE, useValue: mockAuthService },
         { provide: RUNTIME_CONFIGURATION, useValue: mockLanguageConfig },
         TranslocoService,
-        provideRouter([])
+        provideRouter([]),
+        ...extraProviders,
       ],
     });
   };
@@ -70,6 +72,15 @@ describe('AuthButtonComponent', () => {
     // Check that authenticated options are not displayed
     expect(screen.queryByText('My profile')).not.toBeInTheDocument();
     expect(screen.queryByText('Logout')).not.toBeInTheDocument();
+  });
+
+  it('leaves out the routes the application hides', async () => {
+    await renderComponent(false, undefined, [{ provide: HIDDEN_AUTH_ROUTES, useValue: ['register'] }]);
+
+    fireEvent.click(screen.getByLabelText('Auth Button'));
+
+    expect(screen.getByText('Login')).toBeInTheDocument();
+    expect(screen.queryByText('Register')).not.toBeInTheDocument();
   });
 
   it('should display personal data and logout options when authenticated', async () => {
