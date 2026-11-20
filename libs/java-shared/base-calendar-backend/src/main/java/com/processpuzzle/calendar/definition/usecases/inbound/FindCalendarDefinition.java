@@ -47,6 +47,14 @@ public class FindCalendarDefinition {
                 : repository.findByOrgKeyAndDefinitionKeyAndChannel(orgKey, definitionKey, Channel.RELEASED);
     }
 
+    /**
+     * Locks the released row of a calendar until the transaction ends, for a booking that must count the bookings already
+     * in place. Callers must already have decided that the caller may book.
+     */
+    public void lockReleased(String orgKey, String definitionKey) {
+        repository.lockReleased(orgKey, definitionKey);
+    }
+
     private void requireRead(String orgKey, Channel channel) {
         if (channel == Channel.DRAFT) {
             guard.requireDesign(orgKey);
