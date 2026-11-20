@@ -32,6 +32,27 @@ npm install @processpuzzle/util
 | `provideCentralErrorHandler`, `CentralErrorHandler` | provider / class | Global Angular `ErrorHandler`. |
 | `centralHttpErrorInterceptor` | HTTP interceptor | Forwards HTTP errors to the central handler. |
 | `ERROR_MESSAGE_REPORTER` / `ErrorMessageReporter` | injection token / interface | Optional UI reporter for the central handler. |
+| `STANDARD_UNIT_CATALOG`, `UnitCatalog` | constant / class | Units by quantity kind, and ISO 4217 currencies — see [Fundamental types](#fundamental-types). |
+| `QuantityValue`, `MoneyValue`, `DimensionsValue` + their functions | types / functions | Decimal-exact conversion, comparison and arithmetic. |
+| `quantityToIsoDuration`, `isoDurationToQuantity` | functions | TIME quantities ↔ ISO 8601 durations. |
+
+## Fundamental types
+
+Values of quantities, money and 2D / 3D dimensions, as QUANTITY, MONEY and DIMENSIONS attributes store them:
+`{ amount: "12.50", unit: "kg" }`, `{ amount: "19.90", currency: "EUR" }`, `{ width, height, depth?, unit }`.
+Amounts are decimal text and every operation computes with [big.js](https://github.com/MikeMcl/big.js), so nothing
+is rounded by JavaScript numbers.
+
+- **Catalog** — `standard-units.json` declares each unit as `base = (amount + offset) × factor / divisor` within one
+  quantity kind (LENGTH, AREA, VOLUME, MASS, TIME, TEMPERATURE, SPEED, ENERGY, POWER, COUNT), so any two units of a
+  kind convert directly. `processpuzzle-core` reads the same file (`com.processpuzzle.core.quantity`).
+- **Same digits on both sides** — a division keeps 20 places, half up, like the backend's `BigDecimal`;
+  `parity-cases.json` is run by this library's spec and by the backend's `ParityCasesTest`.
+- **Refusals** throw `FundamentalTypeError` with a `reason`: different kinds or currencies are never related, °C / °F
+  compare and convert but don't add, and an ISO duration naming years or months has no fixed length.
+- Money never converts between currencies — exchange rates come later.
+
+Design: [docs/fundamental-types](../../../docs/fundamental-types/fundamental-types-design-plan.md).
 
 ## `wildcardTextMatcher(str, rule)`
 
