@@ -57,6 +57,37 @@ describe('StarterImportStore', () => {
     expect(store.selection()).toBeUndefined();
   });
 
+  describe('with the starter installed', () => {
+    beforeEach(async () => {
+      await store.loadInstalled();
+    });
+
+    it('lists no version newer than the installed one while none is on offer, and selects the installed one', () => {
+      store.select('inventory');
+      expect(store.selectableVersions().map((v) => v.version)).toEqual(['1.0.0']);
+      expect(store.selection()).toEqual({ starterId: 'inventory', version: '1.0.0' });
+    });
+
+    it('lists versions up to the one on offer', async () => {
+      service.listInstalled.mockReturnValue(of([{ ...installed[0], offeredVersion: '1.1.0', upgradeAvailable: true }]));
+      await store.loadInstalled();
+      store.select('inventory');
+      expect(store.selectableVersions().map((v) => v.version)).toEqual(['1.1.0', '1.0.0']);
+    });
+
+    it('cannot preview the version that is installed already', () => {
+      store.select('inventory', '1.0.0');
+      expect(store.selectionInstalled()).toBe(true);
+      expect(store.canPreview()).toBe(false);
+    });
+
+    it('lists every version of a starter that is not installed', () => {
+      store.select('sail');
+      expect(store.selectableVersions().map((v) => v.version)).toEqual(['2.0.0']);
+      expect(store.canPreview()).toBe(true);
+    });
+  });
+
   it('enables Install only after a dry run of the current selection would apply', async () => {
     store.select('inventory');
     expect(store.canPreview()).toBe(true);
