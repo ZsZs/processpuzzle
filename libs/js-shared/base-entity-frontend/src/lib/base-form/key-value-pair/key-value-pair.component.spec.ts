@@ -237,6 +237,29 @@ describe('KeyValuePairComponent', () => {
       expect(component.editorOfSelected()).toBeUndefined();
     });
 
+    it('applies a value picked or typed at once, so the form is dirty without pressing add', async () => {
+      const { component } = await setupControl(allowedConfig(), {});
+      const control = component.formGroup.get('additionalProperties');
+      component.selectKey('--sidenav');
+      component.setSelectedValue(' #3eb698 ');
+
+      expect(component.entries()).toEqual([{ key: '--sidenav', value: '#3eb698' }]);
+      expect(control?.dirty).toBe(true);
+    });
+
+    it('does not record an empty value', async () => {
+      const { component } = await setupControl(allowedConfig(), {});
+      component.selectKey('--sidenav');
+      component.setSelectedValue('  ');
+      expect(component.entries()).toEqual([]);
+    });
+
+    it('starts from the value a picked key already has', async () => {
+      const { component } = await setupControl(allowedConfig(), { '--sidenav': '#112233' });
+      component.selectKey('--sidenav');
+      expect(component.selectedValue()).toBe('#112233');
+    });
+
     it('renders the editing row for each kind of value without failing', async () => {
       const config = allowedConfig();
       config.allowedProperties = [{ key: '--sidenav', label: 'Sidenav background', valueEditor: 'color' }, ...(config.allowedProperties ?? [])];
@@ -248,7 +271,7 @@ describe('KeyValuePairComponent', () => {
       }
       component.selectKey('--sidenav');
       fixture.detectChanges();
-      expect((fixture.nativeElement as HTMLElement).querySelector('pp-color-picker')).not.toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('pp-color-swatch')).not.toBeNull();
     });
 
     it('adds nothing until a key is picked', async () => {
