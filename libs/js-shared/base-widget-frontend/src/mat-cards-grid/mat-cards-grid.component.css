@@ -81,7 +81,8 @@ mat-card-actions button {
     margin-left: 40%;
 }
 
-/* The picture's drawing sits bottom-left, so the buttons go to the right. */
+/* The picture's drawing sits bottom-left, so the buttons go to the right, 5px from the card's right and bottom edges. */
 .default-mat-card.has-image mat-card-actions {
     justify-content: flex-end;
+    padding: 0 5px 5px 0;
 }
