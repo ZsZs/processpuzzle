@@ -188,7 +188,13 @@ services:
     # steady state down toward the 390-480MiB the three sibling backends run at. WATCH
     # `docker stats testbed-backend` after the first deployment: if it sits above ~700MiB, raise this
     # and find the memory elsewhere rather than letting it be OOM-killed on a loop again.
-    mem_limit: 768m
+    #
+    # 2026-11-20: raised to 1536m once the stage host went to 16GiB. At 768m the container sat at 98%
+    # and hit its cgroup limit ~1400 times in 11 hours (`memory.events` `max`), which stalls the JVM in
+    # reclaim and swap; the nightly multi-browser E2E run, and any concurrent users, saw it as random
+    # whole-test timeouts. MaxRAMPercentage stays 65, so the heap becomes ~1GiB and the room outside
+    # it ~540MiB.
+    mem_limit: 1536m
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-ci}
 
