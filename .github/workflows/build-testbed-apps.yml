@@ -35,6 +35,8 @@ on:
       - 'libs/**'
       - 'tools/docker/processpuzzle-testbed-frontend/**'
       - 'tools/docker/processpuzzle-testbed-backend/**'
+      # The stack's compose file carries its memory limits and JVM flags; a change to it alone must still deploy.
+      - 'tools/docker/docker-compose-apps.yaml'
       - '.github/workflows/build-testbed-apps.yml'
       - '.github/workflows/deploy-testbed-apps.yml'
   pull_request:
@@ -46,6 +48,8 @@ on:
       - 'libs/**'
       - 'tools/docker/processpuzzle-testbed-frontend/**'
       - 'tools/docker/processpuzzle-testbed-backend/**'
+      # The stack's compose file carries its memory limits and JVM flags; a change to it alone must still deploy.
+      - 'tools/docker/docker-compose-apps.yaml'
       - '.github/workflows/build-testbed-apps.yml'
       - '.github/workflows/deploy-testbed-apps.yml'
   workflow_dispatch:
