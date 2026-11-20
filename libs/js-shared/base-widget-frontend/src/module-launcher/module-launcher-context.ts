@@ -44,25 +44,28 @@ export const MODULE_LAUNCHER_CONTEXT = new InjectionToken<ModuleLauncherContext>
  *
  * Every text is handed to the cards grid already resolved: it resolves its texts as transloco keys under a prefix, and a
  * text that is no key renders as itself, so no prefix is needed. `routeDepth` is how many URL segments the page the
- * launcher sits on has, which the relative link climbs back out of to reach the mount.
+ * launcher sits on has, which the relative link climbs back out of to reach the mount. Each card also has a button
+ * leading to the same place, captioned `goCaption`.
  */
 export function launcherCardsOf(
   entries: readonly ModuleLauncherEntry[],
   texts: ReadonlyArray<Record<string, string>>,
   imageUrls: ReadonlyArray<string | undefined>,
   routeDepth: number,
+  goCaption = 'Go...',
 ): CardsGridSpec[] {
   const up = '../'.repeat(routeDepth);
   return entries.map((entry, index) => {
     const own = texts[index] ?? {};
     const landing = entry.link ? `/${entry.link.replace(/^\/+/, '')}` : '';
+    const link = `${up}${entry.basePath}${landing}`;
     return {
       title: own[entry.titleKey] || entry.name,
       subtitle: (entry.subtitleKey && own[entry.subtitleKey]) || '',
       content: entry.contentKeys.map((key) => own[key]).filter((text): text is string => !!text),
-      actions: [],
+      actions: [{ caption: goCaption, link }],
       translocoPrefix: '',
-      link: `${up}${entry.basePath}${landing}`,
+      link,
       ...(imageUrls[index] ? { backgroundImage: imageUrls[index] } : {}),
     };
   });

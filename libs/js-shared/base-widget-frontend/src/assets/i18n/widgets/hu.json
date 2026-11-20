@@ -28,7 +28,8 @@
   },
   "module_launcher": {
     "empty": "Itt még nincs semmi. Egy Business Starter moduljai akkor jelennek meg ezen az oldalon, ha hozzáadtak egyet.",
-    "browse": "Business Starterek böngészése"
+    "browse": "Business Starterek böngészése",
+    "go": "Tovább..."
   },
   "sidenav_content": {
     "show_menu": "Menü megjelenítése",
