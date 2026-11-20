@@ -3,7 +3,7 @@ import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { TestEntity } from '../../test-entity';
 import { setupFormControlTest } from '../../../test-setup';
-import { AdditionalPropertiesComponent } from './additional-properties.component';
+import { KeyValuePairComponent } from './key-value-pair.component';
 
 function makeConfig(): BaseEntityAttrDescriptor {
   return new BaseEntityAttrDescriptor('additionalProperties', FormControlType.ADDITIONAL_PROPERTIES, 'Additional Properties');
@@ -17,8 +17,8 @@ function makeEntity(value?: unknown): TestEntity {
 
 async function setupControl(config: BaseEntityAttrDescriptor, value?: unknown) {
   const entity = makeEntity(value);
-  const harness = await setupFormControlTest(AdditionalPropertiesComponent, config, entity, []);
-  return { ...harness, entity, component: harness.component as AdditionalPropertiesComponent<TestEntity> };
+  const harness = await setupFormControlTest(KeyValuePairComponent, config, entity, []);
+  return { ...harness, entity, component: harness.component as KeyValuePairComponent<TestEntity> };
 }
 
 function makeInput(value = ''): HTMLInputElement {
@@ -27,7 +27,7 @@ function makeInput(value = ''): HTMLInputElement {
   return input;
 }
 
-describe('AdditionalPropertiesComponent', () => {
+describe('KeyValuePairComponent', () => {
   describe('entries()', () => {
     it('projects the record into an array of key/value entries', async () => {
       const { component } = await setupControl(makeConfig(), { alpha: 'A', beta: 'B' });
@@ -179,6 +179,51 @@ describe('AdditionalPropertiesComponent', () => {
 
       expect(host.querySelector('.base-entity-form-list')).toBeNull();
       expect(host.querySelector('.edit-row')).toBeNull();
+    });
+  });
+
+  describe('with allowed properties', () => {
+    function allowedConfig(): BaseEntityAttrDescriptor {
+      const config = makeConfig();
+      config.allowedProperties = [
+        { key: '--sidenav', label: 'Sidenav background' },
+        { key: '--density', values: ['compact', 'roomy'] },
+      ];
+      return config;
+    }
+
+    it('offers the keys to pick from', async () => {
+      const { component } = await setupControl(allowedConfig());
+      expect(component.allowed().map((property) => property.key)).toEqual(['--sidenav', '--density']);
+    });
+
+    it('adds the picked key with a typed value, then starts over', async () => {
+      const { component, entity } = await setupControl(allowedConfig(), {});
+      component.selectKey('--sidenav');
+      component.selectedValue.set(' #445566 ');
+      component.addSelected();
+
+      expect(component.entries()).toEqual([{ key: '--sidenav', value: '#445566' }]);
+      expect(component.selectedKey()).toBe('');
+      expect(component.selectedValue()).toBe('');
+      expect(entity).toBeDefined();
+    });
+
+    it('lists the values of a key that names them, and clears the value when the key changes', async () => {
+      const { component } = await setupControl(allowedConfig());
+      component.selectKey('--density');
+      expect(component.valuesOfSelected()).toEqual(['compact', 'roomy']);
+      component.selectedValue.set('roomy');
+
+      component.selectKey('--sidenav');
+      expect(component.valuesOfSelected()).toEqual([]);
+      expect(component.selectedValue()).toBe('');
+    });
+
+    it('adds nothing until a key is picked', async () => {
+      const { component } = await setupControl(allowedConfig(), {});
+      component.addSelected();
+      expect(component.entries()).toEqual([]);
     });
   });
 });

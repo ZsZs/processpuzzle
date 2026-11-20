@@ -7,6 +7,15 @@ import type { MapProvider } from '../base-form/address/address-map';
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
 
+/** One property `ADDITIONAL_PROPERTIES` offers: its key, a readable name, and optionally the values it may take. */
+export interface AllowedProperty {
+  key: string;
+  /** Shown beside the key in the list; the key alone when absent. */
+  label?: string;
+  /** The values to pick from; free text when absent or empty. */
+  values?: string[];
+}
+
 export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   description?: string;
   styleClass? = '';
@@ -20,6 +29,12 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   dateFormat?: DateFormat;
   isLinkToDetails?: boolean;
   selectables?: SelectablesInput;
+  /**
+   * `ADDITIONAL_PROPERTIES` only: the properties a user may add. With it the key is picked from a list rather than
+   * typed, and a property that names `values` has its value picked too. Without it the control stays an open
+   * key/value editor. The list guides; it does not validate — the backend still decides what it accepts.
+   */
+  allowedProperties?: AllowedProperty[];
   /**
    * `TAGS` only: the key of the `TAG_SUGGESTION_SOURCES` entry that supplies values to pick from. The control
    * still accepts free text; values the source does not know are marked as new.

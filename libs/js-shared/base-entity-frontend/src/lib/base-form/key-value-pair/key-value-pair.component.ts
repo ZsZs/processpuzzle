@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatOption, MatSelect } from '@angular/material/select';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { BaseFormControlComponent } from '../base-form-control.component';
@@ -15,7 +16,7 @@ interface KeyValueEntry {
 }
 
 @Component({
-  selector: 'base-additional-properties',
+  selector: 'base-key-value-pair',
   standalone: true,
   template: `
     @if (config().visible) {
@@ -43,17 +44,43 @@ interface KeyValueEntry {
           </ul>
           @if (editing()) {
             <div class="edit-row">
-              <mat-form-field>
-                <mat-label>key</mat-label>
-                <input matInput #keyInput (keydown.enter)="valueInput.focus()" />
-              </mat-form-field>
-              <mat-form-field>
-                <mat-label>value</mat-label>
-                <input matInput #valueInput (keydown.enter)="add(keyInput, valueInput)" />
-              </mat-form-field>
-              <button mat-icon-button type="button" aria-label="add property" (click)="add(keyInput, valueInput)">
-                <mat-icon>add</mat-icon>
-              </button>
+              @if (allowed().length) {
+                <mat-form-field>
+                  <mat-label>key</mat-label>
+                  <mat-select data-testid="property-key" [value]="selectedKey()" (selectionChange)="selectKey($event.value)">
+                    @for (property of allowed(); track property.key) {
+                      <mat-option [value]="property.key">{{ property.label ? property.label + ' (' + property.key + ')' : property.key }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>value</mat-label>
+                  @if (valuesOfSelected().length) {
+                    <mat-select data-testid="property-value" [value]="selectedValue()" (selectionChange)="selectedValue.set($event.value)">
+                      @for (value of valuesOfSelected(); track value) {
+                        <mat-option [value]="value">{{ value }}</mat-option>
+                      }
+                    </mat-select>
+                  } @else {
+                    <input matInput #chosenValue data-testid="property-value" [value]="selectedValue()" (input)="selectedValue.set(chosenValue.value)" (keydown.enter)="addSelected()" />
+                  }
+                </mat-form-field>
+                <button mat-icon-button type="button" aria-label="add property" [disabled]="!selectedKey()" (click)="addSelected()">
+                  <mat-icon>add</mat-icon>
+                </button>
+              } @else {
+                <mat-form-field>
+                  <mat-label>key</mat-label>
+                  <input matInput #keyInput (keydown.enter)="valueInput.focus()" />
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>value</mat-label>
+                  <input matInput #valueInput (keydown.enter)="add(keyInput, valueInput)" />
+                </mat-form-field>
+                <button mat-icon-button type="button" aria-label="add property" (click)="add(keyInput, valueInput)">
+                  <mat-icon>add</mat-icon>
+                </button>
+              }
               <button mat-icon-button type="button" aria-label="cancel edit" (click)="cancelEdit()">
                 <mat-icon>close</mat-icon>
               </button>
@@ -88,10 +115,27 @@ interface KeyValueEntry {
       }
     `,
   ],
-  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatIconButton, MatIcon, EntityLabelPipe],
+  imports: [NgClass, NgStyle, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatIconButton, MatIcon, EntityLabelPipe],
 })
-export class AdditionalPropertiesComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
+export class KeyValuePairComponent<Entity extends BaseEntity> extends BaseFormControlComponent<Entity> {
   readonly editing = signal(false);
+  readonly selectedKey = signal('');
+  readonly selectedValue = signal('');
+  readonly allowed = computed(() => this.config().allowedProperties ?? []);
+  readonly valuesOfSelected = computed(() => this.allowed().find((property) => property.key === this.selectedKey())?.values ?? []);
+
+  selectKey(key: string): void {
+    this.selectedKey.set(key);
+    this.selectedValue.set('');
+  }
+
+  addSelected(): void {
+    const key = this.selectedKey();
+    if (!key) return;
+    this.setRecord({ ...this.record(), [key]: this.selectedValue().trim() });
+    this.selectedKey.set('');
+    this.selectedValue.set('');
+  }
 
   enterEditMode(): void {
     this.editing.set(true);
