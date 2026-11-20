@@ -1,0 +1,94 @@
+# Fundamental Types — quantities, money and dimensions
+
+Status: plan, 2026-11-20. Successor of the legacy `com.processpuzzle.fundamental_types` package
+(ProcessPuzzleFramework): we keep its ideas — a value object of amount + unit, money as a quantity
+whose unit is a currency, a time-bound exchange rate — and drop its implementation (`double` amounts,
+pairwise ratio graph without transitivity, no notion of what a unit measures).
+
+## Goals
+- The user picks a unit from the ones that fit the attribute, and can convert the entered value.
+- One consistent control each for quantities, money and 2D / 3D dimensions.
+- Rules and calculations compare and combine values without converting units themselves.
+
+## Decisions
+| # | Decision |
+| --- | --- |
+| D1 | Unit catalog: a fixed **standard catalog** shipped with the platform. Organization-specific units come later. |
+| D2 | Currency conversion: **later**. Money of different currencies is never combined or compared. |
+| D3 | Amounts are **decimals**, exact end to end. |
+| D4 | Our **own catalog**; no Indriya / Moneta / js-quantities. |
+| D5 | Dimensions use **one unit for all axes**. |
+| D6 | Durations are the TIME kind and interoperate with the ISO 8601 durations workflows already use. |
+| D7 | Switching the unit converts the value by default; *reinterpret* keeps the number. |
+| D8 | Decimal arithmetic in TypeScript uses **big.js**. |
+| D9 | DIMENSIONS also store a normalized area / volume, so they are searchable by it. |
+
+## Model
+- **Quantity kind** — what a unit measures: LENGTH, AREA, VOLUME, MASS, TIME, TEMPERATURE, SPEED,
+  COUNT, … A unit belongs to exactly one kind; only units of the same kind convert.
+- **Unit** — `symbol` (identity, e.g. `kg`), `kind`, a translation key for the name, and
+  `factor` (+ optional `offset`, for °C / °F) relative to the kind's base unit (SI where one exists).
+  Conversion is `base = amount × factor + offset`, so any two units of a kind convert directly.
+  TIME offers s, min, h, d, wk only — months and years are not fixed lengths.
+- **Currency** — ISO 4217 code and its minor units (HUF 0 / 2, EUR 2, JPY 0 …). Not a unit of a kind:
+  money never converts until exchange rates exist (D2).
+- **Catalog as data** — the standard catalog is one JSON resource read by both the TypeScript and the
+  Java side, with a test that fails when the two loaders disagree. Organization units (D1, later) are
+  rows of the same shape.
+
+### Stored values (entity payload, JSONB)
+| Control | Value |
+| --- | --- |
+| QUANTITY | `{ amount: "12.50", unit: "kg" }` |
+| MONEY | `{ amount: "1999.90", currency: "EUR" }` |
+| DIMENSIONS | `{ width: "1.2", height: "0.8", depth?: "0.5", unit: "m" }` |
+
+Amounts are decimal **strings** so JavaScript never rounds them (D3). The backend adds a normalized
+number on write — `baseAmount` for a quantity (in the kind's base unit), the amount for money — which
+RSQL filtering and sorting use; clients don't send it. DIMENSIONS get `baseArea` (2D and 3D) and
+`baseVolume` (3D), in m² / m³.
+
+### Attribute metadata (on `BaseEntityAttribute`, mirrored in the contract and descriptors)
+- QUANTITY: `quantityKind`, `allowedUnits` (empty = all of the kind), `defaultUnit`, `scale`.
+- MONEY: `allowedCurrencies`, `defaultCurrency`; scale comes from the currency.
+- DIMENSIONS: `dimensionCount` (2 or 3), `allowedUnits`, `defaultUnit`; kind is always LENGTH.
+
+Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control type; no new
+`ValueKind`.
+
+## Behaviour
+- **Control** — amount field + unit / currency select. Switching the unit offers *convert* (keep the
+  measured value) or *reinterpret* (keep the number); converting is the default.
+- **Display** — lists, PDF export, document data fields and the status bar format through one pipe,
+  locale-aware (`Intl.NumberFormat`, `style: 'unit'` / `'currency'`). The existing `currency:<code>`
+  value format stays for plain NUMBER attributes.
+- **Validation (backend)** — amount parses as a decimal; unit exists, is of the attribute's kind and is
+  allowed; currency is ISO 4217 and allowed; scale not exceeded; dimensions have 2 or 3 axes as declared.
+- **Rules** — both evaluators (browser `new Function`, backend GraalJS) receive quantity / money values
+  wrapped by the same small helper script:
+  - `qty('5 kg')`, `money('100 EUR')` literals;
+  - `a.gt(b)`, `a.eq(b)`, `a.plus(b)`, `a.to('g')`, `d.area()`, `d.volume()` — unit-aware,
+    failing on a kind or currency mismatch;
+  - `valueOf()` returns the base amount, so `entity.weight > qty('5 kg')` also works for quantities.
+- **Calculations (FEEL)** — read a quantity as its base amount and money as its amount; writing a result
+  into a QUANTITY / MONEY attribute takes the attribute's default unit / currency.
+- **Durations** — a TIME quantity converts to and from an ISO 8601 duration (`PT90M` ↔ `1.5 h`).
+
+## Placement
+- Frontend: catalog, value types, decimal arithmetic and the rule helper in `@processpuzzle/util`
+  (base-entity, base-rule, base-calculation and base-document all reach it); the controls in
+  `base-entity-frontend` next to ADDRESS / GEO_LOCATION.
+- Backend: catalog and value types in `processpuzzle-core`; validation and normalization in
+  `base-entity-backend`; the rule helper loaded by `base-rule-backend`'s GraalJS context.
+
+## Phases
+1. **Catalog and value model** — catalog JSON, TS + Java loaders, parity test, decimal arithmetic,
+   conversion, ISO duration bridge.
+2. **Frontend controls** — QUANTITY, MONEY, DIMENSIONS controls; authoring fields in the entity
+   designer; display pipe in list / PDF / documents; query editor operators.
+3. **Backend** — contract, attribute fields (`copyFrom`!), payload validation, `baseAmount`
+   normalization, RSQL on the normalized value, a seeded example attribute in the testbed.
+4. **Rules and calculations** — shared helper in both rule evaluators, FEEL mapping, rule dry-run
+   showing converted values.
+
+Later: organization units (D1), exchange rates with validity periods (D2).

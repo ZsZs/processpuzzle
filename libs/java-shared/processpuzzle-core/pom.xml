@@ -149,6 +149,32 @@
     </dependencies>
 
     <build>
+        <!-- The standard unit catalog has one source, shared with @processpuzzle/util: the frontend imports the
+             file, the backend reads it off the classpath. parity-cases.json is the test both sides run. -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/../../js-shared/util/src/lib/fundamental-types</directory>
+                <targetPath>fundamental-types</targetPath>
+                <includes>
+                    <include>standard-units.json</include>
+                </includes>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>${project.basedir}/../../js-shared/util/src/lib/fundamental-types</directory>
+                <targetPath>fundamental-types</targetPath>
+                <includes>
+                    <include>parity-cases.json</include>
+                </includes>
+            </testResource>
+        </testResources>
         <plugins>
             <!-- Checkstyle plugin for code quality checks -->
             <plugin>

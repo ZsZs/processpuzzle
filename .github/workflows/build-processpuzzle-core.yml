@@ -5,12 +5,16 @@ on:
       - "develop"
     paths:
       - 'libs/java-shared/processpuzzle-core/**'
+      # The unit catalog and the parity cases are read from @processpuzzle/util's folder.
+      - 'libs/js-shared/util/src/lib/fundamental-types/*.json'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
       - 'libs/java-shared/processpuzzle-core/**'
+      # The unit catalog and the parity cases are read from @processpuzzle/util's folder.
+      - 'libs/js-shared/util/src/lib/fundamental-types/*.json'
 env:
   BASE_DIR: "libs/java-shared/processpuzzle-core"
   NX_PROJECT: "processpuzzle-core"

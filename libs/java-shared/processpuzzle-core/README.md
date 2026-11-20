@@ -10,6 +10,9 @@ ProcessPuzzle Core provides cross-cutting building blocks shared by every backen
 
 - `com.processpuzzle.core.exception` — generic REST exception handling (`ApiExceptionHandler`) for common Spring / Jackson / validation failures. Domain modules add their own `@RestControllerAdvice` for their specific exceptions.
 - `com.processpuzzle.core.logging` — reserved for cross-cutting logging support (AOP logger — TBD).
+- `com.processpuzzle.core.quantity` — fundamental types: `Quantity`, `Money`, `Dimensions`, the `UnitCatalog` and
+  `IsoDurations`. The standard catalog is `@processpuzzle/util`'s `standard-units.json`, packaged into this jar; the
+  shared `parity-cases.json` keeps both sides' results identical (`ParityCasesTest`).
 
 ## Organization authorization
 

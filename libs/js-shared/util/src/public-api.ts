@@ -37,3 +37,30 @@ export { DEFINITION_READ, DEFINITION_REVISION, definitionRead, definitionRevisio
 export { Stack } from './lib/stack';
 export { SubstringPipe } from './lib/substring.pipe';
 export { wildcardTextMatcher } from './lib/wildcard-text-matcher';
+export { FundamentalTypeError, type FundamentalTypeErrorReason } from './lib/fundamental-types/fundamental-type.error';
+export { decimalText, toDecimal, type DecimalInput } from './lib/fundamental-types/decimal';
+export {
+  STANDARD_UNIT_CATALOG,
+  UnitCatalog,
+  type CurrencyDefinition,
+  type QuantityKindData,
+  type QuantityKindDefinition,
+  type UnitCatalogData,
+  type UnitData,
+  type UnitDefinition,
+} from './lib/fundamental-types/unit-catalog';
+export {
+  addQuantities,
+  compareQuantities,
+  convertQuantity,
+  divideQuantity,
+  multiplyQuantity,
+  parseQuantity,
+  quantityBaseAmount,
+  roundQuantity,
+  subtractQuantities,
+  type QuantityValue,
+} from './lib/fundamental-types/quantity';
+export { addMoney, compareMoney, divideMoney, multiplyMoney, parseMoney, roundMoney, subtractMoney, type MoneyValue } from './lib/fundamental-types/money';
+export { convertDimensions, dimensionsArea, dimensionsVolume, type DimensionsValue } from './lib/fundamental-types/dimensions';
+export { isoDurationToQuantity, quantityToIsoDuration } from './lib/fundamental-types/iso-duration';
