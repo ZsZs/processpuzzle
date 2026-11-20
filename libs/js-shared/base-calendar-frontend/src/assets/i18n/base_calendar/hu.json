@@ -40,6 +40,25 @@
     "cancel": "Bejegyzés lemondása",
     "confirm_cancel": "Véglegesen lemondja ezt a bejegyzést?",
     "cancel_confirmed": "Igen, lemondom",
-    "keep": "Megtartom"
+    "keep": "Megtartom",
+    "invitations": {
+      "title": "Meghívottak",
+      "search": "Személy meghívása",
+      "roles": "Szerepkör meghívása",
+      "none": "Még senki sincs meghívva.",
+      "remove": "Eltávolítás",
+      "role": "Szerepkör",
+      "respond": "Az Ön válasza",
+      "invited": "Meghívott",
+      "accept": "Elfogadom",
+      "tentative": "Talán",
+      "decline": "Elutasítom"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "Nincs válasz",
+    "ACCEPTED": "Elfogadta",
+    "TENTATIVE": "Talán",
+    "DECLINED": "Elutasította"
   }
 }

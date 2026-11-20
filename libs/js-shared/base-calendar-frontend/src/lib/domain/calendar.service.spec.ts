@@ -42,6 +42,45 @@ describe('CalendarService', () => {
     expect(await promise).toEqual([]);
   });
 
+  it('searches the directory with the text as a query parameter', async () => {
+    const promise = service.searchDirectory('an');
+
+    const request = http.expectOne((candidate) => candidate.url === `${ROOT}/calendar/directory/users`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('q')).toBe('an');
+    request.flush([{ sub: 's-1', displayName: 'Ann' }]);
+    expect(await promise).toEqual([{ sub: 's-1', displayName: 'Ann' }]);
+  });
+
+  it('asks for the occurrences of the caller across all calendars', async () => {
+    const promise = service.listMyOccurrences('2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z');
+
+    const request = http.expectOne((candidate) => candidate.url === `${ROOT}/calendar/my-occurrences`);
+    expect(request.request.params.get('from')).toBe('2026-12-01T00:00:00Z');
+    expect(request.request.params.get('to')).toBe('2026-12-08T00:00:00Z');
+    request.flush([]);
+    expect(await promise).toEqual([]);
+  });
+
+  it('reads the role catalog of the organization', async () => {
+    const promise = service.roleCatalog();
+
+    const request = http.expectOne(`${ROOT}/role-catalog`);
+    expect(request.request.method).toBe('GET');
+    request.flush([{ name: 'team-lead' }]);
+    expect(await promise).toEqual([{ name: 'team-lead' }]);
+  });
+
+  it('puts the answer to an invitation on the entry attendance', async () => {
+    const promise = service.answerInvitation('team', 'e-1', 'TENTATIVE');
+
+    const request = http.expectOne(`${ROOT}/calendar/calendars/team/entries/e-1/attendance`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ response: 'TENTATIVE' });
+    request.flush({ id: 'e-1' });
+    expect(await promise).toEqual({ id: 'e-1' });
+  });
+
   it('books, reads, replaces and cancels an entry on the calendar it belongs to', async () => {
     const booked = service.bookEntry('team', INPUT);
     const book = http.expectOne(`${ROOT}/calendar/calendars/team/entries`);

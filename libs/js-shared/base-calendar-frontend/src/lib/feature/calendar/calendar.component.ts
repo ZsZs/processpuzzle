@@ -109,6 +109,8 @@ export class CalendarComponent {
   readonly slotMaxTime = input<string>('20:00');
   /** Show the calendar without letting the user book, move or resize anything. */
   readonly readOnly = input<boolean>(false);
+  /** Also show what the user organizes or is invited to, from every calendar they may read. */
+  readonly includeMine = input<boolean>(false);
   /** The height: `auto` grows with the content, a CSS length such as `640px` fixes it. */
   readonly height = input<string>('auto');
 
@@ -145,6 +147,7 @@ export class CalendarComponent {
     const requested = this.defaultView();
     const initial = isCalendarView(requested) && offered.includes(requested) ? requested : offered[0];
     const editable = this.editable();
+    const includeMine = this.includeMine();
     return {
       plugins: [classicTheme, dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
       locales: LOCALES,
@@ -161,7 +164,7 @@ export class CalendarComponent {
       headerToolbar: { start: 'prev,next today', center: 'title', end: offered.map((view) => VIEW_NAMES[view]).join(',') },
       selectable: editable,
       editable,
-      events: (info: EventSourceFuncInfo) => this.fetchEvents(info),
+      events: (info: EventSourceFuncInfo) => this.fetchEvents(info, includeMine),
       select: (info: DateSelectInfo) => this.onSelect(info),
       eventClick: (info: EventClickInfo) => void this.onEventClick(info),
       eventDrop: (info: EventDropInfo) => void this.onEventChange(info),
@@ -177,9 +180,9 @@ export class CalendarComponent {
   }
 
   /** The occurrences of a window, as events. A failure is the central error handler's to report; here it only stops the load. */
-  private async fetchEvents(info: EventSourceFuncInfo) {
+  private async fetchEvents(info: EventSourceFuncInfo, includeMine: boolean) {
     const zone = this.store.timeZone();
-    const occurrences = await this.store.loadOccurrences(toInstant(info.startStr, zone), toInstant(info.endStr, zone));
+    const occurrences = await this.store.loadOccurrences(toInstant(info.startStr, zone), toInstant(info.endStr, zone), includeMine);
     const keys = this.store.calendars().map((calendar) => calendar.key);
     const busy = this.transloco.translate('base_calendar.busy');
     return occurrences.map((occurrence) => toCalendarEvent(occurrence, keys.indexOf(occurrence.calendarKey), busy));

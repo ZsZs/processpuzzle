@@ -40,6 +40,25 @@
     "cancel": "Cancel entry",
     "confirm_cancel": "Cancel this entry for good?",
     "cancel_confirmed": "Yes, cancel it",
-    "keep": "Keep it"
+    "keep": "Keep it",
+    "invitations": {
+      "title": "Invitations",
+      "search": "Invite a person",
+      "roles": "Invite a role",
+      "none": "Nobody invited yet.",
+      "remove": "Remove",
+      "role": "Role",
+      "respond": "Your answer",
+      "invited": "Invited",
+      "accept": "Accept",
+      "tentative": "Tentative",
+      "decline": "Decline"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "No answer yet",
+    "ACCEPTED": "Accepted",
+    "TENTATIVE": "Tentative",
+    "DECLINED": "Declined"
   }
 }

@@ -1,4 +1,4 @@
-import { CalendarEntry, CalendarEntryInput, CalendarInfo, CalendarSlot, EntryKind, EntryVisibility } from './calendar.types';
+import { AttendeeDraft, CalendarEntry, CalendarEntryInput, CalendarInfo, CalendarSlot, EntryKind, EntryVisibility } from './calendar.types';
 import { datePart, instantToLocal, localToInstant, nextDay, plusMinutes, previousDay, toInstant } from './zoned-time';
 
 /** The kinds the dialog offers: what the calendar allows, minus the reserved recurring kind, never none. */
@@ -23,6 +23,9 @@ export interface EntryFormValue {
   endLocal: string;
   startDay: string;
   lastDay: string;
+  attendees: AttendeeDraft[];
+  /** Whether the entry this form was made from came with an attendee list; a form without invitees then clears it. */
+  hadAttendees: boolean;
 }
 
 /** All-day for a whole-day click when the calendar takes all-day entries, else timed when it takes those, else what it takes. */
@@ -41,7 +44,7 @@ export function formForSlot(calendar: CalendarInfo, slot: CalendarSlot): EntryFo
   const zone = calendar.effectiveTimeZone;
   const kinds = bookableKinds(calendar);
   const kind = kindForSlot(kinds, slot.allDay);
-  const base = { kind, title: '', description: '', location: '', category: '', visibility: 'PUBLIC' as EntryVisibility };
+  const base = { kind, title: '', description: '', location: '', category: '', visibility: 'PUBLIC' as EntryVisibility, attendees: [], hadAttendees: false };
 
   if (slot.allDay) {
     const startDay = datePart(slot.start);
@@ -77,6 +80,8 @@ export function formForEntry(calendar: CalendarInfo, entry: CalendarEntry): Entr
     location: entry.location ?? '',
     category: entry.category ?? '',
     visibility: entry.visibility ?? 'PUBLIC',
+    attendees: (entry.attendees ?? []).map((attendee) => ({ type: attendee.type, principal: attendee.principal ?? '', displayName: attendee.displayName, required: attendee.required })),
+    hadAttendees: entry.attendees !== undefined,
   };
   if (entry.kind === 'ALL_DAY' && entry.startDate && entry.endDate) {
     const startDay = datePart(entry.startDate);
@@ -116,12 +121,13 @@ export function toEntryInput(value: EntryFormValue, calendar: CalendarInfo, vers
     visibility: value.visibility,
     version: version ?? null,
   };
+  const withAttendees = value.attendees.length > 0 || value.hadAttendees ? { ...common, attendees: value.attendees.map(({ type, principal, required }) => ({ type, principal, required })) } : common;
   if (value.kind === 'ALL_DAY') {
     if (!value.startDay || !value.lastDay) return null;
-    return { ...common, startDate: value.startDay, endDate: nextDay(value.lastDay) };
+    return { ...withAttendees, startDate: value.startDay, endDate: nextDay(value.lastDay) };
   }
   if (!value.startLocal || !value.endLocal) return null;
-  return { ...common, start: localToInstant(value.startLocal, zone), end: localToInstant(value.endLocal, zone), timeZone: zone };
+  return { ...withAttendees, start: localToInstant(value.startLocal, zone), end: localToInstant(value.endLocal, zone), timeZone: zone };
 }
 
 /** Whether the form can be sent: a title, and times that run forwards. The server still has the last word. */

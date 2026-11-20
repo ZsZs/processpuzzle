@@ -76,3 +76,8 @@
 .pp-calendar .pp-calendar__event--mine {
   font-weight: 600;
 }
+
+/* An entry the caller is invited to, as opposed to one they booked. */
+.pp-calendar .pp-calendar__event--invited {
+  border-style: dashed;
+}

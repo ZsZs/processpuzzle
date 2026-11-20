@@ -9,6 +9,41 @@ export type EntryKind = 'TIMED' | 'ALL_DAY' | 'RECURRING';
 
 export type EntryVisibility = 'PUBLIC' | 'PRIVATE';
 
+export type AttendeeType = 'USER' | 'ROLE';
+
+export type AttendanceResponse = 'NEEDS_ACTION' | 'ACCEPTED' | 'TENTATIVE' | 'DECLINED';
+
+/** The answers an invitee may give; NEEDS_ACTION is only where everybody starts. */
+export type AttendanceAnswerValue = 'ACCEPTED' | 'TENTATIVE' | 'DECLINED';
+
+/** An invitation as an entry shows it. `principal` is null for anybody who may not edit the entry. */
+export interface CalendarAttendee {
+  type: AttendeeType;
+  principal?: string | null;
+  displayName: string;
+  required: boolean;
+  /** USER only. */
+  response?: AttendanceResponse | null;
+  respondedAt?: string | null;
+}
+
+export interface AttendeeInput {
+  type: AttendeeType;
+  principal: string;
+  required: boolean;
+}
+
+/** An invitation being edited in the dialog; the display name is only for showing it. */
+export interface AttendeeDraft extends AttendeeInput {
+  displayName: string;
+}
+
+/** A member found by the directory search: name and subject only. */
+export interface DirectoryMatch {
+  sub: string;
+  displayName: string;
+}
+
 export interface CalendarPermissions {
   /** May book entries and edit their own. */
   canBook: boolean;
@@ -59,6 +94,12 @@ export interface CalendarEntry {
   organizerDisplayName?: string | null;
   mine?: boolean;
   canEdit?: boolean;
+  /** Absent when the entry is busy. */
+  attendees?: CalendarAttendee[];
+  /** Whether the caller is invited, by name or through a role. */
+  invited?: boolean;
+  /** Whether the caller may answer the invitation. */
+  canRespond?: boolean;
   version?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -76,6 +117,8 @@ export interface CalendarEntryInput {
   timeZone?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  /** At most 50. Omit it on an update to keep the current invitees. */
+  attendees?: AttendeeInput[];
   /** On an update, the version last read; a mismatch is refused with 409. */
   version?: number | null;
 }
@@ -96,6 +139,7 @@ export interface Occurrence {
   endDate?: string | null;
   mine?: boolean;
   canEdit?: boolean;
+  invited?: boolean;
 }
 
 /** How a failed call is told to the user. */

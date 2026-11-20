@@ -62,6 +62,13 @@ describe('toCalendarEvent', () => {
   });
 });
 
+describe('invited occurrences', () => {
+  it('carry the invited class, and only those do', () => {
+    expect(toCalendarEvent({ ...TIMED, invited: true }, 0, 'Busy').className).toContain('pp-calendar__event--invited');
+    expect(toCalendarEvent(TIMED, 0, 'Busy').className).not.toContain('pp-calendar__event--invited');
+  });
+});
+
 describe('calendarColor', () => {
   it('cycles through the six theme colors', () => {
     expect(calendarColor(0)).toBe('var(--pp-calendar-color-0)');

@@ -51,6 +51,7 @@ export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busy
   const className = ['pp-calendar__event'];
   if (occurrence.busy) className.push('pp-calendar__event--busy');
   if (occurrence.mine) className.push('pp-calendar__event--mine');
+  if (occurrence.invited) className.push('pp-calendar__event--invited');
   return {
     id: eventId(occurrence),
     title: occurrence.busy ? busyLabel : (occurrence.title ?? ''),
