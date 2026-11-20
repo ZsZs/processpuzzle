@@ -35,12 +35,14 @@ public class BookEntry {
     private final EntryViews views;
     private final EntryPlatformFacts facts;
     private final AttendeeResolver attendees;
+    private final ResourceCapacity capacity;
     private final Clock clock;
 
     public BookEntry(CalendarEntryRepository entries, ResolveCalendarAccess access, OrganizationTimeZone zones,
                      CurrentPrincipal principal, EntryViews views, EntryPlatformFacts facts, AttendeeResolver attendees,
-                     ObjectProvider<Clock> clock) {
+                     ResourceCapacity capacity, ObjectProvider<Clock> clock) {
         this.entries = entries;
+        this.capacity = capacity;
         this.access = access;
         this.zones = zones;
         this.principal = principal;
@@ -67,6 +69,10 @@ public class BookEntry {
                 ? List.of()
                 : attendees.resolve(orgKey, request.attendees(), organizer, now);
         CalendarEntry entry = CalendarEntry.of(orgKey, calendarKey, request, zone);
+        List<String> full = capacity.violations(orgKey, calendar.definition(), entry, null, zone);
+        if (!full.isEmpty()) {
+            throw new InvalidBookingException(full);
+        }
         entry.setOrganizerSub(organizer);
         entry.setOrganizerDisplayName(principal.displayName().orElse(null));
         entry.reconcileAttendees(invited, organizerRow(organizer, entry.getOrganizerDisplayName(), now), false, now);

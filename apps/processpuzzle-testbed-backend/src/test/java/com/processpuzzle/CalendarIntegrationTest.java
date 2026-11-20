@@ -26,7 +26,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -173,6 +179,45 @@ class CalendarIntegrationTest {
         SecurityTestTokens.authenticateAs(ORG, "sub-dee", "office-admin");
         cancel.cancel(ORG, "meeting-room", booked.entry().getId());
         assertThat(entries.findById(booked.entry().getId())).isEmpty();
+    }
+
+    @Test
+    void twoBookingsAtOnceForTheOnePlaceOfARoomTakeTurnsAndTheSecondIsRefused() throws Exception {
+        // A day outside the windows the other tests read, so that the bookings made here cannot change their answers.
+        String slotStart = "2027-04-05T09:00:00Z";
+        CountDownLatch go = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        List<Future<EntryView>> outcomes = new ArrayList<>();
+        try {
+            for (String subject : List.of("sub-bob", "sub-cid")) {
+                outcomes.add(pool.submit(() -> {
+                    SecurityTestTokens.authenticateAs(ORG, subject, "staff");
+                    try {
+                        go.await();
+                        return book.book(ORG, "meeting-room", new BookingRequest(EntryKind.TIMED, "Race " + subject, null, null, null, null,
+                                Instant.parse(slotStart), Instant.parse("2027-04-05T10:00:00Z"), null, null, null, null));
+                    } catch (InvalidBookingException refused) {
+                        return null;
+                    } finally {
+                        SecurityTestTokens.clear();
+                    }
+                }));
+            }
+            go.countDown();
+            List<EntryView> booked = new ArrayList<>();
+            for (Future<EntryView> outcome : outcomes) {
+                EntryView view = outcome.get(60, TimeUnit.SECONDS);
+                if (view != null) {
+                    booked.add(view);
+                }
+            }
+            assertThat(booked).as("exactly one of the two bookings takes the only place").hasSize(1);
+            SecurityTestTokens.authenticateAs(ORG, "sub-dee", "office-admin");
+            cancel.cancel(ORG, "meeting-room", booked.get(0).entry().getId());
+        } finally {
+            pool.shutdownNow();
+            SecurityTestTokens.clear();
+        }
     }
 
     @Test
