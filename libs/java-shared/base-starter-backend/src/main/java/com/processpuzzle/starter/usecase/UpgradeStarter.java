@@ -119,7 +119,7 @@ public class UpgradeStarter {
             return UpgradeReport.rejected(dryRun, starterId, installed.getVersion(), version,
                 List.of(new ImportReport.Error(e.getFile(), e.getMessage())));
         }
-        List<ImportReport.Error> problems = problems(orgKey, starterId, version, bundle.manifest());
+        List<ImportReport.Error> problems = problems(orgKey, starterId, version, bundle.manifest(), installed);
         problems.addAll(keyPrefixRules.check(bundle));
         if (!problems.isEmpty()) {
             return UpgradeReport.rejected(dryRun, starterId, installed.getVersion(), version, problems);
@@ -158,8 +158,18 @@ public class UpgradeStarter {
         return between.isEmpty() ? null : "Upgrade to " + between.getFirst() + " first; versions are applied one at a time.";
     }
 
-    private List<ImportReport.Error> problems(String orgKey, String starterId, String version, StarterManifest manifest) {
+    private List<ImportReport.Error> problems(String orgKey, String starterId, String version, StarterManifest manifest,
+                                              InstalledStarter installed) {
         List<ImportReport.Error> problems = new ArrayList<>();
+        boolean domainKind = manifest.isDomainStarter() && !manifest.isCommon();
+        if (domainKind != installed.isDomainStarter()) {
+            // Upgrade works within one set of keys. The two kinds do not share one: an application of its own is not a set of
+            // modules added to the customer's, whichever way the change goes.
+            problems.add(new ImportReport.Error(BundleReader.MANIFEST, "'" + starterId + "' " + installed.getVersion() + " is installed here as "
+                + (installed.isDomainStarter() ? "modules added to the organization's own application" : "an application of its own")
+                + ", and version " + version + " is " + (domainKind ? "the modules form" : "an application of its own")
+                + ": the two cannot be exchanged by an upgrade."));
+        }
         if (!starterId.equals(manifest.id()) || !version.equals(manifest.version())) {
             problems.add(new ImportReport.Error(BundleReader.MANIFEST, "The bundle is starter '" + manifest.id() + "' "
                 + manifest.version() + ", not '" + starterId + "' " + version + "."));
