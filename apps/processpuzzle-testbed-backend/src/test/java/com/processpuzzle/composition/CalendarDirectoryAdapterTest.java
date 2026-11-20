@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +57,35 @@ class CalendarDirectoryAdapterTest {
     void aSearchFindsAPersonByAnyPartOfTheirNameAndCannotBeWidenedByAnAsterisk() {
         assertThat(CalendarDirectoryAdapter.infix("ee0f4a8e")).isEqualTo("*ee0f4a8e*");
         assertThat(CalendarDirectoryAdapter.infix(" b*ob ")).isEqualTo("*bob*");
+    }
+
+    @Test
+    void aMultiWordSearchFindsOnlyThePeopleWhoseNameHasEveryWord() {
+        UserDirectoryPort directory = mock(UserDirectoryPort.class);
+        when(directory.findUsers(eq("acme"), eq("*Bob*"), anyInt(), anyInt())).thenReturn(new DirectoryPage(
+                List.of(user("sub-bob", "Bob", "Builder", "bob", true), user("sub-bobby", "Bobby", "Tables", "bobby", true)), 2, 0, 100));
+        when(directory.findUsers(eq("acme"), eq("*Builder*"), anyInt(), anyInt())).thenReturn(new DirectoryPage(
+                List.of(user("sub-bob", "Bob", "Builder", "bob", true), user("sub-ann", "Ann", "Builder", "ann", true)), 2, 0, 100));
+
+        List<DirectoryMatch> matches = new CalendarDirectoryAdapter(directory).search("acme", "Bob Builder");
+
+        assertThat(matches).containsExactly(new DirectoryMatch("sub-bob", "Bob Builder"));
+    }
+
+    @Test
+    void theWordsOfASearchAreTrimmedAndDeduplicated() {
+        assertThat(CalendarDirectoryAdapter.words("  Bob   Builder Bob ")).containsExactly("Bob", "Builder");
+        assertThat(CalendarDirectoryAdapter.words("b*ob")).containsExactly("b", "ob");
+        assertThat(CalendarDirectoryAdapter.words(" * ")).isEmpty();
+    }
+
+    @Test
+    void anEmptySearchAsksTheDirectoryNothing() {
+        UserDirectoryPort directory = mock(UserDirectoryPort.class);
+
+        assertThat(new CalendarDirectoryAdapter(directory).search("acme", " * ")).isEmpty();
+
+        org.mockito.Mockito.verifyNoInteractions(directory);
     }
 
     @Test

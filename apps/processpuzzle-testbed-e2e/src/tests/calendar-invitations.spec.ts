@@ -53,9 +53,8 @@ test.describe('Calendar invitations @auth', () => {
     // The organizer invites them by name, found through the directory.
     await calendarOf(page).getByText(title).first().click();
     await expect(page.getByTestId('entry-dialog-title')).toHaveText('Edit entry');
-    // The directory matches single words; the run id in the name is one, and is unique to this account.
-    const runId = registered.user.displayName.split(' ').at(-1) as string;
-    await page.getByTestId('invite-search').fill(runId);
+    // The full name, as the organizer would type it: every word has to match, and the run id keeps it unique to this account.
+    await page.getByTestId('invite-search').fill(registered.user.displayName);
     const match = page.getByTestId('invite-match').filter({ hasText: registered.user.displayName }).first();
     await expect(match).toBeVisible({ timeout: 60_000 });
     await match.click();

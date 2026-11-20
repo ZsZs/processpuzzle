@@ -3,7 +3,10 @@ package com.processpuzzle.composition;
 import com.processpuzzle.calendar.entry.usecases.outbound.CalendarDirectoryPort;
 import com.processpuzzle.orgadmin.usecases.outbound.DirectoryUser;
 import com.processpuzzle.orgadmin.usecases.outbound.UserDirectoryPort;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
@@ -18,19 +21,40 @@ import org.springframework.stereotype.Component;
 @Component
 public class CalendarDirectoryAdapter implements CalendarDirectoryPort {
 
+    /** Candidates fetched per word, so that a word common to many people still leaves the others in the intersection. */
+    private static final int WORD_LIMIT = 100;
+    private static final int MAX_WORDS = 4;
+
     private final UserDirectoryPort directory;
 
     public CalendarDirectoryAdapter(UserDirectoryPort directory) {
         this.directory = directory;
     }
 
+    /**
+     * Each word of the text must be found somewhere in the person's name or username, so "Bob Builder" finds Bob Builder.
+     * Keycloak searches for one term at a time, so each word is searched on its own and the answers are intersected.
+     */
     @Override
     public List<DirectoryMatch> search(String orgKey, String text) {
-        return directory.findUsers(orgKey, infix(text), 0, MAX_RESULTS).content().stream()
-                .filter(DirectoryUser::enabled)
-                .map(CalendarDirectoryAdapter::match)
-                .limit(MAX_RESULTS)
-                .toList();
+        List<String> words = words(text);
+        if (words.isEmpty()) {
+            return List.of();
+        }
+        Map<String, DirectoryUser> found = null;
+        for (String word : words) {
+            Map<String, DirectoryUser> byWord = new LinkedHashMap<>();
+            for (DirectoryUser user : directory.findUsers(orgKey, infix(word), 0, WORD_LIMIT).content()) {
+                if (user.enabled()) {
+                    byWord.put(user.id(), user);
+                }
+            }
+            found = found == null ? byWord : intersect(found, byWord);
+            if (found.isEmpty()) {
+                return List.of();
+            }
+        }
+        return found.values().stream().map(CalendarDirectoryAdapter::match).limit(MAX_RESULTS).toList();
     }
 
     @Override
@@ -49,6 +73,28 @@ public class CalendarDirectoryAdapter implements CalendarDirectoryPort {
      */
     static String infix(String text) {
         return "*" + text.replace("*", "").strip() + "*";
+    }
+
+    /** The distinct words of a search, at most {@link #MAX_WORDS}; a longer search is narrowed by its first words. */
+    static List<String> words(String text) {
+        if (text == null) {
+            return List.of();
+        }
+        return Arrays.stream(text.replace("*", " ").strip().split("\\s+"))
+                .filter(word -> !word.isEmpty())
+                .distinct()
+                .limit(MAX_WORDS)
+                .toList();
+    }
+
+    private static Map<String, DirectoryUser> intersect(Map<String, DirectoryUser> left, Map<String, DirectoryUser> right) {
+        Map<String, DirectoryUser> both = new LinkedHashMap<>();
+        left.forEach((id, user) -> {
+            if (right.containsKey(id)) {
+                both.put(id, user);
+            }
+        });
+        return both;
     }
 
     private static String nonBlank(String value) {
