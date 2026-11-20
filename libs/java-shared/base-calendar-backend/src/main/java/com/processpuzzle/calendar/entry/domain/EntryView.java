@@ -5,5 +5,5 @@ package com.processpuzzle.calendar.entry.domain;
  * The endpoint's mapper hides the fields of a {@code busy} view; the use case that builds it decides, so the rule
  * lives in one place.
  */
-public record EntryView(CalendarEntry entry, boolean busy, boolean mine, boolean canEdit) {
+public record EntryView(CalendarEntry entry, boolean busy, boolean mine, boolean canEdit, boolean invited, boolean canRespond) {
 }

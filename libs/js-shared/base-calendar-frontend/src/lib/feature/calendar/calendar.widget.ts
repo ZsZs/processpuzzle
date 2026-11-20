@@ -62,6 +62,11 @@ export const CALENDAR_WIDGET_REGISTRATION: WidgetRegistration = {
           title: 'Read only',
           description: 'Show the calendar without letting the visitor book, move or resize anything.',
         },
+        includeMine: {
+          type: 'boolean',
+          title: 'Include my invitations',
+          description: 'Also show the entries I organize or am invited to, from every calendar I may read.',
+        },
         height: {
           type: 'string',
           title: 'Height',

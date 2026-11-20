@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -9,16 +9,14 @@ import { provideTranslocoScope, TranslocoPipe, TranslocoService } from '@jsverse
 import { BASE_CALENDAR_TRANSLOCO_ALIAS, BASE_CALENDAR_TRANSLOCO_SCOPE } from '../../base-calendar.i18n';
 import { failureKindOf, failureTextOf } from '../../domain/calendar.service';
 import { CalendarStore } from '../../domain/calendar.store';
-import { CalendarEntry, CalendarFailureKind, CalendarInfo, CalendarSlot, EntryKind } from '../../domain/calendar.types';
+import { AttendanceAnswerValue, AttendeeDraft, CalendarEntry, CalendarFailureKind, CalendarInfo, CalendarSlot, DirectoryMatch, EntryKind } from '../../domain/calendar.types';
 import { bookableKinds, EntryFormValue, formForEntry, formForSlot, isFormComplete, toEntryInput } from '../../domain/entry-form';
 
 /**
  * What the dialog is opened with: `create` from a slot, `edit` for an entry the caller may change, `view` for one
  * they may only read. `calendars` are the calendars the new entry may go on — the ones the caller may book on.
  */
-export type EntryDialogData =
-  | { mode: 'create'; calendars: readonly CalendarInfo[]; slot: CalendarSlot }
-  | { mode: 'edit' | 'view'; calendars: readonly CalendarInfo[]; entry: CalendarEntry };
+export type EntryDialogData = { mode: 'create'; calendars: readonly CalendarInfo[]; slot: CalendarSlot } | { mode: 'edit' | 'view'; calendars: readonly CalendarInfo[]; entry: CalendarEntry };
 
 /** What the dialog tells whoever opened it: something changed, so the calendar has to be read again. */
 export type EntryDialogResult = 'saved' | 'cancelled' | undefined;
@@ -28,6 +26,10 @@ interface Failure {
   kind: CalendarFailureKind;
   text?: string;
 }
+
+/** How long the user must stop typing before the directory is asked, and how many characters it takes to ask. */
+const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_MIN_LENGTH = 2;
 
 const TITLE_KEY_OF_MODE: Record<EntryDialogData['mode'], string> = { create: 'new', edit: 'edit', view: 'view' };
 
@@ -123,6 +125,54 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
               <mat-option value="PRIVATE">{{ 'base_calendar.entry.visibility_private' | transloco }}</mat-option>
             </mat-select>
           </mat-form-field>
+          <section class="pp-entry-dialog__invitations" data-testid="entry-invitations">
+            <h3>{{ 'base_calendar.entry.invitations.title' | transloco }}</h3>
+            @if (data.mode === 'edit' && data.entry.organizerDisplayName) {
+              <p class="pp-entry-dialog__organizer" data-testid="entry-organizer">{{ 'base_calendar.entry.organizer' | transloco }}: {{ data.entry.organizerDisplayName }}</p>
+            }
+            <mat-form-field>
+              <mat-label>{{ 'base_calendar.entry.invitations.search' | transloco }}</mat-label>
+              <input
+                matInput
+                type="search"
+                name="inviteSearch"
+                data-testid="invite-search"
+                autocomplete="off"
+                [ngModel]="query()"
+                (ngModelChange)="onQuery($event)"
+                (keydown.enter)="$event.preventDefault()"
+              />
+            </mat-form-field>
+            @for (match of matches(); track match.sub) {
+              <button mat-button type="button" class="pp-entry-dialog__match" data-testid="invite-match" (click)="addUser(match)">{{ match.displayName }}</button>
+            }
+            @if (roles().length > 0) {
+              <mat-form-field>
+                <mat-label>{{ 'base_calendar.entry.invitations.roles' | transloco }}</mat-label>
+                <mat-select name="inviteRole" data-testid="invite-role" [ngModel]="''" (ngModelChange)="addRole($event)">
+                  @for (role of roles(); track role) {
+                    <mat-option [value]="role">{{ role }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+            @if (value().attendees.length === 0) {
+              <p class="pp-entry-dialog__hint">{{ 'base_calendar.entry.invitations.none' | transloco }}</p>
+            }
+            <ul class="pp-entry-dialog__attendees">
+              @for (draft of value().attendees; track draft.type + ':' + draft.principal) {
+                <li data-testid="invite-draft">
+                  <span
+                    >{{ draft.displayName }}
+                    @if (draft.type === 'ROLE') {
+                      ({{ 'base_calendar.entry.invitations.role' | transloco }})
+                    }
+                  </span>
+                  <button mat-button type="button" data-testid="invite-remove" (click)="removeAttendee(draft)">{{ 'base_calendar.entry.invitations.remove' | transloco }}</button>
+                </li>
+              }
+            </ul>
+          </section>
         </form>
       } @else if (shown(); as entry) {
         @if (entry.busy) {
@@ -143,6 +193,35 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
           @if (entry.organizerDisplayName) {
             <p class="pp-entry-dialog__organizer">{{ 'base_calendar.entry.organizer' | transloco }}: {{ entry.organizerDisplayName }}</p>
           }
+          @if (entry.attendees && entry.attendees.length > 0) {
+            <section data-testid="entry-attendees">
+              <h3>{{ 'base_calendar.entry.invitations.title' | transloco }}</h3>
+              <ul class="pp-entry-dialog__attendees">
+                @for (attendee of entry.attendees; track attendee.type + ':' + attendee.displayName) {
+                  <li data-testid="entry-attendee">
+                    <span>{{ attendee.displayName }}</span>
+                    @if (attendee.type === 'ROLE') {
+                      <span class="pp-entry-dialog__hint">({{ 'base_calendar.entry.invitations.role' | transloco }})</span>
+                    } @else if (attendee.response) {
+                      <span class="pp-entry-dialog__hint" data-testid="entry-attendee-response">{{ 'base_calendar.attendance.' + attendee.response | transloco }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+          @if (entry.canRespond) {
+            <div class="pp-entry-dialog__rsvp" data-testid="entry-rsvp">
+              <span>{{ 'base_calendar.entry.invitations.respond' | transloco }}</span>
+              <button mat-button type="button" data-testid="rsvp-accept" [disabled]="working()" (click)="respond(entry, 'ACCEPTED')">{{ 'base_calendar.entry.invitations.accept' | transloco }}</button>
+              <button mat-button type="button" data-testid="rsvp-tentative" [disabled]="working()" (click)="respond(entry, 'TENTATIVE')">
+                {{ 'base_calendar.entry.invitations.tentative' | transloco }}
+              </button>
+              <button mat-button type="button" data-testid="rsvp-decline" [disabled]="working()" (click)="respond(entry, 'DECLINED')">
+                {{ 'base_calendar.entry.invitations.decline' | transloco }}
+              </button>
+            </div>
+          }
         }
       }
       @if (failure(); as problem) {
@@ -160,7 +239,7 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
         }
       }
       @if (!confirmingCancel()) {
-        <button mat-button type="button" data-testid="entry-close" mat-dialog-close>{{ 'base_calendar.entry.close' | transloco }}</button>
+        <button mat-button type="button" data-testid="entry-close" [mat-dialog-close]="answered() ? 'saved' : undefined">{{ 'base_calendar.entry.close' | transloco }}</button>
         @if (editable()) {
           <button mat-flat-button type="submit" form="pp-entry-form" data-testid="entry-save" [disabled]="!complete() || working()">
             {{ (working() ? 'base_calendar.entry.saving' : 'base_calendar.entry.save') | transloco }}
@@ -195,6 +274,23 @@ const FAILURE_KEYS: Record<CalendarFailureKind, string> = {
     .pp-entry-dialog__error {
       color: var(--mat-sys-error, #b3261e);
     }
+    .pp-entry-dialog__attendees {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .pp-entry-dialog__hint {
+      color: var(--mat-sys-on-surface-variant, #555);
+      margin: 0.25rem 0;
+    }
+    .pp-entry-dialog__match {
+      align-self: flex-start;
+    }
+    .pp-entry-dialog__rsvp {
+      align-items: center;
+      display: flex;
+      gap: 0.5rem;
+    }
     .pp-entry-dialog__confirm {
       margin-right: auto;
     }
@@ -205,19 +301,84 @@ export class EntryDialogComponent {
   private readonly dialogRef = inject<MatDialogRef<EntryDialogComponent, EntryDialogResult>>(MatDialogRef);
   private readonly store = inject(CalendarStore);
   private readonly transloco = inject(TranslocoService);
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
 
   protected readonly calendar = signal<CalendarInfo>(this.initialCalendar());
   protected readonly value = signal<EntryFormValue>(this.initialValue());
   protected readonly working = signal(false);
   protected readonly confirmingCancel = signal(false);
   protected readonly failure = signal<Failure | null>(null);
+  protected readonly query = signal('');
+  protected readonly matches = signal<DirectoryMatch[]>([]);
+  protected readonly roles = signal<string[]>([]);
+  /** The entry as read-only mode shows it; an answer replaces it with the server's copy. */
+  private readonly viewed = signal<CalendarEntry | null>(this.data.mode === 'view' ? this.data.entry : null);
+  /** Whether the user answered an invitation, so closing the dialog tells the calendar to reload. */
+  protected readonly answered = signal(false);
 
   protected readonly editable = computed(() => this.data.mode !== 'view');
   protected readonly kinds = computed(() => bookableKinds(this.calendar()));
   protected readonly complete = computed(() => isFormComplete(this.value()));
   /** The entry as shown read-only; none when the dialog edits. */
-  protected readonly shown = computed(() => (this.data.mode === 'view' ? this.data.entry : null));
+  protected readonly shown = this.viewed.asReadonly();
   protected readonly titleKey = `base_calendar.entry.${TITLE_KEY_OF_MODE[this.data.mode]}`;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.searchTimer));
+    if (this.editable()) {
+      void this.store.roleCatalog().then(
+        (catalog) => this.roles.set(catalog.map((role) => role.name)),
+        () => this.roles.set([]),
+      );
+    }
+  }
+
+  /** Asks the directory once the user has paused typing; a short text clears the matches without asking. */
+  protected onQuery(text: string): void {
+    this.query.set(text);
+    clearTimeout(this.searchTimer);
+    const wanted = text.trim();
+    if (wanted.length < SEARCH_MIN_LENGTH) {
+      this.matches.set([]);
+      return;
+    }
+    this.searchTimer = setTimeout(() => void this.search(wanted), SEARCH_DEBOUNCE_MS);
+  }
+
+  protected addUser(match: DirectoryMatch): void {
+    this.addDraft({ type: 'USER', principal: match.sub, displayName: match.displayName, required: true });
+    this.query.set('');
+    this.matches.set([]);
+  }
+
+  protected addRole(name: string): void {
+    if (name) this.addDraft({ type: 'ROLE', principal: name, displayName: name, required: true });
+  }
+
+  protected removeAttendee(draft: AttendeeDraft): void {
+    this.patch({ attendees: this.value().attendees.filter((candidate) => candidate !== draft) });
+  }
+
+  protected async respond(entry: CalendarEntry, response: AttendanceAnswerValue): Promise<void> {
+    await this.run(async () => {
+      this.viewed.set(await this.store.answer(entry.calendarKey, entry.id, response));
+      this.answered.set(true);
+    });
+  }
+
+  private addDraft(draft: AttendeeDraft): void {
+    const present = this.value().attendees.some((candidate) => candidate.type === draft.type && candidate.principal === draft.principal);
+    if (!present) this.patch({ attendees: [...this.value().attendees, draft] });
+  }
+
+  private async search(wanted: string): Promise<void> {
+    try {
+      const found = await this.store.searchDirectory(wanted);
+      if (this.query().trim() === wanted) this.matches.set(found);
+    } catch {
+      this.matches.set([]);
+    }
+  }
 
   protected patch(change: Partial<EntryFormValue>): void {
     this.value.update((current) => ({ ...current, ...change }));

@@ -40,6 +40,25 @@
     "cancel": "Cancelar entrada",
     "confirm_cancel": "¿Cancelar esta entrada definitivamente?",
     "cancel_confirmed": "Sí, cancelar",
-    "keep": "Conservar"
+    "keep": "Conservar",
+    "invitations": {
+      "title": "Invitaciones",
+      "search": "Invitar a una persona",
+      "roles": "Invitar a un rol",
+      "none": "Nadie invitado todavía.",
+      "remove": "Quitar",
+      "role": "Rol",
+      "respond": "Su respuesta",
+      "invited": "Invitado",
+      "accept": "Aceptar",
+      "tentative": "Provisional",
+      "decline": "Rechazar"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "Sin respuesta",
+    "ACCEPTED": "Aceptada",
+    "TENTATIVE": "Provisional",
+    "DECLINED": "Rechazada"
   }
 }

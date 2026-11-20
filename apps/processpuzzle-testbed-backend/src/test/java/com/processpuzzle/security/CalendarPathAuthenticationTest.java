@@ -51,6 +51,14 @@ class CalendarPathAuthenticationTest {
     }
 
     @Test
+    void thePeopleAndTheirInvitationsNeedAToken() throws Exception {
+        assertThat(status("GET", "/organizations/my-org/calendar/directory/users?q=bo")).isEqualTo(401);
+        assertThat(status("GET", "/organizations/my-org/calendar/my-occurrences?from=2026-12-01T00:00:00Z&to=2026-12-08T00:00:00Z")).isEqualTo(401);
+        assertThat(status("DELETE", "/organizations/my-org/calendar/users/sub-ann")).isEqualTo(401);
+        assertThat(status("PUT", "/organizations/my-org/calendar/calendars/team/entries/" + ENTRY + "/attendance")).isEqualTo(401);
+    }
+
+    @Test
     void theDefinitionsStayOpenAsConfigured() throws Exception {
         assertThat(status("GET", "/organizations/my-org/calendar/definitions")).isNotEqualTo(401);
     }

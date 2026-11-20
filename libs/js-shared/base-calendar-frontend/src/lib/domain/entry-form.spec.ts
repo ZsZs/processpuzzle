@@ -23,6 +23,8 @@ function value(overrides: Partial<EntryFormValue> = {}): EntryFormValue {
     endLocal: '2026-12-01T11:00',
     startDay: '2026-12-01',
     lastDay: '2026-12-01',
+    attendees: [],
+    hadAttendees: false,
     ...overrides,
   };
 }
@@ -133,6 +135,46 @@ describe('toEntryInput', () => {
     expect(input).toMatchObject({ kind: 'ALL_DAY', startDate: '2026-12-24', endDate: '2026-12-27', version: null });
     expect(input).not.toHaveProperty('start');
     expect(input).not.toHaveProperty('timeZone');
+  });
+
+  it('sends the invitees, without their display names, when the form has any', () => {
+    const attendees = [
+      { type: 'USER' as const, principal: 'sub-1', displayName: 'Ann', required: true },
+      { type: 'ROLE' as const, principal: 'team-lead', displayName: 'team-lead', required: false },
+    ];
+
+    const input = toEntryInput(value({ attendees }), CALENDAR);
+
+    expect(input?.attendees).toEqual([
+      { type: 'USER', principal: 'sub-1', required: true },
+      { type: 'ROLE', principal: 'team-lead', required: false },
+    ]);
+  });
+
+  it('sends no attendees field when there are none and the entry came without a list, so an update keeps the invitees', () => {
+    expect(toEntryInput(value(), CALENDAR, 2)).not.toHaveProperty('attendees');
+  });
+
+  it('sends an empty list when the entry came with invitees and the user removed them all', () => {
+    expect(toEntryInput(value({ hadAttendees: true }), CALENDAR, 2)?.attendees).toEqual([]);
+  });
+
+  it('copies the invitees of an entry into the form', () => {
+    const entry: CalendarEntry = {
+      id: 'e-1',
+      calendarKey: 'team',
+      kind: 'TIMED',
+      busy: false,
+      title: 'Planning',
+      start: '2026-12-01T09:00:00Z',
+      end: '2026-12-01T10:00:00Z',
+      attendees: [{ type: 'USER', principal: 'sub-1', displayName: 'Ann', required: true, response: 'ACCEPTED' }],
+    };
+
+    const form = formForEntry(CALENDAR, entry);
+
+    expect(form.attendees).toEqual([{ type: 'USER', principal: 'sub-1', displayName: 'Ann', required: true }]);
+    expect(form.hadAttendees).toBe(true);
   });
 
   it('round-trips an entry through the form', () => {

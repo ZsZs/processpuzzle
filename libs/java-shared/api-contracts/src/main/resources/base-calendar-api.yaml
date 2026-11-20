@@ -238,6 +238,133 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /organizations/{orgKey}/calendar/calendars/{calendarKey}/entries/{entryId}/attendance:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - $ref: "#/components/parameters/CalendarKeyParam"
+      - $ref: "#/components/parameters/EntryIdParam"
+    put:
+      operationId: answerInvitation
+      tags: [ Calendar Entries ]
+      summary: Answer an invitation to an entry
+      description: >-
+        Only the attendee named by the caller's own subject may answer, and only for a USER attendee. Answering does
+        not change the entry, so the organizer's version is not involved. An entry is not answered by a role's members
+        collectively — each one who is to attend adds themself as an attendee and answers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceAnswer"
+      responses:
+        "200":
+          description: The entry, with the answer in place
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /organizations/{orgKey}/calendar/directory/users:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: searchDirectory
+      tags: [ Directory ]
+      summary: Find people to invite
+      description: >-
+        The members of the organization whose name matches `q`, at most 20, as the subject to invite and the name to
+        show. No e-mail address, no roles. Needs a token, and a query of at least two characters; shorter ones answer
+        with nothing rather than with everybody.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 100
+      responses:
+        "200":
+          description: The matches
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 20
+                items:
+                  $ref: "#/components/schemas/DirectoryMatch"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/calendar/my-occurrences:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listMyOccurrences
+      tags: [ Calendars ]
+      summary: What the caller has booked or been invited to, in a time window
+      description: >-
+        Across every calendar the caller may read: the entries they organize, and those they are invited to, by name or
+        through one of their roles. Needs a token. The window is capped as for the occurrences of the calendars.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: The occurrences, in start order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Occurrence"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /organizations/{orgKey}/calendar/users/{userSub}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - name: userSub
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      operationId: eraseCalendarUser
+      tags: [ Calendar Privacy ]
+      summary: Erase a user's calendar data (GDPR)
+      description: >-
+        Removes the user from every entry they are invited to, and anonymizes the entries they organized: the bookings
+        stay, so the calendar keeps its times, but they no longer say who booked them. Allowed for the user themself and
+        for whoever administers the organization. Not undoable.
+      responses:
+        "200":
+          description: Erased; how much was
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErasureResult"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
   /organizations/{orgKey}/calendar/occurrences:
     parameters:
       - $ref: "#/components/parameters/OrgKeyParam"
@@ -631,6 +758,14 @@ components:
           format: date
           nullable: true
           description: ALL_DAY — the day after the last day. A one-day entry ends on the next date.
+        attendees:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/AttendeeInput"
+          description: >-
+            Who is invited. The organizer is added by the server and cannot be removed. On an update the list replaces
+            the current one. A USER attendee who is not yet a member of the organization is refused (422).
         version:
           type: integer
           format: int64
@@ -693,6 +828,17 @@ components:
         mine:
           type: boolean
           description: The caller is the organizer.
+        invited:
+          type: boolean
+          description: The caller is invited, by name or through one of their roles.
+        canRespond:
+          type: boolean
+          description: The caller is invited by name and may answer.
+        attendees:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarAttendee"
+          description: Who is invited. Absent when the entry is busy for the caller.
         canEdit:
           type: boolean
           description: The caller may replace or cancel the entry.
@@ -754,8 +900,89 @@ components:
           description: All-day occurrences — exclusive.
         mine:
           type: boolean
+        invited:
+          type: boolean
         canEdit:
           type: boolean
+
+    AttendeeType:
+      type: string
+      enum: [ USER, ROLE ]
+      description: A USER is one person; a ROLE invites every holder of a realm role.
+
+    AttendanceResponse:
+      type: string
+      enum: [ NEEDS_ACTION, ACCEPTED, TENTATIVE, DECLINED ]
+      description: NEEDS_ACTION until the invitee answers, and again after the entry's time changes.
+
+    AttendanceAnswer:
+      type: object
+      required: [ response ]
+      properties:
+        response:
+          type: string
+          enum: [ ACCEPTED, TENTATIVE, DECLINED ]
+
+    AttendeeInput:
+      type: object
+      required: [ type, principal ]
+      properties:
+        type:
+          $ref: "#/components/schemas/AttendeeType"
+        principal:
+          type: string
+          maxLength: 200
+          description: The subject of a USER attendee (as the directory search returns it), or the name of a ROLE.
+        required:
+          type: boolean
+          default: false
+          description: Whether the invitee has to come. Only a display difference; it changes no rule.
+
+    CalendarAttendee:
+      type: object
+      required: [ type, displayName, required ]
+      properties:
+        type:
+          $ref: "#/components/schemas/AttendeeType"
+        principal:
+          type: string
+          nullable: true
+          description: The subject of a USER or the name of a ROLE; given only to the people who may edit the entry.
+        displayName:
+          type: string
+          description: A name snapshot, taken when the person was invited.
+        required:
+          type: boolean
+        response:
+          allOf:
+            - $ref: "#/components/schemas/AttendanceResponse"
+          nullable: true
+          description: The answer of a USER attendee; absent for a ROLE.
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DirectoryMatch:
+      type: object
+      required: [ sub, displayName ]
+      properties:
+        sub:
+          type: string
+          description: The subject to invite.
+        displayName:
+          type: string
+
+    ErasureResult:
+      type: object
+      required: [ entries, invitations ]
+      properties:
+        entries:
+          type: integer
+          description: How many entries the user organized, now anonymized.
+        invitations:
+          type: integer
+          description: How many invitations of the user were removed.
 
     ErrorResponse:
       type: object

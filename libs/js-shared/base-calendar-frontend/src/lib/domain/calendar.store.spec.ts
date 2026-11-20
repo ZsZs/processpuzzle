@@ -37,6 +37,10 @@ describe('CalendarStore', () => {
       bookEntry: vi.fn(),
       updateEntry: vi.fn().mockResolvedValue(TIMED),
       cancelEntry: vi.fn(),
+      listMyOccurrences: vi.fn().mockResolvedValue([]),
+      searchDirectory: vi.fn().mockResolvedValue([]),
+      roleCatalog: vi.fn().mockResolvedValue([]),
+      answerInvitation: vi.fn(),
     } as never;
     TestBed.configureTestingModule({ providers: [CalendarStore, { provide: CalendarService, useValue: service }] });
     store = TestBed.inject(CalendarStore);
@@ -107,6 +111,38 @@ describe('CalendarStore', () => {
       expect(service.listOccurrences).toHaveBeenCalledWith(['team', 'room'], '2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z');
     });
 
+    it('does not ask for the caller own occurrences unless told to', async () => {
+      service.getCalendar.mockImplementation((key: string) => Promise.resolve(calendar(key)));
+      await store.loadCalendars(['team']);
+
+      await store.loadOccurrences('2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z');
+
+      expect(service.listMyOccurrences).not.toHaveBeenCalled();
+    });
+
+    it('adds the caller own occurrences, once each, when asked to', async () => {
+      service.getCalendar.mockImplementation((key: string) => Promise.resolve(calendar(key)));
+      await store.loadCalendars(['team']);
+      const shared = { entryId: 'e-1', calendarKey: 'team', allDay: false, busy: false, title: 'Planning' };
+      const other = { entryId: 'e-9', calendarKey: 'room', allDay: false, busy: false, title: 'Invited', invited: true };
+      service.listOccurrences.mockResolvedValue([shared]);
+      service.listMyOccurrences.mockResolvedValue([{ ...shared, mine: true }, other]);
+
+      const result = await store.loadOccurrences('2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z', true);
+
+      expect(service.listMyOccurrences).toHaveBeenCalledWith('2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z');
+      expect(result).toEqual([shared, other]);
+    });
+
+    it('still shows the caller own occurrences when no calendar is shown', async () => {
+      service.listMyOccurrences.mockResolvedValue([{ entryId: 'e-9', calendarKey: 'room', allDay: false, busy: false }]);
+
+      const result = await store.loadOccurrences('2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z', true);
+
+      expect(result).toHaveLength(1);
+      expect(service.listOccurrences).not.toHaveBeenCalled();
+    });
+
     it('asks nothing when no calendar is shown', async () => {
       expect(await store.loadOccurrences('2026-12-01T00:00:00Z', '2026-12-08T00:00:00Z')).toEqual([]);
       expect(service.listOccurrences).not.toHaveBeenCalled();
@@ -158,6 +194,24 @@ describe('CalendarStore', () => {
 
       await expect(store.reschedule('team', 'e-1', { allDay: false, start: 'a', end: 'b' })).rejects.toBeInstanceOf(HttpErrorResponse);
     });
+  });
+
+  it('answers an invitation through the service and hands back the refreshed entry', async () => {
+    service.answerInvitation.mockResolvedValue({ ...TIMED, canRespond: true });
+
+    const entry = await store.answer('team', 'e-1', 'ACCEPTED');
+
+    expect(service.answerInvitation).toHaveBeenCalledWith('team', 'e-1', 'ACCEPTED');
+    expect(entry.canRespond).toBe(true);
+  });
+
+  it('passes the directory search and the role catalog through to the service', async () => {
+    service.searchDirectory.mockResolvedValue([{ sub: 's-1', displayName: 'Ann' }]);
+    service.roleCatalog.mockResolvedValue([{ name: 'team-lead' }]);
+
+    expect(await store.searchDirectory('an')).toEqual([{ sub: 's-1', displayName: 'Ann' }]);
+    expect(await store.roleCatalog()).toEqual([{ name: 'team-lead' }]);
+    expect(service.searchDirectory).toHaveBeenCalledWith('an');
   });
 
   it('passes the entry calls through to the service', async () => {

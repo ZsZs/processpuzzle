@@ -62,7 +62,7 @@ public final class EntryFixtures {
     public static <T> ObjectProvider<T> provider(T value) {
         ObjectProvider<T> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable(any())).thenReturn(value);
-        when(provider.getIfUnique(any())).thenReturn(value);
+        when(provider.getIfUnique(any())).thenAnswer(call -> value != null ? value : ((java.util.function.Supplier<?>) call.getArgument(0)).get());
         return provider;
     }
 

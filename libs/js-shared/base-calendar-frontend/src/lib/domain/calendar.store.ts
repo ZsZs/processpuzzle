@@ -1,6 +1,10 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { CalendarService, failureKindOf } from './calendar.service';
-import { CalendarEntry, CalendarEntryInput, CalendarFailureKind, CalendarInfo, Occurrence } from './calendar.types';
+import { AttendanceAnswerValue, CalendarEntry, CalendarEntryInput, CalendarFailureKind, CalendarInfo, DirectoryMatch, Occurrence } from './calendar.types';
+
+function occurrenceId(occurrence: Occurrence): string {
+  return `${occurrence.calendarKey}:${occurrence.entryId}:${occurrence.recurrenceId ?? ''}`;
+}
 
 /** The new times of an entry, as a drag or a resize produces them. */
 export interface Reschedule {
@@ -75,10 +79,30 @@ export class CalendarStore {
     this._status.set('error');
   }
 
-  /** What the shown calendars hold in `[from, to)`. */
-  loadOccurrences(from: string, to: string): Promise<Occurrence[]> {
+  /**
+   * What the shown calendars hold in `[from, to)`. With `includeMine` the caller's own entries and invitations, from
+   * every calendar they may read, are added; an occurrence that is in both lists is shown once.
+   */
+  async loadOccurrences(from: string, to: string, includeMine = false): Promise<Occurrence[]> {
     const keys = this._calendars().map((calendar) => calendar.key);
-    return keys.length === 0 ? Promise.resolve([]) : this.service.listOccurrences(keys, from, to);
+    const [shown, mine] = await Promise.all([
+      keys.length === 0 ? Promise.resolve([]) : this.service.listOccurrences(keys, from, to),
+      includeMine ? this.service.listMyOccurrences(from, to) : Promise.resolve([]),
+    ]);
+    const seen = new Set(shown.map(occurrenceId));
+    return [...shown, ...mine.filter((occurrence) => !seen.has(occurrenceId(occurrence)))];
+  }
+
+  searchDirectory(q: string): Promise<DirectoryMatch[]> {
+    return this.service.searchDirectory(q);
+  }
+
+  roleCatalog(): Promise<{ name: string; description?: string }[]> {
+    return this.service.roleCatalog();
+  }
+
+  answer(calendarKey: string, entryId: string, response: AttendanceAnswerValue): Promise<CalendarEntry> {
+    return this.service.answerInvitation(calendarKey, entryId, response);
   }
 
   getEntry(calendarKey: string, entryId: string): Promise<CalendarEntry> {

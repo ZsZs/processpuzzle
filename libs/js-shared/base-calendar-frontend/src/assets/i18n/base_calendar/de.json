@@ -40,6 +40,25 @@
     "cancel": "Eintrag absagen",
     "confirm_cancel": "Diesen Eintrag endgültig absagen?",
     "cancel_confirmed": "Ja, absagen",
-    "keep": "Behalten"
+    "keep": "Behalten",
+    "invitations": {
+      "title": "Einladungen",
+      "search": "Person einladen",
+      "roles": "Rolle einladen",
+      "none": "Noch niemand eingeladen.",
+      "remove": "Entfernen",
+      "role": "Rolle",
+      "respond": "Ihre Antwort",
+      "invited": "Eingeladen",
+      "accept": "Zusagen",
+      "tentative": "Vielleicht",
+      "decline": "Absagen"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "Keine Antwort",
+    "ACCEPTED": "Zugesagt",
+    "TENTATIVE": "Vielleicht",
+    "DECLINED": "Abgesagt"
   }
 }
