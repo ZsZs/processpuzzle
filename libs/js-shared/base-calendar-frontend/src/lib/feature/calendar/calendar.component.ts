@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked, viewChild, ViewContainerRef } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { CalendarOptions, DateClickInfo, DateSelectInfo, EventClickInfo, EventDropInfo, EventResizeDoneInfo, EventSourceFuncInfo, FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
+import { CalendarOptions, DateSelectInfo, EventClickInfo, EventDropInfo, EventResizeDoneInfo, EventSourceFuncInfo, FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import dayGridPlugin from '@fullcalendar/angular/daygrid';
 import interactionPlugin from '@fullcalendar/angular/interaction';
 import listPlugin from '@fullcalendar/angular/list';
@@ -163,7 +163,6 @@ export class CalendarComponent {
       editable,
       events: (info: EventSourceFuncInfo) => this.fetchEvents(info),
       select: (info: DateSelectInfo) => this.onSelect(info),
-      dateClick: (info: DateClickInfo) => this.onDateClick(info),
       eventClick: (info: EventClickInfo) => void this.onEventClick(info),
       eventDrop: (info: EventDropInfo) => void this.onEventChange(info),
       eventResize: (info: EventResizeDoneInfo) => void this.onEventChange(info),
@@ -186,15 +185,14 @@ export class CalendarComponent {
     return occurrences.map((occurrence) => toCalendarEvent(occurrence, keys.indexOf(occurrence.calendarKey), busy));
   }
 
+  /**
+   * A click on a slot and a drag across several both arrive here: with `selectable` a click selects the slot it
+   * landed on. There is deliberately no `dateClick` handler as well — FullCalendar fires both for one click, which
+   * opened two dialogs.
+   */
   private onSelect(info: DateSelectInfo): void {
     this.calendar()?.getApi().unselect();
     this.openCreate({ start: info.startStr, end: info.endStr, allDay: info.allDay });
-  }
-
-  /** A click on a slot rather than a drag: a whole day on the all-day row and in the month, else a start to default the end from. */
-  private onDateClick(info: DateClickInfo): void {
-    if (!this.editable()) return;
-    this.openCreate(info.allDay ? { start: info.dateStr, end: nextDay(datePart(info.dateStr)), allDay: true } : { start: info.dateStr, end: info.dateStr, allDay: false });
   }
 
   private openCreate(slot: CalendarSlot): void {

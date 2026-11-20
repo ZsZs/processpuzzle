@@ -26,7 +26,7 @@ describe('toCalendarEvent', () => {
       allDay: false,
       editable: true,
       color: 'var(--pp-calendar-color-0)',
-      classNames: ['pp-calendar__event', 'pp-calendar__event--mine'],
+      className: 'pp-calendar__event pp-calendar__event--mine',
       extendedProps: { entryId: 'e-1', calendarKey: 'team', busy: false, mine: true, canEdit: true, location: 'Room 1', category: 'meeting' },
     });
   });
@@ -45,7 +45,7 @@ describe('toCalendarEvent', () => {
     expect(event.title).toBe('Busy');
     expect(event.editable).toBe(false);
     expect(event.extendedProps.canEdit).toBe(false);
-    expect(event.classNames).toContain('pp-calendar__event--busy');
+    expect(event.className.split(' ')).toContain('pp-calendar__event--busy');
     expect(event.extendedProps).not.toHaveProperty('location');
   });
 
