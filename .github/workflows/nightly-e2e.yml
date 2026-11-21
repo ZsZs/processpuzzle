@@ -84,6 +84,10 @@ jobs:
           repository: ${{ github.repository }}
           timeout_minutes: '45'
 
+      # A stage that is down or crawling turns into a dozen unrelated timeouts below; this says so in one line instead.
+      - name: Check that stage is healthy
+        uses: ./.github/actions/check-stage-health
+
       - name: Run E2E tests (chromium)
         uses: ./.github/actions/e2e-test
         with:
@@ -110,6 +114,10 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           timeout_minutes: '45'
+
+      # A stage that is down or crawling turns into a dozen unrelated timeouts below; this says so in one line instead.
+      - name: Check that stage is healthy
+        uses: ./.github/actions/check-stage-health
 
       - name: Run E2E tests (firefox)
         uses: ./.github/actions/e2e-test
@@ -138,6 +146,10 @@ jobs:
           repository: ${{ github.repository }}
           timeout_minutes: '45'
 
+      # A stage that is down or crawling turns into a dozen unrelated timeouts below; this says so in one line instead.
+      - name: Check that stage is healthy
+        uses: ./.github/actions/check-stage-health
+
       - name: Run E2E tests (webkit)
         uses: ./.github/actions/e2e-test
         with:
@@ -164,6 +176,10 @@ jobs:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
           timeout_minutes: '45'
+
+      # A stage that is down or crawling turns into a dozen unrelated timeouts below; this says so in one line instead.
+      - name: Check that stage is healthy
+        uses: ./.github/actions/check-stage-health
 
       - name: Run E2E tests (edge)
         uses: ./.github/actions/e2e-test
