@@ -6,8 +6,8 @@ import java.math.RoundingMode;
 import java.util.function.BinaryOperator;
 
 /**
- * An amount of a currency — a MONEY attribute's value. Money of different currencies is never combined or compared:
- * there are no exchange rates yet. The amount is kept normalized, like {@link Quantity}'s.
+ * An amount of a currency — a MONEY attribute's value. Money of different currencies is never combined or compared; it is
+ * converted first, at an {@link ExchangeRates exchange rate}. The amount is kept normalized, like {@link Quantity}'s.
  */
 public record Money(BigDecimal amount, String currency) {
 
@@ -57,6 +57,11 @@ public record Money(BigDecimal amount, String currency) {
     /** Rounded half up to the currency's minor units (EUR 2, JPY 0, KWD 3). */
     public Money rounded(UnitCatalog catalog) {
         return new Money(amount.setScale(catalog.currency(currency).minorUnits(), RoundingMode.HALF_UP), currency);
+    }
+
+    /** The money in another currency at the rate valid on {@code on}; see {@link ExchangeRates}. */
+    public Money convertTo(String targetCurrency, ExchangeRates rates, java.time.LocalDate on, UnitCatalog catalog) {
+        return rates.convert(this, targetCurrency, on, catalog);
     }
 
     private Money combine(Money other, BinaryOperator<BigDecimal> operation) {

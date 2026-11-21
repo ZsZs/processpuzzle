@@ -14,7 +14,7 @@ pairwise ratio graph without transitivity, no notion of what a unit measures).
 | # | Decision |
 | --- | --- |
 | D1 | Unit catalog: a fixed **standard catalog** shipped with the platform. Organizations add **units to its kinds** (phase 6): factor and kind frozen, retired rather than deleted. New kinds and currencies stay out. |
-| D2 | Currency conversion: **later**. Money of different currencies is never combined or compared. |
+| D2 | Currency conversion through **exchange rates with validity periods** (phase 8): per organization, entered by hand, an explicit date that defaults to today. Money of different currencies is still never combined or compared without converting first. |
 | D3 | Amounts are **decimals**, exact end to end. |
 | D4 | Our **own catalog**; no Indriya / Moneta / js-quantities. |
 | D5 | Dimensions use **one unit for all axes**. |
@@ -121,4 +121,11 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    Whatever shows an attribute without knowing its type reads a measure as one: `formatMeasure` (document fields, entity-table
    cells and sums, PDF export, list cells of a calculated attribute, the calculated control).
 
-Later: exchange rates with validity periods (D2).
+8. **Exchange rates (D2)** — rates per organization, `from` → `to`, a decimal and the date it is valid from (it holds until the
+   next one of the pair starts). A lookup is the direct rate, else the inverse of the opposite pair's (20 places), else a cross
+   rate through the alphabetically first currency that has both legs; nothing else, so a missing rate is an error and never a
+   guess. A conversion rounds half up to the target's minor units. *Part 1:* the model in core (`ExchangeRate`,
+   `ExchangeRates`, `Money.convertTo`) and `@processpuzzle/util` (`ExchangeRates`, `convertMoney`), run against shared parity
+   cases. *Part 2:* the organization resource and persistence, a provider port, `money.to(code, date?)` in the backend rule
+   engine and a FEEL function. *Part 3:* the frontend loader, the browser's rule evaluator and a read-only converted hint in the
+   MONEY control. *Part 4:* a designer screen for rates.
