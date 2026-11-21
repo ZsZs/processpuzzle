@@ -13,6 +13,7 @@ import { BASE_RELEASE_ROUTES } from '@processpuzzle/base-release';
 import { BASE_CALCULATION_ROUTES, CALCULATION_RUNS_ROUTES } from '@processpuzzle/base-calculation';
 import { ApplicationDesignerComponent } from './application-designer/application-designer.component';
 import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
+import { EntityDesignerComponent } from './entity-designer/entity-designer.component';
 import { AiDesignerComponent } from './ai-designer/ai-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
 import { DesignWorkbenchComponent } from './workbench/design-workbench.component';
@@ -41,8 +42,9 @@ export const DESIGN_SECTIONS: Routes = [
   // `entity-definition` — `snakeCaseName(entityName)`, which `BaseFormNavigatorSingletonStore` builds its
   // details URL from and so cannot be renamed. The redirect is what makes the section itself open something.
   //
-  // Componentless rather than a tabbed page like Workflows and Application: the section holds one routable
-  // entity, and a tab bar with a single button repeats the sidenav entry beside it. The `menuTitle` stays on
+  // A tabbed page like Calculations — see EntityDesignerComponent: the entity definitions, and the units the organization
+  // adds to the standard catalog. (With one routable entity a tab bar repeated the sidenav entry beside it; with two it
+  // is the way to the second.) The `menuTitle` stays on
   // this route because DesignSidenavComponent lists the top-level routes that declare one — the branch's own
   // route carries the same key, which is harmless because the sidenav never reaches it.
   //
@@ -55,6 +57,7 @@ export const DESIGN_SECTIONS: Routes = [
     path: 'entities',
     title: 'ProcessPuzzle Design - Entities',
     data: { icon: 'checkbook', menuTitle: 'design.entities' },
+    component: EntityDesignerComponent,
     children: [{ path: '', pathMatch: 'full', redirectTo: 'entity-definition' }, ...BASE_ENTITY_AUTHORING_ROUTES],
   },
   // Mounted at `document`, singular, because the path segment is the snake-cased entity name — see the

@@ -114,7 +114,8 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[], 
   // QUANTITY, MONEY and DIMENSIONS only — the mapper drops each for any other control. The units and currencies are the
   // organization's catalog's, retired units left out: the dropdowns list them, the chip inputs suggest them (a code the
   // catalog lacks shows dashed), and the backend refuses what it does not know. The kinds are the standard ones.
-  const unitCodes = toSelectables(catalog.kinds().flatMap((kind) => kind.units.filter((unit) => !unit.retired).map((unit) => unit.code)));
+  // The units are read when the control opens, not when the descriptor is built: a unit the designer adds in the same session shows at once.
+  const unitCodes = () => toSelectables(catalog.kinds().flatMap((kind) => kind.units.filter((unit) => !unit.retired).map((unit) => unit.code)));
   const currencyCodes = toSelectables(catalog.currencies().map((currency) => currency.code));
   const quantityKindAttr = new BaseEntityAttrDescriptor('quantityKind', FormControlType.DROPDOWN, 'Quantity kind', toSelectables(catalog.kinds().map((kind) => kind.code)));
   quantityKindAttr.hideInTable = true;
