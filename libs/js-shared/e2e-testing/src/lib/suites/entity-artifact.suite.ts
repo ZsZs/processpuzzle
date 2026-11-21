@@ -71,11 +71,11 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
       test.describe(`[${descriptor.entityName}] ARTIFACT ${tester.attr.attrName}`, () => {
         test.describe.configure({ timeout: timeoutMs });
 
-        let manager: EntityCrudFixtureManager | undefined;
+        let managerInUse: EntityCrudFixtureManager | undefined;
 
         test.afterEach(async ({ page }, testInfo) => {
-          const managerForTest = manager;
-          manager = undefined;
+          const managerForTest = managerInUse;
+          managerInUse = undefined;
           await managerForTest?.testTearDown(page, testInfo);
         });
 
@@ -87,7 +87,8 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
 
           const entitySegment = descriptor.entityName.replace(/\s+/g, '-').toLowerCase();
           const suffix = `e2e-${Date.now().toString(36)}-${entitySegment}-${tester.attr.attrName}-r${testInfo.retry}`;
-          manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs);
+          const manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs);
+          managerInUse = manager;
 
           await manager.testSetup(page, descriptor);
           const owner = await manager.createEntity(page, descriptor);

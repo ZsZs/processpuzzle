@@ -33,16 +33,17 @@ const documentDescriptor = requireDocumentDescriptor();
 test.describe(`[${DOCUMENT_ENTITY_NAME}] CONTENT`, () => {
   test.describe.configure({ timeout: 90_000 });
 
-  let manager: EntityCrudFixtureManager | undefined;
+  let managerInUse: EntityCrudFixtureManager | undefined;
 
   test.afterEach(async ({ page }, testInfo) => {
-    const managerForTest = manager;
-    manager = undefined;
+    const managerForTest = managerInUse;
+    managerInUse = undefined;
     await managerForTest?.testTearDown(page, testInfo);
   });
 
   test('adds a text block and autosaves what is typed into it', async ({ page }, testInfo) => {
-    manager = createFixtureManager(testInfo.retry);
+    const manager = createFixtureManager(testInfo.retry);
+    managerInUse = manager;
     const fixture = await manager.createEntity(page, documentDescriptor);
     const prose = `Autosaved by e2e ${testInfo.retry}`;
 
@@ -71,7 +72,8 @@ test.describe(`[${DOCUMENT_ENTITY_NAME}] CONTENT`, () => {
    * back the stale — here, empty — content it was loaded with and silently erase the draft.
    */
   test('keeps the content when the properties form is saved', async ({ page }, testInfo) => {
-    manager = createFixtureManager(testInfo.retry);
+    const manager = createFixtureManager(testInfo.retry);
+    managerInUse = manager;
     const fixture = await manager.createEntity(page, documentDescriptor);
     const prose = `Survives a properties save ${testInfo.retry}`;
 

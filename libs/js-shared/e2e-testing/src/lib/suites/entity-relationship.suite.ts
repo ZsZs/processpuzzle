@@ -94,11 +94,11 @@ export function defineEntityRelationshipSuite(options: DefineEntityRelationshipS
       test.describe(`[${descriptor.entityName}] RELATIONSHIP ${tester.attr.attrName} (${tester.kind})`, () => {
         test.describe.configure({ timeout: timeoutMs });
 
-        let manager: EntityCrudFixtureManager | undefined;
+        let managerInUse: EntityCrudFixtureManager | undefined;
 
         test.afterEach(async ({ page }, testInfo) => {
-          const managerForTest = manager;
-          manager = undefined;
+          const managerForTest = managerInUse;
+          managerInUse = undefined;
           await managerForTest?.testTearDown(page, testInfo);
         });
 
@@ -112,7 +112,8 @@ export function defineEntityRelationshipSuite(options: DefineEntityRelationshipS
 
           const linked = linkedDescriptor as BaseEntityDescriptor;
           const suffix = uniqueSuffix(descriptor, tester, testInfo.retry);
-          manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides, options.afterFixtureRemoved);
+          const manager = new EntityCrudFixtureManager(routes, descriptorMap, suffix, options.expectTimeoutMs, options.fixtureOverrides, options.afterFixtureRemoved);
+          managerInUse = manager;
 
           const context = { page, routes, descriptorMap, manager, options, suffix };
           switch (tester.kind) {
