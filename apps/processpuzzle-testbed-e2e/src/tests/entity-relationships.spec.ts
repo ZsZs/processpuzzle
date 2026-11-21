@@ -122,10 +122,14 @@ defineEntityRelationshipSuite({
       // REFERENCE value kind and so cannot share a fixture with the date styles above. The mapper drops them on
       // this one, so they are pinned to what the read-back then finds: unticked and empty. An empty Map
       // provider still opens the select and takes its first option, which the mapper drops the same way.
+      // The measure options — Quantity kind, Allowed and Default unit, Decimal places, Allowed and Default currency,
+      // Dimensions — are kept only on a QUANTITY, MONEY or DIMENSIONS control, which likewise needs a REFERENCE value kind.
+      // This fixture's control type is a plain one, so the mapper drops them and the read-back finds them empty: pinned
+      // empty, the chip inputs take no chip and the number box no digit.
       entityName: 'Entity Attribute',
-      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x', showMap: 'false', mapProvider: '', defaultCountry: '' },
-      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x', showMap: 'false', mapProvider: '', defaultCountry: '' },
-      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one, the map options only on an ADDRESS one',
+      create: { valueKind: 'DATE_TIME', dateStyle: 'short', timeStyle: 'medium', multiplicity: '0..x', showMap: 'false', mapProvider: '', defaultCountry: '', quantityKind: '', allowedUnits: '', defaultUnit: '', scale: '', allowedCurrencies: '', defaultCurrency: '', dimensionCount: '' },
+      update: { valueKind: 'DATE_TIME', dateStyle: 'long', timeStyle: 'short', multiplicity: '1..x', showMap: 'false', mapProvider: '', defaultCountry: '', quantityKind: '', allowedUnits: '', defaultUnit: '', scale: '', allowedCurrencies: '', defaultCurrency: '', dimensionCount: '' },
+      reason: 'dateStyle / timeStyle are kept only on a DATE / DATE_TIME attribute, maxOccurs only on a 0..x / 1..x one, the map options only on an ADDRESS one, the measure options only on a QUANTITY / MONEY / DIMENSIONS one',
     },
     {
       // The owner of [Event Definition] parameters, pinned as in entity-crud.spec.ts: the generator takes the
