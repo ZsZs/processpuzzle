@@ -218,6 +218,22 @@
       "UNAVAILABLE": "A böngésző nem tudja meghatározni a helyzetét."
     }
   },
+  "measure": {
+    "amount": "Érték",
+    "unit": "Mértékegység",
+    "currency": "Pénznem",
+    "width": "Szélesség",
+    "height": "Magasság",
+    "depth": "Mélység",
+    "convert_on": "A mértékegység váltása átváltja az értéket. Kattintson, ha inkább a számot szeretné megtartani.",
+    "convert_off": "A mértékegység váltása megtartja a számot. Kattintson, ha inkább átváltaná az értéket.",
+    "error": {
+      "amount": "Adjon meg egy számot, például 12,5.",
+      "scale": "Legfeljebb {{ max }} tizedesjegy.",
+      "incomplete": "Töltse ki az összes méretet, vagy egyiket sem.",
+      "required": "Ez az érték kötelező."
+    }
+  },
   "working_context": {
     "search": "Keresés",
     "recent": "Legutóbbiak",

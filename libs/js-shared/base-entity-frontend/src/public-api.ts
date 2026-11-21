@@ -42,6 +42,13 @@ export { COUNTRY_CODES, countryName, countryOptions } from './lib/base-form/addr
 export { GeoLocationComponent } from './lib/base-form/geo-location/geo-location.component';
 export { formatGeoLocation, geoLocationOf, type GeoLocation } from './lib/base-form/geo-location/geo-location';
 export { GeoLocationPipe } from './lib/base-form/geo-location/geo-location.pipe';
+export { QuantityComponent } from './lib/base-form/fundamental-types/quantity.component';
+export { MoneyComponent } from './lib/base-form/fundamental-types/money.component';
+export { DimensionsComponent } from './lib/base-form/fundamental-types/dimensions.component';
+export { DimensionsPipe, MoneyPipe, QuantityPipe } from './lib/base-form/fundamental-types/measure.pipes';
+export { formatDimensions, formatMoney, formatQuantity } from './lib/base-form/fundamental-types/measure-format';
+export { dimensionsOf, moneyOf, quantityOf } from './lib/base-form/fundamental-types/measure-values';
+export { UNIT_CATALOG } from './lib/base-form/fundamental-types/unit-catalog.token';
 export { GeoLocator, GeoLocatorFailure, type GeoLocatorError } from './lib/base-form/geo-location/geo-locator';
 export { DEFAULT_MAP_PROVIDER, MAP_PROVIDERS, googleMapsUrl, mapEmbedUrl, type MapProvider } from './lib/base-form/address/address-map';
 // The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.

@@ -11,9 +11,12 @@ const SKIP_CONTROL_TYPES: ReadonlySet<FormControlType> = new Set([
   FormControlType.GEO_LOCATION,
   FormControlType.COMPONENTS,
   FormControlType.CUSTOM,
+  FormControlType.DIMENSIONS,
   FormControlType.EMBEDDED_COMPONENTS,
   FormControlType.FLEX_BOX,
   FormControlType.LABEL,
+  FormControlType.MONEY,
+  FormControlType.QUANTITY,
   FormControlType.RELATED_ENTITIES,
   FormControlType.TITLE,
 ]);

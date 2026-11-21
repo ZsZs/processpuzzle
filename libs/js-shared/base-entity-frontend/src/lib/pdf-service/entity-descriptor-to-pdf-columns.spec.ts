@@ -120,6 +120,33 @@ describe('entityDescriptorToPdfColumns', () => {
     expect(column.formatter?.(null, {})).toBe('');
   });
 
+  it('writes QUANTITY, MONEY and DIMENSIONS in the locale’s notation', () => {
+    const [quantity, money, dimensions] = entityDescriptorToPdfColumns(
+      [
+        new BaseEntityAttrDescriptor('weight', FormControlType.QUANTITY, 'Weight'),
+        new BaseEntityAttrDescriptor('price', FormControlType.MONEY, 'Price'),
+        new BaseEntityAttrDescriptor('size', FormControlType.DIMENSIONS, 'Size'),
+      ],
+      'de-DE',
+    );
+
+    expect(quantity.formatter?.({ amount: '1234.5', unit: 'kg' }, {})).toBe('1.234,5 kg');
+    expect(money.formatter?.({ amount: '1234.5', currency: 'EUR' }, {})).toContain('1.234,50');
+    expect(dimensions.formatter?.({ width: '1.2', height: '0.8', depth: '0.5', unit: 'm' }, {})).toBe('1,2 × 0,8 × 0,5 m');
+    expect([quantity, money, dimensions].map((column) => column.formatter?.(null, {}))).toEqual(['', '', '']);
+  });
+
+  it('falls back to the browser’s language for QUANTITY, MONEY and DIMENSIONS when none is given', () => {
+    const columns = entityDescriptorToPdfColumns([
+      new BaseEntityAttrDescriptor('weight', FormControlType.QUANTITY, 'Weight'),
+      new BaseEntityAttrDescriptor('price', FormControlType.MONEY, 'Price'),
+      new BaseEntityAttrDescriptor('size', FormControlType.DIMENSIONS, 'Size'),
+    ]);
+
+    expect(columns.map((column) => column.formatter?.(null, {}))).toEqual(['', '', '']);
+    expect(columns[0].formatter?.({ amount: '3', unit: 'kg' }, {})).toContain('kg');
+  });
+
   it('leaves COMMENTS out unless the descriptor asks for them', () => {
     expect(entityDescriptorToPdfColumns([new BaseEntityAttrDescriptor('comments', FormControlType.COMMENTS)])).toEqual([]);
   });

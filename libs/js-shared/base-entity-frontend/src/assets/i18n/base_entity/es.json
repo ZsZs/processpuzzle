@@ -218,6 +218,22 @@
       "UNAVAILABLE": "Este navegador no puede determinar su ubicación."
     }
   },
+  "measure": {
+    "amount": "Cantidad",
+    "unit": "Unidad",
+    "currency": "Moneda",
+    "width": "Ancho",
+    "height": "Alto",
+    "depth": "Profundidad",
+    "convert_on": "Al cambiar la unidad se convierte la cantidad. Haga clic para conservar el número.",
+    "convert_off": "Al cambiar la unidad se conserva el número. Haga clic para convertir la cantidad.",
+    "error": {
+      "amount": "Introduzca un número, por ejemplo 12,5.",
+      "scale": "Como máximo {{ max }} decimales.",
+      "incomplete": "Rellene todas las medidas o ninguna.",
+      "required": "Este valor es obligatorio."
+    }
+  },
   "working_context": {
     "search": "Buscar",
     "recent": "Recientes",

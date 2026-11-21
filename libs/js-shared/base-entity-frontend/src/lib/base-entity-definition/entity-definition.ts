@@ -148,6 +148,20 @@ export class EntityAttributeDefinition implements BaseEntity {
   mapProvider?: MapProvider;
   /** `ADDRESS` only: the ISO 3166-1 alpha-2 code a new address starts with. */
   defaultCountry?: string;
+  /** `QUANTITY` only: the quantity kind whose units are offered — the descriptor's `quantityKind`. */
+  quantityKind?: string;
+  /** `QUANTITY` and `DIMENSIONS`: the unit codes offered; the whole kind when empty. */
+  allowedUnits?: string[];
+  /** `QUANTITY` and `DIMENSIONS`: the unit a new value starts in. */
+  defaultUnit?: string;
+  /** `QUANTITY` and `DIMENSIONS`: the most decimal places an amount may have. */
+  scale?: number;
+  /** `MONEY` only: the ISO 4217 codes offered; every currency when empty. */
+  allowedCurrencies?: string[];
+  /** `MONEY` only: the currency a new amount starts in. */
+  defaultCurrency?: string;
+  /** `DIMENSIONS` only: 2 or 3 axes. */
+  dimensionCount?: 2 | 3;
 
   constructor(init: Partial<EntityAttributeDefinition> = {}) {
     this.code = init.code ?? '';
@@ -174,6 +188,13 @@ export class EntityAttributeDefinition implements BaseEntity {
     this.showMap = init.showMap;
     this.mapProvider = init.mapProvider;
     this.defaultCountry = init.defaultCountry;
+    this.quantityKind = init.quantityKind;
+    this.allowedUnits = init.allowedUnits;
+    this.defaultUnit = init.defaultUnit;
+    this.scale = init.scale;
+    this.allowedCurrencies = init.allowedCurrencies;
+    this.defaultCurrency = init.defaultCurrency;
+    this.dimensionCount = init.dimensionCount;
   }
 }
 
