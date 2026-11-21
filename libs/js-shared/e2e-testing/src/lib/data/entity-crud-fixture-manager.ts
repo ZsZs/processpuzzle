@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page, TestInfo } from '@playwright/test';
 import type { BaseEntityDescriptor } from '@processpuzzle/base-entity';
 import {
   type FixtureOverride,
@@ -31,6 +31,9 @@ export interface EntityFixture extends LinkedEntityFixture {
   deleted: boolean;
 }
 
+/** Extra time a teardown hook may take beyond the test's own timeout. */
+const TEARDOWN_BUDGET_MS = 60_000;
+
 export class EntityCrudFixtureManager {
   private readonly createdIdsByEntity: Record<string, string> = {};
   private readonly createdDataByEntity: Record<string, Record<string, string>> = {};
@@ -50,9 +53,32 @@ export class EntityCrudFixtureManager {
     await this.ensureLinkedFixtures(page, descriptor, []);
   }
 
-  async testTearDown(page: Page): Promise<void> {
-    if (page.isClosed()) return;
+  /**
+   * Removes what the test created. A hook shares the test's timeout, so a test that ran long left the cleanup
+   * nothing — and the page it had been given was closed by then, which used to end the cleanup silently and
+   * leave the data on the stage. So the hook is given a budget of its own, and a closed page is replaced by one
+   * of a fresh context (same base URL and sign-in as the project's).
+   */
+  async testTearDown(page: Page, testInfo?: TestInfo): Promise<void> {
+    if (!this.fixtures.some((fixture) => !fixture.deleted)) return;
+    testInfo?.setTimeout(testInfo.timeout + TEARDOWN_BUDGET_MS);
 
+    const browser = page.context().browser();
+    if (!page.isClosed() || !browser || !testInfo) {
+      await this.deleteAll(page);
+      return;
+    }
+
+    const { baseURL, storageState } = testInfo.project.use;
+    const context = await browser.newContext({ baseURL, storageState });
+    try {
+      await this.deleteAll(await context.newPage());
+    } finally {
+      await context.close();
+    }
+  }
+
+  private async deleteAll(page: Page): Promise<void> {
     const errors: string[] = [];
 
     for (const fixture of [...this.fixtures].reverse()) {

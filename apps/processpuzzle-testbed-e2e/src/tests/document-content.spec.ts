@@ -35,10 +35,10 @@ test.describe(`[${DOCUMENT_ENTITY_NAME}] CONTENT`, () => {
 
   let manager: EntityCrudFixtureManager | undefined;
 
-  test.afterEach(async ({ page }) => {
+  test.afterEach(async ({ page }, testInfo) => {
     const managerForTest = manager;
     manager = undefined;
-    await managerForTest?.testTearDown(page);
+    await managerForTest?.testTearDown(page, testInfo);
   });
 
   test('adds a text block and autosaves what is typed into it', async ({ page }, testInfo) => {

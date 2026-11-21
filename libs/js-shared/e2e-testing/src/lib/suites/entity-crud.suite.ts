@@ -75,10 +75,10 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
         test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
       });
 
-      test.afterEach(async ({ page }) => {
+      test.afterEach(async ({ page }, testInfo) => {
         const managerForTest = manager;
         manager = undefined;
-        await managerForTest?.testTearDown(page);
+        await managerForTest?.testTearDown(page, testInfo);
       });
 
       test('CREATE', async ({ page }, testInfo) => {

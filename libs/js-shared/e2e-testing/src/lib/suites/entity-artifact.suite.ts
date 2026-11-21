@@ -73,10 +73,10 @@ export function defineEntityArtifactSuite(options: DefineEntityArtifactSuiteOpti
 
         let manager: EntityCrudFixtureManager | undefined;
 
-        test.afterEach(async ({ page }) => {
+        test.afterEach(async ({ page }, testInfo) => {
           const managerForTest = manager;
           manager = undefined;
-          await managerForTest?.testTearDown(page);
+          await managerForTest?.testTearDown(page, testInfo);
         });
 
         test('ARTIFACT', async ({ page }, testInfo) => {
