@@ -6,7 +6,10 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
+import com.processpuzzle.baseentity.instances.domain.MeasureValues;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
 import cz.jirutka.rsql.parser.RSQLParserException;
 import java.math.BigDecimal;
@@ -115,22 +118,22 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
         if (version(entityObject) != expectedVersion) {
             throw new EntityObjectAccessException.VersionConflict(objectId, expectedVersion, version(entityObject));
         }
-        writeKeepingVersion(entityObject, values);
+        writeKeepingVersion(entityObject, withMeasures(definitionLookupPort.findByCode(orgKey, entityDefinitionCode).orElse(null), values));
     }
 
     @Override
     @Transactional
     public int upsertAllByKey(String orgKey, String entityDefinitionCode, List<String> keyAttributes,
                               List<Map<String, Object>> rows) {
-        if (definitionLookupPort.findByCode(orgKey, entityDefinitionCode).isEmpty()) {
-            throw new EntityObjectAccessException.UnknownType(entityDefinitionCode);
-        }
+        EntityDefinitionView definition = definitionLookupPort.findByCode(orgKey, entityDefinitionCode)
+            .orElseThrow(() -> new EntityObjectAccessException.UnknownType(entityDefinitionCode));
         Map<List<Object>, EntityObject> byKey = new HashMap<>();
         for (EntityObject entityObject : scope.findAll(orgKey, entityDefinitionCode)) {
             byKey.putIfAbsent(keyOf(entityObject.getPayload(), keyAttributes), entityObject);
         }
         int created = 0;
-        for (Map<String, Object> row : rows) {
+        for (Map<String, Object> written : rows) {
+            Map<String, Object> row = withMeasures(definition, written);
             List<Object> key = keyOf(row, keyAttributes);
             EntityObject existing = byKey.get(key);
             if (existing != null) {
@@ -146,6 +149,29 @@ public class EntityObjectAccessAdapter implements EntityObjectAccess {
             }
         }
         return created;
+    }
+
+    /**
+     * {@code values} with every QUANTITY, MONEY or DIMENSIONS attribute's value put in its stored form — validated, with its
+     * derived numbers — as a form's save would. A bare number, which is what a calculation produces, becomes the attribute's
+     * amount in its default unit or currency. The write is otherwise unvalidated, so this is the one check a derived value gets.
+     */
+    private static Map<String, Object> withMeasures(EntityDefinitionView definition, Map<String, Object> values) {
+        if (definition == null) {
+            return values;
+        }
+        Map<String, Object> prepared = new LinkedHashMap<>(values);
+        values.forEach((code, value) -> {
+            EntityAttributeView attribute = definition.attribute(code);
+            if (attribute != null && attribute.measure() != null && value != null) {
+                try {
+                    prepared.put(code, MeasureValues.forWrite(attribute.measure(), value));
+                } catch (IllegalArgumentException e) {
+                    throw new EntityObjectAccessException.InvalidValue(code, e.getMessage());
+                }
+            }
+        });
+        return prepared;
     }
 
     /** The values of {@code attributes}, numbers by value — a stored {@code 1} and a written {@code 1.0} are one key. */

@@ -64,14 +64,20 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
   value format stays for plain NUMBER attributes.
 - **Validation (backend)** — amount parses as a decimal; unit exists, is of the attribute's kind and is
   allowed; currency is ISO 4217 and allowed; scale not exceeded; dimensions have 2 or 3 axes as declared.
-- **Rules** — both evaluators (browser `new Function`, backend GraalJS) receive quantity / money values
-  wrapped by the same small helper script:
-  - `qty('5 kg')`, `money('100 EUR')` literals;
-  - `a.gt(b)`, `a.eq(b)`, `a.plus(b)`, `a.to('g')`, `d.area()`, `d.volume()` — unit-aware,
-    failing on a kind or currency mismatch;
-  - `valueOf()` returns the base amount, so `entity.weight > qty('5 kg')` also works for quantities.
-- **Calculations (FEEL)** — read a quantity as its base amount and money as its amount; writing a result
-  into a QUANTITY / MONEY attribute takes the attribute's default unit / currency.
+- **Rules** — both evaluators offer `qty()`, `money()` and `dims()`, which read a literal (`qty('5 kg')`), a stored
+  value (`qty(entity.weight)`) or an object literal as an object with `to`, `plus`, `minus`, `times`, `dividedBy`,
+  `eq` / `gt` / `ge` / `lt` / `le`, `round()` (money), `area()` / `volume()` (dimensions) — unit-aware, **throwing** on a
+  kind or currency mismatch. Two choices differ from the first draft: the helpers are explicit rather than wrapping the
+  whole entity (guessing measures by shape would misread embedded rows with `amount` / `unit` fields), and a bare
+  operator on a measure is **refused** (`valueOf` throws), since `qty('10 kg') > qty('9 kg')` compares the text and
+  `qty('5 kg') > qty('5 m')` ignores the kinds. The backend runs GraalJS; the browser **interprets** a read-only subset of
+  JavaScript (an acorn-parsed, allowlisted tree — no `new Function`, so a rule reaches nothing of the page);
+  `rule-measure-cases.json` and `rule-expression-cases.json` pin both to the same answers.
+- **Calculations (FEEL)** — a measure reaches FEEL as its stored object: `weight.baseAmount` (the kind's base unit),
+  `price.baseAmount`, `size.baseArea` / `size.baseVolume`, and `number(price.amount)` for money to the cent. `amount`
+  is deliberately not typed as a number — it means nothing without `unit`, and a sum across units would be quietly
+  wrong. Writing a result into a QUANTITY / MONEY attribute: a bare number is taken to be in the attribute's default
+  unit / currency, rounded to its decimal places and stored with its derived numbers (`MeasureValues.forWrite`).
 - **Durations** — a TIME quantity converts to and from an ISO 8601 duration (`PT90M` ↔ `1.5 h`).
 
 ## Placement
@@ -92,7 +98,9 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    `baseVolume` normalization on every write, RSQL through those numbers. *Part 2:* the designer's authoring
    fields (dropdowns, chip inputs suggesting the catalog), query-editor fields for the derived numbers, and one
    sample attribute of each control in the testbed seed's `dynamic-entity`, with a sample instance.
-4. **Rules and calculations** — shared helper in both rule evaluators, FEEL mapping, rule dry-run
-   showing converted values.
+4. **Rules and calculations** — *Part 1 (#1448):* the helpers in both rule evaluators and the browser's rule
+   interpreter, which replaced `new Function` (SonarCloud `S1523`); the existing dry run supports the helpers, there is
+   no separate "converted values" panel. *Part 2:* a calculation's bare number written into a QUANTITY / MONEY
+   attribute in its default unit or currency, validated and stored with its derived numbers; reading stays as it was.
 
 Later: organization units (D1), exchange rates with validity periods (D2).

@@ -12,6 +12,8 @@ import java.util.List;
  * @param scale             QUANTITY and DIMENSIONS: the most decimal places an amount may have
  * @param allowedCurrencies MONEY: the ISO 4217 codes a value may use
  * @param dimensionCount    DIMENSIONS: 2 or 3; null means 2
+ * @param defaultUnit       QUANTITY and DIMENSIONS: the unit a bare number written to the attribute is taken to be in
+ * @param defaultCurrency   MONEY: the currency a bare number written to the attribute is taken to be in
  */
 public record MeasureView(
     Kind kind,
@@ -19,8 +21,16 @@ public record MeasureView(
     List<String> allowedUnits,
     Integer scale,
     List<String> allowedCurrencies,
-    Integer dimensionCount
+    Integer dimensionCount,
+    String defaultUnit,
+    String defaultCurrency
 ) {
+
+    /** A measure without defaults, for a caller that only validates what is submitted. */
+    public MeasureView(Kind kind, String quantityKind, List<String> allowedUnits, Integer scale, List<String> allowedCurrencies,
+                       Integer dimensionCount) {
+        this(kind, quantityKind, allowedUnits, scale, allowedCurrencies, dimensionCount, null, null);
+    }
 
     /** The three controls whose values are measures. */
     public enum Kind {
