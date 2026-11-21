@@ -87,6 +87,27 @@
       "sharedFrom": "The common this type comes from. Its organization reads the type, but only the common releases or changes it. Empty for your own types. Set by the system."
     }
   },
+  "organization_unit": {
+    "_self": "Unit",
+    "code": "Code",
+    "symbol": "Symbol",
+    "name": "Name",
+    "kind": "Kind",
+    "factor": "Factor",
+    "divisor": "Divisor",
+    "status": "Status",
+    "version": "Version",
+    "_tooltips": {
+      "code": "Unique key of the unit within your organization, used in stored values, e.g. pallet. Fixed once the unit is saved.",
+      "symbol": "What appears beside an amount, e.g. plt.",
+      "name": "The unit spelled out, e.g. Pallet.",
+      "kind": "What the unit measures, e.g. MASS. A unit is added to a kind the standard catalog has. Fixed once the unit is saved.",
+      "factor": "How many of the kind's base units one of these is, e.g. 500 for a pallet of 500 kg. Fixed once the unit is saved, because stored amounts are derived from it.",
+      "divisor": "Divides the factor, for a unit that is a fraction of the base unit; 1 when left empty. Fixed once the unit is saved.",
+      "status": "ACTIVE for a unit in use, RETIRED to stop offering it for new values. Values already stored with it stay readable. A unit is never deleted.",
+      "version": "The revision on screen, kept so two designers cannot overwrite each other unnoticed."
+    }
+  },
   "artifact": {
     "upload_failure": "Artifact upload failed. Please try again.",
     "invalid_file_type": "Only image files are allowed.",

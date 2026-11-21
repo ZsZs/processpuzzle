@@ -112,7 +112,7 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    from the backend (`OrganizationUnitCatalog`, loaded with the entity definitions after sign-in — an app initializer would
    ask before there is a token; `UNIT_CATALOG` is a live view of it), retired units hidden from new choices, the browser's
    rule evaluator and the designer's attribute options on the organization's catalog; document fields and entity-table
-   cells still name a unit of the organization by its code. *Part 4:* a designer screen for units.
+   cells still name a unit of the organization by its code. *Part 4:* the designer's units screen — an `Organization Unit` branch of base-entity's authoring routes (`/design/entities/organization-unit`, a second tab beside the entity definitions): code, kind, factor and divisor are `createOnly` (fixed once saved), the status is the one thing still editable (retire), no delete; a saved unit reloads the catalog at once and the attribute options read it lazily.
 
 7. **Testbed uses the types** — the Order family: a line's `quantity` is a COUNT quantity (`pc`, `dz`), `unitPrice` and `total`
    are EUR money; `demo-component-one` has a COUNT quantity too. The `order-total` calculation reads `baseAmount`

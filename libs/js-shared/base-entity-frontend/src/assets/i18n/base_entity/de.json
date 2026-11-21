@@ -87,6 +87,27 @@
       "sharedFrom": "Das Common, aus dem dieser Typ stammt. Ihre Organisation liest den Typ, aber nur das Common veröffentlicht oder ändert ihn. Leer bei eigenen Typen. Wird vom System gesetzt."
     }
   },
+  "organization_unit": {
+    "_self": "Einheit",
+    "code": "Code",
+    "symbol": "Symbol",
+    "name": "Name",
+    "kind": "Art",
+    "factor": "Faktor",
+    "divisor": "Divisor",
+    "status": "Status",
+    "version": "Version",
+    "_tooltips": {
+      "code": "Eindeutiger Schlüssel der Einheit in Ihrer Organisation, in gespeicherten Werten verwendet, z. B. pallet. Nach dem Speichern fest.",
+      "symbol": "Was neben einer Menge steht, z. B. plt.",
+      "name": "Die ausgeschriebene Einheit, z. B. Palette.",
+      "kind": "Was die Einheit misst, z. B. MASS. Eine Einheit wird einer Art des Standardkatalogs hinzugefügt. Nach dem Speichern fest.",
+      "factor": "Wie viele Basiseinheiten der Art eine davon ist, z. B. 500 für eine Palette zu 500 kg. Nach dem Speichern fest, da gespeicherte Mengen daraus abgeleitet sind.",
+      "divisor": "Teilt den Faktor, für eine Einheit, die ein Bruchteil der Basiseinheit ist; 1, wenn leer. Nach dem Speichern fest.",
+      "status": "ACTIVE für eine verwendete Einheit, RETIRED, damit sie für neue Werte nicht mehr angeboten wird. Bereits gespeicherte Werte bleiben lesbar. Eine Einheit wird nie gelöscht.",
+      "version": "Die angezeigte Revision, damit zwei Designer einander nicht unbemerkt überschreiben."
+    }
+  },
   "artifact": {
     "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen.",
     "invalid_file_type": "Nur Bilddateien sind erlaubt.",

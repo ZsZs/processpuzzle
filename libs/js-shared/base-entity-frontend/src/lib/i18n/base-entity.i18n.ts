@@ -25,6 +25,8 @@ export const BASE_ENTITY_TRANSLOCO_SCOPE = 'base_entity';
  */
 export const ENTITY_DEFINITION_I18N_SCOPE = `${BASE_ENTITY_TRANSLOCO_SCOPE}.entity_definition`;
 export const ENTITY_ATTRIBUTE_I18N_SCOPE = `${BASE_ENTITY_TRANSLOCO_SCOPE}.entity_attribute`;
+/** The units an organization adds to the standard catalog — authored in the same branch, labelled in the same scope. */
+export const ORGANIZATION_UNIT_I18N_SCOPE = `${BASE_ENTITY_TRANSLOCO_SCOPE}.organization_unit`;
 
 /**
  * Where this library's transloco bundles come from when the application ships without its assets.

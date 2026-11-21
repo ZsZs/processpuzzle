@@ -17,6 +17,7 @@ export default createGlobalSetup({
   routeOverrides: {
     'App Definition': '/design/application/app-definition',
     'Entity Definition': '/design/entities/entity-definition',
+    'Organization Unit': '/design/entities/organization-unit',
     'Widget Definition': '/design/application/widget-definition',
   },
 });
