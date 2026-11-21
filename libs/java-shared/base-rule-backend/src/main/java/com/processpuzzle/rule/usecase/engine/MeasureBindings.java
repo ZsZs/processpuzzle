@@ -33,13 +33,19 @@ import org.graalvm.polyglot.proxy.ProxyObject;
  */
 final class MeasureBindings {
 
-    private static final UnitCatalog CATALOG = UnitCatalog.standard();
+    /**
+     * The units a rule's values are read in: the catalog of the organization whose rule is evaluating, which the engine sets
+     * before each evaluation ({@link #useCatalog}). One instance serves one context, and so one thread, at a time.
+     */
+    private UnitCatalog catalog = UnitCatalog.standard();
 
-    private MeasureBindings() {
+    /** Reads units from {@code catalog} until told otherwise — the organization's, for the rule about to run. */
+    void useCatalog(UnitCatalog catalog) {
+        this.catalog = catalog;
     }
 
     /** Defines {@code qty}, {@code money} and {@code dims} as globals of the context. */
-    static void install(Context context) {
+    void install(Context context) {
         Value globals = context.getBindings("js");
         globals.putMember("qty", (ProxyExecutable) args -> quantityOf(single("qty", args)));
         globals.putMember("money", (ProxyExecutable) args -> moneyOf(single("money", args)));
@@ -80,24 +86,24 @@ final class MeasureBindings {
         }
     }
 
-    private static final class QuantityObject extends MeasureObject {
+    private final class QuantityObject extends MeasureObject {
         final Quantity quantity;
 
         QuantityObject(Quantity quantity) {
             this.quantity = quantity;
             member("amount", quantity.amountText());
             member("unit", quantity.unit());
-            member("base", quantity.baseAmount(CATALOG).doubleValue());
-            method("to", args -> new QuantityObject(quantity.convertTo(text("to", args), CATALOG)));
-            method("plus", args -> new QuantityObject(quantity.plus(quantityArg(args), CATALOG)));
-            method("minus", args -> new QuantityObject(quantity.minus(quantityArg(args), CATALOG)));
-            method("times", args -> new QuantityObject(quantity.times(decimalArg(args), CATALOG)));
-            method("dividedBy", args -> new QuantityObject(quantity.dividedBy(decimalArg(args), CATALOG)));
-            method("eq", args -> quantity.compareTo(quantityArg(args), CATALOG) == 0);
-            method("gt", args -> quantity.compareTo(quantityArg(args), CATALOG) > 0);
-            method("ge", args -> quantity.compareTo(quantityArg(args), CATALOG) >= 0);
-            method("lt", args -> quantity.compareTo(quantityArg(args), CATALOG) < 0);
-            method("le", args -> quantity.compareTo(quantityArg(args), CATALOG) <= 0);
+            member("base", quantity.baseAmount(catalog).doubleValue());
+            method("to", args -> new QuantityObject(quantity.convertTo(text("to", args), catalog)));
+            method("plus", args -> new QuantityObject(quantity.plus(quantityArg(args), catalog)));
+            method("minus", args -> new QuantityObject(quantity.minus(quantityArg(args), catalog)));
+            method("times", args -> new QuantityObject(quantity.times(decimalArg(args), catalog)));
+            method("dividedBy", args -> new QuantityObject(quantity.dividedBy(decimalArg(args), catalog)));
+            method("eq", args -> quantity.compareTo(quantityArg(args), catalog) == 0);
+            method("gt", args -> quantity.compareTo(quantityArg(args), catalog) > 0);
+            method("ge", args -> quantity.compareTo(quantityArg(args), catalog) >= 0);
+            method("lt", args -> quantity.compareTo(quantityArg(args), catalog) < 0);
+            method("le", args -> quantity.compareTo(quantityArg(args), catalog) <= 0);
             method("toString", args -> quantity.amountText() + " " + quantity.unit());
             method("valueOf", args -> {
                 throw operatorRefused("a quantity", "gt(), ge(), lt(), le() or eq(), e.g. qty(entity.weight).gt(qty('5 kg'))");
@@ -105,7 +111,7 @@ final class MeasureBindings {
         }
     }
 
-    private static final class MoneyObject extends MeasureObject {
+    private final class MoneyObject extends MeasureObject {
         final Money money;
 
         MoneyObject(Money money) {
@@ -116,7 +122,7 @@ final class MeasureBindings {
             method("minus", args -> new MoneyObject(money.minus(moneyArg(args))));
             method("times", args -> new MoneyObject(money.times(decimalArg(args))));
             method("dividedBy", args -> new MoneyObject(money.dividedBy(decimalArg(args))));
-            method("round", args -> new MoneyObject(money.rounded(CATALOG)));
+            method("round", args -> new MoneyObject(money.rounded(catalog)));
             method("eq", args -> money.compareTo(moneyArg(args)) == 0);
             method("gt", args -> money.compareTo(moneyArg(args)) > 0);
             method("ge", args -> money.compareTo(moneyArg(args)) >= 0);
@@ -129,7 +135,7 @@ final class MeasureBindings {
         }
     }
 
-    private static final class DimensionsObject extends MeasureObject {
+    private final class DimensionsObject extends MeasureObject {
         final Dimensions dimensions;
 
         DimensionsObject(Dimensions dimensions) {
@@ -138,9 +144,9 @@ final class MeasureBindings {
             member("height", Decimals.text(dimensions.height()));
             member("depth", dimensions.depth() == null ? null : Decimals.text(dimensions.depth()));
             member("unit", dimensions.unit());
-            method("to", args -> new DimensionsObject(dimensions.convertTo(text("to", args), CATALOG)));
-            method("area", args -> new QuantityObject(dimensions.area(CATALOG)));
-            method("volume", args -> new QuantityObject(dimensions.volume(CATALOG)));
+            method("to", args -> new DimensionsObject(dimensions.convertTo(text("to", args), catalog)));
+            method("area", args -> new QuantityObject(dimensions.area(catalog)));
+            method("volume", args -> new QuantityObject(dimensions.volume(catalog)));
             method("toString", args -> dimensions.isThreeDimensional()
                     ? "%s x %s x %s %s".formatted(Decimals.text(dimensions.width()), Decimals.text(dimensions.height()), Decimals.text(dimensions.depth()), dimensions.unit())
                     : "%s x %s %s".formatted(Decimals.text(dimensions.width()), Decimals.text(dimensions.height()), dimensions.unit()));
@@ -162,7 +168,7 @@ final class MeasureBindings {
 
     // region reading what a rule hands in
 
-    private static Object quantityOf(Value value) {
+    private Object quantityOf(Value value) {
         if (value.isNull()) {
             return null;
         }
@@ -171,13 +177,13 @@ final class MeasureBindings {
             return object;
         }
         if (value.isString()) {
-            return new QuantityObject(Quantity.parse(value.asString(), CATALOG));
+            return new QuantityObject(Quantity.parse(value.asString(), catalog));
         }
         Map<String, Object> fields = fieldsOf(value, "quantity");
         return new QuantityObject(new Quantity(amount(fields.get("amount"), "amount"), string(fields.get("unit"), "unit")));
     }
 
-    private static Object moneyOf(Value value) {
+    private Object moneyOf(Value value) {
         if (value.isNull()) {
             return null;
         }
@@ -186,13 +192,13 @@ final class MeasureBindings {
             return object;
         }
         if (value.isString()) {
-            return new MoneyObject(Money.parse(value.asString(), CATALOG));
+            return new MoneyObject(Money.parse(value.asString(), catalog));
         }
         Map<String, Object> fields = fieldsOf(value, "money");
         return new MoneyObject(new Money(amount(fields.get("amount"), "amount"), string(fields.get("currency"), "currency")));
     }
 
-    private static Object dimensionsOf(Value value) {
+    private Object dimensionsOf(Value value) {
         if (value.isNull()) {
             return null;
         }
@@ -206,26 +212,26 @@ final class MeasureBindings {
                 depth == null ? null : amount(depth, "depth"), string(fields.get("unit"), "unit")));
     }
 
-    private static Quantity quantityArg(Value[] args) {
+    private Quantity quantityArg(Value[] args) {
         Value value = single("argument", args);
         Object host = hostObject(value);
         if (host instanceof QuantityObject object) {
             return object.quantity;
         }
         if (value.isString()) {
-            return Quantity.parse(value.asString(), CATALOG);
+            return Quantity.parse(value.asString(), catalog);
         }
         throw new FundamentalTypeException(Reason.INVALID_AMOUNT, "expected a quantity, e.g. qty('5 kg')");
     }
 
-    private static Money moneyArg(Value[] args) {
+    private Money moneyArg(Value[] args) {
         Value value = single("argument", args);
         Object host = hostObject(value);
         if (host instanceof MoneyObject object) {
             return object.money;
         }
         if (value.isString()) {
-            return Money.parse(value.asString(), CATALOG);
+            return Money.parse(value.asString(), catalog);
         }
         throw new FundamentalTypeException(Reason.INVALID_AMOUNT, "expected money, e.g. money('100 EUR')");
     }
