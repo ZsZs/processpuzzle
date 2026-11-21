@@ -7,7 +7,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { decimalText, toDecimal } from '@processpuzzle/util';
 import { BaseEntity } from '../../base-entity/base-entity';
 import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
-import { amountValidator, cleanAmount, isAmountText } from './amount-text';
+import { amountValidator, cleanAmount, isAmountText, paddedToPlaces } from './amount-text';
 import { MeasureControlComponent } from './measure-control.component';
 import { currenciesOf, defaultCurrencyOf } from './measure-options';
 import { MEASURE_STYLES } from './measure.styles';
@@ -79,7 +79,11 @@ export class MoneyComponent<Entity extends BaseEntity> extends MeasureControlCom
     const offered = currenciesOf(this.config(), this.catalog);
     // A stored currency the attribute no longer offers is still shown, as in `QuantityComponent`.
     this.currencies.set(stored && !offered.includes(stored.currency) && this.catalog.findCurrency(stored.currency) ? [...offered, stored.currency] : offered);
-    this.fields.reset({ amount: stored?.amount ?? null, currency: stored?.currency ?? defaultCurrencyOf(this.config(), offered) ?? null }, { emitEvent: false });
+    const currency = stored?.currency ?? defaultCurrencyOf(this.config(), offered) ?? null;
+    // Shown to the minor units — the stored text is a decimal, which has lost the trailing zero of 1299.90.
+    const minorUnits = currency ? this.catalog.findCurrency(currency)?.minorUnits : undefined;
+    const amount = stored ? paddedToPlaces(stored.amount, minorUnits) : null;
+    this.fields.reset({ amount, currency }, { emitEvent: false });
     this.fields.controls.amount.addValidators(amountValidator(() => this.scaleLimit()));
   }
 

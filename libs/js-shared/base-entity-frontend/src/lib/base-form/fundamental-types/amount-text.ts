@@ -17,6 +17,14 @@ export function decimalPlaces(text: string): number {
   return point < 0 ? 0 : text.length - point - 1;
 }
 
+/** An amount shown with at least `places` decimal places: `1299.9` as `1299.90` in euro. Longer amounts are left as they are. */
+export function paddedToPlaces(text: string, places: number | undefined): string {
+  if (!places || places <= 0) return text;
+  const missing = places - decimalPlaces(text);
+  if (missing <= 0) return text;
+  return (text.includes('.') ? text : text + '.') + '0'.repeat(missing);
+}
+
 /**
  * Validates an amount field: empty is fine (a required attribute says so itself), anything else must be a plain
  * decimal with at most `maxPlaces()` decimal places when the attribute limits them.

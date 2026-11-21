@@ -3,7 +3,7 @@ import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
 import { describe, expect, it } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
-import { amountValidator, cleanAmount, decimalPlaces, isAmountText } from './amount-text';
+import { amountValidator, cleanAmount, decimalPlaces, isAmountText, paddedToPlaces } from './amount-text';
 import { formatDimensions, formatMoney, formatQuantity } from './measure-format';
 import { convertAmount, currenciesOf, DEFAULT_CONVERSION_SCALE, defaultCurrencyOf, defaultUnitOf, dimensionUnitsOf, groupByKind, quantityUnitsOf } from './measure-options';
 import { dimensionsOf, moneyOf, quantityOf } from './measure-values';
@@ -15,6 +15,14 @@ function attr(type: FormControlType, init: Partial<BaseEntityAttrDescriptor> = {
 }
 
 describe('amount text', () => {
+  it('pads an amount to the minor units, and never shortens one', () => {
+    expect(paddedToPlaces('1299.9', 2)).toBe('1299.90');
+    expect(paddedToPlaces('1299', 2)).toBe('1299.00');
+    expect(paddedToPlaces('1299.999', 2)).toBe('1299.999');
+    expect(paddedToPlaces('1299', 0)).toBe('1299');
+    expect(paddedToPlaces('1299', undefined)).toBe('1299');
+  });
+
   it('reads what a user types: no white space, a decimal comma is a point', () => {
     expect(cleanAmount(' 1 234,5 ')).toBe('1234.5');
     expect(cleanAmount(null)).toBe('');
