@@ -10,6 +10,8 @@ import com.processpuzzle.baseentity.instances.usecases.inbound.CreateEntityInsta
 import com.processpuzzle.baseentity.unit.domain.OrganizationUnit;
 import com.processpuzzle.baseentity.unit.domain.UnitStatus;
 import com.processpuzzle.baseentity.unit.usecases.inbound.ManageOrganizationUnits;
+import com.processpuzzle.rule.usecase.engine.RuleEngine;
+import com.processpuzzle.rule.usecase.engine.RuleKey;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -52,6 +54,7 @@ class OrganizationUnitsIntegrationTest {
     @Autowired private EntityDefinitionReleaseParticipant entityRelease;
     @Autowired private CreateEntityInstanceUseCase createEntity;
     @Autowired private EntityObjectAccess entities;
+    @Autowired private RuleEngine ruleEngine;
 
     private static OrganizationUnit pallet() {
         OrganizationUnit unit = new OrganizationUnit();
@@ -106,6 +109,19 @@ class OrganizationUnitsIntegrationTest {
         assertThat(load(entities.find(org, "consignment", id))).as("a bare number is in the default unit, a retired one still").containsEntry("unit", "pallet").containsEntry("baseAmount", 1500.0);
         assertThatThrownBy(() -> entities.updateAttributes(org, "consignment", id, Map.of("load", Map.of("amount", "1", "unit", "crate")), version(org, id)))
             .isInstanceOf(EntityObjectAccessException.InvalidValue.class);
+    }
+
+    @Test
+    void aRuleOfTheOrganizationReadsTheUnitAndAnotherOrganizationsRuleDoesNot() {
+        String org = ORG + "-rules";
+        String expression = "qty(entity.load).gt(qty('900 kg'))";
+        Map<String, Object> entity = Map.of("load", Map.of("amount", "2", "unit", "pallet"));
+        assertThatThrownBy(() -> ruleEngine.evaluate(RuleKey.of(org, "heavy"), expression, entity)).hasMessageContaining("pallet");
+
+        units.create(org, pallet());
+
+        assertThat(ruleEngine.evaluate(RuleKey.of(org, "heavy"), expression, entity)).as("2 pallets = 1000 kg").isTrue();
+        assertThatThrownBy(() -> ruleEngine.evaluate(RuleKey.of(OTHER_ORG, "heavy"), expression, entity)).hasMessageContaining("pallet");
     }
 
     @Test
