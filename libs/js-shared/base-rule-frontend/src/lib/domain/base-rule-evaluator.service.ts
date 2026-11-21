@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BaseRule } from './base-rule';
+import { interpret, rootScope } from './expression/rule-expression-interpreter';
+import { parseRuleExpression } from './expression/rule-expression-parser';
 import { RuleEvaluationResult } from './rule-evaluation-result';
 
+/** A rule's expression as a function of the entity under evaluation. */
 type CompiledRule = (entity: unknown) => unknown;
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +38,11 @@ export class BaseRuleEvaluatorService {
     this.compiled.clear();
   }
 
+  /** How many distinct expressions are compiled and kept. */
+  cacheSize(): number {
+    return this.compiled.size;
+  }
+
   private compile(expression: string): CompiledRule {
     const trimmed = (expression ?? '').trim();
     if (!trimmed) throw new Error('Rule expression is empty');
@@ -42,7 +50,10 @@ export class BaseRuleEvaluatorService {
     const cached = this.compiled.get(trimmed);
     if (cached) return cached;
 
-    const fn = new Function('entity', `"use strict"; return (${trimmed});`) as CompiledRule;
+    // The text is parsed and checked once, and the tree is interpreted for each entity: no text ever becomes code, so a
+    // rule can reach nothing of the page — only the entity and the helpers rule-expression-builtins lists.
+    const ast = parseRuleExpression(trimmed);
+    const fn: CompiledRule = (entity) => interpret(ast, rootScope(entity));
     this.compiled.set(trimmed, fn);
     return fn;
   }

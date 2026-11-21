@@ -23,7 +23,7 @@ The main pieces the library exposes:
 - **`BaseRule`** – the rule entity (`id`, `name`, `context`, `expression`, `severity`, `message`, `translocoId`, `extendsRuleId`, `override`, `enabled`, `fields`, …).
 - **`Severity`** – `ERROR | WARNING | INFO`.
 - **`BaseRuleService` / `BaseRuleMapper` / `BaseRuleStore`** – the standard `BaseEntity*` triplet backing the CRUD UI; the service talks to the `rules` REST resource.
-- **`BaseRuleEvaluatorService`** – compiles a rule's `expression` string into a cached `(entity) => boolean` function and returns a `RuleEvaluationResult`. Expressions run in strict mode; the compiled function receives a single `entity` argument.
+- **`BaseRuleEvaluatorService`** – parses and checks a rule's `expression` string once, keeps the result, and interprets it for each entity (and the measure helpers `qty`, `money`, `dims`), returning a `RuleEvaluationResult`. No text becomes code; see [What a rule expression can use](#what-a-rule-expression-can-use).
 - **`BaseRuleEngineAdapter`** – implements the `RuleEngine` contract from `@processpuzzle/base-entity`. Loads all enabled rules whose `context` matches a given entity type and evaluates them on demand.
 - **`provideBaseRuleEngine()`** – one-line provider that binds `RULE_ENGINE` (declared by base-entity) to the adapter above. Once provided, every `BaseEntityFormComponent` in the route subtree runs the matching rules automatically.
 - **`BaseRuleFacade` / `BaseRuleContainerComponent` / `BASE_RULE_ROUTES`** – the drop-in UI for managing rules. The container adds a **Dry run…** button next to the standard form actions.
@@ -81,11 +81,11 @@ Both paths render the same `BaseRuleContainerComponent`, which extends the stand
 
 ### 3. Write a rule expression
 
-A rule is just a `BaseRule` record with an `expression` that must evaluate to a truthy value for the rule to pass. The evaluator compiles it as `new Function('entity', '"use strict"; return (…);')`, so:
+A rule is just a `BaseRule` record with an `expression` that must evaluate to a truthy value for the rule to pass. The evaluator interprets it, so:
 
-- The single available variable is `entity` — the object being validated.
-- Everything is standard JavaScript. There is no sandbox; only allow trusted authors to edit rules.
-- The compiled function is cached per unique expression string.
+- The variable is `entity` — the object being validated — and the measure helpers `qty`, `money` and `dims` (see [below](#quantities-money-and-dimensions-in-a-rule)).
+- The language is a read-only subset of JavaScript, sandboxed by construction — see [below](#what-a-rule-expression-can-use).
+- The parsed expression is cached per unique expression string.
 
 ```jsonc
 // A rule that blocks confirming an order with a zero total
@@ -109,6 +109,34 @@ Field semantics:
 - **`fields`** – attribute names that should be marked invalid in the form. If omitted, the failure is reported at the form level.
 - **`enabled`** – short-circuited to `passed: true` when `false`; useful for staging rules.
 - **`extendsRuleId` / `override`** – reserved for rule inheritance and override semantics enforced by the backend.
+
+### What a rule expression can use
+
+The browser does not hand a rule's text to `new Function` or `eval`: it parses the expression once (with [acorn](https://github.com/acornjs/acorn)), checks it, and **interprets the tree** against a list of what a rule may name and call. A rule is data a designer authors and every user who opens the form runs, so what it can reach is decided by that list, not by trust: there is no `window`, `document`, `fetch`, `localStorage` or `Function`, and a rule can only read.
+
+- **Syntax** — one expression: literals (including regular expressions and template strings), the usual operators, `?:`, `?.`, `??`, `typeof`, `in`, `...spread`, array and object literals, `new Date(...)`, and arrow functions with an **expression** body (they can be passed around, called immediately, or call themselves through an argument). Not supported, and refused when the rule is compiled with a message naming the construct: assignment and `++`, `function`, `this`, `class`, `new` of anything but `Date`, statements and block bodies, destructuring, `delete`, `void`, `instanceof`.
+- **Names** — `entity`, `qty`, `money`, `dims`, `Math`, `Number`, `String`, `Boolean`, `Array.isArray`, `Object.keys` / `values` / `entries`, `Date`, `parseInt`, `parseFloat`, `isNaN`, `isFinite`, `undefined`, `NaN`, `Infinity`.
+- **Methods** — the non-mutating ones of arrays (`every`, `some`, `filter`, `map`, `reduce`, `find`, `includes`, `indexOf`, `join`, `slice`, `concat`, `flat` …), strings (`trim`, `split`, `startsWith`, `toLowerCase`, `replace`, `match`, `padStart` …), numbers (`toFixed`), dates (`getTime`, `getFullYear` …) and `RegExp.test`. `push`, `sort`, `splice`, `Object.assign` and the like cannot be called, so a rule never changes the entity.
+- **Refused wherever they appear** — `constructor`, `__proto__` and `prototype`, and a function read from a property and passed around (`arr.map(entity.tags.push)`): both are ways to turn a list of allowed calls into the things it excludes.
+
+The backend runs the same text in GraalJS, which supports all of JavaScript; `rule-expression-cases.json` is run against both so the subset above means the same in the browser's dry run as on the server. A rule that needs more than this subset fails to compile in the browser with the reason, rather than answering differently there.
+
+### Quantities, money and dimensions in a rule
+
+A QUANTITY, MONEY or DIMENSIONS attribute holds an object (`{ amount: "6000", unit: "g" }`), and comparing two of them by hand means converting units. Three helpers do that, so a rule asks the question and nothing more:
+
+```js
+qty(entity.weight).gt(qty('5 kg'))                  // 6000 g is more than 5 kg
+money(entity.price).le(money('100 EUR'))
+dims(entity.size).volume().lt(qty('0.5 m3'))        // 120 x 80 x 50 cm is 0.48 m³
+!entity.weight || qty(entity.weight).le(qty('10 kg'))   // an absent value reads as null
+```
+
+- `qty(x)`, `money(x)` and `dims(x)` take text (`'5 kg'`, `'100 EUR'`), a stored value (`entity.weight`) or an object literal (`{ amount: 5, unit: 'kg' }`); `null` and `undefined` give `null`.
+- A quantity has `amount` (decimal text), `unit`, `base` (a number, in the kind's base unit), `to(unit)`, `plus`, `minus`, `times(n)`, `dividedBy(n)` and `eq`, `gt`, `ge`, `lt`, `le`. Money has `amount`, `currency`, the same arithmetic, `round()` (to the currency's minor units) and the comparisons. Dimensions have `width`, `height`, `depth` (`null` for two axes), `unit`, `to(unit)`, `area()` and `volume()` — both quantities, in m² and m³.
+- Different kinds (`kg` against `m`), different currencies, an unknown unit or a temperature on an offset scale (`°C` plus `°C`) **throw**: the rule is reported as failed with the reason, never answered wrongly. Money is never converted between currencies.
+- **A bare operator is refused**: `qty('10 kg') > qty('9 kg')` would compare the text and `qty('5 kg') > qty('5 m')` would ignore the kinds, so a measure throws when an operator reads it. Use `gt()` and its siblings; `==` between two measures compares identity, so use `eq()`. `String(q)` and template literals print `5 kg`.
+- The backend's rule engine offers the same helpers, and `rule-measure-cases.json` is run against both evaluators — a **Dry run…** here says what the backend will say.
 
 ### 4. Evaluate a rule programmatically
 
