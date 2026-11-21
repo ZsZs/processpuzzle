@@ -18,6 +18,7 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
 import com.processpuzzle.baseentity.port.ManagedAttributesPort;
@@ -169,6 +170,39 @@ class InstancesUseCasesTest {
         Map<String, Object> expected = Map.of("name", "New", "status", "DRAFT");
         assertThat(result.getPayload()).isEqualTo(expected);
         verify(payloadValidatorPort).validate(ORG, defView, expected);
+    }
+
+    private static final EntityDefinitionView ITEM_DEF = new EntityDefinitionView("item", false, List.of(
+            new EntityAttributeView("weight", ValueKindView.REFERENCE, false, false, null, false, false, false, false,
+                    new MeasureView(MeasureView.Kind.QUANTITY, "MASS", null, null, null, null))));
+
+    @Test
+    void createEntityInstance_savesTheMeasuresInTheirStoredFormAfterValidatingTheSubmittedOnes() {
+        when(definitionLookupPort.findByCode(ORG, "item")).thenReturn(Optional.of(ITEM_DEF));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> {
+            EntityObject argument = invocation.getArgument(0);
+            argument.setId(UUID.randomUUID());
+            return argument;
+        });
+        Map<String, Object> submitted = Map.of("weight", Map.of("amount", "250.0", "unit", "g"));
+
+        EntityObject result = createUseCase.create(ORG, "item", submitted);
+
+        verify(payloadValidatorPort).validate(ORG, ITEM_DEF, submitted);
+        assertThat(result.getPayload()).isEqualTo(Map.of("weight", Map.of("amount", "250", "unit", "g", "baseAmount", 0.25)));
+    }
+
+    @Test
+    void updateEntityInstance_savesTheMeasuresInTheirStoredFormAndReplacesWhatTheClientSentAsDerived() {
+        UUID id = UUID.randomUUID();
+        EntityObject existing = EntityObject.builder().id(id).entityDefinitionCode("item").version(1L).payload(Map.of()).build();
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(existing));
+        when(definitionLookupPort.findByCode(ORG, "item")).thenReturn(Optional.of(ITEM_DEF));
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        EntityObject result = updateUseCase.update(ORG, "item", id, 1L, Map.of("weight", Map.of("amount", "2", "unit", "kg", "baseAmount", 999.0)));
+
+        assertThat(result.getPayload()).isEqualTo(Map.of("weight", Map.of("amount", "2", "unit", "kg", "baseAmount", 2.0)));
     }
 
     private static final EntityDefinitionView NOTE_DEF = new EntityDefinitionView("note", false, List.of(

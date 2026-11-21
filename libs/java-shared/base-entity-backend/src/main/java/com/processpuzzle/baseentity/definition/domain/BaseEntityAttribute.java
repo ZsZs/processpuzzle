@@ -131,6 +131,31 @@ public class BaseEntityAttribute {
     /** ADDRESS only: the ISO 3166-1 alpha-2 code a new address starts with. */
     private String defaultCountry;
 
+    /** QUANTITY only: the quantity kind whose units are offered when {@link #allowedUnits} names none. */
+    private String quantityKind;
+
+    /** QUANTITY and DIMENSIONS only: the unit codes a value may use; empty or null means every unit of the kind. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> allowedUnits;
+
+    /** QUANTITY and DIMENSIONS only: the unit a new value starts in. */
+    private String defaultUnit;
+
+    /** QUANTITY and DIMENSIONS only: the most decimal places an amount may have. */
+    private Integer scale;
+
+    /** MONEY only: the ISO 4217 codes a value may use; empty or null means every currency. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> allowedCurrencies;
+
+    /** MONEY only: the currency a new amount starts in. */
+    private String defaultCurrency;
+
+    /** DIMENSIONS only: 2 or 3 axes; null means 2. */
+    private Integer dimensionCount;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private Object validationRules;
@@ -171,6 +196,13 @@ public class BaseEntityAttribute {
         this.showMap = source.showMap;
         this.mapProvider = source.mapProvider;
         this.defaultCountry = source.defaultCountry;
+        this.quantityKind = source.quantityKind;
+        this.allowedUnits = source.allowedUnits == null ? null : new java.util.ArrayList<>(source.allowedUnits);
+        this.defaultUnit = source.defaultUnit;
+        this.scale = source.scale;
+        this.allowedCurrencies = source.allowedCurrencies == null ? null : new java.util.ArrayList<>(source.allowedCurrencies);
+        this.defaultCurrency = source.defaultCurrency;
+        this.dimensionCount = source.dimensionCount;
         this.validationRules = source.validationRules;
     }
 }

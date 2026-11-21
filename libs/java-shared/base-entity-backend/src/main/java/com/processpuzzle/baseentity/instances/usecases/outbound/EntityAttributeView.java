@@ -17,21 +17,28 @@ public record EntityAttributeView(
     /** An ADDRESS attribute — one postal address object, see the ADDRESS form control type. */
     boolean address,
     /** A GEO_LOCATION attribute — one {@code {latitude, longitude, accuracy?, capturedAt?}} object. */
-    boolean geoLocation
+    boolean geoLocation,
+    /** A QUANTITY, MONEY or DIMENSIONS attribute — one measure object; null for every other control. */
+    MeasureView measure
 ) {
     public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
                                String linkedEntityType, boolean required) {
-        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false, false, false);
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, false, false, false, null);
     }
 
     public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
                                String linkedEntityType, boolean required, boolean comments) {
-        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, false, false);
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, false, false, null);
     }
 
     public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
                                String linkedEntityType, boolean required, boolean comments, boolean address) {
-        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, address, false);
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, address, false, null);
+    }
+
+    public EntityAttributeView(String code, ValueKindView valueKind, boolean multiValued, boolean embeddedComponent,
+                               String linkedEntityType, boolean required, boolean comments, boolean address, boolean geoLocation) {
+        this(code, valueKind, multiValued, embeddedComponent, linkedEntityType, required, comments, address, geoLocation, null);
     }
 
     public enum ValueKindView {

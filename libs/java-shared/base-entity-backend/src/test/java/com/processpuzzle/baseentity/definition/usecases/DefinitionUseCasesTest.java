@@ -268,6 +268,34 @@ class DefinitionUseCasesTest {
     }
 
     @Test
+    void replaceAttribute_takesEveryAuthoredFieldButKeepsTheCodeItWasAddressedBy() {
+        BaseEntityAttribute existingAttr = BaseEntityAttribute.builder().code("weight").name("Old").build();
+        BaseEntityDefinition existing = BaseEntityDefinition.builder()
+                .code("item")
+                .attributes(new ArrayList<>(List.of(existingAttr)))
+                .build();
+        BaseEntityAttribute replacement = BaseEntityAttribute.builder().code("renamed").name("Weight").valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.QUANTITY).quantityKind("MASS").allowedUnits(List.of("kg", "g")).defaultUnit("kg").scale(3)
+                .allowedCurrencies(List.of("EUR")).defaultCurrency("EUR").dimensionCount(3).defaultAvatar("scale").build();
+
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, "item", Channel.DRAFT)).thenReturn(Optional.of(existing));
+        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        BaseEntityAttribute result = replaceAttributeUseCase.replaceAttribute(ORG, "item", "weight", replacement);
+
+        assertThat(result).isSameAs(existingAttr);
+        assertThat(result.getCode()).isEqualTo("weight");
+        assertThat(result.getQuantityKind()).isEqualTo("MASS");
+        assertThat(result.getAllowedUnits()).containsExactly("kg", "g");
+        assertThat(result.getDefaultUnit()).isEqualTo("kg");
+        assertThat(result.getScale()).isEqualTo(3);
+        assertThat(result.getAllowedCurrencies()).containsExactly("EUR");
+        assertThat(result.getDefaultCurrency()).isEqualTo("EUR");
+        assertThat(result.getDimensionCount()).isEqualTo(3);
+        assertThat(result.getDefaultAvatar()).isEqualTo("scale");
+    }
+
+    @Test
     void deleteAttribute_success() {
         BaseEntityAttribute existingAttr = BaseEntityAttribute.builder().code("email").build();
         BaseEntityDefinition existing = BaseEntityDefinition.builder()

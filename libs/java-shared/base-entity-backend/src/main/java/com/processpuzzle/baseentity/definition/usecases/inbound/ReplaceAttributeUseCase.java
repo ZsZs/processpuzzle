@@ -28,24 +28,10 @@ public class ReplaceAttributeUseCase {
             .orElseThrow(() -> new NotFoundException(
                 "'%s' has no attribute '%s'".formatted(definitionCode, attributeCode)));
 
-        existing.setName(desiredState.getName());
-        existing.setDisplayOrder(desiredState.getDisplayOrder());
-        existing.setValueKind(desiredState.getValueKind());
-        existing.setFormControlType(desiredState.getFormControlType());
-        existing.setMultiplicity(desiredState.getMultiplicity());
-        existing.setMaxOccurs(desiredState.getMaxOccurs());
-        existing.setRequired(desiredState.isRequired());
-        existing.setIndexed(desiredState.isIndexed());
-        existing.setDefaultValue(desiredState.getDefaultValue());
-        existing.setEnumValues(desiredState.getEnumValues());
-        existing.setDateFormat(desiredState.getDateFormat());
-        existing.setLinkedEntityType(desiredState.getLinkedEntityType());
-        existing.setLinkToDetails(desiredState.isLinkToDetails());
-        existing.setAutosizeColumn(desiredState.isAutosizeColumn());
-        existing.setShowMap(desiredState.isShowMap());
-        existing.setMapProvider(desiredState.getMapProvider());
-        existing.setDefaultCountry(desiredState.getDefaultCountry());
-        existing.setValidationRules(desiredState.getValidationRules());
+        // Every authored field, through the one place that knows them all: a field listed here by hand is a field
+        // silently dropped the day someone adds one. The attribute keeps the code it was addressed by.
+        existing.copyFrom(desiredState);
+        existing.setCode(attributeCode);
 
         validator.validate(definition);
         repository.save(definition);

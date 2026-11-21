@@ -166,6 +166,56 @@ class EntityDefinitionMapperTest {
     }
 
     @Test
+    void measureOptions_roundTripFromInputToModel() {
+        BaseEntityAttributeInput input = new BaseEntityAttributeInput();
+        input.setCode("weight");
+        input.setValueKind(ValueKind.REFERENCE);
+        input.setFormControlType(FormControlType.QUANTITY);
+        input.setQuantityKind("MASS");
+        input.setAllowedUnits(List.of("kg", "g"));
+        input.setDefaultUnit("kg");
+        input.setScale(3);
+        input.setAllowedCurrencies(List.of("EUR"));
+        input.setDefaultCurrency("EUR");
+        input.setDimensionCount(3);
+
+        BaseEntityAttribute domain = mapper.toDomain(input);
+        assertThat(domain.getQuantityKind()).isEqualTo("MASS");
+        assertThat(domain.getAllowedUnits()).containsExactly("kg", "g");
+        assertThat(domain.getDefaultUnit()).isEqualTo("kg");
+        assertThat(domain.getScale()).isEqualTo(3);
+        assertThat(domain.getAllowedCurrencies()).containsExactly("EUR");
+        assertThat(domain.getDefaultCurrency()).isEqualTo("EUR");
+        assertThat(domain.getDimensionCount()).isEqualTo(3);
+
+        com.processpuzzle.baseentity.model.BaseEntityAttribute model = mapper.toModel(domain);
+        assertThat(model.getFormControlType()).isEqualTo(FormControlType.QUANTITY);
+        assertThat(model.getQuantityKind()).isEqualTo("MASS");
+        assertThat(model.getAllowedUnits()).containsExactly("kg", "g");
+        assertThat(model.getDefaultUnit()).isEqualTo("kg");
+        assertThat(model.getScale()).isEqualTo(3);
+        assertThat(model.getAllowedCurrencies()).containsExactly("EUR");
+        assertThat(model.getDefaultCurrency()).isEqualTo("EUR");
+        assertThat(model.getDimensionCount()).isEqualTo(3);
+    }
+
+    @Test
+    void measureOptions_leftOut_staysUnsetInTheDomain() {
+        BaseEntityAttributeInput input = new BaseEntityAttributeInput();
+        input.setCode("price");
+        input.setValueKind(ValueKind.REFERENCE);
+        input.setFormControlType(FormControlType.MONEY);
+
+        BaseEntityAttribute domain = mapper.toDomain(input);
+
+        assertThat(domain.getAllowedUnits()).as("the generated DTO's empty list is not 'set'").isNull();
+        assertThat(domain.getAllowedCurrencies()).isNull();
+        assertThat(domain.getScale()).isNull();
+        assertThat(domain.getDimensionCount()).isNull();
+        assertThat(mapper.toModel(domain).getAllowedCurrencies()).isNull();
+    }
+
+    @Test
     void multiplicity_roundTripsFromInputToModel() {
         BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
         attrInput.setCode("attachments");
