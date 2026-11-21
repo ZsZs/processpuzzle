@@ -49,6 +49,7 @@ export { RouteResolver, toRoutePath, entityIdFromDetailUrl } from './lib/routing
 
 // Setup
 export { createGlobalSetup, type CreateGlobalSetupOptions } from './lib/setup/global-setup';
+export { createGlobalTeardown, type CreateGlobalTeardownOptions } from './lib/setup/global-teardown';
 
 // Page objects
 export { EntityListPO } from './lib/pages/entity-list.po';
