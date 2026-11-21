@@ -26,6 +26,51 @@ async function setupTags(config: BaseEntityAttrDescriptor, tagValue?: unknown, p
 }
 
 describe('TagsComponent', () => {
+  describe('suggestions', () => {
+    const withSelectables = (values: string[]) => Object.assign(makeConfig(), { selectables: values.map((value) => ({ key: value, value })) });
+
+    it('are the attribute’s own selectables, filtered by what is typed and what is already picked', async () => {
+      const { component } = await setupTags(withSelectables(['kg', 'g', 'mg', 'lb']), ['g']);
+
+      expect(component.suggestions()).toEqual(['kg', 'g', 'mg', 'lb']);
+      expect(component.options()).toEqual(['kg', 'mg', 'lb']);
+      component.typed.set(' K');
+      expect(component.options()).toEqual(['kg']);
+    });
+
+    it('never mark a value new — only a suggestion source does', async () => {
+      const { component } = await setupTags(withSelectables(['kg', 'g']), []);
+
+      expect(component.isNew('parsec')).toBe(false);
+    });
+
+    it('are re-read as a callback’s list grows, so a list that is still loading offers what has arrived', async () => {
+      let loaded = ['a'];
+      const config = Object.assign(makeConfig(), { selectables: () => loaded.map((value) => ({ key: value, value })) });
+      const { component } = await setupTags(config, []);
+
+      expect(component.suggestions()).toEqual(['a']);
+      loaded = ['a', 'b'];
+      expect(component.suggestions()).toEqual(['a', 'b']);
+    });
+
+    it('are none for free text, which then has no new values', async () => {
+      const { component } = await setupTags(makeConfig(), []);
+
+      expect(component.suggestions()).toEqual([]);
+      expect(component.isNew('anything')).toBe(false);
+    });
+
+    it('add a source’s values to them, each once', async () => {
+      const config = Object.assign(withSelectables(['kg', 'g']), { tagSuggestions: 'units' });
+      const source = { key: 'units', suggestions: () => of(['g', 't']) };
+
+      const { component } = await setupTags(config, [], [{ provide: TAG_SUGGESTION_SOURCES, useValue: [source] }]);
+
+      expect(component.suggestions()).toEqual(['kg', 'g', 't']);
+    });
+  });
+
   describe('separatorKeysCodes', () => {
     it('exposes ENTER and COMMA as the chip separator keys', async () => {
       const { component } = await setupTags(makeConfig(), []);

@@ -5,6 +5,7 @@ import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { MULTIPLICITIES } from '../base-entity/multiplicity';
 import { toSelectables } from '../base-entity/selectables';
+import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
 import { MAP_PROVIDERS } from '../base-form/address/address-map';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE } from '../i18n/base-entity.i18n';
@@ -110,6 +111,29 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   defaultCountryAttr.pattern = '^[A-Za-z]{2}$';
   defaultCountryAttr.hideInTable = true;
 
+  // QUANTITY, MONEY and DIMENSIONS only — the mapper drops each for any other control. The units and currencies are the
+  // standard catalog's: the dropdowns list them, the chip inputs suggest them (a code the catalog lacks shows dashed),
+  // and the backend refuses what it does not know.
+  const unitCodes = toSelectables(STANDARD_UNIT_CATALOG.kinds().flatMap((kind) => kind.units.map((unit) => unit.code)));
+  const currencyCodes = toSelectables(STANDARD_UNIT_CATALOG.currencies().map((currency) => currency.code));
+  const quantityKindAttr = new BaseEntityAttrDescriptor('quantityKind', FormControlType.DROPDOWN, 'Quantity kind', toSelectables(STANDARD_UNIT_CATALOG.kinds().map((kind) => kind.code)));
+  quantityKindAttr.hideInTable = true;
+  const allowedUnitsAttr = new BaseEntityAttrDescriptor('allowedUnits', FormControlType.TAGS, 'Allowed units', unitCodes);
+  allowedUnitsAttr.hideInTable = true;
+  const defaultUnitAttr = new BaseEntityAttrDescriptor('defaultUnit', FormControlType.DROPDOWN, 'Default unit', unitCodes);
+  defaultUnitAttr.hideInTable = true;
+  const scaleAttr = new BaseEntityAttrDescriptor('scale', FormControlType.TEXT_BOX, 'Decimal places', undefined, undefined, { inputType: 'number' });
+  scaleAttr.hideInTable = true;
+  const dimensionCountAttr = new BaseEntityAttrDescriptor('dimensionCount', FormControlType.DROPDOWN, 'Dimensions', [
+    { key: '2', value: 2 },
+    { key: '3', value: 3 },
+  ]);
+  dimensionCountAttr.hideInTable = true;
+  const allowedCurrenciesAttr = new BaseEntityAttrDescriptor('allowedCurrencies', FormControlType.TAGS, 'Allowed currencies', currencyCodes);
+  allowedCurrenciesAttr.hideInTable = true;
+  const defaultCurrencyAttr = new BaseEntityAttrDescriptor('defaultCurrency', FormControlType.DROPDOWN, 'Default currency', currencyCodes);
+  defaultCurrencyAttr.hideInTable = true;
+
   // The two halves of `dateFormat`, for DATE / DATE_TIME only — the mapper drops them for any other kind,
   // and `timeStyle` for DATE. Left empty, a style falls back to the value kind's default.
   const dateStyleAttr = new BaseEntityAttrDescriptor('dateStyle', FormControlType.DROPDOWN, 'Date Style', toSelectables(DATE_STYLES));
@@ -135,7 +159,15 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   const addressRow = new FlexboxDescriptor([showMapAttr, mapProviderAttr, defaultCountryAttr], FlexDirection.ROW);
   addressRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, addressRow, enumValuesAttr], FlexDirection.COLUMN);
+  const measureRow = new FlexboxDescriptor([quantityKindAttr, defaultUnitAttr, scaleAttr, dimensionCountAttr], FlexDirection.ROW);
+  measureRow.style = { 'column-gap': '10px' };
+  const currencyRow = new FlexboxDescriptor([defaultCurrencyAttr], FlexDirection.ROW);
+  currencyRow.style = { 'column-gap': '10px' };
+
+  const flexBoxContainer = new FlexboxDescriptor(
+    [identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, addressRow, measureRow, allowedUnitsAttr, currencyRow, allowedCurrenciesAttr, enumValuesAttr],
+    FlexDirection.COLUMN,
+  );
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

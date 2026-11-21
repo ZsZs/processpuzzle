@@ -170,6 +170,33 @@ entityDefinitions:
         valueKind: REFERENCE
         formControlType: ARTIFACT
         multiplicity: '0..n'
+      # Measures: an amount with its unit, an amount in a currency, and lengths in one unit. Optional on purpose — the
+      # generated e2e suites have no tester for these controls yet, so they leave them empty.
+      - code: weight
+        name: Weight
+        displayOrder: 14
+        valueKind: REFERENCE
+        formControlType: QUANTITY
+        quantityKind: MASS
+        allowedUnits: [kg, g, lb]
+        defaultUnit: kg
+        scale: 3
+      - code: price
+        name: Price
+        displayOrder: 15
+        valueKind: REFERENCE
+        formControlType: MONEY
+        allowedCurrencies: [EUR, HUF, USD]
+        defaultCurrency: EUR
+      - code: size
+        name: Size
+        displayOrder: 16
+        valueKind: REFERENCE
+        formControlType: DIMENSIONS
+        dimensionCount: 3
+        allowedUnits: [cm, m, in]
+        defaultUnit: cm
+        scale: 1
 
   # 4. Embedded component definition: order-line
   #
@@ -684,6 +711,17 @@ entities:
         - alpha
         - primary
       artifact: documents/alpha-report.pdf
+      weight:
+        amount: "12.5"
+        unit: kg
+      price:
+        amount: "1299.90"
+        currency: EUR
+      size:
+        width: "120"
+        height: "80"
+        depth: "50"
+        unit: cm
       embeddedAddress:
         - street: 123 Innovation Boulevard
           city: Zurich

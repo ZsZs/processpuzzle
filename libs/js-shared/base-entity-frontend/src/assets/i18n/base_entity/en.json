@@ -21,6 +21,13 @@
     "showMap": "Shows a map",
     "mapProvider": "Map provider",
     "defaultCountry": "Default country",
+    "quantityKind": "Quantity kind",
+    "allowedUnits": "Allowed units",
+    "defaultUnit": "Default unit",
+    "scale": "Decimal places",
+    "allowedCurrencies": "Allowed currencies",
+    "defaultCurrency": "Default currency",
+    "dimensionCount": "Dimensions",
     "_tooltips": {
       "code": "Key the value is stored under, unique within the entity type, e.g. orderNumber. Avoid changing it once records exist.",
       "name": "The field's label as users see it on forms and list columns, e.g. Order number.",
@@ -40,6 +47,13 @@
       "showMap": "For ADDRESS controls: show the address on a map, with coordinates derived from it.",
       "mapProvider": "For ADDRESS controls with a map: who draws it. Empty uses OpenStreetMap; a click always opens Google Maps.",
       "defaultCountry": "For ADDRESS controls: the ISO country code a new address starts with, e.g. HU. Empty uses the browser's country.",
+      "quantityKind": "For QUANTITY fields: what is measured (LENGTH, MASS, TIME …), so only its units are offered. QUANTITY, MONEY and DIMENSIONS fields use the REFERENCE value kind.",
+      "allowedUnits": "For QUANTITY and DIMENSIONS fields: the unit codes users may pick, e.g. kg, g. Empty offers every unit of the kind (dimensions: every length).",
+      "defaultUnit": "For QUANTITY and DIMENSIONS fields: the unit a new value starts in. Empty uses the kind's base unit.",
+      "scale": "For QUANTITY and DIMENSIONS fields: the most decimal places an amount may have, 0 to 20. A unit conversion is rounded to it too; empty rounds to 6.",
+      "allowedCurrencies": "For MONEY fields: the ISO currency codes users may pick, e.g. EUR, HUF. Empty offers every currency.",
+      "defaultCurrency": "For MONEY fields: the currency a new amount starts in. Empty uses the first allowed one.",
+      "dimensionCount": "For DIMENSIONS fields: 2 for width × height, 3 to add a depth. Empty means 2.",
       "dateStyle": "For DATE and DATE_TIME fields: how the date is shown, from short (12/31/26) to full (Thursday, December 31, 2026). Empty uses the default.",
       "timeStyle": "For DATE_TIME fields: how the time is shown, from short (14:30) to long (with seconds and time zone). Empty uses the default."
     }

@@ -86,12 +86,12 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    conversion, ISO duration bridge. *Done (#1437).*
 2. **Frontend controls** — QUANTITY, MONEY, DIMENSIONS controls with their descriptor options, the
    definition → descriptor mapping, display pipes in the list and the PDF export, labels in five languages.
-   *Done.* Left for phase 3, because the backend rejects control types it does not know: the authoring fields
-   in the entity designer, the contract enum, the query editor, a testbed / seed sample. Document data fields
-   do not format ADDRESS or GEO_LOCATION either; they follow when they do.
-3. **Backend** — contract (control types, attribute fields), attribute fields (`copyFrom`!), payload
-   validation, `baseAmount` / `baseArea` / `baseVolume` normalization, RSQL on the normalized value, then the
-   designer's authoring fields, the query editor and a seeded example attribute.
+   *Done (#1439).* Document data fields do not format ADDRESS or GEO_LOCATION either; they follow when they do.
+3. **Backend and authoring** — *Part 1 (#1445):* contract, attribute fields (`copyFrom`; `ReplaceAttributeUseCase`
+   uses it too), definition validation against the catalog, payload validation, `baseAmount` / `baseArea` /
+   `baseVolume` normalization on every write, RSQL through those numbers. *Part 2:* the designer's authoring
+   fields (dropdowns, chip inputs suggesting the catalog), query-editor fields for the derived numbers, and one
+   sample attribute of each control in the testbed seed's `dynamic-entity`, with a sample instance.
 4. **Rules and calculations** — shared helper in both rule evaluators, FEEL mapping, rule dry-run
    showing converted values.
 

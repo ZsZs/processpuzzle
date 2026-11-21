@@ -83,8 +83,6 @@ export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlCom
   private readonly sources = inject(TAG_SUGGESTION_SOURCES, { optional: true }) ?? [];
   private readonly destroyRef = inject(DestroyRef);
   private readonly suggested = signal<readonly string[]>([]);
-  /** What the attribute's suggestion source offers; empty for free text, and when the source fails. */
-  readonly suggestions = this.suggested.asReadonly();
 
   ngOnInit(): void {
     const source = this.sources.find((candidate) => candidate.key === this.config().tagSuggestions);
@@ -97,6 +95,17 @@ export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlCom
       .subscribe((values) => this.suggested.set(values));
   }
 
+  /**
+   * What the control offers: the attribute's own `selectables` and its suggestion source's values, each once; empty for
+   * free text, and when the source fails. The selectables are read on every call, because they may be a callback whose list
+   * grows as it loads — a list the author knows up front (the unit codes of the catalog, the organization's entity types)
+   * needs no source bound by the application.
+   */
+  suggestions(): readonly string[] {
+    const own = (this.config().getSelectables() ?? []).map((selectable) => String(selectable.value));
+    return [...new Set([...own, ...this.suggested()])];
+  }
+
   /** The suggestions not yet picked that match what is being typed. */
   options(): string[] {
     const picked = new Set(this.tags());
@@ -104,9 +113,9 @@ export class TagsComponent<Entity extends BaseEntity> extends BaseFormControlCom
     return this.suggestions().filter((option) => !picked.has(option) && option.toLowerCase().includes(typed));
   }
 
-  /** Whether the suggestion source is in play and does not know `tag`. */
+  /** Whether the suggestion source is in play and does not know `tag` — selectables only suggest, they never mark a value new. */
   isNew(tag: string): boolean {
-    const known = this.suggestions();
+    const known = this.suggested();
     return known.length > 0 && !known.includes(tag);
   }
 

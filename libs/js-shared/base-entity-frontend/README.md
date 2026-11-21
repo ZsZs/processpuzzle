@@ -234,7 +234,7 @@ Every attribute's `FormControlType` selects the component that renders it in the
 | `DROPDOWN` | `mat-select` | selected option's `value` | **`selectables`** | Options come from `selectables` (array or `() => Selectable[]`). |
 | `RADIO` | native radio group | selectable `key` | **`selectables`** | Reactive; stores the `key` of the chosen option. |
 | `TITLE` | `<h2>` section heading (display only) | — | `label` | Renders `label` as a form section title. |
-| `TAGS` | `mat-chip-grid` | `string[]` | `label` | ENTER/COMMA add a chip; chips are editable/removable. |
+| `TAGS` | `mat-chip-grid` | `string[]` | `label` | ENTER/COMMA add a chip; chips are editable/removable. `selectables` (an array or a callback, re-read as it grows) and a `tagSuggestions` source are offered as suggestions; free text is still accepted. |
 | `LABEL` | `<h3>`/`<p>` (display only) | `string` | `label` | `isHeading` renders a heading instead of a paragraph. |
 | `FLEX_BOX` | layout container | — (no control) | uses `FlexboxDescriptor` | Grouping only; recurses into children. See below. |
 | `LOOKUP` | autocomplete over a lookup table | lookup **`key`** (`string`) | **`linkedEntityType`** | Tricky — see below. |
@@ -292,7 +292,8 @@ when they do not:
 - **Money never converts.** Changing the currency keeps the number and re-checks it against the new currency's minor units.
 - **Display.** `ppQuantity`, `ppMoney` and `ppDimensions` (and `formatQuantity`, `formatMoney`, `formatDimensions`) write a value in the active language's notation; the list and the PDF export use them. Unit names in the select are the catalog's English names — the symbols are international.
 - **Catalog.** Units and currencies come from the `UNIT_CATALOG` token, the standard catalog of `@processpuzzle/util` unless an application provides another.
-- A metadata-defined entity maps the same options from its attribute definition (`EntityAttributeDefinition`). The designer and the backend contract do not offer these control types yet, and the query editor skips them — both follow with the backend.
+- A metadata-defined entity maps the same options from its attribute definition (`EntityAttributeDefinition`), and the entity designer authors them: dropdowns for the quantity kind, the default unit or currency and the axis count, and chip inputs that suggest the catalog's unit and currency codes (a `TAGS` attribute's own `selectables` are its suggestions; a code the list lacks is shown dashed).
+- **Search.** The query editor offers a measure through the numbers the backend derives from it — `weight.baseAmount`, `price.baseAmount`, `size.baseArea`, `size.baseVolume` — never as the object. A quantity compares in its kind's base unit, so one query covers every unit a value was entered in.
 
 ### FLEX_BOX (layout)
 
