@@ -67,6 +67,7 @@ public class RuleEngine implements AutoCloseable {
                         .statementLimit(50_000, null)
                         .build())
                 .build();
+        MeasureBindings.install(context);
         return new ThreadContext(context);
     }
 

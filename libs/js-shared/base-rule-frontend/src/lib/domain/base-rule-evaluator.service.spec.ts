@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { BaseRule, Severity } from './base-rule';
 import { BaseRuleEvaluatorService } from './base-rule-evaluator.service';
+import measureCases from './rule-measure-cases.json';
 
 describe('BaseRuleEvaluatorService', () => {
   let evaluator: BaseRuleEvaluatorService;
@@ -127,5 +128,58 @@ describe('BaseRuleEvaluatorService', () => {
     } finally {
       globalScope.Function = OriginalFunction;
     }
+  });
+});
+
+describe('BaseRuleEvaluatorService measure helpers', () => {
+  const evaluator = new BaseRuleEvaluatorService();
+  const ruleOf = (expression: string): BaseRule => new BaseRule('r1', 'measure-rule', 'A rule', 'Item', expression, Severity.ERROR, 'Rule failed');
+
+  /** The cases the backend's `MeasureBindingsTest` runs too: a rule must say here what it will say there. */
+  it.each(measureCases.cases)('$expression', (testCase) => {
+    const result = evaluator.evaluate(measureCases.entity, ruleOf(testCase.expression));
+
+    if ('error' in testCase) {
+      expect(result.passed).toBe(false);
+      expect(result.error).toContain(testCase.error);
+    } else {
+      expect(result.error).toBeUndefined();
+      expect(result.passed).toBe(testCase.expected);
+    }
+  });
+
+  it('refuses to change a measure, as it refuses every other write a rule might try', () => {
+    const result = evaluator.evaluate({}, ruleOf("(() => { const q = qty('5 kg'); q.amount = '9'; return true; })()"));
+
+    expect(result.passed).toBe(false);
+    expect(result.error).toMatch(/amount/);
+  });
+
+  it('is available to a rule evaluated again from the cache', () => {
+    const rule = ruleOf("!entity.weight || qty(entity.weight).le(qty('10 kg'))");
+
+    expect(evaluator.evaluate({ weight: { amount: '11000', unit: 'g' } }, rule).passed).toBe(false);
+    expect(evaluator.evaluate({ weight: { amount: '9000', unit: 'g' } }, rule).passed).toBe(true);
+    expect(evaluator.evaluate({}, rule).passed).toBe(true);
+  });
+
+  it('cannot build a measure from anything else', () => {
+    const errorOf = (expression: string) => evaluator.evaluate({}, ruleOf(expression)).error;
+
+    expect(errorOf('qty(5) === null')).toContain('not a quantity');
+    expect(errorOf('money(5) === null')).toContain('not a money');
+    expect(errorOf("qty('1 kg').to(5)")).toContain('unit code');
+    expect(errorOf("qty('1 kg').gt(5)")).toContain('expected a quantity');
+    expect(errorOf("money('1 EUR').gt(5)")).toContain('expected money');
+    expect(errorOf("money('1 EUR').times(NaN)")).toContain('expected a number');
+    expect(errorOf("qty({ amount: 'x', unit: 'kg' })")).toContain('is not a decimal number');
+    expect(errorOf("qty({ amount: true, unit: 'kg' })")).toContain('amount must be a decimal number');
+    expect(errorOf('dims(5) === null')).toContain('not a dimensions');
+  });
+
+  it('reads an object literal of dimensions, with or without a depth', () => {
+    expect(evaluator.evaluate({}, ruleOf("dims({ width: 1, height: 2, depth: 3, unit: 'm' }).volume().eq(qty('6 m3'))")).passed).toBe(true);
+    expect(evaluator.evaluate({}, ruleOf("`${dims({ width: 1, height: 2, unit: 'm' })}` === '1 x 2 m'")).passed).toBe(true);
+    expect(evaluator.evaluate({}, ruleOf("`${dims({ width: 1, height: 2, depth: 3, unit: 'm' })}` === '1 x 2 x 3 m'")).passed).toBe(true);
   });
 });

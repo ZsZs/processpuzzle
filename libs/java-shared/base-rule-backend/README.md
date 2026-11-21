@@ -19,6 +19,23 @@ ProcessPuzzle Base Rule Backend is the server-side companion of [`@processpuzzle
 The library provides persisted rule CRUD, YAML import/export and tenant-scoped GraalJS evaluation.
 Resolution of inherited/overridden rule expressions remains unimplemented.
 
+## Quantities, money and dimensions in a rule
+
+Besides `entity`, a rule can call `qty(...)`, `money(...)` and `dims(...)` (`MeasureBindings`), which read a literal
+(`qty('5 kg')`) or a stored value (`qty(entity.weight)`) as an object that converts and compares itself:
+
+```js
+!entity.weight || qty(entity.weight).le(qty('10 kg'))
+money(entity.price).le(money('100 EUR'))
+dims(entity.size).volume().lt(qty('0.5 m3'))
+```
+
+The objects are host proxies over `com.processpuzzle.core.quantity` — the arithmetic the values are stored with — and
+nothing else of the host is reachable; they are read-only, like the entity. A refusal (different kinds or currencies, an
+unknown unit) fails the evaluation with its reason, and a bare operator on a measure (`qty('10 kg') > qty('9 kg')`, which
+would compare the text) is refused too: use `gt()`, `ge()`, `lt()`, `le()` and `eq()`. The same helpers exist in the
+browser's rule evaluator, and `rule-measure-cases.json` (kept in base-rule-frontend) is run against both.
+
 ## Executable rule revisions
 
 `RuleEngine` caches immutable GraalJS sources by `(orgKey, ruleId)` and compiled functions per

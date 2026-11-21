@@ -23,7 +23,7 @@ The main pieces the library exposes:
 - **`BaseRule`** – the rule entity (`id`, `name`, `context`, `expression`, `severity`, `message`, `translocoId`, `extendsRuleId`, `override`, `enabled`, `fields`, …).
 - **`Severity`** – `ERROR | WARNING | INFO`.
 - **`BaseRuleService` / `BaseRuleMapper` / `BaseRuleStore`** – the standard `BaseEntity*` triplet backing the CRUD UI; the service talks to the `rules` REST resource.
-- **`BaseRuleEvaluatorService`** – compiles a rule's `expression` string into a cached `(entity) => boolean` function and returns a `RuleEvaluationResult`. Expressions run in strict mode; the compiled function receives a single `entity` argument.
+- **`BaseRuleEvaluatorService`** – compiles a rule's `expression` string into a cached function of `entity` and the measure helpers (`qty`, `money`, `dims`) and returns a `RuleEvaluationResult`. Expressions run in strict mode.
 - **`BaseRuleEngineAdapter`** – implements the `RuleEngine` contract from `@processpuzzle/base-entity`. Loads all enabled rules whose `context` matches a given entity type and evaluates them on demand.
 - **`provideBaseRuleEngine()`** – one-line provider that binds `RULE_ENGINE` (declared by base-entity) to the adapter above. Once provided, every `BaseEntityFormComponent` in the route subtree runs the matching rules automatically.
 - **`BaseRuleFacade` / `BaseRuleContainerComponent` / `BASE_RULE_ROUTES`** – the drop-in UI for managing rules. The container adds a **Dry run…** button next to the standard form actions.
@@ -83,7 +83,7 @@ Both paths render the same `BaseRuleContainerComponent`, which extends the stand
 
 A rule is just a `BaseRule` record with an `expression` that must evaluate to a truthy value for the rule to pass. The evaluator compiles it as `new Function('entity', '"use strict"; return (…);')`, so:
 
-- The single available variable is `entity` — the object being validated.
+- The variable is `entity` — the object being validated — and the measure helpers `qty`, `money` and `dims` (see [below](#quantities-money-and-dimensions-in-a-rule)).
 - Everything is standard JavaScript. There is no sandbox; only allow trusted authors to edit rules.
 - The compiled function is cached per unique expression string.
 
@@ -109,6 +109,23 @@ Field semantics:
 - **`fields`** – attribute names that should be marked invalid in the form. If omitted, the failure is reported at the form level.
 - **`enabled`** – short-circuited to `passed: true` when `false`; useful for staging rules.
 - **`extendsRuleId` / `override`** – reserved for rule inheritance and override semantics enforced by the backend.
+
+### Quantities, money and dimensions in a rule
+
+A QUANTITY, MONEY or DIMENSIONS attribute holds an object (`{ amount: "6000", unit: "g" }`), and comparing two of them by hand means converting units. Three helpers do that, so a rule asks the question and nothing more:
+
+```js
+qty(entity.weight).gt(qty('5 kg'))                  // 6000 g is more than 5 kg
+money(entity.price).le(money('100 EUR'))
+dims(entity.size).volume().lt(qty('0.5 m3'))        // 120 x 80 x 50 cm is 0.48 m³
+!entity.weight || qty(entity.weight).le(qty('10 kg'))   // an absent value reads as null
+```
+
+- `qty(x)`, `money(x)` and `dims(x)` take text (`'5 kg'`, `'100 EUR'`), a stored value (`entity.weight`) or an object literal (`{ amount: 5, unit: 'kg' }`); `null` and `undefined` give `null`.
+- A quantity has `amount` (decimal text), `unit`, `base` (a number, in the kind's base unit), `to(unit)`, `plus`, `minus`, `times(n)`, `dividedBy(n)` and `eq`, `gt`, `ge`, `lt`, `le`. Money has `amount`, `currency`, the same arithmetic, `round()` (to the currency's minor units) and the comparisons. Dimensions have `width`, `height`, `depth` (`null` for two axes), `unit`, `to(unit)`, `area()` and `volume()` — both quantities, in m² and m³.
+- Different kinds (`kg` against `m`), different currencies, an unknown unit or a temperature on an offset scale (`°C` plus `°C`) **throw**: the rule is reported as failed with the reason, never answered wrongly. Money is never converted between currencies.
+- **A bare operator is refused**: `qty('10 kg') > qty('9 kg')` would compare the text and `qty('5 kg') > qty('5 m')` would ignore the kinds, so a measure throws when an operator reads it. Use `gt()` and its siblings; `==` between two measures compares identity, so use `eq()`. `String(q)` and template literals print `5 kg`.
+- The backend's rule engine offers the same helpers, and `rule-measure-cases.json` is run against both evaluators — a **Dry run…** here says what the backend will say.
 
 ### 4. Evaluate a rule programmatically
 

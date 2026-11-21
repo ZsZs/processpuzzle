@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BaseRule } from './base-rule';
+import { dims, money, qty } from './measure-bindings';
 import { RuleEvaluationResult } from './rule-evaluation-result';
 
-type CompiledRule = (entity: unknown) => unknown;
+/** A rule's expression as a function of the entity and the measure helpers (`qty`, `money`, `dims`) it may call. */
+type CompiledRule = (entity: unknown, qty: unknown, money: unknown, dims: unknown) => unknown;
 
 @Injectable({ providedIn: 'root' })
 export class BaseRuleEvaluatorService {
@@ -21,7 +23,7 @@ export class BaseRuleEvaluatorService {
 
     let result: unknown;
     try {
-      result = fn(entity);
+      result = fn(entity, qty, money, dims);
     } catch (err) {
       return { ...base, passed: false, error: `Rule evaluation threw: ${errorMessage(err)}` };
     }
@@ -42,7 +44,10 @@ export class BaseRuleEvaluatorService {
     const cached = this.compiled.get(trimmed);
     if (cached) return cached;
 
-    const fn = new Function('entity', `"use strict"; return (${trimmed});`) as CompiledRule;
+    // The one place a rule's text becomes code. The expression is authored in the rule designer by users allowed to define
+    // rules — it is not input from a page — and runs here only to give the same answer the backend's sandbox will give.
+    // eslint-disable-next-line sonarjs/code-eval
+    const fn = new Function('entity', 'qty', 'money', 'dims', `"use strict"; return (${trimmed});`) as CompiledRule;
     this.compiled.set(trimmed, fn);
     return fn;
   }

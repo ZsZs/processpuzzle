@@ -5,12 +5,16 @@ on:
       - "develop"
     paths:
       - 'libs/java-shared/base-rule-backend/**'
+      # The cases both rule evaluators run are read from base-rule-frontend's folder.
+      - 'libs/js-shared/base-rule-frontend/src/lib/domain/rule-measure-cases.json'
   pull_request:
     types: [ opened, synchronize, reopened ]
     branches:
       - "develop"
     paths:
       - 'libs/java-shared/base-rule-backend/**'
+      # The cases both rule evaluators run are read from base-rule-frontend's folder.
+      - 'libs/js-shared/base-rule-frontend/src/lib/domain/rule-measure-cases.json'
 env:
   BASE_DIR: "libs/java-shared/base-rule-backend"
   NX_PROJECT: "base-rule-backend"
