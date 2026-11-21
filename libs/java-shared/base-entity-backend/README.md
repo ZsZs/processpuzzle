@@ -52,6 +52,17 @@ definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`,
 - **Value** — `{ amount, unit }`, `{ amount, currency }`, `{ width, height, depth?, unit }`, the amounts as decimal
   text. A write checks the unit or currency against the catalog and the attribute's allowed list, the amounts as
   decimals, and their decimal places against `scale` (for money, against the currency's minor units).
+- **Organization units** — `/organizations/{orgKey}/units`: an organization adds units to a kind of the standard catalog
+  (a `pallet` of 500 kg, a `bag` of 25 kg: `kind`, `factor` and an optional `divisor`; no new kinds, currencies or
+  temperature-style offsets). The code must be new across the whole catalog. `OrganizationUnitCatalogs` builds each
+  organization's catalog (standard + its units, retired ones included) and implements core's `UnitCatalogProvider`; the
+  definition validator, the payload validator and the derived-write path all read through it, so an allowed unit, a stored
+  value and `baseAmount` all know the organization's units. A definition is checked in the catalog of the organization
+  that owns it — also a common's definition shared with a member. **Kind, factor and divisor are fixed once the unit
+  exists** (stored amounts and `baseAmount` derive from them: `PUT` answers 409), and a unit is **retired, never deleted**
+  (`status: RETIRED`): no longer to be offered, but values stored with it stay valid and keep writing. Reading needs access
+  to the organization, changing it the right to design. The catalog is cached per organization in the process and dropped
+  once a change commits. Not done yet: the rule engine still reads the standard catalog only, and no screen manages units.
 - **Stored form** — after validation, `MeasureNormalizer` rewrites every measure of the payload, embedded components
   included: canonical amounts (`"12.50"` → `"12.5"`) plus the numbers a query compares — `baseAmount` (a quantity in its
   kind's base unit, money as the amount itself), `baseArea` and, for three axes, `baseVolume` (m², m³). They are derived on

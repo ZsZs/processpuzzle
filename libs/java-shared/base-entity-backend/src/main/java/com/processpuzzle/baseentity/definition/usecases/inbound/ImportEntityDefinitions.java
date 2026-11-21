@@ -61,7 +61,7 @@ public class ImportEntityDefinitions {
         List<String> errors = new ArrayList<>();
         Map<String, BaseEntityDefinition> byCode = collectByCode(entries, errors);
         validateComponentParents(orgKey, byCode, errors);
-        validateStructure(byCode, errors);
+        validateStructure(orgKey, byCode, errors);
         if (!errors.isEmpty()) {
             return new Outcome(List.of(), List.of(), errors);
         }
@@ -121,10 +121,10 @@ public class ImportEntityDefinitions {
     }
 
     /** The validator the create and replace use cases run, run up front so a bad entry writes nothing. */
-    private void validateStructure(Map<String, BaseEntityDefinition> byCode, List<String> errors) {
+    private void validateStructure(String orgKey, Map<String, BaseEntityDefinition> byCode, List<String> errors) {
         for (BaseEntityDefinition definition : byCode.values()) {
             try {
-                validator.validate(definition);
+                validator.validate(orgKey, definition);
             } catch (ValidationException e) {
                 String violations = e.getViolations().stream()
                         .map(v -> v.attributeCode() == null ? v.message() : v.attributeCode() + ": " + v.message())

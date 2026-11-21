@@ -12,7 +12,9 @@ ProcessPuzzle Core provides cross-cutting building blocks shared by every backen
 - `com.processpuzzle.core.logging` — reserved for cross-cutting logging support (AOP logger — TBD).
 - `com.processpuzzle.core.quantity` — fundamental types: `Quantity`, `Money`, `Dimensions`, the `UnitCatalog` and
   `IsoDurations`. The standard catalog is `@processpuzzle/util`'s `standard-units.json`, packaged into this jar; the
-  shared `parity-cases.json` keeps both sides' results identical (`ParityCasesTest`).
+  shared `parity-cases.json` keeps both sides' results identical (`ParityCasesTest`). An organization's own units join it
+  through `UnitCatalog.withUnits(...)` — a new, immutable catalog — and `UnitCatalogProvider.forOrganization(orgKey)` is the
+  port a feature reads an organization's catalog through (base-entity implements it; `standardOnly()` is the default).
 
 ## Organization authorization
 
