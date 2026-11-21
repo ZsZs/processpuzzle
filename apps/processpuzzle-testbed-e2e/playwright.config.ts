@@ -23,6 +23,8 @@ const grep =
 export default defineConfig({
   ...nxE2EPreset(__filename, { testDir: './src' }),
   globalSetup: './src/support/global-setup.ts',
+  // The safety net behind each test's own cleanup; see createGlobalTeardown.
+  globalTeardown: './src/support/global-teardown.ts',
   // Was built but never handed to Playwright, which left E2E_ENTITY / E2E_SUITE with no effect at all.
   grep,
   // Spec files run side by side, one worker each; the tests inside a file stay in order (the generated suites build
