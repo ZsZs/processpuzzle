@@ -2,18 +2,28 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { OrganizationUnitCatalog } from '../base-form/fundamental-types/organization-unit-catalog';
 import { EntityDefinitionRegistry } from './entity-definition.registry';
 import { ORDER_DEFINITION, ORDER_LINE_DEFINITION, TEST_ENTITY_DEFINITIONS } from './test-entity-definition';
 
 const ENTITY_DEFINITIONS_URL = 'http://localhost:8080/organizations/acme/entity-definitions?page=0&size=200';
 
+const units = { ensureLoaded: vi.fn(() => Promise.resolve()), invalidate: vi.fn() };
+
 function setup(baseConfiguration: object = { ENTITY_SERVICE_ROOT: 'http://localhost:8080/organizations/acme' }) {
+  units.ensureLoaded.mockClear();
+  units.invalidate.mockClear();
   // The suite-wide beforeEach has already instantiated one, and a spec that wants a different
   // configuration has to start from a fresh module rather than reconfigure that one.
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
-    providers: [provideHttpClient(), provideHttpClientTesting(), { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: baseConfiguration } }],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: OrganizationUnitCatalog, useValue: units },
+      { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: baseConfiguration } },
+    ],
   });
   return { registry: TestBed.inject(EntityDefinitionRegistry), controller: TestBed.inject(HttpTestingController) };
 }
@@ -24,6 +34,20 @@ describe('EntityDefinitionRegistry', () => {
 
   beforeEach(() => {
     ({ registry, controller } = setup());
+  });
+
+  it('reads the organization’s units with the definitions, and again after a reset', async () => {
+    const loaded = registry.load();
+    controller.expectOne(ENTITY_DEFINITIONS_URL).flush({ content: TEST_ENTITY_DEFINITIONS });
+    await loaded;
+    expect(units.ensureLoaded).toHaveBeenCalledTimes(1);
+
+    registry.reset();
+    expect(units.invalidate).toHaveBeenCalledTimes(1);
+    const reloaded = registry.load();
+    controller.expectOne(ENTITY_DEFINITIONS_URL).flush({ content: TEST_ENTITY_DEFINITIONS });
+    await reloaded;
+    expect(units.ensureLoaded).toHaveBeenCalledTimes(2);
   });
 
   it('indexes the definitions by code', async () => {

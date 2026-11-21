@@ -5,7 +5,7 @@ import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { MULTIPLICITIES } from '../base-entity/multiplicity';
 import { toSelectables } from '../base-entity/selectables';
-import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
+import { STANDARD_UNIT_CATALOG, type UnitCatalog } from '@processpuzzle/util';
 import { MAP_PROVIDERS } from '../base-form/address/address-map';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE } from '../i18n/base-entity.i18n';
@@ -20,7 +20,7 @@ export { ENTITY_ATTRIBUTE_ENTITY_NAME };
  */
 export const ENTITY_ATTRIBUTE_ID_FIELD = 'code';
 
-function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]): AbstractAttrDescriptor[] {
+function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[], catalog: UnitCatalog = STANDARD_UNIT_CATALOG): AbstractAttrDescriptor[] {
   const codeAttr = new BaseEntityAttrDescriptor('code', FormControlType.TEXT_BOX, 'Code', undefined, true);
   codeAttr.required = true;
   codeAttr.isHeading = true;
@@ -112,11 +112,11 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   defaultCountryAttr.hideInTable = true;
 
   // QUANTITY, MONEY and DIMENSIONS only — the mapper drops each for any other control. The units and currencies are the
-  // standard catalog's: the dropdowns list them, the chip inputs suggest them (a code the catalog lacks shows dashed),
-  // and the backend refuses what it does not know.
-  const unitCodes = toSelectables(STANDARD_UNIT_CATALOG.kinds().flatMap((kind) => kind.units.map((unit) => unit.code)));
-  const currencyCodes = toSelectables(STANDARD_UNIT_CATALOG.currencies().map((currency) => currency.code));
-  const quantityKindAttr = new BaseEntityAttrDescriptor('quantityKind', FormControlType.DROPDOWN, 'Quantity kind', toSelectables(STANDARD_UNIT_CATALOG.kinds().map((kind) => kind.code)));
+  // organization's catalog's, retired units left out: the dropdowns list them, the chip inputs suggest them (a code the
+  // catalog lacks shows dashed), and the backend refuses what it does not know. The kinds are the standard ones.
+  const unitCodes = toSelectables(catalog.kinds().flatMap((kind) => kind.units.filter((unit) => !unit.retired).map((unit) => unit.code)));
+  const currencyCodes = toSelectables(catalog.currencies().map((currency) => currency.code));
+  const quantityKindAttr = new BaseEntityAttrDescriptor('quantityKind', FormControlType.DROPDOWN, 'Quantity kind', toSelectables(catalog.kinds().map((kind) => kind.code)));
   quantityKindAttr.hideInTable = true;
   const allowedUnitsAttr = new BaseEntityAttrDescriptor('allowedUnits', FormControlType.TAGS, 'Allowed units', unitCodes);
   allowedUnitsAttr.hideInTable = true;
@@ -172,11 +172,14 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   return [flexBoxContainer];
 }
 
-/** @param entityCodes the codes the Linked Entity dropdown offers; see {@link EntityDefinitionOptions.codes} */
-export function createEntityAttributeDescriptor(entityCodes?: () => Selectable[]): BaseEntityDescriptor {
+/**
+ * @param entityCodes the codes the Linked Entity dropdown offers; see {@link EntityDefinitionOptions.codes}
+ * @param catalog the units and currencies the measure options offer; the standard catalog when absent
+ */
+export function createEntityAttributeDescriptor(entityCodes?: () => Selectable[], catalog?: UnitCatalog): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: ENTITY_ATTRIBUTE_ENTITY_NAME,
-    attrDescriptors: createEntityAttributeAttrDescriptors(entityCodes),
+    attrDescriptors: createEntityAttributeAttrDescriptors(entityCodes, catalog),
     i18nScope: ENTITY_ATTRIBUTE_I18N_SCOPE,
     componentParent: ENTITY_DEFINITION_ENTITY_NAME,
     isEmbedded: true,

@@ -9,6 +9,13 @@ export interface UnitData {
   factor: string;
   divisor?: string;
   offset?: string;
+  /** An organization's unit that is no longer offered for new values; values stored with it stay readable. */
+  retired?: boolean;
+}
+
+/** A unit an organization adds to a kind of the standard catalog: a pallet of 500 kg. */
+export interface ExtraUnitData extends UnitData {
+  kind: string;
 }
 
 export interface QuantityKindData {
@@ -31,8 +38,9 @@ export interface UnitCatalogData {
 }
 
 /** A unit with the kind it measures; `divisor` and `offset` are filled in. */
-export interface UnitDefinition extends Required<UnitData> {
+export interface UnitDefinition extends Required<Omit<UnitData, 'retired'>> {
   kind: string;
+  retired: boolean;
 }
 
 export interface QuantityKindDefinition {
@@ -51,12 +59,27 @@ export class UnitCatalog {
   private readonly unitsByCode = new Map<string, UnitDefinition>();
   private readonly currenciesByCode = new Map<string, CurrencyDefinition>();
 
-  constructor(data: UnitCatalogData) {
+  constructor(private readonly data: UnitCatalogData) {
     data.kinds.forEach((kind) => this.addKind(kind));
     data.currencies.forEach((currency) => {
       if (this.currenciesByCode.has(currency.code)) throw invalidCatalog(`currency ${currency.code} is declared twice`);
       this.currenciesByCode.set(currency.code, { code: currency.code, minorUnits: currency.minorUnits });
     });
+  }
+
+  /**
+   * This catalog and the units an organization added, each to the kind it names — a new catalog, this one is unchanged.
+   * Mirrors the backend's `UnitCatalog.withUnits`: an unknown kind or a code already taken is an invalid catalog.
+   */
+  withUnits(extra: readonly ExtraUnitData[]): UnitCatalog {
+    if (extra.length === 0) return this;
+    const kinds = this.data.kinds.map((kind) => ({ ...kind, units: [...kind.units] }));
+    for (const { kind: kindCode, ...unit } of extra) {
+      const kind = kinds.find((candidate) => candidate.code === kindCode);
+      if (!kind) throw invalidCatalog(`unit ${unit.code} names the unknown kind ${kindCode}`);
+      kind.units.push(unit);
+    }
+    return new UnitCatalog({ kinds, currencies: this.data.currencies });
   }
 
   kinds(): QuantityKindDefinition[] {
@@ -81,6 +104,11 @@ export class UnitCatalog {
 
   unitsOf(kind: string): readonly UnitDefinition[] {
     return this.kind(kind).units;
+  }
+
+  /** The units of a kind that are offered for new values — {@link unitsOf} without the retired ones. */
+  activeUnitsOf(kind: string): readonly UnitDefinition[] {
+    return this.unitsOf(kind).filter((unit) => !unit.retired);
   }
 
   currencies(): CurrencyDefinition[] {
@@ -109,7 +137,7 @@ export class UnitCatalog {
 
   private addUnit(kind: string, data: UnitData): UnitDefinition {
     if (this.unitsByCode.has(data.code)) throw invalidCatalog(`unit ${data.code} is declared twice`);
-    const unit: UnitDefinition = { ...data, divisor: data.divisor ?? '1', offset: data.offset ?? '0', kind };
+    const unit: UnitDefinition = { ...data, divisor: data.divisor ?? '1', offset: data.offset ?? '0', retired: data.retired ?? false, kind };
     this.unitsByCode.set(unit.code, unit);
     return unit;
   }

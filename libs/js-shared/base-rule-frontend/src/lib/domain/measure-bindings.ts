@@ -22,6 +22,8 @@ import {
   type DimensionsValue,
   type MoneyValue,
   type QuantityValue,
+  STANDARD_UNIT_CATALOG,
+  type UnitCatalog,
 } from '@processpuzzle/util';
 
 /**
@@ -38,6 +40,23 @@ import {
  * template literal still print `5 kg`; `q == other` compares identity, so never use it for measures.
  */
 
+/** The units a rule is read in: the organization's, set by {@link withCatalog} for the evaluation in progress. */
+let catalog: UnitCatalog = STANDARD_UNIT_CATALOG;
+
+/**
+ * Runs `evaluation` with `unitCatalog` as the catalog `qty()`, `money()` and `dims()` read. An evaluation is synchronous, so
+ * one catalog at a time is enough; the previous one comes back afterwards, whatever the evaluation does.
+ */
+export function withCatalog<T>(unitCatalog: UnitCatalog, evaluation: () => T): T {
+  const previous = catalog;
+  catalog = unitCatalog;
+  try {
+    return evaluation();
+  } finally {
+    catalog = previous;
+  }
+}
+
 function operatorRefused(what: string, instead: string): Error {
   return new Error(`${what} cannot be used with an operator such as > or ==; use ${instead}`);
 }
@@ -45,7 +64,7 @@ function operatorRefused(what: string, instead: string): Error {
 class QuantityRef {
   constructor(private readonly value: QuantityValue) {
     // An unknown unit is refused when the object is made, not when it is first used.
-    quantityBaseAmount(value);
+    quantityBaseAmount(value, catalog);
   }
 
   get amount(): string {
@@ -58,47 +77,47 @@ class QuantityRef {
 
   /** The amount in the kind's base unit, as a number. */
   get base(): number {
-    return Number(quantityBaseAmount(this.value));
+    return Number(quantityBaseAmount(this.value, catalog));
   }
 
   to(unit: unknown): QuantityRef {
-    return new QuantityRef(convertQuantity(this.value, text('to', unit, 'a unit code, e.g. \'kg\'')));
+    return new QuantityRef(convertQuantity(this.value, text('to', unit, 'a unit code, e.g. \'kg\''), catalog));
   }
 
   plus(other: unknown): QuantityRef {
-    return new QuantityRef(addQuantities(this.value, quantityArg(other)));
+    return new QuantityRef(addQuantities(this.value, quantityArg(other), catalog));
   }
 
   minus(other: unknown): QuantityRef {
-    return new QuantityRef(subtractQuantities(this.value, quantityArg(other)));
+    return new QuantityRef(subtractQuantities(this.value, quantityArg(other), catalog));
   }
 
   times(multiplier: unknown): QuantityRef {
-    return new QuantityRef(multiplyQuantity(this.value, decimalArg(multiplier)));
+    return new QuantityRef(multiplyQuantity(this.value, decimalArg(multiplier), catalog));
   }
 
   dividedBy(divisor: unknown): QuantityRef {
-    return new QuantityRef(divideQuantity(this.value, decimalArg(divisor)));
+    return new QuantityRef(divideQuantity(this.value, decimalArg(divisor), catalog));
   }
 
   eq(other: unknown): boolean {
-    return compareQuantities(this.value, quantityArg(other)) === 0;
+    return compareQuantities(this.value, quantityArg(other), catalog) === 0;
   }
 
   gt(other: unknown): boolean {
-    return compareQuantities(this.value, quantityArg(other)) > 0;
+    return compareQuantities(this.value, quantityArg(other), catalog) > 0;
   }
 
   ge(other: unknown): boolean {
-    return compareQuantities(this.value, quantityArg(other)) >= 0;
+    return compareQuantities(this.value, quantityArg(other), catalog) >= 0;
   }
 
   lt(other: unknown): boolean {
-    return compareQuantities(this.value, quantityArg(other)) < 0;
+    return compareQuantities(this.value, quantityArg(other), catalog) < 0;
   }
 
   le(other: unknown): boolean {
-    return compareQuantities(this.value, quantityArg(other)) <= 0;
+    return compareQuantities(this.value, quantityArg(other), catalog) <= 0;
   }
 
   toString(): string {
@@ -143,7 +162,7 @@ class MoneyRef {
 
   /** Rounded half up to the currency's minor units. */
   round(): MoneyRef {
-    return new MoneyRef(roundMoney(this.value));
+    return new MoneyRef(roundMoney(this.value, catalog));
   }
 
   eq(other: unknown): boolean {
@@ -200,17 +219,17 @@ class DimensionsRef {
   }
 
   to(unit: unknown): DimensionsRef {
-    return new DimensionsRef(convertDimensions(this.value, text('to', unit, 'a unit code, e.g. \'kg\'')));
+    return new DimensionsRef(convertDimensions(this.value, text('to', unit, 'a unit code, e.g. \'kg\''), catalog));
   }
 
   /** `width × height`, in square metres. */
   area(): QuantityRef {
-    return new QuantityRef(dimensionsArea(this.value));
+    return new QuantityRef(dimensionsArea(this.value, catalog));
   }
 
   /** `width × height × depth`, in cubic metres; a refusal for two axes. */
   volume(): QuantityRef {
-    return new QuantityRef(dimensionsVolume(this.value));
+    return new QuantityRef(dimensionsVolume(this.value, catalog));
   }
 
   toString(): string {
@@ -251,13 +270,13 @@ function stringOf(raw: unknown, field: string): string {
 
 function quantityArg(other: unknown): QuantityValue {
   if (other instanceof QuantityRef) return other.raw;
-  if (typeof other === 'string') return parseQuantity(other);
+  if (typeof other === 'string') return parseQuantity(other, catalog);
   throw new Error("expected a quantity, e.g. qty('5 kg')");
 }
 
 function moneyArg(other: unknown): MoneyValue {
   if (other instanceof MoneyRef) return other.raw;
-  if (typeof other === 'string') return parseMoney(other);
+  if (typeof other === 'string') return parseMoney(other, catalog);
   throw new Error("expected money, e.g. money('100 EUR')");
 }
 
@@ -278,7 +297,7 @@ function text(what: string, raw: unknown, expected: string): string {
 export function qty(value: unknown): QuantityRef | null {
   if (value === null || value === undefined) return null;
   if (value instanceof QuantityRef) return value;
-  if (typeof value === 'string') return new QuantityRef(parseQuantity(value));
+  if (typeof value === 'string') return new QuantityRef(parseQuantity(value, catalog));
   if (!isObject(value)) throw notAMeasure('quantity');
   return new QuantityRef({ amount: amountOf(value['amount'], 'amount'), unit: stringOf(value['unit'], 'unit') });
 }
@@ -287,7 +306,7 @@ export function qty(value: unknown): QuantityRef | null {
 export function money(value: unknown): MoneyRef | null {
   if (value === null || value === undefined) return null;
   if (value instanceof MoneyRef) return value;
-  if (typeof value === 'string') return new MoneyRef(parseMoney(value));
+  if (typeof value === 'string') return new MoneyRef(parseMoney(value, catalog));
   if (!isObject(value)) throw notAMeasure('money');
   return new MoneyRef({ amount: amountOf(value['amount'], 'amount'), currency: stringOf(value['currency'], 'currency') });
 }

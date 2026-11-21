@@ -108,8 +108,11 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
 6. **Organization units (D1)** — *Part 1:* `UnitCatalog.withUnits` and the `UnitCatalogProvider` port in core; units as an
    org-scoped resource in base-entity-backend (`/organizations/{orgKey}/units`, kind + factor frozen, retire instead of
    delete); the definition validator, payload validation and derived writes read the owning organization's catalog.
-   *Part 2:* the rule engine (`MeasureBindings`) on the organization's catalog. *Part 3:* the frontend catalog from
-   the backend, retired units hidden from new choices. *Part 4:* a designer screen for units.
+   *Part 2 (#1453):* the backend rule engine reads the rule's organization's catalog. *Part 3:* the frontend catalog
+   from the backend (`OrganizationUnitCatalog`, loaded with the entity definitions after sign-in — an app initializer would
+   ask before there is a token; `UNIT_CATALOG` is a live view of it), retired units hidden from new choices, the browser's
+   rule evaluator and the designer's attribute options on the organization's catalog; document fields and entity-table
+   cells still name a unit of the organization by its code. *Part 4:* a designer screen for units.
 
 7. **Testbed uses the types** — the Order family: a line's `quantity` is a COUNT quantity (`pc`, `dz`), `unitPrice` and `total`
    are EUR money; `demo-component-one` has a COUNT quantity too. The `order-total` calculation reads `baseAmount`
