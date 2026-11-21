@@ -1,6 +1,6 @@
 import { inject, Pipe, PipeTransform } from '@angular/core';
 import { injectActiveLang } from '@processpuzzle/util';
-import { formatDimensions, formatMoney, formatQuantity } from './measure-format';
+import { formatDimensions, formatMeasure, formatMoney, formatQuantity } from './measure-format';
 import { UNIT_CATALOG } from './unit-catalog.token';
 
 /**
@@ -36,5 +36,20 @@ export class DimensionsPipe implements PipeTransform {
 
   transform(value: unknown): string {
     return formatDimensions(value, this.activeLang(), this.catalog);
+  }
+}
+
+/**
+ * Whatever an attribute holds, when it may be a measure: `{{ row[attr.attrName] | ppMeasure }}`. A calculated attribute is
+ * the case — a calculation wrote it, its control type says so and no longer says money or quantity. Anything that is not a
+ * measure shows as it is.
+ */
+@Pipe({ name: 'ppMeasure', standalone: true, pure: false })
+export class MeasurePipe implements PipeTransform {
+  private readonly activeLang = injectActiveLang();
+  private readonly catalog = inject(UNIT_CATALOG);
+
+  transform(value: unknown): string {
+    return formatMeasure(value, this.activeLang(), this.catalog) ?? (value === null || value === undefined ? '' : String(value));
   }
 }

@@ -61,6 +61,8 @@
                 {{ element[colDescriptor.attrName] | ppMoney }}
               } @else if (colDescriptor.formControlType === 'DIMENSIONS') {
                 {{ element[colDescriptor.attrName] | ppDimensions }}
+              } @else if (colDescriptor.formControlType === 'CALCULATED') {
+                {{ element[colDescriptor.attrName] | ppMeasure }}
               } @else if (colDescriptor.formControlType === 'COMMENTS') {
                 {{ 'base_entity.comments.count' | transloco: { count: commentCount(element[colDescriptor.attrName]) } }}
               } @else if (colDescriptor.formControlType === 'DATE') {

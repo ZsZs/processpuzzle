@@ -7,14 +7,14 @@ const RUNS = '/base-calculation/samples/calculation-runs';
 
 interface Line {
   productName: string;
-  quantity: number;
-  unitPrice: number;
+  quantity: { amount: string; unit: string };
+  unitPrice: { amount: string; currency: string };
 }
 interface OrderPayload {
   orderNumber: string;
   customerName: string;
   status: string;
-  total: number;
+  total: { amount: string; currency: string };
   lineItems: Line[];
 }
 
@@ -45,8 +45,8 @@ test.describe('Calculation runs', () => {
       orderNumber: `E2E-${randomUUID().slice(0, 8)}`,
       customerName: 'E2E Customer',
       status: 'DRAFT',
-      total: quantity * unitPrice,
-      lineItems: [{ productName: 'E2E item', quantity, unitPrice }],
+      total: { amount: String(quantity * unitPrice), currency: 'EUR' },
+      lineItems: [{ productName: 'E2E item', quantity: { amount: String(quantity), unit: 'pc' }, unitPrice: { amount: String(unitPrice), currency: 'EUR' } }],
     });
 
   const runsOf = (id: string) => platform.calculationRuns('order-total', id);
@@ -55,7 +55,7 @@ test.describe('Calculation runs', () => {
     // 2000 is past the 1000 threshold of the volume table: a 3 % discount.
     const created = await order(1, 2000);
 
-    await expect.poll(async () => (await entities.get<OrderPayload>('order', created.id)).payload.total).toBe(1940);
+    await expect.poll(async () => Number((await entities.get<OrderPayload>('order', created.id)).payload.total.amount)).toBe(1940);
     const [run] = await runsOf(created.id);
     expect(run.status).toBe('COMPLETED');
   });
@@ -95,8 +95,9 @@ test.describe('Calculation runs', () => {
     await entities.update('order', created.id, current.version ?? 0, { ...current.payload, customerName: 'Renamed after freeze' });
 
     // Nothing to wait *for*: a run that wrongly started would land within moments of the update.
+    // eslint-disable-next-line sonarjs/no-fixed-wait-in-tests -- a negative: there is no condition to poll for
     await page.waitForTimeout(2000);
-    expect((await runsOf(created.id)).length).toBe(runsBefore);
+    expect(await runsOf(created.id)).toHaveLength(runsBefore);
   });
 
   test('confirming an order freezes its calculation', async ({ page }) => {

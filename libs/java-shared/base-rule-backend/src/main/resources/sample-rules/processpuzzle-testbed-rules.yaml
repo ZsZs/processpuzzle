@@ -20,7 +20,7 @@ rules:
     enabled: true
     fields:
       - lineItems
-    expression: "!entity.lineItems || entity.lineItems.every(li => Number(li.quantity) > 0)"
+    expression: "!entity.lineItems || entity.lineItems.every(li => qty(li.quantity).gt(qty('0 pc')))"
     message: All line item quantities must be greater than zero.
     translocoId: rule.order.positiveQuantities
 
@@ -38,8 +38,8 @@ rules:
       - lineItems
     expression: >-
       !entity.lineItems ||
-      Math.abs(Number(entity.total) - entity.lineItems.reduce((sum, li) => sum + Number(li.unitPrice)
-      * Number(li.quantity), 0)) < 0.001
+      money(entity.total).eq(entity.lineItems.reduce((sum, li) => sum.plus(money(li.unitPrice).times(qty(li.quantity).base)),
+      money('0 EUR')).round())
     message: Order total does not match the sum of line item subtotals.
     translocoId: rule.order.totalMatchesLineItems
 
@@ -72,6 +72,6 @@ rules:
     enabled: true
     fields:
       - lineItems
-    expression: "!entity.lineItems || entity.lineItems.every(li => Number(li.quantity) >= 0)"
+    expression: "!entity.lineItems || entity.lineItems.every(li => qty(li.quantity).ge(qty('0 pc')))"
     message: Special order line items must have a non-negative quantity.
     translocoId: rule.specialOrder.allowsZeroQuantity

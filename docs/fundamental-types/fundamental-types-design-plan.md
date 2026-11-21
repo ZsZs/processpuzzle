@@ -111,4 +111,11 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    *Part 2:* the rule engine (`MeasureBindings`) on the organization's catalog. *Part 3:* the frontend catalog from
    the backend, retired units hidden from new choices. *Part 4:* a designer screen for units.
 
+7. **Testbed uses the types** — the Order family: a line's `quantity` is a COUNT quantity (`pc`, `dz`), `unitPrice` and `total`
+   are EUR money; `demo-component-one` has a COUNT quantity too. The `order-total` calculation reads `baseAmount`
+   (`quantity.baseAmount * unitPrice.baseAmount`; `number(unitPrice.amount)` answered null, because the stored amount is
+   already numeric in a row), the order rules use `qty()` / `money()`, the seeded orders and the e2e fixtures carry measures.
+   Whatever shows an attribute without knowing its type reads a measure as one: `formatMeasure` (document fields, entity-table
+   cells and sums, PDF export, list cells of a calculated attribute, the calculated control).
+
 Later: exchange rates with validity periods (D2).

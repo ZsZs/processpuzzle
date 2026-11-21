@@ -222,14 +222,20 @@ entityDefinitions:
       - code: quantity
         name: Quantity
         displayOrder: 2
-        valueKind: NUMBER
-        formControlType: TEXT_BOX
+        valueKind: REFERENCE
+        formControlType: QUANTITY
+        quantityKind: COUNT
+        allowedUnits: [pc, dz]
+        defaultUnit: pc
+        scale: 0
         required: true
       - code: unitPrice
         name: Unit Price
         displayOrder: 3
-        valueKind: NUMBER
-        formControlType: TEXT_BOX
+        valueKind: REFERENCE
+        formControlType: MONEY
+        allowedCurrencies: [EUR]
+        defaultCurrency: EUR
         required: true
 
   # 5. Order — the entity the sample rules in base-rule and the sample documents in base-document
@@ -269,11 +275,16 @@ entityDefinitions:
           - DELIVERED
           - CANCELLED
         defaultValue: DRAFT
+      # Written by the `order-total` calculation, which hands base-entity a bare number: that is taken to be in the default
+      # currency, rounded to its cents and stored with its derived numbers. The order form shows it read-only, as the
+      # calculation's value, whatever type it is declared here.
       - code: total
         name: Total
         displayOrder: 4
-        valueKind: NUMBER
-        formControlType: CALCULATED
+        valueKind: REFERENCE
+        formControlType: MONEY
+        allowedCurrencies: [EUR]
+        defaultCurrency: EUR
       - code: shippingAddress
         name: Shipping Address
         displayOrder: 5
@@ -325,14 +336,20 @@ entityDefinitions:
       - code: quantity
         name: Quantity
         displayOrder: 2
-        valueKind: NUMBER
-        formControlType: TEXT_BOX
+        valueKind: REFERENCE
+        formControlType: QUANTITY
+        quantityKind: COUNT
+        allowedUnits: [pc, dz]
+        defaultUnit: pc
+        scale: 0
         required: true
       - code: unitPrice
         name: Unit Price
         displayOrder: 3
-        valueKind: NUMBER
-        formControlType: TEXT_BOX
+        valueKind: REFERENCE
+        formControlType: MONEY
+        allowedCurrencies: [EUR]
+        defaultCurrency: EUR
         required: true
 
   # 7. Special Order — the surface of the 'special-order-allows-zero-quantity' sample rule in
@@ -381,8 +398,10 @@ entityDefinitions:
       - code: total
         name: Total
         displayOrder: 4
-        valueKind: NUMBER
-        formControlType: CALCULATED
+        valueKind: REFERENCE
+        formControlType: MONEY
+        allowedCurrencies: [EUR]
+        defaultCurrency: EUR
       - code: shippingAddress
         name: Shipping Address
         displayOrder: 5
@@ -622,8 +641,12 @@ entityDefinitions:
       - code: quantity
         name: Quantity
         displayOrder: 2
-        valueKind: NUMBER
-        formControlType: NUMBER
+        valueKind: REFERENCE
+        formControlType: QUANTITY
+        quantityKind: COUNT
+        allowedUnits: [pc, dz]
+        defaultUnit: pc
+        scale: 0
       - code: note
         name: Note
         displayOrder: 3
@@ -844,14 +867,24 @@ entities:
       orderNumber: ORD-1001
       customerName: Alice Johnson
       status: DRAFT
-      total: 89.88
+      total:
+        amount: "89.88"
+        currency: EUR
       lineItems:
         - productName: Widget A
-          quantity: 2
-          unitPrice: 19.99
+          quantity:
+            amount: "2"
+            unit: pc
+          unitPrice:
+            amount: "19.99"
+            currency: EUR
         - productName: Widget B
-          quantity: 1
-          unitPrice: 49.90
+          quantity:
+            amount: "1"
+            unit: pc
+          unitPrice:
+            amount: "49.90"
+            currency: EUR
 
   # Order 2 — shipped, so it carries the address that state requires.
   - entityDefinitionCode: order
@@ -859,7 +892,9 @@ entities:
       orderNumber: ORD-1002
       customerName: Bob Meier
       status: SHIPPED
-      total: 85.50
+      total:
+        amount: "85.50"
+        currency: EUR
       shippingAddress:
         country: DE
         street: Hauptstraße 12
@@ -867,11 +902,19 @@ entities:
         city: München
       lineItems:
         - productName: Bolt M8
-          quantity: 5
-          unitPrice: 12
+          quantity:
+            amount: "5"
+            unit: pc
+          unitPrice:
+            amount: "12"
+            currency: EUR
         - productName: Nut M8
-          quantity: 3
-          unitPrice: 8.50
+          quantity:
+            amount: "3"
+            unit: pc
+          unitPrice:
+            amount: "8.50"
+            currency: EUR
 
   # Order 3
   - entityDefinitionCode: order
@@ -879,11 +922,17 @@ entities:
       orderNumber: ORD-1003
       customerName: Carla Rossi
       status: CONFIRMED
-      total: 100
+      total:
+        amount: "100"
+        currency: EUR
       lineItems:
         - productName: Temperature Sensor
-          quantity: 4
-          unitPrice: 25
+          quantity:
+            amount: "4"
+            unit: pc
+          unitPrice:
+            amount: "25"
+            currency: EUR
 
   # Order 4
   - entityDefinitionCode: order
@@ -891,7 +940,9 @@ entities:
       orderNumber: ORD-1004
       customerName: Daniel Novak
       status: DELIVERED
-      total: 499
+      total:
+        amount: "499"
+        currency: EUR
       shippingAddress:
         country: CZ
         street: Wenceslas Square 5
@@ -899,8 +950,12 @@ entities:
         city: Praha
       lineItems:
         - productName: Servo Motor
-          quantity: 1
-          unitPrice: 499
+          quantity:
+            amount: "1"
+            unit: pc
+          unitPrice:
+            amount: "499"
+            currency: EUR
 
   # Special Order 1 — carries a zero-quantity placeholder line. On an `Order` this violates
   # 'positive-quantities'; here 'special-order-allows-zero-quantity' overrides it, so the form opens clean.
@@ -910,16 +965,26 @@ entities:
       orderNumber: SPO-2001
       customerName: Nordwind Logistik GmbH
       status: DRAFT
-      total: 1250
+      total:
+        amount: "1250"
+        currency: EUR
       justification: >-
         Framework agreement; the second line is a placeholder until the supplier quotes the retrofit kit.
       lineItems:
         - productName: Conveyor Belt 12m
-          quantity: 5
-          unitPrice: 250
+          quantity:
+            amount: "5"
+            unit: pc
+          unitPrice:
+            amount: "250"
+            currency: EUR
         - productName: Retrofit Kit (quote pending)
-          quantity: 0
-          unitPrice: 0
+          quantity:
+            amount: "0"
+            unit: pc
+          unitPrice:
+            amount: "0"
+            currency: EUR
 
   # Special Order 2 — no placeholder line, and shipped, so it also satisfies 'shipped-requires-address'.
   # A special order is not exempt from the rules it does not override.
@@ -928,7 +993,9 @@ entities:
       orderNumber: SPO-2002
       customerName: Atelier Lumière SARL
       status: SHIPPED
-      total: 840
+      total:
+        amount: "840"
+        currency: EUR
       shippingAddress:
         country: FR
         street: 14 Rue de la Paix
@@ -937,8 +1004,12 @@ entities:
       justification: Bespoke finish requested by the customer, outside the standard catalogue.
       lineItems:
         - productName: Brass Fitting (custom)
-          quantity: 8
-          unitPrice: 105
+          quantity:
+            amount: "8"
+            unit: pc
+          unitPrice:
+            amount: "105"
+            currency: EUR
 
   # Boats for base-ai's recognition sample. CAN 603 is the 49er on the Wikimedia Commons photo the
   # sample's instructions use, so enrolling that photo shows a matching sail number; the others are there
@@ -989,8 +1060,8 @@ entities:
       name: Demo Root Alpha
       description: The first sample aggregate root.
       componentsOne:
-        - { name: Alpha one A, quantity: 3, note: First part of the first kind. }
-        - { name: Alpha one B, quantity: 8 }
+        - { name: Alpha one A, quantity: { amount: "3", unit: pc }, note: First part of the first kind. }
+        - { name: Alpha one B, quantity: { amount: "8", unit: pc } }
       componentsTwo:
         - { name: Alpha two A, owner: Sam, note: First part of the second kind. }
   - entityDefinitionCode: demo-root
@@ -998,7 +1069,7 @@ entities:
       name: Demo Root Beta
       description: The second sample aggregate root.
       componentsOne:
-        - { name: Beta one A, quantity: 1 }
+        - { name: Beta one A, quantity: { amount: "1", unit: pc } }
       componentsTwo:
         - { name: Beta two A, owner: Kim }
         - { name: Beta two B, owner: Lee }

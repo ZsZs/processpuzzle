@@ -1,6 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslocoService } from '@jsverse/transloco';
+import { sumMeasures } from '@processpuzzle/util';
 import { formatValue, ValueFormat, valueAtPath } from '../value-format/value-format';
 
 /** One column: the value at `path` of every row, under `header`. */
@@ -119,6 +120,8 @@ export class EntityTableComponent {
       const total = totals.find((candidate) => candidate.path === column.path);
       if (!total) return '';
       if (total.aggregate === 'count') return formatValue(this.rowList().length, 'number', this.locale());
+      const measureSum = sumMeasures(this.rowList().map((row) => valueAtPath(row, column.path)));
+      if (measureSum) return formatValue(measureSum, column.format, this.locale());
       const sum = this.rowList().reduce<number>((acc, row) => {
         const value = Number(valueAtPath(row, column.path));
         return Number.isFinite(value) ? acc + value : acc;

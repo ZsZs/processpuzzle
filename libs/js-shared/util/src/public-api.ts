@@ -63,4 +63,5 @@ export {
 } from './lib/fundamental-types/quantity';
 export { addMoney, compareMoney, divideMoney, multiplyMoney, parseMoney, roundMoney, subtractMoney, type MoneyValue } from './lib/fundamental-types/money';
 export { convertDimensions, dimensionsArea, dimensionsVolume, type DimensionsValue } from './lib/fundamental-types/dimensions';
+export { sumMeasures } from './lib/fundamental-types/measure-display';
 export { isoDurationToQuantity, quantityToIsoDuration } from './lib/fundamental-types/iso-duration';

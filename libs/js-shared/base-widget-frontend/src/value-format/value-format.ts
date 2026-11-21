@@ -1,3 +1,5 @@
+import { formatMeasure } from '@processpuzzle/base-entity';
+
 /**
  * How a bound value is shown — one vocabulary for a document's `dataField` node and the `entity-table`
  * widget's columns, so a value reads the same wherever it is placed.
@@ -28,13 +30,16 @@ export function valueAtPath(root: unknown, path: string | undefined): unknown {
 /**
  * `value` as text in `format` for `locale`. `null` and `undefined` are the empty string; a value the format
  * cannot read — a word given `number`, an unparsable date — falls back to its plain text rather than `NaN`.
- * An object (an ADDRESS, an embedded component) is the join of its non-empty scalar values.
+ * A measure (QUANTITY, MONEY, DIMENSIONS) reads in its own unit or currency whatever `format` says — an amount means
+ * nothing without it. Any other object (an ADDRESS, an embedded component) is the join of its non-empty scalar values.
  *
  * `format` is a {@link ValueFormat}, typed as a plain string because it arrives from stored JSON; an unknown
  * one reads as `text`.
  */
 export function formatValue(value: unknown, format: string | undefined, locale: string | undefined): string {
   if (value === null || value === undefined) return '';
+  const measure = formatMeasure(value, locale);
+  if (measure !== undefined) return measure;
   const effective = format ?? 'text';
   if (effective === 'number' || effective.startsWith('currency:')) return formatNumber(value, effective, locale);
   if (effective === 'date' || effective === 'datetime') return formatDate(value, effective, locale);

@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { toDateValue } from '../base-entity/date-format';
+import { formatMeasure } from '../base-form/fundamental-types/measure-format';
 import type { PdfColumnDefinition, PdfExportOptions, PdfExportResult } from './pdf-export.types';
 
 /**
@@ -183,7 +184,7 @@ export class PdfExportService {
     if (typeof value === 'number') return value.toLocaleString(locale);
     if (typeof value === 'bigint') return value.toString();
     if (typeof value === 'string') return this.formatString(value, locale);
-    if (typeof value === 'object') return JSON.stringify(value);
+    if (typeof value === 'object') return formatMeasure(value, locale) ?? JSON.stringify(value);
     return ''; // symbol / function — not meaningful in a table cell
   }
 

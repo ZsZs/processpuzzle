@@ -1,11 +1,11 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatFormField, MatHint, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatTooltip } from '@angular/material/tooltip';
-import { TranslocoPipe } from '@jsverse/transloco';
-import { BaseEntity, BaseFormControlComponent, EntityLabelPipe } from '@processpuzzle/base-entity';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { BaseEntity, BaseFormControlComponent, EntityLabelPipe, formatMeasure } from '@processpuzzle/base-entity';
 import { catchError, debounceTime, filter, of, switchMap } from 'rxjs';
 import { CALCULATED_CONTROL_I18N_SCOPE } from '../../base-calculation.i18n';
 import type { CalculationOutput, EvaluationResult } from '../../domain/calculation-api';
@@ -29,6 +29,9 @@ export const CALCULATED_DEBOUNCE_MS = 400;
  * so — which keeps the value out of the form's PUT. The recomputed value is written into that control without
  * an event, so it neither re-triggers the calculation nor marks the form dirty.
  *
+ * **Measures.** An attribute that holds money or a quantity is stored as an object; it reads in its own currency or unit
+ * (`€89.88`). The calculation answers with a bare number, which takes the stored value's currency or unit.
+ *
  * **Limit.** Embedded children (order lines) are edited in their own form, so only edits of this form react
  * live; a line's change shows when this form is next rendered.
  */
@@ -40,7 +43,7 @@ export const CALCULATED_DEBOUNCE_MS = 400;
     @if (config().visible) {
       <mat-form-field floatLabel="always">
         <mat-label>{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
-        <input matInput readonly [value]="shown() ?? ''" [attr.data-testid]="'calculated-control-value'" />
+        <input matInput readonly [value]="text()" [attr.data-testid]="'calculated-control-value'" />
         <mat-icon
           matSuffix
           [matTooltip]="scope + '.badge' | transloco: { calculation: output()?.calculationId ?? '' }"
@@ -73,10 +76,15 @@ export class CalculatedControlComponent<Entity extends BaseEntity> extends BaseF
   private readonly api = inject(CalculationApiService);
   private readonly outputs = inject(CalculationOutputRegistry);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly transloco = inject(TranslocoService);
 
   protected readonly output = signal<CalculationOutput | undefined>(undefined);
   protected readonly shown = signal<unknown>(undefined);
   protected readonly failed = signal(false);
+  protected readonly text = computed(() => {
+    const shown = this.shown();
+    return formatMeasure(shown, this.transloco.getActiveLang()) ?? (shown ?? '');
+  });
 
   ngOnInit(): void {
     this.shown.set(this.value());
@@ -120,8 +128,15 @@ export class CalculatedControlComponent<Entity extends BaseEntity> extends BaseF
       return;
     }
     this.failed.set(false);
-    const value = values[output.decision];
+    const value = inTheMeasureOf(this.shown(), values[output.decision]);
     this.shown.set(value);
     this.formGroup.get(this.config().attrName)?.setValue(value, { emitEvent: false });
   }
+}
+
+/** A bare number the calculation answers, in the currency or unit of the measure the attribute already holds. */
+function inTheMeasureOf(shown: unknown, answer: unknown): unknown {
+  const isNumber = typeof answer === 'number' || (typeof answer === 'string' && answer.trim() !== '' && Number.isFinite(Number(answer)));
+  if (!isNumber || typeof shown !== 'object' || shown === null || !('amount' in shown)) return answer;
+  return { ...shown, amount: String(answer) };
 }

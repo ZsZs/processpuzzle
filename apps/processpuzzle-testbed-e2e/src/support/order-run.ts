@@ -7,8 +7,8 @@ interface OrderPayload {
   orderNumber: string;
   customerName: string;
   status: string;
-  total: number;
-  lineItems: { productName: string; quantity: number; unitPrice: number }[];
+  total: { amount: string; currency: string };
+  lineItems: { productName: string; quantity: { amount: string; unit: string }; unitPrice: { amount: string; currency: string } }[];
 }
 
 export type RunState = WorkflowInstanceSummary & {
@@ -37,8 +37,8 @@ export class OrderRun {
       orderNumber,
       customerName: 'Events Customer',
       status: 'DRAFT',
-      total: 10,
-      lineItems: [{ productName: 'E2E item', quantity: 1, unitPrice: 10 }],
+      total: { amount: '10', currency: 'EUR' },
+      lineItems: [{ productName: 'E2E item', quantity: { amount: '1', unit: 'pc' }, unitPrice: { amount: '10', currency: 'EUR' } }],
     });
     await expect.poll(async () => (await platform.workflowInstances({ workflowId: 'order-fulfillment-workflow', entityId: order.id })).length, { message: 'the order starts a run' }).toBe(1);
     const [run] = await platform.workflowInstances({ workflowId: 'order-fulfillment-workflow', entityId: order.id });
