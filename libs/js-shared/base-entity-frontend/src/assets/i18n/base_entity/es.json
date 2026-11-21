@@ -87,6 +87,27 @@
       "sharedFrom": "El común del que procede este tipo. Su organización lo lee, pero solo el común lo publica o lo modifica. Vacío en los tipos propios. Lo establece el sistema."
     }
   },
+  "organization_unit": {
+    "_self": "Unidad",
+    "code": "Código",
+    "symbol": "Símbolo",
+    "name": "Nombre",
+    "kind": "Tipo",
+    "factor": "Factor",
+    "divisor": "Divisor",
+    "status": "Estado",
+    "version": "Versión",
+    "_tooltips": {
+      "code": "Clave única de la unidad en su organización, usada en los valores guardados, p. ej. pallet. Fija una vez guardada la unidad.",
+      "symbol": "Lo que aparece junto a una cantidad, p. ej. plt.",
+      "name": "La unidad escrita completa, p. ej. Palé.",
+      "kind": "Lo que mide la unidad, p. ej. MASS. Una unidad se añade a un tipo del catálogo estándar. Fija una vez guardada la unidad.",
+      "factor": "Cuántas unidades base del tipo es una de estas, p. ej. 500 para un palé de 500 kg. Fijo una vez guardada la unidad, porque las cantidades guardadas se derivan de él.",
+      "divisor": "Divide el factor, para una unidad que es una fracción de la unidad base; 1 si se deja vacío. Fijo una vez guardada la unidad.",
+      "status": "ACTIVE para una unidad en uso, RETIRED para dejar de ofrecerla en valores nuevos. Los valores ya guardados siguen siendo legibles. Una unidad nunca se elimina.",
+      "version": "La revisión en pantalla, para que dos diseñadores no se sobrescriban sin darse cuenta."
+    }
+  },
   "artifact": {
     "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo.",
     "invalid_file_type": "Solo se permiten archivos de imagen.",

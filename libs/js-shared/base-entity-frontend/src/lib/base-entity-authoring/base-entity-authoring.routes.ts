@@ -4,9 +4,11 @@ import { baseEntityRoutes, type EmbeddedChildRoute } from '../base-entity.routes
 import { ACTIVE_ENTITY_FACADE } from '../base-entity-facade/active-entity-facade.token';
 import { ENTITY_NAME_ROUTE_DATA_KEY } from '../base-form-navigator/entity-route.registry';
 import { BASE_ENTITY_TRANSLOCO_SCOPE } from '../i18n/base-entity.i18n';
+import { BaseEntityContainerComponent } from '../base-entity-container.component';
 import { EntityDefinitionContainerComponent } from './entity-definition-container.component';
-import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './entity-authoring-names';
+import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
 import { EntityAttributeFacade, EntityDefinitionFacade } from './entity-definition.facade';
+import { OrganizationUnitFacade } from './organization-unit.facade';
 
 /**
  * The authoring branch of the knowledge layer: the list and form of an `Entity Definition`, and the
@@ -39,6 +41,17 @@ export const BASE_ENTITY_AUTHORING_ROUTES: Routes = [
     component: EntityDefinitionContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: EntityDefinitionFacade }, authoringScope()],
     children: baseEntityRoutes(embeddedDefinitionRoutes()),
+  },
+  // The units the organization adds to the standard catalog: a flat list and form, no embedded level. The path segment is
+  // `snakeCaseName('Organization Unit')` for the reason given above, and the scope is the same one, so its labels
+  // (`base_entity.organization_unit.*`) sit in the file the definition's own do.
+  {
+    path: 'organization-unit',
+    title: 'ProcessPuzzle Design - Units',
+    data: { icon: 'straighten', menuTitle: 'design.units', [ENTITY_NAME_ROUTE_DATA_KEY]: ORGANIZATION_UNIT_ENTITY_NAME },
+    component: BaseEntityContainerComponent,
+    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrganizationUnitFacade }, authoringScope()],
+    children: baseEntityRoutes(),
   },
 ];
 

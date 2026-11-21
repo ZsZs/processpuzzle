@@ -7,6 +7,8 @@ import { DESIGN_ROUTES, DESIGN_SECTIONS } from './design.routes';
 import { DesignWorkbenchComponent } from './workbench/design-workbench.component';
 import { CalculationDesignerComponent } from './calculation-designer/calculation-designer.component';
 import { CALCULATION_DESIGNER_TABS } from './calculation-designer/calculation-designer.tabs';
+import { EntityDesignerComponent } from './entity-designer/entity-designer.component';
+import { ENTITY_DESIGNER_TABS } from './entity-designer/entity-designer.tabs';
 import { ReleasePanelComponent } from '@processpuzzle/base-release';
 import { BASE_CHAT_ROUTES } from '@processpuzzle/base-chat';
 import { BASE_ENTITY_AUTHORING_ROUTES } from '@processpuzzle/base-entity';
@@ -115,8 +117,8 @@ describe('DESIGN_ROUTES', () => {
   });
 
   describe('the Entities section', () => {
-    it('hosts the base-entity authoring branch instead of the placeholder', () => {
-      expect(entitiesRoute?.component).toBeUndefined();
+    it('hosts the base-entity authoring branch instead of the placeholder, under its tab bar', () => {
+      expect(entitiesRoute?.component).toBe(EntityDesignerComponent);
       expect(entitiesRoute?.component).not.toBe(UnderConstructionComponent);
       expect(entitiesRoute?.data).toEqual({ icon: 'checkbook', menuTitle: 'design.entities' });
       expect(entitiesRoute?.title).toBeDefined();
@@ -141,6 +143,13 @@ describe('DESIGN_ROUTES', () => {
 
       expect(childPaths).toEqual(expect.arrayContaining(BASE_ENTITY_AUTHORING_ROUTES.map((route) => route.path)));
       expect(childPaths).toContain('entity-definition');
+    });
+
+    it('has a tab for each of them, the entity definitions first and the units second', () => {
+      const childPaths = (entitiesRoute?.children ?? []).map((child) => child.path);
+
+      expect(ENTITY_DESIGNER_TABS.map((tab) => tab.path)).toEqual(['entity-definition', 'organization-unit']);
+      expect(childPaths).toEqual(expect.arrayContaining(ENTITY_DESIGNER_TABS.map((tab) => tab.path)));
     });
 
     it('does not expose the entity definition as a section of its own', () => {

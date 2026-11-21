@@ -87,6 +87,27 @@
       "sharedFrom": "A közös tér, amelyből ez a típus származik. A szervezet olvassa, de csak a közös tér adja ki vagy módosítja. Saját típusoknál üres. A rendszer állítja be."
     }
   },
+  "organization_unit": {
+    "_self": "Mértékegység",
+    "code": "Kód",
+    "symbol": "Jel",
+    "name": "Név",
+    "kind": "Fajta",
+    "factor": "Szorzó",
+    "divisor": "Osztó",
+    "status": "Állapot",
+    "version": "Verzió",
+    "_tooltips": {
+      "code": "A mértékegység egyedi kulcsa a szervezetben, a tárolt értékek ezzel hivatkoznak rá, pl. pallet. Mentés után nem módosítható.",
+      "symbol": "Ami a mennyiség mellett megjelenik, pl. plt.",
+      "name": "A mértékegység kiírva, pl. Raklap.",
+      "kind": "Mit mér a mértékegység, pl. MASS. A mértékegység a szabványos katalógus egy fajtájához adódik. Mentés után nem módosítható.",
+      "factor": "Hány alapegység van a fajtában egy ilyenben, pl. 500 egy 500 kg-os raklapnál. Mentés után nem módosítható, mert a tárolt mennyiségek ebből származnak.",
+      "divisor": "Elosztja a szorzót, az alapegység törtrészét jelentő mértékegységnél; üresen 1. Mentés után nem módosítható.",
+      "status": "ACTIVE a használatban lévő mértékegységnél, RETIRED, hogy új értékekhez ne ajánlja fel. A már tárolt értékek olvashatók maradnak. Mértékegység soha nem törlődik.",
+      "version": "A képernyőn látható változat, hogy két tervező ne írja felül egymást észrevétlenül."
+    }
+  },
   "artifact": {
     "upload_failure": "Az elem feltöltése sikertelen. Próbálja újra.",
     "invalid_file_type": "Csak képfájlok engedélyezettek.",
