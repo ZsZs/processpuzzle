@@ -5,6 +5,7 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.baseentity.port.EntityRulesPort;
 import java.util.List;
 import java.util.Map;
@@ -399,6 +400,44 @@ class DefaultPayloadValidatorAdapterTest {
 
     private static final EntityDefinitionView VISIT_DEF = new EntityDefinitionView("visit", false, List.of(
             new EntityAttributeView("location", ValueKindView.REFERENCE, false, false, null, false, false, false, true)));
+
+    private static EntityDefinitionView measureDefinition(boolean required, MeasureView measure) {
+        return new EntityDefinitionView("item", false, List.of(
+                new EntityAttributeView("size", ValueKindView.REFERENCE, false, false, null, required, false, false, false, measure)));
+    }
+
+    @Test
+    void validate_wellFormedMeasures_pass() {
+        validator.validate(ORG, measureDefinition(false, new MeasureView(MeasureView.Kind.QUANTITY, "MASS", null, null, null, null)),
+                Map.of("size", Map.of("amount", "5", "unit", "kg")));
+        validator.validate(ORG, measureDefinition(false, new MeasureView(MeasureView.Kind.MONEY, null, null, null, null, null)),
+                Map.of("size", Map.of("amount", "5.50", "currency", "EUR")));
+        validator.validate(ORG, measureDefinition(false, new MeasureView(MeasureView.Kind.DIMENSIONS, null, null, null, null, null)),
+                Map.of("size", Map.of("width", "1", "height", "2", "unit", "m")));
+        validator.validate(ORG, measureDefinition(false, new MeasureView(MeasureView.Kind.QUANTITY, "MASS", null, null, null, null)), Map.of());
+    }
+
+    @Test
+    void validate_malformedMeasure_reportsEachProblemOnTheAttribute() {
+        EntityDefinitionView definition = measureDefinition(false, new MeasureView(MeasureView.Kind.QUANTITY, "MASS", null, null, null, null));
+
+        assertThatThrownBy(() -> validator.validate(ORG, definition, Map.of("size", Map.of("amount", "x", "unit", "m"))))
+                .isInstanceOfSatisfying(ValidationException.class, e -> assertThat(e.getViolations()).containsExactly(
+                        new ValidationException.Violation("size", "amount must be a decimal number"),
+                        new ValidationException.Violation("size", "unit 'm' is not allowed here")));
+        assertThatThrownBy(() -> validator.validate(ORG, definition, Map.of("size", "5 kg")))
+                .isInstanceOfSatisfying(ValidationException.class, e -> assertThat(e.getViolations())
+                        .containsExactly(new ValidationException.Violation("size", "expected a quantity object")));
+    }
+
+    @Test
+    void validate_requiredMeasureThatIsMissing_isReportedAsRequired() {
+        EntityDefinitionView definition = measureDefinition(true, new MeasureView(MeasureView.Kind.MONEY, null, null, null, null, null));
+
+        assertThatThrownBy(() -> validator.validate(ORG, definition, Map.of()))
+                .isInstanceOfSatisfying(ValidationException.class, e -> assertThat(e.getViolations())
+                        .containsExactly(new ValidationException.Violation("size", "required")));
+    }
 
     @Test
     void validate_wellFormedGeoLocations_pass() {

@@ -41,6 +41,27 @@ have `package-info.java` declaring `@ApplicationModule`; running
 either `@NamedInterface` is added to the relevant `domain` packages or the adapters are reworked
 to call a narrower published API on the other module instead of its repository.
 
+## Quantities, money and dimensions
+
+`QUANTITY`, `MONEY` and `DIMENSIONS` attributes hold the [fundamental types](../processpuzzle-core/README.md) of
+`processpuzzle-core` (`com.processpuzzle.core.quantity`): `valueKind` REFERENCE, single-valued, no linked type. The
+definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`, `allowedCurrencies`,
+`defaultCurrency`, `dimensionCount` — are checked against the standard catalog when the definition is saved
+(`MeasureAttributeValidator`), and each belongs to one control only.
+
+- **Value** — `{ amount, unit }`, `{ amount, currency }`, `{ width, height, depth?, unit }`, the amounts as decimal
+  text. A write checks the unit or currency against the catalog and the attribute's allowed list, the amounts as
+  decimals, and their decimal places against `scale` (for money, against the currency's minor units).
+- **Stored form** — after validation, `MeasureNormalizer` rewrites every measure of the payload, embedded components
+  included: canonical amounts (`"12.50"` → `"12.5"`) plus the numbers a query compares — `baseAmount` (a quantity in its
+  kind's base unit, money as the amount itself), `baseArea` and, for three axes, `baseVolume` (m², m³). They are derived on
+  every write, so a client cannot set them, and they are `double`s on purpose (see `MeasureValues`).
+- **Search** — through those numbers, never the object: `weight.baseAmount=gt=5` finds every weight over 5 kg whatever
+  unit it was entered in; `size.baseVolume=lt=0.5` is in cubic metres. A bare `weight` or `weight.unit` is refused with a
+  hint naming the selectable numbers.
+- Not covered yet: a calculation that writes into one of these attributes (the object-access port bypasses
+  validation), and the designer / seed support, which follow with the frontend.
+
 ## Still pending on your side
 
 - **`RsqlSpecificationBuilder`** (processpuzzle-core) — I couldn't fetch its source (GitHub

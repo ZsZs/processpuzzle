@@ -10,6 +10,7 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.Optional;
 import org.springframework.beans.factory.ObjectProvider;
@@ -109,7 +110,20 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             attribute.isRequired(),
             attribute.getFormControlType() == FormControlType.COMMENTS,
             attribute.getFormControlType() == FormControlType.ADDRESS,
-            attribute.getFormControlType() == FormControlType.GEO_LOCATION
+            attribute.getFormControlType() == FormControlType.GEO_LOCATION,
+            measureOf(attribute)
         );
+    }
+
+    /** What an instance write needs of a QUANTITY, MONEY or DIMENSIONS attribute; null for any other control. */
+    private MeasureView measureOf(BaseEntityAttribute attribute) {
+        MeasureView.Kind kind = switch (attribute.getFormControlType()) {
+            case QUANTITY -> MeasureView.Kind.QUANTITY;
+            case MONEY -> MeasureView.Kind.MONEY;
+            case DIMENSIONS -> MeasureView.Kind.DIMENSIONS;
+            default -> null;
+        };
+        return kind == null ? null : new MeasureView(kind, attribute.getQuantityKind(), attribute.getAllowedUnits(), attribute.getScale(),
+            attribute.getAllowedCurrencies(), attribute.getDimensionCount());
     }
 }

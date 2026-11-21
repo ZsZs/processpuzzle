@@ -89,6 +89,7 @@ public class EntityDefinitionValidator {
         validateComments(attribute, violations);
         validateAddress(attribute, violations);
         validateGeoLocation(attribute, violations);
+        MeasureAttributeValidator.validate(attribute, violations);
         validateCalculated(attribute, violations);
     }
 

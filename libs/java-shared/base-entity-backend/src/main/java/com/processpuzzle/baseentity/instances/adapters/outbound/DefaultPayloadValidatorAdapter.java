@@ -2,6 +2,7 @@ package com.processpuzzle.baseentity.instances.adapters.outbound;
 
 import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.common.ValidationException.Violation;
+import com.processpuzzle.baseentity.instances.domain.MeasureValues;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
@@ -68,16 +69,7 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             violations.add(new Violation(attribute.code(), "required"));
             return;
         }
-        if (value != null && attribute.comments()) {
-            validateComments(attribute, value, violations);
-            return;
-        }
-        if (value != null && attribute.address()) {
-            validateAddress(attribute, value, violations);
-            return;
-        }
-        if (value != null && attribute.geoLocation()) {
-            validateGeoLocation(attribute, value, violations);
+        if (value != null && validateStructuredValue(attribute, value, violations)) {
             return;
         }
         if (value == null || !attribute.embeddedComponent()) {
@@ -94,6 +86,22 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
         } else {
             validateSingleEmbedded(orgKey, childDefinition, value, violations);
         }
+    }
+
+    /** Checks the value of an attribute whose control owns a structured value; false for every other control. */
+    private boolean validateStructuredValue(EntityAttributeView attribute, Object value, List<Violation> violations) {
+        if (attribute.comments()) {
+            validateComments(attribute, value, violations);
+        } else if (attribute.address()) {
+            validateAddress(attribute, value, violations);
+        } else if (attribute.geoLocation()) {
+            validateGeoLocation(attribute, value, violations);
+        } else if (attribute.measure() != null) {
+            MeasureValues.problems(attribute.measure(), value).forEach(problem -> violations.add(new Violation(attribute.code(), problem)));
+        } else {
+            return false;
+        }
+        return true;
     }
 
     @SuppressWarnings("unchecked")

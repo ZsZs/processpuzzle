@@ -74,6 +74,7 @@ public class UpdateEntityInstanceUseCase {
         effectivePayload = CommentHistoryGuard.guard(definition, entityObject.getPayload(), effectivePayload);
         effectivePayload = EmbeddedItemIdentity.withIdentities(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, effectivePayload);
+        effectivePayload = MeasureNormalizer.withDerivedValues(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
         scope.requireFollowedUnchanged(orgKey, entityDefinitionCode, entityObject.getPayload(), effectivePayload);
         scope.requireUniqueKeys(orgKey, entityDefinitionCode, effectivePayload, entityObject.getId());
 

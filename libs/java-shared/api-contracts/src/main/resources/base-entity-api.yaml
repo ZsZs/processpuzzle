@@ -988,6 +988,9 @@ components:
         - COMMENTS
         - ADDRESS
         - GEO_LOCATION
+        - QUANTITY
+        - MONEY
+        - DIMENSIONS
         - CALCULATED
         - TAGS
         - TITLE
@@ -1233,6 +1236,43 @@ components:
           type: string
           pattern: '^[A-Z]{2}$'
           description: For ADDRESS controls only - the ISO 3166-1 alpha-2 code a new address starts with.
+        quantityKind:
+          type: string
+          description: >
+            For QUANTITY controls only: the quantity kind (LENGTH, MASS, TIME ...) whose units the control offers
+            when allowedUnits names none. Without either, every unit is offered, grouped by kind.
+        allowedUnits:
+          type: array
+          items:
+            type: string
+          description: >
+            For QUANTITY and DIMENSIONS controls only: the unit codes of the standard catalog to offer, and the only
+            ones a value may use. A DIMENSIONS attribute takes lengths only. Empty means every unit of the kind.
+        defaultUnit:
+          type: string
+          description: For QUANTITY and DIMENSIONS controls only - the unit a new value starts in; the base unit of the kind when absent.
+        scale:
+          type: integer
+          minimum: 0
+          maximum: 20
+          description: >
+            For QUANTITY and DIMENSIONS controls only: the most decimal places an amount may have, and the places a
+            unit conversion in the form is rounded to. A MONEY amount is limited by its currency's minor units instead.
+        allowedCurrencies:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]{3}$'
+          description: For MONEY controls only - the ISO 4217 codes to offer, and the only ones a value may use. Empty means every currency.
+        defaultCurrency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: For MONEY controls only - the currency a new amount starts in; the first allowed one when absent.
+        dimensionCount:
+          type: integer
+          minimum: 2
+          maximum: 3
+          description: For DIMENSIONS controls only - 2 (width x height, the default) or 3 (adds the depth).
         validationRules: { }
 
     BaseEntityAttribute:

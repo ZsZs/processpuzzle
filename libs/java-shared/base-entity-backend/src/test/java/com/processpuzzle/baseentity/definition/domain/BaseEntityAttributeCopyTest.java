@@ -44,6 +44,13 @@ class BaseEntityAttributeCopyTest {
             .showMap(true)
             .mapProvider(MapProvider.GOOGLE)
             .defaultCountry("HU")
+            .quantityKind("MASS")
+            .allowedUnits(List.of("kg", "g"))
+            .defaultUnit("kg")
+            .scale(3)
+            .allowedCurrencies(List.of("EUR", "HUF"))
+            .defaultCurrency("EUR")
+            .dimensionCount(3)
             .validationRules(Map.of("min", 0))
             .build();
 

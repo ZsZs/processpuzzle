@@ -10,6 +10,7 @@ import com.processpuzzle.baseentity.definition.domain.ValueKind;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -214,6 +215,26 @@ class EntityDefinitionLookupAdapterTest {
 
         assertThat(view.geoLocation()).isTrue();
         assertThat(view.address()).isFalse();
+    }
+
+    @Test
+    void findByCode_describesTheMeasureOfAQuantityMoneyOrDimensionsAttribute() {
+        BaseEntityAttribute weight = BaseEntityAttribute.builder().code("weight").valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.QUANTITY).quantityKind("MASS").allowedUnits(List.of("kg", "g")).scale(3).build();
+        BaseEntityAttribute price = BaseEntityAttribute.builder().code("price").valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.MONEY).allowedCurrencies(List.of("EUR")).build();
+        BaseEntityAttribute size = BaseEntityAttribute.builder().code("size").valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.DIMENSIONS).dimensionCount(3).build();
+        BaseEntityAttribute name = BaseEntityAttribute.builder().code("name").valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT_BOX).build();
+        BaseEntityDefinition definition = BaseEntityDefinition.builder().code("item").attributes(List.of(weight, price, size, name)).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("acme", "item", Channel.RELEASED)).thenReturn(Optional.of(definition));
+
+        List<EntityAttributeView> views = adapter.findByCode("acme", "item").orElseThrow().attributes();
+
+        assertThat(views.get(0).measure()).isEqualTo(new MeasureView(MeasureView.Kind.QUANTITY, "MASS", List.of("kg", "g"), 3, null, null));
+        assertThat(views.get(1).measure()).isEqualTo(new MeasureView(MeasureView.Kind.MONEY, null, null, null, List.of("EUR"), null));
+        assertThat(views.get(2).measure().threeDimensional()).isTrue();
+        assertThat(views.get(3).measure()).isNull();
     }
 
     @Test

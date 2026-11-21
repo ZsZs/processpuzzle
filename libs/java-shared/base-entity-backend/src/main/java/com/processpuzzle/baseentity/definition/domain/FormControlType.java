@@ -40,6 +40,26 @@ public enum FormControlType {
      */
     GEO_LOCATION,
     /**
+     * An amount of a unit of one quantity kind: valueKind REFERENCE, single-valued, no linkedEntityType. The value is
+     * {@code {amount, unit}} with the amount as decimal text and the unit a code of the standard catalog; the backend
+     * adds {@code baseAmount}, the amount in the kind's base unit, so values compare across units. May set quantityKind,
+     * allowedUnits, defaultUnit and scale.
+     */
+    QUANTITY,
+    /**
+     * An amount of a currency: valueKind REFERENCE, single-valued, no linkedEntityType. The value is
+     * {@code {amount, currency}} with an ISO 4217 currency; the amount has at most the currency's minor units as decimal
+     * places and the backend adds {@code baseAmount}, the same amount as a number. May set allowedCurrencies and
+     * defaultCurrency.
+     */
+    MONEY,
+    /**
+     * Two or three lengths in one unit: valueKind REFERENCE, single-valued, no linkedEntityType. The value is
+     * {@code {width, height, depth?, unit}}; the backend adds {@code baseArea} and, for three axes, {@code baseVolume},
+     * in square and cubic metres. May set allowedUnits (lengths), defaultUnit, scale and dimensionCount.
+     */
+    DIMENSIONS,
+    /**
      * A value a base-calculation calculation derives: single-valued, a scalar valueKind (NUMBER, TEXT, DATE or
      * BOOLEAN), no linkedEntityType. The form shows it read-only, recomputed from the unsaved form state.
      */

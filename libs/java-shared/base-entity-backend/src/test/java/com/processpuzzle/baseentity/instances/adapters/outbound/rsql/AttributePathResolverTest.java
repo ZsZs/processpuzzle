@@ -4,6 +4,7 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,44 @@ class AttributePathResolverTest {
     @BeforeEach
     void setUp() {
         resolver = new AttributePathResolver(lookupPort);
+    }
+
+    private ResolvedAttributePath resolveMeasure(MeasureView measure, String selector) {
+        EntityDefinitionView def = new EntityDefinitionView("item", false, List.of(
+                new EntityAttributeView("size", ValueKindView.REFERENCE, false, false, null, false, false, false, false, measure)));
+        when(lookupPort.findByCode("acme", "item")).thenReturn(Optional.of(def));
+        return resolver.resolve("acme", "item", selector);
+    }
+
+    @Test
+    void resolve_aQuantityOrMoneyIsQueriedThroughItsBaseAmount() {
+        for (MeasureView.Kind kind : List.of(MeasureView.Kind.QUANTITY, MeasureView.Kind.MONEY)) {
+            ResolvedAttributePath path = resolveMeasure(new MeasureView(kind, null, null, null, null, null), "size.baseAmount");
+
+            assertThat(path.valueKind()).isEqualTo(ValueKindView.NUMBER);
+            assertThat(path.segments()).extracting(PathSegment::attributeCode).containsExactly("size", "baseAmount");
+            assertThat(path.segments()).extracting(PathSegment::array).containsOnly(false);
+        }
+    }
+
+    @Test
+    void resolve_dimensionsAreQueriedThroughTheirAreaAndTheirVolumeIfTheyHaveOne() {
+        MeasureView flat = new MeasureView(MeasureView.Kind.DIMENSIONS, null, null, null, null, 2);
+        MeasureView box = new MeasureView(MeasureView.Kind.DIMENSIONS, null, null, null, null, 3);
+
+        assertThat(resolveMeasure(flat, "size.baseArea").segments()).extracting(PathSegment::attributeCode).containsExactly("size", "baseArea");
+        assertThat(resolveMeasure(box, "size.baseVolume").valueKind()).isEqualTo(ValueKindView.NUMBER);
+        assertThatThrownBy(() -> resolveMeasure(flat, "size.baseVolume")).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("size.baseArea");
+    }
+
+    @Test
+    void resolve_aMeasureItselfOrAnythingButItsNumbersIsRefusedWithAHint() {
+        MeasureView quantity = new MeasureView(MeasureView.Kind.QUANTITY, null, null, null, null, null);
+
+        assertThatThrownBy(() -> resolveMeasure(quantity, "size")).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("'size' is a quantity").hasMessageContaining("size.baseAmount");
+        assertThatThrownBy(() -> resolveMeasure(quantity, "size.unit")).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("size.baseAmount");
+        assertThatThrownBy(() -> resolveMeasure(quantity, "size.baseAmount.x")).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("size.baseAmount");
     }
 
     @Test

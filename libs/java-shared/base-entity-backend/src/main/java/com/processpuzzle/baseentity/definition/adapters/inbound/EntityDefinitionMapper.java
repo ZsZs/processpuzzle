@@ -80,6 +80,11 @@ public class EntityDefinitionMapper {
         return new java.util.ArrayList<>(sharing.getVisibleWhen().getState());
     }
 
+    /** The generated DTO pre-fills an absent list with an empty one; the domain keeps "not set" as null. */
+    private static List<String> nullWhenEmpty(List<String> values) {
+        return values == null || values.isEmpty() ? null : new java.util.ArrayList<>(values);
+    }
+
     public BaseEntityAttribute toDomain(BaseEntityAttributeInput input) {
         if (input == null) {
             return null;
@@ -104,6 +109,13 @@ public class EntityDefinitionMapper {
             .showMap(Boolean.TRUE.equals(input.getShowMap()))
             .mapProvider(input.getMapProvider() == null ? null : MapProvider.valueOf(input.getMapProvider().name()))
             .defaultCountry(input.getDefaultCountry())
+            .quantityKind(input.getQuantityKind())
+            .allowedUnits(nullWhenEmpty(input.getAllowedUnits()))
+            .defaultUnit(input.getDefaultUnit())
+            .scale(input.getScale())
+            .allowedCurrencies(nullWhenEmpty(input.getAllowedCurrencies()))
+            .defaultCurrency(input.getDefaultCurrency())
+            .dimensionCount(input.getDimensionCount())
             .validationRules(input.getValidationRules())
             .build();
     }
@@ -172,6 +184,13 @@ public class EntityDefinitionMapper {
         model.setMapProvider(attribute.getMapProvider() == null ? null
             : com.processpuzzle.baseentity.model.MapProvider.valueOf(attribute.getMapProvider().name()));
         model.setDefaultCountry(attribute.getDefaultCountry());
+        model.setQuantityKind(attribute.getQuantityKind());
+        model.setAllowedUnits(attribute.getAllowedUnits());
+        model.setDefaultUnit(attribute.getDefaultUnit());
+        model.setScale(attribute.getScale());
+        model.setAllowedCurrencies(attribute.getAllowedCurrencies());
+        model.setDefaultCurrency(attribute.getDefaultCurrency());
+        model.setDimensionCount(attribute.getDimensionCount());
         model.setValidationRules(attribute.getValidationRules());
         return model;
     }
