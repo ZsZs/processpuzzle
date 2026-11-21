@@ -36,6 +36,11 @@ unknown unit) fails the evaluation with its reason, and a bare operator on a mea
 would compare the text) is refused too: use `gt()`, `ge()`, `lt()`, `le()` and `eq()`. The same helpers exist in the
 browser's rule evaluator, and `rule-measure-cases.json` (kept in base-rule-frontend) is run against both.
 
+Units are read in the **catalog of the rule's organization**: the standard units plus those the organization added
+(`UnitCatalogProvider` in core, which base-entity implements; without it, the standard catalog). The engine sets that
+catalog on the thread's bindings before each evaluation, so one compiled rule and one thread serve every organization and
+a `pallet` is known to the organization that added it only. The browser's evaluator has no organization catalog yet.
+
 ## Executable rule revisions
 
 `RuleEngine` caches immutable GraalJS sources by `(orgKey, ruleId)` and compiled functions per

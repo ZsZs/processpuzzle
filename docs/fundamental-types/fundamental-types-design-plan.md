@@ -108,7 +108,8 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
 6. **Organization units (D1)** — *Part 1:* `UnitCatalog.withUnits` and the `UnitCatalogProvider` port in core; units as an
    org-scoped resource in base-entity-backend (`/organizations/{orgKey}/units`, kind + factor frozen, retire instead of
    delete); the definition validator, payload validation and derived writes read the owning organization's catalog.
-   *Part 2:* the rule engine (`MeasureBindings`) on the organization's catalog. *Part 3:* the frontend catalog from
+   *Part 2:* the backend rule engine reads the rule's organization's catalog (`MeasureBindings` per thread context, set before each
+   evaluation); the browser's evaluator follows with part 3. *Part 3:* the frontend catalog from
    the backend, retired units hidden from new choices. *Part 4:* a designer screen for units.
 
 Later: exchange rates with validity periods (D2).
