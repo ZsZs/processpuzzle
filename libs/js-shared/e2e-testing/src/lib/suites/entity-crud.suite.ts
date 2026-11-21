@@ -67,29 +67,31 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
     test.describe(`[${descriptor.entityName}] CRUD`, () => {
       test.describe.configure({ timeout: timeoutMs });
 
-      let manager: EntityCrudFixtureManager | undefined;
+      let managerInUse: EntityCrudFixtureManager | undefined;
 
       // In `beforeEach` rather than in each test: one place, and every test of the group is still reported,
-      // skipped with the reason. `afterEach` below stays harmless — a skipped test leaves `manager` unset.
+      // skipped with the reason. `afterEach` below stays harmless — a skipped test leaves `managerInUse` unset.
       test.beforeEach(() => {
         test.skip(excluded !== undefined, `excluded by the application: ${excluded?.reason}`);
       });
 
       test.afterEach(async ({ page }, testInfo) => {
-        const managerForTest = manager;
-        manager = undefined;
+        const managerForTest = managerInUse;
+        managerInUse = undefined;
         await managerForTest?.testTearDown(page, testInfo);
       });
 
       test('CREATE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        const manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        managerInUse = manager;
 
         await manager.testSetup(page, descriptor);
         await manager.createEntity(page, descriptor);
       });
 
       test('READ', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        const manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        managerInUse = manager;
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -100,7 +102,8 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('UPDATE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        const manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        managerInUse = manager;
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
@@ -118,7 +121,8 @@ export function defineEntityCrudSuite(options: DefineEntityCrudSuiteOptions): vo
       });
 
       test('DELETE', async ({ page }, testInfo) => {
-        manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        const manager = createFixtureManager(routes, descriptorMap, descriptor, testInfo.retry, options);
+        managerInUse = manager;
 
         await manager.testSetup(page, descriptor);
         const fixture = await manager.createEntity(page, descriptor);
