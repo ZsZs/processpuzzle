@@ -37,6 +37,7 @@ test.describe('Report template', () => {
   });
 
   test.afterEach(async () => {
+    for (const entityId of entities.createdIds('order')) await platform.deleteWorkflowInstances({ entityId });
     await entities.removeAll();
     for (const id of createdDocuments.splice(0)) await platform.deleteDocument(id);
   });
