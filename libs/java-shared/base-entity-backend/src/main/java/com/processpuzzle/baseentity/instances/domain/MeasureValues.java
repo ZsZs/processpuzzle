@@ -9,6 +9,7 @@ import com.processpuzzle.core.quantity.Quantity;
 import com.processpuzzle.core.quantity.UnitCatalog;
 import com.processpuzzle.core.quantity.UnitCatalog.UnitDefinition;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +65,86 @@ public final class MeasureValues {
     /** The value in its stored form. {@code raw} must have passed {@link #problems}. */
     public static Map<String, Object> normalized(MeasureView measure, Object raw) {
         return new MeasureValues(measure, (Map<?, ?>) raw).stored();
+    }
+
+    /**
+     * The value a caller with a bare result — a calculation's number — writes to the attribute, in the stored form. A number is
+     * taken to be in the attribute's default unit or currency and rounded half up to its decimal places (a money amount: the
+     * currency's minor units), since the caller derived it and cannot know them; a measure object is taken as it is and must be
+     * valid. Refused, with the reasons, when it is neither.
+     *
+     * @throws IllegalArgumentException when the value is no valid value of the attribute
+     */
+    public static Map<String, Object> forWrite(MeasureView measure, Object value) {
+        MeasureValues measureValues = new MeasureValues(measure, Map.of());
+        Map<?, ?> candidate = value instanceof Map<?, ?> map ? map : measureValues.bareAmount(value);
+        List<String> problems = problems(measure, candidate);
+        if (!problems.isEmpty()) {
+            throw new IllegalArgumentException(String.join("; ", problems));
+        }
+        return normalized(measure, candidate);
+    }
+
+    /** A bare number as the measure object the attribute holds: its amount, rounded, and the unit or currency it is taken to be in. */
+    private Map<String, Object> bareAmount(Object value) {
+        BigDecimal amount = amountOf(value).orElseThrow(() ->
+                new IllegalArgumentException("expected a number or a %s object".formatted(measure.kind().name().toLowerCase(Locale.ROOT))));
+        Map<String, Object> bare = new LinkedHashMap<>();
+        switch (measure.kind()) {
+            case QUANTITY -> {
+                bare.put(AMOUNT, Decimals.text(roundedTo(amount, measure.scale())));
+                bare.put(UNIT, defaultUnit());
+            }
+            case MONEY -> {
+                String currency = defaultCurrency();
+                bare.put(AMOUNT, Decimals.text(roundedTo(amount, catalog.findCurrency(currency).map(UnitCatalog.CurrencyDefinition::minorUnits).orElse(null))));
+                bare.put(CURRENCY, currency);
+            }
+            default -> throw new IllegalArgumentException("dimensions are lengths and a unit, not a number: write {width, height, depth?, unit}");
+        }
+        return bare;
+    }
+
+    private static BigDecimal roundedTo(BigDecimal amount, Integer scale) {
+        return scale == null ? amount : amount.setScale(scale, RoundingMode.HALF_UP);
+    }
+
+    /** The attribute's default unit when it may be used, else the base unit of what it may use, else the first of those. */
+    private String defaultUnit() {
+        List<String> allowed = measure.allowedUnits() == null ? List.of() : measure.allowedUnits();
+        List<String> candidates = allowed.isEmpty() ? unitsOfQuantityKind() : allowed;
+        String wanted = measure.defaultUnit();
+        if (wanted != null && catalog.findUnit(wanted).isPresent() && (candidates.isEmpty() || candidates.contains(wanted))) {
+            return wanted;
+        }
+        if (candidates.isEmpty()) {
+            throw new IllegalArgumentException("the attribute names no default unit and no quantity kind, so a number alone has no unit");
+        }
+        return candidates.stream().filter(this::isBaseUnit).findFirst().orElse(candidates.get(0));
+    }
+
+    private List<String> unitsOfQuantityKind() {
+        return measure.quantityKind() == null ? List.of() : catalog.kinds().stream()
+                .filter(kind -> kind.code().equals(measure.quantityKind()))
+                .flatMap(kind -> kind.units().stream().map(UnitDefinition::code))
+                .toList();
+    }
+
+    private boolean isBaseUnit(String code) {
+        return catalog.findUnit(code).map(unit -> catalog.kind(unit.kind()).baseUnit().equals(unit.code())).orElse(false);
+    }
+
+    /** The attribute's default currency when it may be used, else the first allowed one. */
+    private String defaultCurrency() {
+        List<String> allowed = measure.allowedCurrencies() == null ? List.of() : measure.allowedCurrencies();
+        String wanted = measure.defaultCurrency();
+        if (wanted != null && catalog.findCurrency(wanted).isPresent() && (allowed.isEmpty() || allowed.contains(wanted))) {
+            return wanted;
+        }
+        if (allowed.isEmpty()) {
+            throw new IllegalArgumentException("the attribute names no default currency, so a number alone has no currency");
+        }
+        return allowed.get(0);
     }
 
     private List<String> check() {

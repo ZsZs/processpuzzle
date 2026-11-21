@@ -61,8 +61,13 @@ definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`,
   hint naming the selectable numbers.
 - The testbed seed's `dynamic-entity` carries one attribute of each control, with a sample instance, and
   `MeasureAttributesIntegrationTest` runs both through the real stack.
-- Not covered yet: a calculation that writes into one of these attributes (the object-access port bypasses
-  validation).
+- **Derived writes** — `EntityObjectAccess.updateAttributes` and `upsertAllByKey`, which base-calculation writes its
+  results through, skip the payload validation of a form's save, but not for these attributes: a value written to one is put
+  in its stored form (`MeasureValues.forWrite`), so the derived numbers are there and a query finds it. A measure object is
+  validated as a form's would be; a **bare number** — what a calculation produces — is taken to be in the attribute's
+  default unit (else the base unit of its quantity kind, else the first allowed one) or default currency (else the first
+  allowed one), rounded half up to its `scale` (money: the currency's minor units). Dimensions take no bare number. A value
+  that does not fit fails the write with `EntityObjectAccessException.InvalidValue`; `null` clears the attribute.
 
 ## Still pending on your side
 

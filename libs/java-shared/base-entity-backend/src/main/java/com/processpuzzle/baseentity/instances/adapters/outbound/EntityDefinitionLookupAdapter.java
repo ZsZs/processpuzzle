@@ -124,6 +124,6 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             default -> null;
         };
         return kind == null ? null : new MeasureView(kind, attribute.getQuantityKind(), attribute.getAllowedUnits(), attribute.getScale(),
-            attribute.getAllowedCurrencies(), attribute.getDimensionCount());
+            attribute.getAllowedCurrencies(), attribute.getDimensionCount(), attribute.getDefaultUnit(), attribute.getDefaultCurrency());
     }
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MeasureValuesTest {
 
@@ -163,5 +164,72 @@ class MeasureValuesTest {
                         Map.entry("baseArea", 0.96), Map.entry("baseVolume", 0.48));
         assertThat(MeasureValues.normalized(FLAT, value("width", "2", "height", "3", "unit", "m")))
                 .containsExactly(Map.entry("width", "2"), Map.entry("height", "3"), Map.entry("unit", "m"), Map.entry("baseArea", 6.0));
+    }
+
+    @Test
+    void forWrite_takesABareNumberToBeInTheDefaultUnit_roundedToTheScale() {
+        MeasureView grams = new MeasureView(Kind.QUANTITY, "MASS", null, 2, null, null, "g", null);
+
+        assertThat(MeasureValues.forWrite(grams, new java.math.BigDecimal("1234.5678")))
+                .containsExactly(Map.entry("amount", "1234.57"), Map.entry("unit", "g"), Map.entry("baseAmount", 1.23457));
+        assertThat(MeasureValues.forWrite(grams, "12.5")).containsEntry("amount", "12.5").containsEntry("unit", "g");
+        assertThat(MeasureValues.forWrite(grams, 7)).containsEntry("amount", "7");
+    }
+
+    @Test
+    void forWrite_withoutADefaultUnit_usesTheBaseUnitOfWhatTheAttributeMayUse() {
+        assertThat(MeasureValues.forWrite(MASS, 5)).containsEntry("unit", "kg");
+        assertThat(MeasureValues.forWrite(new MeasureView(Kind.QUANTITY, null, List.of("g", "kg"), null, null, null, null, null), 5)).containsEntry("unit", "kg");
+        assertThat(MeasureValues.forWrite(new MeasureView(Kind.QUANTITY, null, List.of("g", "mg"), null, null, null, null, null), 5)).containsEntry("unit", "g");
+        assertThat(MeasureValues.forWrite(new MeasureView(Kind.QUANTITY, "MASS", List.of("g"), null, null, null, "lb", null), 5))
+                .as("a default the attribute does not allow is not used").containsEntry("unit", "g");
+        assertThat(MeasureValues.forWrite(new MeasureView(Kind.QUANTITY, null, null, null, null, null, "m", null), 5))
+                .as("a default is enough when nothing narrows the units").containsEntry("unit", "m");
+    }
+
+    @Test
+    void forWrite_refusesANumberTheAttributeCannotGiveAUnitTo() {
+        assertThatThrownBy(() -> MeasureValues.forWrite(ANY_UNIT, 5)).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("no default unit");
+        assertThatThrownBy(() -> MeasureValues.forWrite(new MeasureView(Kind.QUANTITY, null, null, null, null, null, "parsec", null), 5))
+                .hasMessageContaining("no default unit");
+    }
+
+    @Test
+    void forWrite_takesABareNumberToBeInTheDefaultCurrency_roundedToItsMinorUnits() {
+        MeasureView euro = new MeasureView(Kind.MONEY, null, null, null, List.of("EUR", "JPY"), null, null, "EUR");
+        MeasureView yen = new MeasureView(Kind.MONEY, null, null, null, List.of("EUR", "JPY"), null, null, "JPY");
+
+        assertThat(MeasureValues.forWrite(euro, new java.math.BigDecimal("5.3973"))).containsEntry("amount", "5.4").containsEntry("currency", "EUR").containsEntry("baseAmount", 5.4);
+        assertThat(MeasureValues.forWrite(euro, new java.math.BigDecimal("19.995"))).containsEntry("amount", "20");
+        assertThat(MeasureValues.forWrite(yen, new java.math.BigDecimal("1500.5"))).containsEntry("amount", "1501").containsEntry("currency", "JPY");
+        assertThat(MeasureValues.forWrite(new MeasureView(Kind.MONEY, null, null, null, List.of("HUF"), null, null, "USD"), 3))
+                .as("a default the attribute does not allow is not used").containsEntry("currency", "HUF");
+        assertThat(MeasureValues.forWrite(new MeasureView(Kind.MONEY, null, null, null, null, null, null, "USD"), 3)).containsEntry("currency", "USD");
+    }
+
+    @Test
+    void forWrite_refusesMoneyWithoutAnyCurrencyToTakeIt() {
+        assertThatThrownBy(() -> MeasureValues.forWrite(new MeasureView(Kind.MONEY, null, null, null, null, null, null, null), 3))
+                .hasMessageContaining("no default currency");
+        assertThatThrownBy(() -> MeasureValues.forWrite(new MeasureView(Kind.MONEY, null, null, null, null, null, null, "XXX"), 3))
+                .hasMessageContaining("no default currency");
+    }
+
+    @Test
+    void forWrite_takesAMeasureObjectAsItIs_butItHasToBeValid() {
+        assertThat(MeasureValues.forWrite(MASS, value("amount", "250.0", "unit", "g")))
+                .containsExactly(Map.entry("amount", "250"), Map.entry("unit", "g"), Map.entry("baseAmount", 0.25));
+        assertThatThrownBy(() -> MeasureValues.forWrite(GRAMS, value("amount", "1", "unit", "kg"))).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("unit 'kg' is not allowed here");
+        assertThatThrownBy(() -> MeasureValues.forWrite(GRAMS, value("amount", "1.255", "unit", "g")))
+                .hasMessage("amount has more than 2 decimal places");
+        assertThat(MeasureValues.forWrite(BOX, value("width", "1", "height", "2", "depth", "3", "unit", "m"))).containsEntry("baseVolume", 6.0);
+    }
+
+    @Test
+    void forWrite_refusesWhatIsNeitherANumberNorAMeasure() {
+        assertThatThrownBy(() -> MeasureValues.forWrite(MASS, true)).hasMessage("expected a number or a quantity object");
+        assertThatThrownBy(() -> MeasureValues.forWrite(PRICE, "lots")).hasMessage("expected a number or a money object");
+        assertThatThrownBy(() -> MeasureValues.forWrite(BOX, 5)).hasMessageContaining("dimensions are lengths and a unit, not a number");
     }
 }

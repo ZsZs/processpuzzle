@@ -6,7 +6,9 @@ import java.util.Map;
 /**
  * Writes a run's output. Both writes leave every attribute the calculation does not map as it is, run no payload
  * validation and publish no change event — the values are derived, and an event would trigger the calculation
- * that wrote them.
+ * that wrote them. The one value that is checked is a quantity, money or dimensions attribute's: it has to be put in the
+ * form such an attribute is stored in, so a bare number is written as an amount in the attribute's default unit or
+ * currency, and a value that does not fit the attribute fails the write.
  */
 public interface EntityWritePort {
 
