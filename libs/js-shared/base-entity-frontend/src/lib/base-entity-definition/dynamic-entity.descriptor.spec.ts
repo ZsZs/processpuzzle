@@ -89,6 +89,28 @@ describe('descriptorOf', () => {
     expect(attrOf(definition, 'street')).toMatchObject({ showMap: undefined, defaultCountry: undefined });
   });
 
+  it('carries the options of a QUANTITY, MONEY or DIMENSIONS attribute through, each to its own control only', () => {
+    const definition: EntityDefinition = {
+      code: 'item',
+      name: 'Item',
+      attributes: [
+        { code: 'weight', formControlType: 'QUANTITY', quantityKind: 'MASS', allowedUnits: ['kg', 'g'], defaultUnit: 'kg', scale: 3, allowedCurrencies: ['EUR'] },
+        { code: 'price', formControlType: 'MONEY', allowedCurrencies: ['EUR', 'HUF'], defaultCurrency: 'HUF', scale: 2, allowedUnits: ['kg'] },
+        { code: 'size', formControlType: 'DIMENSIONS', dimensionCount: 3, allowedUnits: ['cm'], defaultUnit: 'cm', scale: 1, quantityKind: 'MASS' },
+        { code: 'flat', formControlType: 'DIMENSIONS' },
+        { code: 'bare', formControlType: 'QUANTITY', allowedUnits: [] },
+        { code: 'note', formControlType: 'TEXT', quantityKind: 'MASS', scale: 2, defaultCurrency: 'EUR', dimensionCount: 3 },
+      ],
+    };
+
+    expect(attrOf(definition, 'weight')).toMatchObject({ quantityKind: 'MASS', allowedUnits: ['kg', 'g'], defaultUnit: 'kg', scale: 3, allowedCurrencies: undefined });
+    expect(attrOf(definition, 'price')).toMatchObject({ allowedCurrencies: ['EUR', 'HUF'], defaultCurrency: 'HUF', allowedUnits: undefined, scale: undefined });
+    expect(attrOf(definition, 'size')).toMatchObject({ dimensionCount: 3, allowedUnits: ['cm'], defaultUnit: 'cm', scale: 1, quantityKind: undefined });
+    expect(attrOf(definition, 'flat')?.dimensionCount).toBe(2);
+    expect(attrOf(definition, 'bare')?.allowedUnits).toBeUndefined();
+    expect(attrOf(definition, 'note')).toMatchObject({ quantityKind: undefined, scale: undefined, defaultCurrency: undefined, dimensionCount: undefined });
+  });
+
   it('carries autosizeColumn through, so the list hugs the columns the author asked it to', () => {
     const definition = { code: 'x', name: 'X', attributes: [{ code: 'hugging', formControlType: 'TEXT', autosizeColumn: true }, { code: 'filling', formControlType: 'TEXT' }] };
 
@@ -184,6 +206,9 @@ describe('controlTypeOf', () => {
     ['COMMENTS', FormControlType.COMMENTS],
     ['ADDRESS', FormControlType.ADDRESS],
     ['GEO_LOCATION', FormControlType.GEO_LOCATION],
+    ['QUANTITY', FormControlType.QUANTITY],
+    ['MONEY', FormControlType.MONEY],
+    ['DIMENSIONS', FormControlType.DIMENSIONS],
     ['ARTIFACT', FormControlType.ARTIFACT],
     ['AVATAR', FormControlType.AVATAR],
     ['FOREIGN_KEY', FormControlType.FOREIGN_KEY],

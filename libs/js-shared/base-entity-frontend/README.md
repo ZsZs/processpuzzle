@@ -244,6 +244,9 @@ Every attribute's `FormControlType` selects the component that renders it in the
 | `EMBEDDED_COMPONENTS` | inline sub-form per component | array of the **children themselves** | **`linkedEntityType`** | To-many **containment**, child inside the parent's payload. Backed by a `FormArray`; saved and deleted with the parent. |
 | `ARTIFACT` | file thumbnail/icon + upload/delete | `ArtifactAttr` (or `null`); `ArtifactAttr[]` when multi-valued | `label`, `showThumbnail`, `multiplicity`, `maxOccurs` | Tricky — see below. |
 | `ADDITIONAL_PROPERTIES` | editable key/value list | `Record<string,string>` | `label` | Free-form string map. |
+| `QUANTITY` | amount + unit select | `{ amount, unit }` (amount as decimal text) | `label` | Units of `quantityKind` / `allowedUnits`; see [Quantities, money and dimensions](#quantities-money-and-dimensions). |
+| `MONEY` | amount + currency select | `{ amount, currency }` (ISO 4217) | `label` | Decimal places follow the currency's minor units; never converts between currencies. |
+| `DIMENSIONS` | 2 or 3 length fields + one unit select | `{ width, height, depth?, unit }` | `label` | `dimensionCount` 2 (default) or 3; all axes or none. |
 
 `linkedEntityType` is **mandatory** for `LOOKUP`, `FOREIGN_KEY`, `RELATED_ENTITIES`, `COMPONENTS`, and `EMBEDDED_COMPONENTS` — it names the other entity, whose descriptor is resolved at runtime through `BASE_ENTITY_FACADE_REGISTRY` (or, for an embedded component, through `EMBEDDED_ENTITY_DESCRIPTOR_REGISTRY`); omitting it throws.
 
@@ -271,6 +274,25 @@ when they do not:
 `Test Entity` in the [testbed](../../../apps/processpuzzle-testbed-frontend) demonstrates all three side by side —
 `relatedEntities` → `Related Entity`, `components` → `Test Entity Component`, `embeddedComponents` →
 `Embedded Component`.
+
+### Quantities, money and dimensions
+
+`QUANTITY`, `MONEY` and `DIMENSIONS` render the values of the [fundamental types](../util/README.md#fundamental-types) of `@processpuzzle/util`. Each is one form control holding an object; the amount fields and the unit or currency select are a form group of the component's own, published on every change. The value is `null` while it is empty, incomplete or not a number, so a `required` attribute blocks Save and an optional one saves nothing instead of half an amount. Amounts are decimal **text** (`"12.5"`), typed with a point or a comma.
+
+| Option on the descriptor | Control | Meaning |
+| --- | --- | --- |
+| `quantityKind` | `QUANTITY` | Quantity kind (`MASS`, `LENGTH`, `TIME` …) whose units are offered; every unit, grouped by kind, when neither this nor `allowedUnits` is set. |
+| `allowedUnits` | `QUANTITY`, `DIMENSIONS` | Unit codes to offer. `DIMENSIONS` only ever offers lengths. |
+| `defaultUnit` | `QUANTITY`, `DIMENSIONS` | The unit a new value starts in; the kind's base unit when absent. |
+| `scale` | `QUANTITY`, `DIMENSIONS` | Most decimal places an amount may have, and the places a conversion is rounded to (six when absent). |
+| `allowedCurrencies`, `defaultCurrency` | `MONEY` | ISO 4217 codes to offer (all when absent) and the one a new amount starts in. |
+| `dimensionCount` | `DIMENSIONS` | `2` (width × height, the default) or `3` (adds the depth). |
+
+- **Changing the unit converts** the amount (every axis for `DIMENSIONS`); the button beside the select turns that off for a user correcting a wrongly picked unit. A conversion across different kinds, or of a text that is not a number, keeps the number.
+- **Money never converts.** Changing the currency keeps the number and re-checks it against the new currency's minor units.
+- **Display.** `ppQuantity`, `ppMoney` and `ppDimensions` (and `formatQuantity`, `formatMoney`, `formatDimensions`) write a value in the active language's notation; the list and the PDF export use them. Unit names in the select are the catalog's English names — the symbols are international.
+- **Catalog.** Units and currencies come from the `UNIT_CATALOG` token, the standard catalog of `@processpuzzle/util` unless an application provides another.
+- A metadata-defined entity maps the same options from its attribute definition (`EntityAttributeDefinition`). The designer and the backend contract do not offer these control types yet, and the query editor skips them — both follow with the backend.
 
 ### FLEX_BOX (layout)
 

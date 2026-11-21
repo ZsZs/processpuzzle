@@ -22,6 +22,11 @@ export enum FormControlType {
   /** Rendered by the descriptor's own `component` — the extension point for controls base-entity cannot know. */
   CUSTOM = 'CUSTOM',
   DATE = 'DATE',
+  /**
+   * Two or three lengths in one unit (width × height [× depth]) — the value is one `DimensionsValue`. The unit
+   * is one select for all axes; changing it converts every axis.
+   */
+  DIMENSIONS = 'DIMENSIONS',
   DROPDOWN = 'DROPDOWN',
   /**
    * Where the device was when the user pressed the control's button — the value is one `GeoLocation` object.
@@ -35,6 +40,16 @@ export enum FormControlType {
   FOREIGN_KEY = 'FOREIGN_KEY',
   LABEL = 'LABEL',
   LOOKUP = 'LOOKUP',
+  /**
+   * An amount of a currency — the value is one `MoneyValue`. The amount carries the currency's minor units;
+   * money of different currencies is never converted or combined.
+   */
+  MONEY = 'MONEY',
+  /**
+   * An amount of a unit of one quantity kind (mass, length, time …) — the value is one `QuantityValue`.
+   * Changing the unit converts the amount, unless the user asks to keep the number.
+   */
+  QUANTITY = 'QUANTITY',
   RADIO = 'RADIO',
   RELATED_ENTITIES = 'RELATED_ENTITIES',
   /**

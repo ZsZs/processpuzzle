@@ -40,6 +40,7 @@ const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   COMPONENTS: FormControlType.COMPONENTS,
   DATE: FormControlType.DATE,
   DATE_TIME: FormControlType.DATE,
+  DIMENSIONS: FormControlType.DIMENSIONS,
   DROPDOWN: FormControlType.DROPDOWN,
   EMBEDDED_COMPONENTS: FormControlType.EMBEDDED_COMPONENTS,
   EMBEDDED_LIST: FormControlType.EMBEDDED_LIST,
@@ -50,7 +51,9 @@ const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   GEO_LOCATION: FormControlType.GEO_LOCATION,
   LABEL: FormControlType.LABEL,
   LOOKUP: FormControlType.LOOKUP,
+  MONEY: FormControlType.MONEY,
   NUMBER: FormControlType.TEXT_BOX,
+  QUANTITY: FormControlType.QUANTITY,
   RADIO: FormControlType.RADIO,
   RELATED_ENTITIES: FormControlType.RELATED_ENTITIES,
   TAGS: FormControlType.TAGS,
@@ -148,6 +151,7 @@ function attrDescriptorOf(attribute: EntityAttributeDefinition, lookup: Definiti
     if (attribute.mapProvider) attrDescriptor.mapProvider = attribute.mapProvider;
     if (attribute.defaultCountry) attrDescriptor.defaultCountry = attribute.defaultCountry;
   }
+  applyMeasureOptions(attrDescriptor, attribute);
   // Resolved here because this is the last place that knows the value kind: the descriptor carries none,
   // and a DATE_TIME attribute without a format of its own must still get a time field.
   if (attribute.valueKind === 'DATE' || attribute.valueKind === 'DATE_TIME') attrDescriptor.dateFormat = effectiveDateFormat(attribute, attribute.valueKind);
@@ -163,6 +167,36 @@ function attrDescriptorOf(attribute: EntityAttributeDefinition, lookup: Definiti
   }
 
   return attrDescriptor;
+}
+
+/**
+ * The options of a `QUANTITY`, `MONEY` or `DIMENSIONS` attribute. Each is copied only where the control uses it,
+ * so a definition that carries a leftover `scale` on a text box does not give the text box one.
+ */
+function applyMeasureOptions(descriptor: BaseEntityAttrDescriptor, attribute: EntityAttributeDefinition): void {
+  switch (descriptor.formControlType) {
+    case FormControlType.QUANTITY:
+      if (attribute.quantityKind) descriptor.quantityKind = attribute.quantityKind;
+      applyUnitOptions(descriptor, attribute);
+      break;
+    case FormControlType.DIMENSIONS:
+      applyUnitOptions(descriptor, attribute);
+      descriptor.dimensionCount = attribute.dimensionCount === 3 ? 3 : 2;
+      break;
+    case FormControlType.MONEY:
+      if (attribute.allowedCurrencies?.length) descriptor.allowedCurrencies = attribute.allowedCurrencies;
+      if (attribute.defaultCurrency) descriptor.defaultCurrency = attribute.defaultCurrency;
+      break;
+    default:
+      break;
+  }
+}
+
+/** What `QUANTITY` and `DIMENSIONS` share: the units on offer, the one to start in and the decimal places. */
+function applyUnitOptions(descriptor: BaseEntityAttrDescriptor, attribute: EntityAttributeDefinition): void {
+  if (attribute.allowedUnits?.length) descriptor.allowedUnits = attribute.allowedUnits;
+  if (attribute.defaultUnit) descriptor.defaultUnit = attribute.defaultUnit;
+  if (attribute.scale !== undefined && attribute.scale !== null) descriptor.scale = attribute.scale;
 }
 
 /**

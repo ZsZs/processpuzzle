@@ -64,6 +64,26 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
    * browser's locale, if it names one.
    */
   defaultCountry?: string;
+  /**
+   * `QUANTITY` only: the quantity kind (`MASS`, `LENGTH` …) whose units the control offers when
+   * {@link allowedUnits} names none. With neither, every unit of the catalog, grouped by kind.
+   */
+  quantityKind?: string;
+  /** `QUANTITY` and `DIMENSIONS`: the unit codes to offer; every unit of the kind when absent or empty. */
+  allowedUnits?: string[];
+  /** `QUANTITY` and `DIMENSIONS`: the unit a new value starts in; the kind's base unit when absent. */
+  defaultUnit?: string;
+  /**
+   * `QUANTITY` and `DIMENSIONS`: the most decimal places an amount may have, and the places a unit conversion
+   * is rounded to. A conversion keeps six places when absent; typed amounts are then unrestricted.
+   */
+  scale?: number;
+  /** `MONEY` only: the ISO 4217 codes to offer; every currency of the catalog when absent or empty. */
+  allowedCurrencies?: string[];
+  /** `MONEY` only: the currency a new amount starts in; the first allowed one when absent. */
+  defaultCurrency?: string;
+  /** `DIMENSIONS` only: 2 (width × height, the default) or 3 (width × height × depth). */
+  dimensionCount?: 2 | 3;
   hideInTable?: boolean = false;
   /**
    * The list column hugs its content instead of sharing the space left over. Meant for short values — an id,

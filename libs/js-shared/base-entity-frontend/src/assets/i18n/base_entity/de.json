@@ -218,6 +218,22 @@
       "UNAVAILABLE": "Dieser Browser kann Ihren Standort nicht ermitteln."
     }
   },
+  "measure": {
+    "amount": "Betrag",
+    "unit": "Einheit",
+    "currency": "Währung",
+    "width": "Breite",
+    "height": "Höhe",
+    "depth": "Tiefe",
+    "convert_on": "Beim Ändern der Einheit wird der Betrag umgerechnet. Klicken, um stattdessen die Zahl beizubehalten.",
+    "convert_off": "Beim Ändern der Einheit bleibt die Zahl erhalten. Klicken, um stattdessen den Betrag umzurechnen.",
+    "error": {
+      "amount": "Geben Sie eine Zahl ein, zum Beispiel 12,5.",
+      "scale": "Höchstens {{ max }} Dezimalstellen.",
+      "incomplete": "Alle Maße ausfüllen oder keines.",
+      "required": "Dieser Wert ist erforderlich."
+    }
+  },
   "working_context": {
     "search": "Suchen",
     "recent": "Zuletzt verwendet",

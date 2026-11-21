@@ -83,11 +83,15 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
 
 ## Phases
 1. **Catalog and value model** — catalog JSON, TS + Java loaders, parity test, decimal arithmetic,
-   conversion, ISO duration bridge.
-2. **Frontend controls** — QUANTITY, MONEY, DIMENSIONS controls; authoring fields in the entity
-   designer; display pipe in list / PDF / documents; query editor operators.
-3. **Backend** — contract, attribute fields (`copyFrom`!), payload validation, `baseAmount`
-   normalization, RSQL on the normalized value, a seeded example attribute in the testbed.
+   conversion, ISO duration bridge. *Done (#1437).*
+2. **Frontend controls** — QUANTITY, MONEY, DIMENSIONS controls with their descriptor options, the
+   definition → descriptor mapping, display pipes in the list and the PDF export, labels in five languages.
+   *Done.* Left for phase 3, because the backend rejects control types it does not know: the authoring fields
+   in the entity designer, the contract enum, the query editor, a testbed / seed sample. Document data fields
+   do not format ADDRESS or GEO_LOCATION either; they follow when they do.
+3. **Backend** — contract (control types, attribute fields), attribute fields (`copyFrom`!), payload
+   validation, `baseAmount` / `baseArea` / `baseVolume` normalization, RSQL on the normalized value, then the
+   designer's authoring fields, the query editor and a seeded example attribute.
 4. **Rules and calculations** — shared helper in both rule evaluators, FEEL mapping, rule dry-run
    showing converted values.
 

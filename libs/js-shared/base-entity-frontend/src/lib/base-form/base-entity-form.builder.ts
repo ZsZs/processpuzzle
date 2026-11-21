@@ -21,6 +21,9 @@ import { TagsComponent } from './tags/tags.component';
 import { CommentsComponent } from './comments/comments.component';
 import { AddressComponent } from './address/address.component';
 import { GeoLocationComponent } from './geo-location/geo-location.component';
+import { DimensionsComponent } from './fundamental-types/dimensions.component';
+import { MoneyComponent } from './fundamental-types/money.component';
+import { QuantityComponent } from './fundamental-types/quantity.component';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { FlexboxDescriptor } from '../base-entity/flexboxDescriptor';
 import { ComponentsListComponent } from './components/components-list.component';
@@ -48,12 +51,15 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
   [FormControlType.GEO_LOCATION]: GeoLocationComponent,
   [FormControlType.COMPONENTS]: ComponentsListComponent,
   [FormControlType.DATE]: DatepickerComponent,
+  [FormControlType.DIMENSIONS]: DimensionsComponent,
   [FormControlType.DROPDOWN]: DropdownComponent,
   [FormControlType.EMBEDDED_COMPONENTS]: EmbeddedComponentsListComponent,
   [FormControlType.EMBEDDED_LIST]: EmbeddedListComponent,
   [FormControlType.EMBEDDED_OBJECT]: EmbeddedObjectComponent,
   [FormControlType.LABEL]: LabelComponent,
   [FormControlType.LOOKUP]: LookupComponent,
+  [FormControlType.MONEY]: MoneyComponent,
+  [FormControlType.QUANTITY]: QuantityComponent,
   [FormControlType.RADIO]: RadioComponent,
   [FormControlType.RELATED_ENTITIES]: RelatedEntitiesListComponent,
   [FormControlType.TEXTAREA]: TextareaComponent,
