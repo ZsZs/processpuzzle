@@ -29,7 +29,7 @@ import { commentsOf } from '../base-form/comments/entity-comment';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AddressPipe } from '../base-form/address/address.pipe';
 import { GeoLocationPipe } from '../base-form/geo-location/geo-location.pipe';
-import { DimensionsPipe, MoneyPipe, QuantityPipe } from '../base-form/fundamental-types/measure.pipes';
+import { DimensionsPipe, MeasurePipe, MoneyPipe, QuantityPipe } from '../base-form/fundamental-types/measure.pipes';
 import { WorkingContextDefinition } from '../working-context/working-context.definition';
 
 
@@ -46,6 +46,7 @@ export const BASE_LIST_DESCRIPTORS = new InjectionToken<string[]>('BASE_TABLE_DI
     QuantityPipe,
     MoneyPipe,
     DimensionsPipe,
+    MeasurePipe,
     MatTable,
     MatSort,
     MatHeaderCell,

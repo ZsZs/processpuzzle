@@ -31,8 +31,8 @@ test.describe('Chat @auth', () => {
       orderNumber: `E2E-CHAT-${randomUUID().slice(0, 8)}`,
       customerName: 'Chat Customer',
       status: 'DRAFT',
-      total: 10,
-      lineItems: [{ productName: 'E2E item', quantity: 1, unitPrice: 10 }],
+      total: { amount: '10', currency: 'EUR' },
+      lineItems: [{ productName: 'E2E item', quantity: { amount: '1', unit: 'pc' }, unitPrice: { amount: '10', currency: 'EUR' } }],
     });
     orderId = order.id;
   });

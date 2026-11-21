@@ -73,6 +73,29 @@ class MeasureAttributesIntegrationTest {
         return payload;
     }
 
+    /** The orders and demo objects are seeded with quantities and prices of their own: the definitions take every one. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void everySeededOrderAndDemoObjectPassesItsDefinition() throws IOException {
+        Map<String, Object> seed = new ObjectMapper(new YAMLFactory()).readValue(new ClassPathResource(SEED).getInputStream(), Map.class);
+        List<Map<String, Object>> orders = ((List<Map<String, Object>>) seed.get("entities")).stream()
+                .filter(sample -> List.of("order", "special-order", "demo-root").contains(sample.get("entityDefinitionCode"))).toList();
+        assertThat(orders).hasSizeGreaterThanOrEqualTo(8);
+
+        for (Map<String, Object> sample : orders) {
+            String code = (String) sample.get("entityDefinitionCode");
+            UUID id = createEntity.create(ORG, code, new LinkedHashMap<>((Map<String, Object>) sample.get("payload"))).getId();
+            EntityObjectView stored = entities.find(ORG, code, id);
+            if (!"demo-root".equals(code)) {
+                assertThat(measure(stored, "total")).as("%s total", code).containsEntry("currency", "EUR");
+                for (Map<String, Object> line : (List<Map<String, Object>>) stored.payload().get("lineItems")) {
+                    assertThat((Map<String, Object>) line.get("quantity")).containsEntry("unit", "pc").containsKey("baseAmount");
+                    assertThat((Map<String, Object>) line.get("unitPrice")).containsEntry("currency", "EUR").containsKey("baseAmount");
+                }
+            }
+        }
+    }
+
     @Test
     void theSeedsFirstSampleIsStoredWithItsDerivedNumbers() throws IOException {
         UUID id = createEntity.create(ORG, "dynamic-entity", firstSampleInstance()).getId();

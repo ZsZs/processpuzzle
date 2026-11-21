@@ -53,3 +53,15 @@ describe('formatValue', () => {
     expect(formatValue(['a', 'b'], undefined, 'en')).toBe('a, b');
   });
 });
+
+describe('formatValue of a measure', () => {
+  it('shows money in its own currency whatever the format says', () => {
+    expect(formatValue({ amount: '89.88', currency: 'EUR' }, 'currency:EUR', 'en')).toBe('€89.88');
+    expect(formatValue({ amount: '89.88', currency: 'USD' }, 'text', 'en')).toBe('$89.88');
+  });
+
+  it('shows a quantity with its unit symbol and dimensions as lengths', () => {
+    expect(formatValue({ amount: '12.5', unit: 'kg' }, 'number', 'en')).toBe('12.5 kg');
+    expect(formatValue({ width: '120', height: '80', depth: '50', unit: 'cm' }, undefined, 'en')).toBe('120 × 80 × 50 cm');
+  });
+});

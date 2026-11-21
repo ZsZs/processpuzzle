@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { amountValidator, cleanAmount, decimalPlaces, isAmountText, paddedToPlaces } from './amount-text';
-import { formatDimensions, formatMoney, formatQuantity } from './measure-format';
+import { formatDimensions, formatMeasure, formatMoney, formatQuantity } from './measure-format';
 import { convertAmount, currenciesOf, DEFAULT_CONVERSION_SCALE, defaultCurrencyOf, defaultUnitOf, dimensionUnitsOf, groupByKind, quantityUnitsOf } from './measure-options';
 import { dimensionsOf, moneyOf, quantityOf } from './measure-values';
 
@@ -121,6 +121,17 @@ describe('measure options', () => {
     expect(convertAmount('1', 'kg', 'm', undefined, catalog)).toBeUndefined();
     expect(convertAmount('x', 'kg', 'g', undefined, catalog)).toBeUndefined();
     expect(convertAmount('1', 'parsec', 'm', undefined, catalog)).toBeUndefined();
+  });
+});
+
+describe('formatMeasure', () => {
+  it('formats whichever measure the value is, and nothing else', () => {
+    expect(formatMeasure({ amount: '1234.5', currency: 'EUR' }, 'en')).toBe('€1,234.50');
+    expect(formatMeasure({ amount: '2', unit: 'dz' }, 'en')).toBe('2 dz');
+    expect(formatMeasure({ width: '2', height: '3', unit: 'm' }, 'en')).toBe('2 × 3 m');
+    expect(formatMeasure('text', 'en')).toBeUndefined();
+    expect(formatMeasure({ street: 'Main' }, 'en')).toBeUndefined();
+    expect(formatMeasure(null, 'en')).toBeUndefined();
   });
 });
 

@@ -100,6 +100,17 @@ describe('CalculatedControlComponent', () => {
     expect(form.get('total')?.value).toBe(42);
   });
 
+  it('shows a stored money total in its currency, and a bare answer of the calculation in that currency too', async () => {
+    await render({ entity: { id: 'o-1', orderNumber: 'ORD-1', total: { amount: '10.00', currency: 'EUR' } as never } });
+    expect(value()).toContain('10.00');
+    expect(value()).toContain('€');
+
+    await edit('ORD-2');
+
+    expect(value()).toContain('42.00');
+    expect(value()).toContain('€');
+  });
+
   it('waits for the debounce before asking', async () => {
     await render();
 

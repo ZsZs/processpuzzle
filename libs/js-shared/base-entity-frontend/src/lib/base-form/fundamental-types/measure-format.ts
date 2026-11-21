@@ -15,12 +15,24 @@ function exactly(amount: string): number {
 }
 
 /** Decimal text as a number in the locale's notation, exact — `Intl.NumberFormat` reads the string, not a double. */
-function formatDecimal(amount: string, locale: string): string {
+function formatDecimal(amount: string, locale: string | undefined): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: Math.min(decimalPlaces(amount), MAX_FRACTION_DIGITS) }).format(exactly(amount));
 }
 
+/**
+ * A measure of any of the three kinds as the text its own formatter gives it, or `undefined` when the value is none — which
+ * is how a place that shows whatever an attribute holds (a table cell, a document field, a PDF) tells a measure from
+ * another object. A calculated attribute is one: its control type no longer says what it holds.
+ */
+export function formatMeasure(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string | undefined {
+  if (moneyOf(value)) return formatMoney(value, locale, catalog);
+  if (quantityOf(value)) return formatQuantity(value, locale, catalog);
+  if (dimensionsOf(value)) return formatDimensions(value, locale, catalog);
+  return undefined;
+}
+
 /** A `QUANTITY` value as `12.5 kg`; an empty string when the value holds none. */
-export function formatQuantity(value: unknown, locale: string, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
+export function formatQuantity(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
   const quantity = quantityOf(value);
   if (!quantity) return '';
   return `${formatDecimal(quantity.amount, locale)} ${catalog.findUnit(quantity.unit)?.symbol ?? quantity.unit}`;
@@ -30,7 +42,7 @@ export function formatQuantity(value: unknown, locale: string, catalog: UnitCata
  * A `MONEY` value in the locale's currency notation. The currency's minor units are always shown, and more when
  * the amount has more — an unrounded intermediate result is never displayed as something it is not.
  */
-export function formatMoney(value: unknown, locale: string, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
+export function formatMoney(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
   const money = moneyOf(value);
   if (!money) return '';
   const minor = catalog.findCurrency(money.currency)?.minorUnits ?? 2;
@@ -47,7 +59,7 @@ export function formatMoney(value: unknown, locale: string, catalog: UnitCatalog
 }
 
 /** A `DIMENSIONS` value as `1.2 × 0.8 × 0.5 m`; an empty string when the value holds none. */
-export function formatDimensions(value: unknown, locale: string, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
+export function formatDimensions(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
   const dimensions = dimensionsOf(value);
   if (!dimensions) return '';
   const axes = [dimensions.width, dimensions.height, dimensions.depth].filter((axis): axis is string => axis !== undefined);

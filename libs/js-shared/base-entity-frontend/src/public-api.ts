@@ -45,8 +45,8 @@ export { GeoLocationPipe } from './lib/base-form/geo-location/geo-location.pipe'
 export { QuantityComponent } from './lib/base-form/fundamental-types/quantity.component';
 export { MoneyComponent } from './lib/base-form/fundamental-types/money.component';
 export { DimensionsComponent } from './lib/base-form/fundamental-types/dimensions.component';
-export { DimensionsPipe, MoneyPipe, QuantityPipe } from './lib/base-form/fundamental-types/measure.pipes';
-export { formatDimensions, formatMoney, formatQuantity } from './lib/base-form/fundamental-types/measure-format';
+export { DimensionsPipe, MeasurePipe, MoneyPipe, QuantityPipe } from './lib/base-form/fundamental-types/measure.pipes';
+export { formatDimensions, formatMeasure, formatMoney, formatQuantity } from './lib/base-form/fundamental-types/measure-format';
 export { dimensionsOf, moneyOf, quantityOf } from './lib/base-form/fundamental-types/measure-values';
 export { UNIT_CATALOG } from './lib/base-form/fundamental-types/unit-catalog.token';
 export { GeoLocator, GeoLocatorFailure, type GeoLocatorError } from './lib/base-form/geo-location/geo-locator';
