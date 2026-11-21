@@ -35,7 +35,7 @@ describe('MoneyComponent', () => {
   it('shows the stored amount and currency and leaves the control pristine', async () => {
     const { amount, component, control } = await setupMoney({ value: { amount: '19.90', currency: 'HUF' } });
 
-    expect(amount()?.value).toBe('19.9');
+    expect(amount()?.value).toBe('19.90');
     expect(component.fields.controls.currency.value).toBe('HUF');
     expect(control.pristine).toBe(true);
   });
@@ -81,7 +81,7 @@ describe('MoneyComponent', () => {
     component.fields.controls.currency.setValue('JPY');
     component.onCurrencyChanged();
     expect(control.valid).toBe(false);
-    expect(amount()?.value).toBe('10.5');
+    expect(amount()?.value).toBe('10.50');
 
     type(amount(), '11');
     expect(control.value).toEqual({ amount: '11', currency: 'JPY' });
