@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { InjectionToken } from '@angular/core';
+import { OrganizationUnitCatalog } from '../base-form/fundamental-types/organization-unit-catalog';
 import { TestBed } from '@angular/core/testing';
 import { RUNTIME_CONFIGURATION } from '@processpuzzle/util';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -42,6 +43,7 @@ describe('EntityScreenResolver', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: OrganizationUnitCatalog, useValue: { ensureLoaded: () => Promise.resolve(), invalidate: () => undefined } },
         { provide: RUNTIME_CONFIGURATION, useValue: { BASE_CONFIGURATION: { ENTITY_SERVICE_ROOT: 'http://localhost:8080/organizations/acme' } } },
         { provide: BASE_ENTITY_FACADE_REGISTRY, useValue: facadeRegistry },
         ...(facadeProviders as never[]),

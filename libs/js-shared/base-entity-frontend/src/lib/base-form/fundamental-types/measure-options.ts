@@ -9,19 +9,20 @@ const LENGTH = 'LENGTH';
 /**
  * The units a `QUANTITY` attribute offers: its `allowedUnits` that the catalog knows, else every unit of its
  * `quantityKind`, else every unit of the catalog. Unknown codes are dropped rather than failing the form: a
- * definition may name a unit this catalog has not caught up to.
+ * definition may name a unit this catalog has not caught up to. A retired unit is never offered (a control still shows
+ * the one a stored value carries).
  */
 export function quantityUnitsOf(config: BaseEntityAttrDescriptor, catalog: UnitCatalog): UnitDefinition[] {
   const allowed = knownUnits(config.allowedUnits, catalog);
   if (allowed.length > 0) return allowed;
   const kind = config.quantityKind ?? undefined;
-  if (kind && catalog.kinds().some((candidate) => candidate.code === kind)) return [...catalog.unitsOf(kind)];
-  return catalog.kinds().flatMap((candidate) => candidate.units);
+  if (kind && catalog.kinds().some((candidate) => candidate.code === kind)) return [...catalog.activeUnitsOf(kind)];
+  return catalog.kinds().flatMap((candidate) => candidate.units.filter((unit) => !unit.retired));
 }
 
 /** The units a `DIMENSIONS` attribute offers: lengths only, narrowed by `allowedUnits`. */
 export function dimensionUnitsOf(config: BaseEntityAttrDescriptor, catalog: UnitCatalog): UnitDefinition[] {
-  const lengths = catalog.unitsOf(LENGTH);
+  const lengths = catalog.activeUnitsOf(LENGTH);
   const allowed = knownUnits(config.allowedUnits, catalog).filter((unit) => unit.kind === LENGTH);
   return allowed.length > 0 ? allowed : [...lengths];
 }
@@ -69,5 +70,5 @@ export function convertAmount(amount: string, fromUnit: string, toUnit: string, 
 }
 
 function knownUnits(codes: readonly string[] | undefined, catalog: UnitCatalog): UnitDefinition[] {
-  return (codes ?? []).map((code) => catalog.findUnit(code)).filter((unit): unit is UnitDefinition => unit !== undefined);
+  return (codes ?? []).map((code) => catalog.findUnit(code)).filter((unit): unit is UnitDefinition => unit !== undefined && !unit.retired);
 }

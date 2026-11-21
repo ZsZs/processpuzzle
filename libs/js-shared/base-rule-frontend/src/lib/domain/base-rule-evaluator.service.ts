@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
+import { STANDARD_UNIT_CATALOG, type UnitCatalog } from '@processpuzzle/util';
 import { BaseRule } from './base-rule';
 import { interpret, rootScope } from './expression/rule-expression-interpreter';
+import { withCatalog } from './measure-bindings';
 import { parseRuleExpression } from './expression/rule-expression-parser';
 import { RuleEvaluationResult } from './rule-evaluation-result';
 
@@ -11,7 +13,8 @@ type CompiledRule = (entity: unknown) => unknown;
 export class BaseRuleEvaluatorService {
   private readonly compiled = new Map<string, CompiledRule>();
 
-  evaluate(entity: unknown, rule: BaseRule): RuleEvaluationResult {
+  /** @param catalog the units `qty()`, `money()` and `dims()` read: the organization's, or the standard ones when absent */
+  evaluate(entity: unknown, rule: BaseRule, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): RuleEvaluationResult {
     const base = { ruleId: rule.id, ruleName: rule.name, severity: rule.severity };
     if (!rule.enabled) return { ...base, passed: true };
 
@@ -24,7 +27,7 @@ export class BaseRuleEvaluatorService {
 
     let result: unknown;
     try {
-      result = fn(entity);
+      result = withCatalog(catalog, () => fn(entity));
     } catch (err) {
       return { ...base, passed: false, error: `Rule evaluation threw: ${errorMessage(err)}` };
     }

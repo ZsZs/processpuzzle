@@ -1,3 +1,4 @@
+import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { BaseRule, Severity } from './base-rule';
 import { BaseRuleEvaluatorService } from './base-rule-evaluator.service';
@@ -171,5 +172,24 @@ describe('BaseRuleEvaluatorService measure helpers', () => {
     expect(evaluator.evaluate({}, ruleOf("dims({ width: 1, height: 2, depth: 3, unit: 'm' }).volume().eq(qty('6 m3'))")).passed).toBe(true);
     expect(evaluator.evaluate({}, ruleOf("`${dims({ width: 1, height: 2, unit: 'm' })}` === '1 x 2 m'")).passed).toBe(true);
     expect(evaluator.evaluate({}, ruleOf("`${dims({ width: 1, height: 2, depth: 3, unit: 'm' })}` === '1 x 2 x 3 m'")).passed).toBe(true);
+  });
+});
+
+describe('BaseRuleEvaluatorService with an organization’s units', () => {
+  const evaluator = new BaseRuleEvaluatorService();
+  const expression = "qty(entity.load).gt(qty('900 kg'))";
+  const entity = { load: { amount: '2', unit: 'pallet' } };
+  const ruleOf = (): BaseRule => new BaseRule('r1', 'heavy', 'A rule', 'Item', expression, Severity.ERROR, 'Too light');
+  const acme = STANDARD_UNIT_CATALOG.withUnits([{ kind: 'MASS', code: 'pallet', symbol: 'plt', name: 'Pallet', factor: '500' }]);
+
+  it('reads units in the catalog it is given, and a rule of another catalog does not know them', () => {
+    expect(evaluator.evaluate(entity, ruleOf(), acme).passed).toBe(true);
+    expect(evaluator.evaluate(entity, ruleOf()).error).toContain('pallet');
+    expect(evaluator.evaluate(entity, ruleOf(), acme).passed).toBe(true);
+  });
+
+  it('puts the previous catalog back when the evaluation throws', () => {
+    expect(evaluator.evaluate({ load: { amount: '2', unit: 'nonsense' } }, ruleOf(), acme).error).toContain('nonsense');
+    expect(evaluator.evaluate(entity, ruleOf()).error).toContain('pallet');
   });
 });

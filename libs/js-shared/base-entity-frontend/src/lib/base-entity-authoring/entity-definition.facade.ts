@@ -3,6 +3,7 @@ import { EntityAttributeDefinition, EntityDefinition } from '../base-entity-defi
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
 import { BaseEntityFacade } from '../base-entity-facade/base-entity-facade';
 import { EmbeddedEntityFacade } from '../base-entity-facade/embedded-entity.facade';
+import { UNIT_CATALOG } from '../base-form/fundamental-types/unit-catalog.token';
 import { createEntityAttributeDescriptor } from './entity-attribute.descriptors';
 import { createEntityDefinitionDescriptor } from './entity-definition.descriptors';
 import { EntityDefinitionOptions } from './entity-definition.options';
@@ -55,6 +56,6 @@ export class EntityAttributeFacade extends EmbeddedEntityFacade<EntityAttributeD
   readonly entityType = EntityAttributeDefinition;
 
   protected override createDescriptor(): BaseEntityDescriptor {
-    return createEntityAttributeDescriptor(() => this.injector.get(EntityDefinitionOptions).codes());
+    return createEntityAttributeDescriptor(() => this.injector.get(EntityDefinitionOptions).codes(), this.injector.get(UNIT_CATALOG));
   }
 }

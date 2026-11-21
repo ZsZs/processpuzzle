@@ -1,6 +1,7 @@
 import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { UnitCatalog } from '@processpuzzle/util';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { BaseRule, Severity } from '../domain/base-rule';
@@ -65,7 +66,7 @@ describe('BaseRuleDryRunDialog', () => {
 
       component.onRun();
 
-      expect(evaluator.evaluate).toHaveBeenCalledWith({ qty: 5 }, testRule);
+      expect(evaluator.evaluate).toHaveBeenCalledWith({ qty: 5 }, testRule, expect.any(UnitCatalog));
     });
 
     it('stores the evaluator result on the result signal when JSON is valid', () => {

@@ -52,12 +52,22 @@ describe('the rule expression interpreter', () => {
     });
 
     it('says what the order rules mean', () => {
-      const total = samples.find((sample) => sample.name === 'Total matches sum of line items')?.expression ?? '';
-      const lines = [{ quantity: '2', unitPrice: '19.99' }, { quantity: 1, unitPrice: 49.9 }];
+      const expressionOf = (name: string) => samples.find((sample) => sample.name === name)?.expression ?? '';
+      const total = expressionOf('Total matches sum of line items');
+      const line = (pieces: string, unit: string, price: string) => ({ quantity: { amount: pieces, unit }, unitPrice: { amount: price, currency: 'EUR' } });
+      const lines = [line('2', 'pc', '19.99'), line('1', 'pc', '49.9')];
+      const money = (amount: string) => ({ amount, currency: 'EUR' });
 
-      expect(run(total, { lineItems: lines, total: '89.88' }).passed).toBe(true);
-      expect(run(total, { lineItems: lines, total: '90' }).passed).toBe(false);
+      expect(run(total, { lineItems: lines, total: money('89.88') }).passed).toBe(true);
+      expect(run(total, { lineItems: lines, total: money('90') }).passed).toBe(false);
       expect(run(total, {}).passed).toBe(true);
+      // A dozen is twelve pieces: 2 dozen at 10.00 and 3 pieces at 1.50.
+      expect(run(total, { lineItems: [line('2', 'dz', '10.00'), line('3', 'pc', '1.50')], total: money('244.50') }).passed).toBe(true);
+
+      const positive = expressionOf('All line item quantities are positive');
+      expect(run(positive, { lineItems: lines }).passed).toBe(true);
+      expect(run(positive, { lineItems: [line('0', 'pc', '1')] }).passed).toBe(false);
+      expect(run(expressionOf('Special orders may include zero-quantity placeholder items'), { lineItems: [line('0', 'pc', '0')] }).passed).toBe(true);
     });
   });
 

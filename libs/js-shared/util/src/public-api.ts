@@ -41,6 +41,7 @@ export { FundamentalTypeError, type FundamentalTypeErrorReason } from './lib/fun
 export { decimalText, toDecimal, type DecimalInput } from './lib/fundamental-types/decimal';
 export {
   STANDARD_UNIT_CATALOG,
+  type ExtraUnitData,
   UnitCatalog,
   type CurrencyDefinition,
   type QuantityKindData,
