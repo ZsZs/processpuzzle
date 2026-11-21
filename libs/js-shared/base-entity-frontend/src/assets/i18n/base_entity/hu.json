@@ -21,6 +21,13 @@
     "showMap": "Térképet mutat",
     "mapProvider": "Térképszolgáltató",
     "defaultCountry": "Alapértelmezett ország",
+    "quantityKind": "Mennyiségfajta",
+    "allowedUnits": "Megengedett mértékegységek",
+    "defaultUnit": "Alapértelmezett mértékegység",
+    "scale": "Tizedesjegyek",
+    "allowedCurrencies": "Megengedett pénznemek",
+    "defaultCurrency": "Alapértelmezett pénznem",
+    "dimensionCount": "Dimenziók",
     "_tooltips": {
       "code": "A kulcs, amely alatt az érték tárolódik, az entitástípuson belül egyedi, pl. orderNumber. Ha már vannak rekordok, ne módosítsa.",
       "name": "A mező felirata, ahogy a felhasználók az űrlapokon és a lista oszlopaiban látják, pl. Rendelésszám.",
@@ -40,6 +47,13 @@
       "showMap": "ADDRESS vezérlőknél: a cím megjelenítése térképen, a címből származtatott koordinátákkal.",
       "mapProvider": "Térképes ADDRESS vezérlőknél: ki rajzolja a térképet. Üresen OpenStreetMap; kattintásra mindig a Google Térkép nyílik meg.",
       "defaultCountry": "ADDRESS vezérlőknél: az ISO országkód, amellyel egy új cím indul, pl. HU. Üresen a böngésző országa.",
+      "quantityKind": "QUANTITY mezőkhöz: mit mérünk (LENGTH, MASS, TIME …), csak a hozzá tartozó mértékegységeket kínálja fel. A QUANTITY, MONEY és DIMENSIONS mezők REFERENCE értéktípust használnak.",
+      "allowedUnits": "QUANTITY és DIMENSIONS mezőkhöz: a választható mértékegységek kódjai, pl. kg, g. Üresen a fajta minden mértékegységét felkínálja (méretek: minden hosszúságot).",
+      "defaultUnit": "QUANTITY és DIMENSIONS mezőkhöz: a mértékegység, amelyben egy új érték indul. Üresen a fajta alapegységét használja.",
+      "scale": "QUANTITY és DIMENSIONS mezőkhöz: egy összeg legfeljebb hány tizedesjegyet tartalmazhat, 0–20. Az átváltás is erre kerekít; üresen 6-ra.",
+      "allowedCurrencies": "MONEY mezőkhöz: a választható ISO pénznemkódok, pl. EUR, HUF. Üresen minden pénznemet felkínál.",
+      "defaultCurrency": "MONEY mezőkhöz: a pénznem, amelyben egy új összeg indul. Üresen az első megengedettet használja.",
+      "dimensionCount": "DIMENSIONS mezőkhöz: 2 a szélesség × magasság, 3 mélységet is hozzáad. Üresen 2.",
       "dateStyle": "DATE és DATE_TIME mezőknél: a dátum megjelenítése a short (26. 12. 31.) formától a full (2026. december 31., csütörtök) formáig. Üresen az alapértelmezés érvényes.",
       "timeStyle": "DATE_TIME mezőknél: az idő megjelenítése a short (14:30) formától a long (másodperccel és időzónával) formáig. Üresen az alapértelmezés érvényes."
     }

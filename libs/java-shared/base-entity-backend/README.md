@@ -59,8 +59,10 @@ definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`,
 - **Search** — through those numbers, never the object: `weight.baseAmount=gt=5` finds every weight over 5 kg whatever
   unit it was entered in; `size.baseVolume=lt=0.5` is in cubic metres. A bare `weight` or `weight.unit` is refused with a
   hint naming the selectable numbers.
+- The testbed seed's `dynamic-entity` carries one attribute of each control, with a sample instance, and
+  `MeasureAttributesIntegrationTest` runs both through the real stack.
 - Not covered yet: a calculation that writes into one of these attributes (the object-access port bypasses
-  validation), and the designer / seed support, which follow with the frontend.
+  validation).
 
 ## Still pending on your side
 

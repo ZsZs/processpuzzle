@@ -1,3 +1,4 @@
+import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
 import { AbstractAttrDescriptor, FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
@@ -11,12 +12,9 @@ const SKIP_CONTROL_TYPES: ReadonlySet<FormControlType> = new Set([
   FormControlType.GEO_LOCATION,
   FormControlType.COMPONENTS,
   FormControlType.CUSTOM,
-  FormControlType.DIMENSIONS,
   FormControlType.EMBEDDED_COMPONENTS,
   FormControlType.FLEX_BOX,
   FormControlType.LABEL,
-  FormControlType.MONEY,
-  FormControlType.QUANTITY,
   FormControlType.RELATED_ENTITIES,
   FormControlType.TITLE,
 ]);
@@ -34,6 +32,32 @@ const CONTROL_TYPE_TO_RSQL_TYPE: Partial<Record<FormControlType, RsqlFieldType>>
   [FormControlType.TEXT_BOX]: 'string',
 };
 
+const MEASURE_CONTROL_TYPES: ReadonlySet<FormControlType> = new Set([FormControlType.QUANTITY, FormControlType.MONEY, FormControlType.DIMENSIONS]);
+
+/**
+ * A measure is searched through the numbers the backend derives from it, never as the object: a quantity or an amount of
+ * money through `baseAmount` (a quantity in its kind's base unit, so `weight.baseAmount=gt=5` finds every weight over 5 kg
+ * whatever unit it was entered in), dimensions through `baseArea` and, with three axes, `baseVolume` (m², m³).
+ */
+function measureFields(descriptor: BaseEntityAttrDescriptor): RsqlFieldMetadata[] {
+  const field = (suffix: string, label: string): RsqlFieldMetadata => ({
+    name: `${descriptor.attrName}.${suffix}`,
+    type: 'number',
+    operators: RSQL_OPERATORS_BY_TYPE['number'],
+    label,
+  });
+  switch (descriptor.formControlType) {
+    case FormControlType.DIMENSIONS:
+      return [field('baseArea', `${descriptor.label} area (m²)`), ...(descriptor.dimensionCount === 3 ? [field('baseVolume', `${descriptor.label} volume (m³)`)] : [])];
+    case FormControlType.MONEY:
+      return [field('baseAmount', descriptor.label)];
+    default: {
+      const kind = descriptor.quantityKind ? STANDARD_UNIT_CATALOG.kinds().find((candidate) => candidate.code === descriptor.quantityKind) : undefined;
+      return [field('baseAmount', `${descriptor.label} (${kind?.baseUnit ?? 'base unit'})`)];
+    }
+  }
+}
+
 const INPUT_TYPE_TO_RSQL_TYPE: Record<string, RsqlFieldType> = {
   number: 'number',
   date: 'date',
@@ -49,7 +73,7 @@ export class DescriptorBackedFieldMetadataProvider extends RsqlFieldMetadataProv
     super();
     this.fields = filterAttributeDescriptors(attrDescriptors)
       .filter((d) => !SKIP_CONTROL_TYPES.has(d.formControlType))
-      .map((d) => this.toRsqlField(d));
+      .flatMap((d) => (MEASURE_CONTROL_TYPES.has(d.formControlType) ? measureFields(d) : [this.toRsqlField(d)]));
     this.byName = new Map(this.fields.map((f) => [f.name, f]));
   }
 

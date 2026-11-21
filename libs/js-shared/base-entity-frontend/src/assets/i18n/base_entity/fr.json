@@ -21,6 +21,13 @@
     "showMap": "Affiche une carte",
     "mapProvider": "Fournisseur de carte",
     "defaultCountry": "Pays par défaut",
+    "quantityKind": "Grandeur",
+    "allowedUnits": "Unités autorisées",
+    "defaultUnit": "Unité par défaut",
+    "scale": "Décimales",
+    "allowedCurrencies": "Devises autorisées",
+    "defaultCurrency": "Devise par défaut",
+    "dimensionCount": "Dimensions",
     "_tooltips": {
       "code": "Clé sous laquelle la valeur est stockée, unique dans le type d'entité, p. ex. orderNumber. Ne la modifiez plus une fois des enregistrements créés.",
       "name": "Le libellé du champ tel que les utilisateurs le voient dans les formulaires et les colonnes de liste, p. ex. Numéro de commande.",
@@ -40,6 +47,13 @@
       "showMap": "Pour les contrôles ADDRESS : afficher l'adresse sur une carte, avec des coordonnées déduites de celle-ci.",
       "mapProvider": "Pour les contrôles ADDRESS avec carte : qui la dessine. Vide utilise OpenStreetMap ; un clic ouvre toujours Google Maps.",
       "defaultCountry": "Pour les contrôles ADDRESS : le code pays ISO d'une nouvelle adresse, p. ex. FR. Vide utilise le pays du navigateur.",
+      "quantityKind": "Pour les champs QUANTITY : ce qui est mesuré (LENGTH, MASS, TIME …), seules ses unités sont proposées. Les champs QUANTITY, MONEY et DIMENSIONS utilisent le type de valeur REFERENCE.",
+      "allowedUnits": "Pour les champs QUANTITY et DIMENSIONS : les codes d'unité au choix, p. ex. kg, g. Vide propose toutes les unités de la grandeur (dimensions : toutes les longueurs).",
+      "defaultUnit": "Pour les champs QUANTITY et DIMENSIONS : l'unité dans laquelle commence une nouvelle valeur. Vide utilise l'unité de base de la grandeur.",
+      "scale": "Pour les champs QUANTITY et DIMENSIONS : le nombre maximal de décimales d'un montant, de 0 à 20. Une conversion d'unité y est arrondie ; vide arrondit à 6.",
+      "allowedCurrencies": "Pour les champs MONEY : les codes ISO de devise au choix, p. ex. EUR, HUF. Vide propose toutes les devises.",
+      "defaultCurrency": "Pour les champs MONEY : la devise dans laquelle commence un nouveau montant. Vide utilise la première autorisée.",
+      "dimensionCount": "Pour les champs DIMENSIONS : 2 pour largeur × hauteur, 3 ajoute une profondeur. Vide signifie 2.",
       "dateStyle": "Pour les champs DATE et DATE_TIME : l'affichage de la date, de short (31/12/26) à full (jeudi 31 décembre 2026). Vide utilise la valeur par défaut.",
       "timeStyle": "Pour les champs DATE_TIME : l'affichage de l'heure, de short (14:30) à long (avec secondes et fuseau horaire). Vide utilise la valeur par défaut."
     }

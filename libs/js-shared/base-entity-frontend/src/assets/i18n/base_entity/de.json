@@ -21,6 +21,13 @@
     "showMap": "Zeigt eine Karte",
     "mapProvider": "Kartenanbieter",
     "defaultCountry": "Standardland",
+    "quantityKind": "Größenart",
+    "allowedUnits": "Erlaubte Einheiten",
+    "defaultUnit": "Standardeinheit",
+    "scale": "Nachkommastellen",
+    "allowedCurrencies": "Erlaubte Währungen",
+    "defaultCurrency": "Standardwährung",
+    "dimensionCount": "Dimensionen",
     "_tooltips": {
       "code": "Schlüssel, unter dem der Wert gespeichert wird, eindeutig innerhalb des Entitätstyps, z. B. orderNumber. Nicht mehr ändern, sobald Datensätze existieren.",
       "name": "Die Beschriftung des Feldes, wie Benutzer sie in Formularen und Listenspalten sehen, z. B. Bestellnummer.",
@@ -40,6 +47,13 @@
       "showMap": "Für ADDRESS-Steuerelemente: die Adresse auf einer Karte zeigen, mit daraus ermittelten Koordinaten.",
       "mapProvider": "Für ADDRESS-Steuerelemente mit Karte: wer sie zeichnet. Leer bedeutet OpenStreetMap; ein Klick öffnet immer Google Maps.",
       "defaultCountry": "Für ADDRESS-Steuerelemente: der ISO-Ländercode, mit dem eine neue Adresse beginnt, z. B. DE. Leer nimmt das Land des Browsers.",
+      "quantityKind": "Für QUANTITY-Felder: was gemessen wird (LENGTH, MASS, TIME …); nur seine Einheiten werden angeboten. QUANTITY-, MONEY- und DIMENSIONS-Felder verwenden die Wertart REFERENCE.",
+      "allowedUnits": "Für QUANTITY- und DIMENSIONS-Felder: die Einheiten-Codes zur Auswahl, z. B. kg, g. Leer bietet alle Einheiten der Größenart an (Dimensionen: alle Längen).",
+      "defaultUnit": "Für QUANTITY- und DIMENSIONS-Felder: die Einheit, in der ein neuer Wert beginnt. Leer verwendet die Basiseinheit der Größenart.",
+      "scale": "Für QUANTITY- und DIMENSIONS-Felder: die höchste Zahl an Nachkommastellen eines Betrags, 0 bis 20. Auch eine Umrechnung wird darauf gerundet; leer rundet auf 6.",
+      "allowedCurrencies": "Für MONEY-Felder: die ISO-Währungscodes zur Auswahl, z. B. EUR, HUF. Leer bietet alle Währungen an.",
+      "defaultCurrency": "Für MONEY-Felder: die Währung, in der ein neuer Betrag beginnt. Leer verwendet die erste erlaubte.",
+      "dimensionCount": "Für DIMENSIONS-Felder: 2 für Breite × Höhe, 3 fügt eine Tiefe hinzu. Leer bedeutet 2.",
       "dateStyle": "Für DATE- und DATE_TIME-Felder: wie das Datum angezeigt wird, von short (31.12.26) bis full (Donnerstag, 31. Dezember 2026). Leer bedeutet Standard.",
       "timeStyle": "Für DATE_TIME-Felder: wie die Uhrzeit angezeigt wird, von short (14:30) bis long (mit Sekunden und Zeitzone). Leer bedeutet Standard."
     }
