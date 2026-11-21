@@ -46,7 +46,7 @@ export class BaseRuleEvaluatorService {
 
     // The one place a rule's text becomes code. The expression is authored in the rule designer by users allowed to define
     // rules — it is not input from a page — and runs here only to give the same answer the backend's sandbox will give.
-    // eslint-disable-next-line sonarjs/code-eval
+    // (`sonarjs/code-eval` is switched off for this file in eslint.sonar.config.mjs, not with a comment here.)
     const fn = new Function('entity', 'qty', 'money', 'dims', `"use strict"; return (${trimmed});`) as CompiledRule;
     this.compiled.set(trimmed, fn);
     return fn;
