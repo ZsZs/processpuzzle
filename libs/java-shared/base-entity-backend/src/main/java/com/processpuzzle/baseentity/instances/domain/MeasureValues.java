@@ -44,13 +44,14 @@ public final class MeasureValues {
     private static final String LENGTH = "LENGTH";
     private static final List<String> AXES = List.of("width", "height", "depth");
 
-    private final UnitCatalog catalog = UnitCatalog.standard();
+    private final UnitCatalog catalog;
     private final MeasureView measure;
     private final Map<?, ?> value;
     private final List<String> problems = new ArrayList<>();
 
     private MeasureValues(MeasureView measure, Map<?, ?> value) {
         this.measure = measure;
+        this.catalog = measure.catalog();
         this.value = value;
     }
 

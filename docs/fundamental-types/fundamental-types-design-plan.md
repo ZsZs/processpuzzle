@@ -13,7 +13,7 @@ pairwise ratio graph without transitivity, no notion of what a unit measures).
 ## Decisions
 | # | Decision |
 | --- | --- |
-| D1 | Unit catalog: a fixed **standard catalog** shipped with the platform. Organization-specific units come later. |
+| D1 | Unit catalog: a fixed **standard catalog** shipped with the platform. Organizations add **units to its kinds** (phase 6): factor and kind frozen, retired rather than deleted. New kinds and currencies stay out. |
 | D2 | Currency conversion: **later**. Money of different currencies is never combined or compared. |
 | D3 | Amounts are **decimals**, exact end to end. |
 | D4 | Our **own catalog**; no Indriya / Moneta / js-quantities. |
@@ -103,4 +103,12 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    no separate "converted values" panel. *Part 2:* a calculation's bare number written into a QUANTITY / MONEY
    attribute in its default unit or currency, validated and stored with its derived numbers; reading stays as it was.
 
-Later: organization units (D1), exchange rates with validity periods (D2).
+5. **Browser check** — the controls checked in a real browser against a mocked backend (#1451: money shown to the minor
+   units). The designer's authoring fields are not covered: they are hosted by ProcessPuzzle UI, not the testbed.
+6. **Organization units (D1)** — *Part 1:* `UnitCatalog.withUnits` and the `UnitCatalogProvider` port in core; units as an
+   org-scoped resource in base-entity-backend (`/organizations/{orgKey}/units`, kind + factor frozen, retire instead of
+   delete); the definition validator, payload validation and derived writes read the owning organization's catalog.
+   *Part 2:* the rule engine (`MeasureBindings`) on the organization's catalog. *Part 3:* the frontend catalog from
+   the backend, retired units hidden from new choices. *Part 4:* a designer screen for units.
+
+Later: exchange rates with validity periods (D2).

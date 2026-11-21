@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.definition.domain;
 
 import com.processpuzzle.baseentity.common.ValidationException;
+import com.processpuzzle.core.quantity.UnitCatalog;
+import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -412,10 +414,30 @@ class EntityDefinitionValidatorTest {
     }
 
     @Test
+    void validate_quantityNamingAnOrganizationUnit_isReadInThatOrganizationsCatalog() {
+        UnitCatalog withPallet = UnitCatalog.standard().withUnits(List.of(
+                new UnitCatalog.ExtraUnit("MASS", "pallet", "plt", "Pallet", new java.math.BigDecimal("500"), java.math.BigDecimal.ONE)));
+        UnitCatalogProvider catalogs = orgKey -> "acme".equals(orgKey) ? withPallet : UnitCatalog.standard();
+        EntityDefinitionValidator orgAware = new EntityDefinitionValidator(catalogs);
+        BaseEntityAttribute load = measureAttribute(FormControlType.QUANTITY);
+        load.setAllowedUnits(List.of("kg", "pallet"));
+        BaseEntityDefinition definition = definitionWith(load);
+
+        orgAware.validate("acme", definition);
+
+        assertThatThrownBy(() -> orgAware.validate("other", definition)).isInstanceOf(ValidationException.class)
+                .satisfies(e -> assertThat(((ValidationException) e).getViolations()).extracting(ValidationException.Violation::message)
+                        .contains("allowedUnits names unknown unit 'pallet'"));
+        definition.setOrgKey("acme");
+        orgAware.validate(definition);
+        assertThatThrownBy(() -> validator.validate("acme", definition)).as("a validator without organization units").isInstanceOf(ValidationException.class);
+    }
+
+    @Test
     void validate_quantityNamingWhatTheCatalogDoesNotKnow_throwsValidationException() {
         BaseEntityAttribute kind = measureAttribute(FormControlType.QUANTITY);
         kind.setQuantityKind("LUMINOSITY");
-        assertSingleViolation(kind, "quantityKind 'LUMINOSITY' is not a quantity kind of the standard catalog");
+        assertSingleViolation(kind, "quantityKind 'LUMINOSITY' is not a quantity kind of the catalog");
 
         BaseEntityAttribute unit = measureAttribute(FormControlType.QUANTITY);
         unit.setAllowedUnits(List.of("kg", "parsec"));

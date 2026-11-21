@@ -16,17 +16,19 @@ final class MeasureAttributeValidator {
     private static final String LENGTH = "LENGTH";
     private static final int MAX_SCALE = 20;
 
-    private final UnitCatalog catalog = UnitCatalog.standard();
+    private final UnitCatalog catalog;
     private final BaseEntityAttribute attribute;
     private final List<Violation> violations;
 
-    private MeasureAttributeValidator(BaseEntityAttribute attribute, List<Violation> violations) {
+    private MeasureAttributeValidator(UnitCatalog catalog, BaseEntityAttribute attribute, List<Violation> violations) {
+        this.catalog = catalog;
         this.attribute = attribute;
         this.violations = violations;
     }
 
-    static void validate(BaseEntityAttribute attribute, List<Violation> violations) {
-        new MeasureAttributeValidator(attribute, violations).validate();
+    /** {@code catalog} is the one of the organization that owns the attribute's definition: the standard units and its own. */
+    static void validate(UnitCatalog catalog, BaseEntityAttribute attribute, List<Violation> violations) {
+        new MeasureAttributeValidator(catalog, attribute, violations).validate();
     }
 
     private void validate() {
@@ -73,7 +75,7 @@ final class MeasureAttributeValidator {
     private void validateUnits(String requiredKind) {
         boolean knownKind = requiredKind == null || catalog.kinds().stream().anyMatch(known -> known.code().equals(requiredKind));
         if (!knownKind) {
-            report("quantityKind '%s' is not a quantity kind of the standard catalog".formatted(requiredKind));
+            report("quantityKind '%s' is not a quantity kind of the catalog".formatted(requiredKind));
         }
         String kind = knownKind ? requiredKind : null;
         List<String> allowed = attribute.getAllowedUnits() == null ? List.of() : attribute.getAllowedUnits();
