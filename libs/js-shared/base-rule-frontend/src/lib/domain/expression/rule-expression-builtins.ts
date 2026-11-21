@@ -25,8 +25,15 @@ const DATE_METHODS: ReadonlySet<string> = new Set([
   'getDate', 'getDay', 'getFullYear', 'getHours', 'getMilliseconds', 'getMinutes', 'getMonth', 'getSeconds', 'getTime', 'toISOString',
 ]);
 
+/**
+ * `isNaN` and `isFinite` as a script has them as globals: they read their argument as a number first (`isNaN('abc')` is true),
+ * which `Number.isNaN` and `Number.isFinite` do not. `parseInt` and `parseFloat` are the very functions of `Number`.
+ */
+const isNaNOf = (value: unknown): boolean => Number.isNaN(Number(value));
+const isFiniteOf = (value: unknown): boolean => Number.isFinite(Number(value));
+
 /** The functions a rule may call by their own name, and the members of the namespaces it may call. */
-const CALLABLE_GLOBALS: ReadonlySet<unknown> = new Set([Number, String, Boolean, parseInt, parseFloat, isNaN, isFinite, qty, money, dims]);
+const CALLABLE_GLOBALS: ReadonlySet<unknown> = new Set([Number, String, Boolean, Number.parseInt, Number.parseFloat, isNaNOf, isFiniteOf, qty, money, dims]);
 
 const NAMESPACE_METHODS: ReadonlyMap<unknown, ReadonlySet<string>> = new Map<unknown, ReadonlySet<string>>([
   [Math, new Set(Object.getOwnPropertyNames(Math))],
@@ -49,10 +56,10 @@ export const GLOBAL_VALUES: ReadonlyMap<string, unknown> = new Map<string, unkno
   ['Array', Array],
   ['Object', Object],
   ['Date', Date],
-  ['parseInt', parseInt],
-  ['parseFloat', parseFloat],
-  ['isNaN', isNaN],
-  ['isFinite', isFinite],
+  ['parseInt', Number.parseInt],
+  ['parseFloat', Number.parseFloat],
+  ['isNaN', isNaNOf],
+  ['isFinite', isFiniteOf],
   ['qty', qty],
   ['money', money],
   ['dims', dims],

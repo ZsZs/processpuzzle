@@ -170,7 +170,7 @@ function logicalValue(node: LogicalExpression, scope: Scope): unknown {
     case '&&':
       return left ? evaluate(node.right, scope) : left;
     case '||':
-      return left ? left : evaluate(node.right, scope);
+      return left || evaluate(node.right, scope);
     default:
       return left ?? evaluate(node.right, scope);
   }

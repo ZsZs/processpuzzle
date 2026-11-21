@@ -49,6 +49,7 @@
     { "expression": "new Date('2026-01-02').getTime() > new Date('2026-01-01').getTime() && new Date('2026-06-15T00:00:00Z').getFullYear() === 2026", "expected": true },
     { "expression": "'a,b'.split(',').length === 2 && 'abc'.startsWith('a') && 'abc'.endsWith('c') && 'abc'.slice(1) === 'bc' && 'x'.padStart(3, '0') === '00x' && 'a-b'.replace('-', '+') === 'a+b'", "expected": true },
     { "expression": "(2.5).toFixed(1) === '2.5' && Number.isInteger(4) && parseInt('12px') === 12 && isNaN(Number('x')) && Number('3') === 3", "expected": true },
+    { "expression": "isNaN('abc') && !isNaN('12') && isFinite('12') && !isFinite('abc') && parseInt('12px') === 12 && parseFloat('1.5x') === 1.5", "expected": true },
     { "expression": "Math.round(2.5) === 3 && Math.min(1, 2) === 1 && Math.floor(-0.5) === -1", "expected": true },
     { "expression": "entity.lineItems.map(li => Number(li.quantity)).filter(Boolean).length === 2 && entity.lineItems.find(li => li.quantity === 1).unitPrice === 10.5 && entity.lineItems.findIndex(li => li.quantity === 99) === -1 && entity.lineItems.some(li => li.unitPrice > 10)", "expected": true },
     { "expression": "[[1, 2], [3]].flat().length === 3 && [1, 2].flatMap(x => [x, x]).length === 4 && [3, 1, 2].slice(1).concat([9]).length === 3", "expected": true },
