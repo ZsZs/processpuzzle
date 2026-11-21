@@ -40,7 +40,7 @@ interface LoadedImages {
     @if (cards().length) {
       <pp-cards-grid [cards]="cards()" />
     } @else if (context && !entries().length) {
-      <p class="module-launcher__empty" *transloco="let t; prefix: 'module_launcher'">
+      <p class="module-launcher__empty" *transloco="let t; prefix: 'widgets.module_launcher'">
         {{ t('empty') }}
         <a [routerLink]="[designPrefix + '/design/starters']">{{ t('browse') }}</a>
       </p>
