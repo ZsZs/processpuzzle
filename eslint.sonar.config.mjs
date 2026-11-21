@@ -24,9 +24,5 @@ export default [
   // or creating fixtures one after another. Parallelizing these awaits would break the tests, so the await-in-loop
   // rule is suppressed for the entire e2e-testing library.
   { files: ['libs/js-shared/e2e-testing/src/lib/**/*.ts'], rules: { 'sonarjs/no-await-in-loop': 'off' } },
-  // The rule evaluator is the one place a rule's text becomes code (`new Function`): the expressions are authored in the
-  // rule designer by users allowed to define rules, not input from a page, and run in the browser only to give the same
-  // answer the backend's sandbox will give. Set here, not with a disable comment, for the reason above.
-  { files: ['libs/js-shared/base-rule-frontend/src/lib/domain/base-rule-evaluator.service.ts'], rules: { 'sonarjs/code-eval': 'off' } },
   { ignores: ['**/dist', '**/reports', '**/coverage', 'tools/mock-backend'] },
 ];

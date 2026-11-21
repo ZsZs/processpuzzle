@@ -1,0 +1,59 @@
+{
+  "entity": {
+    "key": "my-org",
+    "contactEmail": "a@b.hu",
+    "status": "SHIPPED",
+    "shippingAddress": "",
+    "total": "30.5",
+    "name": "  Alpha  ",
+    "n": 5,
+    "tags": ["a", "b"],
+    "missing": null,
+    "flags": { "x": true },
+    "layout": { "contentMaxWidth": "960px" },
+    "lineItems": [
+      { "quantity": "2", "unitPrice": "10" },
+      { "quantity": 1, "unitPrice": 10.5 }
+    ],
+    "regions": [
+      { "type": "sidenav", "navItems": [{ "routePath": "/a", "icon": "x", "roles": ["ADMIN"], "children": [{ "routePath": "", "children": [] }] }] },
+      { "type": "header" }
+    ]
+  },
+  "cases": [
+    { "expression": "/^[a-z0-9]+(-[a-z0-9]+)*$/.test(entity.key || '')", "expected": true },
+    { "expression": "entity.contactEmail == null || /^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(entity.contactEmail)", "expected": true },
+    { "expression": "/ABC/i.test('abc') && 'a1b2'.match(/\\d/g).length === 2", "expected": true },
+    { "expression": "entity.lineItems.every(li => Number(li.quantity) > 0)", "expected": true },
+    { "expression": "Math.abs(Number(entity.total) - entity.lineItems.reduce((sum, li) => sum + Number(li.unitPrice) * Number(li.quantity), 0)) < 0.001", "expected": true },
+    { "expression": "entity.status !== 'SHIPPED' || (entity.shippingAddress != null && entity.shippingAddress !== '')", "expected": false },
+    { "expression": "(entity.regions || []).some(r => r.type === 'sidenav' && (r.navItems || []).length > 0)", "expected": true },
+    { "expression": "(entity.regions || []).every(r => r.type !== 'sidenav' || ((f, x) => f(f, x, 1))((self, items, depth) => items.every(n => depth <= 2 && self(self, n.children || [], depth + 1)), r.navItems || []))", "expected": true },
+    { "expression": "((check) => (entity.regions || []).every(r => check(r.widgets || [])))((widgets) => widgets.every(w => w.type === 'x'))", "expected": true },
+    { "expression": "['admin', 'api'].indexOf((entity.key || '').toLowerCase()) < 0", "expected": true },
+    { "expression": "entity.name.trim().length === 5 && entity.name.trim().toUpperCase() === 'ALPHA'", "expected": true },
+    { "expression": "entity.tags.join('-') === 'a-b' && entity.tags.includes('b') && !entity.tags.includes('z')", "expected": true },
+    { "expression": "`${entity.tags.length}:${entity.n * 2}` === '2:10'", "expected": true },
+    { "expression": "(entity.n > 3 ? 'big' : 'small') === 'big'", "expected": true },
+    { "expression": "entity.layout?.contentMaxWidth === '960px' && entity.missing?.x === undefined && entity.nothing?.deep.deeper === undefined", "expected": true },
+    { "expression": "(entity.missing ?? 'dflt') === 'dflt' && (entity.n ?? 0) === 5", "expected": true },
+    { "expression": "typeof entity.name === 'string' && typeof entity.nothing === 'undefined' && typeof undeclaredName === 'undefined'", "expected": true },
+    { "expression": "entity.missing == null && entity.nothing == undefined && '5' == 5 && entity.n == '5' && entity.n != 6", "expected": true },
+    { "expression": "7 % 4 === 3 && 2 ** 3 === 8 && (5 & 3) === 1 && (~5) === -6 && (1 << 3) === 8", "expected": true },
+    { "expression": "10 - 3 === 7 && 6 * 7 === 42 && 8 / 2 === 4 && -(3) === -3 && +'4' === 4 && (5 | 2) === 7 && (5 ^ 1) === 4 && (16 >> 2) === 4 && (-1 >>> 28) === 15 && 3 <= 3 && 2 >= 2 && 1 !== 2 && 'a' != 'b'", "expected": true },
+    { "expression": "[1, , 3].length === 3 && [1, , 3][1] === undefined", "expected": true },
+    { "expression": "Math.max(...[1, 5, 3]) === 5 && [...entity.tags, 'c'].length === 3", "expected": true },
+    { "expression": "({ a: 1, b: 2 }).b === 2 && 'x' in entity.flags && !('y' in entity.flags)", "expected": true },
+    { "expression": "Object.keys(entity.flags).length === 1 && Object.values(entity.flags)[0] === true", "expected": true },
+    { "expression": "Array.isArray(entity.tags) && !Array.isArray(entity.name)", "expected": true },
+    { "expression": "new Date('2026-01-02').getTime() > new Date('2026-01-01').getTime() && new Date('2026-06-15T00:00:00Z').getFullYear() === 2026", "expected": true },
+    { "expression": "'a,b'.split(',').length === 2 && 'abc'.startsWith('a') && 'abc'.endsWith('c') && 'abc'.slice(1) === 'bc' && 'x'.padStart(3, '0') === '00x' && 'a-b'.replace('-', '+') === 'a+b'", "expected": true },
+    { "expression": "(2.5).toFixed(1) === '2.5' && Number.isInteger(4) && parseInt('12px') === 12 && isNaN(Number('x')) && Number('3') === 3", "expected": true },
+    { "expression": "Math.round(2.5) === 3 && Math.min(1, 2) === 1 && Math.floor(-0.5) === -1", "expected": true },
+    { "expression": "entity.lineItems.map(li => Number(li.quantity)).filter(Boolean).length === 2 && entity.lineItems.find(li => li.quantity === 1).unitPrice === 10.5 && entity.lineItems.findIndex(li => li.quantity === 99) === -1 && entity.lineItems.some(li => li.unitPrice > 10)", "expected": true },
+    { "expression": "[[1, 2], [3]].flat().length === 3 && [1, 2].flatMap(x => [x, x]).length === 4 && [3, 1, 2].slice(1).concat([9]).length === 3", "expected": true },
+    { "expression": "!entity.lineItems || entity.lineItems.length === 0", "expected": false },
+    { "expression": "entity.missing.field", "error": "field" },
+    { "expression": "undeclaredName === 1", "error": "undeclaredName is not defined" }
+  ]
+}

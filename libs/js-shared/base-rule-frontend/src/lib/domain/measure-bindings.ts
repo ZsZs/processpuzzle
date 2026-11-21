@@ -223,6 +223,11 @@ class DimensionsRef {
   }
 }
 
+/** Whether `value` is one of the objects `qty`, `money` and `dims` make. */
+export function isMeasureRef(value: unknown): boolean {
+  return value instanceof QuantityRef || value instanceof MoneyRef || value instanceof DimensionsRef;
+}
+
 // region reading what a rule hands in
 
 function isObject(value: unknown): value is Record<string, unknown> {

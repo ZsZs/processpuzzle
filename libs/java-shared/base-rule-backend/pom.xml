@@ -128,8 +128,8 @@
     </dependencies>
 
     <build>
-        <!-- rule-measure-cases.json is the cases both rule evaluators run — the browser's and this one — so it lives in
-             base-rule-frontend and is read from there. -->
+        <!-- rule-measure-cases.json and rule-expression-cases.json are the cases both rule evaluators run — the browser's and
+             this one — so they live in base-rule-frontend and are read from there. -->
         <testResources>
             <testResource>
                 <directory>src/test/resources</directory>
@@ -138,6 +138,7 @@
                 <directory>${project.basedir}/../../js-shared/base-rule-frontend/src/lib/domain</directory>
                 <includes>
                     <include>rule-measure-cases.json</include>
+                    <include>rule-expression-cases.json</include>
                 </includes>
             </testResource>
         </testResources>
