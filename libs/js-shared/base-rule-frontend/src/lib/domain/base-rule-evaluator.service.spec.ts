@@ -1,4 +1,4 @@
-import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
+import { ExchangeRates, STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { BaseRule, Severity } from './base-rule';
 import { BaseRuleEvaluatorService } from './base-rule-evaluator.service';
@@ -128,7 +128,7 @@ describe('BaseRuleEvaluatorService measure helpers', () => {
 
   /** The cases the backend's `MeasureBindingsTest` runs too: a rule must say here what it will say there. */
   it.each(measureCases.cases)('$expression', (testCase) => {
-    const result = evaluator.evaluate(measureCases.entity, ruleOf(testCase.expression));
+    const result = evaluator.evaluate(measureCases.entity, ruleOf(testCase.expression), STANDARD_UNIT_CATALOG, new ExchangeRates(measureCases.rates));
 
     if ('error' in testCase) {
       expect(result.passed).toBe(false);

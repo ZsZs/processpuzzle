@@ -5,6 +5,10 @@
     "size": { "width": "120", "height": "80", "depth": "50", "unit": "cm" },
     "flat": { "width": "2", "height": "3", "unit": "m" }
   },
+  "rates": [
+    { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" },
+    { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" }
+  ],
   "cases": [
     { "expression": "qty('1 kg').eq(qty('1000 g'))", "expected": true },
     { "expression": "qty(entity.weight).gt(qty('5 kg'))", "expected": true },
@@ -49,6 +53,16 @@
     { "expression": "qty('20 degC').plus(qty('1 K'))", "error": "offset scale" },
     { "expression": "qty(entity.price)", "error": "unit is missing" },
     { "expression": "money('1 EUR').times('abc')", "error": "is not a decimal number" },
-    { "expression": "dims(entity.flat).volume()", "error": "no volume" }
+    { "expression": "dims(entity.flat).volume()", "error": "no volume" },
+    { "expression": "money('110 USD').to('EUR', '2026-03-01').eq(money('100 EUR'))", "expected": true },
+    { "expression": "money('120 USD').to('EUR', '2026-08-01').eq(money('100 EUR'))", "expected": true },
+    { "expression": "money('100 EUR').to('USD', '2026-03-01T09:30:00Z').eq(money('110 USD'))", "expected": true },
+    { "expression": "money('1 USD').to('EUR', '2026-03-01').eq(money('0.91 EUR'))", "expected": true },
+    { "expression": "money('5 EUR').to('EUR').eq(money('5 EUR'))", "expected": true },
+    { "expression": "money(entity.price).to('USD', '2026-03-01').gt(money('90 USD'))", "expected": true },
+    { "expression": "money('1 USD').to('EUR', '2025-01-01')", "error": "no exchange rate" },
+    { "expression": "money('1 EUR').to('GBP', '2026-03-01')", "error": "no exchange rate" },
+    { "expression": "money('1 USD').to('EUR', 'yesterday')", "error": "ISO date" },
+    { "expression": "money('1 USD').to('ZZZ', '2026-03-01')", "error": "ZZZ" }
   ]
 }

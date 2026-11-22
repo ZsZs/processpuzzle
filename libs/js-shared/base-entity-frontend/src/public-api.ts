@@ -51,6 +51,8 @@ export { dimensionsOf, moneyOf, quantityOf } from './lib/base-form/fundamental-t
 export { UNIT_CATALOG } from './lib/base-form/fundamental-types/unit-catalog.token';
 export { catalogOf, OrganizationUnitCatalog } from './lib/base-form/fundamental-types/organization-unit-catalog';
 export { OrganizationUnitService, type OrganizationUnit } from './lib/base-form/fundamental-types/organization-unit.service';
+export { ExchangeRateService, type ExchangeRateRecord } from './lib/base-form/fundamental-types/exchange-rate.service';
+export { OrganizationExchangeRates, tableOf } from './lib/base-form/fundamental-types/organization-exchange-rates';
 export { GeoLocator, GeoLocatorFailure, type GeoLocatorError } from './lib/base-form/geo-location/geo-locator';
 export { DEFAULT_MAP_PROVIDER, MAP_PROVIDERS, googleMapsUrl, mapEmbedUrl, type MapProvider } from './lib/base-form/address/address-map';
 // The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.

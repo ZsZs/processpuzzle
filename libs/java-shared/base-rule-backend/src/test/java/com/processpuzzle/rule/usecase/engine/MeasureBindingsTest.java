@@ -2,8 +2,12 @@ package com.processpuzzle.rule.usecase.engine;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.processpuzzle.core.quantity.ExchangeRate;
+import com.processpuzzle.core.quantity.ExchangeRates;
+import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -29,7 +33,10 @@ class MeasureBindingsTest {
 
     @BeforeEach
     void setUp() {
-        engine = new RuleEngine();
+        List<ExchangeRate> rates = StreamSupport.stream(CASES.get("rates").spliterator(), false)
+                .map(r -> ExchangeRate.of(r.get("from").asText(), r.get("to").asText(), r.get("rate").asText(), r.get("validFrom").asText())).toList();
+        ExchangeRates table = ExchangeRates.of(rates);
+        engine = new RuleEngine(UnitCatalogProvider.standardOnly(), orgKey -> table);
     }
 
     @AfterEach

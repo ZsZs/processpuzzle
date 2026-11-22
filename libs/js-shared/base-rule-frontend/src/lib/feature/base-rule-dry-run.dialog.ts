@@ -6,7 +6,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MAT_DIALOG_DATA, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 import { BaseRule } from '../domain/base-rule';
-import { UNIT_CATALOG } from '@processpuzzle/base-entity';
+import { OrganizationExchangeRates, UNIT_CATALOG } from '@processpuzzle/base-entity';
 import { BaseRuleEvaluatorService } from '../domain/base-rule-evaluator.service';
 import { RuleEvaluationResult } from '../domain/rule-evaluation-result';
 
@@ -66,6 +66,7 @@ export class BaseRuleDryRunDialog {
   protected readonly data = inject<BaseRuleDryRunDialogData>(MAT_DIALOG_DATA);
   private readonly evaluator = inject(BaseRuleEvaluatorService);
   private readonly catalog = inject(UNIT_CATALOG);
+  private readonly exchangeRates = inject(OrganizationExchangeRates);
   private readonly dialogRef = inject(MatDialogRef<BaseRuleDryRunDialog, BaseRuleDryRunDialogResult>);
   protected readonly result = signal<RuleEvaluationResult | undefined>(undefined);
   protected entityJson: string;
@@ -88,7 +89,7 @@ export class BaseRuleDryRunDialog {
       });
       return;
     }
-    this.result.set(this.evaluator.evaluate(entity, this.data.rule, this.catalog));
+    this.result.set(this.evaluator.evaluate(entity, this.data.rule, this.catalog, this.exchangeRates.rates()));
   }
 
   onPick(): void {

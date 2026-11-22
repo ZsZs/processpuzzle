@@ -236,6 +236,7 @@
     "amount": "Amount",
     "unit": "Unit",
     "currency": "Currency",
+    "show_in": "Also show in",
     "width": "Width",
     "height": "Height",
     "depth": "Depth",
