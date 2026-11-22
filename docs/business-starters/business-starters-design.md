@@ -317,6 +317,11 @@ mounts:
       link: overview
 ```
 
+**One entry per starter.** A starter may bring several modules, but it adds one sidenav entry and one launcher card to the
+customer's application, not one per module: at most one mount carries a `nav` or a `launcher` (the packager and the
+bundle reader refuse a manifest where more do). The other modules are mounted without them, so they have a route, and the
+entry module's pages link to them.
+
 Hints are data, not app definitions. After the starter's definitions are written the install calls `ModuleMountPort`
 (declared in `processpuzzle-core`, implemented by `base-app`), which adds to the application's **draft** a `ModuleMount`
 carrying the `launcher` card, and a sidenav entry named for the module that leads to the mount's landing route. Nothing
