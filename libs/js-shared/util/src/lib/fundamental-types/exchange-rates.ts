@@ -80,8 +80,8 @@ export class ExchangeRates {
     return opposite ? toDecimal('1').div(opposite) : undefined;
   }
 
-  private valid(from: string, to: string, on: string): Big | undefined {
-    const list = this.history.get(pairKey(from, to)) ?? [];
+  private valid(base: string, quote: string, on: string): Big | undefined {
+    const list = this.history.get(pairKey(base, quote)) ?? [];
     let found: Big | undefined;
     for (const entry of list) {
       if (entry.validFrom <= on) found = entry.rate;
@@ -94,7 +94,7 @@ export class ExchangeRates {
     for (const key of this.history.keys()) key.split('>').forEach((code) => through.add(code));
     through.delete(from);
     through.delete(to);
-    for (const via of [...through].sort()) {
+    for (const via of [...through].sort((a, b) => a.localeCompare(b))) {
       const first = this.leg(from, via, on);
       const second = first ? this.leg(via, to, on) : undefined;
       if (first && second) return first.times(second);
