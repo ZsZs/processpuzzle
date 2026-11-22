@@ -52,6 +52,9 @@ definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`,
 - **Value** — `{ amount, unit }`, `{ amount, currency }`, `{ width, height, depth?, unit }`, the amounts as decimal
   text. A write checks the unit or currency against the catalog and the attribute's allowed list, the amounts as
   decimals, and their decimal places against `scale` (for money, against the currency's minor units).
+- **Seeded units and rates** — `default-units/<orgKey>-units.yaml` (`DefaultUnitsLoader`, on with `base-entity.loadDefaultEntities`): a `units`
+  list and an `exchangeRates` list for the organization named in the file. Create-only — a unit code or a pair and date the organization
+  already has is left as it is — and loaded ahead of the entity definitions, which may name a seeded unit.
 - **Exchange rates** — `/organizations/{orgKey}/exchange-rates` (list, create, get, replace, delete): an organization's rate
   for a pair of currencies from a date on, held until the pair's next rate starts. One rate per pair and date (409), currencies of the
   standard catalog, a positive decimal. `OrganizationExchangeRates` implements core's `ExchangeRateProvider` with a per-organization

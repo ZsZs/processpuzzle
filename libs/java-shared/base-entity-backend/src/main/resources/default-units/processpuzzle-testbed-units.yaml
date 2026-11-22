@@ -1,0 +1,17 @@
+# Units and exchange rates of the 'processpuzzle-testbed' organization, read by DefaultUnitsLoader on startup.
+#
+# Create-only: a unit or a rate the organization already has — by unit code, or by pair and date — is left as it is, so a
+# designer's change survives a restart. Loaded ahead of the entity definitions, which may name these units.
+
+# Units the organization adds to kinds of the standard catalog. `factor / divisor` is the unit's size in the kind's base unit.
+units:
+  - { code: pallet, symbol: plt, name: Pallet, kind: MASS, factor: '500' }      # 500 kg
+  - { code: bag, symbol: bag, name: Bag, kind: MASS, factor: '25' }             # 25 kg
+  - { code: carton, symbol: ctn, name: Carton, kind: COUNT, factor: '6' }       # six pieces
+
+# What one unit of `from` is worth in `to`, from `validFrom` until the pair's next rate. A pair is entered once: the inverse and
+# the cross rate (here USD <-> HUF, through EUR) are derived.
+exchangeRates:
+  - { from: EUR, to: USD, rate: '1.08', validFrom: '2026-01-01' }
+  - { from: EUR, to: USD, rate: '1.12', validFrom: '2026-07-01' }
+  - { from: EUR, to: HUF, rate: '395.5', validFrom: '2026-01-01' }
