@@ -14,6 +14,7 @@ describe('EntityDesignerComponent', () => {
       'design/en': {
         'entity-definitions': 'Entity definitions',
         units: 'Units',
+        'exchange-rates': 'Exchange rates',
       },
     },
   };

@@ -7,15 +7,16 @@ import { EMBEDDED_ENTITY_ROUTE_DATA_KEY, ENTITY_NAME_ROUTE_DATA_KEY } from '../b
 import { BASE_ENTITY_AUTHORING_ENTITY_FACADES, BASE_ENTITY_AUTHORING_FACADE_PROVIDERS } from './base-entity-authoring.providers';
 import { BASE_ENTITY_AUTHORING_ROUTES } from './base-entity-authoring.routes';
 import { EntityDefinitionContainerComponent } from './entity-definition-container.component';
-import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
+import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, EXCHANGE_RATE_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
 import { EntityAttributeFacade, EntityDefinitionFacade } from './entity-definition.facade';
+import { ExchangeRateEntryFacade } from './exchange-rate-entry.facade';
 import { OrganizationUnitFacade } from './organization-unit.facade';
 
 describe('BASE_ENTITY_AUTHORING_ROUTES', () => {
   const definitionRoute = BASE_ENTITY_AUTHORING_ROUTES[0];
 
-  it('mounts a branch for the routable definition and one for the organization’s units', () => {
-    expect(BASE_ENTITY_AUTHORING_ROUTES.map((route) => route.path)).toEqual(['entity-definition', 'organization-unit']);
+  it('mounts a branch for the routable definition, one for the organization’s units and one for its exchange rates', () => {
+    expect(BASE_ENTITY_AUTHORING_ROUTES.map((route) => route.path)).toEqual(['entity-definition', 'organization-unit', 'exchange-rate']);
     expect(definitionRoute.component).toBe(EntityDefinitionContainerComponent);
   });
 
@@ -97,9 +98,27 @@ describe('the units branch', () => {
   });
 });
 
+describe('the exchange rates branch', () => {
+  const rateRoute = BASE_ENTITY_AUTHORING_ROUTES[2];
+
+  it('mounts at the snake-cased entity name, declared on the segment-contributing route', () => {
+    expect(rateRoute.path).toBe(snakeCaseName(EXCHANGE_RATE_ENTITY_NAME));
+    expect(rateRoute.path).toBe('exchange-rate');
+    expect(rateRoute.data?.[ENTITY_NAME_ROUTE_DATA_KEY]).toBe(EXCHANGE_RATE_ENTITY_NAME);
+  });
+
+  it('hosts the generic container, binds its own facade and has no embedded level', () => {
+    expect(rateRoute.component).toBe(BaseEntityContainerComponent);
+    expect(rateRoute.providers).toContainEqual({ provide: ACTIVE_ENTITY_FACADE, useExisting: ExchangeRateEntryFacade });
+    const details = (rateRoute.children ?? []).find((child) => child.path === `:${BaseUrlSegments.EntityID}/${BaseUrlSegments.DetailsForm}`);
+    expect(details).toBeDefined();
+    expect(details?.loadChildren).toBeUndefined();
+  });
+});
+
 describe('the authoring providers', () => {
   it('ships every facade, so a consuming application cannot register half the branch', () => {
-    expect(BASE_ENTITY_AUTHORING_FACADE_PROVIDERS).toEqual([EntityDefinitionFacade, EntityAttributeFacade, OrganizationUnitFacade]);
+    expect(BASE_ENTITY_AUTHORING_FACADE_PROVIDERS).toEqual([EntityDefinitionFacade, EntityAttributeFacade, OrganizationUnitFacade, ExchangeRateEntryFacade]);
   });
 
   /** An `EMBEDDED_COMPONENTS` control reaches the child's store and descriptor through this map. */
@@ -108,6 +127,7 @@ describe('the authoring providers', () => {
       [ENTITY_DEFINITION_ENTITY_NAME]: EntityDefinitionFacade,
       [ENTITY_ATTRIBUTE_ENTITY_NAME]: EntityAttributeFacade,
       [ORGANIZATION_UNIT_ENTITY_NAME]: OrganizationUnitFacade,
+      [EXCHANGE_RATE_ENTITY_NAME]: ExchangeRateEntryFacade,
     });
   });
 });

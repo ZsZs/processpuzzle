@@ -145,10 +145,10 @@ describe('DESIGN_ROUTES', () => {
       expect(childPaths).toContain('entity-definition');
     });
 
-    it('has a tab for each of them, the entity definitions first and the units second', () => {
+    it('has a tab for each of them: the entity definitions, the units, then the exchange rates', () => {
       const childPaths = (entitiesRoute?.children ?? []).map((child) => child.path);
 
-      expect(ENTITY_DESIGNER_TABS.map((tab) => tab.path)).toEqual(['entity-definition', 'organization-unit']);
+      expect(ENTITY_DESIGNER_TABS.map((tab) => tab.path)).toEqual(['entity-definition', 'organization-unit', 'exchange-rate']);
       expect(childPaths).toEqual(expect.arrayContaining(ENTITY_DESIGNER_TABS.map((tab) => tab.path)));
     });
 

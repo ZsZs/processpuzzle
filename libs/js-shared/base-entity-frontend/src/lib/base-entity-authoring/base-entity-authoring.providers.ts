@@ -1,7 +1,8 @@
 import type { Provider } from '@angular/core';
 import type { BaseEntityFacadeRegistry } from '../base-entity-facade/base-entity-facade-registry';
-import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
+import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, EXCHANGE_RATE_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
 import { EntityAttributeFacade, EntityDefinitionFacade } from './entity-definition.facade';
+import { ExchangeRateEntryFacade } from './exchange-rate-entry.facade';
 import { OrganizationUnitFacade } from './organization-unit.facade';
 
 /**
@@ -11,7 +12,7 @@ import { OrganizationUnitFacade } from './organization-unit.facade';
  * other — that is what gives it a store — and only its repository differs, reading and writing the
  * `Entity Definition` document rather than an endpoint of its own.
  */
-export const BASE_ENTITY_AUTHORING_FACADE_PROVIDERS: Provider[] = [EntityDefinitionFacade, EntityAttributeFacade, OrganizationUnitFacade];
+export const BASE_ENTITY_AUTHORING_FACADE_PROVIDERS: Provider[] = [EntityDefinitionFacade, EntityAttributeFacade, OrganizationUnitFacade, ExchangeRateEntryFacade];
 
 /**
  * The same facades keyed by entity name, to be spread into the application's `BASE_ENTITY_FACADE_REGISTRY`
@@ -32,4 +33,5 @@ export const BASE_ENTITY_AUTHORING_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [ENTITY_DEFINITION_ENTITY_NAME]: EntityDefinitionFacade,
   [ENTITY_ATTRIBUTE_ENTITY_NAME]: EntityAttributeFacade,
   [ORGANIZATION_UNIT_ENTITY_NAME]: OrganizationUnitFacade,
+  [EXCHANGE_RATE_ENTITY_NAME]: ExchangeRateEntryFacade,
 };

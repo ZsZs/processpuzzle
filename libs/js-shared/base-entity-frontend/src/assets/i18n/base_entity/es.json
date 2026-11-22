@@ -108,6 +108,21 @@
       "version": "La revisión en pantalla, para que dos diseñadores no se sobrescriban sin darse cuenta."
     }
   },
+  "exchange_rate": {
+    "_self": "Tipo de cambio",
+    "from": "De",
+    "to": "A",
+    "rate": "Tipo",
+    "validFrom": "Válido desde",
+    "version": "Versión",
+    "_tooltips": {
+      "from": "La moneda de origen, p. ej. EUR.",
+      "to": "La moneda de destino, p. ej. HUF. Distinta de De.",
+      "rate": "Cuántas unidades de la segunda moneda vale una unidad de la primera, p. ej. 395,5. El inverso y los tipos cruzados a través de otra moneda se derivan, así que un par se introduce una vez, en el sentido en que lo cotice.",
+      "validFrom": "El primer día en que rige el tipo, como AAAA-MM-DD. Rige hasta que el par tenga uno posterior. Un tipo por par y fecha.",
+      "version": "La revisión en pantalla, para que dos diseñadores no se sobrescriban sin darse cuenta."
+    }
+  },
   "artifact": {
     "upload_failure": "Error al subir el artefacto. Inténtelo de nuevo.",
     "invalid_file_type": "Solo se permiten archivos de imagen.",

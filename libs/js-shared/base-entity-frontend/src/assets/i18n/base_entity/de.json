@@ -108,6 +108,21 @@
       "version": "Die angezeigte Revision, damit zwei Designer einander nicht unbemerkt überschreiben."
     }
   },
+  "exchange_rate": {
+    "_self": "Wechselkurs",
+    "from": "Von",
+    "to": "Nach",
+    "rate": "Kurs",
+    "validFrom": "Gültig ab",
+    "version": "Version",
+    "_tooltips": {
+      "from": "Die Währung, aus der umgerechnet wird, z. B. EUR.",
+      "to": "Die Währung, in die umgerechnet wird, z. B. HUF. Eine andere als Von.",
+      "rate": "Wie viele Einheiten der zweiten Währung eine Einheit der ersten wert ist, z. B. 395,5. Der Kehrwert und Kreuzkurse über eine andere Währung werden abgeleitet, ein Paar wird also einmal erfasst, in der Richtung, in der Sie es notieren.",
+      "validFrom": "Der erste Tag, an dem der Kurs gilt, als JJJJ-MM-TT. Er gilt, bis das Paar einen späteren Kurs hat. Ein Kurs je Paar und Datum.",
+      "version": "Die angezeigte Revision, damit zwei Designer einander nicht unbemerkt überschreiben."
+    }
+  },
   "artifact": {
     "upload_failure": "Hochladen des Artefakts fehlgeschlagen. Bitte erneut versuchen.",
     "invalid_file_type": "Nur Bilddateien sind erlaubt.",

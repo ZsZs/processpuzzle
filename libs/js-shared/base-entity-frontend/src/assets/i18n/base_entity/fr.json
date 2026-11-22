@@ -108,6 +108,21 @@
       "version": "La révision affichée, pour que deux concepteurs ne s'écrasent pas sans le savoir."
     }
   },
+  "exchange_rate": {
+    "_self": "Taux de change",
+    "from": "De",
+    "to": "Vers",
+    "rate": "Taux",
+    "validFrom": "Valable à partir du",
+    "version": "Version",
+    "_tooltips": {
+      "from": "La devise de départ, p. ex. EUR.",
+      "to": "La devise d'arrivée, p. ex. HUF. Différente de De.",
+      "rate": "Combien d'unités de la seconde devise vaut une unité de la première, p. ex. 395,5. L'inverse et les taux croisés par une autre devise sont déduits : une paire se saisit une fois, dans le sens où vous la cotez.",
+      "validFrom": "Le premier jour où le taux s'applique, au format AAAA-MM-JJ. Il vaut jusqu'à un taux ultérieur de la paire. Un taux par paire et par date.",
+      "version": "La révision affichée, pour que deux concepteurs ne s'écrasent pas sans le savoir."
+    }
+  },
   "artifact": {
     "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer.",
     "invalid_file_type": "Seuls les fichiers image sont autorisés.",

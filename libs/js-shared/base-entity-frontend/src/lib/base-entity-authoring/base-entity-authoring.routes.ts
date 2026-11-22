@@ -6,8 +6,9 @@ import { ENTITY_NAME_ROUTE_DATA_KEY } from '../base-form-navigator/entity-route.
 import { BASE_ENTITY_TRANSLOCO_SCOPE } from '../i18n/base-entity.i18n';
 import { BaseEntityContainerComponent } from '../base-entity-container.component';
 import { EntityDefinitionContainerComponent } from './entity-definition-container.component';
-import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
+import { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, EXCHANGE_RATE_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './entity-authoring-names';
 import { EntityAttributeFacade, EntityDefinitionFacade } from './entity-definition.facade';
+import { ExchangeRateEntryFacade } from './exchange-rate-entry.facade';
 import { OrganizationUnitFacade } from './organization-unit.facade';
 
 /**
@@ -51,6 +52,16 @@ export const BASE_ENTITY_AUTHORING_ROUTES: Routes = [
     data: { icon: 'straighten', menuTitle: 'design.units', [ENTITY_NAME_ROUTE_DATA_KEY]: ORGANIZATION_UNIT_ENTITY_NAME },
     component: BaseEntityContainerComponent,
     providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: OrganizationUnitFacade }, authoringScope()],
+    children: baseEntityRoutes(),
+  },
+  // The exchange rates the organization enters: a flat list and form, no embedded level, as for the units. The path segment is
+  // `snakeCaseName('Exchange Rate')`, and the labels (`base_entity.exchange_rate.*`) sit in the scope registered above.
+  {
+    path: 'exchange-rate',
+    title: 'ProcessPuzzle Design - Exchange Rates',
+    data: { icon: 'currency_exchange', menuTitle: 'design.exchange-rates', [ENTITY_NAME_ROUTE_DATA_KEY]: EXCHANGE_RATE_ENTITY_NAME },
+    component: BaseEntityContainerComponent,
+    providers: [{ provide: ACTIVE_ENTITY_FACADE, useExisting: ExchangeRateEntryFacade }, authoringScope()],
     children: baseEntityRoutes(),
   },
 ];

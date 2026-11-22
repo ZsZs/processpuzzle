@@ -79,6 +79,14 @@ defineEntityCrudSuite({
       reason: 'a unit is retired, never deleted, and its kind and factor are not generic values',
     },
     {
+      entityName: 'Exchange Rate',
+      // A rate is between two *different* currencies, and the generator takes the first option for both dropdowns, so the POST
+      // comes back 422 on the first. The rate and the date have to fit their patterns too. Authoring a rate is covered by
+      // base-entity-frontend's own tests and ExchangeRatesIntegrationTest. Drop this entry if the fixture factory ever learns to
+      // pick different options for two dropdowns of one entity.
+      reason: 'a rate is between two different currencies, and the generated fixture picks the same option twice',
+    },
+    {
       entityName: 'IssuedDocument',
       // Every field is the server's: a signature is recorded by POST .../signatures, which needs a published
       // report and a signer, and the descriptor is `isReadOnly` with no identification attribute to build a

@@ -108,6 +108,21 @@
       "version": "The revision on screen, kept so two designers cannot overwrite each other unnoticed."
     }
   },
+  "exchange_rate": {
+    "_self": "Exchange rate",
+    "from": "From",
+    "to": "To",
+    "rate": "Rate",
+    "validFrom": "Valid from",
+    "version": "Version",
+    "_tooltips": {
+      "from": "The currency converted from, e.g. EUR.",
+      "to": "The currency converted to, e.g. HUF. Another than From.",
+      "rate": "How many units of the second currency one unit of the first is worth, e.g. 395.5. The inverse and cross rates through another currency are derived, so a pair is entered once, in whichever direction you quote it.",
+      "validFrom": "The first day the rate holds, as YYYY-MM-DD. It holds until the pair has a later rate. One rate per pair and date.",
+      "version": "The revision on screen, kept so two designers cannot overwrite each other unnoticed."
+    }
+  },
   "artifact": {
     "upload_failure": "Artifact upload failed. Please try again.",
     "invalid_file_type": "Only image files are allowed.",
