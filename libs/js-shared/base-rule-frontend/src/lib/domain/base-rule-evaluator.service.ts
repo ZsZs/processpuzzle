@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { STANDARD_UNIT_CATALOG, type UnitCatalog } from '@processpuzzle/util';
+import { ExchangeRates, STANDARD_UNIT_CATALOG, type UnitCatalog } from '@processpuzzle/util';
 import { BaseRule } from './base-rule';
 import { interpret, rootScope } from './expression/rule-expression-interpreter';
-import { withCatalog } from './measure-bindings';
+import { withCatalog, withRates } from './measure-bindings';
 import { parseRuleExpression } from './expression/rule-expression-parser';
 import { RuleEvaluationResult } from './rule-evaluation-result';
 
@@ -13,8 +13,11 @@ type CompiledRule = (entity: unknown) => unknown;
 export class BaseRuleEvaluatorService {
   private readonly compiled = new Map<string, CompiledRule>();
 
-  /** @param catalog the units `qty()`, `money()` and `dims()` read: the organization's, or the standard ones when absent */
-  evaluate(entity: unknown, rule: BaseRule, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): RuleEvaluationResult {
+  /**
+   * @param catalog the units `qty()`, `money()` and `dims()` read: the organization's, or the standard ones when absent
+   * @param rates the exchange rates `money(...).to(...)` converts at: the organization's, or none when absent
+   */
+  evaluate(entity: unknown, rule: BaseRule, catalog: UnitCatalog = STANDARD_UNIT_CATALOG, rates: ExchangeRates = ExchangeRates.NONE): RuleEvaluationResult {
     const base = { ruleId: rule.id, ruleName: rule.name, severity: rule.severity };
     if (!rule.enabled) return { ...base, passed: true };
 
@@ -27,7 +30,7 @@ export class BaseRuleEvaluatorService {
 
     let result: unknown;
     try {
-      result = withCatalog(catalog, () => fn(entity));
+      result = withCatalog(catalog, () => withRates(rates, () => fn(entity)));
     } catch (err) {
       return { ...base, passed: false, error: `Rule evaluation threw: ${errorMessage(err)}` };
     }

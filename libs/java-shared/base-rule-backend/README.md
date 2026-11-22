@@ -39,7 +39,7 @@ browser's rule evaluator, and `rule-measure-cases.json` (kept in base-rule-front
 Units are read in the **catalog of the rule's organization**: the standard units plus those the organization added
 (`UnitCatalogProvider` in core, which base-entity implements; without it, the standard catalog). The engine sets that
 catalog on the thread's bindings before each evaluation, so one compiled rule and one thread serve every organization and
-a `pallet` is known to the organization that added it only. The browser's evaluator has no organization catalog yet.
+a `pallet` is known to the organization that added it only. The browser's evaluator reads the same catalog.
 
 `money(...).to('USD', '2026-07-01')` converts at the **exchange rate of the rule's organization** valid on that date — an ISO date or
 date-time text, or a JS date; today's without one — rounded to the target's minor units. The engine sets the organization's rates

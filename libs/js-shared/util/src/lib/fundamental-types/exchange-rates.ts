@@ -56,6 +56,13 @@ export class ExchangeRates {
     }
   }
 
+  /** Every currency some rate mentions, alphabetically — the ones a conversion can start or end in. */
+  currencies(): string[] {
+    const codes = new Set<string>();
+    for (const key of this.history.keys()) key.split('>').forEach((code) => codes.add(code));
+    return [...codes].sort((a, b) => a.localeCompare(b));
+  }
+
   /** What one `from` is worth in `to` on `on` (an ISO date); one for the same currency. */
   rate(from: string, to: string, on: string): Big {
     if (from === to) return toDecimal('1');
@@ -101,6 +108,12 @@ export class ExchangeRates {
     }
     return undefined;
   }
+}
+
+/** A date as the ISO text a rate is looked up by (`2026-07-01`), in the local calendar; today without an argument. */
+export function isoDateOf(date: Date = new Date()): string {
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`;
 }
 
 function pairKey(from: string, to: string): string {

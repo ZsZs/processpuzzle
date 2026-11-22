@@ -3,7 +3,8 @@ import { firstValueFrom, of } from 'rxjs';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import type { EvaluatableRule } from '@processpuzzle/base-entity';
-import { RULE_ENGINE } from '@processpuzzle/base-entity';
+import { OrganizationExchangeRates, RULE_ENGINE } from '@processpuzzle/base-entity';
+import { ExchangeRates } from '@processpuzzle/util';
 import { BaseRule, Severity } from '../domain/base-rule';
 import { BaseRuleService } from '../domain/base-rule.service';
 import { BaseRuleEvaluatorService } from '../domain/base-rule-evaluator.service';
@@ -24,6 +25,7 @@ describe('BaseRuleEngineAdapter', () => {
         BaseRuleEngineAdapter,
         { provide: BaseRuleService, useValue: service },
         { provide: BaseRuleEvaluatorService, useValue: evaluator },
+        { provide: OrganizationExchangeRates, useValue: { rates: () => ExchangeRates.NONE } },
       ],
     });
     adapter = TestBed.inject(BaseRuleEngineAdapter);
@@ -215,6 +217,7 @@ describe('provideBaseRuleEngine()', () => {
         provideBaseRuleEngine(),
         { provide: BaseRuleService, useValue: service },
         { provide: BaseRuleEvaluatorService, useValue: evaluator },
+        { provide: OrganizationExchangeRates, useValue: { rates: () => ExchangeRates.NONE } },
       ],
     });
 

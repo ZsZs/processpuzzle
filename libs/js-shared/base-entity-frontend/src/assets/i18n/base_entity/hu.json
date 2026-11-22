@@ -236,6 +236,7 @@
     "amount": "Érték",
     "unit": "Mértékegység",
     "currency": "Pénznem",
+    "show_in": "Megjelenítés más pénznemben",
     "width": "Szélesség",
     "height": "Magasság",
     "depth": "Mélység",

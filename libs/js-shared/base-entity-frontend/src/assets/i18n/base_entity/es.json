@@ -236,6 +236,7 @@
     "amount": "Cantidad",
     "unit": "Unidad",
     "currency": "Moneda",
+    "show_in": "Mostrar también en",
     "width": "Ancho",
     "height": "Alto",
     "depth": "Profundidad",

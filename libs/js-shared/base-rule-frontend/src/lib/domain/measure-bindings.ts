@@ -4,12 +4,15 @@ import {
   compareMoney,
   compareQuantities,
   convertDimensions,
+  convertMoney,
   convertQuantity,
   decimalText,
   dimensionsArea,
   dimensionsVolume,
   divideMoney,
   divideQuantity,
+  ExchangeRates,
+  isoDateOf,
   multiplyMoney,
   multiplyQuantity,
   parseMoney,
@@ -43,6 +46,20 @@ import {
 /** The units a rule is read in: the organization's, set by {@link withCatalog} for the evaluation in progress. */
 let catalog: UnitCatalog = STANDARD_UNIT_CATALOG;
 
+/** The exchange rates `money(...).to(...)` converts at: the organization's, set by {@link withRates} for the evaluation in progress. */
+let exchangeRates: ExchangeRates = ExchangeRates.NONE;
+
+/** Runs `evaluation` with `rates` as the exchange rates conversions read; the previous ones come back afterwards. */
+export function withRates<T>(rates: ExchangeRates, evaluation: () => T): T {
+  const previous = exchangeRates;
+  exchangeRates = rates;
+  try {
+    return evaluation();
+  } finally {
+    exchangeRates = previous;
+  }
+}
+
 /**
  * Runs `evaluation` with `unitCatalog` as the catalog `qty()`, `money()` and `dims()` read. An evaluation is synchronous, so
  * one catalog at a time is enough; the previous one comes back afterwards, whatever the evaluation does.
@@ -55,6 +72,17 @@ export function withCatalog<T>(unitCatalog: UnitCatalog, evaluation: () => T): T
   } finally {
     catalog = previous;
   }
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The day a conversion is for: ISO date or date-time text, a JS date, or today. */
+function rateDate(raw: unknown): string {
+  if (raw === undefined || raw === null) return isoDateOf();
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) return isoDateOf(raw);
+  const day = typeof raw === 'string' ? raw.trim().slice(0, 10) : '';
+  if (ISO_DATE.test(day)) return day;
+  throw new Error("expected an ISO date, e.g. '2026-07-01'");
 }
 
 function operatorRefused(what: string, instead: string): Error {
@@ -158,6 +186,14 @@ class MoneyRef {
 
   dividedBy(divisor: unknown): MoneyRef {
     return new MoneyRef(divideMoney(this.value, decimalArg(divisor)));
+  }
+
+  /**
+   * The money in another currency at the rate valid on a date — an ISO date or date-time text, or a JS date; today's without
+   * one — rounded to the target's minor units. A pair with no rate on that date is refused, never guessed.
+   */
+  to(currency: unknown, date?: unknown): MoneyRef {
+    return new MoneyRef(convertMoney(this.value, text('to', currency, "a currency code, e.g. 'USD'"), exchangeRates, rateDate(date), catalog));
   }
 
   /** Rounded half up to the currency's minor units. */

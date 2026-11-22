@@ -128,5 +128,6 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    `ExchangeRates`, `Money.convertTo`) and `@processpuzzle/util` (`ExchangeRates`, `convertMoney`), run against shared parity
    cases. *Part 2:* the organization resource (`/organizations/{orgKey}/exchange-rates`, create / replace / delete, one rate per pair and
    date) in base-entity-backend, the `ExchangeRateProvider` port in core, `money(...).to(code, date?)` in the backend rule engine and
-   `convert currency(amount, from, to, date?)` in FEEL (a missing rate fails the calculation: FEEL turns an error value into null). *Part 3:* the frontend loader, the browser's rule evaluator and a read-only converted hint in the
-   MONEY control. *Part 4:* a designer screen for rates.
+   `convert currency(amount, from, to, date?)` in FEEL (a missing rate fails the calculation: FEEL turns an error value into null). *Part 3:* the frontend loader (`OrganizationExchangeRates`, read with the entity definitions after sign-in),
+   `money(...).to(code, date?)` in the browser's rule evaluator — `rule-measure-cases.json` now carries a `rates` table and the
+   conversion cases both evaluators run — and a read-only *Also show in* hint in the MONEY control (today's rate, never stored). *Part 4:* a designer screen for rates.

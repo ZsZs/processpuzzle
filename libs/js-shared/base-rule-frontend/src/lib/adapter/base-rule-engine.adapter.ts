@@ -1,7 +1,7 @@
 import { inject, Injectable, Provider } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import type { EvaluatableRule, RuleEngine, RuleEvaluationResult } from '@processpuzzle/base-entity';
-import { RULE_ENGINE, UNIT_CATALOG } from '@processpuzzle/base-entity';
+import { OrganizationExchangeRates, RULE_ENGINE, UNIT_CATALOG } from '@processpuzzle/base-entity';
 import { BaseRuleService } from '../domain/base-rule.service';
 import { BaseRuleEvaluatorService } from '../domain/base-rule-evaluator.service';
 import { BaseRule, Severity } from '../domain/base-rule';
@@ -11,6 +11,7 @@ export class BaseRuleEngineAdapter implements RuleEngine {
   private readonly service = inject(BaseRuleService);
   private readonly evaluator = inject(BaseRuleEvaluatorService);
   private readonly catalog = inject(UNIT_CATALOG);
+  private readonly exchangeRates = inject(OrganizationExchangeRates);
 
   loadRulesFor(context: string): Observable<EvaluatableRule[]> {
     return this.service
@@ -27,7 +28,7 @@ export class BaseRuleEngineAdapter implements RuleEngine {
   }
 
   evaluate(entity: unknown, rule: EvaluatableRule): RuleEvaluationResult {
-    const result = this.evaluator.evaluate(entity, toBaseRule(rule), this.catalog);
+    const result = this.evaluator.evaluate(entity, toBaseRule(rule), this.catalog, this.exchangeRates.rates());
     return {
       ruleId: result.ruleId,
       passed: result.passed,
