@@ -55,6 +55,14 @@
                 {{ element[colDescriptor.attrName] | ppAddress }}
               } @else if (colDescriptor.formControlType === 'GEO_LOCATION') {
                 {{ element[colDescriptor.attrName] | ppGeoLocation }}
+              } @else if (colDescriptor.formControlType === 'QUANTITY') {
+                {{ element[colDescriptor.attrName] | ppQuantity }}
+              } @else if (colDescriptor.formControlType === 'MONEY') {
+                {{ element[colDescriptor.attrName] | ppMoney }}
+              } @else if (colDescriptor.formControlType === 'DIMENSIONS') {
+                {{ element[colDescriptor.attrName] | ppDimensions }}
+              } @else if (colDescriptor.formControlType === 'CALCULATED') {
+                {{ element[colDescriptor.attrName] | ppMeasure }}
               } @else if (colDescriptor.formControlType === 'COMMENTS') {
                 {{ 'base_entity.comments.count' | transloco: { count: commentCount(element[colDescriptor.attrName]) } }}
               } @else if (colDescriptor.formControlType === 'DATE') {

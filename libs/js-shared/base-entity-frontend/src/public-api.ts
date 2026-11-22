@@ -10,7 +10,7 @@ export { BaseEntityContainerComponent } from './lib/base-entity-container.compon
 export { BaseEntityContainerStore } from './lib/base-entity-container.store'; // With @angular/build:ng-packagr executor causes a problem
 export { BaseEntityRestService } from './lib/base-entity-service/base-entity-rest.service'; // With @angular/build:ng-packagr executor causes a problem
 export type { BaseEntity, PersistedBaseEntity, PersistedEntity } from './lib/base-entity/base-entity';
-export { BaseEntityAttrDescriptor, type Selectable, type SelectablesInput } from './lib/base-entity/base-entity-attr.descriptor';
+export { BaseEntityAttrDescriptor, type AllowedProperty, type Selectable, type SelectablesInput, type ValueEditor } from './lib/base-entity/base-entity-attr.descriptor';
 export { toSelectables } from './lib/base-entity/selectables';
 export {
   isBoundedByMaxOccurs,
@@ -42,6 +42,17 @@ export { COUNTRY_CODES, countryName, countryOptions } from './lib/base-form/addr
 export { GeoLocationComponent } from './lib/base-form/geo-location/geo-location.component';
 export { formatGeoLocation, geoLocationOf, type GeoLocation } from './lib/base-form/geo-location/geo-location';
 export { GeoLocationPipe } from './lib/base-form/geo-location/geo-location.pipe';
+export { QuantityComponent } from './lib/base-form/fundamental-types/quantity.component';
+export { MoneyComponent } from './lib/base-form/fundamental-types/money.component';
+export { DimensionsComponent } from './lib/base-form/fundamental-types/dimensions.component';
+export { DimensionsPipe, MeasurePipe, MoneyPipe, QuantityPipe } from './lib/base-form/fundamental-types/measure.pipes';
+export { formatDimensions, formatMeasure, formatMoney, formatQuantity, useDisplayCatalog } from './lib/base-form/fundamental-types/measure-format';
+export { dimensionsOf, moneyOf, quantityOf } from './lib/base-form/fundamental-types/measure-values';
+export { UNIT_CATALOG } from './lib/base-form/fundamental-types/unit-catalog.token';
+export { catalogOf, OrganizationUnitCatalog } from './lib/base-form/fundamental-types/organization-unit-catalog';
+export { OrganizationUnitService, type OrganizationUnit } from './lib/base-form/fundamental-types/organization-unit.service';
+export { ExchangeRateService, type ExchangeRateRecord } from './lib/base-form/fundamental-types/exchange-rate.service';
+export { OrganizationExchangeRates, tableOf } from './lib/base-form/fundamental-types/organization-exchange-rates';
 export { GeoLocator, GeoLocatorFailure, type GeoLocatorError } from './lib/base-form/geo-location/geo-locator';
 export { DEFAULT_MAP_PROVIDER, MAP_PROVIDERS, googleMapsUrl, mapEmbedUrl, type MapProvider } from './lib/base-form/address/address-map';
 // The rich text editor every feature edits Tiptap JSON with — comments here, a document's TEXT blocks in base-document.
@@ -135,13 +146,17 @@ export { BASE_ENTITY_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLOCO_SCOPE, ENTITY_ATT
 // one reads a definition and synthesizes screens from it, this one writes the definition.
 export { BASE_ENTITY_AUTHORING_ROUTES } from './lib/base-entity-authoring/base-entity-authoring.routes';
 export { BASE_ENTITY_AUTHORING_ENTITY_FACADES, BASE_ENTITY_AUTHORING_FACADE_PROVIDERS } from './lib/base-entity-authoring/base-entity-authoring.providers';
-export { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './lib/base-entity-authoring/entity-authoring-names';
+export { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, EXCHANGE_RATE_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './lib/base-entity-authoring/entity-authoring-names';
 export { createEntityDefinitionDescriptor } from './lib/base-entity-authoring/entity-definition.descriptors';
 export { createEntityAttributeDescriptor, ENTITY_ATTRIBUTE_ID_FIELD } from './lib/base-entity-authoring/entity-attribute.descriptors';
 export { EntityDefinitionMapper } from './lib/base-entity-authoring/entity-definition.mapper';
 export { EntityDefinitionAuthoringService } from './lib/base-entity-authoring/entity-definition-authoring.service';
 export { EntityDefinitionStore } from './lib/base-entity-authoring/entity-definition.store';
 export { EntityAttributeFacade, EntityDefinitionFacade } from './lib/base-entity-authoring/entity-definition.facade';
+export { OrganizationUnitFacade } from './lib/base-entity-authoring/organization-unit.facade';
+export { ExchangeRateEntryFacade } from './lib/base-entity-authoring/exchange-rate-entry.facade';
+export { ExchangeRateEntry } from './lib/base-entity-authoring/exchange-rate-entry';
+export { OrganizationUnitRecord, type OrganizationUnitStatus } from './lib/base-entity-authoring/organization-unit';
 export { EntityDefinitionContainerComponent } from './lib/base-entity-authoring/entity-definition-container.component';
 export { provideWorkingContexts, WORKING_CONTEXT_DEFINITIONS, DEFAULT_RECENT_CONTEXTS, type WorkingContextDefinition, type WorkingContextDisplay, type WorkingContextPicker, type WorkingContextPersistence } from './lib/working-context/working-context.definition';
 export { WorkingContextService, type ActiveWorkingContext } from './lib/working-context/working-context.service';

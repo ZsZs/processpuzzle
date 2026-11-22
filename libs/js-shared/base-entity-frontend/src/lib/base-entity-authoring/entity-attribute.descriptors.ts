@@ -5,6 +5,7 @@ import { DATE_STYLES, TIME_STYLES } from '../base-entity/date-format';
 import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { MULTIPLICITIES } from '../base-entity/multiplicity';
 import { toSelectables } from '../base-entity/selectables';
+import { STANDARD_UNIT_CATALOG, type UnitCatalog } from '@processpuzzle/util';
 import { MAP_PROVIDERS } from '../base-form/address/address-map';
 import { ENTITY_FORM_CONTROL_TYPES, ENTITY_VALUE_KINDS } from '../base-entity-definition/entity-definition';
 import { ENTITY_ATTRIBUTE_I18N_SCOPE } from '../i18n/base-entity.i18n';
@@ -19,7 +20,7 @@ export { ENTITY_ATTRIBUTE_ENTITY_NAME };
  */
 export const ENTITY_ATTRIBUTE_ID_FIELD = 'code';
 
-function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]): AbstractAttrDescriptor[] {
+function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[], catalog: UnitCatalog = STANDARD_UNIT_CATALOG): AbstractAttrDescriptor[] {
   const codeAttr = new BaseEntityAttrDescriptor('code', FormControlType.TEXT_BOX, 'Code', undefined, true);
   codeAttr.required = true;
   codeAttr.isHeading = true;
@@ -110,6 +111,30 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   defaultCountryAttr.pattern = '^[A-Za-z]{2}$';
   defaultCountryAttr.hideInTable = true;
 
+  // QUANTITY, MONEY and DIMENSIONS only — the mapper drops each for any other control. The units and currencies are the
+  // organization's catalog's, retired units left out: the dropdowns list them, the chip inputs suggest them (a code the
+  // catalog lacks shows dashed), and the backend refuses what it does not know. The kinds are the standard ones.
+  // The units are read when the control opens, not when the descriptor is built: a unit the designer adds in the same session shows at once.
+  const unitCodes = () => toSelectables(catalog.kinds().flatMap((kind) => kind.units.filter((unit) => !unit.retired).map((unit) => unit.code)));
+  const currencyCodes = toSelectables(catalog.currencies().map((currency) => currency.code));
+  const quantityKindAttr = new BaseEntityAttrDescriptor('quantityKind', FormControlType.DROPDOWN, 'Quantity kind', toSelectables(catalog.kinds().map((kind) => kind.code)));
+  quantityKindAttr.hideInTable = true;
+  const allowedUnitsAttr = new BaseEntityAttrDescriptor('allowedUnits', FormControlType.TAGS, 'Allowed units', unitCodes);
+  allowedUnitsAttr.hideInTable = true;
+  const defaultUnitAttr = new BaseEntityAttrDescriptor('defaultUnit', FormControlType.DROPDOWN, 'Default unit', unitCodes);
+  defaultUnitAttr.hideInTable = true;
+  const scaleAttr = new BaseEntityAttrDescriptor('scale', FormControlType.TEXT_BOX, 'Decimal places', undefined, undefined, { inputType: 'number' });
+  scaleAttr.hideInTable = true;
+  const dimensionCountAttr = new BaseEntityAttrDescriptor('dimensionCount', FormControlType.DROPDOWN, 'Dimensions', [
+    { key: '2', value: 2 },
+    { key: '3', value: 3 },
+  ]);
+  dimensionCountAttr.hideInTable = true;
+  const allowedCurrenciesAttr = new BaseEntityAttrDescriptor('allowedCurrencies', FormControlType.TAGS, 'Allowed currencies', currencyCodes);
+  allowedCurrenciesAttr.hideInTable = true;
+  const defaultCurrencyAttr = new BaseEntityAttrDescriptor('defaultCurrency', FormControlType.DROPDOWN, 'Default currency', currencyCodes);
+  defaultCurrencyAttr.hideInTable = true;
+
   // The two halves of `dateFormat`, for DATE / DATE_TIME only — the mapper drops them for any other kind,
   // and `timeStyle` for DATE. Left empty, a style falls back to the value kind's default.
   const dateStyleAttr = new BaseEntityAttrDescriptor('dateStyle', FormControlType.DROPDOWN, 'Date Style', toSelectables(DATE_STYLES));
@@ -135,16 +160,27 @@ function createEntityAttributeAttrDescriptors(entityCodes?: () => Selectable[]):
   const addressRow = new FlexboxDescriptor([showMapAttr, mapProviderAttr, defaultCountryAttr], FlexDirection.ROW);
   addressRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, addressRow, enumValuesAttr], FlexDirection.COLUMN);
+  const measureRow = new FlexboxDescriptor([quantityKindAttr, defaultUnitAttr, scaleAttr, dimensionCountAttr], FlexDirection.ROW);
+  measureRow.style = { 'column-gap': '10px' };
+  const currencyRow = new FlexboxDescriptor([defaultCurrencyAttr], FlexDirection.ROW);
+  currencyRow.style = { 'column-gap': '10px' };
+
+  const flexBoxContainer = new FlexboxDescriptor(
+    [identityRow, kindRow, multiplicityRow, flagRow, referenceRow, formatRow, addressRow, measureRow, allowedUnitsAttr, currencyRow, allowedCurrenciesAttr, enumValuesAttr],
+    FlexDirection.COLUMN,
+  );
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }
 
-/** @param entityCodes the codes the Linked Entity dropdown offers; see {@link EntityDefinitionOptions.codes} */
-export function createEntityAttributeDescriptor(entityCodes?: () => Selectable[]): BaseEntityDescriptor {
+/**
+ * @param entityCodes the codes the Linked Entity dropdown offers; see {@link EntityDefinitionOptions.codes}
+ * @param catalog the units and currencies the measure options offer; the standard catalog when absent
+ */
+export function createEntityAttributeDescriptor(entityCodes?: () => Selectable[], catalog?: UnitCatalog): BaseEntityDescriptor {
   return new BaseEntityDescriptor({
     entityName: ENTITY_ATTRIBUTE_ENTITY_NAME,
-    attrDescriptors: createEntityAttributeAttrDescriptors(entityCodes),
+    attrDescriptors: createEntityAttributeAttrDescriptors(entityCodes, catalog),
     i18nScope: ENTITY_ATTRIBUTE_I18N_SCOPE,
     componentParent: ENTITY_DEFINITION_ENTITY_NAME,
     isEmbedded: true,

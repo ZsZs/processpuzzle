@@ -7,8 +7,8 @@ interface OrderPayload {
   orderNumber: string;
   customerName: string;
   status: string;
-  total: number;
-  lineItems: { productName: string; quantity: number; unitPrice: number }[];
+  total: { amount: string; currency: string };
+  lineItems: { productName: string; quantity: { amount: string; unit: string }; unitPrice: { amount: string; currency: string } }[];
 }
 
 const FULFILLMENT = 'order-fulfillment-workflow';
@@ -43,8 +43,8 @@ test.describe('Event matching', () => {
       orderNumber: `E2E-${run}`,
       customerName,
       status: 'DRAFT',
-      total: 10,
-      lineItems: [{ productName: 'E2E item', quantity: 1, unitPrice: 10 }],
+      total: { amount: '10', currency: 'EUR' },
+      lineItems: [{ productName: 'E2E item', quantity: { amount: '1', unit: 'pc' }, unitPrice: { amount: '10', currency: 'EUR' } }],
     });
   };
 

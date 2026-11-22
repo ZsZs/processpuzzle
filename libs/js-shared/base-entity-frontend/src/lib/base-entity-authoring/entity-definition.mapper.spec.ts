@@ -210,6 +210,60 @@ describe('EntityDefinitionMapper', () => {
     });
   });
 
+  describe('measure options', () => {
+    const toDtoAttribute = (init: Partial<EntityAttributeDefinition>) =>
+      mapper.toDto(new EntityDefinition({ code: 'item', attributes: [new EntityAttributeDefinition({ code: 'size', ...init })] })).attributes?.[0];
+
+    it('reads them from the response, a JSON null being no option', () => {
+      const [attribute] =
+        mapper.fromDto({
+          code: 'item',
+          attributes: [{ code: 'weight', formControlType: 'QUANTITY', quantityKind: 'MASS', allowedUnits: ['kg', 'g'], defaultUnit: 'kg', scale: 3, dimensionCount: 3, allowedCurrencies: ['EUR'], defaultCurrency: 'EUR' }],
+        }).attributes ?? [];
+      expect(attribute).toMatchObject({ quantityKind: 'MASS', allowedUnits: ['kg', 'g'], defaultUnit: 'kg', scale: 3, dimensionCount: 3, allowedCurrencies: ['EUR'], defaultCurrency: 'EUR' });
+
+      const [empty] = mapper.fromDto({ code: 'item', attributes: [{ code: 'price', formControlType: 'MONEY', quantityKind: null, scale: null, allowedUnits: null } as never] }).attributes ?? [];
+      expect(empty.quantityKind).toBeUndefined();
+      expect(empty.scale).toBeUndefined();
+      expect(empty.allowedUnits).toBeUndefined();
+    });
+
+    it('writes a QUANTITY its kind, units and scale — and nothing of MONEY or DIMENSIONS', () => {
+      const dto = toDtoAttribute({ formControlType: 'QUANTITY', quantityKind: ' MASS ', allowedUnits: ['kg', 'g'], defaultUnit: 'kg', scale: '3' as never, allowedCurrencies: ['EUR'], defaultCurrency: 'EUR', dimensionCount: 3 });
+
+      expect(dto).toMatchObject({ quantityKind: 'MASS', allowedUnits: ['kg', 'g'], defaultUnit: 'kg', scale: 3 });
+      for (const option of ['allowedCurrencies', 'defaultCurrency', 'dimensionCount']) expect(dto).not.toHaveProperty(option);
+    });
+
+    it('writes DIMENSIONS its units, scale and axis count, but no quantity kind', () => {
+      const dto = toDtoAttribute({ formControlType: 'DIMENSIONS', quantityKind: 'LENGTH', allowedUnits: ['cm'], defaultUnit: 'cm', scale: 1, dimensionCount: '3' as never });
+
+      expect(dto).toMatchObject({ allowedUnits: ['cm'], defaultUnit: 'cm', scale: 1, dimensionCount: 3 });
+      expect(dto).not.toHaveProperty('quantityKind');
+    });
+
+    it('writes MONEY its currencies, and none of the unit options', () => {
+      const dto = toDtoAttribute({ formControlType: 'MONEY', allowedCurrencies: ['EUR', 'HUF'], defaultCurrency: ' HUF ', allowedUnits: ['kg'], scale: 2 });
+
+      expect(dto).toMatchObject({ allowedCurrencies: ['EUR', 'HUF'], defaultCurrency: 'HUF' });
+      for (const option of ['allowedUnits', 'scale', 'quantityKind', 'dimensionCount']) expect(dto).not.toHaveProperty(option);
+    });
+
+    it('leaves out what the form left empty — blank text, an empty list, a number that is not one', () => {
+      const dto = toDtoAttribute({ formControlType: 'DIMENSIONS', allowedUnits: [], defaultUnit: '  ', scale: '' as never, dimensionCount: 'x' as never });
+
+      for (const option of ['allowedUnits', 'defaultUnit', 'scale', 'dimensionCount']) expect(dto).not.toHaveProperty(option);
+      expect(toDtoAttribute({ formControlType: 'MONEY', allowedCurrencies: [], defaultCurrency: '' })).not.toHaveProperty('allowedCurrencies');
+      expect(toDtoAttribute({ formControlType: 'QUANTITY', scale: null as never })).not.toHaveProperty('scale');
+    });
+
+    it('writes none of them for any other control', () => {
+      const dto = toDtoAttribute({ formControlType: 'TEXT', quantityKind: 'MASS', allowedUnits: ['kg'], defaultUnit: 'kg', scale: 2, allowedCurrencies: ['EUR'], defaultCurrency: 'EUR', dimensionCount: 3 });
+
+      for (const option of ['quantityKind', 'allowedUnits', 'defaultUnit', 'scale', 'allowedCurrencies', 'defaultCurrency', 'dimensionCount']) expect(dto).not.toHaveProperty(option);
+    });
+  });
+
   it('round-trips a definition through both directions', () => {
     const roundTripped = mapper.fromDto({ ...responseDto, ...mapper.toDto(mapper.fromDto(responseDto)) });
 

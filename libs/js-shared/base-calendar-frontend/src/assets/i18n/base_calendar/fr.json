@@ -33,6 +33,27 @@
     "end": "Fin",
     "first_day": "Premier jour",
     "last_day": "Dernier jour",
+    "repeat": {
+      "title": "Répétition",
+      "NEVER": "Jamais",
+      "DAILY": "Quotidien",
+      "WEEKLY": "Hebdomadaire",
+      "MONTHLY": "Mensuel",
+      "ends": "Fin",
+      "ends_never": "Jamais",
+      "ends_after": "Après un nombre d'occurrences",
+      "ends_on": "À une date",
+      "count": "Occurrences",
+      "until": "Dernier jour",
+      "frequency": {
+        "DAILY": "quotidiennement",
+        "WEEKLY": "chaque semaine",
+        "MONTHLY": "chaque mois"
+      },
+      "summary": "Se répète {{frequency}}",
+      "summary_count": "Se répète {{frequency}}, {{count}} fois",
+      "summary_until": "Se répète {{frequency}} jusqu'au {{date}}"
+    },
     "organizer": "Organisateur",
     "save": "Enregistrer",
     "saving": "Enregistrement…",
@@ -40,6 +61,25 @@
     "cancel": "Annuler l'entrée",
     "confirm_cancel": "Annuler définitivement cette entrée ?",
     "cancel_confirmed": "Oui, annuler",
-    "keep": "Conserver"
+    "keep": "Conserver",
+    "invitations": {
+      "title": "Invitations",
+      "search": "Inviter une personne",
+      "roles": "Inviter un rôle",
+      "none": "Personne invité pour le moment.",
+      "remove": "Retirer",
+      "role": "Rôle",
+      "respond": "Votre réponse",
+      "invited": "Invité",
+      "accept": "Accepter",
+      "tentative": "Provisoire",
+      "decline": "Refuser"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "Sans réponse",
+    "ACCEPTED": "Accepté",
+    "TENTATIVE": "Provisoire",
+    "DECLINED": "Refusé"
   }
 }

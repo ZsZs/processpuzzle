@@ -116,7 +116,7 @@ describe('TEXT_BOX fixture values', () => {
   it('writes sentence-shaped text where the attribute declares no pattern', () => {
     const tester = createControlTester(attr({ attrName: 'title', formControlType: 'TEXT_BOX', label: 'Title' }));
 
-    expect(tester.createValue(context)).toBe('Test Title e2e-mspt0-document-r0');
+    expect(tester.createValue(context)).toBe('e2e-mspt0-document-r0 Test Title');
   });
 
   // The form itself rejects a value the pattern does not match, so a fixture that ignored the pattern would
@@ -124,19 +124,25 @@ describe('TEXT_BOX fixture values', () => {
   it('derives a dashed token where the attribute declares a pattern', () => {
     const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug', pattern: slugPattern }));
 
-    expect(tester.createValue(context)).toBe('test-slug-e2e-mspt0-document-r0');
+    expect(tester.createValue(context)).toBe('e2e-mspt0-document-r0-test-slug');
   });
 
   it('does not leave separators from punctuation at either end of a dashed token', () => {
     const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug!!!', pattern: slugPattern }));
 
-    expect(tester.createValue(context)).toBe('test-slug-e2e-mspt0-document-r0');
+    expect(tester.createValue(context)).toBe('e2e-mspt0-document-r0-test-slug');
+  });
+
+  it('keeps the run mark in front when it updates sentence-shaped text', () => {
+    const tester = createControlTester(attr({ attrName: 'title', formControlType: 'TEXT_BOX', label: 'Title' }));
+
+    expect(tester.updateValue(context, { title: 'e2e-mspt0-document-r0 Test Title' })).toBe('e2e-mspt0-document-r0 Updated Test Title');
   });
 
   it('keeps the update value inside the pattern too', () => {
     const tester = createControlTester(attr({ attrName: 'slug', formControlType: 'TEXT_BOX', label: 'Slug', pattern: slugPattern }));
 
-    expect(tester.updateValue(context, { slug: 'test-slug-e2e-mspt0-document-r0' })).toBe('updated-test-slug-e2e-mspt0-document-r0');
+    expect(tester.updateValue(context, { slug: 'e2e-mspt0-document-r0-test-slug' })).toBe('e2e-mspt0-document-r0-updated-test-slug');
   });
 
   // Deriving a string for an arbitrary regular expression is a different problem; failing here names the

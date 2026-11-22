@@ -10,9 +10,13 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeV
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
+import com.processpuzzle.core.quantity.UnitCatalog;
+import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.Optional;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,11 +29,20 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
 
     private final EntityDefinitionRepository entityDefinitionRepository;
     private final ObjectProvider<DataSpaceDirectory> dataSpaces;
+    private final UnitCatalogProvider catalogs;
 
+    /** For an application, or a test, that has only the standard units. */
     public EntityDefinitionLookupAdapter(EntityDefinitionRepository entityDefinitionRepository,
                                          ObjectProvider<DataSpaceDirectory> dataSpaces) {
+        this(entityDefinitionRepository, dataSpaces, UnitCatalogProvider.standardOnly());
+    }
+
+    @Autowired
+    public EntityDefinitionLookupAdapter(EntityDefinitionRepository entityDefinitionRepository,
+                                         ObjectProvider<DataSpaceDirectory> dataSpaces, UnitCatalogProvider catalogs) {
         this.entityDefinitionRepository = entityDefinitionRepository;
         this.dataSpaces = dataSpaces;
+        this.catalogs = catalogs;
     }
 
     /**
@@ -85,10 +98,13 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
     }
 
     private EntityDefinitionView toView(BaseEntityDefinition definition) {
+        // The catalog of the organization that owns the definition: the units its attributes name are that organization's, also
+        // when the definition is a common's, shared with a member.
+        UnitCatalog catalog = catalogs.forOrganization(definition.getOrgKey());
         return new EntityDefinitionView(
             definition.getCode(),
             definition.isEmbedded(),
-            definition.getAttributes().stream().map(this::toView).toList(),
+            definition.getAttributes().stream().map(attribute -> toView(attribute, catalog)).toList(),
             definition.getAttributes().stream()
                 .filter(BaseEntityAttribute::isLinkToDetails)
                 .map(BaseEntityAttribute::getCode)
@@ -99,7 +115,7 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
         );
     }
 
-    private EntityAttributeView toView(BaseEntityAttribute attribute) {
+    private EntityAttributeView toView(BaseEntityAttribute attribute, UnitCatalog catalog) {
         return new EntityAttributeView(
             attribute.getCode(),
             ValueKindView.valueOf(attribute.getValueKind().name()),
@@ -109,7 +125,20 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             attribute.isRequired(),
             attribute.getFormControlType() == FormControlType.COMMENTS,
             attribute.getFormControlType() == FormControlType.ADDRESS,
-            attribute.getFormControlType() == FormControlType.GEO_LOCATION
+            attribute.getFormControlType() == FormControlType.GEO_LOCATION,
+            measureOf(attribute, catalog)
         );
+    }
+
+    /** What an instance write needs of a QUANTITY, MONEY or DIMENSIONS attribute; null for any other control. */
+    private MeasureView measureOf(BaseEntityAttribute attribute, UnitCatalog catalog) {
+        MeasureView.Kind kind = switch (attribute.getFormControlType()) {
+            case QUANTITY -> MeasureView.Kind.QUANTITY;
+            case MONEY -> MeasureView.Kind.MONEY;
+            case DIMENSIONS -> MeasureView.Kind.DIMENSIONS;
+            default -> null;
+        };
+        return kind == null ? null : new MeasureView(kind, attribute.getQuantityKind(), attribute.getAllowedUnits(), attribute.getScale(),
+            attribute.getAllowedCurrencies(), attribute.getDimensionCount(), attribute.getDefaultUnit(), attribute.getDefaultCurrency(), catalog);
     }
 }

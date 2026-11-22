@@ -132,5 +132,5 @@ neither as a sidenav nor as a top-nav row — and `nav-menu` (visible on small s
 | `role` in the registry | Rejected — `WidgetDefinition.category` already classifies widgets for the palette. |
 | `WidgetConfigSource` + `route-widget-layout` entity | Rejected — `AppDefinition` is that source, static or remote. |
 | Zod schemas | Rejected — `propsSchema` (JSON Schema) is already the contract. |
-| Lazy `loadComponent` | Deferred until the widget count warrants it. |
+| Lazy `loadComponent` | Planned, see [Lazy widget registration](widget-lazy-registration-plan.md): the calendar widget's FullCalendar (about 410 kB) is the trigger. |
 | `PageContentProvider` | Deferred — no consumer yet. |

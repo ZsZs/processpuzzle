@@ -53,8 +53,8 @@ class OrderTotalCalculationIntegrationTest {
                 componentParents: [ order ]
                 attributes:
                   - { code: productName, name: Product, displayOrder: 1, valueKind: TEXT, formControlType: TEXT_BOX, required: true }
-                  - { code: quantity, name: Quantity, displayOrder: 2, valueKind: NUMBER, formControlType: TEXT_BOX, required: true }
-                  - { code: unitPrice, name: Unit Price, displayOrder: 3, valueKind: NUMBER, formControlType: TEXT_BOX, required: true }
+                  - { code: quantity, name: Quantity, displayOrder: 2, valueKind: REFERENCE, formControlType: QUANTITY, quantityKind: COUNT, allowedUnits: [ pc, dz ], defaultUnit: pc, scale: 0, required: true }
+                  - { code: unitPrice, name: Unit Price, displayOrder: 3, valueKind: REFERENCE, formControlType: MONEY, allowedCurrencies: [ EUR ], defaultCurrency: EUR, required: true }
               - code: order
                 name: Order
                 status: ACTIVE
@@ -68,7 +68,7 @@ class OrderTotalCalculationIntegrationTest {
                     valueKind: ENUM
                     formControlType: DROPDOWN
                     enumValues: [ DRAFT, CONFIRMED ]
-                  - { code: total, name: Total, displayOrder: 3, valueKind: NUMBER, formControlType: TEXT_BOX }
+                  - { code: total, name: Total, displayOrder: 3, valueKind: REFERENCE, formControlType: MONEY, allowedCurrencies: [ EUR ], defaultCurrency: EUR }
                   - code: lineItems
                     name: Line Items
                     displayOrder: 4
@@ -132,7 +132,7 @@ class OrderTotalCalculationIntegrationTest {
 
         // A form sends the whole object back, its stale total included; the calculation's stays and is recomputed.
         Map<String, Object> edited = new LinkedHashMap<>(created.payload());
-        edited.put("total", 1);
+        edited.put("total", Map.of("amount", "1", "currency", "EUR"));
         edited.put("lineItems", List.of(line("Widget A", 600, 19.99)));
         updateEntity.update(ORG, "order", orderId, created.version(), edited);
         EntityObjectView updated = entities.find(ORG, "order", orderId);
@@ -171,12 +171,17 @@ class OrderTotalCalculationIntegrationTest {
         assertThat(runs.findAll(ORG, "order-total", orderId.toString())).as("caught up once").hasSize(runCount);
     }
 
+    @SuppressWarnings("unchecked")
     private static BigDecimal total(EntityObjectView order) {
-        return new BigDecimal(String.valueOf(order.payload().get("total")));
+        Map<String, Object> total = (Map<String, Object>) order.payload().get("total");
+        assertThat(total).as("the total is money").containsEntry("currency", "EUR");
+        return new BigDecimal(String.valueOf(total.get("amount")));
     }
 
     private static Map<String, Object> line(String product, int quantity, double unitPrice) {
-        return Map.of("productName", product, "quantity", quantity, "unitPrice", unitPrice);
+        return Map.of("productName", product,
+                "quantity", Map.of("amount", String.valueOf(quantity), "unit", "pc"),
+                "unitPrice", Map.of("amount", BigDecimal.valueOf(unitPrice).toPlainString(), "currency", "EUR"));
     }
 
     private static ByteArrayInputStream stream(String yaml) {

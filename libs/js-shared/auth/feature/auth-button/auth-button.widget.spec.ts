@@ -1,7 +1,8 @@
 import { reflectComponentType } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { loadWidgetComponent } from '@processpuzzle/widgets';
 import { parse } from 'yaml';
 import { AUTH_BUTTON_WIDGET, AUTH_BUTTON_WIDGET_REGISTRATION } from './auth-button.widget';
 
@@ -13,7 +14,10 @@ const SEED_CATALOGUE = 'libs/java-shared/base-widget-backend/src/main/resources/
 
 describe('AUTH_BUTTON_WIDGET widget contract', () => {
   const registration = AUTH_BUTTON_WIDGET_REGISTRATION;
-  const mirror = reflectComponentType(registration.component);
+  let mirror: ReturnType<typeof reflectComponentType>;
+  beforeAll(async () => {
+    mirror = reflectComponentType(await loadWidgetComponent(registration));
+  });
 
   it('is registered under its own key', () => {
     expect(registration.type).toBe(AUTH_BUTTON_WIDGET);

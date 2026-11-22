@@ -117,7 +117,8 @@ public class SecurityConfig {
     };
 
     /**
-     * Booking, changing and cancelling entries. Always authenticated, whatever {@code require-authentication} says: an
+     * Booking, changing, cancelling and answering entries, finding people to invite, the caller's own invitations and
+     * erasing a user's calendar data. Always authenticated, whatever {@code require-authentication} says: an
      * entry has an organizer, which the use cases take from the token subject, and an anonymous call has none. Matched
      * after {@link #CALENDAR_READ_PATHS}, so only the non-{@code GET} requests reach it. The calendar
      * <em>definitions</em> are authored metadata like every other definition and follow {@code require-authentication}.
@@ -125,6 +126,13 @@ public class SecurityConfig {
     private static final String[] CALENDAR_PATHS = {
             "/api/organizations/*/calendar/calendars/**",
             "/organizations/*/calendar/calendars/**",
+            // Who is invited, and what is theirs: a visitor without a token has neither a directory nor invitations.
+            "/api/organizations/*/calendar/directory/**",
+            "/organizations/*/calendar/directory/**",
+            "/api/organizations/*/calendar/my-occurrences",
+            "/organizations/*/calendar/my-occurrences",
+            "/api/organizations/*/calendar/users/**",
+            "/organizations/*/calendar/users/**",
     };
 
     /**

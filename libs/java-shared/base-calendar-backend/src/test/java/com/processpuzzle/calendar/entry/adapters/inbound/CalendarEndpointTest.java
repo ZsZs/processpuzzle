@@ -23,10 +23,13 @@ import com.processpuzzle.calendar.definition.domain.PublicDetail;
 import com.processpuzzle.calendar.entry.domain.CalendarAccess;
 import com.processpuzzle.calendar.entry.domain.CalendarEntry;
 import com.processpuzzle.calendar.entry.domain.EntryView;
+import com.processpuzzle.calendar.entry.domain.OccurrenceSpan;
+import com.processpuzzle.calendar.entry.domain.OccurrenceView;
 import com.processpuzzle.calendar.entry.domain.EntryVisibility;
 import com.processpuzzle.calendar.entry.usecases.exception.CalendarNotFoundException;
 import com.processpuzzle.calendar.entry.usecases.exception.InvalidEntryRequestException;
 import com.processpuzzle.calendar.entry.usecases.inbound.GetCalendar;
+import com.processpuzzle.calendar.entry.usecases.inbound.ListMyOccurrences;
 import com.processpuzzle.calendar.entry.usecases.inbound.ListOccurrences;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -50,7 +53,7 @@ class CalendarEndpointTest {
     void setUp() {
         getCalendar = mock(GetCalendar.class);
         listOccurrences = mock(ListOccurrences.class);
-        mvc = MockMvcBuilders.standaloneSetup(new CalendarEndpoint(getCalendar, listOccurrences, new EntryMapper()))
+        mvc = MockMvcBuilders.standaloneSetup(new CalendarEndpoint(getCalendar, listOccurrences, mock(ListMyOccurrences.class), new EntryMapper()))
                 .setControllerAdvice(new CalendarApiExceptionHandler())
                 .build();
     }
@@ -93,8 +96,10 @@ class CalendarEndpointTest {
         CalendarEntry timed = timedEntry(ALICE, EntryVisibility.PUBLIC);
         CalendarEntry holiday = allDayEntry(ALICE, LocalDate.parse("2026-12-24"), LocalDate.parse("2026-12-27"));
         when(listOccurrences.list(any(), any(), any(), any())).thenReturn(List.of(
-                new EntryView(timed, false, true, true),
-                new EntryView(holiday, true, false, false)));
+                new OccurrenceView(new EntryView(timed, false, true, true, false, false),
+                        new OccurrenceSpan(null, timed.getStartUtc(), timed.getEndUtc(), null, null)),
+                new OccurrenceView(new EntryView(holiday, true, false, false, false, false),
+                        new OccurrenceSpan(null, null, null, holiday.getStartDate(), holiday.getEndDate()))));
 
         mvc.perform(get(BASE + "/occurrences").param("calendars", CALENDAR + ",other")
                         .param("from", "2026-12-01T00:00:00Z").param("to", "2026-12-31T00:00:00Z"))

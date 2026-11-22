@@ -39,7 +39,7 @@ function fakeStore() {
     timeZone: signal('Europe/Budapest'),
     canBook: signal(true),
     loadCalendars: vi.fn(async (_keys: readonly string[]): Promise<void> => undefined),
-    loadOccurrences: vi.fn(async (_from: string, _to: string): Promise<Occurrence[]> => []),
+    loadOccurrences: vi.fn(async (_from: string, _to: string, _includeMine?: boolean): Promise<Occurrence[]> => []),
     getEntry: vi.fn(async (_calendarKey: string, _entryId: string): Promise<CalendarEntry> => ENTRY),
     reschedule: vi.fn(async (): Promise<CalendarEntry> => ENTRY),
   };
@@ -203,10 +203,20 @@ describe('CalendarComponent', () => {
         endStr: '2026-12-07T00:00:00+01:00',
       });
 
-      expect(store.loadOccurrences).toHaveBeenCalledWith('2026-11-29T23:00:00Z', '2026-12-06T23:00:00Z');
+      expect(store.loadOccurrences).toHaveBeenCalledWith('2026-11-29T23:00:00Z', '2026-12-06T23:00:00Z', false);
       expect(events).toHaveLength(2);
       expect(events[0]).toMatchObject({ title: 'Planning', color: 'var(--pp-calendar-color-0)', editable: true });
       expect(events[1]).toMatchObject({ title: 'Busy', color: 'var(--pp-calendar-color-1)', editable: false });
+    });
+  });
+
+  describe('includeMine', () => {
+    it('is passed to the store when the window is loaded', async () => {
+      show([calendar('team')], () => fixture.componentRef.setInput('includeMine', true));
+
+      await (options().events as (info: unknown) => Promise<unknown>)({ startStr: '2026-11-30T00:00:00+01:00', endStr: '2026-12-07T00:00:00+01:00' });
+
+      expect(store.loadOccurrences).toHaveBeenCalledWith('2026-11-29T23:00:00Z', '2026-12-06T23:00:00Z', true);
     });
   });
 
@@ -234,20 +244,22 @@ describe('CalendarComponent', () => {
       show([calendar('team')], () => fixture.componentRef.setInput('readOnly', true));
 
       (options().select as (info: unknown) => void)(slot);
-      (options().dateClick as (info: unknown) => void)({ dateStr: '2026-12-01T10:00:00+01:00', allDay: false });
 
       expect(dialog.open).not.toHaveBeenCalled();
     });
 
-    it('opens a whole-day slot for a click in the month and a timed one for a click in the week', () => {
+    it('opens a whole-day slot for a click in the month, which arrives as a one-day selection', () => {
       show();
-      const click = options().dateClick as (info: unknown) => void;
 
-      click({ dateStr: '2026-12-24', allDay: true });
-      click({ dateStr: '2026-12-01T10:00:00+01:00', allDay: false });
+      (options().select as (info: unknown) => void)({ startStr: '2026-12-24', endStr: '2026-12-25', allDay: true });
 
       expect(dialog.open.mock.calls[0][1].data.slot).toEqual({ start: '2026-12-24', end: '2026-12-25', allDay: true });
-      expect(dialog.open.mock.calls[1][1].data.slot).toEqual({ start: '2026-12-01T10:00:00+01:00', end: '2026-12-01T10:00:00+01:00', allDay: false });
+    });
+
+    it('registers no date-click handler besides the selection, because FullCalendar fires both for one click and two dialogs opened', () => {
+      show();
+
+      expect(options().dateClick).toBeUndefined();
     });
 
     it('reads the calendar again when the dialog changed something, and not when it was only closed', () => {

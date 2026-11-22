@@ -26,7 +26,7 @@ describe('toCalendarEvent', () => {
       allDay: false,
       editable: true,
       color: 'var(--pp-calendar-color-0)',
-      classNames: ['pp-calendar__event', 'pp-calendar__event--mine'],
+      className: 'pp-calendar__event pp-calendar__event--mine',
       extendedProps: { entryId: 'e-1', calendarKey: 'team', busy: false, mine: true, canEdit: true, location: 'Room 1', category: 'meeting' },
     });
   });
@@ -45,7 +45,7 @@ describe('toCalendarEvent', () => {
     expect(event.title).toBe('Busy');
     expect(event.editable).toBe(false);
     expect(event.extendedProps.canEdit).toBe(false);
-    expect(event.classNames).toContain('pp-calendar__event--busy');
+    expect(event.className.split(' ')).toContain('pp-calendar__event--busy');
     expect(event.extendedProps).not.toHaveProperty('location');
   });
 
@@ -57,8 +57,25 @@ describe('toCalendarEvent', () => {
     expect(toCalendarEvent({ ...TIMED, recurrenceId: '2026-12-08' }, 0, 'Busy').id).toBe('team:e-1:2026-12-08');
   });
 
+  it('is never draggable, though the caller may edit the series from its dialog', () => {
+    const occurrence = { ...TIMED, recurrenceId: '2026-12-08' };
+
+    const event = toCalendarEvent(occurrence, 0, 'Busy');
+
+    expect(event.editable).toBe(false);
+    expect(event.extendedProps.canEdit).toBe(true);
+    expect(event.className.split(' ')).toContain('pp-calendar__event--recurring');
+  });
+
   it('is not editable without the server saying so', () => {
     expect(toCalendarEvent({ ...TIMED, canEdit: undefined }, 0, 'Busy').editable).toBe(false);
+  });
+});
+
+describe('invited occurrences', () => {
+  it('carry the invited class, and only those do', () => {
+    expect(toCalendarEvent({ ...TIMED, invited: true }, 0, 'Busy').className).toContain('pp-calendar__event--invited');
+    expect(toCalendarEvent(TIMED, 0, 'Busy').className).not.toContain('pp-calendar__event--invited');
   });
 });
 

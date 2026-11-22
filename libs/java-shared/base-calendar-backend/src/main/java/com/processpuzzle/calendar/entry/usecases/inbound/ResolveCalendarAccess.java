@@ -53,6 +53,14 @@ public class ResolveCalendarAccess {
                 .filter(calendar -> calendar.access().canRead());
     }
 
+    /**
+     * Locks the released calendar until the transaction ends, so that the bookings of a resource calendar are checked one
+     * at a time. Call only after {@link #readable} has let the caller book.
+     */
+    public void lockForBooking(String orgKey, String calendarKey) {
+        definitions.lockReleased(orgKey, calendarKey);
+    }
+
     public CalendarAccess of(String orgKey, CalendarDefinition definition) {
         boolean authenticated = principal.isAuthenticated();
         boolean staff = authenticated && principal.isPlatformAdmin();

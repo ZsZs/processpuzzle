@@ -21,6 +21,13 @@
     "showMap": "Zeigt eine Karte",
     "mapProvider": "Kartenanbieter",
     "defaultCountry": "Standardland",
+    "quantityKind": "Größenart",
+    "allowedUnits": "Erlaubte Einheiten",
+    "defaultUnit": "Standardeinheit",
+    "scale": "Nachkommastellen",
+    "allowedCurrencies": "Erlaubte Währungen",
+    "defaultCurrency": "Standardwährung",
+    "dimensionCount": "Dimensionen",
     "_tooltips": {
       "code": "Schlüssel, unter dem der Wert gespeichert wird, eindeutig innerhalb des Entitätstyps, z. B. orderNumber. Nicht mehr ändern, sobald Datensätze existieren.",
       "name": "Die Beschriftung des Feldes, wie Benutzer sie in Formularen und Listenspalten sehen, z. B. Bestellnummer.",
@@ -40,6 +47,13 @@
       "showMap": "Für ADDRESS-Steuerelemente: die Adresse auf einer Karte zeigen, mit daraus ermittelten Koordinaten.",
       "mapProvider": "Für ADDRESS-Steuerelemente mit Karte: wer sie zeichnet. Leer bedeutet OpenStreetMap; ein Klick öffnet immer Google Maps.",
       "defaultCountry": "Für ADDRESS-Steuerelemente: der ISO-Ländercode, mit dem eine neue Adresse beginnt, z. B. DE. Leer nimmt das Land des Browsers.",
+      "quantityKind": "Für QUANTITY-Felder: was gemessen wird (LENGTH, MASS, TIME …); nur seine Einheiten werden angeboten. QUANTITY-, MONEY- und DIMENSIONS-Felder verwenden die Wertart REFERENCE.",
+      "allowedUnits": "Für QUANTITY- und DIMENSIONS-Felder: die Einheiten-Codes zur Auswahl, z. B. kg, g. Leer bietet alle Einheiten der Größenart an (Dimensionen: alle Längen).",
+      "defaultUnit": "Für QUANTITY- und DIMENSIONS-Felder: die Einheit, in der ein neuer Wert beginnt. Leer verwendet die Basiseinheit der Größenart.",
+      "scale": "Für QUANTITY- und DIMENSIONS-Felder: die höchste Zahl an Nachkommastellen eines Betrags, 0 bis 20. Auch eine Umrechnung wird darauf gerundet; leer rundet auf 6.",
+      "allowedCurrencies": "Für MONEY-Felder: die ISO-Währungscodes zur Auswahl, z. B. EUR, HUF. Leer bietet alle Währungen an.",
+      "defaultCurrency": "Für MONEY-Felder: die Währung, in der ein neuer Betrag beginnt. Leer verwendet die erste erlaubte.",
+      "dimensionCount": "Für DIMENSIONS-Felder: 2 für Breite × Höhe, 3 fügt eine Tiefe hinzu. Leer bedeutet 2.",
       "dateStyle": "Für DATE- und DATE_TIME-Felder: wie das Datum angezeigt wird, von short (31.12.26) bis full (Donnerstag, 31. Dezember 2026). Leer bedeutet Standard.",
       "timeStyle": "Für DATE_TIME-Felder: wie die Uhrzeit angezeigt wird, von short (14:30) bis long (mit Sekunden und Zeitzone). Leer bedeutet Standard."
     }
@@ -71,6 +85,42 @@
       "updatedAt": "Wann die Definition zuletzt gespeichert wurde. Wird vom System gesetzt.",
       "releaseState": "Ob die laufende Anwendung diese Definition so verwendet, wie sie ist: NEW wurde nie veröffentlicht, CHANGED weicht vom Veröffentlichten ab, RELEASED ist das, was die Anwendung verwendet. Veröffentlichen Sie im Bereich Release, um es zu ändern. Wird vom System gesetzt.",
       "sharedFrom": "Das Common, aus dem dieser Typ stammt. Ihre Organisation liest den Typ, aber nur das Common veröffentlicht oder ändert ihn. Leer bei eigenen Typen. Wird vom System gesetzt."
+    }
+  },
+  "organization_unit": {
+    "_self": "Einheit",
+    "code": "Code",
+    "symbol": "Symbol",
+    "name": "Name",
+    "kind": "Art",
+    "factor": "Faktor",
+    "divisor": "Divisor",
+    "status": "Status",
+    "version": "Version",
+    "_tooltips": {
+      "code": "Eindeutiger Schlüssel der Einheit in Ihrer Organisation, in gespeicherten Werten verwendet, z. B. pallet. Nach dem Speichern fest.",
+      "symbol": "Was neben einer Menge steht, z. B. plt.",
+      "name": "Die ausgeschriebene Einheit, z. B. Palette.",
+      "kind": "Was die Einheit misst, z. B. MASS. Eine Einheit wird einer Art des Standardkatalogs hinzugefügt. Nach dem Speichern fest.",
+      "factor": "Wie viele Basiseinheiten der Art eine davon ist, z. B. 500 für eine Palette zu 500 kg. Nach dem Speichern fest, da gespeicherte Mengen daraus abgeleitet sind.",
+      "divisor": "Teilt den Faktor, für eine Einheit, die ein Bruchteil der Basiseinheit ist; 1, wenn leer. Nach dem Speichern fest.",
+      "status": "ACTIVE für eine verwendete Einheit, RETIRED, damit sie für neue Werte nicht mehr angeboten wird. Bereits gespeicherte Werte bleiben lesbar. Eine Einheit wird nie gelöscht.",
+      "version": "Die angezeigte Revision, damit zwei Designer einander nicht unbemerkt überschreiben."
+    }
+  },
+  "exchange_rate": {
+    "_self": "Wechselkurs",
+    "from": "Von",
+    "to": "Nach",
+    "rate": "Kurs",
+    "validFrom": "Gültig ab",
+    "version": "Version",
+    "_tooltips": {
+      "from": "Die Währung, aus der umgerechnet wird, z. B. EUR.",
+      "to": "Die Währung, in die umgerechnet wird, z. B. HUF. Eine andere als Von.",
+      "rate": "Wie viele Einheiten der zweiten Währung eine Einheit der ersten wert ist, z. B. 395,5. Der Kehrwert und Kreuzkurse über eine andere Währung werden abgeleitet, ein Paar wird also einmal erfasst, in der Richtung, in der Sie es notieren.",
+      "validFrom": "Der erste Tag, an dem der Kurs gilt, als JJJJ-MM-TT. Er gilt, bis das Paar einen späteren Kurs hat. Ein Kurs je Paar und Datum.",
+      "version": "Die angezeigte Revision, damit zwei Designer einander nicht unbemerkt überschreiben."
     }
   },
   "artifact": {
@@ -216,6 +266,23 @@
       "POSITION_UNAVAILABLE": "Das Gerät konnte seinen Standort nicht bestimmen.",
       "TIMEOUT": "Die Standortermittlung hat zu lange gedauert. Bitte erneut versuchen.",
       "UNAVAILABLE": "Dieser Browser kann Ihren Standort nicht ermitteln."
+    }
+  },
+  "measure": {
+    "amount": "Betrag",
+    "unit": "Einheit",
+    "currency": "Währung",
+    "show_in": "Auch anzeigen in",
+    "width": "Breite",
+    "height": "Höhe",
+    "depth": "Tiefe",
+    "convert_on": "Beim Ändern der Einheit wird der Betrag umgerechnet. Klicken, um stattdessen die Zahl beizubehalten.",
+    "convert_off": "Beim Ändern der Einheit bleibt die Zahl erhalten. Klicken, um stattdessen den Betrag umzurechnen.",
+    "error": {
+      "amount": "Geben Sie eine Zahl ein, zum Beispiel 12,5.",
+      "scale": "Höchstens {{ max }} Dezimalstellen.",
+      "incomplete": "Alle Maße ausfüllen oder keines.",
+      "required": "Dieser Wert ist erforderlich."
     }
   },
   "working_context": {

@@ -24,6 +24,7 @@ export type { LoggingConfiguration } from './lib/logging/logging.service';
 export { provideCentralErrorHandler } from './lib/error-handler/provide-central-error-handler';
 export { provideLocaleRouting } from './lib/transloco/provide-locale-routing';
 export { provideLoggingService } from './lib/logging/provide-logging.service';
+export { ColorSwatchComponent, swatchColor } from './lib/color-swatch/color-swatch.component';
 export { NavigateBackComponent } from './lib/navigate-back/navigate-back.component';
 export { NavigateBackService } from './lib/navigate-back/navigate-back.service';
 export { SessionUser } from './lib/session-user/session-user';
@@ -36,3 +37,33 @@ export { DEFINITION_READ, DEFINITION_REVISION, definitionRead, definitionRevisio
 export { Stack } from './lib/stack';
 export { SubstringPipe } from './lib/substring.pipe';
 export { wildcardTextMatcher } from './lib/wildcard-text-matcher';
+export { FundamentalTypeError, type FundamentalTypeErrorReason } from './lib/fundamental-types/fundamental-type.error';
+export { decimalText, toDecimal, type DecimalInput } from './lib/fundamental-types/decimal';
+export {
+  STANDARD_UNIT_CATALOG,
+  type ExtraUnitData,
+  UnitCatalog,
+  type CurrencyDefinition,
+  type QuantityKindData,
+  type QuantityKindDefinition,
+  type UnitCatalogData,
+  type UnitData,
+  type UnitDefinition,
+} from './lib/fundamental-types/unit-catalog';
+export {
+  addQuantities,
+  compareQuantities,
+  convertQuantity,
+  divideQuantity,
+  multiplyQuantity,
+  parseQuantity,
+  quantityBaseAmount,
+  roundQuantity,
+  subtractQuantities,
+  type QuantityValue,
+} from './lib/fundamental-types/quantity';
+export { convertMoney, ExchangeRates, isoDateOf, type ExchangeRateData } from './lib/fundamental-types/exchange-rates';
+export { addMoney, compareMoney, divideMoney, multiplyMoney, parseMoney, roundMoney, subtractMoney, type MoneyValue } from './lib/fundamental-types/money';
+export { convertDimensions, dimensionsArea, dimensionsVolume, type DimensionsValue } from './lib/fundamental-types/dimensions';
+export { sumMeasures } from './lib/fundamental-types/measure-display';
+export { isoDurationToQuantity, quantityToIsoDuration } from './lib/fundamental-types/iso-duration';

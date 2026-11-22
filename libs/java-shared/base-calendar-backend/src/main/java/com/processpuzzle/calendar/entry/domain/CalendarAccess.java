@@ -14,9 +14,13 @@ public record CalendarAccess(boolean canRead, boolean canBook, boolean canManage
     /** The access of a caller who may not even know the calendar exists. */
     public static final CalendarAccess NONE = new CalendarAccess(false, false, false, false);
 
-    /** Whether the caller sees only the times of an entry with this visibility. */
-    public boolean seesBusyOnly(boolean organizer, EntryVisibility visibility) {
-        if (organizer || canManage) {
+    /**
+     * Whether the caller sees only the times of an entry. The organizer, the managers and anybody invited to the entry
+     * see all of it, whatever its visibility; anybody else sees the times of a private entry, and of a public one only
+     * when the calendar gives its readers the detail.
+     */
+    public boolean seesBusyOnly(boolean organizer, boolean invited, EntryVisibility visibility) {
+        if (organizer || canManage || invited) {
             return false;
         }
         return visibility == EntryVisibility.PRIVATE || !fullDetail;

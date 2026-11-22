@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/ZsZs/processpuzzle#readme",
   "peerDependencies": {
+    "acorn": "^8.19.0",
     "@angular/common": "~22.0.5",
     "@angular/core": "~22.0.5",
     "@ngrx/signals": "^21.1.1",

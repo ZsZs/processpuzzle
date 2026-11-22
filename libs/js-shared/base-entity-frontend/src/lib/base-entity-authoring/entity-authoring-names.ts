@@ -13,3 +13,12 @@
  */
 export const ENTITY_DEFINITION_ENTITY_NAME = 'Entity Definition';
 export const ENTITY_ATTRIBUTE_ENTITY_NAME = 'Entity Attribute';
+
+/**
+ * The units an organization adds to the standard catalog — a branch of its own beside the definition graph, in the same
+ * transloco scope. Distinctive for the same reason as the two above: the registry is one flat map for the application.
+ */
+export const ORGANIZATION_UNIT_ENTITY_NAME = 'Organization Unit';
+
+/** The exchange rates an organization enters — the third routable entity of the authoring branch, in the same transloco scope. */
+export const EXCHANGE_RATE_ENTITY_NAME = 'Exchange Rate';

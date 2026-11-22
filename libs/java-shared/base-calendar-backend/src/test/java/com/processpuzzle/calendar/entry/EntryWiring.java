@@ -11,7 +11,13 @@ import static org.mockito.Mockito.when;
 import com.processpuzzle.calendar.definition.domain.CalendarDefinition;
 import com.processpuzzle.calendar.definition.usecases.inbound.FindCalendarDefinition;
 import com.processpuzzle.calendar.entry.domain.CalendarEntryRepository;
+import com.processpuzzle.calendar.entry.usecases.inbound.AttendeeResolver;
 import com.processpuzzle.calendar.entry.usecases.inbound.BookEntry;
+import com.processpuzzle.calendar.entry.usecases.inbound.CallerMembership;
+import com.processpuzzle.calendar.entry.usecases.inbound.EmptyDirectory;
+import com.processpuzzle.calendar.entry.usecases.inbound.RespondToInvitation;
+import com.processpuzzle.calendar.entry.usecases.inbound.ListMyOccurrences;
+import com.processpuzzle.calendar.entry.usecases.outbound.CalendarDirectoryPort;
 import com.processpuzzle.calendar.entry.usecases.inbound.CancelEntry;
 import com.processpuzzle.calendar.entry.usecases.inbound.EntryPlatformFacts;
 import com.processpuzzle.calendar.entry.usecases.inbound.EntryViews;
@@ -20,6 +26,7 @@ import com.processpuzzle.calendar.entry.usecases.inbound.GetEntry;
 import com.processpuzzle.calendar.entry.usecases.inbound.ListOccurrences;
 import com.processpuzzle.calendar.entry.usecases.inbound.OrganizationTimeZone;
 import com.processpuzzle.calendar.entry.usecases.inbound.ResolveCalendarAccess;
+import com.processpuzzle.calendar.entry.usecases.inbound.ResourceCapacity;
 import com.processpuzzle.calendar.entry.usecases.inbound.UpdateEntry;
 import com.processpuzzle.core.security.CurrentPrincipal;
 import java.time.Clock;
@@ -41,23 +48,44 @@ public final class EntryWiring {
     public final OrganizationTimeZone zones = zones("Europe/Budapest");
     public final ResolveCalendarAccess access;
     public final EntryViews views;
+    public final CalendarDirectoryPort directory;
+    public final AttendeeResolver attendees;
+    private final ResourceCapacity capacity;
+    public final CallerMembership membership;
     private final CurrentPrincipal principal;
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
     public EntryWiring(CurrentPrincipal principal, CalendarDefinition calendar) {
+        this(principal, calendar, EmptyDirectory.INSTANCE);
+    }
+
+    /** As the default, with a directory that knows the people the test names. */
+    public EntryWiring(CurrentPrincipal principal, CalendarDefinition calendar, CalendarDirectoryPort directory) {
         FindCalendarDefinition definitions = mock(FindCalendarDefinition.class);
         when(definitions.released(ORG, CALENDAR)).thenReturn(Optional.of(calendar));
         this.principal = principal;
         this.access = new ResolveCalendarAccess(definitions, principal);
-        this.views = new EntryViews(principal);
+        this.capacity = new ResourceCapacity(repository, access);
+        this.membership = new CallerMembership(principal);
+        this.views = new EntryViews(membership);
+        this.directory = directory;
+        this.attendees = new AttendeeResolver(provider(directory));
     }
 
     public BookEntry book() {
-        return new BookEntry(repository, access, zones, principal, views, facts, provider(clock));
+        return new BookEntry(repository, access, zones, principal, views, facts, attendees, capacity, provider(clock));
     }
 
     public UpdateEntry update() {
-        return new UpdateEntry(repository, access, zones, principal, views, facts, provider(clock));
+        return new UpdateEntry(repository, access, zones, principal, views, facts, attendees, capacity, provider(clock));
+    }
+
+    public RespondToInvitation respond() {
+        return new RespondToInvitation(repository, access, membership, views, provider(clock));
+    }
+
+    public ListMyOccurrences myOccurrences() {
+        return new ListMyOccurrences(repository, access, zones, membership, views);
     }
 
     public CancelEntry cancel() {

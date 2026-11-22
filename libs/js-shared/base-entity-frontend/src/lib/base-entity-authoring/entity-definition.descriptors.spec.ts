@@ -125,12 +125,17 @@ describe('createEntityAttributeDescriptor', () => {
   // `dateStyle` and `timeStyle` are the contract's `dateFormat`, flattened for the form and folded back by the mapper.
   it('authors every field of BaseEntityAttributeInput and nothing the contract would drop', () => {
     expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual([
+      'allowedCurrencies',
+      'allowedUnits',
       'autosizeColumn',
       'code',
       'dateStyle',
       'defaultAvatar',
       'defaultCountry',
+      'defaultCurrency',
+      'defaultUnit',
       'defaultValue',
+      'dimensionCount',
       'displayOrder',
       'enumValues',
       'formControlType',
@@ -141,11 +146,41 @@ describe('createEntityAttributeDescriptor', () => {
       'maxOccurs',
       'multiplicity',
       'name',
+      'quantityKind',
       'required',
+      'scale',
       'showMap',
       'timeStyle',
       'valueKind',
     ]);
+  });
+
+  describe('the measure options', () => {
+    const optionsOf = (name: string) => attrOf(attrs, name).getSelectables()?.map((selectable) => selectable.key);
+
+    it('offers the catalog’s quantity kinds, units and currencies, kept out of the table', () => {
+      expect(optionsOf('quantityKind')).toEqual(expect.arrayContaining(['LENGTH', 'MASS', 'TIME']));
+      expect(optionsOf('defaultUnit')).toEqual(expect.arrayContaining(['kg', 'cm', 'degC']));
+      expect(optionsOf('allowedUnits')).toEqual(optionsOf('defaultUnit'));
+      expect(optionsOf('defaultCurrency')).toEqual(expect.arrayContaining(['EUR', 'HUF', 'JPY']));
+      expect(optionsOf('allowedCurrencies')).toEqual(optionsOf('defaultCurrency'));
+      for (const name of ['quantityKind', 'allowedUnits', 'defaultUnit', 'scale', 'dimensionCount', 'allowedCurrencies', 'defaultCurrency']) {
+        expect(attrOf(attrs, name).hideInTable).toBe(true);
+      }
+    });
+
+    it('lists units and currencies as chips that suggest the catalog, and numbers as numbers', () => {
+      expect(attrOf(attrs, 'allowedUnits').formControlType).toBe(FormControlType.TAGS);
+      expect(attrOf(attrs, 'allowedCurrencies').formControlType).toBe(FormControlType.TAGS);
+      expect(attrOf(attrs, 'scale').options.inputType).toBe('number');
+      expect(attrOf(attrs, 'dimensionCount').getSelectables()?.map((selectable) => selectable.value)).toEqual([2, 3]);
+    });
+
+    it('is offered the three measure controls among the control types', () => {
+      expect(attrOf(attrs, 'formControlType').getSelectables()?.map((selectable) => selectable.value)).toEqual(
+        expect.arrayContaining(['QUANTITY', 'MONEY', 'DIMENSIONS']),
+      );
+    });
   });
 
   it('offers the contract styles for dateFormat, kept out of the table', () => {

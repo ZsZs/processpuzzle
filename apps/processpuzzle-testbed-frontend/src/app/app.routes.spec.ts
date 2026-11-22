@@ -7,6 +7,9 @@ import { TestBed } from '@angular/core/testing';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { AUTHENTICATION_SERVICE } from '@processpuzzle/auth';
 import { BASE_APP_ROUTES } from '@processpuzzle/base-app';
+import { BaseCalendarComponent } from './content/base-calendar/base-calendar.component';
+import { OverviewComponent as CalendarOverviewComponent } from './content/base-calendar/overview.component';
+import { SamplesComponent as CalendarSamplesComponent } from './content/base-calendar/samples.component';
 
 /**
  * Guards the one thing about mounting a metadata-defined entity that fails *silently*.
@@ -63,7 +66,7 @@ describe('appRoutes — entity screen mount points', () => {
 
   it('exposes every primary feature as a titled navigation route', () => {
     expect(appRoutes.filter((route) => route.title).map((route) => route.path)).toEqual([
-      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-event', 'base-chat', 'base-calculation', 'base-release', 'base-workflow', 'base-ai', 'base-starter', 'base-app', 'ci-cd',
+      'home', 'util', 'test-util', 'widgets', 'auth-lib', 'base-entity', 'base-rule', 'base-document', 'base-state', 'base-event', 'base-chat', 'base-calendar', 'base-calculation', 'base-release', 'base-workflow', 'base-ai', 'base-starter', 'base-app', 'ci-cd',
     ]);
   });
 
@@ -75,5 +78,26 @@ describe('appRoutes — entity screen mount points', () => {
     await TestBed.runInInjectionContext(() => home?.resolve?.['auth']?.());
 
     expect(authenticate).toHaveBeenCalledOnce();
+  });
+});
+
+describe('appRoutes — the Base Calendar page', () => {
+  const page = appRoutes.find((route) => route.path === 'base-calendar') as Route;
+  const load = (route: Route | undefined) => (route?.loadComponent as () => Promise<unknown>)();
+  const tab = (path: string) => page.children?.find((route) => route.path === path);
+
+  it('loads the page and both of its tabs lazily, so FullCalendar stays out of the initial bundle', async () => {
+    expect(await load(page)).toBe(BaseCalendarComponent);
+    expect(await load(tab('overview'))).toBe(CalendarOverviewComponent);
+    expect(await load(tab('samples'))).toBe(CalendarSamplesComponent);
+  });
+
+  it('opens on the overview', () => {
+    expect(tab('')).toMatchObject({ pathMatch: 'full', redirectTo: 'overview' });
+  });
+
+  it('is titled and carries the icon and menu key of the navigation', () => {
+    expect(page.title).toBe('ProcessPuzzle Testbed - Base Calendar');
+    expect(page.data).toEqual({ icon: 'calendar_month', menuTitle: 'base-calendar' });
   });
 });

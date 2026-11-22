@@ -21,6 +21,13 @@
     "showMap": "Térképet mutat",
     "mapProvider": "Térképszolgáltató",
     "defaultCountry": "Alapértelmezett ország",
+    "quantityKind": "Mennyiségfajta",
+    "allowedUnits": "Megengedett mértékegységek",
+    "defaultUnit": "Alapértelmezett mértékegység",
+    "scale": "Tizedesjegyek",
+    "allowedCurrencies": "Megengedett pénznemek",
+    "defaultCurrency": "Alapértelmezett pénznem",
+    "dimensionCount": "Dimenziók",
     "_tooltips": {
       "code": "A kulcs, amely alatt az érték tárolódik, az entitástípuson belül egyedi, pl. orderNumber. Ha már vannak rekordok, ne módosítsa.",
       "name": "A mező felirata, ahogy a felhasználók az űrlapokon és a lista oszlopaiban látják, pl. Rendelésszám.",
@@ -40,6 +47,13 @@
       "showMap": "ADDRESS vezérlőknél: a cím megjelenítése térképen, a címből származtatott koordinátákkal.",
       "mapProvider": "Térképes ADDRESS vezérlőknél: ki rajzolja a térképet. Üresen OpenStreetMap; kattintásra mindig a Google Térkép nyílik meg.",
       "defaultCountry": "ADDRESS vezérlőknél: az ISO országkód, amellyel egy új cím indul, pl. HU. Üresen a böngésző országa.",
+      "quantityKind": "QUANTITY mezőkhöz: mit mérünk (LENGTH, MASS, TIME …), csak a hozzá tartozó mértékegységeket kínálja fel. A QUANTITY, MONEY és DIMENSIONS mezők REFERENCE értéktípust használnak.",
+      "allowedUnits": "QUANTITY és DIMENSIONS mezőkhöz: a választható mértékegységek kódjai, pl. kg, g. Üresen a fajta minden mértékegységét felkínálja (méretek: minden hosszúságot).",
+      "defaultUnit": "QUANTITY és DIMENSIONS mezőkhöz: a mértékegység, amelyben egy új érték indul. Üresen a fajta alapegységét használja.",
+      "scale": "QUANTITY és DIMENSIONS mezőkhöz: egy összeg legfeljebb hány tizedesjegyet tartalmazhat, 0–20. Az átváltás is erre kerekít; üresen 6-ra.",
+      "allowedCurrencies": "MONEY mezőkhöz: a választható ISO pénznemkódok, pl. EUR, HUF. Üresen minden pénznemet felkínál.",
+      "defaultCurrency": "MONEY mezőkhöz: a pénznem, amelyben egy új összeg indul. Üresen az első megengedettet használja.",
+      "dimensionCount": "DIMENSIONS mezőkhöz: 2 a szélesség × magasság, 3 mélységet is hozzáad. Üresen 2.",
       "dateStyle": "DATE és DATE_TIME mezőknél: a dátum megjelenítése a short (26. 12. 31.) formától a full (2026. december 31., csütörtök) formáig. Üresen az alapértelmezés érvényes.",
       "timeStyle": "DATE_TIME mezőknél: az idő megjelenítése a short (14:30) formától a long (másodperccel és időzónával) formáig. Üresen az alapértelmezés érvényes."
     }
@@ -71,6 +85,42 @@
       "updatedAt": "A definíció utolsó mentésének időpontja. A rendszer állítja be.",
       "releaseState": "Azt mutatja, hogy a futó alkalmazás a definíciót a jelenlegi formájában használja-e: NEW még sosem lett közzétéve, CHANGED eltér a közzétettől, RELEASED az, amit az alkalmazás használ. A Release szakaszban közzétéve módosítható. A rendszer állítja be.",
       "sharedFrom": "A közös tér, amelyből ez a típus származik. A szervezet olvassa, de csak a közös tér adja ki vagy módosítja. Saját típusoknál üres. A rendszer állítja be."
+    }
+  },
+  "organization_unit": {
+    "_self": "Mértékegység",
+    "code": "Kód",
+    "symbol": "Jel",
+    "name": "Név",
+    "kind": "Fajta",
+    "factor": "Szorzó",
+    "divisor": "Osztó",
+    "status": "Állapot",
+    "version": "Verzió",
+    "_tooltips": {
+      "code": "A mértékegység egyedi kulcsa a szervezetben, a tárolt értékek ezzel hivatkoznak rá, pl. pallet. Mentés után nem módosítható.",
+      "symbol": "Ami a mennyiség mellett megjelenik, pl. plt.",
+      "name": "A mértékegység kiírva, pl. Raklap.",
+      "kind": "Mit mér a mértékegység, pl. MASS. A mértékegység a szabványos katalógus egy fajtájához adódik. Mentés után nem módosítható.",
+      "factor": "Hány alapegység van a fajtában egy ilyenben, pl. 500 egy 500 kg-os raklapnál. Mentés után nem módosítható, mert a tárolt mennyiségek ebből származnak.",
+      "divisor": "Elosztja a szorzót, az alapegység törtrészét jelentő mértékegységnél; üresen 1. Mentés után nem módosítható.",
+      "status": "ACTIVE a használatban lévő mértékegységnél, RETIRED, hogy új értékekhez ne ajánlja fel. A már tárolt értékek olvashatók maradnak. Mértékegység soha nem törlődik.",
+      "version": "A képernyőn látható változat, hogy két tervező ne írja felül egymást észrevétlenül."
+    }
+  },
+  "exchange_rate": {
+    "_self": "Árfolyam",
+    "from": "Ebből",
+    "to": "Ebbe",
+    "rate": "Árfolyam",
+    "validFrom": "Érvényes ettől",
+    "version": "Verzió",
+    "_tooltips": {
+      "from": "A pénznem, amelyből átváltunk, pl. EUR.",
+      "to": "A pénznem, amelybe átváltunk, pl. HUF. Más, mint az Ebből.",
+      "rate": "Az első pénznem egy egysége hány egységet ér a másodikból, pl. 395,5. A fordított és más pénzneműn át számolt keresztárfolyamot levezetjük, ezért egy párt egyszer kell megadni, abban az irányban, ahogy jegyzi.",
+      "validFrom": "Az első nap, amikor az árfolyam érvényes, ÉÉÉÉ-HH-NN formában. Addig érvényes, amíg a párnak nincs későbbi árfolyama. Páronként és naponként egy árfolyam.",
+      "version": "A képernyőn látható változat, hogy két tervező ne írja felül egymást észrevétlenül."
     }
   },
   "artifact": {
@@ -216,6 +266,23 @@
       "POSITION_UNAVAILABLE": "Az eszköz nem tudta meghatározni a helyzetét.",
       "TIMEOUT": "A helymeghatározás túl sokáig tartott. Próbálja újra.",
       "UNAVAILABLE": "A böngésző nem tudja meghatározni a helyzetét."
+    }
+  },
+  "measure": {
+    "amount": "Érték",
+    "unit": "Mértékegység",
+    "currency": "Pénznem",
+    "show_in": "Megjelenítés más pénznemben",
+    "width": "Szélesség",
+    "height": "Magasság",
+    "depth": "Mélység",
+    "convert_on": "A mértékegység váltása átváltja az értéket. Kattintson, ha inkább a számot szeretné megtartani.",
+    "convert_off": "A mértékegység váltása megtartja a számot. Kattintson, ha inkább átváltaná az értéket.",
+    "error": {
+      "amount": "Adjon meg egy számot, például 12,5.",
+      "scale": "Legfeljebb {{ max }} tizedesjegy.",
+      "incomplete": "Töltse ki az összes méretet, vagy egyiket sem.",
+      "required": "Ez az érték kötelező."
     }
   },
   "working_context": {

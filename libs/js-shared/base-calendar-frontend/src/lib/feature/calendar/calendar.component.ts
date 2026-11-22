@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked, viewChild, ViewContainerRef } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
-import { CalendarOptions, DateClickInfo, DateSelectInfo, EventClickInfo, EventDropInfo, EventResizeDoneInfo, EventSourceFuncInfo, FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
+import { CalendarOptions, DateSelectInfo, EventClickInfo, EventDropInfo, EventResizeDoneInfo, EventSourceFuncInfo, FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import dayGridPlugin from '@fullcalendar/angular/daygrid';
 import interactionPlugin from '@fullcalendar/angular/interaction';
 import listPlugin from '@fullcalendar/angular/list';
@@ -109,6 +109,8 @@ export class CalendarComponent {
   readonly slotMaxTime = input<string>('20:00');
   /** Show the calendar without letting the user book, move or resize anything. */
   readonly readOnly = input<boolean>(false);
+  /** Also show what the user organizes or is invited to, from every calendar they may read. */
+  readonly includeMine = input<boolean>(false);
   /** The height: `auto` grows with the content, a CSS length such as `640px` fixes it. */
   readonly height = input<string>('auto');
 
@@ -145,6 +147,7 @@ export class CalendarComponent {
     const requested = this.defaultView();
     const initial = isCalendarView(requested) && offered.includes(requested) ? requested : offered[0];
     const editable = this.editable();
+    const includeMine = this.includeMine();
     return {
       plugins: [classicTheme, dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin],
       locales: LOCALES,
@@ -161,9 +164,8 @@ export class CalendarComponent {
       headerToolbar: { start: 'prev,next today', center: 'title', end: offered.map((view) => VIEW_NAMES[view]).join(',') },
       selectable: editable,
       editable,
-      events: (info: EventSourceFuncInfo) => this.fetchEvents(info),
+      events: (info: EventSourceFuncInfo) => this.fetchEvents(info, includeMine),
       select: (info: DateSelectInfo) => this.onSelect(info),
-      dateClick: (info: DateClickInfo) => this.onDateClick(info),
       eventClick: (info: EventClickInfo) => void this.onEventClick(info),
       eventDrop: (info: EventDropInfo) => void this.onEventChange(info),
       eventResize: (info: EventResizeDoneInfo) => void this.onEventChange(info),
@@ -178,23 +180,22 @@ export class CalendarComponent {
   }
 
   /** The occurrences of a window, as events. A failure is the central error handler's to report; here it only stops the load. */
-  private async fetchEvents(info: EventSourceFuncInfo) {
+  private async fetchEvents(info: EventSourceFuncInfo, includeMine: boolean) {
     const zone = this.store.timeZone();
-    const occurrences = await this.store.loadOccurrences(toInstant(info.startStr, zone), toInstant(info.endStr, zone));
+    const occurrences = await this.store.loadOccurrences(toInstant(info.startStr, zone), toInstant(info.endStr, zone), includeMine);
     const keys = this.store.calendars().map((calendar) => calendar.key);
     const busy = this.transloco.translate('base_calendar.busy');
     return occurrences.map((occurrence) => toCalendarEvent(occurrence, keys.indexOf(occurrence.calendarKey), busy));
   }
 
+  /**
+   * A click on a slot and a drag across several both arrive here: with `selectable` a click selects the slot it
+   * landed on. There is deliberately no `dateClick` handler as well — FullCalendar fires both for one click, which
+   * opened two dialogs.
+   */
   private onSelect(info: DateSelectInfo): void {
     this.calendar()?.getApi().unselect();
     this.openCreate({ start: info.startStr, end: info.endStr, allDay: info.allDay });
-  }
-
-  /** A click on a slot rather than a drag: a whole day on the all-day row and in the month, else a start to default the end from. */
-  private onDateClick(info: DateClickInfo): void {
-    if (!this.editable()) return;
-    this.openCreate(info.allDay ? { start: info.dateStr, end: nextDay(datePart(info.dateStr)), allDay: true } : { start: info.dateStr, end: info.dateStr, allDay: false });
   }
 
   private openCreate(slot: CalendarSlot): void {

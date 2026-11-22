@@ -1,5 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { OrganizationExchangeRates } from '../base-form/fundamental-types/organization-exchange-rates';
+import { OrganizationUnitCatalog } from '../base-form/fundamental-types/organization-unit-catalog';
 import { EntityDefinition, isRenderable } from './entity-definition';
 import { EntityDefinitionService } from './entity-definition.service';
 
@@ -20,6 +22,8 @@ import { EntityDefinitionService } from './entity-definition.service';
 @Injectable({ providedIn: 'root' })
 export class EntityDefinitionRegistry {
   private readonly service = inject(EntityDefinitionService);
+  private readonly units = inject(OrganizationUnitCatalog);
+  private readonly exchangeRates = inject(OrganizationExchangeRates);
   private definitions?: Promise<Map<string, EntityDefinition>>;
 
   /** Every renderable definition, by `code`. */
@@ -48,14 +52,20 @@ export class EntityDefinitionRegistry {
    * Discards the cache, so the next read fetches again.
    *
    * For the designer: a definition edited through its own CRUD screens changes what the previewed
-   * application should render, and nothing else would ever invalidate a session-long cache.
+   * application should render, and nothing else would ever invalidate a session-long cache. The organization's units
+   * are read again with them: a definition may name one that was just added.
    */
   reset(): void {
     this.definitions = undefined;
+    this.units.invalidate();
+    this.exchangeRates.invalidate();
   }
 
   private async fetch(): Promise<Map<string, EntityDefinition>> {
-    const definitions = await firstValueFrom(this.service.findAll());
+    // The organization's units are metadata of the same standing — a definition names them — and read at the same
+    // moment, which is after sign-in; they arrive with the definitions, so no control is built against a catalog without them.
+    // Its exchange rates come with them, for the rules and the hints that convert money.
+    const [definitions] = await Promise.all([firstValueFrom(this.service.findAll()), this.units.ensureLoaded(), this.exchangeRates.ensureLoaded()]);
     // A failed fetch resolves to `[]` (see EntityDefinitionService), so an empty map is a legitimate
     // answer and is cached as such — retrying on every route recognition would turn one missing backend
     // into a request per navigation.

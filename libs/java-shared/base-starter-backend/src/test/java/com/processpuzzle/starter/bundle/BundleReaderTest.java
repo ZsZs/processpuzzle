@@ -410,6 +410,17 @@ class BundleReaderTest {
     }
 
     @Test
+    void aStarterAddsOneSidenavEntryAndOneLauncherCard() {
+        String routeOnly = "  - moduleKey: inv-orders\n    basePath: orders\n";
+        String secondEntry = routeOnly + "    nav: { icon: list, labelKey: nav.title }\n";
+        String secondCard = routeOnly + "    launcher: { titleKey: launcher.title }\n";
+
+        assertThat(read(v2(V3_HEAD + V2_CONTENTS + MOUNT + routeOnly)).manifest().mounts()).hasSize(2);
+        assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT + secondEntry)), "only one mount carries a 'nav' or a 'launcher'; inv-stock, inv-orders");
+        assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT + secondCard)), "only one mount carries a 'nav' or a 'launcher'");
+    }
+
+    @Test
     void aDomainStarterRefusesMalformedMounts() {
         assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT.replace("basePath: stock", "basePath: Stock"))), "needs a 'basePath'");
         assertInvalid(() -> read(v2(V3_HEAD + V2_CONTENTS + MOUNT + MOUNT.substring("mounts:\n".length()))), "'inv-stock' is named twice");

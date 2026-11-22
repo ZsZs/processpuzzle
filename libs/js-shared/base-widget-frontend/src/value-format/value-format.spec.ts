@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { useDisplayCatalog } from '@processpuzzle/base-entity';
+import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
+import { afterEach, describe, expect, it } from 'vitest';
 import { formatValue, valueAtPath } from './value-format';
 
 describe('valueAtPath', () => {
@@ -51,5 +53,29 @@ describe('formatValue', () => {
   it('joins the scalar values of an object and the items of an array', () => {
     expect(formatValue({ street: 'Fő utca 1', city: 'Budapest', geo: { lat: 1 }, zip: '' }, 'text', 'en')).toBe('Fő utca 1, Budapest');
     expect(formatValue(['a', 'b'], undefined, 'en')).toBe('a, b');
+  });
+});
+
+describe('formatValue of a measure in an organization’s own unit', () => {
+  afterEach(() => useDisplayCatalog(STANDARD_UNIT_CATALOG));
+
+  it('shows the unit by its symbol once the organization’s catalog is the display catalog, and by its code before', () => {
+    expect(formatValue({ amount: '2', unit: 'pallet' }, 'text', 'en')).toBe('2 pallet');
+
+    useDisplayCatalog(STANDARD_UNIT_CATALOG.withUnits([{ kind: 'MASS', code: 'pallet', symbol: 'plt', name: 'Pallet', factor: '500' }]));
+
+    expect(formatValue({ amount: '2', unit: 'pallet' }, 'text', 'en')).toBe('2 plt');
+  });
+});
+
+describe('formatValue of a measure', () => {
+  it('shows money in its own currency whatever the format says', () => {
+    expect(formatValue({ amount: '89.88', currency: 'EUR' }, 'currency:EUR', 'en')).toBe('€89.88');
+    expect(formatValue({ amount: '89.88', currency: 'USD' }, 'text', 'en')).toBe('$89.88');
+  });
+
+  it('shows a quantity with its unit symbol and dimensions as lengths', () => {
+    expect(formatValue({ amount: '12.5', unit: 'kg' }, 'number', 'en')).toBe('12.5 kg');
+    expect(formatValue({ width: '120', height: '80', depth: '50', unit: 'cm' }, undefined, 'en')).toBe('120 × 80 × 50 cm');
   });
 });

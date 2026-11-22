@@ -1,7 +1,8 @@
 import { reflectComponentType } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { loadWidgetComponent } from '@processpuzzle/widgets';
 import { parse } from 'yaml';
 import { CONTENT_BOOK_WIDGET, CONTENT_BOOK_WIDGET_REGISTRATION } from './content-book.widget';
 
@@ -13,7 +14,10 @@ const SEED_CATALOGUE = 'libs/java-shared/base-widget-backend/src/main/resources/
 
 describe('content-book widget contract', () => {
   const registration = CONTENT_BOOK_WIDGET_REGISTRATION;
-  const mirror = reflectComponentType(registration.component);
+  let mirror: ReturnType<typeof reflectComponentType>;
+  beforeAll(async () => {
+    mirror = reflectComponentType(await loadWidgetComponent(registration));
+  });
 
   it('has exactly the inputs its props schema describes', () => {
     expect(mirror?.inputs.map((input) => input.templateName).sort()).toEqual(Object.keys(registration.definition.propsSchema?.properties ?? {}).sort());

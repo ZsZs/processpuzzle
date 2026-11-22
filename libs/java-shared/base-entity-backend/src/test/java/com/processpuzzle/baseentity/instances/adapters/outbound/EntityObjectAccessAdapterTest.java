@@ -5,8 +5,11 @@ import com.processpuzzle.baseentity.api.EntityObjectView;
 import com.processpuzzle.baseentity.instances.domain.EntityObject;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectRepository;
 import com.processpuzzle.baseentity.instances.domain.EntityObjectScope;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.RsqlToInstanceSpecificationPort;
 import cz.jirutka.rsql.parser.RSQLParserException;
 import java.math.BigDecimal;
@@ -260,5 +263,73 @@ class EntityObjectAccessAdapterTest {
         when(lookupPort.findByCode(ORG, "nope")).thenReturn(Optional.empty());
         assertThatThrownBy(() -> adapter.upsertAllByKey(ORG, "nope", List.of(), List.of()))
             .isInstanceOf(EntityObjectAccessException.UnknownType.class);
+    }
+
+    private static EntityDefinitionView itemDefinition() {
+        return new EntityDefinitionView("item", false, List.of(
+            new EntityAttributeView("totalWeight", ValueKindView.REFERENCE, false, false, null, false, false, false, false,
+                new MeasureView(MeasureView.Kind.QUANTITY, "MASS", null, 3, null, null, "kg", null)),
+            new EntityAttributeView("total", ValueKindView.REFERENCE, false, false, null, false, false, false, false,
+                new MeasureView(MeasureView.Kind.MONEY, null, null, null, List.of("EUR"), null, null, "EUR")),
+            new EntityAttributeView("note", ValueKindView.TEXT, false, false, null, false)));
+    }
+
+    private EntityObject item(Map<String, Object> payload) {
+        return EntityObject.builder().id(id).orgKey(ORG).entityDefinitionCode("item").version(1L).payload(new LinkedHashMap<>(payload)).build();
+    }
+
+    @Test
+    void updateAttributes_putsABareNumberInTheStoredFormOfAMeasureAttribute() {
+        when(lookupPort.findByCode(ORG, "item")).thenReturn(Optional.of(itemDefinition()));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(item(Map.of("note", "x"))));
+        when(repository.replacePayloadKeepingVersion(any(), any(), any(), any())).thenReturn(1);
+
+        adapter.updateAttributes(ORG, "item", id, Map.of("totalWeight", new BigDecimal("3.45678"), "total", new BigDecimal("19.995"), "note", "kept"), 1L);
+
+        verify(repository).replacePayloadKeepingVersion(org.mockito.ArgumentMatchers.eq(id), any(), any(), org.mockito.ArgumentMatchers.argThat(payload ->
+            Map.of("amount", "3.457", "unit", "kg", "baseAmount", 3.457).equals(payload.get("totalWeight"))
+                && Map.of("amount", "20", "currency", "EUR", "baseAmount", 20.0).equals(payload.get("total"))
+                && "kept".equals(payload.get("note"))));
+    }
+
+    @Test
+    void updateAttributes_refusesAValueThatDoesNotFitAMeasureAttributeAndWritesNothing() {
+        when(lookupPort.findByCode(ORG, "item")).thenReturn(Optional.of(itemDefinition()));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(item(Map.of())));
+
+        assertThatThrownBy(() -> adapter.updateAttributes(ORG, "item", id, Map.of("totalWeight", "heavy"), 1L))
+            .isInstanceOf(EntityObjectAccessException.InvalidValue.class)
+            .hasMessage("'totalWeight' cannot take that value: expected a number or a quantity object");
+        assertThatThrownBy(() -> adapter.updateAttributes(ORG, "item", id, Map.of("total", Map.of("amount", "1", "currency", "USD")), 1L))
+            .hasMessageContaining("currency 'USD' is not allowed here");
+
+        verify(repository, never()).replacePayloadKeepingVersion(any(), any(), any(), any());
+    }
+
+    @Test
+    void updateAttributes_clearsAMeasureAttributeWithNull_andLeavesOtherAttributesAlone() {
+        when(lookupPort.findByCode(ORG, "item")).thenReturn(Optional.of(itemDefinition()));
+        when(repository.findByIdAndOrgKey(id, ORG)).thenReturn(Optional.of(item(Map.of("totalWeight", Map.of("amount", "1", "unit", "kg")))));
+        when(repository.replacePayloadKeepingVersion(any(), any(), any(), any())).thenReturn(1);
+        Map<String, Object> values = new java.util.HashMap<>();
+        values.put("totalWeight", null);
+        values.put("unknown", 5);
+
+        adapter.updateAttributes(ORG, "item", id, values, 1L);
+
+        verify(repository).replacePayloadKeepingVersion(org.mockito.ArgumentMatchers.eq(id), any(), any(), org.mockito.ArgumentMatchers.argThat(payload ->
+            payload.containsKey("totalWeight") && payload.get("totalWeight") == null && Integer.valueOf(5).equals(payload.get("unknown"))));
+    }
+
+    @Test
+    void upsertAllByKey_putsEachRowsMeasuresInTheirStoredForm() {
+        when(lookupPort.findByCode(ORG, "item")).thenReturn(Optional.of(itemDefinition()));
+        when(repository.findAllByOrgKeyAndEntityDefinitionCode(ORG, "item")).thenReturn(List.of());
+
+        int created = adapter.upsertAllByKey(ORG, "item", List.of("note"), List.of(Map.of("note", "n1", "totalWeight", 2)));
+
+        assertThat(created).isEqualTo(1);
+        verify(repository).save(org.mockito.ArgumentMatchers.argThat(saved ->
+            Map.of("amount", "2", "unit", "kg", "baseAmount", 2.0).equals(saved.getPayload().get("totalWeight"))));
     }
 }

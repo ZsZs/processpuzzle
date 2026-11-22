@@ -70,7 +70,7 @@ import { UpgradeReportComponent } from './upgrade-report.component';
           <label class="starter-import__version">
             {{ scope + '.version' | transloco }}
             <select data-testid="starter-version" (change)="pickVersion(starter.id, $event)">
-              @for (version of starter.versions; track version.version) {
+              @for (version of store.selectableVersions(); track version.version) {
                 <option [value]="version.version" [selected]="version.version === store.selection()?.version">
                   {{ version.version }}{{ version.status === 'deprecated' ? ' (' + (scope + '.deprecated' | transloco) + ')' : '' }}
                 </option>

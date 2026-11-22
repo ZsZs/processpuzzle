@@ -33,6 +33,27 @@
     "end": "Ende",
     "first_day": "Erster Tag",
     "last_day": "Letzter Tag",
+    "repeat": {
+      "title": "Wiederholung",
+      "NEVER": "Nie",
+      "DAILY": "Täglich",
+      "WEEKLY": "Wöchentlich",
+      "MONTHLY": "Monatlich",
+      "ends": "Endet",
+      "ends_never": "Nie",
+      "ends_after": "Nach einer Anzahl von Terminen",
+      "ends_on": "Am Datum",
+      "count": "Termine",
+      "until": "Letzter Tag",
+      "frequency": {
+        "DAILY": "täglich",
+        "WEEKLY": "wöchentlich",
+        "MONTHLY": "monatlich"
+      },
+      "summary": "Wiederholt sich {{frequency}}",
+      "summary_count": "Wiederholt sich {{frequency}}, {{count}} Mal",
+      "summary_until": "Wiederholt sich {{frequency}} bis {{date}}"
+    },
     "organizer": "Organisator",
     "save": "Speichern",
     "saving": "Wird gespeichert…",
@@ -40,6 +61,25 @@
     "cancel": "Eintrag absagen",
     "confirm_cancel": "Diesen Eintrag endgültig absagen?",
     "cancel_confirmed": "Ja, absagen",
-    "keep": "Behalten"
+    "keep": "Behalten",
+    "invitations": {
+      "title": "Einladungen",
+      "search": "Person einladen",
+      "roles": "Rolle einladen",
+      "none": "Noch niemand eingeladen.",
+      "remove": "Entfernen",
+      "role": "Rolle",
+      "respond": "Ihre Antwort",
+      "invited": "Eingeladen",
+      "accept": "Zusagen",
+      "tentative": "Vielleicht",
+      "decline": "Absagen"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "Keine Antwort",
+    "ACCEPTED": "Zugesagt",
+    "TENTATIVE": "Vielleicht",
+    "DECLINED": "Abgesagt"
   }
 }

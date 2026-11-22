@@ -36,6 +36,10 @@ tags:
     description: Knowledge layer — entity type metadata
   - name: Base Entities
     description: Operation layer — entity instances
+  - name: Base Entity Units
+    description: Units an organization adds to the standard catalog of quantity units
+  - name: Base Entity Exchange Rates
+    description: The exchange rates of an organization, with the date each is valid from
 
 # ---------------------------------------------------------------------------
 # RSQL Filtering
@@ -794,6 +798,233 @@ paths:
   # own store, so that a later split into services with separate databases moves this segment into the
   # host rather than rewriting the resource. In the monolith it is also what keeps seven identical
   # `/translations` paths from colliding into an ambiguous mapping at startup.
+  # ==========================================================================
+  # Organization units
+  # ==========================================================================
+  /organizations/{orgKey}/units:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+    get:
+      operationId: listOrganizationUnits
+      tags: [ Base Entity Units ]
+      summary: List the organization's own units
+      description: >
+        Only the units the organization added; the standard catalog ships with the platform and is not
+        listed here. A retired unit is listed (status RETIRED) so that stored values naming it can still be read.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrganizationUnitStatus'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUnitPage'
+    post:
+      operationId: createOrganizationUnit
+      tags: [ Base Entity Units ]
+      summary: Add a unit to a quantity kind of the catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationUnitInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUnit'
+          headers:
+            Location:
+              schema:
+                type: string
+        '409':
+          description: the code is already a unit of the catalog or of this organization
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/units/{code}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/UnitCode'
+    get:
+      operationId: getOrganizationUnit
+      tags: [ Base Entity Units ]
+      summary: Get one of the organization's units
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUnit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: replaceOrganizationUnit
+      tags: [ Base Entity Units ]
+      summary: Rename a unit, or retire it
+      description: >
+        Only `symbol`, `name` and `status` can change. A unit's kind and factor are fixed once it exists —
+        stored amounts and their normalized `baseAmount` depend on them — so a different `kind`, `factor`
+        or `divisor` is answered 409. There is no delete: retire the unit (status RETIRED) and it is no
+        longer offered for new values, while values that name it stay valid.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationUnitInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationUnit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict, or kind / factor / divisor / code changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  # ==========================================================================
+  # Exchange rates
+  # ==========================================================================
+  /organizations/{orgKey}/exchange-rates:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+    get:
+      operationId: listExchangeRates
+      tags: [ Base Entity Exchange Rates ]
+      summary: List the organization's exchange rates
+      description: >
+        Every rate of the organization, newest first within a pair of currencies. A rate holds from its `validFrom`
+        date until the next rate of the same pair starts.
+      parameters:
+        - name: from
+          in: query
+          description: Only rates from this currency (ISO 4217).
+          schema:
+            type: string
+        - name: to
+          in: query
+          description: Only rates to this currency (ISO 4217).
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRatePage'
+    post:
+      operationId: createExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Add a rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExchangeRateInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRate'
+          headers:
+            Location:
+              schema:
+                type: string
+        '409':
+          description: the pair already has a rate valid from that date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/exchange-rates/{id}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/ExchangeRateId'
+    get:
+      operationId: getExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Get one rate
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: replaceExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Change a rate
+      description: >
+        Replaces the pair, the rate and the date it is valid from. Conversions read the rates when they run, so a change
+        applies to the next one; results a calculation has frozen keep the rate they were computed with.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExchangeRateInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict, or the pair already has a rate valid from that date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Delete a rate
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /organizations/{orgKey}/entity/translations/{locale}:
     parameters:
       - $ref: '#/components/parameters/OrgKeyParam'
@@ -872,6 +1103,19 @@ components:
       required: true
       schema:
         type: string
+    UnitCode:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: string
+    ExchangeRateId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     RevisionParam:
       name: revision
       in: query
@@ -988,6 +1232,9 @@ components:
         - COMMENTS
         - ADDRESS
         - GEO_LOCATION
+        - QUANTITY
+        - MONEY
+        - DIMENSIONS
         - CALCULATED
         - TAGS
         - TITLE
@@ -1233,6 +1480,43 @@ components:
           type: string
           pattern: '^[A-Z]{2}$'
           description: For ADDRESS controls only - the ISO 3166-1 alpha-2 code a new address starts with.
+        quantityKind:
+          type: string
+          description: >
+            For QUANTITY controls only: the quantity kind (LENGTH, MASS, TIME ...) whose units the control offers
+            when allowedUnits names none. Without either, every unit is offered, grouped by kind.
+        allowedUnits:
+          type: array
+          items:
+            type: string
+          description: >
+            For QUANTITY and DIMENSIONS controls only: the unit codes of the standard catalog to offer, and the only
+            ones a value may use. A DIMENSIONS attribute takes lengths only. Empty means every unit of the kind.
+        defaultUnit:
+          type: string
+          description: For QUANTITY and DIMENSIONS controls only - the unit a new value starts in; the base unit of the kind when absent.
+        scale:
+          type: integer
+          minimum: 0
+          maximum: 20
+          description: >
+            For QUANTITY and DIMENSIONS controls only: the most decimal places an amount may have, and the places a
+            unit conversion in the form is rounded to. A MONEY amount is limited by its currency's minor units instead.
+        allowedCurrencies:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]{3}$'
+          description: For MONEY controls only - the ISO 4217 codes to offer, and the only ones a value may use. Empty means every currency.
+        defaultCurrency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: For MONEY controls only - the currency a new amount starts in; the first allowed one when absent.
+        dimensionCount:
+          type: integer
+          minimum: 2
+          maximum: 3
+          description: For DIMENSIONS controls only - 2 (width x height, the default) or 3 (adds the depth).
         validationRules: { }
 
     BaseEntityAttribute:
@@ -1386,6 +1670,125 @@ components:
                 here.
 
     BaseEntityDefinitionPage:
+      $ref: '#/components/schemas/Page'
+
+    # ------------------------------------------------------------------
+    # Organization units
+    # ------------------------------------------------------------------
+    OrganizationUnitStatus:
+      type: string
+      enum: [ ACTIVE, RETIRED ]
+      description: A RETIRED unit is no longer offered for new values; values that name it stay valid.
+
+    OrganizationUnitInput:
+      type: object
+      required: [ code, symbol, name, kind, factor ]
+      properties:
+        code:
+          type: string
+          pattern: '^[A-Za-z][A-Za-z0-9_-]*$'
+          description: >
+            Identifies the unit in stored values, across all kinds, so it must not be a code of the standard
+            catalog or of another of the organization's units.
+        symbol:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+          description: A quantity kind of the standard catalog (`MASS`, `LENGTH`, ...). Fixed once the unit exists.
+        factor:
+          type: string
+          description: >
+            Decimal text. The unit's amount times `factor`, divided by `divisor`, is the amount in the
+            kind's base unit: a pallet of 500 kg is factor `500` in `MASS`. Positive. Fixed once the unit exists.
+        divisor:
+          type: string
+          description: Decimal text, positive, default `1` (a milligram is factor 1, divisor 1000000). Fixed once the unit exists.
+        status:
+          $ref: '#/components/schemas/OrganizationUnitStatus'
+        version:
+          type: integer
+          description: The version read, on a replace — a stale one is answered 409.
+
+    OrganizationUnit:
+      allOf:
+        - $ref: '#/components/schemas/OrganizationUnitInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+            createdBy:
+              type: string
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              readOnly: true
+            updatedBy:
+              type: string
+              readOnly: true
+
+    OrganizationUnitPage:
+      $ref: '#/components/schemas/Page'
+
+    # ------------------------------------------------------------------
+    # Exchange rates
+    # ------------------------------------------------------------------
+    ExchangeRateInput:
+      type: object
+      required: [ from, to, rate, validFrom ]
+      properties:
+        from:
+          type: string
+          description: ISO 4217 code of the currency being converted.
+        to:
+          type: string
+          description: ISO 4217 code of the currency converted to. Different from `from`.
+        rate:
+          type: string
+          description: >
+            Decimal text, positive: how many units of `to` one unit of `from` is worth. The inverse rate and
+            cross rates through another currency are derived, so a pair needs entering once.
+        validFrom:
+          type: string
+          format: date
+          description: The first day the rate holds. It holds until the next rate of the same pair starts.
+        version:
+          type: integer
+          description: The version read, on a replace — a stale one is answered 409.
+
+    ExchangeRate:
+      allOf:
+        - $ref: '#/components/schemas/ExchangeRateInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+            createdBy:
+              type: string
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              readOnly: true
+            updatedBy:
+              type: string
+              readOnly: true
+
+    ExchangeRatePage:
       $ref: '#/components/schemas/Page'
 
     # ------------------------------------------------------------------

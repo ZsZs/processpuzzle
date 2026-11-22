@@ -21,6 +21,13 @@
     "showMap": "Shows a map",
     "mapProvider": "Map provider",
     "defaultCountry": "Default country",
+    "quantityKind": "Quantity kind",
+    "allowedUnits": "Allowed units",
+    "defaultUnit": "Default unit",
+    "scale": "Decimal places",
+    "allowedCurrencies": "Allowed currencies",
+    "defaultCurrency": "Default currency",
+    "dimensionCount": "Dimensions",
     "_tooltips": {
       "code": "Key the value is stored under, unique within the entity type, e.g. orderNumber. Avoid changing it once records exist.",
       "name": "The field's label as users see it on forms and list columns, e.g. Order number.",
@@ -40,6 +47,13 @@
       "showMap": "For ADDRESS controls: show the address on a map, with coordinates derived from it.",
       "mapProvider": "For ADDRESS controls with a map: who draws it. Empty uses OpenStreetMap; a click always opens Google Maps.",
       "defaultCountry": "For ADDRESS controls: the ISO country code a new address starts with, e.g. HU. Empty uses the browser's country.",
+      "quantityKind": "For QUANTITY fields: what is measured (LENGTH, MASS, TIME …), so only its units are offered. QUANTITY, MONEY and DIMENSIONS fields use the REFERENCE value kind.",
+      "allowedUnits": "For QUANTITY and DIMENSIONS fields: the unit codes users may pick, e.g. kg, g. Empty offers every unit of the kind (dimensions: every length).",
+      "defaultUnit": "For QUANTITY and DIMENSIONS fields: the unit a new value starts in. Empty uses the kind's base unit.",
+      "scale": "For QUANTITY and DIMENSIONS fields: the most decimal places an amount may have, 0 to 20. A unit conversion is rounded to it too; empty rounds to 6.",
+      "allowedCurrencies": "For MONEY fields: the ISO currency codes users may pick, e.g. EUR, HUF. Empty offers every currency.",
+      "defaultCurrency": "For MONEY fields: the currency a new amount starts in. Empty uses the first allowed one.",
+      "dimensionCount": "For DIMENSIONS fields: 2 for width × height, 3 to add a depth. Empty means 2.",
       "dateStyle": "For DATE and DATE_TIME fields: how the date is shown, from short (12/31/26) to full (Thursday, December 31, 2026). Empty uses the default.",
       "timeStyle": "For DATE_TIME fields: how the time is shown, from short (14:30) to long (with seconds and time zone). Empty uses the default."
     }
@@ -71,6 +85,42 @@
       "updatedAt": "When the definition was last saved. Set by the system.",
       "releaseState": "Whether the running application uses this definition as it stands: NEW was never published, CHANGED differs from what was published, RELEASED is what the application uses. Publish in the Release section to change it. Set by the system.",
       "sharedFrom": "The common this type comes from. Its organization reads the type, but only the common releases or changes it. Empty for your own types. Set by the system."
+    }
+  },
+  "organization_unit": {
+    "_self": "Unit",
+    "code": "Code",
+    "symbol": "Symbol",
+    "name": "Name",
+    "kind": "Kind",
+    "factor": "Factor",
+    "divisor": "Divisor",
+    "status": "Status",
+    "version": "Version",
+    "_tooltips": {
+      "code": "Unique key of the unit within your organization, used in stored values, e.g. pallet. Fixed once the unit is saved.",
+      "symbol": "What appears beside an amount, e.g. plt.",
+      "name": "The unit spelled out, e.g. Pallet.",
+      "kind": "What the unit measures, e.g. MASS. A unit is added to a kind the standard catalog has. Fixed once the unit is saved.",
+      "factor": "How many of the kind's base units one of these is, e.g. 500 for a pallet of 500 kg. Fixed once the unit is saved, because stored amounts are derived from it.",
+      "divisor": "Divides the factor, for a unit that is a fraction of the base unit; 1 when left empty. Fixed once the unit is saved.",
+      "status": "ACTIVE for a unit in use, RETIRED to stop offering it for new values. Values already stored with it stay readable. A unit is never deleted.",
+      "version": "The revision on screen, kept so two designers cannot overwrite each other unnoticed."
+    }
+  },
+  "exchange_rate": {
+    "_self": "Exchange rate",
+    "from": "From",
+    "to": "To",
+    "rate": "Rate",
+    "validFrom": "Valid from",
+    "version": "Version",
+    "_tooltips": {
+      "from": "The currency converted from, e.g. EUR.",
+      "to": "The currency converted to, e.g. HUF. Another than From.",
+      "rate": "How many units of the second currency one unit of the first is worth, e.g. 395.5. The inverse and cross rates through another currency are derived, so a pair is entered once, in whichever direction you quote it.",
+      "validFrom": "The first day the rate holds, as YYYY-MM-DD. It holds until the pair has a later rate. One rate per pair and date.",
+      "version": "The revision on screen, kept so two designers cannot overwrite each other unnoticed."
     }
   },
   "artifact": {
@@ -216,6 +266,23 @@
       "POSITION_UNAVAILABLE": "The device could not determine its location.",
       "TIMEOUT": "Reading the location took too long. Try again.",
       "UNAVAILABLE": "This browser cannot tell your location."
+    }
+  },
+  "measure": {
+    "amount": "Amount",
+    "unit": "Unit",
+    "currency": "Currency",
+    "show_in": "Also show in",
+    "width": "Width",
+    "height": "Height",
+    "depth": "Depth",
+    "convert_on": "Changing the unit converts the amount. Click to keep the number instead.",
+    "convert_off": "Changing the unit keeps the number. Click to convert the amount instead.",
+    "error": {
+      "amount": "Enter a number, for example 12.5.",
+      "scale": "At most {{ max }} decimal places.",
+      "incomplete": "Fill in every measure, or none.",
+      "required": "This value is required."
     }
   },
   "working_context": {

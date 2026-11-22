@@ -1,0 +1,81 @@
+name: Check stage health
+description: >-
+  Fails the job, naming the endpoint, when stage is down or too slow to be tested. Without it a struggling stage shows
+  up as a dozen unrelated timeouts and "element(s) not found" across the browser matrix, which says nothing about why.
+
+inputs:
+  base_url:
+    description: The testbed's address.
+    required: false
+    default: https://testbed.stage.processpuzzle.de
+  auth_url:
+    description: Keycloak's address.
+    required: false
+    default: https://auth.stage.processpuzzle.de
+  max_seconds:
+    description: The slowest an endpoint may answer and still count as healthy.
+    required: false
+    default: '5'
+  wait_minutes:
+    description: How long to keep probing before declaring stage unhealthy; a stage that has only just restarted gets this long to come up.
+    required: false
+    default: '5'
+
+runs:
+  using: composite
+  steps:
+    # One probe per thing a test goes through: the page the browser loads, the backend's own health, a database-backed
+    # API read (which is what a form or a list does), and the identity provider every signed-in test depends on.
+    - name: Probe the stage
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.base_url }}
+        AUTH_URL: ${{ inputs.auth_url }}
+        MAX_SECONDS: ${{ inputs.max_seconds }}
+        WAIT_MINUTES: ${{ inputs.wait_minutes }}
+      run: |
+        probes=(
+          "frontend|$BASE_URL/"
+          "backend health|$BASE_URL/api/actuator/health"
+          "backend data|$BASE_URL/api/organizations/processpuzzle-testbed/event-definitions"
+          "keycloak|$AUTH_URL/realms/processpuzzle-testbed/.well-known/openid-configuration"
+        )
+
+        deadline=$((SECONDS + WAIT_MINUTES * 60))
+        while true; do
+          problems=()
+          for probe in "${probes[@]}"; do
+            name="${probe%%|*}"
+            url="${probe#*|}"
+            # Three tries per probe, the middle one taken: a single slow answer is noise, a slow median is a stage.
+            times=()
+            code=000
+            for _ in 1 2 3; do
+              result=$(curl -s -o /dev/null -m 30 -w '%{http_code} %{time_total}' "$url" || echo "000 30")
+              code="${result%% *}"
+              times+=("${result##* }")
+              [ "$code" = "200" ] || break
+            done
+            median=$(printf '%s\n' "${times[@]}" | sort -n | sed -n "$(( (${#times[@]} + 1) / 2 ))p")
+            echo "$name: HTTP $code in ${median}s ($url)"
+            if [ "$code" != "200" ]; then
+              problems+=("$name answered HTTP $code ($url)")
+            elif awk -v t="$median" -v max="$MAX_SECONDS" 'BEGIN { exit !(t > max) }'; then
+              problems+=("$name took ${median}s, more than ${MAX_SECONDS}s ($url)")
+            fi
+          done
+
+          if [ ${#problems[@]} -eq 0 ]; then
+            echo "Stage is healthy."
+            exit 0
+          fi
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            for problem in "${problems[@]}"; do
+              echo "::error title=Stage is unhealthy::$problem"
+            done
+            echo "::error::Stage was still unhealthy after ${WAIT_MINUTES} minutes, so the browser tests were not started: their failures would say nothing about the code."
+            exit 1
+          fi
+          echo "Not healthy yet (${problems[*]}). Probing again in 30 seconds."
+          sleep 30
+        done

@@ -2,11 +2,18 @@ package com.processpuzzle.calendar.entry.adapters.inbound;
 
 import com.processpuzzle.calendar.definition.domain.CalendarDefinition;
 import com.processpuzzle.calendar.definition.domain.EntryKind;
+import com.processpuzzle.calendar.entry.domain.Attendee;
+import com.processpuzzle.calendar.entry.domain.AttendeeRequest;
+import com.processpuzzle.calendar.entry.domain.AttendeeType;
 import com.processpuzzle.calendar.entry.domain.BookingRequest;
 import com.processpuzzle.calendar.entry.domain.CalendarEntry;
 import com.processpuzzle.calendar.entry.domain.EntryView;
 import com.processpuzzle.calendar.entry.domain.EntryVisibility;
+import com.processpuzzle.calendar.entry.domain.OccurrenceSpan;
+import com.processpuzzle.calendar.entry.domain.OccurrenceView;
+import com.processpuzzle.calendar.entry.domain.Recurrence;
 import com.processpuzzle.calendar.entry.usecases.inbound.GetCalendar;
+import com.processpuzzle.calendar.model.AttendeeInput;
 import com.processpuzzle.calendar.model.CalendarEntryInput;
 import com.processpuzzle.calendar.model.CalendarPermissions;
 import com.processpuzzle.calendar.model.CalendarView;
@@ -39,7 +46,36 @@ public class EntryMapper {
                 input.getTimeZone(),
                 input.getStartDate(),
                 input.getEndDate(),
-                input.getVersion());
+                input.getVersion(),
+                input.getAttendees() == null ? null : input.getAttendees().stream().map(EntryMapper::invitation).toList(),
+                recurrence(input.getRecurrence()));
+    }
+
+    private static Recurrence recurrence(com.processpuzzle.calendar.model.CalendarRecurrence input) {
+        if (input == null) {
+            return null;
+        }
+        return new Recurrence(
+                input.getFrequency() == null ? null : Recurrence.Frequency.valueOf(input.getFrequency().name()),
+                input.getCount(),
+                input.getUntil());
+    }
+
+    private static com.processpuzzle.calendar.model.CalendarRecurrence recurrenceModel(Recurrence rule) {
+        if (rule == null) {
+            return null;
+        }
+        return new com.processpuzzle.calendar.model.CalendarRecurrence(
+                com.processpuzzle.calendar.model.RecurrenceFrequency.valueOf(rule.frequency().name()))
+                .count(rule.count())
+                .until(rule.until());
+    }
+
+    private static AttendeeRequest invitation(AttendeeInput input) {
+        return new AttendeeRequest(
+                input.getType() == null ? null : AttendeeType.valueOf(input.getType().name()),
+                input.getPrincipal(),
+                Boolean.TRUE.equals(input.getRequired()));
     }
 
     public com.processpuzzle.calendar.model.CalendarEntry toModel(EntryView view) {
@@ -52,12 +88,16 @@ public class EntryMapper {
                 .timeZone(entry.getTimeZone())
                 .startDate(entry.getStartDate())
                 .endDate(entry.getEndDate())
+                .recurrence(recurrenceModel(entry.recurrence()))
                 .mine(view.mine())
+                .invited(view.invited())
+                .canRespond(view.canRespond())
                 .canEdit(view.canEdit())
                 .version(entry.getVersion())
                 .createdAt(offset(entry.getCreatedAt()))
                 .updatedAt(offset(entry.getUpdatedAt()));
         if (!view.busy()) {
+            model.attendees(entry.getAttendees().stream().map(attendee -> attendee(attendee, view.canEdit())).toList());
             model.title(entry.getTitle())
                     .description(entry.getDescription())
                     .location(entry.getLocation())
@@ -68,19 +108,34 @@ public class EntryMapper {
         return model;
     }
 
-    public Occurrence toOccurrence(EntryView view) {
+    /** An invitation as the caller may see it: the subject only to the people who may change the entry. */
+    private static com.processpuzzle.calendar.model.CalendarAttendee attendee(Attendee attendee, boolean principalVisible) {
+        boolean user = attendee.getType() == AttendeeType.USER;
+        return new com.processpuzzle.calendar.model.CalendarAttendee(
+                        com.processpuzzle.calendar.model.AttendeeType.valueOf(attendee.getType().name()), attendee.getDisplayName(), attendee.isRequired())
+                .principal(principalVisible ? attendee.getPrincipal() : null)
+                .response(user && attendee.getResponse() != null
+                        ? com.processpuzzle.calendar.model.AttendanceResponse.valueOf(attendee.getResponse().name()) : null)
+                .respondedAt(offset(attendee.getRespondedAt()));
+    }
+
+    public Occurrence toOccurrence(OccurrenceView occurrence) {
+        EntryView view = occurrence.view();
         CalendarEntry entry = view.entry();
-        Occurrence occurrence = new Occurrence(entry.getId(), entry.getCalendarKey(), entry.getKind() == EntryKind.ALL_DAY, view.busy())
-                .start(offset(entry.getStartUtc()))
-                .end(offset(entry.getEndUtc()))
-                .startDate(entry.getStartDate())
-                .endDate(entry.getEndDate())
+        OccurrenceSpan span = occurrence.span();
+        Occurrence result = new Occurrence(entry.getId(), entry.getCalendarKey(), entry.isAllDay(), view.busy())
+                .recurrenceId(span.recurrenceId() == null ? null : span.recurrenceId().toString())
+                .start(offset(span.start()))
+                .end(offset(span.end()))
+                .startDate(span.startDate())
+                .endDate(span.endDate())
                 .mine(view.mine())
+                .invited(view.invited())
                 .canEdit(view.canEdit());
         if (!view.busy()) {
-            occurrence.title(entry.getTitle()).location(entry.getLocation()).category(entry.getCategory());
+            result.title(entry.getTitle()).location(entry.getLocation()).category(entry.getCategory());
         }
-        return occurrence;
+        return result;
     }
 
     public CalendarView toView(GetCalendar.Summary summary) {

@@ -33,6 +33,27 @@
     "end": "Ends",
     "first_day": "First day",
     "last_day": "Last day",
+    "repeat": {
+      "title": "Repeats",
+      "NEVER": "Never",
+      "DAILY": "Daily",
+      "WEEKLY": "Weekly",
+      "MONTHLY": "Monthly",
+      "ends": "Ends",
+      "ends_never": "Never",
+      "ends_after": "After a number of occurrences",
+      "ends_on": "On date",
+      "count": "Occurrences",
+      "until": "Last day",
+      "frequency": {
+        "DAILY": "daily",
+        "WEEKLY": "weekly",
+        "MONTHLY": "monthly"
+      },
+      "summary": "Repeats {{frequency}}",
+      "summary_count": "Repeats {{frequency}}, {{count}} times",
+      "summary_until": "Repeats {{frequency}} until {{date}}"
+    },
     "organizer": "Organizer",
     "save": "Save",
     "saving": "Saving…",
@@ -40,6 +61,25 @@
     "cancel": "Cancel entry",
     "confirm_cancel": "Cancel this entry for good?",
     "cancel_confirmed": "Yes, cancel it",
-    "keep": "Keep it"
+    "keep": "Keep it",
+    "invitations": {
+      "title": "Invitations",
+      "search": "Invite a person",
+      "roles": "Invite a role",
+      "none": "Nobody invited yet.",
+      "remove": "Remove",
+      "role": "Role",
+      "respond": "Your answer",
+      "invited": "Invited",
+      "accept": "Accept",
+      "tentative": "Tentative",
+      "decline": "Decline"
+    }
+  },
+  "attendance": {
+    "NEEDS_ACTION": "No answer yet",
+    "ACCEPTED": "Accepted",
+    "TENTATIVE": "Tentative",
+    "DECLINED": "Declined"
   }
 }

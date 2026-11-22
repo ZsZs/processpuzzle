@@ -8,6 +8,7 @@ import com.processpuzzle.baseentity.definition.domain.BaseEntityAttribute;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.baseentity.definition.domain.DateFormat;
 import com.processpuzzle.baseentity.definition.domain.DateStyle;
+import com.processpuzzle.baseentity.definition.domain.FormControlType;
 import com.processpuzzle.baseentity.definition.domain.TimeStyle;
 import com.processpuzzle.baseentity.definition.domain.EntityDefinitionRepository;
 import com.processpuzzle.baseentity.definition.usecases.inbound.CreateEntityDefinitionUseCase;
@@ -139,6 +140,33 @@ class DefaultEntityLoaderTest {
                 .isEqualTo(new DateFormat(DateStyle.SHORT, null));
         assertThat(attribute(dynamicEntity, "dateTimeAttr").getDateFormat())
                 .isEqualTo(new DateFormat(DateStyle.MEDIUM, TimeStyle.SHORT));
+    }
+
+    @Test
+    void seedsTheTestbedMeasures() {
+        loader.loadDefaults();
+
+        ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
+        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
+                .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
+
+        BaseEntityAttribute weight = attribute(dynamicEntity, "weight");
+        assertThat(weight.getFormControlType()).isEqualTo(FormControlType.QUANTITY);
+        assertThat(weight.getQuantityKind()).isEqualTo("MASS");
+        assertThat(weight.getAllowedUnits()).containsExactly("kg", "g", "lb");
+        assertThat(weight.getDefaultUnit()).isEqualTo("kg");
+        assertThat(weight.getScale()).isEqualTo(3);
+        BaseEntityAttribute price = attribute(dynamicEntity, "price");
+        assertThat(price.getFormControlType()).isEqualTo(FormControlType.MONEY);
+        assertThat(price.getAllowedCurrencies()).containsExactly("EUR", "HUF", "USD");
+        assertThat(price.getDefaultCurrency()).isEqualTo("EUR");
+        BaseEntityAttribute size = attribute(dynamicEntity, "size");
+        assertThat(size.getFormControlType()).isEqualTo(FormControlType.DIMENSIONS);
+        assertThat(size.getDimensionCount()).isEqualTo(3);
+        assertThat(size.getAllowedUnits()).containsExactly("cm", "m", "in");
+        assertThat(dynamicEntity.getAttributes()).filteredOn(a -> List.of("weight", "price", "size").contains(a.getCode()))
+                .as("optional, so the generated e2e suites that cannot fill them still save").allMatch(a -> !a.isRequired());
     }
 
     private static BaseEntityAttribute attribute(BaseEntityDefinition definition, String code) {

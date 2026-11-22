@@ -1,6 +1,8 @@
 import { ANIMATION_MODULE_TYPE } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { OrganizationExchangeRates } from '@processpuzzle/base-entity';
+import { ExchangeRates, UnitCatalog } from '@processpuzzle/util';
 import { describe, expect, it } from 'vitest';
 import { mock } from 'vitest-mock-extended';
 import { BaseRule, Severity } from '../domain/base-rule';
@@ -31,6 +33,7 @@ describe('BaseRuleDryRunDialog', () => {
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: dialogRef },
         { provide: BaseRuleEvaluatorService, useValue: evaluator },
+        { provide: OrganizationExchangeRates, useValue: { rates: () => ExchangeRates.NONE } },
       ],
     });
 
@@ -65,7 +68,7 @@ describe('BaseRuleDryRunDialog', () => {
 
       component.onRun();
 
-      expect(evaluator.evaluate).toHaveBeenCalledWith({ qty: 5 }, testRule);
+      expect(evaluator.evaluate).toHaveBeenCalledWith({ qty: 5 }, testRule, expect.any(UnitCatalog), expect.any(ExchangeRates));
     });
 
     it('stores the evaluator result on the result signal when JSON is valid', () => {

@@ -343,3 +343,45 @@ plan, and why:
   end of both is exclusive, which `CalendarEntryPersistenceTest` checks at every edge.
 - **Seed:** `default-calendar-definitions/base-calendar/processpuzzle-testbed-calendar-definitions.yaml` ships a
   public events calendar, a team calendar and a room, loaded by `base-calendar.loadDefaultCalendarDefinitions`.
+
+## 13. Phase 3a as built (attendees)
+
+Contract: `base-calendar-api.yaml` gains `attendees` on entries, `invited`/`canRespond`, the answer endpoint
+(`PUT …/entries/{id}/attendance`), `GET …/directory/users`, `GET …/my-occurrences` and `DELETE …/users/{userSub}`.
+Where the build differs from §4a, and why:
+
+- **The organizer is an invitee, accepted, from the start.** That is what lets "my calendar" and the detail rule
+  treat the organizer and the invitees alike; the organizer cannot be removed from the list.
+- **Only a PUT that names invitees replaces them.** A change that omits `attendees` keeps them as they are; the
+  reschedule path of the widget relies on this, so a drag cannot wipe the invitations.
+- **Moving the time resets every invitee's answer**, but not the organizer's, who made the move.
+- **Invitations by name are checked against the directory and take the name from it.** A subject the directory does
+  not know is refused (422, naming the invitation), so no invitation can carry a name nobody checked. Without a
+  directory adapter nobody can be invited by name (`EmptyDirectory`).
+- **The directory is exposed as `org-admin :: port`** (a named interface, so the testbed composition can adapt it).
+  The adapter passes only subject and name, not e-mail or roles, and drops disabled accounts. The realm of an
+  organization is its key.
+- **Roles count only for members of the organization** (`CallerMembership`): a role of another realm invites nobody.
+- **Erasure removes a user's invitations and anonymizes the entries they organized** (organizer becomes `erased`).
+  §4a said "anonymize the attendee snapshots"; removing the invitation is the cleaner act, because a second
+  anonymized row would collide with the first on the same entry's key.
+- **Visibility:** an invitee sees a private entry in full, and answers without the booking right. Invitees are hidden
+  in a busy view. An invitee's subject is sent only to people who may edit the entry.
+- **Directory search** needs a token and at least two characters, and returns at most 20 matches.
+- **Still out of 3a:** recurring entries (phase 4, §14), and the events for answers and erasure (only
+  booking, change and cancellation publish facts).
+
+## 14. Phases 4 and 5 as built (2026-11-20)
+
+Simplified on purpose, after the decisions of 2026-11-20:
+
+- **Recurrence (phase 4):** three presets only, daily, weekly (the weekday of the template) and monthly (its day of the
+  month), ending after a count (1 to 500) or on a date, or never. The RRULE text is not stored; the series is held as
+  its preset, its count or until date, and its first and last day. The server expands occurrences per query window
+  and keeps the template's local time across daylight saving time. Editing changes the whole series. Not built:
+  exceptions for one occurrence, "this and following", and the free-text RRULE.
+- **Capacity (phase 5):** a resource calendar's capacity is the number of bookings that may overlap at one time. Each
+  occurrence of a booking is checked against the bookings already in place, the entry being changed left out. The
+  released calendar row is locked for the booking or change, so concurrent bookings take turns. A series is checked
+  for two years of occurrences; beyond that it is not checked. Capacity counts bookings, not units, so no `quantity`
+  exists. Not built: release and import of participants, `RolesReferenced`, and the definition authoring screen.

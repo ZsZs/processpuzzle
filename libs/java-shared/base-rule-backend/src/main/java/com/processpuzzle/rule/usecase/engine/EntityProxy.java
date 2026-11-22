@@ -30,6 +30,11 @@ public final class EntityProxy implements ProxyObject {
         this.fields = fields;
     }
 
+    /** The data this proxy shows, for the helpers that read a stored value as a whole ({@code qty(entity.weight)}). */
+    Map<String, Object> fields() {
+        return fields;
+    }
+
     /**
      * Wraps a Map as the root object passed into a rule's {@code entity} parameter.
      */

@@ -22,10 +22,12 @@ public class EvaluateCalculation {
     private final CalculationValidator validator;
     private final InputResolver resolver;
     private final CalculationEngine engine;
+    private final OrganizationRates rates;
     private final TransactionTemplate reading;
 
     public EvaluateCalculation(FindCalculationDefinition definitions, CalculationValidator validator, InputResolver resolver,
-                               CalculationEngine engine, PlatformTransactionManager transactionManager) {
+                               CalculationEngine engine, OrganizationRates rates, PlatformTransactionManager transactionManager) {
+        this.rates = rates;
         this.definitions = definitions;
         this.validator = validator;
         this.resolver = resolver;
@@ -62,7 +64,7 @@ public class EvaluateCalculation {
         return reading.execute(status -> {
             ResolvedInputs inputs = resolver.resolve(orgKey, model, parameters, unsaved);
             try {
-                return new Evaluation(engine.evaluate(validation.analysis().plan(), inputs.parameters(), inputs.inputs()).plain(), null);
+                return new Evaluation(rates.within(orgKey, () -> engine.evaluate(validation.analysis().plan(), inputs.parameters(), inputs.inputs())).plain(), null);
             } catch (CalculationException e) {
                 EvaluationResult partial = new EvaluationResult(Map.of(), Map.of(), Map.of(),
                         validation.analysis().order(), e.trace());

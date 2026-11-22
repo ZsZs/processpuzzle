@@ -25,11 +25,16 @@ describe('launcherCardsOf', () => {
       title: 'Stock keeping',
       subtitle: 'Items and places',
       content: ['Track items.', 'Counts'],
-      actions: [],
+      actions: [{ caption: 'Go...', link: '../stock/overview' }],
       translocoPrefix: '',
       link: '../stock/overview',
       backgroundImage: 'blob:image',
     });
+  });
+
+  it('captions the button with the given text', () => {
+    const [card] = launcherCardsOf([STOCK], [{}], [], 1, 'Los...');
+    expect(card.actions).toEqual([{ caption: 'Los...', link: '../stock/overview' }]);
   });
 
   it('is titled with the module name, and leaves out what has no text, when nothing is translated', () => {

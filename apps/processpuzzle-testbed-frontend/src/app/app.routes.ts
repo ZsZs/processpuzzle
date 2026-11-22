@@ -314,6 +314,18 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    path: 'base-calendar',
+    title: 'ProcessPuzzle Testbed - Base Calendar',
+    data: { icon: 'calendar_month', menuTitle: 'base-calendar' },
+    loadComponent: () => import('./content/base-calendar/base-calendar.component').then((comp) => comp.BaseCalendarComponent),
+    providers: [LayoutService],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'overview' },
+      { path: 'overview', loadComponent: () => import('./content/base-calendar/overview.component').then((comp) => comp.OverviewComponent) },
+      { path: 'samples', loadComponent: () => import('./content/base-calendar/samples.component').then((comp) => comp.SamplesComponent) },
+    ],
+  },
+  {
     path: 'base-calculation',
     title: 'ProcessPuzzle Testbed - Base Calculation',
     data: { icon: 'calculate', menuTitle: 'base-calculation' },

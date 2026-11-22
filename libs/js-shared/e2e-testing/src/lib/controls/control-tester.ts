@@ -165,6 +165,9 @@ function toDashedToken(value: string): string {
   return token;
 }
 
+/** The mark the generated suites lead their fixture text with: `e2e-<time>-<entity>-r<retry>`, as text or dashed. */
+const FIXTURE_MARK_PREFIX = /^e2e-[a-z0-9]+-[a-z0-9-]+?-r\d+(?=[\s-]|$)/;
+
 class TextBoxControlTester extends ControlTester {
   innerLocator(): string {
     return 'input, textarea';
@@ -173,14 +176,18 @@ class TextBoxControlTester extends ControlTester {
   override createValue(context: ControlDataContext): string {
     if (this.inputType() === 'number') return '123';
 
-    const suffix = context.uniqueSuffix ? ` ${context.uniqueSuffix}` : '';
-    return this.patternedValue(`Test ${this.attr.label ?? this.attr.attrName}${suffix}`);
+    // The run's mark leads, so everything a run created sorts together and is found by `e2e-` at the start.
+    const mark = context.uniqueSuffix ? `${context.uniqueSuffix} ` : '';
+    return this.patternedValue(`${mark}Test ${this.attr.label ?? this.attr.attrName}`);
   }
 
   override updateValue(_context: ControlDataContext, original: Record<string, string>): string {
     if (this.inputType() === 'number') return String(Number(original[this.attr.attrName] ?? 0) + 1);
 
-    return this.patternedValue(`Updated ${original[this.attr.attrName] ?? this.attr.attrName}`);
+    const current = original[this.attr.attrName] ?? this.attr.attrName;
+    // Keeps the mark in front: `e2e-x-document-r0 Test Title` becomes `e2e-x-document-r0 Updated Test Title`.
+    const mark = FIXTURE_MARK_PREFIX.exec(current)?.[0];
+    return this.patternedValue(mark ? `${mark} Updated${current.slice(mark.length)}` : `Updated ${current}`);
   }
 
   /**

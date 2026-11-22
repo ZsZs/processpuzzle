@@ -2,9 +2,12 @@ package com.processpuzzle.baseentity.definition.domain;
 
 import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.common.ValidationException.Violation;
+import com.processpuzzle.core.quantity.UnitCatalog;
+import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,11 +20,29 @@ import org.springframework.stereotype.Component;
 @Component
 public class EntityDefinitionValidator {
 
+    private final UnitCatalogProvider catalogs;
+
+    /** A validator that knows only the standard units. */
+    public EntityDefinitionValidator() {
+        this(UnitCatalogProvider.standardOnly());
+    }
+
+    @Autowired
+    public EntityDefinitionValidator(UnitCatalogProvider catalogs) {
+        this.catalogs = catalogs;
+    }
+
+    /** Validates a definition that already belongs to an organization, in that organization's units. */
     public void validate(BaseEntityDefinition definition) {
+        validate(definition.getOrgKey(), definition);
+    }
+
+    /** Validates a definition about to be saved to {@code orgKey}, which it may not carry yet: the units it names are that organization's. */
+    public void validate(String orgKey, BaseEntityDefinition definition) {
         List<Violation> violations = new ArrayList<>();
         validateEmbeddedParent(definition, violations);
         validateContextObject(definition, violations);
-        validateAttributes(definition, violations);
+        validateAttributes(orgKey, definition, violations);
         validateIdentifiers(definition, violations);
         validateEmbeddedComponentsUniqueness(definition, violations);
 
@@ -63,13 +84,14 @@ public class EntityDefinitionValidator {
         }
     }
 
-    private void validateAttributes(BaseEntityDefinition definition, List<Violation> violations) {
+    private void validateAttributes(String orgKey, BaseEntityDefinition definition, List<Violation> violations) {
+        UnitCatalog catalog = catalogs.forOrganization(orgKey);
         for (BaseEntityAttribute attribute : definition.getAttributes()) {
-            validateAttribute(attribute, violations);
+            validateAttribute(attribute, violations, catalog);
         }
     }
 
-    private void validateAttribute(BaseEntityAttribute attribute, List<Violation> violations) {
+    private void validateAttribute(BaseEntityAttribute attribute, List<Violation> violations, UnitCatalog catalog) {
         if (attribute.getFormControlType() == FormControlType.ENUM_SELECT
             && attribute.getValueKind() != ValueKind.ENUM) {
             violations.add(new Violation(attribute.getCode(), "ENUM_SELECT attributes must declare valueKind=ENUM"));
@@ -89,6 +111,7 @@ public class EntityDefinitionValidator {
         validateComments(attribute, violations);
         validateAddress(attribute, violations);
         validateGeoLocation(attribute, violations);
+        MeasureAttributeValidator.validate(catalog, attribute, violations);
         validateCalculated(attribute, violations);
     }
 

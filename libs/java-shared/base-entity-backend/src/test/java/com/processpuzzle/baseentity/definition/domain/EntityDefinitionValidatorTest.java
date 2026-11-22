@@ -1,6 +1,8 @@
 package com.processpuzzle.baseentity.definition.domain;
 
 import com.processpuzzle.baseentity.common.ValidationException;
+import com.processpuzzle.core.quantity.UnitCatalog;
+import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -369,6 +371,200 @@ class EntityDefinitionValidatorTest {
     private static BaseEntityAttribute calculatedAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {
         return BaseEntityAttribute.builder().code("total").name("Total").valueKind(valueKind)
                 .formControlType(FormControlType.CALCULATED).multiplicity(multiplicity).linkedEntityType(linkedEntityType).build();
+    }
+
+    @Test
+    void validate_measureAttributesWithTheirOwnOptions_pass() {
+        BaseEntityAttribute quantity = measureAttribute(FormControlType.QUANTITY);
+        quantity.setQuantityKind("MASS");
+        quantity.setAllowedUnits(List.of("kg", "g"));
+        quantity.setDefaultUnit("g");
+        quantity.setScale(3);
+        validator.validate(definitionWith(quantity));
+
+        BaseEntityAttribute money = measureAttribute(FormControlType.MONEY);
+        money.setAllowedCurrencies(List.of("EUR", "HUF"));
+        money.setDefaultCurrency("HUF");
+        validator.validate(definitionWith(money));
+
+        BaseEntityAttribute dimensions = measureAttribute(FormControlType.DIMENSIONS);
+        dimensions.setAllowedUnits(List.of("cm", "m"));
+        dimensions.setDefaultUnit("cm");
+        dimensions.setScale(1);
+        dimensions.setDimensionCount(3);
+        validator.validate(definitionWith(dimensions));
+
+        validator.validate(definitionWith(measureAttribute(FormControlType.QUANTITY)));
+    }
+
+    @Test
+    void validate_measureOfAnotherShape_throwsValidationException() {
+        for (FormControlType type : List.of(FormControlType.QUANTITY, FormControlType.MONEY, FormControlType.DIMENSIONS)) {
+            String message = type + " attributes must declare valueKind=REFERENCE, a single value and no linkedEntityType";
+            BaseEntityAttribute text = measureAttribute(type);
+            text.setValueKind(ValueKind.TEXT);
+            assertSingleViolation(text, message);
+            BaseEntityAttribute many = measureAttribute(type);
+            many.setMultiplicity(Multiplicity.ZERO_TO_N);
+            assertSingleViolation(many, message);
+            BaseEntityAttribute linked = measureAttribute(type);
+            linked.setLinkedEntityType("unit");
+            assertSingleViolation(linked, message);
+        }
+    }
+
+    @Test
+    void validate_quantityNamingAnOrganizationUnit_isReadInThatOrganizationsCatalog() {
+        UnitCatalog withPallet = UnitCatalog.standard().withUnits(List.of(
+                new UnitCatalog.ExtraUnit("MASS", "pallet", "plt", "Pallet", new java.math.BigDecimal("500"), java.math.BigDecimal.ONE)));
+        UnitCatalogProvider catalogs = orgKey -> "acme".equals(orgKey) ? withPallet : UnitCatalog.standard();
+        EntityDefinitionValidator orgAware = new EntityDefinitionValidator(catalogs);
+        BaseEntityAttribute load = measureAttribute(FormControlType.QUANTITY);
+        load.setAllowedUnits(List.of("kg", "pallet"));
+        BaseEntityDefinition definition = definitionWith(load);
+
+        orgAware.validate("acme", definition);
+
+        assertThatThrownBy(() -> orgAware.validate("other", definition)).isInstanceOf(ValidationException.class)
+                .satisfies(e -> assertThat(((ValidationException) e).getViolations()).extracting(ValidationException.Violation::message)
+                        .contains("allowedUnits names unknown unit 'pallet'"));
+        definition.setOrgKey("acme");
+        orgAware.validate(definition);
+        assertThatThrownBy(() -> validator.validate("acme", definition)).as("a validator without organization units").isInstanceOf(ValidationException.class);
+    }
+
+    @Test
+    void validate_quantityNamingWhatTheCatalogDoesNotKnow_throwsValidationException() {
+        BaseEntityAttribute kind = measureAttribute(FormControlType.QUANTITY);
+        kind.setQuantityKind("LUMINOSITY");
+        assertSingleViolation(kind, "quantityKind 'LUMINOSITY' is not a quantity kind of the catalog");
+
+        BaseEntityAttribute unit = measureAttribute(FormControlType.QUANTITY);
+        unit.setAllowedUnits(List.of("kg", "parsec"));
+        assertSingleViolation(unit, "allowedUnits names unknown unit 'parsec'");
+
+        BaseEntityAttribute unitOfAnotherKind = measureAttribute(FormControlType.QUANTITY);
+        unitOfAnotherKind.setQuantityKind("MASS");
+        unitOfAnotherKind.setAllowedUnits(List.of("kg", "m"));
+        assertSingleViolation(unitOfAnotherKind, "allowedUnits 'm' measures LENGTH, not MASS");
+
+        BaseEntityAttribute defaultOfAnotherKind = measureAttribute(FormControlType.QUANTITY);
+        defaultOfAnotherKind.setQuantityKind("MASS");
+        defaultOfAnotherKind.setDefaultUnit("m");
+        assertSingleViolation(defaultOfAnotherKind, "defaultUnit 'm' measures LENGTH, not MASS");
+
+        BaseEntityAttribute unknownDefault = measureAttribute(FormControlType.QUANTITY);
+        unknownDefault.setDefaultUnit("parsec");
+        assertSingleViolation(unknownDefault, "defaultUnit names unknown unit 'parsec'");
+    }
+
+    @Test
+    void validate_measureWithABlankLinkedTypeIsAsGoodAsOneWithout() {
+        BaseEntityAttribute quantity = measureAttribute(FormControlType.QUANTITY);
+        quantity.setLinkedEntityType(" ");
+        validator.validate(definitionWith(quantity));
+    }
+
+    @Test
+    void validate_defaultUnitOutsideTheAllowedOnes_throwsValidationException() {
+        BaseEntityAttribute quantity = measureAttribute(FormControlType.QUANTITY);
+        quantity.setAllowedUnits(List.of("kg", "g"));
+        quantity.setDefaultUnit("t");
+        assertSingleViolation(quantity, "defaultUnit 't' is not one of the allowedUnits");
+    }
+
+    @Test
+    void validate_scaleOutsideZeroToTwenty_throwsValidationException() {
+        for (int scale : new int[] {-1, 21}) {
+            BaseEntityAttribute quantity = measureAttribute(FormControlType.QUANTITY);
+            quantity.setScale(scale);
+            assertSingleViolation(quantity, "scale must be between 0 and 20");
+        }
+        BaseEntityAttribute edge = measureAttribute(FormControlType.QUANTITY);
+        edge.setScale(0);
+        validator.validate(definitionWith(edge));
+        edge.setScale(20);
+        validator.validate(definitionWith(edge));
+    }
+
+    @Test
+    void validate_dimensionsOfAnotherKindOrCount_throwsValidationException() {
+        BaseEntityAttribute mass = measureAttribute(FormControlType.DIMENSIONS);
+        mass.setAllowedUnits(List.of("cm", "kg"));
+        assertSingleViolation(mass, "allowedUnits 'kg' measures MASS, not LENGTH");
+
+        BaseEntityAttribute defaultMass = measureAttribute(FormControlType.DIMENSIONS);
+        defaultMass.setDefaultUnit("kg");
+        assertSingleViolation(defaultMass, "defaultUnit 'kg' measures MASS, not LENGTH");
+
+        BaseEntityAttribute four = measureAttribute(FormControlType.DIMENSIONS);
+        four.setDimensionCount(4);
+        assertSingleViolation(four, "dimensionCount must be 2 or 3");
+
+        BaseEntityAttribute two = measureAttribute(FormControlType.DIMENSIONS);
+        two.setDimensionCount(2);
+        validator.validate(definitionWith(two));
+    }
+
+    @Test
+    void validate_moneyNamingWhatTheCatalogDoesNotKnow_throwsValidationException() {
+        BaseEntityAttribute unknown = measureAttribute(FormControlType.MONEY);
+        unknown.setAllowedCurrencies(List.of("EUR", "XXX"));
+        assertSingleViolation(unknown, "allowedCurrencies names unknown currency 'XXX'");
+
+        BaseEntityAttribute unknownDefault = measureAttribute(FormControlType.MONEY);
+        unknownDefault.setAllowedCurrencies(List.of("EUR"));
+        unknownDefault.setDefaultCurrency("XXX");
+        assertSingleViolation(unknownDefault, "defaultCurrency names unknown currency 'XXX'");
+
+        BaseEntityAttribute outside = measureAttribute(FormControlType.MONEY);
+        outside.setAllowedCurrencies(List.of("EUR"));
+        outside.setDefaultCurrency("USD");
+        assertSingleViolation(outside, "defaultCurrency 'USD' is not one of the allowedCurrencies");
+
+        BaseEntityAttribute anyAllowed = measureAttribute(FormControlType.MONEY);
+        anyAllowed.setDefaultCurrency("USD");
+        validator.validate(definitionWith(anyAllowed));
+    }
+
+    @Test
+    void validate_optionsAnotherControlOwns_throwsValidationException() {
+        BaseEntityAttribute money = measureAttribute(FormControlType.MONEY);
+        money.setAllowedUnits(List.of("kg"));
+        money.setScale(2);
+        assertSingleViolation(money, "MONEY attributes cannot set allowedUnits, scale");
+
+        BaseEntityAttribute quantity = measureAttribute(FormControlType.QUANTITY);
+        quantity.setDefaultCurrency("EUR");
+        quantity.setDimensionCount(3);
+        assertSingleViolation(quantity, "QUANTITY attributes cannot set defaultCurrency, dimensionCount");
+
+        BaseEntityAttribute dimensions = measureAttribute(FormControlType.DIMENSIONS);
+        dimensions.setQuantityKind("LENGTH");
+        dimensions.setAllowedCurrencies(List.of("EUR"));
+        assertSingleViolation(dimensions, "DIMENSIONS attributes cannot set quantityKind, allowedCurrencies");
+    }
+
+    @Test
+    void validate_measureOptionsOnAnotherControl_throwsValidationException() {
+        BaseEntityAttribute text = textAttribute();
+        text.setScale(2);
+        text.setAllowedUnits(List.of("kg"));
+        assertSingleViolation(text, "allowedUnits, scale only mean something on QUANTITY, MONEY and DIMENSIONS attributes");
+
+        BaseEntityAttribute emptyLists = textAttribute();
+        emptyLists.setAllowedUnits(List.of());
+        emptyLists.setAllowedCurrencies(List.of());
+        validator.validate(definitionWith(emptyLists));
+    }
+
+    private static BaseEntityAttribute measureAttribute(FormControlType type) {
+        return BaseEntityAttribute.builder()
+                .code("measure")
+                .name("Measure")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(type)
+                .build();
     }
 
     private static BaseEntityAttribute geoLocationAttribute(ValueKind valueKind, Multiplicity multiplicity, String linkedEntityType) {

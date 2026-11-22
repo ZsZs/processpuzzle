@@ -31,7 +31,8 @@ tables:
 decisions:
   lineTotal:
     for: lines
-    expr: "quantity * unitPrice"
+    # A line's quantity is read in the count unit's base (a dozen is 12 pieces) and its price in the currency.
+    expr: "quantity.baseAmount * unitPrice.baseAmount"
   subtotal:
     requires: [lineTotal]
     aggregate: { sum: lineTotal }

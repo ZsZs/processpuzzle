@@ -19,6 +19,32 @@ ProcessPuzzle Base Rule Backend is the server-side companion of [`@processpuzzle
 The library provides persisted rule CRUD, YAML import/export and tenant-scoped GraalJS evaluation.
 Resolution of inherited/overridden rule expressions remains unimplemented.
 
+## Quantities, money and dimensions in a rule
+
+Besides `entity`, a rule can call `qty(...)`, `money(...)` and `dims(...)` (`MeasureBindings`), which read a literal
+(`qty('5 kg')`) or a stored value (`qty(entity.weight)`) as an object that converts and compares itself:
+
+```js
+!entity.weight || qty(entity.weight).le(qty('10 kg'))
+money(entity.price).le(money('100 EUR'))
+dims(entity.size).volume().lt(qty('0.5 m3'))
+```
+
+The objects are host proxies over `com.processpuzzle.core.quantity` — the arithmetic the values are stored with — and
+nothing else of the host is reachable; they are read-only, like the entity. A refusal (different kinds or currencies, an
+unknown unit) fails the evaluation with its reason, and a bare operator on a measure (`qty('10 kg') > qty('9 kg')`, which
+would compare the text) is refused too: use `gt()`, `ge()`, `lt()`, `le()` and `eq()`. The same helpers exist in the
+browser's rule evaluator, and `rule-measure-cases.json` (kept in base-rule-frontend) is run against both.
+
+Units are read in the **catalog of the rule's organization**: the standard units plus those the organization added
+(`UnitCatalogProvider` in core, which base-entity implements; without it, the standard catalog). The engine sets that
+catalog on the thread's bindings before each evaluation, so one compiled rule and one thread serve every organization and
+a `pallet` is known to the organization that added it only. The browser's evaluator reads the same catalog.
+
+`money(...).to('USD', '2026-07-01')` converts at the **exchange rate of the rule's organization** valid on that date — an ISO date or
+date-time text, or a JS date; today's without one — rounded to the target's minor units. The engine sets the organization's rates
+(`ExchangeRateProvider` in core, which base-entity implements) like its catalog; a pair with no rate is refused, never guessed.
+
 ## Executable rule revisions
 
 `RuleEngine` caches immutable GraalJS sources by `(orgKey, ruleId)` and compiled functions per

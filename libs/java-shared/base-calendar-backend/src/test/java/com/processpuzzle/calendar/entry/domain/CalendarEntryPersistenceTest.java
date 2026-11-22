@@ -5,6 +5,7 @@ import static com.processpuzzle.calendar.entry.EntryFixtures.CALENDAR;
 import static com.processpuzzle.calendar.entry.EntryFixtures.ORG;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.processpuzzle.calendar.entry.domain.AttendeeType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -160,5 +161,60 @@ class CalendarEntryPersistenceTest {
 
         assertThat(overlapping(ORG, Set.of(CALENDAR))).isEmpty();
         assertThat(overlapping("org-2", Set.of(CALENDAR))).hasSize(1);
+    }
+
+    private CalendarEntry invited(String organizer, List<Attendee> invitations) {
+        CalendarEntry entry = com.processpuzzle.calendar.entry.EntryFixtures.timedEntry(organizer, EntryVisibility.PRIVATE);
+        entry.setId(null);
+        entry.setVersion(null);
+        entry.setStartUtc(Instant.parse("2026-12-02T09:00:00Z"));
+        entry.setEndUtc(Instant.parse("2026-12-02T10:00:00Z"));
+        entry.reconcileAttendees(invitations, Attendee.user(organizer, "Organizer", false, AttendanceResponse.ACCEPTED, Instant.parse("2026-12-01T08:00:00Z")),
+                false, Instant.parse("2026-12-01T08:00:00Z"));
+        return repository.saveAndFlush(entry);
+    }
+
+    @Test
+    void invitationsRoundTripWithTheirAnswersAndTheirNames() {
+        CalendarEntry saved = invited(ALICE, List.of(
+                Attendee.user("sub-bob", "Bob Builder", true, AttendanceResponse.NEEDS_ACTION, null),
+                Attendee.role("staff", false)));
+        saved.invitationOf("sub-bob").orElseThrow().answer(AttendanceResponse.TENTATIVE, Instant.parse("2026-12-01T09:00:00Z"));
+        repository.saveAndFlush(saved);
+
+        CalendarEntry reloaded = repository.findByIdAndOrgKeyAndCalendarKey(saved.getId(), ORG, CALENDAR).orElseThrow();
+
+        assertThat(reloaded.getAttendees()).extracting(a -> a.getType() + ":" + a.getPrincipal()).containsExactlyInAnyOrder(
+                "ROLE:staff", "USER:sub-bob", "USER:" + ALICE);
+        Attendee bob = reloaded.invitationOf("sub-bob").orElseThrow();
+        assertThat(bob.getDisplayName()).isEqualTo("Bob Builder");
+        assertThat(bob.isRequired()).isTrue();
+        assertThat(bob.getResponse()).isEqualTo(AttendanceResponse.TENTATIVE);
+        assertThat(bob.getRespondedAt()).isEqualTo(Instant.parse("2026-12-01T09:00:00Z"));
+        assertThat(reloaded.getAttendees().stream().filter(a -> a.getType() == AttendeeType.ROLE).findFirst().orElseThrow().getResponse()).isNull();
+    }
+
+    @Test
+    void mineIsWhatTheCallerOrganizesOrIsInvitedToByNameOrByRole() {
+        CalendarEntry byName = invited(ALICE, List.of(Attendee.user("sub-bob", "Bob Builder", false, AttendanceResponse.NEEDS_ACTION, null)));
+        CalendarEntry byRole = invited(ALICE, List.of(Attendee.role("staff", false)));
+        CalendarEntry notBobs = invited(ALICE, List.of(Attendee.user("sub-carol", "Carol", false, AttendanceResponse.NEEDS_ACTION, null)));
+        CalendarEntry organizedByBob = invited("sub-bob", List.of());
+        CalendarEntry elsewhere = invited(ALICE, List.of(Attendee.role("guest", false)));
+
+        List<CalendarEntry> mine = repository.findMine(ORG, "sub-bob", java.util.Set.of("staff"), Instant.parse("2026-12-02T00:00:00Z"),
+                Instant.parse("2026-12-03T00:00:00Z"), LocalDate.parse("2026-12-02"), LocalDate.parse("2026-12-02"));
+
+        assertThat(mine).extracting(CalendarEntry::getId).containsExactlyInAnyOrder(byName.getId(), byRole.getId(), organizedByBob.getId());
+        assertThat(mine).extracting(CalendarEntry::getId).doesNotContain(notBobs.getId(), elsewhere.getId());
+    }
+
+    @Test
+    void invitedByNameFindsOnlyThePersonsOwnInvitations() {
+        CalendarEntry byName = invited(ALICE, List.of(Attendee.user("sub-bob", "Bob Builder", false, AttendanceResponse.NEEDS_ACTION, null)));
+        invited(ALICE, List.of(Attendee.role("staff", false)));
+
+        assertThat(repository.findInvitedBy(ORG, "sub-bob")).extracting(CalendarEntry::getId).containsExactly(byName.getId());
+        assertThat(repository.findInvitedBy("org-2", "sub-bob")).isEmpty();
     }
 }

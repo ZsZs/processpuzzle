@@ -10,6 +10,14 @@ ProcessPuzzle Core provides cross-cutting building blocks shared by every backen
 
 - `com.processpuzzle.core.exception` — generic REST exception handling (`ApiExceptionHandler`) for common Spring / Jackson / validation failures. Domain modules add their own `@RestControllerAdvice` for their specific exceptions.
 - `com.processpuzzle.core.logging` — reserved for cross-cutting logging support (AOP logger — TBD).
+- `com.processpuzzle.core.quantity` — fundamental types: `Quantity`, `Money`, `Dimensions`, the `UnitCatalog` and
+  `IsoDurations`. The standard catalog is `@processpuzzle/util`'s `standard-units.json`, packaged into this jar; the
+  shared `parity-cases.json` keeps both sides' results identical (`ParityCasesTest`). An organization's own units join it
+  through `UnitCatalog.withUnits(...)` — a new, immutable catalog — and `UnitCatalogProvider.forOrganization(orgKey)` is the
+  port a feature reads an organization's catalog through (base-entity implements it; `standardOnly()` is the default).
+  Exchange rates are `ExchangeRates` — immutable, per organization: a rate holds from its date until the pair's next one, a lookup is
+  direct, else inverse, else a cross rate through one currency, else a NO_EXCHANGE_RATE; `Money.convertTo(currency, rates, date, catalog)`
+  rounds half up to the target's minor units. The parity cases cover it on both sides.
 
 ## Organization authorization
 

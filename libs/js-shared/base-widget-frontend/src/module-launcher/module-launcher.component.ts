@@ -40,7 +40,7 @@ interface LoadedImages {
     @if (cards().length) {
       <pp-cards-grid [cards]="cards()" />
     } @else if (context && !entries().length) {
-      <p class="module-launcher__empty" *transloco="let t; prefix: 'module_launcher'">
+      <p class="module-launcher__empty" *transloco="let t; prefix: 'widgets.module_launcher'">
         {{ t('empty') }}
         <a [routerLink]="[designPrefix + '/design/starters']">{{ t('browse') }}</a>
       </p>
@@ -60,6 +60,7 @@ export class ModuleLauncherComponent {
   private readonly createdUrls = new Set<string>();
 
   private readonly language = toSignal(this.transloco.langChanges$, { initialValue: this.transloco.getActiveLang() });
+  private readonly goCaption = toSignal(this.transloco.selectTranslate('module_launcher.go', {}, 'widgets'), { initialValue: 'Go...' });
   protected readonly entries = computed(() => this.context?.entries() ?? []);
 
   private readonly texts = toSignal(
@@ -79,7 +80,7 @@ export class ModuleLauncherComponent {
     // Texts and pictures arrive after the entries do; each is used only while it still belongs to them.
     const texts = this.texts().entries === entries ? this.texts().texts : [];
     const urls = this.images().entries === entries ? this.images().urls : [];
-    return launcherCardsOf(entries, texts, urls, this.routeDepth);
+    return launcherCardsOf(entries, texts, urls, this.routeDepth, this.goCaption());
   });
 
   constructor() {

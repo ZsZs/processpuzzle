@@ -33,6 +33,31 @@ describe('DescriptorBackedFieldMetadataProvider', () => {
     expect(byName['title'].type).toBe('string');
   });
 
+  it('searches a measure through its derived numbers, never as the object', () => {
+    const quantity = Object.assign(new BaseEntityAttrDescriptor('weight', FormControlType.QUANTITY, 'Weight'), { quantityKind: 'MASS' });
+    const descriptors = [
+      quantity,
+      new BaseEntityAttrDescriptor('amount', FormControlType.QUANTITY, 'Amount'),
+      new BaseEntityAttrDescriptor('price', FormControlType.MONEY, 'Price'),
+      new BaseEntityAttrDescriptor('flat', FormControlType.DIMENSIONS, 'Flat'),
+      Object.assign(new BaseEntityAttrDescriptor('box', FormControlType.DIMENSIONS, 'Box'), { dimensionCount: 3 as const }),
+    ];
+
+    const provider = new DescriptorBackedFieldMetadataProvider(descriptors);
+
+    expect(provider.getFields().map((field) => [field.name, field.label])).toEqual([
+      ['weight.baseAmount', 'Weight (kg)'],
+      ['amount.baseAmount', 'Amount (base unit)'],
+      ['price.baseAmount', 'Price'],
+      ['flat.baseArea', 'Flat area (m²)'],
+      ['box.baseArea', 'Box area (m²)'],
+      ['box.baseVolume', 'Box volume (m³)'],
+    ]);
+    expect(provider.getFields().every((field) => field.type === 'number' && field.operators === RSQL_OPERATORS_BY_TYPE['number'])).toBe(true);
+    expect(provider.getField('weight')).toBeUndefined();
+    expect(provider.getField('weight.baseAmount')?.type).toBe('number');
+  });
+
   it('skips descriptors whose control types cannot be filtered on', () => {
     const descriptors = [
       new BaseEntityAttrDescriptor('artifact', FormControlType.ARTIFACT),

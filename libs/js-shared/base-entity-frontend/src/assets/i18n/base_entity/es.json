@@ -21,6 +21,13 @@
     "showMap": "Muestra un mapa",
     "mapProvider": "Proveedor de mapas",
     "defaultCountry": "País predeterminado",
+    "quantityKind": "Magnitud",
+    "allowedUnits": "Unidades permitidas",
+    "defaultUnit": "Unidad predeterminada",
+    "scale": "Decimales",
+    "allowedCurrencies": "Monedas permitidas",
+    "defaultCurrency": "Moneda predeterminada",
+    "dimensionCount": "Dimensiones",
     "_tooltips": {
       "code": "Clave con la que se guarda el valor, única dentro del tipo de entidad, p. ej. orderNumber. No la cambie una vez que existan registros.",
       "name": "La etiqueta del campo tal como la ven los usuarios en formularios y columnas de lista, p. ej. Número de pedido.",
@@ -40,6 +47,13 @@
       "showMap": "Para controles ADDRESS: mostrar la dirección en un mapa, con coordenadas derivadas de ella.",
       "mapProvider": "Para controles ADDRESS con mapa: quién lo dibuja. Vacío usa OpenStreetMap; un clic siempre abre Google Maps.",
       "defaultCountry": "Para controles ADDRESS: el código ISO del país con el que empieza una dirección nueva, p. ej. ES. Vacío usa el país del navegador.",
+      "quantityKind": "Para campos QUANTITY: qué se mide (LENGTH, MASS, TIME …); solo se ofrecen sus unidades. Los campos QUANTITY, MONEY y DIMENSIONS usan el tipo de valor REFERENCE.",
+      "allowedUnits": "Para campos QUANTITY y DIMENSIONS: los códigos de unidad que se pueden elegir, p. ej. kg, g. Vacío ofrece todas las unidades de la magnitud (dimensiones: todas las longitudes).",
+      "defaultUnit": "Para campos QUANTITY y DIMENSIONS: la unidad en que empieza un valor nuevo. Vacío usa la unidad base de la magnitud.",
+      "scale": "Para campos QUANTITY y DIMENSIONS: el máximo de decimales de una cantidad, de 0 a 20. Una conversión de unidad se redondea a ese valor; vacío redondea a 6.",
+      "allowedCurrencies": "Para campos MONEY: los códigos ISO de moneda que se pueden elegir, p. ej. EUR, HUF. Vacío ofrece todas las monedas.",
+      "defaultCurrency": "Para campos MONEY: la moneda en que empieza un importe nuevo. Vacío usa la primera permitida.",
+      "dimensionCount": "Para campos DIMENSIONS: 2 para ancho × alto, 3 añade la profundidad. Vacío significa 2.",
       "dateStyle": "Para campos DATE y DATE_TIME: cómo se muestra la fecha, de short (31/12/26) a full (jueves, 31 de diciembre de 2026). Vacío usa el valor predeterminado.",
       "timeStyle": "Para campos DATE_TIME: cómo se muestra la hora, de short (14:30) a long (con segundos y zona horaria). Vacío usa el valor predeterminado."
     }
@@ -71,6 +85,42 @@
       "updatedAt": "Cuándo se guardó la definición por última vez. Lo establece el sistema.",
       "releaseState": "Si la aplicación en marcha usa esta definición tal como está: NEW nunca se ha publicado, CHANGED difiere de lo publicado, RELEASED es lo que usa la aplicación. Publique en la sección Release para cambiarlo. Lo establece el sistema.",
       "sharedFrom": "El común del que procede este tipo. Su organización lo lee, pero solo el común lo publica o lo modifica. Vacío en los tipos propios. Lo establece el sistema."
+    }
+  },
+  "organization_unit": {
+    "_self": "Unidad",
+    "code": "Código",
+    "symbol": "Símbolo",
+    "name": "Nombre",
+    "kind": "Tipo",
+    "factor": "Factor",
+    "divisor": "Divisor",
+    "status": "Estado",
+    "version": "Versión",
+    "_tooltips": {
+      "code": "Clave única de la unidad en su organización, usada en los valores guardados, p. ej. pallet. Fija una vez guardada la unidad.",
+      "symbol": "Lo que aparece junto a una cantidad, p. ej. plt.",
+      "name": "La unidad escrita completa, p. ej. Palé.",
+      "kind": "Lo que mide la unidad, p. ej. MASS. Una unidad se añade a un tipo del catálogo estándar. Fija una vez guardada la unidad.",
+      "factor": "Cuántas unidades base del tipo es una de estas, p. ej. 500 para un palé de 500 kg. Fijo una vez guardada la unidad, porque las cantidades guardadas se derivan de él.",
+      "divisor": "Divide el factor, para una unidad que es una fracción de la unidad base; 1 si se deja vacío. Fijo una vez guardada la unidad.",
+      "status": "ACTIVE para una unidad en uso, RETIRED para dejar de ofrecerla en valores nuevos. Los valores ya guardados siguen siendo legibles. Una unidad nunca se elimina.",
+      "version": "La revisión en pantalla, para que dos diseñadores no se sobrescriban sin darse cuenta."
+    }
+  },
+  "exchange_rate": {
+    "_self": "Tipo de cambio",
+    "from": "De",
+    "to": "A",
+    "rate": "Tipo",
+    "validFrom": "Válido desde",
+    "version": "Versión",
+    "_tooltips": {
+      "from": "La moneda de origen, p. ej. EUR.",
+      "to": "La moneda de destino, p. ej. HUF. Distinta de De.",
+      "rate": "Cuántas unidades de la segunda moneda vale una unidad de la primera, p. ej. 395,5. El inverso y los tipos cruzados a través de otra moneda se derivan, así que un par se introduce una vez, en el sentido en que lo cotice.",
+      "validFrom": "El primer día en que rige el tipo, como AAAA-MM-DD. Rige hasta que el par tenga uno posterior. Un tipo por par y fecha.",
+      "version": "La revisión en pantalla, para que dos diseñadores no se sobrescriban sin darse cuenta."
     }
   },
   "artifact": {
@@ -216,6 +266,23 @@
       "POSITION_UNAVAILABLE": "El dispositivo no pudo determinar su ubicación.",
       "TIMEOUT": "La lectura de la ubicación tardó demasiado. Inténtelo de nuevo.",
       "UNAVAILABLE": "Este navegador no puede determinar su ubicación."
+    }
+  },
+  "measure": {
+    "amount": "Cantidad",
+    "unit": "Unidad",
+    "currency": "Moneda",
+    "show_in": "Mostrar también en",
+    "width": "Ancho",
+    "height": "Alto",
+    "depth": "Profundidad",
+    "convert_on": "Al cambiar la unidad se convierte la cantidad. Haga clic para conservar el número.",
+    "convert_off": "Al cambiar la unidad se conserva el número. Haga clic para convertir la cantidad.",
+    "error": {
+      "amount": "Introduzca un número, por ejemplo 12,5.",
+      "scale": "Como máximo {{ max }} decimales.",
+      "incomplete": "Rellene todas las medidas o ninguna.",
+      "required": "Este valor es obligatorio."
     }
   },
   "working_context": {

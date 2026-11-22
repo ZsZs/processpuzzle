@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse, HttpParams, HttpStatusCode } from '@angu
 import { inject, Injectable } from '@angular/core';
 import { RUNTIME_CONFIGURATION, serviceRootOf } from '@processpuzzle/util';
 import { firstValueFrom } from 'rxjs';
-import { CalendarEntry, CalendarEntryInput, CalendarFailureKind, CalendarInfo, Occurrence } from './calendar.types';
+import { AttendanceAnswerValue, CalendarEntry, CalendarEntryInput, CalendarFailureKind, CalendarInfo, DirectoryMatch, Occurrence } from './calendar.types';
 
 /** How a failed call is told to the user. 422 — a booking that breaks the calendar's rules — is `invalid`, like 400. */
 export function failureKindOf(error: unknown): CalendarFailureKind {
@@ -54,6 +54,26 @@ export class CalendarService {
   listOccurrences(calendarKeys: readonly string[], from: string, to: string): Promise<Occurrence[]> {
     const params = new HttpParams().set('calendars', calendarKeys.join(',')).set('from', from).set('to', to);
     return firstValueFrom(this.http.get<Occurrence[]>(`${this.base}/occurrences`, { params }));
+  }
+
+  /** Members whose name matches; the server returns nothing for fewer than two characters. */
+  searchDirectory(q: string): Promise<DirectoryMatch[]> {
+    return firstValueFrom(this.http.get<DirectoryMatch[]>(`${this.base}/directory/users`, { params: new HttpParams().set('q', q) }));
+  }
+
+  /** What the caller organizes or is invited to in `[from, to)`, across all calendars. Needs a token. */
+  listMyOccurrences(from: string, to: string): Promise<Occurrence[]> {
+    return firstValueFrom(this.http.get<Occurrence[]>(`${this.base}/my-occurrences`, { params: new HttpParams().set('from', from).set('to', to) }));
+  }
+
+  /** The roles of the organization that may be invited; the catalog is the organization's, next to the calendar root. */
+  roleCatalog(): Promise<{ name: string; description?: string }[]> {
+    return firstValueFrom(this.http.get<{ name: string; description?: string }[]>(`${this.root}/role-catalog`));
+  }
+
+  /** The caller's own answer to an invitation. */
+  answerInvitation(calendarKey: string, entryId: string, response: AttendanceAnswerValue): Promise<CalendarEntry> {
+    return firstValueFrom(this.http.put<CalendarEntry>(`${this.entryUrl(calendarKey, entryId)}/attendance`, { response }));
   }
 
   getEntry(calendarKey: string, entryId: string): Promise<CalendarEntry> {

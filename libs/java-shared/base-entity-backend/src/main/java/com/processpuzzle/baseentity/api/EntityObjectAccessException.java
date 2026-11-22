@@ -34,6 +34,13 @@ public sealed class EntityObjectAccessException extends RuntimeException {
         }
     }
 
+    /** A value does not fit its attribute — a measure with an unknown unit, say, or a number where the attribute has no default unit. */
+    public static final class InvalidValue extends EntityObjectAccessException {
+        public InvalidValue(String attributeCode, String reason) {
+            super("'%s' cannot take that value: %s".formatted(attributeCode, reason));
+        }
+    }
+
     /** {@code expectedVersion} no longer matches — someone else wrote between read and write. */
     public static final class VersionConflict extends EntityObjectAccessException {
         public VersionConflict(UUID objectId, long expectedVersion, long actualVersion) {

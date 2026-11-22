@@ -285,6 +285,24 @@ public class BundleReader {
         Set<String> modules = new LinkedHashSet<>();
         Set<String> paths = new LinkedHashSet<>();
         manifest.mounts().forEach(mount -> validateMount(mount, modules, paths));
+        requireOneEntryMount(manifest.mounts());
+    }
+
+    /**
+     * A starter may bring several modules, but it adds one sidenav entry and one launcher card to the customer's
+     * application, not one per module: at most one mount carries a {@code nav} or a {@code launcher}. The other mounts
+     * only give their module a route, which the entry module's pages can link to.
+     */
+    private void requireOneEntryMount(List<StarterManifest.Mount> mounts) {
+        List<String> entries = mounts.stream()
+                .filter(mount -> mount.nav() != null || mount.launcher() != null)
+                .map(StarterManifest.Mount::moduleKey)
+                .toList();
+        if (entries.size() > 1) {
+            throw BundleRejectedException.invalid(MANIFEST, "A starter adds one sidenav entry and one launcher card, so only one "
+                    + "mount carries a 'nav' or a 'launcher'; " + String.join(", ", entries) + " all do. Give the other modules "
+                    + "mounts without them and link to their pages from the entry module.");
+        }
     }
 
     private void validateMount(StarterManifest.Mount mount, Set<String> modules, Set<String> paths) {

@@ -14,7 +14,8 @@ export interface CalendarEventInput {
   /** Whether the caller may drag and resize it; FullCalendar then offers the handles. */
   editable: boolean;
   color: string;
-  classNames: string[];
+  /** Space separated. FullCalendar 7 calls it `className` and takes a string; v6's `classNames` and its arrays are silently ignored. */
+  className: string;
   extendedProps: {
     entryId: string;
     calendarKey: string;
@@ -40,25 +41,29 @@ function eventId(occurrence: Occurrence): string {
 
 /**
  * One occurrence as a calendar event. A busy occurrence carries no title from the server, so it shows
- * {@code busyLabel}; it is never editable, whatever else says so.
+ * {@code busyLabel}; it is never editable, whatever else says so. Nor is an occurrence of a recurring entry: a drag
+ * would move one occurrence, and the series is edited whole, from the entry dialog.
  *
  * @param colorIndex position of the occurrence's calendar among the calendars shown
  */
 export function toCalendarEvent(occurrence: Occurrence, colorIndex: number, busyLabel: string): CalendarEventInput {
   const allDay = occurrence.allDay;
+  const recurring = Boolean(occurrence.recurrenceId);
   const canEdit = !occurrence.busy && occurrence.canEdit === true;
-  const classNames = ['pp-calendar__event'];
-  if (occurrence.busy) classNames.push('pp-calendar__event--busy');
-  if (occurrence.mine) classNames.push('pp-calendar__event--mine');
+  const className = ['pp-calendar__event'];
+  if (occurrence.busy) className.push('pp-calendar__event--busy');
+  if (recurring) className.push('pp-calendar__event--recurring');
+  if (occurrence.mine) className.push('pp-calendar__event--mine');
+  if (occurrence.invited) className.push('pp-calendar__event--invited');
   return {
     id: eventId(occurrence),
     title: occurrence.busy ? busyLabel : (occurrence.title ?? ''),
     start: (allDay ? occurrence.startDate : occurrence.start) ?? '',
     end: (allDay ? occurrence.endDate : occurrence.end) ?? '',
     allDay,
-    editable: canEdit,
+    editable: canEdit && !recurring,
     color: calendarColor(colorIndex),
-    classNames,
+    className: className.join(' '),
     extendedProps: {
       entryId: occurrence.entryId,
       calendarKey: occurrence.calendarKey,

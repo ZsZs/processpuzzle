@@ -11,8 +11,8 @@ interface OrderPayload {
   orderNumber: string;
   customerName: string;
   status: string;
-  total: number;
-  lineItems: { productName: string; quantity: number; unitPrice: number }[];
+  total: { amount: string; currency: string };
+  lineItems: { productName: string; quantity: { amount: string; unit: string }; unitPrice: { amount: string; currency: string } }[];
 }
 
 /**
@@ -37,6 +37,7 @@ test.describe('Report template', () => {
   });
 
   test.afterEach(async () => {
+    for (const entityId of entities.createdIds('order')) await platform.deleteWorkflowInstances({ entityId });
     await entities.removeAll();
     for (const id of createdDocuments.splice(0)) await platform.deleteDocument(id);
   });
@@ -100,8 +101,8 @@ test.describe('Report template', () => {
       orderNumber: `E2E-${run}`,
       customerName: `Customer ${run}`,
       status: 'DRAFT',
-      total: 30,
-      lineItems: [{ productName: `Item ${run}`, quantity: 3, unitPrice: 10 }],
+      total: { amount: '30', currency: 'EUR' },
+      lineItems: [{ productName: `Item ${run}`, quantity: { amount: '3', unit: 'pc' }, unitPrice: { amount: '10', currency: 'EUR' } }],
     });
 
     await openInvoice(page, order.id);
@@ -122,8 +123,8 @@ test.describe('Report template', () => {
       orderNumber: `E2E-${run}`,
       customerName: `Customer ${run}`,
       status: 'DRAFT',
-      total: 10,
-      lineItems: [{ productName: 'Item', quantity: 1, unitPrice: 10 }],
+      total: { amount: '10', currency: 'EUR' },
+      lineItems: [{ productName: 'Item', quantity: { amount: '1', unit: 'pc' }, unitPrice: { amount: '10', currency: 'EUR' } }],
     });
 
     await openInvoice(page, order.id);
@@ -159,6 +160,7 @@ test.describe('Report template', () => {
     await expect(page.getByTestId('entity-table')).toBeVisible();
 
     // Autosave has an 800 ms debounce, and Preview reads the stored draft.
+    // eslint-disable-next-line sonarjs/no-fixed-wait-in-tests -- the debounce has no observable end to wait for
     await page.waitForTimeout(2500);
     await page.getByTestId('document-show-preview').click();
     await pickOrder(page, 'ORD-1001');

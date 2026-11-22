@@ -73,6 +73,34 @@ the dependency edges (`POST …/calculation-definitions/validate`).
 Stored attribute values are typed for FEEL through `EntityAttributeTypePort`: numbers become decimals, `DATE` and
 `DATE_TIME` text becomes `java.time`; results are stored as JSON — durations and dates as ISO text.
 
+## Quantities, money and dimensions
+
+A QUANTITY, MONEY or DIMENSIONS attribute reaches FEEL as its stored object, so a calculation reads what base-entity has
+already derived: `weight.baseAmount` is the amount in the kind's base unit (grams and kilograms are the same unit there),
+`price.baseAmount` and `size.baseArea` / `size.baseVolume` likewise, and `number(price.amount)` is a money amount to the cent.
+Reading `weight.amount` is deliberately not a number: it is only meaningful together with `weight.unit`, and a sum over rows in
+different units would be quietly wrong.
+
+An output can write into such an attribute. A bare number is taken to be in the attribute's default unit or currency,
+rounded to its decimal places and stored with its derived numbers; see *Derived writes* in
+[base-entity-backend](../base-entity-backend/README.md#quantities-money-and-dimensions). A value the attribute cannot take
+fails the run, as any other failed write does.
+
+```yaml
+decisions:
+  weights:     { for: items, expr: "weight.baseAmount" }
+  weightTotal: { requires: [weights], aggregate: { sum: weights } }
+output:
+  entity: parcel
+  mapping: { totalWeight: weightTotal }   # a QUANTITY attribute with a default unit
+```
+
+`convert currency(amount, from, to[, date])` converts an amount at the exchange rate of the organization the calculation runs for,
+valid on the date (a FEEL date, a date and time or ISO text; today's without one), rounded to the target's minor units:
+`convert currency(price.baseAmount, "USD", "EUR", order.date)`. A pair with no rate on that date **fails the calculation** — FEEL would
+turn an error value into `null`, which would write nothing, or zero, where the run has to fail. The rates come from `ExchangeRateProvider`
+(base-entity implements it) through `ExchangeRateScope`, entered by the use case that knows the organization.
+
 ## Definitions, runs and freezing
 
 Definitions follow the platform's draft/released storage (`DefinitionKinds.CALCULATION`, released after the rules).

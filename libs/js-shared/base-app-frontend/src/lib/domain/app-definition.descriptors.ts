@@ -1,4 +1,4 @@
-import { AbstractAttrDescriptor, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
+import { AbstractAttrDescriptor, AllowedProperty, BaseEntityAttrDescriptor, BaseEntityDescriptor, FlexboxDescriptor, FlexDirection, FormControlType, toSelectables } from '@processpuzzle/base-entity';
 import { AppAssetsAttrDescriptor } from './app-assets-control.component';
 import { AppTranslationsAttrDescriptor } from './app-translations-control.component';
 import { APP_DEFINITION_I18N_SCOPE } from '../base-app.i18n';
@@ -12,6 +12,28 @@ import { APP_ROUTE_ID_FIELD } from './route-definition.descriptors';
 export { APP_DEFINITION_ENTITY_NAME };
 
 const statusSelectables = toSelectables(Object.keys(AppDefinitionStatus));
+
+/** The `--pp-*` tokens a theme may override, as `PpThemeTokens` lists them, with a name a user recognizes. */
+const THEME_TOKENS: AllowedProperty[] = [
+  { key: '--pp-surface-sidenav', label: 'Sidenav background', valueEditor: 'color' },
+  { key: '--pp-on-sidenav', label: 'Sidenav text', valueEditor: 'color' },
+  { key: '--pp-surface-header', label: 'Header and footer background', valueEditor: 'color' },
+  { key: '--pp-on-header', label: 'Header and footer text', valueEditor: 'color' },
+  { key: '--pp-surface-base', label: 'Page background', valueEditor: 'color' },
+  { key: '--pp-surface-card', label: 'Card background', valueEditor: 'color' },
+  { key: '--pp-button-primary-bg', label: 'Primary button background', valueEditor: 'color' },
+  { key: '--pp-button-primary-text', label: 'Primary button text', valueEditor: 'color' },
+  { key: '--pp-button-secondary-bg', label: 'Secondary button background', valueEditor: 'color' },
+  { key: '--pp-button-secondary-text', label: 'Secondary button text', valueEditor: 'color' },
+  { key: '--pp-button-delete-bg', label: 'Delete button background', valueEditor: 'color' },
+  { key: '--pp-button-delete-text', label: 'Delete button text', valueEditor: 'color' },
+  { key: '--pp-chip-bg', label: 'Chip background', valueEditor: 'color' },
+  { key: '--pp-chip-text', label: 'Chip text', valueEditor: 'color' },
+  { key: '--pp-color-white', label: 'Base color: white', valueEditor: 'color' },
+  { key: '--pp-color-light-green', label: 'Base color: light green', valueEditor: 'color' },
+  { key: '--pp-color-light-blue', label: 'Base color: light blue', valueEditor: 'color' },
+  { key: '--pp-color-dark-blue', label: 'Base color: dark blue', valueEditor: 'color' },
+];
 
 function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // The id is what opens the application from the list: it is the one value of the row that is unique and never empty,
@@ -64,6 +86,9 @@ function createAppDefinitionAttrDescriptors(): AbstractAttrDescriptor[] {
   // key/value editor is the only shape that can carry it without the form inventing a closed list.
   const tokenOverridesAttr = new BaseEntityAttrDescriptor('tokenOverrides', FormControlType.ADDITIONAL_PROPERTIES, 'Token Overrides');
   tokenOverridesAttr.hideInTable = true;
+  // The tokens the backend accepts (PpThemeTokens), so a user picks one instead of knowing its name. Values stay free:
+  // any CSS color, `#8a2be2` or `rebeccapurple`.
+  tokenOverridesAttr.allowedProperties = THEME_TOKENS;
   // endregion
 
   // region layout — flattened out of `layout` by AppDefinitionMapper

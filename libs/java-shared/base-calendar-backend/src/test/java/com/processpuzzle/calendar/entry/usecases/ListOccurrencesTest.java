@@ -21,7 +21,7 @@ import com.processpuzzle.calendar.definition.domain.CalendarVisibility;
 import com.processpuzzle.calendar.definition.domain.PublicDetail;
 import com.processpuzzle.calendar.entry.EntryWiring;
 import com.processpuzzle.calendar.entry.domain.CalendarEntry;
-import com.processpuzzle.calendar.entry.domain.EntryView;
+import com.processpuzzle.calendar.entry.domain.OccurrenceView;
 import com.processpuzzle.calendar.entry.domain.EntryVisibility;
 import com.processpuzzle.calendar.entry.usecases.exception.InvalidEntryRequestException;
 import com.processpuzzle.core.security.CurrentPrincipal;
@@ -55,9 +55,9 @@ class ListOccurrencesTest {
         CalendarEntry holiday = allDayEntry(ALICE, LocalDate.parse("2026-12-02"), LocalDate.parse("2026-12-04"));
         stored(wiring, late, holiday, early);
 
-        List<EntryView> listed = wiring.occurrences().list(ORG, List.of(CALENDAR), FROM, TO);
+        List<OccurrenceView> listed = wiring.occurrences().list(ORG, List.of(CALENDAR), FROM, TO);
 
-        assertThat(listed).extracting(view -> view.entry().getId()).containsExactly(early.getId(), holiday.getId(), late.getId());
+        assertThat(listed).extracting(view -> view.view().entry().getId()).containsExactly(early.getId(), holiday.getId(), late.getId());
     }
 
     @Test
@@ -72,8 +72,9 @@ class ListOccurrencesTest {
         ArgumentCaptor<LocalDate> last = ArgumentCaptor.forClass(LocalDate.class);
         verify(wiring.repository).findOverlapping(eq(ORG), eq(Set.of(CALENDAR)), eq(Instant.parse("2026-11-30T23:00:00Z")),
                 eq(Instant.parse("2026-12-07T23:00:00Z")), first.capture(), last.capture());
-        assertThat(first.getValue()).isEqualTo(LocalDate.parse("2026-12-01"));
-        assertThat(last.getValue()).as("the exclusive end instant belongs to the next day").isEqualTo(LocalDate.parse("2026-12-07"));
+        // Widened by a day either side, so that a series whose local day is in its own zone is not missed; the exact check follows.
+        assertThat(first.getValue()).isEqualTo(LocalDate.parse("2026-11-30"));
+        assertThat(last.getValue()).as("the exclusive end instant belongs to the next day, widened by one more").isEqualTo(LocalDate.parse("2026-12-08"));
     }
 
     @Test
@@ -89,12 +90,12 @@ class ListOccurrencesTest {
         EntryWiring wiring = wired(anonymous(), CalendarVisibility.PUBLIC, PublicDetail.BUSY_ONLY);
         stored(wiring, timedEntry(ALICE, EntryVisibility.PUBLIC));
 
-        List<EntryView> listed = wiring.occurrences().list(ORG, List.of(CALENDAR), FROM, TO);
+        List<OccurrenceView> listed = wiring.occurrences().list(ORG, List.of(CALENDAR), FROM, TO);
 
         assertThat(listed).singleElement().satisfies(view -> {
-            assertThat(view.busy()).isTrue();
-            assertThat(view.mine()).isFalse();
-            assertThat(view.canEdit()).isFalse();
+            assertThat(view.view().busy()).isTrue();
+            assertThat(view.view().mine()).isFalse();
+            assertThat(view.view().canEdit()).isFalse();
         });
     }
 
@@ -107,10 +108,10 @@ class ListOccurrencesTest {
         theirs.setEndUtc(Instant.parse("2026-12-02T10:00:00Z"));
         stored(wiring, mine, theirs);
 
-        List<EntryView> listed = wiring.occurrences().list(ORG, List.of(CALENDAR), FROM, TO);
+        List<OccurrenceView> listed = wiring.occurrences().list(ORG, List.of(CALENDAR), FROM, TO);
 
-        assertThat(listed).extracting(EntryView::busy).containsExactly(false, true);
-        assertThat(listed).extracting(EntryView::mine).containsExactly(true, false);
+        assertThat(listed).extracting(o -> o.view().busy()).containsExactly(false, true);
+        assertThat(listed).extracting(o -> o.view().mine()).containsExactly(true, false);
     }
 
     @Test

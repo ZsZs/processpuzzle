@@ -19,6 +19,7 @@ export type {
   Occurrence,
 } from './lib/domain/calendar.types';
 
-export { CalendarComponent, type CalendarViewName } from './lib/feature/calendar/calendar.component';
 export { CALENDAR_WIDGET, CALENDAR_WIDGET_REGISTRATION, provideCalendarWidget } from './lib/feature/calendar/calendar.widget';
+// Type-only, so the component's class (and FullCalendar with it) stays out of the initial bundle; the widget loads it.
+export type { CalendarComponent, CalendarViewName } from './lib/feature/calendar/calendar.component';
 export { EntryDialogComponent, type EntryDialogData, type EntryDialogResult } from './lib/feature/entry-dialog/entry-dialog.component';

@@ -7,6 +7,20 @@ import type { MapProvider } from '../base-form/address/address-map';
 export type Selectable = { key: string; value: unknown };
 export type SelectablesInput = Array<Selectable> | (() => Array<Selectable>);
 
+/** How a property's value is edited: free text when absent, or one of these editors. */
+export type ValueEditor = 'color';
+
+/** One property `ADDITIONAL_PROPERTIES` offers: its key, a readable name, and optionally the values it may take. */
+export interface AllowedProperty {
+  key: string;
+  /** Shown beside the key in the list; the key alone when absent. */
+  label?: string;
+  /** The values to pick from; free text when absent or empty. */
+  values?: string[];
+  /** The editor for the value when it is not picked from {@link values}; a plain text field when absent. */
+  valueEditor?: ValueEditor;
+}
+
 export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   description?: string;
   styleClass? = '';
@@ -20,6 +34,12 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   dateFormat?: DateFormat;
   isLinkToDetails?: boolean;
   selectables?: SelectablesInput;
+  /**
+   * `ADDITIONAL_PROPERTIES` only: the properties a user may add. With it the key is picked from a list rather than
+   * typed, and a property that names `values` has its value picked too. Without it the control stays an open
+   * key/value editor. The list guides; it does not validate — the backend still decides what it accepts.
+   */
+  allowedProperties?: AllowedProperty[];
   /**
    * `TAGS` only: the key of the `TAG_SUGGESTION_SOURCES` entry that supplies values to pick from. The control
    * still accepts free text; values the source does not know are marked as new.
@@ -44,6 +64,26 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
    * browser's locale, if it names one.
    */
   defaultCountry?: string;
+  /**
+   * `QUANTITY` only: the quantity kind (`MASS`, `LENGTH` …) whose units the control offers when
+   * {@link allowedUnits} names none. With neither, every unit of the catalog, grouped by kind.
+   */
+  quantityKind?: string;
+  /** `QUANTITY` and `DIMENSIONS`: the unit codes to offer; every unit of the kind when absent or empty. */
+  allowedUnits?: string[];
+  /** `QUANTITY` and `DIMENSIONS`: the unit a new value starts in; the kind's base unit when absent. */
+  defaultUnit?: string;
+  /**
+   * `QUANTITY` and `DIMENSIONS`: the most decimal places an amount may have, and the places a unit conversion
+   * is rounded to. A conversion keeps six places when absent; typed amounts are then unrestricted.
+   */
+  scale?: number;
+  /** `MONEY` only: the ISO 4217 codes to offer; every currency of the catalog when absent or empty. */
+  allowedCurrencies?: string[];
+  /** `MONEY` only: the currency a new amount starts in; the first allowed one when absent. */
+  defaultCurrency?: string;
+  /** `DIMENSIONS` only: 2 (width × height, the default) or 3 (width × height × depth). */
+  dimensionCount?: 2 | 3;
   hideInTable?: boolean = false;
   /**
    * The list column hugs its content instead of sharing the space left over. Meant for short values — an id,

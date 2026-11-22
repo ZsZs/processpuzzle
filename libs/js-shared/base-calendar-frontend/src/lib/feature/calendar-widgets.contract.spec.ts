@@ -1,7 +1,8 @@
 import { reflectComponentType } from '@angular/core';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { loadWidgetComponent } from '@processpuzzle/widgets';
 import { parse } from 'yaml';
 import { CALENDAR_WIDGET, CALENDAR_WIDGET_REGISTRATION } from './calendar/calendar.widget';
 
@@ -12,7 +13,10 @@ import { CALENDAR_WIDGET, CALENDAR_WIDGET_REGISTRATION } from './calendar/calend
 const SEED_CATALOGUE = 'libs/java-shared/base-widget-backend/src/main/resources/default-widgets/processpuzzle-testbed-widgets.yaml';
 
 describe.each([[CALENDAR_WIDGET, CALENDAR_WIDGET_REGISTRATION]])('%s widget contract', (key, registration) => {
-  const mirror = reflectComponentType(registration.component);
+  let mirror: ReturnType<typeof reflectComponentType>;
+  beforeAll(async () => {
+    mirror = reflectComponentType(await loadWidgetComponent(registration));
+  });
 
   it('is registered under its own key', () => {
     expect(registration.type).toBe(key);

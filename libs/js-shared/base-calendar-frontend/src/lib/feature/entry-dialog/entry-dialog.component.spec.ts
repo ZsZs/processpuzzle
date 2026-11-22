@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CalendarStore } from '../../domain/calendar.store';
 import { CalendarEntry, CalendarInfo } from '../../domain/calendar.types';
 import { calendarTranslations } from '../../test-translations';
@@ -39,7 +39,14 @@ const ENTRY: CalendarEntry = {
 };
 
 describe('EntryDialogComponent', () => {
-  let store: { book: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn>; cancel: ReturnType<typeof vi.fn> };
+  let store: {
+    book: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    cancel: ReturnType<typeof vi.fn>;
+    searchDirectory: ReturnType<typeof vi.fn>;
+    roleCatalog: ReturnType<typeof vi.fn>;
+    answer: ReturnType<typeof vi.fn>;
+  };
   let dialogRef: { close: ReturnType<typeof vi.fn> };
   let fixture: ComponentFixture<EntryDialogComponent>;
 
@@ -77,7 +84,14 @@ describe('EntryDialogComponent', () => {
   }
 
   beforeEach(() => {
-    store = { book: vi.fn().mockResolvedValue(ENTRY), update: vi.fn().mockResolvedValue(ENTRY), cancel: vi.fn().mockResolvedValue(undefined) };
+    store = {
+      book: vi.fn().mockResolvedValue(ENTRY),
+      update: vi.fn().mockResolvedValue(ENTRY),
+      cancel: vi.fn().mockResolvedValue(undefined),
+      searchDirectory: vi.fn().mockResolvedValue([]),
+      roleCatalog: vi.fn().mockResolvedValue([]),
+      answer: vi.fn().mockResolvedValue(ENTRY),
+    };
     dialogRef = { close: vi.fn() };
   });
 
@@ -176,6 +190,67 @@ describe('EntryDialogComponent', () => {
       await open({ mode: 'create', calendars: [TEAM, ROOM], slot: SLOT });
       expect(q('entry-calendar')).not.toBeNull();
       expect(q('entry-kind')).not.toBeNull();
+    });
+  });
+
+  describe('repetition', () => {
+    const SERIES_CALENDAR: CalendarInfo = { ...TEAM, allowedKinds: ['TIMED', 'ALL_DAY', 'RECURRING'] };
+
+    /** The Repeats choices are mat-selects, which a spec sets through the form rather than by opening their overlays. */
+    async function setRepeat(change: Record<string, unknown>) {
+      (fixture.componentInstance as unknown as { patchRepeat(change: Record<string, unknown>): void }).patchRepeat(change);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('is offered only on a calendar that takes recurring entries', async () => {
+      await open({ mode: 'create', calendars: [TEAM], slot: SLOT });
+      expect(q('entry-repeat')).toBeNull();
+      TestBed.resetTestingModule();
+
+      await open({ mode: 'create', calendars: [SERIES_CALENDAR], slot: SLOT });
+      expect(q('entry-repeat')).not.toBeNull();
+      expect(q('entry-repeat-ends')).toBeNull();
+    });
+
+    it('books a series with the count of occurrences it was given, as a RECURRING template', async () => {
+      await open({ mode: 'create', calendars: [SERIES_CALENDAR], slot: SLOT });
+      await setRepeat({ frequency: 'WEEKLY', ends: 'AFTER_COUNT' });
+      expect(q('entry-repeat-until')).toBeNull();
+      await type('entry-repeat-count', '3');
+      await type('entry-title', 'Standup');
+
+      await submit();
+
+      expect(store.book).toHaveBeenCalledWith(
+        'team',
+        expect.objectContaining({ kind: 'RECURRING', title: 'Standup', start: '2026-12-01T09:00:00Z', end: '2026-12-01T10:00:00Z', recurrence: { frequency: 'WEEKLY', count: 3 } }),
+      );
+      expect(dialogRef.close).toHaveBeenCalledWith('saved');
+    });
+
+    it('books nothing while a series that ends on a date has no date', async () => {
+      await open({ mode: 'create', calendars: [SERIES_CALENDAR], slot: SLOT });
+      await setRepeat({ frequency: 'DAILY', ends: 'ON_DATE' });
+      await type('entry-title', 'Standup');
+
+      await submit();
+
+      expect(store.book).not.toHaveBeenCalled();
+    });
+
+    it('shows the repetition of a series in view, in words', async () => {
+      await open({ mode: 'view', calendars: [SERIES_CALENDAR], entry: { ...ENTRY, kind: 'RECURRING', canEdit: false, recurrence: { frequency: 'WEEKLY', count: 3 } } });
+
+      expect(text('entry-view-repeat')).toBe('Repeats weekly, 3 times');
+    });
+
+    it('loads the repetition of a series into the form when it is edited', async () => {
+      await open({ mode: 'edit', calendars: [SERIES_CALENDAR], entry: { ...ENTRY, kind: 'RECURRING', recurrence: { frequency: 'MONTHLY', until: '2027-01-31' } } });
+
+      expect((q('entry-repeat-until') as HTMLInputElement).value).toBe('2027-01-31');
+      expect(q('entry-repeat-count')).toBeNull();
     });
   });
 
@@ -280,6 +355,156 @@ describe('EntryDialogComponent', () => {
       await open({ mode: 'view', calendars: [TEAM], entry: { id: 'e-3', calendarKey: 'team', kind: 'ALL_DAY', busy: false, title: 'Holiday', startDate: '2026-12-24', endDate: '2026-12-27' } });
 
       expect(text('entry-view-when')).toMatch(/Dec 24, 2026\s+–\s+Dec 26, 2026/);
+    });
+  });
+
+  describe('invitations', () => {
+    type Internals = { addRole(name: string): void };
+    const ANN = { sub: 'sub-ann', displayName: 'Ann Invitee' };
+
+    afterEach(() => vi.useRealTimers());
+
+    async function typeSearch(value: string) {
+      const input = q('invite-search') as HTMLInputElement;
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    }
+
+    async function settle() {
+      await vi.advanceTimersByTimeAsync(300);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    const drafts = () => Array.from(fixture.nativeElement.querySelectorAll('[data-testid="invite-draft"]')) as HTMLElement[];
+
+    it('asks the directory once the user paused, not on every keystroke', async () => {
+      await open({ mode: 'create', calendars: [TEAM], slot: SLOT });
+      vi.useFakeTimers();
+      store.searchDirectory.mockResolvedValue([ANN]);
+
+      await typeSearch('an');
+      await vi.advanceTimersByTimeAsync(200);
+      await typeSearch('ann');
+      await vi.advanceTimersByTimeAsync(200);
+      expect(store.searchDirectory).not.toHaveBeenCalled();
+      await settle();
+
+      expect(store.searchDirectory).toHaveBeenCalledTimes(1);
+      expect(store.searchDirectory).toHaveBeenCalledWith('ann');
+      expect(text('invite-match')).toBe('Ann Invitee');
+    });
+
+    it('does not ask for fewer than two characters', async () => {
+      await open({ mode: 'create', calendars: [TEAM], slot: SLOT });
+      vi.useFakeTimers();
+
+      await typeSearch('a');
+      await settle();
+
+      expect(store.searchDirectory).not.toHaveBeenCalled();
+      expect(q('invite-match')).toBeNull();
+    });
+
+    it('adds the picked person as a user invitee, once, and sends it with the booking', async () => {
+      await open({ mode: 'create', calendars: [TEAM], slot: SLOT });
+      vi.useFakeTimers();
+      store.searchDirectory.mockResolvedValue([ANN]);
+      await typeSearch('ann');
+      await settle();
+
+      (q('invite-match') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      vi.useRealTimers();
+      await type('entry-title', 'Planning');
+      await submit();
+
+      expect(drafts()).toHaveLength(1);
+      expect(drafts()[0].textContent).toContain('Ann Invitee');
+      expect(store.book).toHaveBeenCalledWith('team', expect.objectContaining({ attendees: [{ type: 'USER', principal: 'sub-ann', required: true }] }));
+    });
+
+    it('adds a role from the catalog once, and a draft can be removed again', async () => {
+      store.roleCatalog.mockResolvedValue([{ name: 'team-lead' }]);
+      await open({ mode: 'create', calendars: [TEAM], slot: SLOT });
+      const dialog = fixture.componentInstance as unknown as Internals;
+
+      dialog.addRole('team-lead');
+      dialog.addRole('team-lead');
+      fixture.detectChanges();
+      expect(drafts()).toHaveLength(1);
+      expect(q('invite-role')).not.toBeNull();
+
+      (q('invite-remove') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(drafts()).toHaveLength(0);
+    });
+
+    it('shows the organizer as a line that cannot be removed, and the current invitees, when editing', async () => {
+      const entry: CalendarEntry = { ...ENTRY, attendees: [{ type: 'USER', principal: 'sub-ann', displayName: 'Ann Invitee', required: true, response: 'NEEDS_ACTION' }] };
+
+      await open({ mode: 'edit', calendars: [TEAM], entry });
+
+      expect(text('entry-organizer')).toContain('Ann Organizer');
+      expect(drafts()).toHaveLength(1);
+      await submit();
+      expect(store.update).toHaveBeenCalledWith('team', 'e-1', expect.objectContaining({ attendees: [{ type: 'USER', principal: 'sub-ann', required: true }] }));
+    });
+
+    it('leaves the invitees alone on an update when the entry came without a list', async () => {
+      await open({ mode: 'edit', calendars: [TEAM], entry: ENTRY });
+
+      await submit();
+
+      expect(store.update.mock.calls[0][2]).not.toHaveProperty('attendees');
+    });
+
+    it('lists the attendees read-only with their answers, none for a role, and never a subject', async () => {
+      const entry: CalendarEntry = {
+        ...ENTRY,
+        canEdit: false,
+        attendees: [
+          { type: 'USER', principal: null, displayName: 'Ann Invitee', required: true, response: 'ACCEPTED' },
+          { type: 'ROLE', principal: null, displayName: 'team-lead', required: true, response: null },
+        ],
+      };
+
+      await open({ mode: 'view', calendars: [TEAM], entry });
+
+      const rows = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="entry-attendee"]')) as HTMLElement[];
+      expect(rows).toHaveLength(2);
+      expect(rows[0].textContent).toContain('Accepted');
+      expect(rows[1].querySelector('[data-testid="entry-attendee-response"]')).toBeNull();
+      expect(q('entry-rsvp')).toBeNull();
+    });
+
+    it('offers the three answers to an invitee, sends the one picked and shows the refreshed entry', async () => {
+      const entry: CalendarEntry = { ...ENTRY, canEdit: false, canRespond: true, attendees: [{ type: 'USER', principal: null, displayName: 'Me', required: true, response: 'NEEDS_ACTION' }] };
+      store.answer.mockResolvedValue({ ...entry, attendees: [{ type: 'USER', principal: null, displayName: 'Me', required: true, response: 'TENTATIVE' }] });
+      await open({ mode: 'view', calendars: [TEAM], entry });
+      expect(q('rsvp-accept')).not.toBeNull();
+      expect(q('rsvp-decline')).not.toBeNull();
+
+      (q('rsvp-tentative') as HTMLButtonElement).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(store.answer).toHaveBeenCalledWith('team', 'e-1', 'TENTATIVE');
+      expect(text('entry-attendee-response')).toBe('Tentative');
+    });
+
+    it('says why when an answer is refused', async () => {
+      store.answer.mockRejectedValue(new HttpErrorResponse({ status: 403 }));
+      await open({ mode: 'view', calendars: [TEAM], entry: { ...ENTRY, canEdit: false, canRespond: true } });
+
+      (q('rsvp-accept') as HTMLButtonElement).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(text('entry-error')).toBe('You are not allowed to do that.');
     });
   });
 });

@@ -35,6 +35,13 @@ interface EntityAttributeDto {
   showMap?: boolean;
   mapProvider?: MapProvider;
   defaultCountry?: string;
+  quantityKind?: string;
+  allowedUnits?: string[];
+  defaultUnit?: string;
+  scale?: number;
+  allowedCurrencies?: string[];
+  defaultCurrency?: string;
+  dimensionCount?: 2 | 3;
 }
 
 /** `BaseEntityDefinition` on the way in, `BaseEntityDefinitionInput` on the way out. */
@@ -151,6 +158,14 @@ function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
     showMap: dto.showMap,
     mapProvider: dto.mapProvider,
     defaultCountry: dto.defaultCountry,
+    // A JSON null is an option not set; the model knows only "absent".
+    quantityKind: dto.quantityKind ?? undefined,
+    allowedUnits: dto.allowedUnits ?? undefined,
+    defaultUnit: dto.defaultUnit ?? undefined,
+    scale: dto.scale ?? undefined,
+    allowedCurrencies: dto.allowedCurrencies ?? undefined,
+    defaultCurrency: dto.defaultCurrency ?? undefined,
+    dimensionCount: dto.dimensionCount ?? undefined,
   });
 }
 
@@ -180,7 +195,56 @@ function fromAttribute(attribute: EntityAttributeDefinition): EntityAttributeDto
     autosizeColumn: attribute.autosizeColumn ?? false,
     defaultAvatar: attribute.defaultAvatar,
     ...addressOptionsOf(attribute),
+    ...measureOptionsOf(attribute),
   };
+}
+
+/**
+ * The options of `QUANTITY`, `MONEY` and `DIMENSIONS` — each only for the control that uses it, since the backend
+ * rejects the others. The PUT is a full replacement, so what the form leaves empty is simply not sent: blank text is
+ * no option, an empty list is none, and the number boxes' text is coerced (a NaN is no option either).
+ */
+function measureOptionsOf(attribute: EntityAttributeDefinition): Partial<EntityAttributeDto> {
+  switch (attribute.formControlType) {
+    case 'QUANTITY': {
+      const quantityKind = attribute.quantityKind?.trim();
+      return { ...(quantityKind ? { quantityKind } : {}), ...unitOptionsOf(attribute) };
+    }
+    case 'DIMENSIONS': {
+      const dimensionCount = numberOf(attribute.dimensionCount);
+      return { ...unitOptionsOf(attribute), ...(dimensionCount === undefined ? {} : { dimensionCount: dimensionCount as 2 | 3 }) };
+    }
+    case 'MONEY':
+      return currencyOptionsOf(attribute);
+    default:
+      return {};
+  }
+}
+
+/** What `QUANTITY` and `DIMENSIONS` share: the units on offer, the one to start in and the decimal places. */
+function unitOptionsOf(attribute: EntityAttributeDefinition): Partial<EntityAttributeDto> {
+  const defaultUnit = attribute.defaultUnit?.trim();
+  const scale = numberOf(attribute.scale);
+  return {
+    ...(attribute.allowedUnits?.length ? { allowedUnits: attribute.allowedUnits } : {}),
+    ...(defaultUnit ? { defaultUnit } : {}),
+    ...(scale === undefined ? {} : { scale }),
+  };
+}
+
+function currencyOptionsOf(attribute: EntityAttributeDefinition): Partial<EntityAttributeDto> {
+  const defaultCurrency = attribute.defaultCurrency?.trim();
+  return {
+    ...(attribute.allowedCurrencies?.length ? { allowedCurrencies: attribute.allowedCurrencies } : {}),
+    ...(defaultCurrency ? { defaultCurrency } : {}),
+  };
+}
+
+/** A number typed into a text box may come back as a string; blank or not a number is no value. */
+function numberOf(raw: unknown): number | undefined {
+  if (raw === null || raw === undefined || raw === '') return undefined;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : undefined;
 }
 
 /**

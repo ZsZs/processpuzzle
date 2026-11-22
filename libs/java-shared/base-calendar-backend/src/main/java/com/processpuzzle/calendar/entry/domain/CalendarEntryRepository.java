@@ -26,12 +26,46 @@ public interface CalendarEntryRepository extends JpaRepository<CalendarEntry, UU
               and ((e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.TIMED
                     and e.startUtc < :to and e.endUtc > :from)
                 or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.ALL_DAY
-                    and e.startDate <= :lastDay and e.endDate > :firstDay))
+                    and e.startDate <= :lastDay and e.endDate > :firstDay)
+                or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.RECURRING
+                    and e.seriesFirstDay <= :lastDay and (e.seriesLastDay is null or e.seriesLastDay >= :firstDay)))
             """)
     List<CalendarEntry> findOverlapping(@Param("orgKey") String orgKey,
                                         @Param("calendarKeys") Collection<String> calendarKeys,
                                         @Param("from") Instant from, @Param("to") Instant to,
                                         @Param("firstDay") LocalDate firstDay, @Param("lastDay") LocalDate lastDay);
+
+    /**
+     * The entries the caller organizes, or is invited to by name or through one of {@code roles}, that overlap the
+     * window. {@code roles} must not be empty: an empty IN list is not valid JPQL, so callers pass a placeholder.
+     */
+    @Query("""
+            select distinct e from CalendarEntry e left join e.attendees a
+            where e.orgKey = :orgKey
+              and (e.organizerSub = :subject
+                   or (a.type = com.processpuzzle.calendar.entry.domain.AttendeeType.USER and a.principal = :subject)
+                   or (a.type = com.processpuzzle.calendar.entry.domain.AttendeeType.ROLE and a.principal in :roles))
+              and ((e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.TIMED
+                    and e.startUtc < :to and e.endUtc > :from)
+                or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.ALL_DAY
+                    and e.startDate <= :lastDay and e.endDate > :firstDay)
+                or (e.kind = com.processpuzzle.calendar.definition.domain.EntryKind.RECURRING
+                    and e.seriesFirstDay <= :lastDay and (e.seriesLastDay is null or e.seriesLastDay >= :firstDay)))
+            """)
+    List<CalendarEntry> findMine(@Param("orgKey") String orgKey, @Param("subject") String subject,
+                                 @Param("roles") Collection<String> roles,
+                                 @Param("from") Instant from, @Param("to") Instant to,
+                                 @Param("firstDay") LocalDate firstDay, @Param("lastDay") LocalDate lastDay);
+
+    /** The entries a user organized, for erasing them. */
+    List<CalendarEntry> findByOrgKeyAndOrganizerSub(String orgKey, String organizerSub);
+
+    /** The entries a user is invited to by name, for erasing the invitations. */
+    @Query("""
+            select distinct e from CalendarEntry e join e.attendees a
+            where e.orgKey = :orgKey and a.type = com.processpuzzle.calendar.entry.domain.AttendeeType.USER and a.principal = :subject
+            """)
+    List<CalendarEntry> findInvitedBy(@Param("orgKey") String orgKey, @Param("subject") String subject);
 
     /** Every entry of a tenant in one statement, for erasing the tenant. */
     @Modifying(flushAutomatically = true)

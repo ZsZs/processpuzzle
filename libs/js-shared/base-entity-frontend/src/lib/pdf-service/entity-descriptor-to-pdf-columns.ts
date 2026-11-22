@@ -6,6 +6,7 @@ import { formatAddress } from '../base-form/address/address-formats';
 import { countryName } from '../base-form/address/countries';
 import { addressOf } from '../base-form/address/postal-address';
 import { formatGeoLocation } from '../base-form/geo-location/geo-location';
+import { formatDimensions, formatMoney, formatQuantity } from '../base-form/fundamental-types/measure-format';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import type { PdfColumnDefinition } from './pdf-export.types';
 
@@ -61,6 +62,15 @@ function columnFormatter(descriptor: BaseEntityAttrDescriptor, locale: string | 
 
     case FormControlType.GEO_LOCATION:
       return (value) => formatGeoLocation(value);
+
+    case FormControlType.QUANTITY:
+      return (value) => formatQuantity(value, locale ?? navigator.language);
+
+    case FormControlType.MONEY:
+      return (value) => formatMoney(value, locale ?? navigator.language);
+
+    case FormControlType.DIMENSIONS:
+      return (value) => formatDimensions(value, locale ?? navigator.language);
 
     // TEXT_BOX, TEXTAREA, DROPDOWN, FOREIGN_KEY, LOOKUP, etc. → default string coercion in the service
     default:

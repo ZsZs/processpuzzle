@@ -25,7 +25,17 @@ export class EntityListPO {
   async clickNew() {
     const newButton = this.page.getByTestId(buttonTestId(this.descriptor.entityName, 'new'));
     await expect(newButton).toBeEnabled();
-    await newButton.click();
+    const listUrl = this.page.url();
+    // The button being enabled does not mean its handler is wired: Firefox and WebKit regularly deliver the click
+    // before Angular has attached it, and nothing happens. The failure then surfaces a whole test timeout later,
+    // as a form field that never appears. So the click is only done once the application has actually left the
+    // list, and is repeated until it has.
+    await expect(async () => {
+      if (this.page.url() === listUrl) {
+        await newButton.click({ timeout: 2_000 });
+      }
+      await expect.poll(() => this.page.url(), { timeout: 3_000 }).not.toBe(listUrl);
+    }).toPass({ timeout: 20_000 });
   }
 
   /** Type into the toolbar filter input. */

@@ -71,6 +71,22 @@ defineEntityCrudSuite({
       reason: 'a definition is created from YAML whose keys name it, which generated fixture data cannot produce',
     },
     {
+      entityName: 'Organization Unit',
+      // A unit is never deleted — a stored value may carry it, so the contract has no DELETE and the descriptor offers none —
+      // and this suite creates a fixture and removes it again. Its kind has to be one of the catalog's and its factor a
+      // positive decimal, which generated prose is not either. Authoring a unit is covered by base-entity-frontend's own
+      // tests and OrganizationUnitsIntegrationTest. Drop this entry if the fixture factory ever learns to leave a row behind.
+      reason: 'a unit is retired, never deleted, and its kind and factor are not generic values',
+    },
+    {
+      entityName: 'Exchange Rate',
+      // A rate is between two *different* currencies, and the generator takes the first option for both dropdowns, so the POST
+      // comes back 422 on the first. The rate and the date have to fit their patterns too. Authoring a rate is covered by
+      // base-entity-frontend's own tests and ExchangeRatesIntegrationTest. Drop this entry if the fixture factory ever learns to
+      // pick different options for two dropdowns of one entity.
+      reason: 'a rate is between two different currencies, and the generated fixture picks the same option twice',
+    },
+    {
       entityName: 'IssuedDocument',
       // Every field is the server's: a signature is recorded by POST .../signatures, which needs a published
       // report and a signer, and the descriptor is `isReadOnly` with no identification attribute to build a

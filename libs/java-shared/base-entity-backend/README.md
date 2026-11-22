@@ -41,6 +41,52 @@ have `package-info.java` declaring `@ApplicationModule`; running
 either `@NamedInterface` is added to the relevant `domain` packages or the adapters are reworked
 to call a narrower published API on the other module instead of its repository.
 
+## Quantities, money and dimensions
+
+`QUANTITY`, `MONEY` and `DIMENSIONS` attributes hold the [fundamental types](../processpuzzle-core/README.md) of
+`processpuzzle-core` (`com.processpuzzle.core.quantity`): `valueKind` REFERENCE, single-valued, no linked type. The
+definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`, `allowedCurrencies`,
+`defaultCurrency`, `dimensionCount` — are checked against the standard catalog when the definition is saved
+(`MeasureAttributeValidator`), and each belongs to one control only.
+
+- **Value** — `{ amount, unit }`, `{ amount, currency }`, `{ width, height, depth?, unit }`, the amounts as decimal
+  text. A write checks the unit or currency against the catalog and the attribute's allowed list, the amounts as
+  decimals, and their decimal places against `scale` (for money, against the currency's minor units).
+- **Seeded units and rates** — `default-units/<orgKey>-units.yaml` (`DefaultUnitsLoader`, on with `base-entity.loadDefaultEntities`): a `units`
+  list and an `exchangeRates` list for the organization named in the file. Create-only — a unit code or a pair and date the organization
+  already has is left as it is — and loaded ahead of the entity definitions, which may name a seeded unit.
+- **Exchange rates** — `/organizations/{orgKey}/exchange-rates` (list, create, get, replace, delete): an organization's rate
+  for a pair of currencies from a date on, held until the pair's next rate starts. One rate per pair and date (409), currencies of the
+  standard catalog, a positive decimal. `OrganizationExchangeRates` implements core's `ExchangeRateProvider` with a per-organization
+  table dropped after the change commits, as the unit catalogs are; the inverse and cross rates are derived, so a pair is entered once.
+- **Organization units** — `/organizations/{orgKey}/units`: an organization adds units to a kind of the standard catalog
+  (a `pallet` of 500 kg, a `bag` of 25 kg: `kind`, `factor` and an optional `divisor`; no new kinds, currencies or
+  temperature-style offsets). The code must be new across the whole catalog. `OrganizationUnitCatalogs` builds each
+  organization's catalog (standard + its units, retired ones included) and implements core's `UnitCatalogProvider`; the
+  definition validator, the payload validator and the derived-write path all read through it, so an allowed unit, a stored
+  value and `baseAmount` all know the organization's units. A definition is checked in the catalog of the organization
+  that owns it — also a common's definition shared with a member. **Kind, factor and divisor are fixed once the unit
+  exists** (stored amounts and `baseAmount` derive from them: `PUT` answers 409), and a unit is **retired, never deleted**
+  (`status: RETIRED`): no longer to be offered, but values stored with it stay valid and keep writing. Reading needs access
+  to the organization, changing it the right to design. The catalog is cached per organization in the process and dropped
+  once a change commits. Not done yet: the rule engine still reads the standard catalog only, and no screen manages units.
+- **Stored form** — after validation, `MeasureNormalizer` rewrites every measure of the payload, embedded components
+  included: canonical amounts (`"12.50"` → `"12.5"`) plus the numbers a query compares — `baseAmount` (a quantity in its
+  kind's base unit, money as the amount itself), `baseArea` and, for three axes, `baseVolume` (m², m³). They are derived on
+  every write, so a client cannot set them, and they are `double`s on purpose (see `MeasureValues`).
+- **Search** — through those numbers, never the object: `weight.baseAmount=gt=5` finds every weight over 5 kg whatever
+  unit it was entered in; `size.baseVolume=lt=0.5` is in cubic metres. A bare `weight` or `weight.unit` is refused with a
+  hint naming the selectable numbers.
+- The testbed seed's `dynamic-entity` carries one attribute of each control, with a sample instance, and
+  `MeasureAttributesIntegrationTest` runs both through the real stack.
+- **Derived writes** — `EntityObjectAccess.updateAttributes` and `upsertAllByKey`, which base-calculation writes its
+  results through, skip the payload validation of a form's save, but not for these attributes: a value written to one is put
+  in its stored form (`MeasureValues.forWrite`), so the derived numbers are there and a query finds it. A measure object is
+  validated as a form's would be; a **bare number** — what a calculation produces — is taken to be in the attribute's
+  default unit (else the base unit of its quantity kind, else the first allowed one) or default currency (else the first
+  allowed one), rounded half up to its `scale` (money: the currency's minor units). Dimensions take no bare number. A value
+  that does not fit fails the write with `EntityObjectAccessException.InvalidValue`; `null` clears the attribute.
+
 ## Still pending on your side
 
 - **`RsqlSpecificationBuilder`** (processpuzzle-core) — I couldn't fetch its source (GitHub

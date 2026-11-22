@@ -5,6 +5,7 @@ import { setUpTranslocoTestBed } from '@processpuzzle/test-util';
 import { screen, waitFor } from '@testing-library/angular';
 import { Observable, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import widgetsEn from '../assets/i18n/widgets/en.json';
 import { ModuleLauncherComponent } from './module-launcher.component';
 import { ModuleLauncherContext, ModuleLauncherEntry, MODULE_LAUNCHER_CONTEXT } from './module-launcher-context';
 
@@ -31,7 +32,7 @@ function contextOf(
 
 async function setUp(context?: ModuleLauncherContext) {
   const providers = [provideRouter([]), ...(context ? [{ provide: MODULE_LAUNCHER_CONTEXT, useValue: context }] : [])];
-  return setUpTranslocoTestBed(ModuleLauncherComponent, { translations: { en: {} } }, { providers });
+  return setUpTranslocoTestBed(ModuleLauncherComponent, { scope: 'widgets', translations: { en: {}, 'widgets/en': widgetsEn } }, { providers });
 }
 
 describe('ModuleLauncherComponent', () => {
@@ -88,6 +89,16 @@ describe('ModuleLauncherComponent', () => {
     const empty = fixture.nativeElement.querySelector('.module-launcher__empty');
     expect(empty).not.toBeNull();
     expect(empty.querySelector('a')?.getAttribute('href')).toBe('/design/starters');
+  });
+
+  // The scope is not part of the directive's prefix on its own: written as 'module_launcher' the lookup misses and the page shows the raw keys.
+  it('writes the note and the link in words, not as translation keys', async () => {
+    const { fixture } = await setUp(contextOf([]).context);
+
+    const empty = fixture.nativeElement.querySelector('.module-launcher__empty');
+    expect(empty.textContent).toContain(widgetsEn.module_launcher.empty);
+    expect(empty.querySelector('a')?.textContent).toContain(widgetsEn.module_launcher.browse);
+    expect(empty.textContent).not.toContain('module_launcher.');
   });
 
   it('takes the empty note away once a module brings a card', async () => {

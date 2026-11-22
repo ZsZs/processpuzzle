@@ -1,0 +1,93 @@
+{
+  "conversions": [
+    { "amount": "1", "from": "ft", "to": "m", "expected": "0.3048" },
+    { "amount": "1", "from": "m", "to": "ft", "expected": "3.28083989501312335958" },
+    { "amount": "1", "from": "m", "to": "in", "expected": "39.37007874015748031496" },
+    { "amount": "3", "from": "cm", "to": "in", "expected": "1.18110236220472440945" },
+    { "amount": "100", "from": "degC", "to": "degF", "expected": "212" },
+    { "amount": "32", "from": "degF", "to": "degC", "expected": "0" },
+    { "amount": "98.6", "from": "degF", "to": "degC", "expected": "37" },
+    { "amount": "1", "from": "km/h", "to": "m/s", "expected": "0.27777777777777777778" },
+    { "amount": "1", "from": "mph", "to": "km/h", "expected": "1.609344" },
+    { "amount": "1", "from": "kn", "to": "km/h", "expected": "1.852" },
+    { "amount": "1.5", "from": "h", "to": "min", "expected": "90" },
+    { "amount": "1", "from": "lb", "to": "g", "expected": "453.59237" },
+    { "amount": "2", "from": "l", "to": "m3", "expected": "0.002" },
+    { "amount": "1", "from": "gal", "to": "l", "expected": "3.785411784" },
+    { "amount": "1", "from": "ac", "to": "ha", "expected": "0.40468564224" },
+    { "amount": "12.50", "from": "kg", "to": "kg", "expected": "12.5" },
+    { "amount": "-0.0", "from": "kg", "to": "g", "expected": "0" }
+  ],
+  "baseAmounts": [
+    { "amount": "25", "unit": "degC", "expected": "298.15" },
+    { "amount": "1", "unit": "degF", "expected": "255.92777777777777777778" },
+    { "amount": "1", "unit": "h", "expected": "3600" },
+    { "amount": "3", "unit": "dz", "expected": "36" },
+    { "amount": "1", "unit": "kWh", "expected": "3600000" }
+  ],
+  "dimensions": [
+    { "width": "120", "height": "80", "depth": "50", "unit": "cm", "area": "0.96", "volume": "0.48" },
+    { "width": "2", "height": "3", "unit": "ft", "area": "0.55741824" },
+    { "width": "10", "height": "10", "depth": "10", "unit": "in", "area": "0.064516", "volume": "0.016387064" }
+  ],
+  "moneyRounding": [
+    { "amount": "1.005", "currency": "EUR", "expected": "1.01" },
+    { "amount": "-1.005", "currency": "EUR", "expected": "-1.01" },
+    { "amount": "2.5", "currency": "JPY", "expected": "3" },
+    { "amount": "1.0005", "currency": "KWD", "expected": "1.001" }
+  ],
+  "toIsoDuration": [
+    { "amount": "1.5", "unit": "h", "expected": "PT1H30M" },
+    { "amount": "90000", "unit": "s", "expected": "P1DT1H" },
+    { "amount": "0", "unit": "s", "expected": "PT0S" },
+    { "amount": "1", "unit": "wk", "expected": "P7D" },
+    { "amount": "1.25", "unit": "s", "expected": "PT1.25S" },
+    { "amount": "100", "unit": "ms", "expected": "PT0.1S" }
+  ],
+  "fromIsoDuration": [
+    { "duration": "PT1H30M", "unit": "min", "expected": "90" },
+    { "duration": "P1W2D", "unit": "d", "expected": "9" },
+    { "duration": "P1DT0.5S", "unit": "s", "expected": "86400.5" },
+    { "duration": "PT1M", "unit": "s", "expected": "60" },
+    { "duration": "pt0s", "unit": "s", "expected": "0" }
+  ],
+  "invalidIsoDurations": [
+    { "duration": "P1M", "reason": "CALENDAR_DURATION" },
+    { "duration": "P1Y2D", "reason": "CALENDAR_DURATION" },
+    { "duration": "P", "reason": "INVALID_DURATION" },
+    { "duration": "PT", "reason": "INVALID_DURATION" },
+    { "duration": "P1DT", "reason": "INVALID_DURATION" },
+    { "duration": "1H", "reason": "INVALID_DURATION" },
+    { "duration": "PT1S1H", "reason": "INVALID_DURATION" },
+    { "duration": "P1D1D", "reason": "INVALID_DURATION" },
+    { "duration": "PT1HT1M", "reason": "INVALID_DURATION" }
+  ],
+  "exchangeConversions": [
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "100", "currency": "EUR", "to": "USD", "on": "2026-06-30", "expected": "110" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "100", "currency": "EUR", "to": "USD", "on": "2026-07-01", "expected": "120" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "100", "currency": "EUR", "to": "USD", "on": "2030-01-01", "expected": "120" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.25", "validFrom": "2026-01-01" } ], "amount": "100", "currency": "USD", "to": "EUR", "on": "2026-03-01", "expected": "80" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "3", "validFrom": "2026-01-01" } ], "amount": "1", "currency": "USD", "to": "EUR", "on": "2026-03-01", "expected": "0.33" },
+    { "rates": [ { "from": "EUR", "to": "JPY", "rate": "160.5", "validFrom": "2026-01-01" } ], "amount": "12.34", "currency": "EUR", "to": "JPY", "on": "2026-03-01", "expected": "1981" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.005", "validFrom": "2026-01-01" } ], "amount": "1", "currency": "EUR", "to": "USD", "on": "2026-03-01", "expected": "1.01" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.005", "validFrom": "2026-01-01" } ], "amount": "5.5", "currency": "EUR", "to": "EUR", "on": "2026-03-01", "expected": "5.5" },
+    { "rates": [ { "from": "USD", "to": "EUR", "rate": "0.9", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "HUF", "rate": "400", "validFrom": "2026-01-01" } ], "amount": "100", "currency": "USD", "to": "HUF", "on": "2026-03-01", "expected": "36000" },
+    { "rates": [ { "from": "USD", "to": "EUR", "rate": "0.9", "validFrom": "2026-01-01" }, { "from": "HUF", "to": "EUR", "rate": "0.0025", "validFrom": "2026-01-01" } ], "amount": "100", "currency": "USD", "to": "HUF", "on": "2026-03-01", "expected": "36000" },
+    { "rates": [ { "from": "EUR", "to": "GBP", "rate": "0.8", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "HUF", "rate": "400", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.1", "validFrom": "2026-01-01" }, { "from": "GBP", "to": "USD", "rate": "1.3", "validFrom": "2026-01-01" } ], "amount": "10", "currency": "HUF", "to": "USD", "on": "2026-03-01", "expected": "0.03" }
+  ],
+  "exchangeRefusals": [
+    { "rates": [], "amount": "1", "currency": "EUR", "to": "USD", "on": "2026-03-01", "reason": "NO_EXCHANGE_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "1", "currency": "EUR", "to": "USD", "on": "2025-12-31", "reason": "NO_EXCHANGE_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "1", "currency": "EUR", "to": "HUF", "on": "2026-03-01", "reason": "NO_EXCHANGE_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "1", "currency": "EUR", "to": "ZZZ", "on": "2026-03-01", "reason": "UNKNOWN_CURRENCY" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.10", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.20", "validFrom": "2026-07-01" } ], "amount": "1", "currency": "ZZZ", "to": "USD", "on": "2026-03-01", "reason": "UNKNOWN_CURRENCY" }
+  ],
+  "invalidExchangeRates": [
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "0", "validFrom": "2026-01-01" } ], "reason": "INVALID_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "-1.1", "validFrom": "2026-01-01" } ], "reason": "INVALID_RATE" },
+    { "rates": [ { "from": "EUR", "to": "EUR", "rate": "1", "validFrom": "2026-01-01" } ], "reason": "INVALID_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.1", "validFrom": "2026-01-01" }, { "from": "EUR", "to": "USD", "rate": "1.2", "validFrom": "2026-01-01" } ], "reason": "INVALID_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "1.1", "validFrom": "yesterday" } ], "reason": "INVALID_RATE" },
+    { "rates": [ { "from": "EUR", "to": "USD", "rate": "a lot", "validFrom": "2026-01-01" } ], "reason": "INVALID_AMOUNT" }
+  ]
+}

@@ -65,13 +65,43 @@ class BookingRulesTest {
     }
 
     @Test
-    void recurringEntriesAreRefusedEvenWhenTheCalendarAllowsThem() {
+    void aRecurringEntryNeedsARecurrenceAndItsTemplateIsChecked() {
         CalendarDefinition allowsRecurring = open();
         allowsRecurring.setAllowedKinds(new ArrayList<>(List.of(EntryKind.TIMED, EntryKind.RECURRING)));
-        BookingRequest recurring = new BookingRequest(EntryKind.RECURRING, "Standup", null, null, null, null,
+        BookingRequest withoutRule = new BookingRequest(EntryKind.RECURRING, "Standup", null, null, null, null,
                 Instant.parse("2026-12-01T09:00:00Z"), Instant.parse("2026-12-01T09:15:00Z"), null, null, null, null);
 
-        assertThat(check(allowsRecurring, recurring)).singleElement().asString().contains("not supported yet");
+        assertThat(check(allowsRecurring, withoutRule)).singleElement().asString().contains("needs a 'recurrence'");
+        assertThat(check(allowsRecurring, recurring(WEEKLY, 10, null))).isEmpty();
+    }
+
+    @Test
+    void aRecurrenceEndsOnACountOrADateNotBoth() {
+        CalendarDefinition allowsRecurring = open();
+        allowsRecurring.setAllowedKinds(new ArrayList<>(List.of(EntryKind.TIMED, EntryKind.RECURRING)));
+
+        assertThat(check(allowsRecurring, recurring(WEEKLY, 3, LocalDate.parse("2027-01-31")))).singleElement().asString().contains("not both");
+        assertThat(check(allowsRecurring, recurring(WEEKLY, 0, null))).singleElement().asString().contains("between 1 and 500");
+        assertThat(check(allowsRecurring, recurring(WEEKLY, 501, null))).singleElement().asString().contains("between 1 and 500");
+        assertThat(check(allowsRecurring, recurring(WEEKLY, null, LocalDate.parse("2026-11-30")))).singleElement().asString()
+                .contains("must not be before the first occurrence");
+    }
+
+    @Test
+    void aRecurrenceOnASingleEntryIsRefused() {
+        BookingRequest single = new BookingRequest(EntryKind.TIMED, "Lunch", null, null, null, null,
+                Instant.parse("2026-12-01T09:00:00Z"), Instant.parse("2026-12-01T10:00:00Z"), null, null, null, null,
+                null, new Recurrence(Recurrence.Frequency.DAILY, 2, null));
+
+        assertThat(check(open(), single)).singleElement().asString().contains("only for a recurring entry");
+    }
+
+    private static final Recurrence.Frequency WEEKLY = Recurrence.Frequency.WEEKLY;
+
+    private static BookingRequest recurring(Recurrence.Frequency frequency, Integer count, LocalDate until) {
+        return new BookingRequest(EntryKind.RECURRING, "Standup", null, null, null, null,
+                Instant.parse("2026-12-01T09:00:00Z"), Instant.parse("2026-12-01T09:15:00Z"), null, null, null, null,
+                null, new Recurrence(frequency, count, until));
     }
 
     @Test

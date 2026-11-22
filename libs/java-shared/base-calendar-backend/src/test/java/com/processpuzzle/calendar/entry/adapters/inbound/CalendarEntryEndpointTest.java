@@ -31,6 +31,7 @@ import com.processpuzzle.calendar.entry.usecases.exception.StaleEntryException;
 import com.processpuzzle.calendar.entry.usecases.inbound.BookEntry;
 import com.processpuzzle.calendar.entry.usecases.inbound.CancelEntry;
 import com.processpuzzle.calendar.entry.usecases.inbound.GetEntry;
+import com.processpuzzle.calendar.entry.usecases.inbound.RespondToInvitation;
 import com.processpuzzle.calendar.entry.usecases.inbound.UpdateEntry;
 import java.time.Instant;
 import java.util.List;
@@ -64,13 +65,13 @@ class CalendarEntryEndpointTest {
         update = mock(UpdateEntry.class);
         cancel = mock(CancelEntry.class);
         get = mock(GetEntry.class);
-        mvc = MockMvcBuilders.standaloneSetup(new CalendarEntryEndpoint(book, update, cancel, get, new EntryMapper()))
+        mvc = MockMvcBuilders.standaloneSetup(new CalendarEntryEndpoint(book, update, cancel, get, mock(RespondToInvitation.class), new EntryMapper()))
                 .setControllerAdvice(new CalendarApiExceptionHandler())
                 .build();
     }
 
     private static EntryView full(CalendarEntry entry) {
-        return new EntryView(entry, false, true, true);
+        return new EntryView(entry, false, true, true, false, false);
     }
 
     @Test
@@ -131,7 +132,7 @@ class CalendarEntryEndpointTest {
     @Test
     void aBusyEntryCarriesTheTimesAndNothingElse() throws Exception {
         CalendarEntry stored = timedEntry(ALICE, EntryVisibility.PRIVATE);
-        when(get.get(ORG, "team-calendar", stored.getId())).thenReturn(new EntryView(stored, true, false, false));
+        when(get.get(ORG, "team-calendar", stored.getId())).thenReturn(new EntryView(stored, true, false, false, false, false));
 
         mvc.perform(get(BASE + "/" + stored.getId()))
                 .andExpect(status().isOk())

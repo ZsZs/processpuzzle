@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WIDGET_REGISTRY, WidgetRegistration } from '../widget-registry/widget-registry.token';
@@ -114,5 +114,63 @@ describe('WidgetHostComponent', () => {
     render({ id: 'w1', type: 'test-widget' }, false);
 
     expect(fixture.nativeElement.querySelector('[data-testid="unregistered-w1"]')).not.toBeNull();
+  });
+});
+
+describe('a lazy widget', () => {
+  let fixture: ComponentFixture<WidgetHostComponent>;
+  const widget: HostedWidget = { id: 'w1', type: 'lazy-widget', props: { label: 'Loaded' } };
+  const lazy = (loadComponent: () => Promise<Type<unknown>>): WidgetRegistration => ({ type: 'lazy-widget', definition: { name: 'Lazy widget' }, loadComponent });
+  const place = (host = TestBed.createComponent(WidgetHostComponent)) => {
+    host.componentRef.setInput('widget', widget);
+    host.detectChanges();
+    return host;
+  };
+  /** A plain promise is not tracked by the zoneless scheduler, so wait for it to settle, then check the view. */
+  const settle = async (host: ComponentFixture<WidgetHostComponent>) => {
+    await new Promise((resolve) => setTimeout(resolve));
+    host.detectChanges();
+  };
+  const button = (host: ComponentFixture<WidgetHostComponent>) => host.nativeElement.querySelector('.host-test-widget') as HTMLButtonElement | null;
+
+  function configure(registry: ReadonlyMap<string, WidgetRegistration>) {
+    TestBed.configureTestingModule({ imports: [WidgetHostComponent], providers: [{ provide: WIDGET_REGISTRY, useValue: registry }] });
+  }
+
+  it('shows a placeholder until its class has loaded, then renders the widget', async () => {
+    configure(new Map([['lazy-widget', lazy(() => Promise.resolve(HostTestWidgetComponent))]]));
+    fixture = place();
+
+    expect(button(fixture)).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="loading-w1"]')).not.toBeNull();
+
+    await settle(fixture);
+    expect(button(fixture)?.textContent).toContain('Loaded');
+  });
+
+  it('shows the failure, and tries the import again on the next placement', async () => {
+    const load = vi.fn<() => Promise<Type<unknown>>>().mockRejectedValueOnce(new Error('chunk not found')).mockResolvedValueOnce(HostTestWidgetComponent);
+    configure(new Map([['lazy-widget', lazy(load)]]));
+    fixture = place();
+    await settle(fixture);
+    expect(fixture.nativeElement.querySelector('[data-testid="load-failed-w1"]')).not.toBeNull();
+
+    const again = place(TestBed.createComponent(WidgetHostComponent));
+    await settle(again);
+
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(button(again)?.textContent).toContain('Loaded');
+  });
+
+  it('renders a second placement of a loaded widget at once, without loading it again', async () => {
+    const load = vi.fn(() => Promise.resolve(HostTestWidgetComponent));
+    configure(new Map([['lazy-widget', lazy(load)]]));
+    fixture = place();
+    await settle(fixture);
+
+    const second = place(TestBed.createComponent(WidgetHostComponent));
+
+    expect(button(second)?.textContent).toContain('Loaded');
+    expect(load).toHaveBeenCalledTimes(1);
   });
 });

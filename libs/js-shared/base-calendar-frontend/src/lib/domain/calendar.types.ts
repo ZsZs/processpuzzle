@@ -4,10 +4,57 @@
 
 export type CalendarKind = 'TEAM' | 'RESOURCE';
 
-/** RECURRING is reserved: a calendar may allow it, but entries of that kind are refused until recurrence exists. */
+/** RECURRING is a TIMED or ALL_DAY template repeated by a {@link CalendarRecurrence}; a calendar must allow it. */
 export type EntryKind = 'TIMED' | 'ALL_DAY' | 'RECURRING';
 
+export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+
+/**
+ * How a RECURRING entry repeats. `count` and `until` are never both set; neither means the series never ends.
+ * `count` includes the template, `until` is the last day an occurrence may fall on.
+ */
+export interface CalendarRecurrence {
+  frequency: RecurrenceFrequency;
+  count?: number | null;
+  until?: string | null;
+}
+
 export type EntryVisibility = 'PUBLIC' | 'PRIVATE';
+
+export type AttendeeType = 'USER' | 'ROLE';
+
+export type AttendanceResponse = 'NEEDS_ACTION' | 'ACCEPTED' | 'TENTATIVE' | 'DECLINED';
+
+/** The answers an invitee may give; NEEDS_ACTION is only where everybody starts. */
+export type AttendanceAnswerValue = 'ACCEPTED' | 'TENTATIVE' | 'DECLINED';
+
+/** An invitation as an entry shows it. `principal` is null for anybody who may not edit the entry. */
+export interface CalendarAttendee {
+  type: AttendeeType;
+  principal?: string | null;
+  displayName: string;
+  required: boolean;
+  /** USER only. */
+  response?: AttendanceResponse | null;
+  respondedAt?: string | null;
+}
+
+export interface AttendeeInput {
+  type: AttendeeType;
+  principal: string;
+  required: boolean;
+}
+
+/** An invitation being edited in the dialog; the display name is only for showing it. */
+export interface AttendeeDraft extends AttendeeInput {
+  displayName: string;
+}
+
+/** A member found by the directory search: name and subject only. */
+export interface DirectoryMatch {
+  sub: string;
+  displayName: string;
+}
 
 export interface CalendarPermissions {
   /** May book entries and edit their own. */
@@ -56,9 +103,17 @@ export interface CalendarEntry {
   startDate?: string | null;
   /** ALL_DAY: the day after the last day. */
   endDate?: string | null;
+  /** RECURRING: how the template repeats. */
+  recurrence?: CalendarRecurrence | null;
   organizerDisplayName?: string | null;
   mine?: boolean;
   canEdit?: boolean;
+  /** Absent when the entry is busy. */
+  attendees?: CalendarAttendee[];
+  /** Whether the caller is invited, by name or through a role. */
+  invited?: boolean;
+  /** Whether the caller may answer the invitation. */
+  canRespond?: boolean;
   version?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -76,11 +131,18 @@ export interface CalendarEntryInput {
   timeZone?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  /** RECURRING only, and required for it. */
+  recurrence?: CalendarRecurrence;
+  /** At most 50. Omit it on an update to keep the current invitees. */
+  attendees?: AttendeeInput[];
   /** On an update, the version last read; a mismatch is refused with 409. */
   version?: number | null;
 }
 
-/** What a calendar shows for a window: one entry, or one occurrence of a recurring one. */
+/**
+ * What a calendar shows for a window: one entry, or one occurrence of a recurring one. A recurring entry's
+ * occurrences share `entryId` and differ by `recurrenceId`, the occurrence's local date; a single entry has none.
+ */
 export interface Occurrence {
   entryId: string;
   calendarKey: string;
@@ -96,6 +158,7 @@ export interface Occurrence {
   endDate?: string | null;
   mine?: boolean;
   canEdit?: boolean;
+  invited?: boolean;
 }
 
 /** How a failed call is told to the user. */
