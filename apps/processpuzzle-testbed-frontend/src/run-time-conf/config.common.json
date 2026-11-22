@@ -6,7 +6,7 @@
     "SELF_SERVICE_ROLES_SERVICE_ROOT": "http://localhost:8080/organizations/processpuzzle-testbed",
     "THIRD_PARTY_ROOT": "http://localhost:3000",
     "OBJECT_STORE_SERVICE_ROOT": "http://localhost:8080",
-    "APPLICATION_VERSION": "1.4.0"
+    "APPLICATION_VERSION": "1.5.0"
   },
   "LANGUAGE_CONFIGURATION": {
     "DEFAULT_LANGUAGE": "en",

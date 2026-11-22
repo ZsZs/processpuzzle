@@ -1,10 +1,10 @@
 import { FormControl } from '@angular/forms';
 import { STANDARD_UNIT_CATALOG } from '@processpuzzle/util';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { amountValidator, cleanAmount, decimalPlaces, isAmountText, paddedToPlaces } from './amount-text';
-import { formatDimensions, formatMeasure, formatMoney, formatQuantity } from './measure-format';
+import { formatDimensions, formatMeasure, formatMoney, formatQuantity, useDisplayCatalog } from './measure-format';
 import { convertAmount, currenciesOf, DEFAULT_CONVERSION_SCALE, defaultCurrencyOf, defaultUnitOf, dimensionUnitsOf, groupByKind, quantityUnitsOf } from './measure-options';
 import { dimensionsOf, moneyOf, quantityOf } from './measure-values';
 
@@ -121,6 +121,28 @@ describe('measure options', () => {
     expect(convertAmount('1', 'kg', 'm', undefined, catalog)).toBeUndefined();
     expect(convertAmount('x', 'kg', 'g', undefined, catalog)).toBeUndefined();
     expect(convertAmount('1', 'parsec', 'm', undefined, catalog)).toBeUndefined();
+  });
+});
+
+describe('the display catalog', () => {
+  const PALLET = { kind: 'MASS', code: 'pallet', symbol: 'plt', name: 'Pallet', factor: '500' };
+
+  afterEach(() => useDisplayCatalog(STANDARD_UNIT_CATALOG));
+
+  it('names a unit the formatters are not given a catalog for by the catalog set, and falls back to the code before that', () => {
+    expect(formatQuantity({ amount: '2', unit: 'pallet' }, 'en')).toBe('2 pallet');
+
+    useDisplayCatalog(STANDARD_UNIT_CATALOG.withUnits([PALLET]));
+
+    expect(formatQuantity({ amount: '2', unit: 'pallet' }, 'en')).toBe('2 plt');
+    expect(formatMeasure({ amount: '2', unit: 'pallet' }, 'en')).toBe('2 plt');
+    expect(formatDimensions({ width: '1', height: '2', unit: 'm' }, 'en')).toBe('1 × 2 m');
+  });
+
+  it('yields to a catalog the caller passes', () => {
+    useDisplayCatalog(STANDARD_UNIT_CATALOG.withUnits([PALLET]));
+
+    expect(formatQuantity({ amount: '2', unit: 'pallet' }, 'en', STANDARD_UNIT_CATALOG)).toBe('2 pallet');
   });
 });
 
