@@ -5,6 +5,7 @@ import { RUNTIME_CONFIGURATION, STANDARD_UNIT_CATALOG } from '@processpuzzle/uti
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseEntityAttrDescriptor } from '../../base-entity/base-entity-attr.descriptor';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
+import { formatMeasure } from './measure-format';
 import { quantityUnitsOf } from './measure-options';
 import { catalogOf, OrganizationUnitCatalog } from './organization-unit-catalog';
 import { OrganizationUnit } from './organization-unit.service';
@@ -45,6 +46,8 @@ describe('the organization’s unit catalog', () => {
     expect(seen.currencies()).toHaveLength(STANDARD_UNIT_CATALOG.currencies().length);
     expect(seen.findCurrency('EUR')?.minorUnits).toBe(2);
     expect(seen.unit('pallet').symbol).toBe('plt');
+    // What formats without an injector reads the organization's catalog too.
+    expect(formatMeasure({ amount: '2', unit: 'pallet' }, 'en')).toBe('2 plt');
     expect(seen.kind('MASS').baseUnit).toBe('kg');
     expect(seen.currency('EUR').code).toBe('EUR');
     expect(seen.activeUnitsOf('MASS').map((unit) => unit.code)).toContain('pallet');

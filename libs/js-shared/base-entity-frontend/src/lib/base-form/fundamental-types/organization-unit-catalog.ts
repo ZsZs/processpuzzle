@@ -9,6 +9,7 @@ import {
 } from '@processpuzzle/util';
 import { NGXLogger } from 'ngx-logging-kit';
 import { firstValueFrom } from 'rxjs';
+import { useDisplayCatalog } from './measure-format';
 import { OrganizationUnit, OrganizationUnitService } from './organization-unit.service';
 
 /**
@@ -49,6 +50,8 @@ export class OrganizationUnitCatalog {
   private async load(): Promise<void> {
     const units = await firstValueFrom(this.service.findAll());
     this.current.set(catalogOf(units, this.logger));
+    // Places that format a value without an injector — a document field, a PDF — name its unit from the same catalog.
+    useDisplayCatalog(this.live);
   }
 }
 

@@ -2,6 +2,19 @@ import { STANDARD_UNIT_CATALOG, UnitCatalog } from '@processpuzzle/util';
 import { decimalPlaces } from './amount-text';
 import { dimensionsOf, moneyOf, quantityOf } from './measure-values';
 
+/**
+ * The catalog the formatters name units and currencies from when a caller passes none: the standard one, until the organization's
+ * units are loaded ({@link useDisplayCatalog}). It is what lets a document field, a table cell, a PDF and the calculated control —
+ * which format a value without an injector to ask for the catalog — write an organization's own unit by its symbol (`2 plt`) and not
+ * by its code.
+ */
+let displayCatalog: UnitCatalog = STANDARD_UNIT_CATALOG;
+
+/** Makes {@code catalog} the one the formatters use by default. The organization's live catalog, once its units are loaded. */
+export function useDisplayCatalog(catalog: UnitCatalog): void {
+  displayCatalog = catalog;
+}
+
 /** Longest fraction `Intl.NumberFormat` is asked for; a stored amount has at most the backend's 20 division places. */
 const MAX_FRACTION_DIGITS = 20;
 
@@ -24,7 +37,7 @@ function formatDecimal(amount: string, locale: string | undefined): string {
  * is how a place that shows whatever an attribute holds (a table cell, a document field, a PDF) tells a measure from
  * another object. A calculated attribute is one: its control type no longer says what it holds.
  */
-export function formatMeasure(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string | undefined {
+export function formatMeasure(value: unknown, locale: string | undefined, catalog: UnitCatalog = displayCatalog): string | undefined {
   if (moneyOf(value)) return formatMoney(value, locale, catalog);
   if (quantityOf(value)) return formatQuantity(value, locale, catalog);
   if (dimensionsOf(value)) return formatDimensions(value, locale, catalog);
@@ -32,7 +45,7 @@ export function formatMeasure(value: unknown, locale: string | undefined, catalo
 }
 
 /** A `QUANTITY` value as `12.5 kg`; an empty string when the value holds none. */
-export function formatQuantity(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
+export function formatQuantity(value: unknown, locale: string | undefined, catalog: UnitCatalog = displayCatalog): string {
   const quantity = quantityOf(value);
   if (!quantity) return '';
   return `${formatDecimal(quantity.amount, locale)} ${catalog.findUnit(quantity.unit)?.symbol ?? quantity.unit}`;
@@ -42,7 +55,7 @@ export function formatQuantity(value: unknown, locale: string | undefined, catal
  * A `MONEY` value in the locale's currency notation. The currency's minor units are always shown, and more when
  * the amount has more — an unrounded intermediate result is never displayed as something it is not.
  */
-export function formatMoney(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
+export function formatMoney(value: unknown, locale: string | undefined, catalog: UnitCatalog = displayCatalog): string {
   const money = moneyOf(value);
   if (!money) return '';
   const minor = catalog.findCurrency(money.currency)?.minorUnits ?? 2;
@@ -59,7 +72,7 @@ export function formatMoney(value: unknown, locale: string | undefined, catalog:
 }
 
 /** A `DIMENSIONS` value as `1.2 × 0.8 × 0.5 m`; an empty string when the value holds none. */
-export function formatDimensions(value: unknown, locale: string | undefined, catalog: UnitCatalog = STANDARD_UNIT_CATALOG): string {
+export function formatDimensions(value: unknown, locale: string | undefined, catalog: UnitCatalog = displayCatalog): string {
   const dimensions = dimensionsOf(value);
   if (!dimensions) return '';
   const axes = [dimensions.width, dimensions.height, dimensions.depth].filter((axis): axis is string => axis !== undefined);

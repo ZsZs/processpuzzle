@@ -111,8 +111,8 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    *Part 2 (#1453):* the backend rule engine reads the rule's organization's catalog. *Part 3:* the frontend catalog
    from the backend (`OrganizationUnitCatalog`, loaded with the entity definitions after sign-in — an app initializer would
    ask before there is a token; `UNIT_CATALOG` is a live view of it), retired units hidden from new choices, the browser's
-   rule evaluator and the designer's attribute options on the organization's catalog; document fields and entity-table
-   cells still name a unit of the organization by its code. *Part 4:* the designer's units screen — an `Organization Unit` branch of base-entity's authoring routes (`/design/entities/organization-unit`, a second tab beside the entity definitions): code, kind, factor and divisor are `createOnly` (fixed once saved), the status is the one thing still editable (retire), no delete; a saved unit reloads the catalog at once and the attribute options read it lazily.
+   rule evaluator and the designer's attribute options on the organization's catalog; document fields, entity-table
+   cells and PDF export name a unit of the organization by its symbol from phase 10. *Part 4:* the designer's units screen — an `Organization Unit` branch of base-entity's authoring routes (`/design/entities/organization-unit`, a second tab beside the entity definitions): code, kind, factor and divisor are `createOnly` (fixed once saved), the status is the one thing still editable (retire), no delete; a saved unit reloads the catalog at once and the attribute options read it lazily.
 
 7. **Testbed uses the types** — the Order family: a line's `quantity` is a COUNT quantity (`pc`, `dz`), `unitPrice` and `total`
    are EUR money; `demo-component-one` has a COUNT quantity too. The `order-total` calculation reads `baseAmount`
@@ -140,5 +140,11 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    definitions, which may name a seeded unit. The testbed's file gives its organization a pallet (500 kg), a bag (25 kg) and a carton
    (six pieces), and EUR to USD (two dates, to show a rate holding until the next) and EUR to HUF — USD to HUF is the derived cross
    rate. With them the units and rates screens, the money hint and the generated e2e list suites have real rows.
+
+10. **Organization units everywhere they are shown** — the formatters (`formatMeasure`, `formatQuantity`, …) take the catalog they name
+    units from as an argument; the places that format without an injector — a document field, an entity-table cell and its sums, a PDF,
+    the calculated control — passed none and so fell back to the standard catalog, which wrote an organization's own unit by its code
+    (`2 pallet`). `useDisplayCatalog` makes the organization's live catalog the default once its units are loaded, so those say `2 plt`
+    too; a caller that passes a catalog still wins.
 
 Later: nothing planned.

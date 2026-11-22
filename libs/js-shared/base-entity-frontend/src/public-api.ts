@@ -46,7 +46,7 @@ export { QuantityComponent } from './lib/base-form/fundamental-types/quantity.co
 export { MoneyComponent } from './lib/base-form/fundamental-types/money.component';
 export { DimensionsComponent } from './lib/base-form/fundamental-types/dimensions.component';
 export { DimensionsPipe, MeasurePipe, MoneyPipe, QuantityPipe } from './lib/base-form/fundamental-types/measure.pipes';
-export { formatDimensions, formatMeasure, formatMoney, formatQuantity } from './lib/base-form/fundamental-types/measure-format';
+export { formatDimensions, formatMeasure, formatMoney, formatQuantity, useDisplayCatalog } from './lib/base-form/fundamental-types/measure-format';
 export { dimensionsOf, moneyOf, quantityOf } from './lib/base-form/fundamental-types/measure-values';
 export { UNIT_CATALOG } from './lib/base-form/fundamental-types/unit-catalog.token';
 export { catalogOf, OrganizationUnitCatalog } from './lib/base-form/fundamental-types/organization-unit-catalog';
