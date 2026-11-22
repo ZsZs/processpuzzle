@@ -353,8 +353,11 @@ services:
     # here for eligibility rather than for size — see `keycloak` above.
     mem_limit: 96m
     ports:
-      - "${PP_MAILPIT_UI_PUBLISH:-8025:8025}"      # Web console
-      - "${PP_MAILPIT_SMTP_PUBLISH:-1025:1025}"    # SMTP
+      # Localhost only unless an environment says otherwise. Mailpit has no authentication, accepts any mail and shows every
+      # message, activation links included, so a host that publishes it on all interfaces hands both to the internet (stage did,
+      # and internet scanners were already probing 1025).
+      - "${PP_MAILPIT_UI_PUBLISH:-127.0.0.1:8025:8025}"      # Web console
+      - "${PP_MAILPIT_SMTP_PUBLISH:-127.0.0.1:1025:1025}"    # SMTP
     environment:
       MP_MAX_MESSAGES: ${MP_MAX_MESSAGES:-500}
       # No authentication and no TLS: it is reachable only on this network, and the realm import
