@@ -2,12 +2,14 @@ package com.processpuzzle.calculation.adapter.outbound;
 
 import com.processpuzzle.calculation.engine.ExpressionEnginePort;
 import com.processpuzzle.calculation.engine.ExpressionException;
+import com.processpuzzle.core.quantity.FundamentalTypeException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.camunda.feel.api.EvaluationResult;
 import org.camunda.feel.api.FeelEngineApi;
 import org.camunda.feel.api.FeelEngineBuilder;
@@ -40,7 +42,7 @@ public class CamundaFeelExpressionEngine implements ExpressionEnginePort {
 
     @Override
     public Object evaluate(String expression, Map<String, Object> variables) {
-        EvaluationResult result = engine.evaluate(parsed(expressions, expression, false), contextOf(variables));
+        EvaluationResult result = run(expression, () -> engine.evaluate(parsed(expressions, expression, false), contextOf(variables)));
         if (result.isFailure()) {
             throw new ExpressionException(expression, result.failure().message());
         }
@@ -49,7 +51,7 @@ public class CamundaFeelExpressionEngine implements ExpressionEnginePort {
 
     @Override
     public boolean test(String tests, Object input, Map<String, Object> variables) {
-        EvaluationResult result = engine.evaluateWithInput(parsed(unaryTests, tests, true), input, contextOf(variables));
+        EvaluationResult result = run(tests, () -> engine.evaluateWithInput(parsed(unaryTests, tests, true), input, contextOf(variables)));
         if (result.isFailure()) {
             throw new ExpressionException(tests, result.failure().message());
         }
@@ -66,6 +68,15 @@ public class CamundaFeelExpressionEngine implements ExpressionEnginePort {
     public Optional<String> checkUnaryTests(String tests) {
         ParseResult result = engine.parseUnaryTests(tests);
         return result.isSuccess() ? Optional.empty() : Optional.of(result.failure().message());
+    }
+
+    /** A function the platform adds refuses by throwing a {@link FundamentalTypeException}; that is the expression's failure. */
+    private static EvaluationResult run(String expression, Supplier<EvaluationResult> evaluation) {
+        try {
+            return evaluation.get();
+        } catch (FundamentalTypeException e) {
+            throw new ExpressionException(expression, e.getMessage());
+        }
     }
 
     private ParsedExpression parsed(Map<String, ParsedExpression> cache, String text, boolean asUnaryTests) {

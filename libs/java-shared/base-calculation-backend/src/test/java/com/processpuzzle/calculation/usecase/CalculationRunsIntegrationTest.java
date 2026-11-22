@@ -71,7 +71,7 @@ class CalculationRunsIntegrationTest {
     @Import({CamundaFeelExpressionEngine.class, CalculationValidator.class, CalculationEngineConfiguration.class,
             CreateCalculationDefinition.class, ReplaceCalculationDefinition.class, FindCalculationDefinition.class,
             ImportCalculationDefinitions.class, InputResolver.class, OutputWriter.class, RunEvents.class,
-            RunCalculation.class, EvaluateCalculation.class, FreezeRun.class, FindCalculationRuns.class,
+            RunCalculation.class, EvaluateCalculation.class, OrganizationRates.class, FreezeRun.class, FindCalculationRuns.class,
             CalculationReleaseParticipant.class})
     static class TestConfig {
 

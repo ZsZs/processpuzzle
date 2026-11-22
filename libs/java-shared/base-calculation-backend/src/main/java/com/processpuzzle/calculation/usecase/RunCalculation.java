@@ -51,6 +51,7 @@ public class RunCalculation {
     private final InputResolver resolver;
     private final CalculationEngine engine;
     private final OutputWriter writer;
+    private final OrganizationRates rates;
     private final CalculationRunRepository runs;
     private final RunEvents events;
     private final TransactionTemplate computing;
@@ -58,7 +59,8 @@ public class RunCalculation {
 
     public RunCalculation(FindCalculationDefinition definitions, CalculationValidator validator, InputResolver resolver,
                           CalculationEngine engine, OutputWriter writer, CalculationRunRepository runs, RunEvents events,
-                          PlatformTransactionManager transactionManager) {
+                          OrganizationRates rates, PlatformTransactionManager transactionManager) {
+        this.rates = rates;
         this.definitions = definitions;
         this.validator = validator;
         this.resolver = resolver;
@@ -122,7 +124,7 @@ public class RunCalculation {
         try {
             Computed computed = computing.execute(status -> {
                 ResolvedInputs inputs = resolver.resolve(orgKey, model, parameters);
-                EvaluationResult result = engine.evaluate(plan, inputs.parameters(), inputs.inputs());
+                EvaluationResult result = rates.within(orgKey, () -> engine.evaluate(plan, inputs.parameters(), inputs.inputs()));
                 int written = writer.write(orgKey, model, inputs, result);
                 return new Computed(inputs, result, written);
             });

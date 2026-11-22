@@ -36,6 +36,15 @@ unknown unit) fails the evaluation with its reason, and a bare operator on a mea
 would compare the text) is refused too: use `gt()`, `ge()`, `lt()`, `le()` and `eq()`. The same helpers exist in the
 browser's rule evaluator, and `rule-measure-cases.json` (kept in base-rule-frontend) is run against both.
 
+Units are read in the **catalog of the rule's organization**: the standard units plus those the organization added
+(`UnitCatalogProvider` in core, which base-entity implements; without it, the standard catalog). The engine sets that
+catalog on the thread's bindings before each evaluation, so one compiled rule and one thread serve every organization and
+a `pallet` is known to the organization that added it only. The browser's evaluator has no organization catalog yet.
+
+`money(...).to('USD', '2026-07-01')` converts at the **exchange rate of the rule's organization** valid on that date — an ISO date or
+date-time text, or a JS date; today's without one — rounded to the target's minor units. The engine sets the organization's rates
+(`ExchangeRateProvider` in core, which base-entity implements) like its catalog; a pair with no rate is refused, never guessed.
+
 ## Executable rule revisions
 
 `RuleEngine` caches immutable GraalJS sources by `(orgKey, ruleId)` and compiled functions per

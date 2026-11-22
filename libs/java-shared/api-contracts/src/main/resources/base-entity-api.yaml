@@ -38,6 +38,8 @@ tags:
     description: Operation layer — entity instances
   - name: Base Entity Units
     description: Units an organization adds to the standard catalog of quantity units
+  - name: Base Entity Exchange Rates
+    description: The exchange rates of an organization, with the date each is valid from
 
 # ---------------------------------------------------------------------------
 # RSQL Filtering
@@ -903,6 +905,126 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
 
+  # ==========================================================================
+  # Exchange rates
+  # ==========================================================================
+  /organizations/{orgKey}/exchange-rates:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+    get:
+      operationId: listExchangeRates
+      tags: [ Base Entity Exchange Rates ]
+      summary: List the organization's exchange rates
+      description: >
+        Every rate of the organization, newest first within a pair of currencies. A rate holds from its `validFrom`
+        date until the next rate of the same pair starts.
+      parameters:
+        - name: from
+          in: query
+          description: Only rates from this currency (ISO 4217).
+          schema:
+            type: string
+        - name: to
+          in: query
+          description: Only rates to this currency (ISO 4217).
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRatePage'
+    post:
+      operationId: createExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Add a rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExchangeRateInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRate'
+          headers:
+            Location:
+              schema:
+                type: string
+        '409':
+          description: the pair already has a rate valid from that date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /organizations/{orgKey}/exchange-rates/{id}:
+    parameters:
+      - $ref: '#/components/parameters/OrgKeyParam'
+      - $ref: '#/components/parameters/ExchangeRateId'
+    get:
+      operationId: getExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Get one rate
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: replaceExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Change a rate
+      description: >
+        Replaces the pair, the rate and the date it is valid from. Conversions read the rates when they run, so a change
+        applies to the next one; results a calculation has frozen keep the rate they were computed with.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExchangeRateInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeRate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: version conflict, or the pair already has a rate valid from that date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetail'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      operationId: deleteExchangeRate
+      tags: [ Base Entity Exchange Rates ]
+      summary: Delete a rate
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /organizations/{orgKey}/entity/translations/{locale}:
     parameters:
       - $ref: '#/components/parameters/OrgKeyParam'
@@ -987,6 +1109,13 @@ components:
       required: true
       schema:
         type: string
+    ExchangeRateId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     RevisionParam:
       name: revision
       in: query
@@ -1607,6 +1736,59 @@ components:
               readOnly: true
 
     OrganizationUnitPage:
+      $ref: '#/components/schemas/Page'
+
+    # ------------------------------------------------------------------
+    # Exchange rates
+    # ------------------------------------------------------------------
+    ExchangeRateInput:
+      type: object
+      required: [ from, to, rate, validFrom ]
+      properties:
+        from:
+          type: string
+          description: ISO 4217 code of the currency being converted.
+        to:
+          type: string
+          description: ISO 4217 code of the currency converted to. Different from `from`.
+        rate:
+          type: string
+          description: >
+            Decimal text, positive: how many units of `to` one unit of `from` is worth. The inverse rate and
+            cross rates through another currency are derived, so a pair needs entering once.
+        validFrom:
+          type: string
+          format: date
+          description: The first day the rate holds. It holds until the next rate of the same pair starts.
+        version:
+          type: integer
+          description: The version read, on a replace — a stale one is answered 409.
+
+    ExchangeRate:
+      allOf:
+        - $ref: '#/components/schemas/ExchangeRateInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+            createdBy:
+              type: string
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              readOnly: true
+            updatedBy:
+              type: string
+              readOnly: true
+
+    ExchangeRatePage:
       $ref: '#/components/schemas/Page'
 
     # ------------------------------------------------------------------
