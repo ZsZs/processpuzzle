@@ -10,7 +10,9 @@ export type FundamentalTypeErrorReason =
   | 'DIVISION_BY_ZERO'
   | 'INVALID_DURATION'
   | 'CALENDAR_DURATION'
-  | 'INVALID_CATALOG';
+  | 'INVALID_CATALOG'
+  | 'INVALID_RATE'
+  | 'NO_EXCHANGE_RATE';
 
 export class FundamentalTypeError extends Error {
   constructor(

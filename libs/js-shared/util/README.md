@@ -46,6 +46,9 @@ is rounded by JavaScript numbers.
 - **Catalog** — `standard-units.json` declares each unit as `base = (amount + offset) × factor / divisor` within one
   quantity kind (LENGTH, AREA, VOLUME, MASS, TIME, TEMPERATURE, SPEED, ENERGY, POWER, COUNT), so any two units of a
   kind convert directly. `processpuzzle-core` reads the same file (`com.processpuzzle.core.quantity`).
+- **Exchange rates** — `ExchangeRates` holds an organization's rates (`{ from, to, rate, validFrom }`; a rate holds until the pair's next one
+  starts): a lookup is the direct rate, else the inverse, else a cross rate through one other currency, else a `NO_EXCHANGE_RATE`; `convertMoney`
+  rounds half up to the target's minor units. Money of two currencies is still never combined without converting first.
 - **Same digits on both sides** — a division keeps 20 places, half up, like the backend's `BigDecimal`;
   `parity-cases.json` is run by this library's spec and by the backend's `ParityCasesTest`.
 - **Refusals** throw `FundamentalTypeError` with a `reason`: different kinds or currencies are never related, °C / °F

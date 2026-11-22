@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -55,6 +57,32 @@ class ParityCasesTest {
     Stream<DynamicTest> moneyRounding() {
         return cases("moneyRounding", c -> text(c, "amount") + " " + text(c, "currency"),
             c -> assertThat(Money.of(text(c, "amount"), text(c, "currency")).rounded(CATALOG).amountText()).isEqualTo(text(c, "expected")));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> exchangeConversions() {
+        return cases("exchangeConversions", c -> "%s %s to %s on %s".formatted(text(c, "amount"), text(c, "currency"), text(c, "to"), text(c, "on")),
+            c -> assertThat(rates(c).convert(Money.of(text(c, "amount"), text(c, "currency")), text(c, "to"), LocalDate.parse(text(c, "on")), CATALOG))
+                .isEqualTo(Money.of(text(c, "expected"), text(c, "to"))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> exchangeRefusals() {
+        return cases("exchangeRefusals", c -> "%s %s to %s on %s".formatted(text(c, "amount"), text(c, "currency"), text(c, "to"), text(c, "on")),
+            c -> assertThatThrownBy(() -> rates(c).convert(Money.of(text(c, "amount"), text(c, "currency")), text(c, "to"), LocalDate.parse(text(c, "on")), CATALOG))
+                .isInstanceOfSatisfying(FundamentalTypeException.class, e -> assertThat(e.reason().name()).isEqualTo(text(c, "reason"))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> invalidExchangeRates() {
+        return cases("invalidExchangeRates", c -> c.get("rates").toString(), c -> assertThatThrownBy(() -> rates(c))
+            .isInstanceOfSatisfying(FundamentalTypeException.class, e -> assertThat(e.reason().name()).isEqualTo(text(c, "reason"))));
+    }
+
+    private static ExchangeRates rates(JsonNode c) {
+        List<ExchangeRate> list = StreamSupport.stream(c.get("rates").spliterator(), false)
+            .map(r -> ExchangeRate.of(text(r, "from"), text(r, "to"), text(r, "rate"), text(r, "validFrom"))).toList();
+        return ExchangeRates.of(list);
     }
 
     @TestFactory

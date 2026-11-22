@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decimalText, toDecimal } from './decimal';
+import { ExchangeRates } from './exchange-rates';
 import { convertDimensions, dimensionsArea, dimensionsVolume } from './dimensions';
 import { FundamentalTypeError, FundamentalTypeErrorReason } from './fundamental-type.error';
 import { isoDurationToQuantity, quantityToIsoDuration } from './iso-duration';
@@ -44,6 +45,18 @@ describe('fundamental types — parity cases shared with the backend', () => {
 
   it.each(parity.moneyRounding)('rounds $amount $currency', ({ amount, currency, expected }) => {
     expect(roundMoney({ amount, currency })).toEqual({ amount: expected, currency });
+  });
+
+  it.each(parity.exchangeConversions)('converts $amount $currency to $to on $on', ({ rates, amount, currency, to, on, expected }) => {
+    expect(new ExchangeRates(rates).convert({ amount, currency }, to, on)).toEqual({ amount: expected, currency: to });
+  });
+
+  it.each(parity.exchangeRefusals)('refuses $amount $currency to $to on $on', ({ rates, amount, currency, to, on, reason }) => {
+    expect(reasonOf(() => new ExchangeRates(rates).convert({ amount, currency }, to, on))).toBe(reason);
+  });
+
+  it.each(parity.invalidExchangeRates)('refuses the rates $rates', ({ rates, reason }) => {
+    expect(reasonOf(() => new ExchangeRates(rates))).toBe(reason);
   });
 
   it.each(parity.toIsoDuration)('writes $amount $unit as $expected', ({ amount, unit, expected }) => {
