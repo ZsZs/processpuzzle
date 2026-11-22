@@ -52,6 +52,10 @@ definition's options — `quantityKind`, `allowedUnits`, `defaultUnit`, `scale`,
 - **Value** — `{ amount, unit }`, `{ amount, currency }`, `{ width, height, depth?, unit }`, the amounts as decimal
   text. A write checks the unit or currency against the catalog and the attribute's allowed list, the amounts as
   decimals, and their decimal places against `scale` (for money, against the currency's minor units).
+- **Exchange rates** — `/organizations/{orgKey}/exchange-rates` (list, create, get, replace, delete): an organization's rate
+  for a pair of currencies from a date on, held until the pair's next rate starts. One rate per pair and date (409), currencies of the
+  standard catalog, a positive decimal. `OrganizationExchangeRates` implements core's `ExchangeRateProvider` with a per-organization
+  table dropped after the change commits, as the unit catalogs are; the inverse and cross rates are derived, so a pair is entered once.
 - **Organization units** — `/organizations/{orgKey}/units`: an organization adds units to a kind of the standard catalog
   (a `pallet` of 500 kg, a `bag` of 25 kg: `kind`, `factor` and an optional `divisor`; no new kinds, currencies or
   temperature-style offsets). The code must be new across the whole catalog. `OrganizationUnitCatalogs` builds each

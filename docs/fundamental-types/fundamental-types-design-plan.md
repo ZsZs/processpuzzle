@@ -126,6 +126,7 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    rate through the alphabetically first currency that has both legs; nothing else, so a missing rate is an error and never a
    guess. A conversion rounds half up to the target's minor units. *Part 1:* the model in core (`ExchangeRate`,
    `ExchangeRates`, `Money.convertTo`) and `@processpuzzle/util` (`ExchangeRates`, `convertMoney`), run against shared parity
-   cases. *Part 2:* the organization resource and persistence, a provider port, `money.to(code, date?)` in the backend rule
-   engine and a FEEL function. *Part 3:* the frontend loader, the browser's rule evaluator and a read-only converted hint in the
+   cases. *Part 2:* the organization resource (`/organizations/{orgKey}/exchange-rates`, create / replace / delete, one rate per pair and
+   date) in base-entity-backend, the `ExchangeRateProvider` port in core, `money(...).to(code, date?)` in the backend rule engine and
+   `convert currency(amount, from, to, date?)` in FEEL (a missing rate fails the calculation: FEEL turns an error value into null). *Part 3:* the frontend loader, the browser's rule evaluator and a read-only converted hint in the
    MONEY control. *Part 4:* a designer screen for rates.

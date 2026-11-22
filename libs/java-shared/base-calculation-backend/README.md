@@ -95,6 +95,12 @@ output:
   mapping: { totalWeight: weightTotal }   # a QUANTITY attribute with a default unit
 ```
 
+`convert currency(amount, from, to[, date])` converts an amount at the exchange rate of the organization the calculation runs for,
+valid on the date (a FEEL date, a date and time or ISO text; today's without one), rounded to the target's minor units:
+`convert currency(price.baseAmount, "USD", "EUR", order.date)`. A pair with no rate on that date **fails the calculation** — FEEL would
+turn an error value into `null`, which would write nothing, or zero, where the run has to fail. The rates come from `ExchangeRateProvider`
+(base-entity implements it) through `ExchangeRateScope`, entered by the use case that knows the organization.
+
 ## Definitions, runs and freezing
 
 Definitions follow the platform's draft/released storage (`DefinitionKinds.CALCULATION`, released after the rules).

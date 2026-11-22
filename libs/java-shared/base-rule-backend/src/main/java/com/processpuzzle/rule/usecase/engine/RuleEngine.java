@@ -1,5 +1,6 @@
 package com.processpuzzle.rule.usecase.engine;
 
+import com.processpuzzle.core.quantity.ExchangeRateProvider;
 import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.IOAccess;
@@ -41,7 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *       cache would let one tenant's expression be evaluated for another.</li>
  *   <li><b>Units are the organization's.</b> {@code qty()}, {@code money()} and {@code dims()} read units in the catalog of
  *       the organization whose rule is evaluating (its own units, if it added any), set on the thread's
- *       {@link MeasureBindings} before each evaluation; the compiled rule is the same whichever it is.</li>
+ *       {@link MeasureBindings} before each evaluation; the compiled rule is the same whichever it is. So are the exchange
+ *       rates {@code money(...).to(...)} converts at.</li>
  * </ul>
  *
  */
@@ -51,19 +53,25 @@ public class RuleEngine implements AutoCloseable {
     private final Map<RuleKey, Source> ruleSources = new ConcurrentHashMap<>();
     private final ThreadLocal<ThreadContext> threadContext;
     private final UnitCatalogProvider catalogs;
+    private final ExchangeRateProvider rates;
 
-    /** An engine that knows only the standard units. */
+    /** An engine that knows only the standard units and no exchange rates. */
     public RuleEngine() {
-        this(UnitCatalogProvider.standardOnly());
+        this(UnitCatalogProvider.standardOnly(), ExchangeRateProvider.noRates());
     }
 
     @Autowired
-    public RuleEngine(ObjectProvider<UnitCatalogProvider> catalogs) {
-        this(catalogs.getIfAvailable(UnitCatalogProvider::standardOnly));
+    public RuleEngine(ObjectProvider<UnitCatalogProvider> catalogs, ObjectProvider<ExchangeRateProvider> rates) {
+        this(catalogs.getIfAvailable(UnitCatalogProvider::standardOnly), rates.getIfAvailable(ExchangeRateProvider::noRates));
     }
 
     RuleEngine(UnitCatalogProvider catalogs) {
+        this(catalogs, ExchangeRateProvider.noRates());
+    }
+
+    RuleEngine(UnitCatalogProvider catalogs, ExchangeRateProvider rates) {
         this.catalogs = catalogs;
+        this.rates = rates;
         this.engine = Engine.newBuilder("js")
                 // Expected on a stock JDK (no Graal JIT compiler installed) — see README.
                 // Rule expressions are short and infrequent, so interpreted-mode is fine for
@@ -142,6 +150,7 @@ public class RuleEngine implements AutoCloseable {
                 cached != null && cached.source() == source
                         ? cached : new CompiledRule(source, tc.context.eval(source)));
         tc.bindings.useCatalog(catalogs.forOrganization(key.orgKey()));
+        tc.bindings.useRates(rates.forOrganization(key.orgKey()));
         Value result = compiled.function().execute(EntityProxy.wrap(entityData));
         return result.asBoolean();
     }

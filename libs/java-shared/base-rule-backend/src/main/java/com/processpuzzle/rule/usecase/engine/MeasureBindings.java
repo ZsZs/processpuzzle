@@ -2,12 +2,15 @@ package com.processpuzzle.rule.usecase.engine;
 
 import com.processpuzzle.core.quantity.Decimals;
 import com.processpuzzle.core.quantity.Dimensions;
+import com.processpuzzle.core.quantity.ExchangeRates;
 import com.processpuzzle.core.quantity.FundamentalTypeException;
 import com.processpuzzle.core.quantity.FundamentalTypeException.Reason;
 import com.processpuzzle.core.quantity.Money;
 import com.processpuzzle.core.quantity.Quantity;
 import com.processpuzzle.core.quantity.UnitCatalog;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,6 +41,17 @@ final class MeasureBindings {
      * before each evaluation ({@link #useCatalog}). One instance serves one context, and so one thread, at a time.
      */
     private UnitCatalog catalog = UnitCatalog.standard();
+
+    /**
+     * The exchange rates {@code money(...).to(...)} converts at: those of the organization whose rule is evaluating, set by the
+     * engine before each evaluation like the catalog. None until told, so a conversion between two currencies is refused.
+     */
+    private ExchangeRates rates = ExchangeRates.none();
+
+    /** Converts money at {@code rates} until told otherwise — the organization's, for the rule about to run. */
+    void useRates(ExchangeRates rates) {
+        this.rates = rates;
+    }
 
     /** Reads units from {@code catalog} until told otherwise — the organization's, for the rule about to run. */
     void useCatalog(UnitCatalog catalog) {
@@ -123,6 +137,7 @@ final class MeasureBindings {
             method("times", args -> new MoneyObject(money.times(decimalArg(args))));
             method("dividedBy", args -> new MoneyObject(money.dividedBy(decimalArg(args))));
             method("round", args -> new MoneyObject(money.rounded(catalog)));
+            method("to", args -> new MoneyObject(converted(money, args)));
             method("eq", args -> money.compareTo(moneyArg(args)) == 0);
             method("gt", args -> money.compareTo(moneyArg(args)) > 0);
             method("ge", args -> money.compareTo(moneyArg(args)) >= 0);
@@ -222,6 +237,33 @@ final class MeasureBindings {
             return Quantity.parse(value.asString(), catalog);
         }
         throw new FundamentalTypeException(Reason.INVALID_AMOUNT, "expected a quantity, e.g. qty('5 kg')");
+    }
+
+    /**
+     * The money in the currency of {@code args[0]} at the rate valid on the date of {@code args[1]} — an ISO date or date-time
+     * text, or a JS date — or today's when there is none. Rounded to the target's minor units.
+     */
+    private Money converted(Money money, Value[] args) {
+        if (args.length < 1 || args.length > 2) {
+            throw new FundamentalTypeException(Reason.INVALID_RATE, "to takes a currency code and, optionally, a date");
+        }
+        if (!args[0].isString()) {
+            throw new FundamentalTypeException(Reason.UNKNOWN_CURRENCY, "to expects a currency code, e.g. 'USD'");
+        }
+        boolean dated = args.length == 2 && !args[1].isNull();
+        return money.convertTo(args[0].asString(), rates, dated ? dateArg(args[1]) : LocalDate.now(), catalog);
+    }
+
+    private static LocalDate dateArg(Value value) {
+        if (value.isDate()) {
+            return value.asDate();
+        }
+        String text = value.isString() ? value.asString().trim() : "";
+        try {
+            return LocalDate.parse(text.length() > 10 ? text.substring(0, 10) : text);
+        } catch (DateTimeParseException e) {
+            throw new FundamentalTypeException(Reason.INVALID_RATE, "expected an ISO date, e.g. '2026-07-01'", e);
+        }
     }
 
     private Money moneyArg(Value[] args) {
