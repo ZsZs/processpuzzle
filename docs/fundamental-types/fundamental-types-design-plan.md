@@ -133,3 +133,12 @@ Like ADDRESS and GEO_LOCATION these are `FormControlType`s validated by control 
    conversion cases both evaluators run — and a read-only *Also show in* hint in the MONEY control (today's rate, never stored). *Part 4:* the designer's rates screen — an `Exchange Rate` branch of base-entity's authoring routes
    (`/design/entities/exchange-rate`, the third tab of the Entities section): from, to, rate and the date it is valid from; a rate can be
    deleted, since nothing stored carries it; a save, a change or a delete reloads the organization's table at once.
+
+9. **Seeded units and rates** — `default-units/<orgKey>-units.yaml` (`DefaultUnitsLoader`, with `base-entity.loadDefaultEntities`): a
+   `units` list and an `exchangeRates` list, create-only like the other seeds — a unit the organization already has, and a rate for
+   a pair and date it already has, are left as they are, so a designer's change survives a restart. Loaded ahead of the entity
+   definitions, which may name a seeded unit. The testbed's file gives its organization a pallet (500 kg), a bag (25 kg) and a carton
+   (six pieces), and EUR to USD (two dates, to show a rate holding until the next) and EUR to HUF — USD to HUF is the derived cross
+   rate. With them the units and rates screens, the money hint and the generated e2e list suites have real rows.
+
+Later: nothing planned.
