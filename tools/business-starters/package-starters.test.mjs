@@ -82,6 +82,18 @@ test('a bad prefix or a bad mount is refused', () => {
   refused(starter({ 'manifest.yaml': HEAD + CONTENTS + MOUNT.replace('labelKey', 'label') }), "unknown field 'label'");
 });
 
+test('a starter adds one sidenav entry and one launcher card, however many modules it mounts', () => {
+  const second = { 'modules/m.yaml': 'moduleDefinitions:\n  - key: inv-stock\n  - key: inv-orders\n' };
+  const routeOnly = '  - moduleKey: inv-orders\n    basePath: orders\n';
+  const withNav = '  - moduleKey: inv-orders\n    basePath: orders\n    nav: { icon: list, labelKey: nav.title }\n';
+  const withCard = '  - moduleKey: inv-orders\n    basePath: orders\n    launcher: { titleKey: launcher.title }\n';
+  const manifest = (extra) => HEAD + CONTENTS + MOUNT + extra;
+
+  readStarter(starter({ ...second, 'manifest.yaml': manifest(routeOnly) }));
+  refused(starter({ ...second, 'manifest.yaml': manifest(withNav) }), "only one mount may carry a 'nav' or a 'launcher'");
+  refused(starter({ ...second, 'manifest.yaml': manifest(withCard) }), 'inv-stock, inv-orders all do');
+});
+
 test('keyPrefix and mounts need manifestVersion 3', () => {
   refused(starter({ 'manifest.yaml': HEAD.replace('manifestVersion: 3', 'manifestVersion: 2') + CONTENTS }), "'keyPrefix' needs manifestVersion 3");
 });

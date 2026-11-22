@@ -251,6 +251,14 @@ function checkMounts(mounts, modules, contents, where) {
     }
     if (mount.launcher !== undefined) checkLauncher(mount, contents, `${at}.launcher`);
   });
+  // A starter may bring several modules, but adds one sidenav entry and one launcher card, not one per module.
+  const entries = mounts.filter((mount) => mount.nav !== undefined || mount.launcher !== undefined).map((mount) => mount.moduleKey);
+  if (entries.length > 1) {
+    throw new StarterError(
+      `${where}: only one mount may carry a 'nav' or a 'launcher' (one sidenav entry and one launcher card), but ${entries.join(', ')} all do; ` +
+        `give the other modules mounts without them`,
+    );
+  }
 }
 
 function checkLauncher(mount, contents, at) {
