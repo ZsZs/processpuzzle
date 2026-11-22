@@ -16,6 +16,18 @@ defineEntityListSuite({
       reason: 'nothing starts a workflow instance, so the list is legitimately empty',
     },
     {
+      entityName: 'Organization Unit',
+      // The list is the units this organization added to the standard catalog, and the testbed seed adds none: one exists only
+      // after a designer creates it. Drop this entry once something seeds a unit for the testbed tenant.
+      reason: 'nothing seeds an organization unit, so the list is legitimately empty',
+    },
+    {
+      entityName: 'Exchange Rate',
+      // The list is the rates this organization entered, and the testbed seed enters none: one exists only after a designer
+      // creates it. Drop this entry once something seeds a rate for the testbed tenant.
+      reason: 'nothing seeds an exchange rate, so the list is legitimately empty',
+    },
+    {
       entityName: 'IssuedDocument',
       // The list is the signatures of the organization, and nothing in the testbed seed signs a report: one
       // exists only after a user signs. Drop this entry once something seeds a signature for the testbed tenant.

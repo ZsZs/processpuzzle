@@ -87,6 +87,42 @@
       "sharedFrom": "Le commun dont provient ce type. Votre organisation le lit, mais seul le commun le publie ou le modifie. Vide pour vos propres types. Défini par le système."
     }
   },
+  "organization_unit": {
+    "_self": "Unité",
+    "code": "Code",
+    "symbol": "Symbole",
+    "name": "Nom",
+    "kind": "Type",
+    "factor": "Facteur",
+    "divisor": "Diviseur",
+    "status": "Statut",
+    "version": "Version",
+    "_tooltips": {
+      "code": "Clé unique de l'unité dans votre organisation, utilisée dans les valeurs enregistrées, p. ex. pallet. Figée une fois l'unité enregistrée.",
+      "symbol": "Ce qui apparaît à côté d'une quantité, p. ex. plt.",
+      "name": "L'unité en toutes lettres, p. ex. Palette.",
+      "kind": "Ce que mesure l'unité, p. ex. MASS. Une unité s'ajoute à un type du catalogue standard. Figé une fois l'unité enregistrée.",
+      "factor": "Combien d'unités de base du type vaut une unité, p. ex. 500 pour une palette de 500 kg. Figé une fois l'unité enregistrée, car les quantités stockées en dérivent.",
+      "divisor": "Divise le facteur, pour une unité qui est une fraction de l'unité de base ; 1 si laissé vide. Figé une fois l'unité enregistrée.",
+      "status": "ACTIVE pour une unité en usage, RETIRED pour ne plus la proposer pour de nouvelles valeurs. Les valeurs déjà enregistrées restent lisibles. Une unité n'est jamais supprimée.",
+      "version": "La révision affichée, pour que deux concepteurs ne s'écrasent pas sans le savoir."
+    }
+  },
+  "exchange_rate": {
+    "_self": "Taux de change",
+    "from": "De",
+    "to": "Vers",
+    "rate": "Taux",
+    "validFrom": "Valable à partir du",
+    "version": "Version",
+    "_tooltips": {
+      "from": "La devise de départ, p. ex. EUR.",
+      "to": "La devise d'arrivée, p. ex. HUF. Différente de De.",
+      "rate": "Combien d'unités de la seconde devise vaut une unité de la première, p. ex. 395,5. L'inverse et les taux croisés par une autre devise sont déduits : une paire se saisit une fois, dans le sens où vous la cotez.",
+      "validFrom": "Le premier jour où le taux s'applique, au format AAAA-MM-JJ. Il vaut jusqu'à un taux ultérieur de la paire. Un taux par paire et par date.",
+      "version": "La révision affichée, pour que deux concepteurs ne s'écrasent pas sans le savoir."
+    }
+  },
   "artifact": {
     "upload_failure": "Échec du téléversement de l'artefact. Veuillez réessayer.",
     "invalid_file_type": "Seuls les fichiers image sont autorisés.",

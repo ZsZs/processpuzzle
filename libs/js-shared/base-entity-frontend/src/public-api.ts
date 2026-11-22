@@ -146,13 +146,17 @@ export { BASE_ENTITY_TRANSLATION_SOURCE, BASE_ENTITY_TRANSLOCO_SCOPE, ENTITY_ATT
 // one reads a definition and synthesizes screens from it, this one writes the definition.
 export { BASE_ENTITY_AUTHORING_ROUTES } from './lib/base-entity-authoring/base-entity-authoring.routes';
 export { BASE_ENTITY_AUTHORING_ENTITY_FACADES, BASE_ENTITY_AUTHORING_FACADE_PROVIDERS } from './lib/base-entity-authoring/base-entity-authoring.providers';
-export { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME } from './lib/base-entity-authoring/entity-authoring-names';
+export { ENTITY_ATTRIBUTE_ENTITY_NAME, ENTITY_DEFINITION_ENTITY_NAME, EXCHANGE_RATE_ENTITY_NAME, ORGANIZATION_UNIT_ENTITY_NAME } from './lib/base-entity-authoring/entity-authoring-names';
 export { createEntityDefinitionDescriptor } from './lib/base-entity-authoring/entity-definition.descriptors';
 export { createEntityAttributeDescriptor, ENTITY_ATTRIBUTE_ID_FIELD } from './lib/base-entity-authoring/entity-attribute.descriptors';
 export { EntityDefinitionMapper } from './lib/base-entity-authoring/entity-definition.mapper';
 export { EntityDefinitionAuthoringService } from './lib/base-entity-authoring/entity-definition-authoring.service';
 export { EntityDefinitionStore } from './lib/base-entity-authoring/entity-definition.store';
 export { EntityAttributeFacade, EntityDefinitionFacade } from './lib/base-entity-authoring/entity-definition.facade';
+export { OrganizationUnitFacade } from './lib/base-entity-authoring/organization-unit.facade';
+export { ExchangeRateEntryFacade } from './lib/base-entity-authoring/exchange-rate-entry.facade';
+export { ExchangeRateEntry } from './lib/base-entity-authoring/exchange-rate-entry';
+export { OrganizationUnitRecord, type OrganizationUnitStatus } from './lib/base-entity-authoring/organization-unit';
 export { EntityDefinitionContainerComponent } from './lib/base-entity-authoring/entity-definition-container.component';
 export { provideWorkingContexts, WORKING_CONTEXT_DEFINITIONS, DEFAULT_RECENT_CONTEXTS, type WorkingContextDefinition, type WorkingContextDisplay, type WorkingContextPicker, type WorkingContextPersistence } from './lib/working-context/working-context.definition';
 export { WorkingContextService, type ActiveWorkingContext } from './lib/working-context/working-context.service';
