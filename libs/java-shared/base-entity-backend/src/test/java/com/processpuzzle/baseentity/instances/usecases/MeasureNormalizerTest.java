@@ -67,6 +67,49 @@ class MeasureNormalizerTest {
     }
 
     @Test
+    void aBareNumberBecomesItsMeasureObjectAndAMeasureObjectIsLeftAlone() {
+        MeasureView kg = new MeasureView(Kind.QUANTITY, "MASS", null, null, null, null, "kg", null);
+        EntityDefinitionView definition = new EntityDefinitionView("item", false, List.of(measure("weight", kg), measure("load", kg)));
+        Map<String, Object> stored = Map.of("amount", "2", "unit", "kg", "baseAmount", 2.0);
+
+        Map<String, Object> result = MeasureNormalizer.withMeasureObjects(definition, Map.of("weight", 2, "load", stored), DEFINITIONS);
+
+        assertThat(result.get("weight")).isEqualTo(Map.of("amount", "2", "unit", "kg", "baseAmount", 2.0));
+        assertThat(result.get("load")).isSameAs(stored);
+    }
+
+    @Test
+    void aBareNumberInsideAnEmbeddedRowBecomesItsMeasureObject() {
+        MeasureView kg = new MeasureView(Kind.QUANTITY, "MASS", null, null, null, null, "kg", null);
+        EntityDefinitionView line = new EntityDefinitionView("line", true, List.of(measure("weight", kg)));
+        EntityDefinitionView shipment = new EntityDefinitionView("shipment", false, List.of(embedded("lines", "line", true)));
+
+        Map<String, Object> result = MeasureNormalizer.withMeasureObjects(shipment, Map.of("lines", List.of(Map.of("weight", 3))),
+                code -> code.equals("line") ? Optional.of(line) : Optional.empty());
+
+        assertThat(result.get("lines")).isEqualTo(List.of(Map.of("weight", Map.of("amount", "3", "unit", "kg", "baseAmount", 3.0))));
+    }
+
+    @Test
+    void aValueThatIsNoMeasureIsLeftAsItIs() {
+        MeasureView kg = new MeasureView(Kind.QUANTITY, "MASS", null, null, null, null, "kg", null);
+        EntityDefinitionView definition = new EntityDefinitionView("item", false, List.of(measure("weight", kg)));
+
+        Map<String, Object> result = MeasureNormalizer.withMeasureObjects(definition, Map.of("weight", "heavy"), DEFINITIONS);
+
+        assertThat(result).containsExactly(Map.entry("weight", "heavy"));
+    }
+
+    @Test
+    void anUpToDatePayloadComesBackEqualToItsInput() {
+        MeasureView kg = new MeasureView(Kind.QUANTITY, "MASS", null, null, null, null, "kg", null);
+        EntityDefinitionView definition = new EntityDefinitionView("item", false, List.of(measure("weight", kg)));
+        Map<String, Object> payload = Map.of("weight", Map.of("amount", "2", "unit", "kg", "baseAmount", 2.0));
+
+        assertThat(MeasureNormalizer.withMeasureObjects(definition, payload, DEFINITIONS)).isEqualTo(payload);
+    }
+
+    @Test
     void reachesTheRowsOfAMultiValuedEmbeddedCollectionAtEveryLevel() {
         EntityDefinitionView definition = new EntityDefinitionView("shipment", false, List.of(embedded("parcels", "parcel", true)));
         Map<String, Object> payload = Map.of("parcels", List.of(

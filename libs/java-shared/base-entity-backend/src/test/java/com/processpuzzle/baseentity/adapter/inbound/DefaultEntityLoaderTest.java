@@ -35,6 +35,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -54,6 +56,7 @@ class DefaultEntityLoaderTest {
     private EntityObjectRepository objectRepository;
     private ResourcePatternResolver resourceResolver;
     private SeededMeasureUpgrader measureUpgrader;
+    private SeededInstanceUpgrader instanceUpgrader;
     private DefaultEntityLoader loader;
 
     @BeforeEach
@@ -92,6 +95,7 @@ class DefaultEntityLoaderTest {
                 });
 
         measureUpgrader = mock(SeededMeasureUpgrader.class);
+        instanceUpgrader = mock(SeededInstanceUpgrader.class);
 
         loader = new DefaultEntityLoader(
                 createDefinitionUseCase,
@@ -100,8 +104,19 @@ class DefaultEntityLoaderTest {
                 createInstanceUseCase,
                 new EntityObjectScope(objectRepository),
                 resourceResolver,
-                measureUpgrader
+                measureUpgrader,
+                instanceUpgrader
         );
+    }
+
+    @Test
+    void seededInstancesOfAnExistingDefinitionAreBroughtUpToTheirMeasures() {
+        when(objectRepository.existsByOrgKeyAndEntityDefinitionCode(anyString(), anyString())).thenReturn(true);
+
+        loader.loadDefaults();
+
+        verify(createInstanceUseCase, never()).create(anyString(), anyString(), any());
+        verify(instanceUpgrader, atLeastOnce()).upgrade(eq(ORG), eq("order"));
     }
 
     @Test

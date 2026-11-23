@@ -29,6 +29,22 @@ public final class MeasureNormalizer {
      */
     public static Map<String, Object> withDerivedValues(EntityDefinitionView definition, Map<String, Object> payload,
                                                         Function<String, Optional<EntityDefinitionView>> definitions) {
+        return normalize(definition, payload, definitions, false);
+    }
+
+    /**
+     * Like {@link #withDerivedValues}, and also puts a bare number or amount in a measure attribute into its measure object, in the
+     * attribute's default unit or currency. A value stored before the attribute became a measure is a bare number; this is how it
+     * is brought up to the measure it is now. A measure object already in its stored form is left as it is, so a payload that is
+     * up to date comes back equal to its input. A value that is neither is left as it is too.
+     */
+    public static Map<String, Object> withMeasureObjects(EntityDefinitionView definition, Map<String, Object> payload,
+                                                         Function<String, Optional<EntityDefinitionView>> definitions) {
+        return normalize(definition, payload, definitions, true);
+    }
+
+    private static Map<String, Object> normalize(EntityDefinitionView definition, Map<String, Object> payload,
+                                                 Function<String, Optional<EntityDefinitionView>> definitions, boolean adoptBare) {
         if (payload == null || definition == null) {
             return payload;
         }
@@ -39,28 +55,42 @@ public final class MeasureNormalizer {
                 continue;
             }
             if (attribute.measure() != null && value instanceof Map<?, ?>) {
-                result.put(attribute.code(), MeasureValues.normalized(attribute.measure(), value));
+                if (!adoptBare) {
+                    result.put(attribute.code(), MeasureValues.normalized(attribute.measure(), value));
+                }
+            } else if (attribute.measure() != null && adoptBare) {
+                adoptBareValue(attribute, value).ifPresent(measure -> result.put(attribute.code(), measure));
             } else if (attribute.embeddedComponent()) {
-                result.put(attribute.code(), embedded(attribute, value, definitions));
+                result.put(attribute.code(), embedded(attribute, value, definitions, adoptBare));
             }
         }
         return result;
     }
 
+    /** The measure object a bare value stands for, or empty when the value cannot be read as a measure. */
+    private static Optional<Map<String, Object>> adoptBareValue(EntityAttributeView attribute, Object value) {
+        try {
+            return Optional.of(MeasureValues.forWrite(attribute.measure(), value));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
     /** One component row, or every row of a multi-valued collection, normalized against the component's definition. */
     @SuppressWarnings("unchecked")
-    private static Object embedded(EntityAttributeView attribute, Object value, Function<String, Optional<EntityDefinitionView>> definitions) {
+    private static Object embedded(EntityAttributeView attribute, Object value,
+                                   Function<String, Optional<EntityDefinitionView>> definitions, boolean adoptBare) {
         EntityDefinitionView component = attribute.linkedEntityType() == null ? null : definitions.apply(attribute.linkedEntityType()).orElse(null);
         if (component == null) {
             return value;
         }
         if (value instanceof Map<?, ?> row) {
-            return withDerivedValues(component, (Map<String, Object>) row, definitions);
+            return normalize(component, (Map<String, Object>) row, definitions, adoptBare);
         }
         if (value instanceof List<?> rows) {
             List<Object> normalized = new ArrayList<>(rows.size());
             for (Object row : rows) {
-                normalized.add(row instanceof Map<?, ?> map ? withDerivedValues(component, (Map<String, Object>) map, definitions) : row);
+                normalized.add(row instanceof Map<?, ?> map ? normalize(component, (Map<String, Object>) map, definitions, adoptBare) : row);
             }
             return normalized;
         }
