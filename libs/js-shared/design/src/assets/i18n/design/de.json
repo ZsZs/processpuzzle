@@ -108,5 +108,11 @@
   "base-chat_card_content_1": "Ein Chat pro Datensatz oder beliebig viele Themen mit Titel",
   "base-chat_card_content_2": "Lesen, Schreiben und Beginnen nach Rolle einschränken",
   "base-chat_card_content_3": "Den Chat für Eingaben schließen, sobald der Datensatz seine Zustände verlässt",
-  "base-chat_card_button": "Chats definieren..."
+  "base-chat_card_button": "Chats definieren...",
+  "tutorial": {
+    "menu_entity": "Tutorial ansehen",
+    "loading": "Tutorial wird geladen…",
+    "no_video": "Das Video für diese Sprache ist noch nicht veröffentlicht.",
+    "not_found": "Dieses Tutorial ist noch nicht veröffentlicht."
+  }
 }

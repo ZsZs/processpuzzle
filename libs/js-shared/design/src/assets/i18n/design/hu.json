@@ -108,5 +108,11 @@
   "base-chat_card_content_1": "Rekordonként egy csevegés, vagy tetszőleges számú címmel ellátott téma",
   "base-chat_card_content_2": "Olvasás, írás és indítás korlátozása szerepkör szerint",
   "base-chat_card_content_3": "Az írás lezárása, amint a rekord elhagyja az állapotokat",
-  "base-chat_card_button": "Csevegések meghatározása..."
+  "base-chat_card_button": "Csevegések meghatározása...",
+  "tutorial": {
+    "menu_entity": "Oktatóvideó megtekintése",
+    "loading": "Oktatóvideó betöltése…",
+    "no_video": "Ehhez a nyelvhez a videó még nincs közzétéve.",
+    "not_found": "Ez az oktatóvideó még nincs közzétéve."
+  }
 }

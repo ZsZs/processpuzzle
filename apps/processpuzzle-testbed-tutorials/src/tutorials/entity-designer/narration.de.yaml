@@ -1,0 +1,50 @@
+title: "Entity Designer: eigene Geschäftsobjekte definieren"
+
+values:
+  entityName: Produkt
+  entityDescription: Was das Unternehmen verkauft.
+  nameAttribute: Name
+  priceAttribute: Preis
+
+steps:
+  intro: >-
+    Willkommen im Entity Designer. Eine Entität beschreibt eine Art von Geschäftsobjekt, mit der Ihre Anwendung
+    arbeitet, zum Beispiel ein Produkt, einen Kunden oder eine Bestellung. Sobald eine Entität definiert ist,
+    liefert ProcessPuzzle ihre Liste und ihr Formular, ganz ohne Programmierung.
+  open: >-
+    Öffnen Sie auf der Designer-Startseite die Karte Entitäten.
+  list: >-
+    Dies ist die Liste der Entitätsdefinitionen Ihrer Organisation. Die Spalte Freigabe zeigt, ob eine
+    Definition in der laufenden Anwendung bereits aktiv ist oder noch ein Entwurf.
+  new: >-
+    Definieren wir eine neue Entität. Klicken Sie auf New.
+  identify: >-
+    Jede Entität braucht einen Code und einen Namen. Der Code ist der kurze, technische Schlüssel. Er wird in
+    Adressen und von anderen Definitionen verwendet. Schreiben Sie ihn deshalb klein und ändern Sie ihn später
+    nicht mehr. Der Name ist das, was Ihre Benutzer sehen. Eine Beschreibung hilft den Kollegen, die nach Ihnen
+    entwerfen.
+  save-definition: >-
+    Speichern Sie die Definition. Sie erscheint nun in der Liste, als neu markiert, weil sie noch nicht
+    freigegeben wurde.
+  find: >-
+    Attribute lassen sich hinzufügen, sobald die Entität gespeichert ist. Suchen Sie sie mit dem Filter und
+    öffnen Sie sie.
+  add-attribute: >-
+    Ein Attribut ist eine einzelne Angabe, die die Entität enthält. Klicken Sie in das Feld Attribute und wählen
+    Sie Hinzufügen.
+  describe-attribute: >-
+    Unser erstes Attribut ist der Name des Produkts. Geben Sie ihm einen Code und einen Namen und wählen Sie die
+    Wertart: Text. Markieren Sie es als erforderlich, damit kein Produkt ohne Namen gespeichert werden kann.
+    Und lassen Sie es den Datensatz benennen. Dann ist es der Link, der in Listen angezeigt wird.
+  save-attribute: >-
+    Speichern Sie das Attribut. Sie sind wieder bei der Entität, und das Attribut ist aufgeführt.
+  second-attribute: >-
+    Hier ist das zweite Attribut, der Preis. Es ist eine Zahl; der Steuerelementtyp bestimmt, wie das Feld im Formular aussieht. Die Attributliste zeigt jetzt beide.
+  save-entity: >-
+    Speichern Sie die Entität. Ihre Attribute werden zusammen mit ihr gespeichert, der Name bleibt also erhalten.
+  release: >-
+    Das Produkt ist definiert, aber noch ein Entwurf. Ihre Benutzer sehen es erst, wenn Sie eine Freigabe
+    veröffentlichen. So bleibt ein halbfertiger Entwurf von der laufenden Anwendung fern.
+  outro: >-
+    Mehr braucht eine Entität nicht: einen Code, einen Namen und ihre Attribute. Geben Sie ihr als Nächstes in
+    den anderen Designern Regeln, einen Lebenszyklus oder einen Workflow.

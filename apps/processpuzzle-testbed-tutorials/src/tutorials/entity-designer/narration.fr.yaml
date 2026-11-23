@@ -1,0 +1,49 @@
+title: "Entity Designer : définir vos propres objets métier"
+
+values:
+  entityName: Produit
+  entityDescription: Ce que vend l'entreprise.
+  nameAttribute: Nom
+  priceAttribute: Prix
+
+steps:
+  intro: >-
+    Bienvenue dans l'Entity Designer. Une entité décrit un type d'objet métier avec lequel votre application
+    travaille, par exemple un produit, un client ou une commande. Dès qu'une entité est définie, ProcessPuzzle
+    fournit sa liste et son formulaire, sans rien programmer.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Entités.
+  list: >-
+    Voici la liste des définitions d'entités de votre organisation. La colonne Publication indique si une
+    définition est déjà active dans l'application en service, ou si elle n'est encore qu'un brouillon.
+  new: >-
+    Définissons une nouvelle entité. Cliquez sur New.
+  identify: >-
+    Chaque entité a besoin d'un code et d'un nom. Le code est la clé technique, courte. Il sert dans les adresses
+    et dans d'autres définitions : écrivez-le en minuscules et ne le modifiez plus ensuite. Le nom est ce que
+    verront vos utilisateurs. Une description aide les collègues qui concevront après vous.
+  save-definition: >-
+    Enregistrez la définition. Elle apparaît maintenant dans la liste, marquée comme nouvelle, car elle n'a pas
+    encore été publiée.
+  find: >-
+    Les attributs peuvent être ajoutés dès que l'entité est enregistrée. Retrouvez-la avec le filtre, puis
+    ouvrez-la.
+  add-attribute: >-
+    Un attribut est une donnée que contient l'entité. Cliquez dans le cadre Attributs, puis choisissez Ajouter.
+  describe-attribute: >-
+    Notre premier attribut est le nom du produit. Donnez-lui un code et un nom, et choisissez le type de
+    valeur : texte. Marquez-le comme obligatoire, afin qu'aucun produit ne puisse être enregistré sans lui.
+    Et faites-en le titre de l'enregistrement : ce sera le lien affiché dans les listes.
+  save-attribute: >-
+    Enregistrez l'attribut. Vous revenez à l'entité, et l'attribut y figure.
+  second-attribute: >-
+    Voici le second attribut, le prix. C'est un nombre ; le type de contrôle détermine l'apparence du champ dans le formulaire. La liste des attributs affiche maintenant les deux.
+  save-entity: >-
+    Enregistrez l'entité. Ses attributs sont enregistrés avec elle, le nom est donc conservé.
+  release: >-
+    Le produit est défini, mais ce n'est encore qu'un brouillon. Vos utilisateurs ne le verront pas tant que
+    vous n'aurez pas fait de publication. Ainsi, une conception inachevée reste à l'écart de l'application en
+    service.
+  outro: >-
+    C'est tout ce qu'il faut à une entité : un code, un nom et ses attributs. Donnez-lui ensuite des règles, un
+    cycle de vie ou un workflow dans les autres concepteurs.

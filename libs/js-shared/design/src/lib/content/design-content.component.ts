@@ -31,6 +31,7 @@ export class DesignContentComponent {
       subtitle: 'base-entity_card_subtitle',
       content: ['base-entity_card_content', 'base-entity_card_content_1', 'base-entity_card_content_2', 'base-entity_card_content_3'],
       actions: [{ link: `${this.prefix}/design/entities`, caption: 'base-entity_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_entity', link: `${this.prefix}/design/tutorials/entity-designer` }],
       translocoPrefix: 'design',
     },
     {
