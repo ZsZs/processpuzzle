@@ -76,6 +76,7 @@ public class DefaultEntityLoader {
     private final EntityObjectScope objectScope;
     private final ResourcePatternResolver resourceResolver;
     private final SeededMeasureUpgrader measureUpgrader;
+    private final SeededInstanceUpgrader instanceUpgrader;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -86,7 +87,8 @@ public class DefaultEntityLoader {
                                CreateEntityInstanceUseCase createInstanceUseCase,
                                EntityObjectScope objectScope,
                                ResourcePatternResolver resourceResolver,
-                               SeededMeasureUpgrader measureUpgrader) {
+                               SeededMeasureUpgrader measureUpgrader,
+                               SeededInstanceUpgrader instanceUpgrader) {
         this.createDefinitionUseCase = createDefinitionUseCase;
         this.definitionRepository = definitionRepository;
         this.definitionMapper = definitionMapper;
@@ -94,6 +96,7 @@ public class DefaultEntityLoader {
         this.objectScope = objectScope;
         this.resourceResolver = resourceResolver;
         this.measureUpgrader = measureUpgrader;
+        this.instanceUpgrader = instanceUpgrader;
     }
 
     /**
@@ -152,7 +155,8 @@ public class DefaultEntityLoader {
         // that follow it, so a fresh database would seed one of each rather than all of them.
         Set<String> alreadySeeded = definitionsWithInstances(orgKey, document);
         alreadySeeded.forEach(code -> LOG.info(
-                "Default entity instances for definition '{}' already exist; left untouched.", code));
+                "Default entity instances for definition '{}' already exist; left untouched apart from their measure values.", code));
+        alreadySeeded.forEach(code -> upgradeInstances(orgKey, code));
 
         Tally instanceTally = new Tally();
         for (EntityObjectInput entity : document.entities()) {
@@ -197,6 +201,18 @@ public class DefaultEntityLoader {
             LOG.warn("Failed to create default entity definition '{}' from {}.",
                     input.getCode(), fileName, e);
             return Outcome.REJECTED;
+        }
+    }
+
+    /** Brings the seeded instances of an existing definition up to its measure attributes; a failure is logged and the next is tried. */
+    private void upgradeInstances(String orgKey, String entityDefinitionCode) {
+        try {
+            int rewritten = instanceUpgrader.upgrade(orgKey, entityDefinitionCode);
+            if (rewritten > 0) {
+                LOG.info("Default entity instances of '{}': {} object(s) brought up to their measure attributes.", entityDefinitionCode, rewritten);
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Could not bring the seeded instances of '{}' up to their measure attributes.", entityDefinitionCode, e);
         }
     }
 
