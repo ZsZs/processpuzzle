@@ -83,6 +83,29 @@ class SeededMeasureUpgraderTest {
     }
 
     @Test
+    void aCalculatedAttributeTakesTheMoneySeedToo() {
+        BaseEntityAttribute total = BaseEntityAttribute.builder()
+                .code("total")
+                .valueKind(ValueKind.NUMBER)
+                .formControlType(FormControlType.CALCULATED)
+                .build();
+        BaseEntityDefinition draft = definition(Channel.DRAFT, total);
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, CODE, Channel.DRAFT)).thenReturn(Optional.of(draft));
+        when(repository.findByOrgKeyAndCodeAndChannel(ORG, CODE, Channel.RELEASED)).thenReturn(Optional.empty());
+        BaseEntityAttribute money = BaseEntityAttribute.builder()
+                .code("total")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.MONEY)
+                .allowedCurrencies(List.of("EUR"))
+                .defaultCurrency("EUR")
+                .build();
+
+        assertThat(upgrader.upgrade(ORG, seed(money))).isEqualTo(1);
+        assertThat(total.getFormControlType()).isEqualTo(FormControlType.MONEY);
+        assertThat(total.getDefaultCurrency()).isEqualTo("EUR");
+    }
+
+    @Test
     void aSeedWithNoMeasureChangesNothing() {
         BaseEntityDefinition draft = definition(Channel.DRAFT, plain("productName"));
         when(repository.findByOrgKeyAndCodeAndChannel(eq(ORG), eq(CODE), any())).thenReturn(Optional.of(draft));

@@ -18,9 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>{@link DefaultEntityLoader} creates a seeded definition only when it is missing and never updates one, so a
  * definition seeded before one of its attributes became a measure keeps the plain control it was seeded with. Such an
  * attribute is not recognised as a QUANTITY, MONEY or DIMENSIONS value: nothing derives its {@code baseAmount}, and a
- * calculation that reads it gets null. This copies the measure settings of the seed onto the draft and the release, and
- * only where the stored attribute is still a plain NUMBER or TEXT_BOX. An attribute already of any other control is left
- * as its owner set it.
+ * calculation that reads it gets null. This copies the measure settings of the seed onto the draft and the release, and only
+ * where the stored attribute is still a plain NUMBER, TEXT_BOX or CALCULATED control. An attribute already of any other
+ * control is left as its owner set it.
  */
 @Component
 @Transactional
@@ -28,7 +28,8 @@ public class SeededMeasureUpgrader {
 
     private static final Set<FormControlType> MEASURES = EnumSet.of(FormControlType.QUANTITY, FormControlType.MONEY,
             FormControlType.DIMENSIONS);
-    private static final Set<FormControlType> PLAIN = EnumSet.of(FormControlType.NUMBER, FormControlType.TEXT_BOX);
+    private static final Set<FormControlType> PLAIN = EnumSet.of(FormControlType.NUMBER, FormControlType.TEXT_BOX,
+            FormControlType.CALCULATED);
 
     private final EntityDefinitionRepository definitionRepository;
 
