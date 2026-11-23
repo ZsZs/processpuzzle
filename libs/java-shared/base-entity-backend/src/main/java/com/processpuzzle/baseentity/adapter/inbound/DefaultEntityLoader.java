@@ -75,6 +75,7 @@ public class DefaultEntityLoader {
     private final CreateEntityInstanceUseCase createInstanceUseCase;
     private final EntityObjectScope objectScope;
     private final ResourcePatternResolver resourceResolver;
+    private final SeededMeasureUpgrader measureUpgrader;
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -84,13 +85,15 @@ public class DefaultEntityLoader {
                                EntityDefinitionMapper definitionMapper,
                                CreateEntityInstanceUseCase createInstanceUseCase,
                                EntityObjectScope objectScope,
-                               ResourcePatternResolver resourceResolver) {
+                               ResourcePatternResolver resourceResolver,
+                               SeededMeasureUpgrader measureUpgrader) {
         this.createDefinitionUseCase = createDefinitionUseCase;
         this.definitionRepository = definitionRepository;
         this.definitionMapper = definitionMapper;
         this.createInstanceUseCase = createInstanceUseCase;
         this.objectScope = objectScope;
         this.resourceResolver = resourceResolver;
+        this.measureUpgrader = measureUpgrader;
     }
 
     /**
@@ -169,7 +172,8 @@ public class DefaultEntityLoader {
         }
 
         if (definitionRepository.existsByOrgKeyAndCodeAndChannel(orgKey, input.getCode(), Channel.DRAFT)) {
-            LOG.info("Default entity definition '{}' already exists; left untouched.", input.getCode());
+            upgradeMeasures(orgKey, input);
+            LOG.info("Default entity definition '{}' already exists; left untouched apart from its measure attributes.", input.getCode());
             return Outcome.SKIPPED;
         }
 
@@ -193,6 +197,18 @@ public class DefaultEntityLoader {
             LOG.warn("Failed to create default entity definition '{}' from {}.",
                     input.getCode(), fileName, e);
             return Outcome.REJECTED;
+        }
+    }
+
+    /** Brings an existing definition's measure attributes up to the seed; a failure is logged and the next definition is tried. */
+    private void upgradeMeasures(String orgKey, BaseEntityDefinitionInput input) {
+        try {
+            int upgraded = measureUpgrader.upgrade(orgKey, definitionMapper.toDomain(input));
+            if (upgraded > 0) {
+                LOG.info("Default entity definition '{}': {} measure attribute(s) brought up to the seed.", input.getCode(), upgraded);
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Could not bring the measure attributes of default entity definition '{}' up to the seed.", input.getCode(), e);
         }
     }
 
