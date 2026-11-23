@@ -53,6 +53,7 @@ class DefaultEntityLoaderTest {
     private CreateEntityInstanceUseCase createInstanceUseCase;
     private EntityObjectRepository objectRepository;
     private ResourcePatternResolver resourceResolver;
+    private SeededMeasureUpgrader measureUpgrader;
     private DefaultEntityLoader loader;
 
     @BeforeEach
@@ -90,14 +91,27 @@ class DefaultEntityLoaderTest {
                             .build();
                 });
 
+        measureUpgrader = mock(SeededMeasureUpgrader.class);
+
         loader = new DefaultEntityLoader(
                 createDefinitionUseCase,
                 definitionRepository,
                 definitionMapper,
                 createInstanceUseCase,
                 new EntityObjectScope(objectRepository),
-                resourceResolver
+                resourceResolver,
+                measureUpgrader
         );
+    }
+
+    @Test
+    void anExistingDefinitionIsLeftUntouchedButItsMeasuresAreUpgraded() {
+        when(definitionRepository.existsByOrgKeyAndCodeAndChannel(anyString(), anyString(), eq(Channel.DRAFT))).thenReturn(true);
+
+        loader.loadDefaults();
+
+        verify(createDefinitionUseCase, org.mockito.Mockito.never()).create(anyString(), any(BaseEntityDefinition.class));
+        verify(measureUpgrader, org.mockito.Mockito.atLeastOnce()).upgrade(eq(ORG), any(BaseEntityDefinition.class));
     }
 
     @Test
