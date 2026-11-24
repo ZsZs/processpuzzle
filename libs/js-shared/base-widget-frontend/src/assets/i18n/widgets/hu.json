@@ -43,5 +43,9 @@
     "loading": "A videó betöltése…",
     "no_video": "Ehhez a nyelvhez a videó még nincs közzétéve.",
     "not_found": "Ez a videó még nincs közzétéve."
+  },
+  "announcement": {
+    "hide": "Elrejtés",
+    "dont_show_again": "Ne mutasd újra"
   }
 }

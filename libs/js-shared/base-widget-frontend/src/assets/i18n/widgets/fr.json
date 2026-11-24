@@ -43,5 +43,9 @@
     "loading": "Chargement de la vidéo…",
     "no_video": "La vidéo dans cette langue n'est pas encore publiée.",
     "not_found": "Cette vidéo n'est pas encore publiée."
+  },
+  "announcement": {
+    "hide": "Masquer",
+    "dont_show_again": "Ne plus afficher"
   }
 }
