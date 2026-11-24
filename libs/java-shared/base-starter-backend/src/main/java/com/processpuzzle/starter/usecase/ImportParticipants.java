@@ -29,7 +29,7 @@ public class ImportParticipants {
     public ImportParticipants(ObjectProvider<DefinitionImportParticipant> participants,
                               ObjectProvider<InstanceDataProbe> probes,
                               ObjectProvider<RecordImportParticipant> records) {
-        this(participants.stream().toList(), probes.stream().toList(), records.getIfAvailable());
+        this(participants.stream().toList(), probes.stream().toList(), records == null ? null : records.getIfAvailable());
     }
 
     /** For a caller that has no record loader, such as a test or a deployment without seed records. */
