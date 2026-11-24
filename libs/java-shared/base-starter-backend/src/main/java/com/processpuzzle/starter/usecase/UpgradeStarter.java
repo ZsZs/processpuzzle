@@ -4,9 +4,11 @@ import com.processpuzzle.core.definition.DefinitionRemoval;
 import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.core.definition.MigrationStepQueue;
 import com.processpuzzle.core.definition.ParticipantResult;
+import com.processpuzzle.core.definition.RecordImportParticipant;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
 import com.processpuzzle.starter.bundle.BundleRejectedException;
+import com.processpuzzle.starter.bundle.ContentGroups;
 import com.processpuzzle.starter.bundle.MigrationFile;
 import com.processpuzzle.starter.bundle.StarterBundle;
 import com.processpuzzle.starter.bundle.StarterManifest;
@@ -61,6 +63,7 @@ public class UpgradeStarter {
     private final InstalledStarterRepository installedRepository;
     private final OfferedVersionRepository offered;
     private final ObjectProvider<MigrationStepQueue> queue;
+    private final ObjectProvider<RecordImportParticipant> records;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -68,6 +71,7 @@ public class UpgradeStarter {
                           UpgradePlanner planner, CommonRules commonRules, KeyPrefixRules keyPrefixRules,
                           DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
                           OfferedVersionRepository offered, ObjectProvider<MigrationStepQueue> queue,
+                          ObjectProvider<RecordImportParticipant> records,
                           PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
         this.guard = guard;
         this.installer = installer;
@@ -80,6 +84,7 @@ public class UpgradeStarter {
         this.installedRepository = installedRepository;
         this.offered = offered;
         this.queue = queue;
+        this.records = records;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -190,6 +195,11 @@ public class UpgradeStarter {
                 return UpgradeReport.rejected(dryRun, manifest.id(), from, manifest.version(), errors);
             }
         }
+        List<ImportReport.Error> recordErrors = loadRecords(orgKey, bundle, items);
+        if (!recordErrors.isEmpty()) {
+            status.setRollbackOnly();
+            return UpgradeReport.rejected(dryRun, manifest.id(), from, manifest.version(), recordErrors);
+        }
         Map<String, Set<String>> removed = remove(orgKey, plan, items);
         List<MigrationStep> steps = migrationSteps(bundle, from);
         String queueProblem = queue(orgKey, steps);
@@ -241,6 +251,30 @@ public class UpgradeStarter {
             result.errors().forEach(message -> errors.add(new ImportReport.Error(file, message)));
         });
         return errors;
+    }
+
+    /**
+     * Loads the bundle's seed records additively, as an install does: a record a stored one matches is left as it is, so
+     * an upgrade that brings records the organization already has adds nothing for them. Empty when every file loaded.
+     */
+    private List<ImportReport.Error> loadRecords(String orgKey, StarterBundle bundle, List<UpgradeReport.Item> items) {
+        List<String> files = bundle.manifest().contents().getOrDefault(ContentGroups.RECORDS, List.of());
+        if (files.isEmpty()) {
+            return List.of();
+        }
+        RecordImportParticipant loader = records.getIfAvailable();
+        if (loader == null) {
+            return List.of(new ImportReport.Error(BundleReader.MANIFEST, "This platform cannot import 'records' yet."));
+        }
+        for (String file : files) {
+            ParticipantResult result = loader.load(orgKey, file, bundle.file(file));
+            if (result.isRejected()) {
+                return result.errors().stream().map(message -> new ImportReport.Error(file, message)).toList();
+            }
+            result.items().forEach(item ->
+                    items.add(new UpgradeReport.Item(ImportReport.RECORD, item.key(), UpgradeReport.Action.ADD, null)));
+        }
+        return List.of();
     }
 
     /** Dependents first, as an install removes; what a definition still depends on stays, and is reported. */

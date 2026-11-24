@@ -1,0 +1,46 @@
+title: "Entity Designer: saját üzleti objektumok meghatározása"
+
+values:
+  entityName: Termék
+  entityDescription: Amit a cég értékesít.
+  nameAttribute: Név
+  priceAttribute: Ár
+
+steps:
+  intro: >-
+    Üdvözöljük az Entity Designerben. Egy entitás az alkalmazás egyféle üzleti objektumát írja le, például egy
+    terméket, egy ügyfelet vagy egy rendelést. Amint az entitás elkészült, a ProcessPuzzle programozás nélkül
+    adja hozzá a listát és az űrlapot.
+  open: >-
+    A Tervező kezdőlapon nyissa meg az Entitások kártyát.
+  list: >-
+    Ez a szervezet entitásdefinícióinak listája. A Kiadás oszlop mutatja, hogy egy definíció már él-e a futó
+    alkalmazásban, vagy még csak tervezet.
+  new: >-
+    Hozzunk létre egy új entitást. Kattintson a New gombra.
+  identify: >-
+    Minden entitásnak kell egy kód és egy név. A kód a rövid, technikai kulcs. Címekben és más definíciókban is
+    szerepel, ezért legyen kisbetűs, és később ne módosítsa. A név az, amit a felhasználók látnak. A leírás
+    azoknak a kollégáknak segít, akik Ön után terveznek.
+  save-definition: >-
+    Mentse a definíciót. Most megjelenik a listában, újként megjelölve, mert még nem került kiadásra.
+  find: >-
+    Attribútumot akkor lehet hozzáadni, ha az entitás már mentve van. Keresse meg a szűrővel, és nyissa meg.
+  add-attribute: >-
+    Egy attribútum az entitás egyetlen adata. Kattintson az Attribútumok dobozba, majd válassza a hozzáadást.
+  describe-attribute: >-
+    Az első attribútum a termék neve. Adjon neki kódot és nevet, és válassza ki az értéktípust: szöveg. Jelölje
+    kötelezőnek, hogy termék ne legyen menthető nélküle. És legyen ez a rekord címe, így ez lesz a listákban
+    megjelenő hivatkozás.
+  save-attribute: >-
+    Mentse az attribútumot. Visszakerült az entitáshoz, és az attribútum már szerepel a listában.
+  second-attribute: >-
+    Itt a második attribútum, az ár. Szám, a vezérlő típusa határozza meg, hogyan jelenik meg a mező az űrlapon. Az attribútumlista most mindkettőt mutatja.
+  save-entity: >-
+    Mentse az entitást. Az attribútumai vele együtt tárolódnak, így a név megmarad.
+  release: >-
+    A termék elkészült, de még csak tervezet. A felhasználók addig nem látják, amíg ki nem ad egy kiadást.
+    Így a félkész terv nem kerül be az élő alkalmazásba.
+  outro: >-
+    Ennyi kell egy entitáshoz: egy kód, egy név és az attribútumai. Ezután a többi tervezőben szabályokat,
+    életciklust vagy munkafolyamatot adhat hozzá.

@@ -121,8 +121,9 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
     // A type the organization's common shares: its objects are the common's, read here and never written.
     isReadOnly: !!definition.sharedFrom,
     // A retired record of a shared type is shown, not changed: it comes back through Reinstate.
-    isEditable: (entity) => !(entity as DynamicEntity).retiredAt,
-    isDeletable: (entity) => !(entity as DynamicEntity).retiredAt,
+    // Undefined while the row is still loading, as for the definition descriptor.
+    isEditable: (entity) => !(entity as DynamicEntity | undefined)?.retiredAt,
+    isDeletable: (entity) => !(entity as DynamicEntity | undefined)?.retiredAt,
   });
 }
 

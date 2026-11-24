@@ -24,6 +24,12 @@ public final class ContentGroups {
             Map.entry("translations", DefinitionKinds.TRANSLATION),
             Map.entry("assets", DefinitionKinds.ASSET));
 
+    /**
+     * The group of seed records: loaded after every definition is written, through the {@code RecordImportParticipant}.
+     * It is not a definition kind, so it has no {@link #kindOf} entry.
+     */
+    public static final String RECORDS = "records";
+
     private ContentGroups() {
     }
 

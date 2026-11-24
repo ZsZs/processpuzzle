@@ -69,14 +69,18 @@ class StateMachineTopologyValidatorTest {
     }
 
     @Test
-    void rejectsEmptyOrNullStates() {
-        assertThatThrownBy(() -> validate("draft", null, List.of()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("at least one state");
+    void acceptsAStateLessDraft() {
+        assertThatCode(() -> validate("draft", null, List.of())).doesNotThrowAnyException();
+        assertThatCode(() -> validate("draft", List.of(), List.of())).doesNotThrowAnyException();
+    }
+
+    @Test
+    void stillChecksTheEntityOfAStateLessDraft() {
+        when(entityAttributeQuery.entityTypeExists(ORG, ENTITY, Channel.DRAFT)).thenReturn(false);
 
         assertThatThrownBy(() -> validate("draft", List.of(), List.of()))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("at least one state");
+                .hasMessageContaining("not an entity type");
     }
 
     @Test

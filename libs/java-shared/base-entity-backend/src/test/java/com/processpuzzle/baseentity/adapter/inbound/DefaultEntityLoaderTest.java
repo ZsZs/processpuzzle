@@ -35,6 +35,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -53,6 +55,8 @@ class DefaultEntityLoaderTest {
     private CreateEntityInstanceUseCase createInstanceUseCase;
     private EntityObjectRepository objectRepository;
     private ResourcePatternResolver resourceResolver;
+    private SeededMeasureUpgrader measureUpgrader;
+    private SeededInstanceUpgrader instanceUpgrader;
     private DefaultEntityLoader loader;
 
     @BeforeEach
@@ -90,14 +94,39 @@ class DefaultEntityLoaderTest {
                             .build();
                 });
 
+        measureUpgrader = mock(SeededMeasureUpgrader.class);
+        instanceUpgrader = mock(SeededInstanceUpgrader.class);
+
         loader = new DefaultEntityLoader(
                 createDefinitionUseCase,
                 definitionRepository,
                 definitionMapper,
                 createInstanceUseCase,
                 new EntityObjectScope(objectRepository),
-                resourceResolver
+                resourceResolver,
+                measureUpgrader,
+                instanceUpgrader
         );
+    }
+
+    @Test
+    void seededInstancesOfAnExistingDefinitionAreBroughtUpToTheirMeasures() {
+        when(objectRepository.existsByOrgKeyAndEntityDefinitionCode(anyString(), anyString())).thenReturn(true);
+
+        loader.loadDefaults();
+
+        verify(createInstanceUseCase, never()).create(anyString(), anyString(), any());
+        verify(instanceUpgrader, atLeastOnce()).upgrade(eq(ORG), eq("order"));
+    }
+
+    @Test
+    void anExistingDefinitionIsLeftUntouchedButItsMeasuresAreUpgraded() {
+        when(definitionRepository.existsByOrgKeyAndCodeAndChannel(anyString(), anyString(), eq(Channel.DRAFT))).thenReturn(true);
+
+        loader.loadDefaults();
+
+        verify(createDefinitionUseCase, org.mockito.Mockito.never()).create(anyString(), any(BaseEntityDefinition.class));
+        verify(measureUpgrader, org.mockito.Mockito.atLeastOnce()).upgrade(eq(ORG), any(BaseEntityDefinition.class));
     }
 
     @Test
@@ -105,13 +134,14 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        verify(createDefinitionUseCase, times(15)).create(eq(ORG), defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
                 .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
                         "order-line", "order", "special-order-line", "special-order", "boat",
-                        "race", "race-registration", "race-observation", "demo-component-one", "demo-component-two", "demo-root");
+                        "race", "race-registration", "race-observation", "demo-component-one", "demo-component-two", "demo-root",
+                        "processpuzzle-tutorial");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
@@ -132,7 +162,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        verify(createDefinitionUseCase, times(15)).create(eq(ORG), defCaptor.capture());
         BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
                 .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
 
@@ -147,7 +177,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        verify(createDefinitionUseCase, times(15)).create(eq(ORG), defCaptor.capture());
         BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
                 .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
 
@@ -214,7 +244,7 @@ class DefaultEntityLoaderTest {
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(13)).create(anyString(), any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(14)).create(anyString(), any(BaseEntityDefinition.class));
     }
 
     @Test

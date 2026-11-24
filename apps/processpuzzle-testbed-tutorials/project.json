@@ -1,0 +1,35 @@
+{
+  "name": "processpuzzle-testbed-tutorials",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/processpuzzle-testbed-tutorials/src",
+  "implicitDependencies": ["processpuzzle-testbed-frontend"],
+  "targets": {
+    "record": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "commands": [
+          "playwright test --config apps/processpuzzle-testbed-tutorials/tutorials.config.ts",
+          "node apps/processpuzzle-testbed-tutorials/src/publish/publish.mjs"
+        ],
+        "parallel": false
+      }
+    },
+    "smoke": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "playwright test --config apps/processpuzzle-testbed-tutorials/tutorials.config.ts",
+        "env": { "TUTORIAL_VIDEO": "false" }
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node apps/processpuzzle-testbed-tutorials/src/publish/publish.mjs"
+      }
+    }
+  }
+}

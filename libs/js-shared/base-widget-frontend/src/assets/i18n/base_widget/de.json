@@ -142,5 +142,8 @@
   },
   "navigate_back": {
     "name": "Zurück"
+  },
+  "video_player": {
+    "name": "Videoplayer"
   }
 }

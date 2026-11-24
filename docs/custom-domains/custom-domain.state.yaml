@@ -1,0 +1,90 @@
+# CustomDomain - flat state machine (draft)
+# Callers fire a triggerKey; they never name the target state.
+# NOTE: keys are illustrative, adapt to the real State definition schema.
+
+stateMachine:
+  key: custom-domain-lifecycle
+  entity: custom-domain
+  initial: PENDING_DNS
+
+  states:
+    - key: PENDING_DNS
+      label: Waiting for DNS
+      description: "Customer must create the TXT record and point the domain to us"
+    - key: VERIFIED
+      label: DNS verified
+    - key: PROVISIONING
+      label: Issuing certificate
+    - key: ACTIVE
+      label: Active
+      description: "Served by the proxy, resolvable by the gateway"
+    - key: FAILED
+      label: Failed
+      description: "See failureReason; customer can retry"
+    - key: REMOVED
+      label: Removed
+      final: true
+
+  transitions:
+    - trigger: dnsVerified
+      from: PENDING_DNS
+      to: VERIFIED
+      actor: system            # DomainVerificationJob
+      effects:
+        - { set: dnsCheckedAt, value: now }
+
+    - trigger: startProvisioning
+      from: VERIFIED
+      to: PROVISIONING
+      actor: system            # fires automatically after dnsVerified
+      effects:
+        - { call: DomainProvisioningPort.provision }
+
+    - trigger: provisioningSucceeded
+      from: PROVISIONING
+      to: ACTIVE
+      actor: system            # provisioner event DomainActivated
+      effects:
+        - { set: activatedAt, value: now }
+        - { set: failureReason, value: null }
+        - { call: KeycloakClientSync.addRedirectUris }
+        - { call: TenantCache.evict }
+
+    - trigger: provisioningFailed
+      from: PROVISIONING
+      to: FAILED
+      actor: system            # provisioner event DomainProvisioningFailed
+      effects:
+        - { set: failureReason, value: "${event.reason}" }
+
+    - trigger: renewalFailed
+      from: ACTIVE
+      to: FAILED
+      actor: system            # renewal monitor, certificate close to expiry
+      effects:
+        - { set: failureReason, value: "${event.reason}" }
+        - { call: TenantCache.evict }
+
+    - trigger: retry
+      from: FAILED
+      to: PENDING_DNS
+      actor: customer-admin    # button in the Admin UI
+
+    - trigger: remove
+      from: [PENDING_DNS, VERIFIED, PROVISIONING, ACTIVE, FAILED]
+      to: REMOVED
+      actor: customer-admin
+      effects:
+        - { call: DomainProvisioningPort.deprovision }
+        - { call: KeycloakClientSync.removeRedirectUris }
+        - { call: TenantCache.evict }
+
+  # Timeouts keep abandoned requests from piling up.
+  timers:
+    - state: PENDING_DNS
+      after: P7D
+      trigger: remove          # unverified for 7 days -> released for others to claim
+    - state: PROVISIONING
+      after: PT15M
+      trigger: provisioningFailed
+      payload: { reason: "Provisioning timed out" }

@@ -38,5 +38,10 @@
   "sidenav_toggle": {
     "hide": "Menü ausblenden",
     "show": "Menü einblenden"
+  },
+  "video_player": {
+    "loading": "Das Video wird geladen…",
+    "no_video": "Das Video für diese Sprache ist noch nicht veröffentlicht.",
+    "not_found": "Dieses Video ist noch nicht veröffentlicht."
   }
 }

@@ -108,5 +108,9 @@
   "base-chat_card_content_1": "Un chat por registro, o cualquier número de temas con título",
   "base-chat_card_content_2": "Restringir la lectura, la escritura y el inicio por rol",
   "base-chat_card_content_3": "Cerrar la escritura cuando el registro salga de sus estados",
-  "base-chat_card_button": "Definir chats..."
+  "base-chat_card_button": "Definir chats...",
+  "tutorial": {
+    "menu_entity": "Ver el tutorial",
+    "menu_rules": "Ver el tutorial"
+  }
 }

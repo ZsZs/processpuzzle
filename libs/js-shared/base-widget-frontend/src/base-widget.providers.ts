@@ -23,6 +23,7 @@ import { TASK_DASHBOARD_BUTTON_WIDGET_REGISTRATION } from './task-dashboard-butt
 import { SIDENAV_TOGGLE_WIDGET_REGISTRATION } from './sidenav-toggle/sidenav-toggle.widget';
 import { THEMES_BUTTON_WIDGET_REGISTRATION } from './themes-button/themes-button.widget';
 import { VERSION_BUTTON_WIDGET_REGISTRATION } from './version-button/version-button.widget';
+import { VIDEO_PLAYER_WIDGET_REGISTRATION } from './video-player/video-player.widget';
 import { WidgetDefinitionFacade } from './widget-definition/widget-definition.facade';
 import { WIDGET_DEFINITION_ENTITY_NAME, WIDGET_INPUT_PORT_ENTITY_NAME, WIDGET_OUTPUT_PORT_ENTITY_NAME } from './widget-definition/widget-entity-names';
 import { WidgetInputPortFacade } from './widget-definition/widget-input-port.facade';
@@ -52,6 +53,7 @@ export { TASK_DASHBOARD_BUTTON_WIDGET } from './task-dashboard-button/task-dashb
 export { SIDENAV_TOGGLE_WIDGET } from './sidenav-toggle/sidenav-toggle.widget';
 export { THEMES_BUTTON_WIDGET } from './themes-button/themes-button.widget';
 export { VERSION_BUTTON_WIDGET } from './version-button/version-button.widget';
+export { VIDEO_PLAYER_WIDGET } from './video-player/video-player.widget';
 
 /**
  * Registry keys for this library's widgets, and the `provide*Widget()` call per key.
@@ -166,6 +168,10 @@ export function provideVersionButtonWidget(): Provider[] {
   return provideWidget(VERSION_BUTTON_WIDGET_REGISTRATION);
 }
 
+export function provideVideoPlayerWidget(): Provider[] {
+  return provideWidget(VIDEO_PLAYER_WIDGET_REGISTRATION);
+}
+
 /** Every registration this library ships, in key order — what {@link provideBaseWidgets} registers. */
 export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   APP_LOGO_WIDGET_REGISTRATION,
@@ -191,6 +197,7 @@ export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   TASK_DASHBOARD_BUTTON_WIDGET_REGISTRATION,
   THEMES_BUTTON_WIDGET_REGISTRATION,
   VERSION_BUTTON_WIDGET_REGISTRATION,
+  VIDEO_PLAYER_WIDGET_REGISTRATION,
 ];
 
 /**
