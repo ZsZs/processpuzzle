@@ -120,11 +120,7 @@ describe('DESIGN_ROUTES', () => {
     it('hosts the base-entity authoring branch instead of the placeholder, under its tab bar', () => {
       expect(entitiesRoute?.component).toBe(EntityDesignerComponent);
       expect(entitiesRoute?.component).not.toBe(UnderConstructionComponent);
-      expect(entitiesRoute?.data).toEqual({
-        icon: 'checkbook',
-        menuTitle: 'design.entities',
-        announcement: expect.objectContaining({ id: 'entity-designer-tutorial', link: '/design/tutorials/entity-designer' }),
-      });
+      expect(entitiesRoute?.data).toEqual({ icon: 'checkbook', menuTitle: 'design.entities' });
       expect(entitiesRoute?.title).toBeDefined();
     });
 

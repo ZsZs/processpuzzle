@@ -111,9 +111,5 @@
   "base-chat_card_button": "Définir des chats...",
   "tutorial": {
     "menu_entity": "Voir le tutoriel"
-  },
-  "announcement": {
-    "tutorial": "Des tutoriels sont disponibles pour ce concepteur.",
-    "tutorial_link": "Voir le tutoriel"
   }
 }

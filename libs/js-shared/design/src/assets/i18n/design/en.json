@@ -111,9 +111,5 @@
   "base-chat_card_button": "Define chats...",
   "tutorial": {
     "menu_entity": "Watch the tutorial"
-  },
-  "announcement": {
-    "tutorial": "Tutorials are available for this designer.",
-    "tutorial_link": "Watch the tutorial"
   }
 }
