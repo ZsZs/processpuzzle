@@ -7,8 +7,11 @@ import static org.mockito.Mockito.mock;
 
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.DefinitionKinds;
+import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.definition.ModuleMountPort;
+import com.processpuzzle.core.definition.ParticipantResult;
+import com.processpuzzle.core.definition.RecordImportParticipant;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
@@ -844,6 +847,61 @@ class ImportBundleTest {
             unmountCalls.add(List.copyOf(moduleKeys));
             return next;
         }
+    }
+
+    @Test
+    void recordsLoadAfterTheDefinitionsTheyRefer_to() {
+        ImportBundle withRecords = importBundleWithRecords((orgKey, file, yaml) -> {
+            calls.add("records:" + file);
+            return new ParticipantResult(List.of(new ImportedItem("item 7", ImportedItem.Action.CREATE)), List.of());
+        });
+
+        ImportReport report = withRecords.execute("acme", recordsBundle(), false, null);
+
+        assertThat(calls).containsSubsequence("entity:entities/item.yaml", "rule:rules/item-rules.yaml", "records:records/seed.yaml");
+        assertThat(report.items()).extracting(ImportReport.Item::kind, ImportReport.Item::key)
+                .contains(org.assertj.core.groups.Tuple.tuple(ImportReport.RECORD, "item 7"));
+        assertThat(provenanceRepository.findByOrgKeyAndKindAndKey("acme", ImportReport.RECORD, "item 7")).isEmpty();
+    }
+
+    @Test
+    void aRefusedRecordFileRefusesTheWholeBundle() {
+        ImportBundle withRecords = importBundleWithRecords((orgKey, file, yaml) ->
+                ParticipantResult.rejected(List.of("Record 1 ('item') is refused: no value.")));
+
+        assertThatThrownBy(() -> withRecords.execute("acme", recordsBundle(), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors()).containsExactly(
+                        new ImportReport.Error("records/seed.yaml", "Record 1 ('item') is refused: no value.")));
+        assertThat(provenanceRepository.count()).isZero();
+        assertThat(installedStarterRepository.count()).isZero();
+    }
+
+    @Test
+    void recordsNeedARecordLoaderOnThisPlatform() {
+        assertThatThrownBy(() -> importBundle.execute("acme", recordsBundle(), false, null))
+                .isInstanceOfSatisfying(ImportRejectedException.class, e -> assertThat(e.getReport().errors())
+                        .extracting(ImportReport.Error::message)
+                        .containsExactly("This platform cannot import 'records' yet."));
+        assertThat(calls).isEmpty();
+    }
+
+    private ImportBundle importBundleWithRecords(RecordImportParticipant records) {
+        StaticListableBeanFactory factory = new StaticListableBeanFactory();
+        factory.addBean("entities", entities);
+        factory.addBean("rules", rules);
+        factory.addBean("modules", modules);
+        ImportParticipants participants = new ImportParticipants(factory.getBeanProvider(DefinitionImportParticipant.class),
+                factory.getBeanProvider(InstanceDataProbe.class), provider(records));
+        return new ImportBundle(new OrganizationGuard(provider(policy)), new BundleReader(new StarterProperties()), participants,
+                provenanceRepository, installedStarterRepository, commonRules(), new KeyPrefixRules(participants),
+                provider(mountPort), transactionManager, provider(null));
+    }
+
+    private ByteArrayInputStream recordsBundle() {
+        Map<String, String> files = TestBundles.inventory();
+        files.put("manifest.yaml", TestBundles.MANIFEST + "  records:\n    - records/seed.yaml\n");
+        files.put("records/seed.yaml", "entities: []\n");
+        return zip(files);
     }
 
     private ByteArrayInputStream bundle(String entityFile, String ruleFile) {

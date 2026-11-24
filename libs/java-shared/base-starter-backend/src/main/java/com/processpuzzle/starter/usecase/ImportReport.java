@@ -14,6 +14,9 @@ public record ImportReport(boolean dryRun, Status status, String starterId, Stri
     /** The kind of an item that is a module mounted into, or taken out of, the application — not a definition. */
     public static final String MOUNT = "mount";
 
+    /** The kind of an item that is a seed record created in the organization — instance data, not a definition. */
+    public static final String RECORD = "record";
+
     public enum Status {
         APPLIED, WOULD_APPLY, REJECTED
     }
