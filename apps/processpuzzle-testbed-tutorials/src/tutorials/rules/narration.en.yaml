@@ -1,0 +1,30 @@
+title: "Rule Designer: check your data with rules"
+
+values:
+  ruleName: Amount is not negative
+  ruleMessage: The amount cannot be negative.
+
+steps:
+  intro: >-
+    Welcome to the Rule Designer. A rule checks the data your users enter, and tells them when something is wrong.
+    You write it once, and every form of that entity applies it.
+  open: >-
+    From the Designer Home, open the Rules card.
+  list: >-
+    These are the rules of your organization. Each rule belongs to an entity, and carries a severity: an error
+    stops the save, a warning only informs the user.
+  new: >-
+    Let's write a new rule. Click New.
+  identify: >-
+    Every rule needs a name, which designers see, and a context: the entity it checks. Here the context is
+    Dynamic Entity, and the severity is error, so a violation stops the save.
+  write-expression: >-
+    The expression is a condition that must hold for the data to be valid. An empty amount is allowed, and any
+    other amount must not be negative. The message is what the user reads when the rule fails.
+  save: >-
+    Save the rule. It appears in the list at once, with its context and its severity.
+  show-result: >-
+    From now on, every form of this entity applies the rule. A negative amount is refused, with this message.
+  outro: >-
+    That is a rule: a condition on an entity, with a message and a severity. Next, the state machine decides what
+    may happen to an object once its data is valid.

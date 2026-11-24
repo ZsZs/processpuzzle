@@ -110,6 +110,7 @@
   "base-chat_card_content_3": "Den Chat für Eingaben schließen, sobald der Datensatz seine Zustände verlässt",
   "base-chat_card_button": "Chats definieren...",
   "tutorial": {
-    "menu_entity": "Tutorial ansehen"
+    "menu_entity": "Tutorial ansehen",
+    "menu_rules": "Tutorial ansehen"
   }
 }

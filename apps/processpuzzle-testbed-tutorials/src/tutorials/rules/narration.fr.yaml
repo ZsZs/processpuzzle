@@ -1,0 +1,31 @@
+title: "Rule Designer : contrôlez vos données avec des règles"
+
+values:
+  ruleName: Le montant n'est pas négatif
+  ruleMessage: Le montant ne peut pas être négatif.
+
+steps:
+  intro: >-
+    Bienvenue dans le Rule Designer. Une règle contrôle les données saisies par vos utilisateurs, et leur signale
+    quand quelque chose ne va pas. Vous l'écrivez une fois, et chaque formulaire de cette entité l'applique.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Règles.
+  list: >-
+    Voici les règles de votre organisation. Chaque règle appartient à une entité et porte une gravité : une erreur
+    arrête l'enregistrement, un avertissement informe seulement l'utilisateur.
+  new: >-
+    Écrivons une nouvelle règle. Cliquez sur Nouveau.
+  identify: >-
+    Chaque règle a un nom, que les concepteurs voient, et un contexte : l'entité qu'elle contrôle. Ici, le contexte
+    est Dynamic Entity et la gravité est erreur, donc une violation arrête l'enregistrement.
+  write-expression: >-
+    L'expression est une condition qui doit être vraie pour que les données soient valides. Un montant vide est
+    permis, tout autre montant ne doit pas être négatif. Le message est ce que l'utilisateur lit quand la règle
+    échoue.
+  save: >-
+    Enregistrez la règle. Elle apparaît tout de suite dans la liste, avec son contexte et sa gravité.
+  show-result: >-
+    Désormais, chaque formulaire de cette entité applique la règle. Un montant négatif est refusé, avec ce message.
+  outro: >-
+    Voilà une règle : une condition sur une entité, avec un message et une gravité. Ensuite, la machine d'états
+    décide de ce qui peut arriver à un objet une fois que ses données sont valides.

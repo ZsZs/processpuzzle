@@ -49,6 +49,7 @@ export class DesignContentComponent {
       subtitle: 'base-rule_card_subtitle',
       content: ['base-rule_card_content', 'base-rule_card_content_1', 'base-rule_card_content_2', 'base-rule_card_content_3'],
       actions: [{ link: `${this.prefix}/design/base-rule`, caption: 'base-rule_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_rules', link: `${this.prefix}/design/tutorials/rules` }],
       translocoPrefix: 'design',
     },
     {
