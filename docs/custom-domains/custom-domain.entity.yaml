@@ -1,0 +1,90 @@
+# CustomDomain - Entity definition (draft)
+# NOTE: field names follow the general Entity/Attribute concept, but are not checked
+# against the real definition schema. Adapt keys to the actual YAML format.
+#
+# SCOPE: this entity must live in the PLATFORM scope (Admin app / platform DB),
+# not in the per-customer DB keyed by {orgKey}. Reason: the proxy/gateway has to
+# resolve "Host: ycn.de" -> orgKey/application BEFORE any tenant is known, and
+# hostnames must be unique across all customers.
+
+entity:
+  key: custom-domain
+  label: Custom Domain
+  scope: platform
+  stateMachine: custom-domain-lifecycle   # see custom-domain.state.yaml
+
+  attributes:
+    - key: hostname
+      label: Domain
+      type: string
+      required: true
+      unique: true            # globally unique, also over soft-removed rows until released
+      immutable: true         # change = remove + add new domain
+      validation:
+        pattern: '^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
+        normalize: lowercase-trim
+        forbiddenSuffixes: [processpuzzle.com, localhost]
+      help: "Apex or subdomain, e.g. ycn.de"
+
+    - key: includeWww
+      label: Also serve www.<domain>
+      type: boolean
+      default: false
+      help: "Only valid if www resolves to us; certificate is requested for both names"
+
+    - key: orgKey
+      label: Organization
+      type: string
+      required: true
+      immutable: true
+
+    - key: applicationKey
+      label: Application
+      type: reference
+      target: application
+      required: true
+      help: "e.g. ycn, the app served at custom.processpuzzle.com/ycn"
+
+    - key: primary
+      label: Primary domain
+      type: boolean
+      default: true
+      help: "Used for generated links (invites, password reset) and the 301 redirect from the path URL"
+
+    - key: defaultLocale
+      label: Default language
+      type: string
+      required: false
+      help: "Feeds the domain-based locale routing"
+
+    # --- system-managed, read-only for the customer ---
+    - key: verificationToken
+      type: string
+      readOnly: true
+      generated: uuid         # shown in the UI as TXT value for _processpuzzle-verify.<hostname>
+
+    - key: dnsCheckedAt
+      type: datetime
+      readOnly: true
+
+    - key: certificateExpiresAt
+      type: datetime
+      readOnly: true
+
+    - key: failureReason
+      type: string
+      readOnly: true
+
+    - key: activatedAt
+      type: datetime
+      readOnly: true
+
+  indexes:
+    - { name: by-hostname, attributes: [hostname], unique: true }   # hot path: Host header lookup
+    - { name: by-org, attributes: [orgKey] }
+
+  # Hot-path lookup contract for the gateway (cached, evicted on state change):
+  lookup:
+    key: hostname
+    returns: [orgKey, applicationKey, defaultLocale, primary]
+    onlyWhenState: [ACTIVE]
