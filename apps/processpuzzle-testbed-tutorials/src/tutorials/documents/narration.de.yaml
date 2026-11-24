@@ -1,0 +1,35 @@
+title: "Document Designer: Dokumente schreiben, die Ihre Benutzer lesen können"
+
+values:
+  documentTitle: Willkommensbrief
+  documentAuthor: Kundenservice
+  documentDescription: Ein Brief an jeden neuen Kunden.
+  blockText: Willkommen im Unternehmen. Wir freuen uns, dass Sie sich für uns entschieden haben, und dieser Brief zeigt Ihnen, wo Sie anfangen können.
+
+steps:
+  intro: >-
+    Willkommen beim Document Designer. Ein Dokument ist ein Text, den Ihre Anwendung ihren Benutzern zeigt: ein Brief,
+    ein Vertrag, eine Handbuchseite. Sie schreiben ihn hier, Block für Block, und er wird genau so angezeigt, wie Sie
+    ihn geschrieben haben.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Dokumente.
+  list: >-
+    Dies sind die Dokumente Ihrer Organisation. Jedes hat einen Titel, einen Autor und einen Status, der zeigt, ob es
+    bereits veröffentlicht ist.
+  new: >-
+    Schreiben wir ein neues Dokument. Klicken Sie auf Neu.
+  identify: >-
+    Ein Dokument braucht ein Kürzel, einen kurzen Namen in der Adresse, und einen Titel, den die Leser sehen. Ergänzen
+    Sie einen Autor und eine kurze Beschreibung, damit die Designer, die nach Ihnen kommen, wissen, wofür es gedacht ist.
+  save-document: >-
+    Speichern Sie das Dokument. Es erscheint sofort in der Liste.
+  open-content: >-
+    Öffnen Sie das Dokument und wechseln Sie zu seinem Inhalt. Hier wird der Text geschrieben, Block für Block.
+  add-text: >-
+    Fügen Sie einen Textblock hinzu und schreiben Sie hinein. Der Text wird beim Tippen gespeichert, Sie müssen also
+    nichts speichern.
+  preview: >-
+    Die Vorschau zeigt das Dokument so, wie seine Leser es sehen werden. Was Sie hier sehen, erhalten sie auch.
+  outro: >-
+    Das ist ein Dokument: ein Titel, ein Autor und Textblöcke, die so angezeigt werden, wie sie geschrieben wurden. Als
+    Nächstes prüft der Rule Designer, was ein Dokument enthalten muss, bevor es veröffentlicht werden kann.

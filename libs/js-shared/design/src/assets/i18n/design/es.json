@@ -112,6 +112,7 @@
   "tutorial": {
     "menu_entity": "Ver el tutorial",
     "menu_rules": "Ver el tutorial",
-    "menu_states": "Ver el tutorial"
+    "menu_states": "Ver el tutorial",
+    "menu_documents": "Ver el tutorial"
   }
 }
