@@ -797,8 +797,8 @@ components:
             created — see "Ownership and the single entry point" — so an object whose state
             attribute reads empty is one created before its machine existed, not a normal one.
         states:
+          # A draft may have no states yet; releasing it needs at least one, and the release check refuses it until then.
           type: array
-          minItems: 1
           items:
             $ref: "#/components/schemas/State"
         transitions:

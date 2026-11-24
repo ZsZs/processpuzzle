@@ -127,11 +127,11 @@ class StateMachineAuthoringParticipantTest {
             .orgKey(ORG).entityName("invoice").stateAttributeKey("status").initialStateKey("draft")
             .states(List.of()).transitions(List.of()).build();
         when(repository.findByOrgKeyAndEntityNameAndChannel(ORG, "invoice", Channel.DRAFT)).thenReturn(Optional.of(stored));
-        doThrow(new IllegalArgumentException("A state machine must declare at least one state"))
-            .when(validator).validate(ORG, "invoice", "status", "draft", List.of(), List.of());
 
         assertThat(participant.validate(ORG, "invoice"))
-            .containsExactly(AuthoringIssue.error("", "A state machine must declare at least one state"));
+            .singleElement()
+            .satisfies(issue -> assertThat(issue.severity()).isEqualTo(AuthoringIssue.Severity.WARNING));
+        verify(validator, never()).validate(any(), any(), any(), any(), any(), any());
     }
 
     @Test
