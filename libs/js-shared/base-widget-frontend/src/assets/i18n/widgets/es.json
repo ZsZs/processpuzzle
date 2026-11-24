@@ -43,5 +43,9 @@
     "loading": "Cargando el vídeo…",
     "no_video": "El vídeo en este idioma todavía no está publicado.",
     "not_found": "Este vídeo todavía no está publicado."
+  },
+  "announcement": {
+    "hide": "Ocultar",
+    "dont_show_again": "No volver a mostrar"
   }
 }
