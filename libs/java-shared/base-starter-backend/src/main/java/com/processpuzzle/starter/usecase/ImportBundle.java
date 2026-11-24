@@ -155,12 +155,13 @@ public class ImportBundle {
     }
 
     /**
-     * Applies the bundle's files kind by kind, appending what each wrote to {@code items}. Stops at the first refusal and
-     * answers its errors: a participant that failed mid-write may have left the persistence context in a state later
-     * participants should not build on. Empty when every file was written.
+     * Applies the bundle's files kind by kind, then its record files, appending what each wrote to {@code items}. Stops at
+     * the first refusal and answers its errors: a participant that failed mid-write may have left the persistence context
+     * in a state later participants should not build on. Empty when every file was written.
      */
     private Optional<List<ImportReport.Error>> write(String orgKey, StarterBundle bundle,
                                                      Map<DefinitionImportParticipant, List<String>> plan,
+                                                     List<String> recordFiles,
                                                      Map<String, Set<String>> removed, List<ImportReport.Item> items) {
         for (Map.Entry<DefinitionImportParticipant, List<String>> step : plan.entrySet()) {
             DefinitionImportParticipant participant = step.getKey();
@@ -177,6 +178,14 @@ public class ImportBundle {
                 }
             }
         }
+        for (String file : recordFiles) {
+            ParticipantResult result = participants.records().orElseThrow().load(orgKey, file, bundle.file(file));
+            if (result.isRejected()) {
+                return Optional.of(result.errors().stream().map(message -> new ImportReport.Error(file, message)).toList());
+            }
+            result.items().forEach(item ->
+                    items.add(new ImportReport.Item(ImportReport.RECORD, item.key(), ImportReport.Action.CREATE)));
+        }
         return Optional.empty();
     }
 
@@ -191,7 +200,7 @@ public class ImportBundle {
         Map<String, Set<String>> removed = additive ? new LinkedHashMap<>() : removeAll(orgKey);
 
         List<ImportReport.Item> items = new ArrayList<>();
-        Optional<List<ImportReport.Error>> refusal = write(orgKey, bundle, plan, removed, items);
+        Optional<List<ImportReport.Error>> refusal = write(orgKey, bundle, plan, recordFiles(manifest), removed, items);
         if (refusal.isPresent()) {
             status.setRollbackOnly();
             return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), refusal.get());
@@ -323,10 +332,21 @@ public class ImportBundle {
         }
     }
 
+    /** The seed-record files, loaded after the definitions. Their group is checked by {@link #plan}. */
+    private static List<String> recordFiles(StarterManifest manifest) {
+        return manifest.contents().getOrDefault(ContentGroups.RECORDS, List.of());
+    }
+
     /** Participants in import order, each with the bundle files of its kind. */
     private Map<DefinitionImportParticipant, List<String>> plan(StarterManifest manifest, List<ImportReport.Error> errors) {
         Map<String, List<String>> filesByKind = new LinkedHashMap<>();
         manifest.contents().forEach((group, files) -> {
+            if (ContentGroups.RECORDS.equals(group)) {
+                if (!files.isEmpty() && participants.records().isEmpty()) {
+                    errors.add(new ImportReport.Error(BundleReader.MANIFEST, "This platform cannot import 'records' yet."));
+                }
+                return;
+            }
             Optional<String> kind = ContentGroups.kindOf(group);
             if (kind.isEmpty()) {
                 errors.add(new ImportReport.Error(BundleReader.MANIFEST, "Unknown contents group '" + group + "'."));
@@ -362,7 +382,8 @@ public class ImportBundle {
 
         Instant now = clock.instant();
         Map<String, Set<String>> keysByKind = items.stream()
-                .filter(item -> item.action() != ImportReport.Action.DELETE && !ImportReport.MOUNT.equals(item.kind()))
+                .filter(item -> item.action() != ImportReport.Action.DELETE && !ImportReport.MOUNT.equals(item.kind())
+                        && !ImportReport.RECORD.equals(item.kind()))
                 .collect(Collectors.groupingBy(
                         ImportReport.Item::kind, LinkedHashMap::new,
                         Collectors.mapping(ImportReport.Item::key, Collectors.toCollection(LinkedHashSet::new))));

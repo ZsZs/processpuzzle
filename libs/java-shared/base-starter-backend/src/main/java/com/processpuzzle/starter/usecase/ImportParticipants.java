@@ -2,6 +2,7 @@ package com.processpuzzle.starter.usecase;
 
 import com.processpuzzle.core.definition.DefinitionImportParticipant;
 import com.processpuzzle.core.definition.InstanceDataProbe;
+import com.processpuzzle.core.definition.RecordImportParticipant;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -22,18 +23,28 @@ public class ImportParticipants {
 
     private final Map<String, DefinitionImportParticipant> byKind = new LinkedHashMap<>();
     private final List<InstanceDataProbe> probes;
+    private final RecordImportParticipant records;
 
     @Autowired
     public ImportParticipants(ObjectProvider<DefinitionImportParticipant> participants,
-                              ObjectProvider<InstanceDataProbe> probes) {
-        this(participants.stream().toList(), probes.stream().toList());
+                              ObjectProvider<InstanceDataProbe> probes,
+                              ObjectProvider<RecordImportParticipant> records) {
+        this(participants.stream().toList(), probes.stream().toList(), records.getIfAvailable());
     }
 
-    private ImportParticipants(List<DefinitionImportParticipant> participants, List<InstanceDataProbe> probes) {
+    /** For a caller that has no record loader, such as a test or a deployment without seed records. */
+    public ImportParticipants(ObjectProvider<DefinitionImportParticipant> participants,
+                              ObjectProvider<InstanceDataProbe> probes) {
+        this(participants.stream().toList(), probes.stream().toList(), null);
+    }
+
+    private ImportParticipants(List<DefinitionImportParticipant> participants, List<InstanceDataProbe> probes,
+                               RecordImportParticipant records) {
         participants.stream()
                 .sorted(Comparator.comparingInt(DefinitionImportParticipant::order))
                 .forEach(this::add);
         this.probes = List.copyOf(probes);
+        this.records = records;
     }
 
     /** For a caller that holds the participants already, such as a test. */
@@ -42,11 +53,16 @@ public class ImportParticipants {
     }
 
     public static ImportParticipants of(List<DefinitionImportParticipant> participants, List<InstanceDataProbe> probes) {
-        return new ImportParticipants(participants, probes);
+        return new ImportParticipants(participants, probes, null);
     }
 
     public Optional<DefinitionImportParticipant> forKind(String kind) {
         return Optional.ofNullable(byKind.get(kind));
+    }
+
+    /** The loader of seed records, if the deployment hosts one. */
+    public Optional<RecordImportParticipant> records() {
+        return Optional.ofNullable(records);
     }
 
     /** In import order. */

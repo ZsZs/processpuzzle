@@ -60,7 +60,7 @@ const KEYED_GROUPS = {
 };
 const CONTENT_GROUPS = [
   'entities', 'states', 'rules', 'calculations', 'widgets', 'chats', 'documents', 'workflows', 'modules', 'apps', 'translations',
-  'assets',
+  'assets', 'records',
 ];
 // What the files of the last two groups say about where they belong, as BundleOwnedPath in base-app-backend reads it.
 const OWNED_GROUPS = ['translations', 'assets'];
