@@ -141,26 +141,31 @@ function checkMigration(folder, path, where) {
 function checkCommons(manifest, folder, where) {
   const version = manifest.manifestVersion ?? 1;
   if (!SUPPORTED_MANIFEST_VERSIONS.includes(version)) throw new StarterError(`${where}: unsupported manifestVersion ${version}`);
-  if (version < 2) {
-    for (const field of ['kind', 'common', 'migrations']) {
-      if (field in manifest) throw new StarterError(`${where}: '${field}' needs manifestVersion 2`);
-    }
-  }
-  if (version < 3) {
-    for (const field of ['keyPrefix', 'mounts']) {
-      if (field in manifest) throw new StarterError(`${where}: '${field}' needs manifestVersion 3`);
-    }
-  }
+  checkFieldsNeedVersion(manifest, version, where);
   if (version < 2) return;
-  const fields = version >= 3 ? V3_FIELDS : V2_FIELDS;
-  for (const field of Object.keys(manifest)) {
-    if (!fields.includes(field)) throw new StarterError(`${where}: unknown field '${field}'`);
-  }
+  checkKnownFields(manifest, version >= 3 ? V3_FIELDS : V2_FIELDS, where);
   if (manifest.kind !== undefined && !['starter', 'common'].includes(manifest.kind)) {
     throw new StarterError(`${where}: unknown kind '${manifest.kind}'`);
   }
   if (manifest.kind === 'common') checkCommonManifest(manifest, where);
   else if (manifest.common) checkTenantCommon(manifest, folder, where);
+}
+
+/** A field a manifest version predates is refused: the commons fields need 2, the domain-starter fields 3. */
+function checkFieldsNeedVersion(manifest, version, where) {
+  const needs = [[2, ['kind', 'common', 'migrations']], [3, ['keyPrefix', 'mounts']]];
+  for (const [since, fields] of needs) {
+    if (version >= since) continue;
+    for (const field of fields) {
+      if (field in manifest) throw new StarterError(`${where}: '${field}' needs manifestVersion ${since}`);
+    }
+  }
+}
+
+function checkKnownFields(manifest, fields, where) {
+  for (const field of Object.keys(manifest)) {
+    if (!fields.includes(field)) throw new StarterError(`${where}: unknown field '${field}'`);
+  }
 }
 
 function checkCommonManifest(manifest, where) {
@@ -203,33 +208,53 @@ function checkDomainStarter(manifest, folder, where) {
   if ('apps' in contents) {
     throw new StarterError(`${where}: a manifestVersion 3 starter carries no application ('apps'); mount its modules with 'mounts'`);
   }
+  checkOwnedPaths(contents, where);
+  const modules = checkKeysUnderPrefix(manifest, contents, folder, where);
+  checkModuleScopes(manifest, modules, where);
+  if (manifest.kind === 'common' && (manifest.mounts ?? []).length > 0) {
+    throw new StarterError(`${where}: a common is mounted nowhere, so it has no 'mounts'`);
+  }
+  checkMounts(manifest.mounts ?? [], modules, contents, where);
+}
+
+/** Translations and assets of an application are not a domain starter's: a path under 'apps' is refused. */
+function checkOwnedPaths(contents, where) {
   for (const group of OWNED_GROUPS) {
     for (const path of contents[group] ?? []) {
       if (path.split('/')[1] === 'apps') throw new StarterError(`${where}: '${path}' belongs to an application; give it to a module`);
     }
   }
-  const prefix = `${manifest.keyPrefix}-`;
+}
+
+/** Every key the keyed groups define starts with the starter's prefix; returns the modules by key. */
+function checkKeysUnderPrefix(manifest, contents, folder, where) {
   const modules = new Map();
   for (const [group, [list, keyField]] of Object.entries(KEYED_GROUPS)) {
     for (const path of contents[group] ?? []) {
-      for (const entry of parse(readFileSync(join(folder, path), 'utf8'))?.[list] ?? []) {
-        const key = entry?.[keyField];
-        if (typeof key !== 'string') continue; // the importer reports a definition without a key
-        if (!key.startsWith(prefix)) throw new StarterError(`${where}: '${key}' in '${path}' does not start with '${prefix}'`);
-        if (group === 'modules') modules.set(key, entry);
-      }
+      const entries = parse(readFileSync(join(folder, path), 'utf8'))?.[list] ?? [];
+      checkEntryKeys(entries, keyField, `${manifest.keyPrefix}-`, path, where, group === 'modules' ? modules : null);
     }
   }
+  return modules;
+}
+
+/** The keys of one file's entries start with the prefix; the module entries are collected when `modules` is given. */
+function checkEntryKeys(entries, keyField, prefix, path, where, modules) {
+  for (const entry of entries) {
+    const key = entry?.[keyField];
+    if (typeof key !== 'string') continue; // the importer reports a definition without a key
+    if (!key.startsWith(prefix)) throw new StarterError(`${where}: '${key}' in '${path}' does not start with '${prefix}'`);
+    modules?.set(key, entry);
+  }
+}
+
+function checkModuleScopes(manifest, modules, where) {
   for (const [key, module] of modules) {
     const scope = module.translocoScope ?? key.replaceAll('-', '_');
     if (!scope.startsWith(`${manifest.keyPrefix}_`)) {
       throw new StarterError(`${where}: module '${key}' has the transloco scope '${scope}', which does not start with '${manifest.keyPrefix}_'`);
     }
   }
-  if (manifest.kind === 'common' && (manifest.mounts ?? []).length > 0) {
-    throw new StarterError(`${where}: a common is mounted nowhere, so it has no 'mounts'`);
-  }
-  checkMounts(manifest.mounts ?? [], modules, contents, where);
 }
 
 function checkMounts(mounts, modules, contents, where) {
