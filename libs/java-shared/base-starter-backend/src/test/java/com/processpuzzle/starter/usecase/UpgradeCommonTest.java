@@ -109,7 +109,7 @@ class UpgradeCommonTest {
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         UpgradeStarter upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
                 new UpgradePlanner(participants, provenanceRepository), commonRules, new KeyPrefixRules(participants), provenanceRepository,
-                installedRepository, offeredRepository, provider(null), transactionManager, provider(null));
+                installedRepository, offeredRepository, provider(null), provider(null), transactionManager, provider(null));
         upgradeCommon = new UpgradeCommon(upgrade, releaserProvider(), dataSpaceRepository, transactionManager);
         installer.provision(COMMON, COMMON, "1.0.0", "seed");
     }
