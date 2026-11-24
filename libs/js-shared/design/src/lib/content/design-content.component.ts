@@ -41,6 +41,7 @@ export class DesignContentComponent {
       content: ['base-document_card_content', 'base-document_card_content_1', 'base-document_card_content_2', 'base-document_card_content_3'],
       // Singular, matching the snake-cased entity name BASE_DOCUMENT_ROUTES mounts at — see the comment there.
       actions: [{ link: `${this.prefix}/design/document`, caption: 'base-document_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_documents', link: `${this.prefix}/design/tutorials/documents` }],
       translocoPrefix: 'design',
     },
     {
