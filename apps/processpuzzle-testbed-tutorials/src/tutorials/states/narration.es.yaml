@@ -1,0 +1,41 @@
+title: "State Designer: defina el ciclo de vida de una entidad"
+
+values:
+  machineName: Ciclo de vida del producto
+  machineDescription: Las etapas por las que pasa un producto.
+  stateNameNew: Nuevo
+  stateNameActive: Activo
+  stateNameDiscontinued: Descatalogado
+
+steps:
+  intro: >-
+    Bienvenido al State Designer. Una máquina de estados describe las etapas por las que pasa un objeto de una
+    entidad, como nuevo, activo o descatalogado. Decide qué cambios están permitidos desde cada etapa.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Estados.
+  list: >-
+    Estas son las máquinas de estados de su organización, una por entidad. La columna Publicación indica si una máquina
+    ya está activa o sigue siendo un borrador.
+  new: >-
+    Definamos una máquina de estados nueva. Haga clic en Nuevo.
+  identify: >-
+    Una máquina pertenece a una entidad, aquí Producto, y necesita un nombre y una descripción para los diseñadores que
+    vengan después.
+  choose-attribute: >-
+    El atributo de estado es el campo de la entidad que guarda la etapa actual. Aquí es Estado. El estado inicial es la
+    etapa en la que empieza un producto nuevo. Las etapas las añadiremos enseguida.
+  save-machine: >-
+    Guarde la máquina como borrador. Aparece en la lista con su entidad y su estado inicial, y todavía no está activa.
+  find: >-
+    Abra la máquina de nuevo para añadir sus etapas.
+  add-states: >-
+    Cada etapa es un estado con una clave y un nombre. Añada Nuevo, después Activo y por último Descatalogado.
+    Descatalogado es final: cuando un producto llega a esa etapa, ya no sale de ella.
+  save-states: >-
+    Guarde la máquina. Las etapas se guardan con ella, así que se conservan.
+  show-result: >-
+    La máquina ya enumera sus etapas. Una publicación la hace activa para cada producto, por eso necesita al menos una
+    etapa.
+  outro: >-
+    Eso es una máquina de estados: las etapas de una entidad, la que es su punto de partida y la que no puede
+    abandonar. A continuación, el diseñador de workflows usa esas etapas para dirigir los pasos de un proceso.

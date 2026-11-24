@@ -58,6 +58,7 @@ export class DesignContentComponent {
       subtitle: 'base-state_card_subtitle',
       content: ['base-state_card_content', 'base-state_card_content_1', 'base-state_card_content_2', 'base-state_card_content_3'],
       actions: [{ link: `${this.prefix}/design/states`, caption: 'base-state_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_states', link: `${this.prefix}/design/tutorials/states` }],
       translocoPrefix: 'design',
     },
     {

@@ -1,0 +1,41 @@
+title: "State Designer: egy entitás életciklusának meghatározása"
+
+values:
+  machineName: Termék életciklusa
+  machineDescription: Azok a szakaszok, amelyeken a termék áthalad.
+  stateNameNew: Új
+  stateNameActive: Aktív
+  stateNameDiscontinued: Kivezetett
+
+steps:
+  intro: >-
+    Üdvözöljük a State Designerben. Egy állapotgép leírja azokat a szakaszokat, amelyeken egy entitás objektuma
+    áthalad, például új, aktív vagy kivezetett. Eldönti, milyen változtatások engedélyezettek az egyes szakaszokból.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg az Állapotok kártyát.
+  list: >-
+    Ezek a szervezete állapotgépei, entitásonként egy. A Közzététel oszlop mutatja, hogy egy gép már élesben van-e,
+    vagy még piszkozat.
+  new: >-
+    Határozzunk meg egy új állapotgépet. Kattintson az Új gombra.
+  identify: >-
+    Egy gép egy entitáshoz tartozik, itt a Termékhez, és névre és leírásra van szüksége a később dolgozó tervezők
+    számára.
+  choose-attribute: >-
+    Az állapotattribútum az entitás az a mezője, amely az aktuális szakaszt tárolja. Itt ez a Státusz. A kezdőállapot
+    az a szakasz, amelyben egy új termék indul. A szakaszokat hamarosan hozzáadjuk.
+  save-machine: >-
+    Mentse a gépet piszkozatként. A listában az entitásával és a kezdőállapotával együtt látszik, és még nincs élesben.
+  find: >-
+    Nyissa meg újra a gépet, hogy hozzáadja a szakaszait.
+  add-states: >-
+    Minden szakasz egy kulccsal és névvel rendelkező állapot. Adja hozzá az Újat, majd az Aktívat, végül a Kivezetettet.
+    A Kivezetett végleges: ha egy termék ide került, innen nem lép tovább.
+  save-states: >-
+    Mentse a gépet. A szakaszok vele együtt mentődnek, így megmaradnak.
+  show-result: >-
+    A gép most felsorolja a szakaszait. A közzététel minden termékre élessé teszi, ezért legalább egy szakaszra van
+    szüksége.
+  outro: >-
+    Ez egy állapotgép: egy entitás szakaszai, az, amelyben kezdődik, és az, amelyet nem hagy el. Következőként a
+    workflow-tervező ezekkel a szakaszokkal vezérli egy folyamat lépéseit.
