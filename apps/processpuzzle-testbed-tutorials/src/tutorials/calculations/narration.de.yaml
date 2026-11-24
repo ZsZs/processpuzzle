@@ -1,0 +1,60 @@
+title: "Calculation Designer: Werte aus Ihren Daten ableiten und nachvollziehen, wie jeder entsteht"
+
+values: {}
+
+steps:
+  intro: >-
+    Willkommen beim Calculation Designer. Eine Berechnung leitet Werte aus den Daten Ihrer Anwendung ab: eine Summe aus
+    den Positionen einer Bestellung, einen Rabatt aus der Kundenstufe, eine Rangliste aus einer Reihe von Ergebnissen.
+    Sie beschreiben die Berechnung einmal, und die Anwendung rechnet sie überall dort aus, wo sie gebraucht wird. Anders
+    als eine Formel, die tief im Code steckt, sehen Sie jederzeit, wie ein Wert zustande gekommen ist. Dieses Tutorial
+    zeigt Ihnen, wie.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Berechnungen. Der Designer öffnet die Liste der Berechnungen,
+    die Ihre Organisation definiert hat.
+  list: >-
+    Hier ist die Liste. Die Berechnung, die wir uns ansehen, heißt order-total. Jede Berechnung hat einen Namen, die
+    Entität, in deren Felder sie ihre Ergebnisse schreibt, und einen Veröffentlichungsstand: Ein Entwurf wird noch
+    geändert, eine veröffentlichte Berechnung ist die, die die laufende Anwendung verwendet. Öffnen Sie order-total, um
+    die Definition zu sehen.
+  definition: >-
+    Die Definition legt fest, wie die Berechnung heißt und welche Entität ihre Ergebnisse erhält. Hier fließen die
+    Ergebnisse in die Bestellung, die Gesamtsumme der Bestellung ist also immer die, die diese Berechnung ermittelt. Die
+    Beschreibung sagt dem nächsten Designer, wofür die Berechnung da ist. Sie lohnt sich, weil sie das Erste ist, was
+    jemand liest.
+  source: >-
+    Die Berechnung selbst steht in ihrem Quelltext, in einer kleinen deklarativen Sprache. Jede Zeile benennt einen Wert
+    und wie er entsteht: eine Summe über die Positionen einer Bestellung, einen Satz, der aus einer Entscheidungstabelle
+    gelesen wird, oder einen einfachen Ausdruck über die Werte darüber. Der Editor prüft die Syntax während Sie
+    schreiben, und der Designer bewahrt den Quelltext als die einzige Beschreibung der Berechnung auf.
+  validate: >-
+    Validieren prüft die ganze Berechnung, bevor sie verwendet werden kann: ob jeder Wert, den sie nennt, definiert ist,
+    ob kein Wert von sich selbst abhängt und ob die Tabellen, die sie verwendet, existieren. Das Ergebnis zeigt sofort,
+    ob die Berechnung in Ordnung ist, und wo sie es nicht ist.
+  tables: >-
+    Manche Werte sind keine Formeln, sondern Entscheidungstabellen: eine Regel, die je nach Bedingungen einen Wert
+    liefert, etwa den Rabattsatz für jede Kundenstufe. Die Tabelle wird Zeile für Zeile gelesen, und die erste Zeile,
+    deren Bedingungen zutreffen, liefert den Wert. Tabellen werden getrennt vom Quelltext geführt, sodass ein Designer
+    einen Satz ändern kann, ohne die Formel anzufassen, die ihn verwendet.
+  choose-order: >-
+    Sehen wir uns die Berechnung nun in Aktion an. Der Reiter Auswerten führt sie an einer echten Bestellung aus. Wir
+    wählen die Bestellung ORD-1001, eine kleine Bestellung mit zwei Positionen, und lassen die Kundenstufe leer, damit
+    die Rabatttabelle ihren Standardsatz liefert.
+  evaluate: >-
+    Entwurf auswerten führt die Berechnung für die Bestellung aus. Sie zeigt die Werte, die sie erzeugt: die Zwischensumme
+    aus den Positionen, den Rabattsatz und die Gesamtsumme. Es sind dieselben Zahlen, die die Anwendung in die Bestellung
+    schreibt, sobald die Berechnung veröffentlicht ist.
+  trace: >-
+    Die Nachverfolgung erklärt jeden Wert. Die Positionssummen kommen aus den beiden Positionen der Bestellung, die
+    Zwischensumme addiert sie, der Rabattsatz kommt aus der Tabelle, und die Gesamtsumme ergibt sich aus beiden. Jede
+    Zeile sagt, welche Art von Entscheidung den Wert erzeugt hat und auf welchen Daten sie beruht. Wenn eine Zahl falsch
+    wirkt, sehen Sie genau, woher sie stammt.
+  runs: >-
+    Die Ansicht Läufe zeigt schließlich die Berechnungen, die die Anwendung tatsächlich ausgeführt hat: welche
+    Berechnung, für welches Objekt und wann. Sie können nach Berechnung oder Objekt filtern und die Liste aktualisieren.
+    Ein Lauf wird zusammen mit dem Quelltext aufbewahrt, aus dem er berechnet wurde, sodass sich ein Ergebnis auch lange
+    erklären lässt, nachdem sich die Bestellung geändert hat.
+  outro: >-
+    Das ist eine Berechnung: eine Beschreibung in einer kleinen Sprache, Entscheidungstabellen, wo eine Regel
+    Bedingungen hat, eine Prüfung vor dem Einsatz und eine Nachverfolgung für jeden Wert. Als Nächstes nutzt der
+    Workflow-Designer solche Werte, um zu entscheiden, welcher Schritt eines Prozesses als Nächstes kommt.

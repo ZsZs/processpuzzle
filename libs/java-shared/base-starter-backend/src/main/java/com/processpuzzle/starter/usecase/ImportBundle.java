@@ -206,6 +206,9 @@ public class ImportBundle {
         Map<String, Set<String>> removed = additive ? new LinkedHashMap<>() : removeAll(orgKey);
 
         List<ImportReport.Item> items = new ArrayList<>();
+        // A common's data space must exist before its definitions are written: a shared entity type is accepted only in a
+        // common, so the first install of a common would refuse its own types. Rolled back with the rest on a refusal or dry run.
+        commonRules.commonInstalled(manifest);
         Optional<List<ImportReport.Error>> refusal = write(orgKey, bundle, plan, recordFiles(manifest), removed, items);
         if (refusal.isPresent()) {
             status.setRollbackOnly();
@@ -219,7 +222,6 @@ public class ImportBundle {
             return new ImportReport(true, ImportReport.Status.WOULD_APPLY, manifest.id(), manifest.version(), items, List.of(), warnings);
         }
         recordProvenance(orgKey, manifest, items, additive, importedBy);
-        commonRules.commonInstalled(manifest);
         return new ImportReport(false, ImportReport.Status.APPLIED, manifest.id(), manifest.version(), items, List.of(), warnings);
     }
 

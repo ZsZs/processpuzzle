@@ -1,0 +1,56 @@
+title: "Calculation Designer: értékek levezetése az adatokból, és annak megtekintése, hogyan jön létre mindegyik"
+
+values: {}
+
+steps:
+  intro: >-
+    Üdvözöljük a Calculation Designerben. Egy számítás értékeket vezet le az alkalmazás adataiból: összeget a rendelés
+    tételeiből, kedvezményt az ügyfél szintjéből, rangsort eredmények sorozatából. Egyszer írja le a számítást, és az
+    alkalmazás mindenhol elvégzi, ahol szükség van rá. Ami megkülönbözteti a kódba rejtett képlettől, az az, hogy egy
+    érték kiszámításának módja mindig látható. Ez a bemutató megmutatja, hogyan.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Számítások kártyát. A tervező megnyitja a szervezete által definiált számítások
+    listáját.
+  list: >-
+    Itt a lista. Az a számítás, amelyet megnézünk, az order-total. Minden számításnak van neve, az entitás, amelybe az
+    eredményeit írja, és közzétételi állapota: a piszkozatot még módosítják, a közzétett számítást pedig az éles
+    alkalmazás használja. Nyissa meg az order-total-t a definíció megtekintéséhez.
+  definition: >-
+    A definíció megmondja, hogy a számítás hogyan hívják, és melyik entitás kapja az eredményeit. Itt az eredmények a
+    rendelésbe kerülnek, így a rendelés végösszege mindig az, amelyet ez a számítás határoz meg. A leírás elmondja a
+    következő tervezőnek, mire szolgál a számítás, ezért érdemes gondosan megírni, mert ezt olvassák el először.
+  source: >-
+    Maga a számítás a forrásában van, egy kis deklaratív nyelven. Minden sor megnevez egy értéket és azt, hogyan
+    származik: összeg a rendelés tételei fölött, egy döntési táblából olvasott arány, vagy egyszerű kifejezés a fölötte
+    álló értékekből. A szerkesztő a munka közben ellenőrzi a szintaxist, a tervező pedig a forrást tartja meg a számítás
+    egyetlen leírásaként.
+  validate: >-
+    Az érvényesítés az egész számítást ellenőrzi, mielőtt használni lehetne: hogy minden megnevezett érték definiált-e,
+    hogy egy érték sem függ-e önmagától, és hogy a használt táblák léteznek-e. Az eredmény azonnal megmutatja, hogy a
+    számítás rendben van-e, és ha nincs, akkor hol.
+  tables: >-
+    Egyes értékek nem képletek, hanem döntési táblák: olyan szabályok, amelyek feltételek szerint adnak értéket, például
+    minden ügyfélszinthez tartozó kedvezményi arányt. A táblát sorról sorra olvassák, és az első sor, amelynek feltételei
+    teljesülnek, adja az értéket. A táblák elkülönülnek a forrástól, így a tervező az arányt úgy módosíthatja, hogy a
+    képletet, amely használja, nem kell érintenie.
+  choose-order: >-
+    Nézzük most a számítást működés közben. A Kiértékelés fül egy valódi rendelésen futtatja le. Az ORD-1001 rendelést
+    választjuk, egy kis rendelést két tétellel, és az ügyfélszintet üresen hagyjuk, hogy a kedvezménytábla az alapértelmezett
+    arányt adja.
+  evaluate: >-
+    A piszkozat kiértékelése lefuttatja a számítást a rendelésen. Megmutatja az előállított értékeket: a tételek
+    részösszegét, a kedvezményi arányt és a végösszeget. Ugyanezek a számok kerülnek majd a rendelésbe, amint a számítást
+    közzéteszik.
+  trace: >-
+    A nyomkövetés minden értéket megmagyaráz. A tételösszegek a rendelés két tételéből jönnek, a részösszeg ezeket adja
+    össze, a kedvezményi arány a táblából származik, a végösszeg pedig mindkettőből adódik. Minden sor megmondja, milyen
+    fajta döntés hozta létre az értéket és milyen adatokon alapul, így ha egy szám hibásnak látszik, pontosan látja, honnan
+    származik.
+  runs: >-
+    Végül a Futások nézet felsorolja azokat a számításokat, amelyeket az alkalmazás ténylegesen lefuttatott: melyik
+    számítást, melyik objektumra és mikor. Szűrhet számítás vagy objektum szerint, és frissítheti a listát. A futás azzal a
+    forrással együtt marad meg, amelyből kiszámították, így az eredmény a rendelés megváltozása után is megmagyarázható.
+  outro: >-
+    Ez egy számítás: leírás egy kis nyelven, döntési táblák ott, ahol a szabálynak feltételei vannak, ellenőrzés használat
+    előtt, és nyomkövetés minden értékhez. Következőként a Workflow Designer ilyen értékeket használ annak eldöntésére, mi
+    legyen a folyamat következő lépése.
