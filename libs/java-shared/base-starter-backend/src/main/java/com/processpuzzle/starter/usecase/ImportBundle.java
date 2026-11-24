@@ -178,6 +178,12 @@ public class ImportBundle {
                 }
             }
         }
+        return writeRecords(orgKey, bundle, recordFiles, items);
+    }
+
+    /** Loads the record files after the definitions; the first refused file is the answer, as for a definition. */
+    private Optional<List<ImportReport.Error>> writeRecords(String orgKey, StarterBundle bundle, List<String> recordFiles,
+                                                            List<ImportReport.Item> items) {
         for (String file : recordFiles) {
             ParticipantResult result = participants.records().orElseThrow().load(orgKey, file, bundle.file(file));
             if (result.isRejected()) {
