@@ -8,8 +8,11 @@ import { EntityStoreHandle } from './base-entity.store';
 export const addEntity = <Entity extends BaseEntity>(store: EntityStoreHandle<Entity>, repository: BaseEntityService<Entity>) => {
   return async (entity: Entity): Promise<PersistedEntity<Entity> | undefined> => {
     patchState(store, { isLoading: true, error: undefined });
+    // TEMP-DEBUG: nightly save investigation, remove after diagnosis
+    console.info('[TEMP-DEBUG] addEntity: POST requested');
     try {
       const savedEntity = await firstValueFrom(repository.add(entity));
+      console.info('[TEMP-DEBUG] addEntity: POST answered');
       patchState(store, { entities: store.entities().concat([savedEntity]), isLoading: false });
       return savedEntity;
     } catch (error) {
