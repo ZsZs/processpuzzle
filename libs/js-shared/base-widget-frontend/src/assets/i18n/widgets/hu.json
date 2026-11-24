@@ -38,5 +38,10 @@
   "sidenav_toggle": {
     "hide": "Menü elrejtése",
     "show": "Menü megjelenítése"
+  },
+  "video_player": {
+    "loading": "A videó betöltése…",
+    "no_video": "Ehhez a nyelvhez a videó még nincs közzétéve.",
+    "not_found": "Ez a videó még nincs közzétéve."
   }
 }

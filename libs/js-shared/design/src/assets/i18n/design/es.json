@@ -110,9 +110,6 @@
   "base-chat_card_content_3": "Cerrar la escritura cuando el registro salga de sus estados",
   "base-chat_card_button": "Definir chats...",
   "tutorial": {
-    "menu_entity": "Ver el tutorial",
-    "loading": "Cargando el tutorial…",
-    "no_video": "El vídeo en este idioma aún no está publicado.",
-    "not_found": "Este tutorial aún no está publicado."
+    "menu_entity": "Ver el tutorial"
   }
 }

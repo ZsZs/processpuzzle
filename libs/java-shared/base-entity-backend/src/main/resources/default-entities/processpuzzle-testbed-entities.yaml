@@ -719,22 +719,23 @@ entityDefinitions:
         multiplicity: '0..n'
 
 
-  # Tutorial — the videos and transcripts of the Designer's tutorials, one row per tutorial and language. Rows are
-  # written by apps/processpuzzle-testbed-tutorials (publish), not seeded: an ARTIFACT holds the id of an upload,
-  # which only exists after the video is put into the object store. Read anonymously by the testbed's tutorial viewer.
-  - code: tutorial
-    name: Tutorial
+  # ProcessPuzzle Tutorial — the videos and texts of the Designer's tutorials, one row per tutorial and language. Rows are
+  # written by apps/processpuzzle-testbed-tutorials (publish), not seeded: an ARTIFACT holds the id of an upload, which
+  # only exists after the video is put into the object store. The video-player widget reads them anonymously.
+  - code: processpuzzle-tutorial
+    name: ProcessPuzzle Tutorial
     description: >-
-      A narrated video tutorial of one designer, with its transcript, in one language.
+      A narrated video tutorial of one designer, with its text, in one language.
     status: ACTIVE
     attributes:
-      - code: tutorialKey
-        name: Tutorial key
+      - code: name
+        name: Name
         displayOrder: 1
         valueKind: TEXT
         formControlType: TEXT_BOX
         required: true
         indexed: true
+        isLinkToDetails: true
       - code: language
         name: Language
         displayOrder: 2
@@ -742,24 +743,17 @@ entityDefinitions:
         formControlType: TEXT_BOX
         required: true
         indexed: true
-      - code: title
-        name: Title
+      - code: text
+        name: Text
         displayOrder: 3
         valueKind: TEXT
-        formControlType: TEXT_BOX
-        required: true
-        isLinkToDetails: true
+        formControlType: TEXTAREA
       - code: video
         name: Video
         displayOrder: 4
         valueKind: REFERENCE
         formControlType: ARTIFACT
         multiplicity: '0..1'
-      - code: transcript
-        name: Transcript
-        displayOrder: 5
-        valueKind: TEXT
-        formControlType: TEXTAREA
 
 entities:
   # Sample Object 1

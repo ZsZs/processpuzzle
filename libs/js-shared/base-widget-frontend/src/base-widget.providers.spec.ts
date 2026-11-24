@@ -25,6 +25,7 @@ import {
   TASK_DASHBOARD_BUTTON_WIDGET,
   THEMES_BUTTON_WIDGET,
   VERSION_BUTTON_WIDGET,
+  VIDEO_PLAYER_WIDGET,
   provideBaseWidgets,
   provideCardsGridWidget,
 } from './base-widget.providers';
@@ -63,6 +64,7 @@ describe('base-widget providers', () => {
         TASK_DASHBOARD_BUTTON_WIDGET,
         THEMES_BUTTON_WIDGET,
         VERSION_BUTTON_WIDGET,
+        VIDEO_PLAYER_WIDGET,
       ].sort(),
     );
     expect(registry.get(CARDS_GRID_WIDGET)?.component).toBe(MatCardsGridComponent);
