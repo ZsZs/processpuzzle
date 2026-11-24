@@ -1,0 +1,32 @@
+title: "Document Designer: olvasható dokumentumok írása"
+
+values:
+  documentTitle: Üdvözlő levél
+  documentAuthor: Ügyfélszolgálat
+  documentDescription: Levél minden új ügyfélnek.
+  blockText: Üdvözöljük a cégnél. Örülünk, hogy minket választott, és ez a levél megmutatja, hol érdemes kezdeni.
+
+steps:
+  intro: >-
+    Üdvözöljük a Document Designerben. A dokumentum olyan szöveg, amelyet az alkalmazás megmutat a felhasználóinak: levél,
+    szerződés, kézikönyv-oldal. Itt írja meg, blokkonként, és pontosan úgy jelenik meg, ahogy megírta.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Dokumentumok kártyát.
+  list: >-
+    Ezek a szervezete dokumentumai. Mindegyiknek van címe, szerzője és állapota, amely megmutatja, közzétették-e már.
+  new: >-
+    Írjunk egy új dokumentumot. Kattintson az Új gombra.
+  identify: >-
+    A dokumentumnak kell egy azonosító, a címben szereplő rövid név, és egy cím, amelyet az olvasók látnak. Adjon hozzá
+    szerzőt és rövid leírást, hogy a később dolgozó tervezők tudják, mire való.
+  save-document: >-
+    Mentse a dokumentumot. Azonnal megjelenik a listában.
+  open-content: >-
+    Nyissa meg a dokumentumot, és váltson a tartalmára. Itt íródik a szöveg, blokkonként.
+  add-text: >-
+    Adjon hozzá egy szövegblokkot, és írjon bele. A szöveg gépelés közben mentődik, így nincs mit elmenteni.
+  preview: >-
+    Az előnézet úgy mutatja a dokumentumot, ahogy az olvasói látni fogják. Amit itt lát, azt ők is kapják.
+  outro: >-
+    Ez egy dokumentum: cím, szerző és szövegblokkok, pontosan úgy megjelenítve, ahogy megírták. Következőként a Rule
+    Designer ellenőrzi, mit kell tartalmaznia a dokumentumnak a közzétételhez.

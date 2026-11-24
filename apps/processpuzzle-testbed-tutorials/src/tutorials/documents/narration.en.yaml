@@ -1,0 +1,33 @@
+title: "Document Designer: write documents your users can read"
+
+values:
+  documentTitle: Welcome letter
+  documentAuthor: Customer care
+  documentDescription: A letter to every new customer.
+  blockText: Welcome to the company. We are glad you chose us, and this letter tells you where to begin.
+
+steps:
+  intro: >-
+    Welcome to the Document Designer. A document is a text that your application shows to its users: a letter, a
+    contract, a manual page. You write it here, block by block, and it is shown exactly as you wrote it.
+  open: >-
+    From the Designer Home, open the Documents card.
+  list: >-
+    These are the documents of your organization. Each one has a title, an author, and a status that tells whether it
+    is already published.
+  new: >-
+    Let's write a new document. Click New.
+  identify: >-
+    A document needs a slug, a short name in the address, and a title that readers see. Add an author and a short
+    description, so that the designers who follow know what it is for.
+  save-document: >-
+    Save the document. It appears in the list at once.
+  open-content: >-
+    Open the document and switch to its content. Here the text is written, block by block.
+  add-text: >-
+    Add a text block, and write into it. The text is saved as you type, so there is no save to remember.
+  preview: >-
+    The preview shows the document as its readers will see it. What you see here is what they get.
+  outro: >-
+    That is a document: a title, an author, and blocks of text, shown the way they were written. Next, the Rule
+    Designer checks what a document must contain before it can be published.

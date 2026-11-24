@@ -1,0 +1,35 @@
+title: "Document Designer : écrire des documents que vos utilisateurs peuvent lire"
+
+values:
+  documentTitle: Lettre de bienvenue
+  documentAuthor: Service client
+  documentDescription: Une lettre adressée à chaque nouveau client.
+  blockText: Bienvenue dans l'entreprise. Nous sommes heureux que vous nous ayez choisis, et cette lettre vous indique par où commencer.
+
+steps:
+  intro: >-
+    Bienvenue dans le Document Designer. Un document est un texte que votre application montre à ses utilisateurs : une
+    lettre, un contrat, une page de manuel. Vous l'écrivez ici, bloc par bloc, et il s'affiche exactement comme vous
+    l'avez écrit.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Documents.
+  list: >-
+    Voici les documents de votre organisation. Chacun a un titre, un auteur et un statut qui indique s'il est déjà
+    publié.
+  new: >-
+    Écrivons un nouveau document. Cliquez sur Nouveau.
+  identify: >-
+    Un document a besoin d'un identifiant, un nom court dans l'adresse, et d'un titre que les lecteurs voient. Ajoutez un
+    auteur et une courte description, pour que les concepteurs qui suivent sachent à quoi il sert.
+  save-document: >-
+    Enregistrez le document. Il apparaît tout de suite dans la liste.
+  open-content: >-
+    Ouvrez le document et passez à son contenu. C'est ici que le texte s'écrit, bloc par bloc.
+  add-text: >-
+    Ajoutez un bloc de texte, et écrivez dedans. Le texte est enregistré au fur et à mesure, il n'y a donc rien à
+    enregistrer.
+  preview: >-
+    L'aperçu montre le document tel que ses lecteurs le verront. Ce que vous voyez ici, ils le reçoivent.
+  outro: >-
+    Voilà un document : un titre, un auteur et des blocs de texte, affichés comme ils ont été écrits. Ensuite, le Rule
+    Designer contrôle ce qu'un document doit contenir avant de pouvoir être publié.
