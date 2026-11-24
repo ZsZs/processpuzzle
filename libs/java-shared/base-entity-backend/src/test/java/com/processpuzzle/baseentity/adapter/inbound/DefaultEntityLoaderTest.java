@@ -134,13 +134,14 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        verify(createDefinitionUseCase, times(15)).create(eq(ORG), defCaptor.capture());
 
         List<BaseEntityDefinition> capturedDefs = defCaptor.getAllValues();
         assertThat(capturedDefs).extracting(BaseEntityDefinition::getCode)
                 .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
                         "order-line", "order", "special-order-line", "special-order", "boat",
-                        "race", "race-registration", "race-observation", "demo-component-one", "demo-component-two", "demo-root");
+                        "race", "race-registration", "race-observation", "demo-component-one", "demo-component-two", "demo-root",
+                        "tutorial");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")
@@ -161,7 +162,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        verify(createDefinitionUseCase, times(15)).create(eq(ORG), defCaptor.capture());
         BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
                 .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
 
@@ -176,7 +177,7 @@ class DefaultEntityLoaderTest {
         loader.loadDefaults();
 
         ArgumentCaptor<BaseEntityDefinition> defCaptor = ArgumentCaptor.forClass(BaseEntityDefinition.class);
-        verify(createDefinitionUseCase, times(14)).create(eq(ORG), defCaptor.capture());
+        verify(createDefinitionUseCase, times(15)).create(eq(ORG), defCaptor.capture());
         BaseEntityDefinition dynamicEntity = defCaptor.getAllValues().stream()
                 .filter(def -> def.getCode().equals("dynamic-entity")).findFirst().orElseThrow();
 
@@ -243,7 +244,7 @@ class DefaultEntityLoaderTest {
 
         loader.loadDefaults();
 
-        verify(createDefinitionUseCase, times(13)).create(anyString(), any(BaseEntityDefinition.class));
+        verify(createDefinitionUseCase, times(14)).create(anyString(), any(BaseEntityDefinition.class));
     }
 
     @Test

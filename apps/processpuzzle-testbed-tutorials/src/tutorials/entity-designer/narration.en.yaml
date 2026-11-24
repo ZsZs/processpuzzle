@@ -1,0 +1,47 @@
+title: "Entity Designer: define your own business objects"
+
+# What the scenario types into the forms. Codes are not here: they stay the same in every language.
+values:
+  entityName: Product
+  entityDescription: Something the company sells.
+  nameAttribute: Name
+  priceAttribute: Price
+
+steps:
+  intro: >-
+    Welcome to the Entity Designer. An entity describes one kind of business object your application works with,
+    such as a product, a customer or an order. Once an entity is defined, ProcessPuzzle gives you its list and
+    its form, with nothing to program.
+  open: >-
+    From the Designer Home, open the Entities card.
+  list: >-
+    This is the list of the entity definitions in your organization. The Release column tells you whether a
+    definition is already live in the running application, or is still a draft.
+  new: >-
+    Let us define a new entity. Click New.
+  identify: >-
+    Every entity needs a code and a name. The code is the short, technical key. It is used in addresses and by
+    other definitions, so keep it lowercase and do not change it later. The name is what your users will see.
+    A description helps the colleagues who design after you.
+  save-definition: >-
+    Save the definition. It now appears in the list, marked as new, because it has not been released yet.
+  find: >-
+    Attributes can be added as soon as the entity is saved. Find it with the filter, and open it.
+  add-attribute: >-
+    An attribute is one piece of data the entity holds. Click into the Attributes box, then choose Add.
+  describe-attribute: >-
+    Our first attribute is the name of the product. Give it a code and a name, and choose the value kind: text.
+    Mark it as required, so that no product can be saved without it. And let it title the record, which makes
+    it the link shown in lists.
+  save-attribute: >-
+    Save the attribute. You are back on the entity, and the attribute is listed.
+  second-attribute: >-
+    Here is the second attribute, the price. It is a number, and its control type decides how the field looks on the form. The list now shows both attributes.
+  save-entity: >-
+    Save the entity. Its attributes are stored together with it, so the name is kept.
+  release: >-
+    The product is defined, but it is still a draft. Your users will not see it until you publish a release.
+    That keeps a half-finished design away from the live application.
+  outro: >-
+    That is all an entity needs: a code, a name, and its attributes. Next, give it rules, a life cycle or a
+    workflow in the other designers.

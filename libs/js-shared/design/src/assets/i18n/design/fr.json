@@ -108,5 +108,11 @@
   "base-chat_card_content_1": "Un chat par enregistrement, ou autant de sujets titrés que voulu",
   "base-chat_card_content_2": "Restreindre la lecture, l'écriture et l'ouverture par rôle",
   "base-chat_card_content_3": "Fermer l'écriture quand l'enregistrement quitte ses états",
-  "base-chat_card_button": "Définir des chats..."
+  "base-chat_card_button": "Définir des chats...",
+  "tutorial": {
+    "menu_entity": "Voir le tutoriel",
+    "loading": "Chargement du tutoriel…",
+    "no_video": "La vidéo dans cette langue n'est pas encore publiée.",
+    "not_found": "Ce tutoriel n'est pas encore publié."
+  }
 }

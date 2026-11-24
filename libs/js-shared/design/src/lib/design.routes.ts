@@ -18,6 +18,7 @@ import { AiDesignerComponent } from './ai-designer/ai-designer.component';
 import { DesignContentComponent } from './content/design-content.component';
 import { DesignWorkbenchComponent } from './workbench/design-workbench.component';
 import { WorkflowDesignerComponent } from './workflow-designer/workflow-designer.component';
+import { TutorialViewerComponent } from './tutorial/tutorial-viewer.component';
 
 /**
  * The sections of the designer, one per feature, in the order the sidenav lists them. Hosted by
@@ -167,6 +168,13 @@ export const DESIGN_SECTIONS: Routes = [
     // nothing to the injectors the tabs' own screens resolve through. What those screens need —
     // `base_entity` and `base_app` — each tab's route declares for itself.
     children: [{ path: '', pathMatch: 'full', redirectTo: 'app-definition' }, ...BASE_APP_ROUTES, ...BASE_WIDGET_ROUTES],
+  },
+  // The video tutorials the designer cards link to, one route per tutorial (`tutorials/entity-designer`). No menuTitle:
+  // they are reached from a card, not from the sidenav. The viewer reads the `tutorial` entity, anonymously in the testbed.
+  {
+    path: 'tutorials/:key',
+    title: 'ProcessPuzzle Design - Tutorial',
+    component: TutorialViewerComponent,
   },
   // The AI Designer section: the design assistant on a page of its own. It drafts into the other sections, so it
   // sits after them and before the starters and the release, which act on what they hold.

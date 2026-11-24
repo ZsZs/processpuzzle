@@ -98,7 +98,9 @@ export function createEntityDefinitionDescriptor(entityCodes?: () => Selectable[
     attrDescriptors: createEntityDefinitionAttrDescriptors(entityCodes),
     i18nScope: ENTITY_DEFINITION_I18N_SCOPE,
     // A type of the organization's common is read, not authored here: the common releases it.
-    isEditable: (entity) => !(entity as EntityDefinition).sharedFrom,
-    isDeletable: (entity) => !(entity as EntityDefinition).sharedFrom,
+    // `entity` is undefined while the store is still loading the row (a reloaded details page asks before it arrives);
+    // the optional chaining keeps that from throwing, and the rule is re-evaluated once the row is there.
+    isEditable: (entity) => !(entity as EntityDefinition | undefined)?.sharedFrom,
+    isDeletable: (entity) => !(entity as EntityDefinition | undefined)?.sharedFrom,
   });
 }

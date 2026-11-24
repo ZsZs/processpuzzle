@@ -23,6 +23,7 @@ describe('descriptorOf', () => {
     expect(descriptor.isEditable?.({ id: '1' })).toBe(true);
     expect(descriptor.isEditable?.({ id: '1', retiredAt: '2026-11-16T10:00:00Z' } as never)).toBe(false);
     expect(descriptor.isDeletable?.({ id: '1', retiredAt: '2026-11-16T10:00:00Z' } as never)).toBe(false);
+    expect(descriptor.isEditable?.(undefined as never)).toBe(true);
   });
 
   it('names the entity by the definition name, not by its code — the descriptor is what URLs and registries are keyed by', () => {

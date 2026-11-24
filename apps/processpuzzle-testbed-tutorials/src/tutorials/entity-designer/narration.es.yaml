@@ -1,0 +1,46 @@
+title: "Entity Designer: defina sus propios objetos de negocio"
+
+values:
+  entityName: Producto
+  entityDescription: Lo que vende la empresa.
+  nameAttribute: Nombre
+  priceAttribute: Precio
+
+steps:
+  intro: >-
+    Bienvenido al Entity Designer. Una entidad describe un tipo de objeto de negocio con el que trabaja su
+    aplicación, por ejemplo un producto, un cliente o un pedido. En cuanto la entidad está definida,
+    ProcessPuzzle le ofrece su lista y su formulario, sin programar nada.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Entidades.
+  list: >-
+    Esta es la lista de definiciones de entidades de su organización. La columna Publicación indica si una
+    definición ya está activa en la aplicación en funcionamiento o si todavía es un borrador.
+  new: >-
+    Definamos una entidad nueva. Haga clic en New.
+  identify: >-
+    Toda entidad necesita un código y un nombre. El código es la clave técnica, breve. Se usa en direcciones y
+    en otras definiciones, así que escríbalo en minúsculas y no lo cambie después. El nombre es lo que verán sus
+    usuarios. Una descripción ayuda a los compañeros que diseñen después de usted.
+  save-definition: >-
+    Guarde la definición. Ahora aparece en la lista, marcada como nueva, porque todavía no se ha publicado.
+  find: >-
+    Los atributos se pueden añadir en cuanto la entidad está guardada. Búsquela con el filtro y ábrala.
+  add-attribute: >-
+    Un atributo es un dato que contiene la entidad. Haga clic en el cuadro Atributos y elija Añadir.
+  describe-attribute: >-
+    Nuestro primer atributo es el nombre del producto. Asígnele un código y un nombre, y elija el tipo de valor:
+    texto. Márquelo como obligatorio, para que ningún producto pueda guardarse sin él. Y haga que titule el
+    registro: así será el enlace que se muestra en las listas.
+  save-attribute: >-
+    Guarde el atributo. Vuelve a la entidad, y el atributo ya aparece en ella.
+  second-attribute: >-
+    Este es el segundo atributo, el precio. Es un número; el tipo de control decide cómo se ve el campo en el formulario. La lista de atributos muestra ahora los dos.
+  save-entity: >-
+    Guarde la entidad. Sus atributos se guardan junto con ella, así que el nombre se conserva.
+  release: >-
+    El producto está definido, pero todavía es un borrador. Sus usuarios no lo verán hasta que publique una
+    versión. Así, un diseño a medias no llega a la aplicación en funcionamiento.
+  outro: >-
+    Eso es todo lo que necesita una entidad: un código, un nombre y sus atributos. A continuación, dele reglas,
+    un ciclo de vida o un flujo de trabajo en los otros diseñadores.

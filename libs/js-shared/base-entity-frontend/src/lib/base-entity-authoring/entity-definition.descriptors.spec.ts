@@ -78,6 +78,9 @@ describe('createEntityDefinitionDescriptor', () => {
     expect(descriptor.isDeletable?.(own)).toBe(true);
     expect(descriptor.isEditable?.(shared)).toBe(false);
     expect(descriptor.isDeletable?.(shared)).toBe(false);
+    // The row is not loaded yet on a reloaded details page: the rule must answer, not throw.
+    expect(descriptor.isEditable?.(undefined as never)).toBe(true);
+    expect(descriptor.isDeletable?.(undefined as never)).toBe(true);
   });
 
   /**

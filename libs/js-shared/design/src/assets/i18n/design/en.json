@@ -108,5 +108,11 @@
   "base-chat_card_content_1": "One chat per record, or any number of titled topics",
   "base-chat_card_content_2": "Restrict reading, writing and starting by role",
   "base-chat_card_content_3": "Close the chat for writing once the record leaves its states",
-  "base-chat_card_button": "Define chats..."
+  "base-chat_card_button": "Define chats...",
+  "tutorial": {
+    "menu_entity": "Watch the tutorial",
+    "loading": "Loading the tutorial…",
+    "no_video": "The video for this language is not published yet.",
+    "not_found": "This tutorial is not published yet."
+  }
 }
