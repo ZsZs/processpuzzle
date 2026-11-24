@@ -1,0 +1,60 @@
+title: "Workflow Designer: einen Geschäftsprozess modellieren, vom ersten bis zum letzten Schritt"
+
+values: {}
+
+steps:
+  intro: >-
+    Willkommen beim Workflow Designer. Ein Workflow beschreibt, wie Arbeit durch Ihre Organisation läuft: wer was tut, in
+    welcher Reihenfolge, mit welchen Informationen, und was geschieht, wenn etwas schiefgeht. Sobald ein Workflow
+    freigegeben ist, führt die Anwendung ihn aus: Sie weist die Aufgaben den richtigen Personen zu, verfolgt jeden Vorgang
+    und hält fest, was getan wurde. Dieses Tutorial geht einen freigegebenen Workflow durch, die Auftragsabwicklung, von
+    seiner Definition bis zu den Vorgängen, die bereits durchgelaufen sind, damit Sie jeden Bestandteil eines Workflows
+    sehen.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Workflows. Der Designer listet die Workflows Ihrer Organisation.
+  list: >-
+    Jede Zeile ist ein Workflow. Die Spalte Veröffentlichung zeigt, ob er live oder noch ein Entwurf ist, und die Spalte
+    Aktive Instanzen zählt die Vorgänge, die gerade durchlaufen werden. Die Auftragsabwicklung gehört zu den freigegebenen
+    Workflows; öffnen Sie sie, um zu sehen, wie sie definiert ist.
+  definition: >-
+    Die Definition enthält den Namen und die Beschreibung des Workflows. Die Beschreibung ist das Erste, was ein neuer
+    Designer liest, beschreiben Sie also hier den Zweck des Prozesses. Außerdem stehen hier die Version und die Ereignisse,
+    die den Workflow starten. Unterhalb der Definition sind die Bestandteile des Workflows aufgeführt, je ein Abschnitt für
+    jede Art von Element, aus denen ein Prozess besteht.
+  modeler: >-
+    Der Modellierer zeichnet den Prozess. Jede Form ist ein Schritt: eine Aufgabe, die eine Person ausführt, ein Ereignis,
+    das den Ablauf beginnt oder beendet, eine Entscheidung, die ihn in zwei Wege teilt. Die Pfeile zeigen, was worauf folgt.
+    Die Zeichnung ist keine Dekoration: Sie ist der Prozess, dem die Anwendung folgt. Ändert ein Designer das Diagramm,
+    ändert sich der Workflow mit.
+  roles: >-
+    Rollen legen fest, wer die Arbeit ausführen darf. Eine Aufgabe wird einer Rolle zugewiesen, und jede Person mit dieser
+    Rolle kann sie übernehmen. Rollen werden einmal für die ganze Organisation festgelegt, sodass etwa ein Lagermitarbeiter
+    oder eine Buchhalterin in jedem Workflow, der sie braucht, gleich benannt werden.
+  tasks: >-
+    Eine Aufgabe ist eine Arbeitseinheit: ein Schritt im Diagramm, den eine Person ausführt, etwa die Prüfung einer
+    Bestellung oder die Bestätigung eines Versands. Jede Aufgabe nennt die Rolle, die sie ausführt, und welche Informationen
+    sie braucht und erzeugt. Eine Aufgabe kann eigene Teilschritte haben, damit die Person, die sie erledigt, in der
+    richtigen Reihenfolge durch die Arbeit geführt wird.
+  artifacts: >-
+    Artefakte sind die Dinge, die ein Workflow weitergibt: eine Bestellung, eine Rechnung, ein Lieferschein. Ein Artefakt
+    ist entweder eine Entität Ihrer Anwendung oder ein Dokument, und der Workflow legt fest, welches davon jede Aufgabe liest
+    und schreibt. So weiß eine Aufgabe, an welcher Bestellung sie arbeitet, und die nächste Aufgabe findet das Ergebnis der
+    vorigen.
+  tools: >-
+    Werkzeuge sind automatisierte Schritte: ein Aufruf, den die Anwendung selbst ausführt, etwa die Reservierung von Ware
+    oder der Versand einer Bestätigung. Ein Werkzeug übernimmt die Arbeit, die sonst eine Person erledigen müsste, und
+    meldet das Ergebnis zurück, sodass der Workflow weiterlaufen kann, ohne dass jemand wartet.
+  events: >-
+    Ereignisse sind das, worauf ein Workflow hört und was er mitteilt. Eine Bestellung, die an anderer Stelle der
+    Anwendung aufgegeben wird, kann diesen Workflow starten; eine später bestätigte Zahlung kann einen wartenden Vorgang
+    weiterbewegen. Ereignisse verbinden den Workflow mit dem Rest der Anwendung, sodass ein Prozess dort beginnt, wo sein
+    Auslöser liegt, und nicht dort, wo sich jemand daran erinnert, ihn zu starten.
+  instances: >-
+    Schließlich sind die Instanzen die Vorgänge, die tatsächlich gelaufen sind: einer für jede Bestellung, jeweils mit
+    eigenem Fortschritt, eigenen Aufgaben und eigener Historie. Hier steht nichts als Kopie des Entwurfs; es ist die Arbeit,
+    die die Anwendung gerade ausführt oder bereits erledigt hat, und der erste Ort, an dem Sie nachsehen, wenn ein Vorgang
+    festzuhängen scheint.
+  outro: >-
+    Das ist ein Workflow: ein Diagramm aus Schritten, die Rollen, die sie ausführen, die Artefakte, die sie weitergeben, die
+    Werkzeuge, die selbständig handeln, und die Ereignisse, die sie starten und weiterbewegen. Als Nächstes definiert der
+    Chat Designer die Unterhaltungen, die Menschen und Prozesse über die gemeinsame Arbeit führen können.

@@ -1,0 +1,55 @@
+title: "Workflow Designer: üzleti folyamat modellezése, az első lépéstől az utolsóig"
+
+values: {}
+
+steps:
+  intro: >-
+    Üdvözöljük a Workflow Designerben. A workflow leírja, hogyan halad a munka a szervezetében: ki mit csinál, milyen
+    sorrendben, milyen információval, és mi történik, ha valami rosszul sül el. Amint egy workflow közzé van téve, az
+    alkalmazás futtatja: a feladatokat a megfelelő személyekhez rendeli, minden ügyet nyomon követ, és rögzíti, mi történt.
+    Ez a bemutató egy közzétett workflow-t, a Rendelésteljesítést járja végig, a definíciójától a már lefutott ügyekig, hogy
+    lásson minden elemet, amiből egy workflow áll.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Workflow-k kártyát. A tervező felsorolja a szervezete workflow-jait.
+  list: >-
+    Minden sor egy workflow. A Közzététel oszlop megmutatja, hogy élesben van-e vagy még piszkozat, az Aktív példányok
+    oszlop pedig azt, hány ügy fut rajta jelenleg. A Rendelésteljesítés a közzétett workflow-k egyike; nyissa meg, hogy
+    lássa, hogyan van definiálva.
+  definition: >-
+    A definíció tartalmazza a workflow nevét és leírását. A leírás az első, amit egy új tervező elolvas, ezért itt írja le a
+    folyamat célját. Itt áll a verzió és azok az események is, amelyek elindítják a workflow-t. A definíció alatt a
+    workflow elemei láthatók, minden folyamatfajtához külön szakasz.
+  modeler: >-
+    A modellező rajzolja meg a folyamatot. Minden alakzat egy lépés: egy feladat, amelyet személy végez, egy esemény, amely
+    elindítja vagy lezárja a folyamatot, egy döntés, amely kettéosztja. A nyilak megmutatják, mi mi után következik. A rajz
+    nem díszítés: ez az a folyamat, amelyet az alkalmazás követ, és amikor a tervező módosítja a diagramot, a workflow is
+    vele együtt változik.
+  roles: >-
+    A szerepkörök azt határozzák meg, ki végezheti a munkát. Egy feladat egy szerepkörhöz tartozik, és annak minden
+    birtokosa felvállalhatja. A szerepköröket egyszer, az egész szervezetre definiálják, így egy raktáros vagy egy könyvelő
+    minden olyan workflow-ban ugyanúgy szerepel, amelyhez szükség van rá.
+  tasks: >-
+    A feladat egy munkaegység: a diagram egy lépése, amelyet személy végez, például egy rendelés ellenőrzése vagy egy szállítás
+    megerősítése. Minden feladat megnevezi a szerepkört, amely elvégzi, és azt az információt, amelyet igényel és előállít.
+    A feladatnak lehetnek saját részlépései, így aki végzi, a helyes sorrendben kap útmutatást.
+  artifacts: >-
+    Az artefaktumok azok a dolgok, amelyeket a workflow továbbad: egy rendelés, egy számla, egy szállítólevél. Az artefaktum
+    vagy az alkalmazás egyik entitása, vagy egy dokumentum, és a workflow megadja, hogy melyiket olvassa és írja az egyes
+    feladat. Így tudja a feladat, melyik rendelésen dolgozik, és a következő feladat megtalálja az előző eredményét.
+  tools: >-
+    Az eszközök automatizált lépések: olyan hívás, amelyet az alkalmazás magától indít, például készlet lefoglalása vagy
+    visszaigazolás küldése. Az eszköz azt a munkát végzi el, amelyet egyébként egy személynek kellene, és visszajelez, így a
+    workflow úgy folytatódhat, hogy senkinek nem kell várnia rá.
+  events: >-
+    Az események azok, amire a workflow figyel, és amiket közzétesz. Az alkalmazás más részén leadott rendelés elindíthatja
+    ezt a workflow-t; egy később visszaigazolt fizetés tovább léptethet egy várakozó ügyet. Az események kötik össze a
+    workflow-t az alkalmazás többi részével, így a folyamat ott kezdődik, ahol az indító esemény történik, nem pedig ahol
+    valaki emlékszik elindítani.
+  instances: >-
+    Végül a példányok azok az ügyek, amelyek ténylegesen lefutottak: minden rendeléshez egy, mindegyiknek saját haladással,
+    saját feladatokkal és saját előzménnyel. Itt semmi nem a tervezet másolata; ez az a munka, amelyet az alkalmazás éppen
+    végez vagy már elvégzett, és ez az első hely, ahol akkor nézzen, ha egy ügy elakadni látszik.
+  outro: >-
+    Ez egy workflow: lépések diagramja, az őket végző szerepkörök, az általuk továbbadott artefaktumok, a saját maguktól
+    cselekvő eszközök, és az események, amelyek elindítják és továbbviszik őket. Következőként a Chat Designer határozza meg
+    azokat a beszélgetéseket, amelyeket az emberek és a folyamatok a közös munkájukról folytathatnak.
