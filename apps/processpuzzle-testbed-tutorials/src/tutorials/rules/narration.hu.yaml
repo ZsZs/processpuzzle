@@ -1,0 +1,31 @@
+title: "Rule Designer: szabályokkal ellenőrizze az adatait"
+
+values:
+  ruleName: Az összeg nem negatív
+  ruleMessage: Az összeg nem lehet negatív.
+
+steps:
+  intro: >-
+    Üdvözöljük a Rule Designerben. A szabály ellenőrzi a felhasználók által megadott adatokat, és jelzi nekik, ha
+    valami nincs rendben. Egyszer írja meg, és az entitás minden űrlapja alkalmazza.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Szabályok kártyát.
+  list: >-
+    Ezek a szervezete szabályai. Minden szabály egy entitáshoz tartozik, és súlyossággal rendelkezik: a hiba
+    megállítja a mentést, a figyelmeztetés csak tájékoztat.
+  new: >-
+    Írjunk egy új szabályt. Kattintson az Új gombra.
+  identify: >-
+    Minden szabálynak van neve, amelyet a tervezők látnak, és kontextusa: az entitás, amelyet ellenőriz. Itt a
+    kontextus Dynamic Entity, a súlyosság pedig hiba, így a sértés megállítja a mentést.
+  write-expression: >-
+    A kifejezés egy feltétel, amelynek teljesülnie kell ahhoz, hogy az adatok érvényesek legyenek. Az üres összeg
+    megengedett, bármely más összeg nem lehet negatív. Az üzenet az, amit a felhasználó lát, ha a szabály sérül.
+  save: >-
+    Mentse el a szabályt. Azonnal megjelenik a listában, a kontextusával és a súlyosságával együtt.
+  show-result: >-
+    Mostantól az entitás minden űrlapja alkalmazza a szabályt. A negatív összeget a rendszer elutasítja, ezzel az
+    üzenettel.
+  outro: >-
+    Ez egy szabály: feltétel egy entitáson, üzenettel és súlyossággal. Következőként az állapotgép dönti el, mi
+    történhet egy objektummal, miután az adatai érvényesek.

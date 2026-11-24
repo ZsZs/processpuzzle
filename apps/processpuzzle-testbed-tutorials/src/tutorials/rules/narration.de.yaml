@@ -1,0 +1,32 @@
+title: "Rule Designer: Ihre Daten mit Regeln prüfen"
+
+values:
+  ruleName: Betrag ist nicht negativ
+  ruleMessage: Der Betrag darf nicht negativ sein.
+
+steps:
+  intro: >-
+    Willkommen beim Rule Designer. Eine Regel prüft die Daten, die Ihre Benutzer eingeben, und zeigt ihnen an, wenn
+    etwas nicht stimmt. Sie schreiben sie einmal, und jedes Formular dieser Entität wendet sie an.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Regeln.
+  list: >-
+    Dies sind die Regeln Ihrer Organisation. Jede Regel gehört zu einer Entität und hat einen Schweregrad: ein Fehler
+    stoppt das Speichern, eine Warnung informiert den Benutzer nur.
+  new: >-
+    Schreiben wir eine neue Regel. Klicken Sie auf Neu.
+  identify: >-
+    Jede Regel braucht einen Namen, den die Designer sehen, und einen Kontext: die Entität, die sie prüft. Hier ist
+    der Kontext Dynamic Entity und der Schweregrad Fehler, sodass ein Verstoß das Speichern stoppt.
+  write-expression: >-
+    Der Ausdruck ist eine Bedingung, die erfüllt sein muss, damit die Daten gültig sind. Ein leerer Betrag ist
+    erlaubt, jeder andere Betrag darf nicht negativ sein. Die Meldung ist das, was der Benutzer liest, wenn die
+    Regel verletzt wird.
+  save: >-
+    Speichern Sie die Regel. Sie erscheint sofort in der Liste, mit Kontext und Schweregrad.
+  show-result: >-
+    Ab jetzt wendet jedes Formular dieser Entität die Regel an. Ein negativer Betrag wird abgelehnt, mit dieser
+    Meldung.
+  outro: >-
+    Das ist eine Regel: eine Bedingung an einer Entität, mit Meldung und Schweregrad. Als Nächstes bestimmt der
+    Zustandsautomat, was mit einem Objekt geschehen darf, sobald seine Daten gültig sind.

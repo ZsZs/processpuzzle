@@ -1,0 +1,32 @@
+title: "Rule Designer: compruebe sus datos con reglas"
+
+values:
+  ruleName: El importe no es negativo
+  ruleMessage: El importe no puede ser negativo.
+
+steps:
+  intro: >-
+    Bienvenido al Rule Designer. Una regla comprueba los datos que introducen sus usuarios, y les indica cuándo algo
+    no está bien. La escribe una vez, y cada formulario de esa entidad la aplica.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Reglas.
+  list: >-
+    Estas son las reglas de su organización. Cada regla pertenece a una entidad y tiene una gravedad: un error
+    detiene el guardado, una advertencia solo informa al usuario.
+  new: >-
+    Escribamos una regla nueva. Haga clic en Nuevo.
+  identify: >-
+    Toda regla necesita un nombre, que ven los diseñadores, y un contexto: la entidad que comprueba. Aquí el
+    contexto es Dynamic Entity y la gravedad es error, así que una infracción detiene el guardado.
+  write-expression: >-
+    La expresión es una condición que debe cumplirse para que los datos sean válidos. Un importe vacío está
+    permitido, y cualquier otro importe no puede ser negativo. El mensaje es lo que lee el usuario cuando la regla
+    falla.
+  save: >-
+    Guarde la regla. Aparece en la lista al instante, con su contexto y su gravedad.
+  show-result: >-
+    A partir de ahora, cada formulario de esta entidad aplica la regla. Un importe negativo se rechaza, con este
+    mensaje.
+  outro: >-
+    Eso es una regla: una condición sobre una entidad, con un mensaje y una gravedad. A continuación, la máquina de
+    estados decide qué puede pasarle a un objeto una vez que sus datos son válidos.
