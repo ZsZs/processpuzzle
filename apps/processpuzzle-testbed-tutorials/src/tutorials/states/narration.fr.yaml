@@ -1,0 +1,42 @@
+title: "State Designer : définir le cycle de vie d'une entité"
+
+values:
+  machineName: Cycle de vie du produit
+  machineDescription: Les étapes que traverse un produit.
+  stateNameNew: Nouveau
+  stateNameActive: Actif
+  stateNameDiscontinued: Arrêté
+
+steps:
+  intro: >-
+    Bienvenue dans le State Designer. Une machine d'états décrit les étapes que traverse un objet d'une entité, par
+    exemple nouveau, actif ou arrêté. Elle détermine les changements autorisés depuis chaque étape.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte États.
+  list: >-
+    Voici les machines d'états de votre organisation, une par entité. La colonne Publication indique si une machine est
+    déjà active, ou encore un brouillon.
+  new: >-
+    Définissons une nouvelle machine d'états. Cliquez sur Nouveau.
+  identify: >-
+    Une machine appartient à une entité, ici Produit, et a besoin d'un nom et d'une description pour les concepteurs qui
+    suivent.
+  choose-attribute: >-
+    L'attribut d'état est le champ de l'entité qui contient l'étape courante. Ici, c'est Statut. L'état initial est
+    l'étape dans laquelle un nouveau produit commence. Nous ajouterons les étapes dans un instant.
+  save-machine: >-
+    Enregistrez la machine comme brouillon. Elle apparaît dans la liste avec son entité et son état initial, et elle
+    n'est pas encore active.
+  find: >-
+    Ouvrez à nouveau la machine pour ajouter ses étapes.
+  add-states: >-
+    Chaque étape est un état avec une clé et un nom. Ajoutez Nouveau, puis Actif, puis Arrêté. Arrêté est final : une
+    fois un produit arrivé à cette étape, il n'en repart pas.
+  save-states: >-
+    Enregistrez la machine. Les étapes sont enregistrées avec elle, elles sont donc conservées.
+  show-result: >-
+    La machine liste maintenant ses étapes. Une publication la rend active pour chaque produit, elle doit donc avoir au
+    moins une étape.
+  outro: >-
+    Voilà une machine d'états : les étapes d'une entité, celle dans laquelle elle commence, et celle qu'elle ne quitte
+    pas. Ensuite, le concepteur de workflows utilise ces étapes pour piloter les actions d'un processus.

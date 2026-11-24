@@ -111,6 +111,7 @@
   "base-chat_card_button": "Définir des chats...",
   "tutorial": {
     "menu_entity": "Voir le tutoriel",
-    "menu_rules": "Voir le tutoriel"
+    "menu_rules": "Voir le tutoriel",
+    "menu_states": "Voir le tutoriel"
   }
 }

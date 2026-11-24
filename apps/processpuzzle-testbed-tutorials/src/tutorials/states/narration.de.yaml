@@ -1,0 +1,42 @@
+title: "State Designer: den Lebenszyklus einer Entität festlegen"
+
+values:
+  machineName: Produkt-Lebenszyklus
+  machineDescription: Die Stufen, die ein Produkt durchläuft.
+  stateNameNew: Neu
+  stateNameActive: Aktiv
+  stateNameDiscontinued: Eingestellt
+
+steps:
+  intro: >-
+    Willkommen beim State Designer. Ein Zustandsautomat beschreibt die Stufen, die ein Objekt einer Entität durchläuft,
+    etwa neu, aktiv oder eingestellt. Er legt fest, welche Änderungen von jeder Stufe aus erlaubt sind.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Zustände.
+  list: >-
+    Dies sind die Zustandsautomaten Ihrer Organisation, einer für jede Entität. Die Spalte Veröffentlichung zeigt, ob
+    ein Automat bereits live ist oder noch ein Entwurf.
+  new: >-
+    Definieren wir einen neuen Zustandsautomaten. Klicken Sie auf Neu.
+  identify: >-
+    Ein Automat gehört zu einer Entität, hier Produkt, und braucht einen Namen und eine Beschreibung für die Designer,
+    die nach Ihnen kommen.
+  choose-attribute: >-
+    Das Zustandsattribut ist das Feld der Entität, das die aktuelle Stufe hält. Hier ist es Status. Der Anfangszustand
+    ist die Stufe, in der ein neues Produkt beginnt. Die Stufen fügen wir gleich hinzu.
+  save-machine: >-
+    Speichern Sie den Automaten als Entwurf. Er steht mit seiner Entität und seinem Anfangszustand in der Liste und ist
+    noch nicht live.
+  find: >-
+    Öffnen Sie den Automaten erneut, um seine Stufen hinzuzufügen.
+  add-states: >-
+    Jede Stufe ist ein Zustand mit einem Schlüssel und einem Namen. Fügen Sie Neu hinzu, dann Aktiv und dann
+    Eingestellt. Eingestellt ist endgültig: Ein Produkt, das dort angekommen ist, verlässt diese Stufe nicht mehr.
+  save-states: >-
+    Speichern Sie den Automaten. Die Stufen werden mit ihm gespeichert und bleiben erhalten.
+  show-result: >-
+    Der Automat listet jetzt seine Stufen. Eine Veröffentlichung macht ihn für jedes Produkt live, deshalb braucht er
+    mindestens eine Stufe.
+  outro: >-
+    Das ist ein Zustandsautomat: die Stufen einer Entität, die Stufe, in der sie beginnt, und die, die sie nicht
+    verlässt. Als Nächstes nutzt der Workflow-Designer diese Stufen, um die Schritte eines Prozesses zu steuern.
