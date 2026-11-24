@@ -52,6 +52,10 @@ public class StateMachineTopologyValidator {
     public void validate(String orgKey, String entityName, String stateAttributeKey, String initialStateKey,
                          List<State> states, List<Transition> transitions) {
         validateStateAttribute(orgKey, entityName, stateAttributeKey);
+        if (states == null || states.isEmpty()) {
+            // A draft may be saved before it has states; the release check refuses it until it has them.
+            return;
+        }
         Set<String> stateKeys = uniqueStateKeys(states);
         requireKnownState(initialStateKey, stateKeys, "initialStateKey");
         validateTransitions(states, stateKeys, transitions);
@@ -136,9 +140,6 @@ public class StateMachineTopologyValidator {
     }
 
     private Set<String> uniqueStateKeys(List<State> states) {
-        if (states == null || states.isEmpty()) {
-            throw new IllegalArgumentException("A state machine must declare at least one state");
-        }
         Set<String> keys = new HashSet<>();
         for (State state : states) {
             if (!keys.add(state.key())) {

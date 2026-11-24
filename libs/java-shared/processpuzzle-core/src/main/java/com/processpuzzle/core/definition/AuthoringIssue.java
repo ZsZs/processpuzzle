@@ -18,4 +18,8 @@ public record AuthoringIssue(Severity severity, String path, String text) {
     public static AuthoringIssue error(String path, String text) {
         return new AuthoringIssue(Severity.ERROR, path, text);
     }
+
+    public static AuthoringIssue warning(String path, String text) {
+        return new AuthoringIssue(Severity.WARNING, path, text);
+    }
 }

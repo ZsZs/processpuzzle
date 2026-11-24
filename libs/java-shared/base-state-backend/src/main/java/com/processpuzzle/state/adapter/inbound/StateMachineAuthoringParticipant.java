@@ -114,6 +114,9 @@ public class StateMachineAuthoringParticipant implements DefinitionAuthoringPart
     public List<AuthoringIssue> validate(String orgKey, String key) {
         return repository.findByOrgKeyAndEntityNameAndChannel(orgKey, key, Channel.DRAFT)
             .map(draft -> {
+                if (draft.getStates() == null || draft.getStates().isEmpty()) {
+                    return List.of(AuthoringIssue.warning("", "This machine has no states yet. It is saved as a draft and cannot be released until it has at least one."));
+                }
                 try {
                     validator.validate(orgKey, key, draft.getStateAttributeKey(), draft.getInitialStateKey(),
                         draft.getStates(), draft.getTransitions());

@@ -115,6 +115,13 @@ public class StateMachineReleaseParticipant implements ReleaseParticipant {
     public List<ReleaseProblem> check(String orgKey, ReleaseCandidate candidate) {
         Map<String, StateMachineDefinition> drafts = machinesOf(orgKey, Channel.DRAFT);
         List<ReleaseProblem> problems = new ArrayList<>();
+        // A draft is saved before it has states, so the release is where a state-less machine is refused.
+        for (StateMachineDefinition draft : drafts.values()) {
+            if (draft.getStates() == null || draft.getStates().isEmpty()) {
+                problems.add(ReleaseProblem.error(kind(), draft.getEntityName(), "state.release.noStates",
+                        "The state machine has no states, so it cannot be released. Add at least one state first."));
+            }
+        }
         for (StateMachineDefinition current : machinesOf(orgKey, Channel.RELEASED).values()) {
             StateMachineDefinition draft = drafts.get(current.getEntityName());
             if (draft != null && machineContent(draft).equals(machineContent(current))) {

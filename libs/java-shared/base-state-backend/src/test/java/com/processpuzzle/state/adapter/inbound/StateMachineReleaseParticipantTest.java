@@ -150,6 +150,21 @@ class StateMachineReleaseParticipantTest {
         assertThat(participant.check(ORG, EVERYTHING)).isEmpty();
     }
 
+    /** A machine may be saved as a draft before it has states, but it is refused at release until it has one. */
+    @Test
+    void refusesToReleaseADraftWithoutStates() {
+        saveDraft(StateMachineDefinition.builder()
+            .orgKey(ORG).name("Invoice").entityName("invoice").stateAttributeKey("status").initialStateKey("draft")
+            .states(List.of()).transitions(List.of()).build());
+
+        assertThat(participant.check(ORG, EVERYTHING))
+            .singleElement()
+            .satisfies(problem -> {
+                assertThat(problem.severity()).isEqualTo(ReleaseProblem.Severity.ERROR);
+                assertThat(problem.errorId()).isEqualTo("state.release.noStates");
+            });
+    }
+
     /** A layout saved before its machine is a draft too: the release carries it, so it is pending. */
     @Test
     void aLayoutWithoutAMachineIsADraftAndReleasedLikeOne() {
