@@ -111,6 +111,7 @@
   "base-chat_card_button": "Csevegések meghatározása...",
   "tutorial": {
     "menu_entity": "Oktatóvideó megtekintése",
-    "menu_rules": "Tutoriál megnézése"
+    "menu_rules": "Tutoriál megnézése",
+    "menu_states": "Tutoriál megnézése"
   }
 }

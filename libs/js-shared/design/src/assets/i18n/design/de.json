@@ -111,6 +111,7 @@
   "base-chat_card_button": "Chats definieren...",
   "tutorial": {
     "menu_entity": "Tutorial ansehen",
-    "menu_rules": "Tutorial ansehen"
+    "menu_rules": "Tutorial ansehen",
+    "menu_states": "Tutorial ansehen"
   }
 }

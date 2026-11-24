@@ -1,0 +1,39 @@
+title: "State Designer: define the lifecycle of an entity"
+
+values:
+  machineName: Product lifecycle
+  machineDescription: The stages a product goes through.
+  stateNameNew: New
+  stateNameActive: Active
+  stateNameDiscontinued: Discontinued
+
+steps:
+  intro: >-
+    Welcome to the State Designer. A state machine describes the stages an object of an entity goes through, such as
+    new, active or discontinued. It decides which changes are allowed from each stage.
+  open: >-
+    From the Designer Home, open the States card.
+  list: >-
+    These are the state machines of your organization, one for each entity. The Release column tells you whether a
+    machine is already live, or still a draft.
+  new: >-
+    Let's define a new state machine. Click New.
+  identify: >-
+    A machine belongs to an entity, here Product, and needs a name and a description for the designers who follow.
+  choose-attribute: >-
+    The state attribute is the entity field that holds the current stage. Here it is Status. The initial state is the
+    stage a new product starts in. We will add the stages in a moment.
+  save-machine: >-
+    Save the machine as a draft. It is listed with its entity and its initial state, and it is not live yet.
+  find: >-
+    Open the machine again, to add its stages.
+  add-states: >-
+    Each stage is a state with a key and a name. Add New, then Active, and then Discontinued. Discontinued is final:
+    once a product is there, it does not leave.
+  save-states: >-
+    Save the machine. The stages are stored with it, so they are kept.
+  show-result: >-
+    The machine now lists its stages. A release makes it live for every product, so it has to have at least one stage.
+  outro: >-
+    That is a state machine: the stages of an entity, the first one it starts in, and the one it cannot leave. Next, the
+    workflow designer uses those stages to drive the steps of a process.
