@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Publishes the recorded tutorials: for every <tutorial>/<language> under tmp/out, uploads the MP4 to the object store
- * and creates or updates that language's row of the `tutorial` entity. The viewer in the designer reads those rows.
+ * and creates or updates that language's row of the `processpuzzle-tutorial` entity. The video-player widget reads those rows.
  *
  *   TUTORIAL_BASE_URL=http://localhost:9090 ENVIRONMENT=ci node apps/processpuzzle-testbed-tutorials/src/publish/publish.mjs [tutorial-name]
  *
@@ -15,7 +15,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(here, '..', '..', 'tmp', 'out');
 const BASE = (process.env.TUTORIAL_BASE_URL ?? 'http://localhost:9090').replace(/\/?$/, '/');
 const ENVIRONMENT = process.env.ENVIRONMENT ?? 'ci';
-const ENTITY = 'tutorial';
+const ENTITY = 'processpuzzle-tutorial';
 
 async function runtimeConfig(file) {
   const response = await fetch(new URL(`run-time-conf/${file}`, BASE));
@@ -45,7 +45,7 @@ async function upload(objectStore, file, name) {
 }
 
 async function findRow(backend, tutorialKey, language) {
-  const rsql = encodeURIComponent(`tutorialKey==${tutorialKey};language==${language}`);
+  const rsql = encodeURIComponent(`name==${tutorialKey};language==${language}`);
   const body = await (await check(await fetch(`${backend}/entities/${ENTITY}?size=5&rsql=${rsql}`), 'listing tutorials')).json();
   return body.content?.[0];
 }
@@ -56,10 +56,9 @@ function transcriptOf(markdown) {
 }
 
 async function publishLanguage(backend, objectStore, tutorialKey, language, directory) {
-  const meta = JSON.parse(await readFile(path.join(directory, 'tutorial.json'), 'utf8'));
   const transcript = transcriptOf(await readFile(path.join(directory, `${tutorialKey}.md`), 'utf8'));
   const video = await upload(objectStore, path.join(directory, `${tutorialKey}.mp4`), `${tutorialKey}-${language}.mp4`);
-  const payload = { tutorialKey, language, title: meta.title, transcript, video };
+  const payload = { name: tutorialKey, language, text: transcript, video };
 
   const existing = await findRow(backend, tutorialKey, language);
   if (existing) {

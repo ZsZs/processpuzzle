@@ -799,3 +799,33 @@ widgetDefinitions:
     - name: slotSelected
       type: OBJECT
       description: 'The empty slot the visitor clicked or dragged: its start, its exclusive end and whether it is a whole day.'
+  - key: video-player
+    name: Video player
+    translocoId: base_widget.video_player.name
+    description: Plays the video an entity row holds, in the application language, beside an optional text attribute of the same row.
+    category: Content
+    icon: smart_display
+    propsSchema:
+      type: object
+      properties:
+        entityName:
+          type: string
+          title: Entity name
+          description: The entity whose rows are read, by its definition code.
+        query:
+          type: string
+          title: Query
+          description: An RSQL query that selects the row, such as name==entity-designer.
+        attribute:
+          type: string
+          title: Video attribute
+          description: The ARTIFACT attribute that holds the video.
+        textAttribute:
+          type: string
+          title: Text attribute
+          description: A text attribute shown beneath the video. Nothing is shown when left empty.
+      required:
+      - entityName
+      - query
+      - attribute
+      additionalProperties: false

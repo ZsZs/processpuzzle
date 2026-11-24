@@ -141,7 +141,7 @@ class DefaultEntityLoaderTest {
                 .containsExactly("dynamic-embedded-address", "dynamic-embedded-detail", "dynamic-entity",
                         "order-line", "order", "special-order-line", "special-order", "boat",
                         "race", "race-registration", "race-observation", "demo-component-one", "demo-component-two", "demo-root",
-                        "tutorial");
+                        "processpuzzle-tutorial");
 
         ArgumentCaptor<String> codeCaptor = ArgumentCaptor.forClass(String.class);
         @SuppressWarnings("unchecked")

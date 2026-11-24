@@ -142,5 +142,8 @@
   },
   "navigate_back": {
     "name": "Vissza"
+  },
+  "video_player": {
+    "name": "Videólejátszó"
   }
 }

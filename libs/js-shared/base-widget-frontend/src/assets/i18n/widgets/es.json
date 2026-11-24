@@ -38,5 +38,10 @@
   "sidenav_toggle": {
     "hide": "Ocultar el menú",
     "show": "Mostrar el menú"
+  },
+  "video_player": {
+    "loading": "Cargando el vídeo…",
+    "no_video": "El vídeo en este idioma todavía no está publicado.",
+    "not_found": "Este vídeo todavía no está publicado."
   }
 }

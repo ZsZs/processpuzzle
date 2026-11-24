@@ -38,5 +38,10 @@
   "sidenav_toggle": {
     "hide": "Hide the menu",
     "show": "Show the menu"
+  },
+  "video_player": {
+    "loading": "Loading the video…",
+    "no_video": "The video for this language is not published yet.",
+    "not_found": "This video is not published yet."
   }
 }
