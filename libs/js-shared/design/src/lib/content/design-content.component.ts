@@ -77,6 +77,7 @@ export class DesignContentComponent {
       subtitle: 'base-workflow_card_subtitle',
       content: ['base-workflow_card_content', 'base-workflow_card_content_1', 'base-workflow_card_content_2', 'base-workflow_card_content_3'],
       actions: [{ link: `${this.prefix}/design/workflows`, caption: 'base-workflow_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_workflows', link: `${this.prefix}/design/tutorials/workflows` }],
       translocoPrefix: 'design',
     },
     {

@@ -1,0 +1,54 @@
+title: "Workflow Designer: modele un proceso de negocio, desde el primer paso hasta el último"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenido al Workflow Designer. Un workflow describe cómo circula el trabajo en su organización: quién hace qué, en
+    qué orden, con qué información, y qué ocurre cuando algo sale mal. Una vez publicado, la aplicación lo ejecuta: asigna
+    las tareas a las personas adecuadas, sigue cada caso y registra lo que se ha hecho. Este tutorial recorre un workflow
+    publicado, la gestión de pedidos, desde su definición hasta los casos que ya han pasado por él, para que vea cada parte
+    de la que se compone un workflow.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Workflows. El diseñador enumera los workflows de su organización.
+  list: >-
+    Cada fila es un workflow. La columna Publicación indica si está activo o sigue siendo un borrador, y la columna
+    Instancias activas cuenta los casos que lo recorren en este momento. La gestión de pedidos es uno de los workflows
+    publicados; ábralo para ver cómo está definido.
+  definition: >-
+    La definición recoge el nombre del workflow y su descripción. La descripción es lo primero que lee un diseñador nuevo,
+    así que explique aquí para qué sirve el proceso. También registra la versión y los eventos que inician el workflow. Bajo
+    la definición se enumeran las partes del workflow, una sección para cada tipo de elemento del que se compone un proceso.
+  modeler: >-
+    El modelador dibuja el proceso. Cada forma es un paso: una tarea que realiza una persona, un evento que inicia o cierra
+    el flujo, una decisión que lo divide en dos. Las flechas indican qué sigue a qué. El dibujo no es decorativo: es el
+    proceso que sigue la aplicación, y cuando un diseñador cambia el diagrama, el workflow cambia con él.
+  roles: >-
+    Los roles indican quién puede realizar el trabajo. Una tarea se asigna a un rol, y toda persona que tenga ese rol puede
+    tomarla. Los roles se definen una sola vez para toda la organización, así que un almacenero o un contable se nombra igual
+    en cada workflow que lo necesite.
+  tasks: >-
+    Una tarea es una unidad de trabajo: un paso del diagrama que realiza una persona, como revisar un pedido o confirmar un
+    envío. Cada tarea indica el rol que la realiza, y qué información necesita y produce. Una tarea puede tener pasos propios,
+    para que quien la realiza vaya siendo guiado en el orden correcto.
+  artifacts: >-
+    Los artefactos son las cosas que el workflow se pasa de unos pasos a otros: un pedido, una factura, un albarán. Un
+    artefacto es una entidad de su aplicación o un documento, y el workflow declara cuál lee y cuál escribe cada tarea. Así
+    sabe una tarea sobre qué pedido trabaja, y la siguiente encuentra el resultado de la anterior.
+  tools: >-
+    Las herramientas son pasos automatizados: una llamada que la aplicación hace por sí misma, como reservar existencias o
+    enviar una confirmación. Una herramienta hace el trabajo que, si no, tendría que hacer una persona, y devuelve el
+    resultado, así que el workflow puede seguir sin que nadie espere.
+  events: >-
+    Los eventos son lo que un workflow escucha y lo que anuncia. Un pedido realizado en otra parte de la aplicación puede
+    iniciar este workflow; un pago confirmado más tarde puede hacer avanzar un caso en espera. Los eventos conectan el
+    workflow con el resto de la aplicación, así que un proceso empieza donde ocurre su disparador, no donde alguien recuerda
+    iniciarlo.
+  instances: >-
+    Por último, las instancias son los casos que de verdad se han ejecutado: uno por cada pedido, cada uno con su propio
+    avance, sus propias tareas y su propio historial. Aquí nada es una copia del diseño; es el trabajo que la aplicación
+    está haciendo o ya ha hecho, y el primer lugar donde mirar cuando un caso parece atascado.
+  outro: >-
+    Eso es un workflow: un diagrama de pasos, los roles que los realizan, los artefactos que se transmiten, las herramientas
+    que actúan por sí solas y los eventos que los inician y los hacen avanzar. A continuación, el Chat Designer define las
+    conversaciones que las personas y los procesos pueden mantener sobre el trabajo que comparten.

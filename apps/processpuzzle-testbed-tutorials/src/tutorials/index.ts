@@ -4,6 +4,7 @@ import { DOCUMENTS } from './documents/documents.tutorial';
 import { RULES } from './rules/rules.tutorial';
 import { STATES_TUTORIAL } from './states/states.tutorial';
 import { CALCULATIONS } from './calculations/calculations.tutorial';
+import { WORKFLOWS } from './workflows/workflows.tutorial';
 
 /** Every tutorial, in the order of the Designer Home cards. */
-export const TUTORIALS: Tutorial[] = [ENTITY_DESIGNER, DOCUMENTS, RULES, STATES_TUTORIAL, CALCULATIONS];
+export const TUTORIALS: Tutorial[] = [ENTITY_DESIGNER, DOCUMENTS, RULES, STATES_TUTORIAL, CALCULATIONS, WORKFLOWS];

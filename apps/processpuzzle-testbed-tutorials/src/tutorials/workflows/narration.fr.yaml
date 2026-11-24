@@ -1,0 +1,59 @@
+title: "Workflow Designer : modéliser un processus métier, de la première étape à la dernière"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenue dans le Workflow Designer. Un workflow décrit comment le travail circule dans votre organisation : qui fait
+    quoi, dans quel ordre, avec quelles informations, et ce qui se passe quand quelque chose tourne mal. Une fois un
+    workflow publié, l'application l'exécute : elle attribue les tâches aux bonnes personnes, suit chaque dossier et
+    enregistre ce qui a été fait. Ce tutoriel parcourt un workflow publié, la préparation des commandes, depuis sa
+    définition jusqu'aux dossiers qui l'ont déjà traversé, afin que vous voyiez chaque élément dont un workflow est
+    composé.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Workflows. Le concepteur liste les workflows de votre organisation.
+  list: >-
+    Chaque ligne est un workflow. La colonne Publication indique s'il est actif ou encore un brouillon, et la colonne
+    Instances actives compte les dossiers qui le traversent en ce moment. La préparation des commandes fait partie des
+    workflows publiés ; ouvrez-la pour voir comment elle est définie.
+  definition: >-
+    La définition contient le nom du workflow et sa description. La description est la première chose que lit un nouveau
+    concepteur, décrivez donc ici la finalité du processus. Elle indique aussi la version et les événements qui démarrent le
+    workflow. Sous la définition figurent les éléments du workflow, une section pour chaque sorte d'élément dont un
+    processus est fait.
+  modeler: >-
+    Le modeleur dessine le processus. Chaque forme est une étape : une tâche qu'une personne accomplit, un événement qui
+    démarre ou termine le déroulement, une décision qui le sépare en deux. Les flèches indiquent ce qui suit quoi. Le dessin
+    n'est pas décoratif : c'est le processus que suit l'application, et quand un concepteur modifie le diagramme, le
+    workflow change avec lui.
+  roles: >-
+    Les rôles désignent qui peut faire le travail. Une tâche est confiée à un rôle, et toute personne qui détient ce rôle
+    peut la prendre en charge. Les rôles sont définis une seule fois pour toute l'organisation, donc un magasinier ou un
+    comptable porte le même nom dans chaque workflow qui en a besoin.
+  tasks: >-
+    Une tâche est une unité de travail : une étape du diagramme qu'une personne exécute, comme la vérification d'une
+    commande ou la confirmation d'une expédition. Chaque tâche indique le rôle qui l'exécute, ainsi que les informations
+    qu'elle requiert et produit. Une tâche peut comporter ses propres sous-étapes, pour que la personne qui la réalise soit
+    guidée dans le bon ordre.
+  artifacts: >-
+    Les artefacts sont les objets que le workflow se transmet : une commande, une facture, un bon de livraison. Un artefact
+    est soit une entité de votre application, soit un document, et le workflow déclare lequel chaque tâche lit et écrit.
+    C'est ainsi qu'une tâche sait sur quelle commande elle travaille, et que la suivante retrouve le résultat de la
+    précédente.
+  tools: >-
+    Les outils sont des étapes automatisées : un appel que l'application effectue seule, comme la réservation d'un stock ou
+    l'envoi d'une confirmation. Un outil fait le travail qu'une personne devrait sinon faire, et il rend son résultat, si
+    bien que le workflow peut continuer sans que personne n'attende.
+  events: >-
+    Les événements sont ce qu'un workflow écoute et ce qu'il annonce. Une commande passée ailleurs dans l'application peut
+    démarrer ce workflow ; un paiement confirmé plus tard peut faire avancer un dossier en attente. Les événements relient
+    le workflow au reste de l'application : un processus commence là où se produit son déclencheur, et non là où quelqu'un
+    se souvient de le lancer.
+  instances: >-
+    Enfin, les instances sont les dossiers qui ont réellement été traités : un pour chaque commande, chacun avec sa propre
+    progression, ses propres tâches et son propre historique. Rien ici n'est une copie du modèle ; ce sont les travaux que
+    l'application exécute ou a déjà exécutés, et le premier endroit où regarder quand un dossier semble bloqué.
+  outro: >-
+    Voilà un workflow : un diagramme d'étapes, les rôles qui les exécutent, les artefacts qu'elles se transmettent, les
+    outils qui agissent seuls, et les événements qui les démarrent et les font avancer. Ensuite, le Chat Designer définit
+    les conversations que les personnes et les processus peuvent avoir au sujet du travail qu'ils partagent.
