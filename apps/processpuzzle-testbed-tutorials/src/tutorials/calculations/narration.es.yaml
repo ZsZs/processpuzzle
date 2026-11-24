@@ -1,0 +1,54 @@
+title: "Calculation Designer: derive valores de sus datos y vea cómo se obtiene cada uno"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenido al Calculation Designer. Un cálculo deriva valores de los datos de su aplicación: un total a partir de las
+    líneas de un pedido, un descuento a partir del nivel de un cliente, una clasificación a partir de una serie de
+    resultados. Usted describe el cálculo una sola vez, y la aplicación lo calcula donde haga falta. Lo que lo distingue
+    de una fórmula escondida en el código es que siempre puede ver cómo se llegó a un valor. Este tutorial le muestra cómo.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Cálculos. El diseñador abre la lista de los cálculos que ha definido
+    su organización.
+  list: >-
+    Esta es la lista. El cálculo que vamos a ver es order-total. Cada cálculo tiene un nombre, la entidad en la que
+    escribe sus resultados, y un estado de publicación: un borrador todavía se está modificando, mientras que un cálculo
+    publicado es el que usa la aplicación en funcionamiento. Abra order-total para ver su definición.
+  definition: >-
+    La definición indica cómo se llama el cálculo y qué entidad recibe sus resultados. Aquí los resultados entran en el
+    pedido, así que el total del pedido es siempre el que calcula este cálculo. La descripción le dice al siguiente
+    diseñador para qué sirve, y merece escribirse bien, porque es lo primero que lee alguien.
+  source: >-
+    El cálculo en sí está escrito en su código fuente, en un lenguaje declarativo sencillo. Cada línea nombra un valor y
+    cómo se deriva: una suma sobre las líneas de un pedido, una tasa que se lee de una tabla de decisión, o una expresión
+    sencilla sobre los valores de arriba. El editor comprueba la sintaxis mientras escribe, y el diseñador guarda el código
+    fuente como la única descripción del cálculo.
+  validate: >-
+    Validar comprueba el cálculo entero antes de poder usarlo: que cada valor que nombra esté definido, que ningún valor
+    dependa de sí mismo y que existan las tablas que usa. El resultado indica de inmediato si el cálculo está bien, y dónde
+    no lo está, si no lo está.
+  tables: >-
+    Algunos valores no son fórmulas, sino tablas de decisión: una regla que da un valor según condiciones, como la tasa de
+    descuento para cada nivel de cliente. La tabla se lee fila por fila, y la primera fila cuyas condiciones se cumplen da
+    el valor. Las tablas se mantienen aparte del código fuente, así que un diseñador puede cambiar una tasa sin tocar la
+    fórmula que la usa.
+  choose-order: >-
+    Ahora veamos el cálculo en funcionamiento. La pestaña Evaluar lo ejecuta sobre un pedido real. Elegimos el pedido
+    ORD-1001, un pedido pequeño de dos líneas, y dejamos vacío el nivel del cliente, para que la tabla de descuentos dé su
+    tasa por defecto.
+  evaluate: >-
+    Evaluar borrador ejecuta el cálculo sobre el pedido. Muestra los valores que produce: el subtotal de las líneas, la tasa
+    de descuento y el total. Son las mismas cifras que la aplicación escribirá en el pedido cuando el cálculo se publique.
+  trace: >-
+    La traza explica cada valor. Los totales de línea salen de las dos líneas del pedido, el subtotal los suma, la tasa de
+    descuento sale de la tabla, y el total se obtiene de los dos. Cada fila dice qué tipo de decisión produjo el valor y
+    sobre qué datos, así que, si una cifra parece errónea, puede ver exactamente de dónde viene.
+  runs: >-
+    Por último, la vista de Ejecuciones enumera los cálculos que la aplicación ha realizado de verdad: qué cálculo, para qué
+    objeto y cuándo. Puede filtrar por cálculo o por objeto, y actualizar la lista. Cada ejecución se conserva junto con el
+    código fuente del que se calculó, así que un resultado se puede explicar mucho después de que el pedido haya cambiado.
+  outro: >-
+    Eso es un cálculo: una descripción en un lenguaje sencillo, tablas de decisión donde una regla tiene condiciones, una
+    comprobación antes de usarlo y una traza para cada valor. A continuación, el Workflow Designer usa esos valores para
+    decidir cuál es el siguiente paso de un proceso.

@@ -1,0 +1,54 @@
+title: "Calculation Designer: derive values from your data, and see how each one is worked out"
+
+values: {}
+
+steps:
+  intro: >-
+    Welcome to the Calculation Designer. A calculation derives values from the data of your application: a total from
+    the lines of an order, a discount from a customer's tier, a ranking from a series of results. You describe the
+    calculation once, and the application computes it wherever it is needed. What makes it different from a formula
+    buried in code is that you can always see how a value was reached, and this tutorial shows you how.
+  open: >-
+    From the Designer Home, open the Calculations card. The designer opens the list of the calculations your
+    organization has defined.
+  list: >-
+    Here is the list. The calculation we will look at is order-total. Every calculation has a name, the entity it
+    writes its results into, and a release state: a draft is still being changed, while a released calculation is the
+    one the running application uses. Open order-total to see its definition.
+  definition: >-
+    The definition states what the calculation is called, and which entity receives its results. Here the results go
+    into the order, so the order's total is always the one this calculation computes. The description tells the next
+    designer what the calculation is for, and it is worth writing well, because it is the first thing anyone reads.
+  source: >-
+    The calculation itself is written in its source, in a small declarative language. Each line names one value and how
+    it is derived: a sum over the lines of an order, a rate looked up in a decision table, or a plain expression over
+    the values above it. The editor checks the syntax as you work, and the designer keeps the source as the single
+    description of the calculation.
+  validate: >-
+    Validate checks the whole calculation before it can be used: that every value it names is defined, that no value
+    depends on itself, and that the tables it uses exist. The result tells you at once whether the calculation is
+    sound, and where it is not if it is not.
+  tables: >-
+    Some values are not formulas but decision tables: a rule that gives a value depending on conditions, such as the
+    discount rate for each customer tier. The table is read row by row, and the first row whose conditions hold gives
+    the value. Tables are kept apart from the source, so a designer can change a rate without touching the formula that
+    uses it.
+  choose-order: >-
+    Now let's see the calculation at work. The Evaluate tab runs it against a real order. We choose order ORD-1001, a
+    small order with two lines, and leave the customer tier empty, so the discount table gives its default rate.
+  evaluate: >-
+    Evaluate draft runs the calculation on the order. It shows the values it produced: the subtotal from the lines, the
+    discount rate, and the total. These are the same figures the application will write into the order once the
+    calculation is released.
+  trace: >-
+    The trace explains each value. The line totals come from the two lines of the order, the subtotal adds them up, the
+    discount rate comes from the table, and the total is worked out from the two. Each row says what kind of decision
+    produced the value and over which data, so when a figure looks wrong you can see exactly where it came from.
+  runs: >-
+    Finally, the Runs view lists the calculations the application has actually run: which calculation, for which
+    subject, and when. You can filter by calculation or subject, and refresh the list. A run is kept with the source it
+    was computed from, so a result can be explained long after the order has changed.
+  outro: >-
+    That is a calculation: a description in a small language, decision tables where a rule has conditions, a check
+    before use, and a trace for every value. Next, the Workflow Designer uses such values to decide which step of a
+    process comes next.
