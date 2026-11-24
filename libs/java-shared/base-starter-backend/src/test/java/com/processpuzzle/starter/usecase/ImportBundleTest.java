@@ -885,6 +885,22 @@ class ImportBundleTest {
         assertThat(calls).isEmpty();
     }
 
+    @Test
+    void aCommonIsRegisteredBeforeItsOwnRecordsAreWritten() {
+        List<Boolean> registeredDuringWrite = new ArrayList<>();
+        ImportBundle withRecords = importBundleWithRecords((orgKey, file, yaml) -> {
+            registeredDuringWrite.add(dataSpaceRepository.existsById(orgKey));
+            return new ParticipantResult(List.of(), List.of());
+        });
+        String manifest = "manifestVersion: 3" + "\n" + "kind: common" + "\n" + "id: inventory-common" + "\n" + "name: Inventory Common" + "\n" + "version: 1.0.0" + "\n" + "definitionSchemaVersion: 1" + "\n" + "keyPrefix: inventory" + "\n" + "contents:" + "\n" + "  records:" + "\n" + "    - records/seed.yaml" + "\n";
+        Map<String, String> files = Map.of("manifest.yaml", manifest, "records/seed.yaml", "entities: []" + "\n");
+
+        ImportReport report = withRecords.execute("inventory-common", zip(files), false, null);
+
+        assertThat(report.status()).isEqualTo(ImportReport.Status.APPLIED);
+        assertThat(registeredDuringWrite).containsExactly(true);
+    }
+
     private ImportBundle importBundleWithRecords(RecordImportParticipant records) {
         StaticListableBeanFactory factory = new StaticListableBeanFactory();
         factory.addBean("entities", entities);
