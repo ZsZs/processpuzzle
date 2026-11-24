@@ -57,11 +57,7 @@ export const DESIGN_SECTIONS: Routes = [
   {
     path: 'entities',
     title: 'ProcessPuzzle Design - Entities',
-    data: {
-      icon: 'checkbook',
-      menuTitle: 'design.entities',
-      announcement: { id: 'entity-designer-tutorial', messageKey: 'announcement.tutorial', linkKey: 'announcement.tutorial_link', link: '/design/tutorials/entity-designer' },
-    },
+    data: { icon: 'checkbook', menuTitle: 'design.entities' },
     component: EntityDesignerComponent,
     children: [{ path: '', pathMatch: 'full', redirectTo: 'entity-definition' }, ...BASE_ENTITY_AUTHORING_ROUTES],
   },

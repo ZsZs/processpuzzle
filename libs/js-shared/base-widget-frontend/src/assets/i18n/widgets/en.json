@@ -43,9 +43,5 @@
     "loading": "Loading the video…",
     "no_video": "The video for this language is not published yet.",
     "not_found": "This video is not published yet."
-  },
-  "announcement": {
-    "hide": "Hide",
-    "dont_show_again": "Don't show again"
   }
 }

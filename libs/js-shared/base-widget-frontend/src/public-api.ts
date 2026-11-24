@@ -90,8 +90,6 @@ export type { AppAssetContext, ModuleAssetContext } from './module-asset/module-
 export { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 export { provideAppPropertyStore } from './app-property/app-property-store.provider';
 export { ShareButtonComponent } from './share-button/share-button.component';
-export { AnnouncementComponent } from './announcement/announcement.component';
-export type { AnnouncementTone } from './announcement/announcement.component';
 export { ShareButtonModule } from './share-button/share-button.module';
 export { SidenavAutosizeDirective } from './sidenav-autosize/sidenav-autosize.directive';
 export { SidenavContentService } from './sidenav-content/sidenav-content.service';
