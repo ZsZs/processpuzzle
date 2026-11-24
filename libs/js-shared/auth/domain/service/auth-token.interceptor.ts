@@ -42,12 +42,8 @@ export function authTokenInterceptor(apiRoots: readonly string[] = [], withheldR
     const authService = inject(AUTHENTICATION_SERVICE, { optional: true }) as AuthService | null;
     if (!authService) return next(request);
 
-    // TEMP-DEBUG: nightly save investigation, remove after diagnosis
-    const debugStart = Date.now();
-    console.info(`[TEMP-DEBUG] interceptor ${request.method} ${request.url}: refresh start`);
     return from(authService.refreshAccessToken()).pipe(
-      switchMap((refreshed) => {
-        console.info(`[TEMP-DEBUG] interceptor ${request.method} ${request.url}: refresh done in ${Date.now() - debugStart}ms (refreshed=${refreshed})`);
+      switchMap(() => {
         const token = authService.getAccessToken();
         return next(token ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : request);
       }),
