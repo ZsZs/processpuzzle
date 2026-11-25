@@ -103,6 +103,7 @@ public class EntityDefinitionMapper {
             .enumValues(input.getEnumValues())
             .dateFormat(toDomain(input.getDateFormat()))
             .linkedEntityType(input.getLinkedEntityType())
+            .snapshotFields(input.getSnapshotFields() == null ? java.util.List.of() : java.util.List.copyOf(input.getSnapshotFields()))
             .isLinkToDetails(Boolean.TRUE.equals(input.getIsLinkToDetails()))
             .defaultAvatar(input.getDefaultAvatar())
             .autosizeColumn(Boolean.TRUE.equals(input.getAutosizeColumn()))
@@ -177,6 +178,7 @@ public class EntityDefinitionMapper {
         model.setEnumValues(attribute.getEnumValues());
         model.setDateFormat(toModel(attribute.getDateFormat()));
         model.setLinkedEntityType(attribute.getLinkedEntityType());
+        model.setSnapshotFields(new java.util.ArrayList<>(attribute.getSnapshotFields()));
         model.setIsLinkToDetails(attribute.isLinkToDetails());
         model.setDefaultAvatar(attribute.getDefaultAvatar());
         model.setAutosizeColumn(attribute.isAutosizeColumn());

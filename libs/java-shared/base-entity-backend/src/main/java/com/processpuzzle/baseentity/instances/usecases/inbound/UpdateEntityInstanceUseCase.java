@@ -75,6 +75,8 @@ public class UpdateEntityInstanceUseCase {
         effectivePayload = EmbeddedItemIdentity.withIdentities(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
         payloadValidatorPort.validate(orgKey, definition, effectivePayload);
         effectivePayload = MeasureNormalizer.withDerivedValues(definition, effectivePayload, code -> definitionLookupPort.findByCode(orgKey, code));
+        effectivePayload = EntitySnapshots.withSnapshots(effectivePayload, definitionLookupPort.snapshotsOf(orgKey, entityDefinitionCode),
+            entityObject.getPayload(), (linkedType, referencedId) -> scope.find(orgKey, linkedType, referencedId).map(EntityObject::getPayload));
         scope.requireFollowedUnchanged(orgKey, entityDefinitionCode, entityObject.getPayload(), effectivePayload);
         scope.requireUniqueKeys(orgKey, entityDefinitionCode, effectivePayload, entityObject.getId());
 
