@@ -49,8 +49,21 @@ const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
         <div class="row">
           <fieldset class="base-entity-form-field" tabindex="0" [ngClass]="config().styleClass" [ngStyle]="config().style">
             <legend [ngClass]="config().labelClass">{{ config().i18nKey() | ppLabel: config().label }}</legend>
+            @if (config().disabled && imageArtifacts().length > 0) {
+              <div class="artifact-album" data-testid="artifact-album">
+                @for (artifact of imageArtifacts(); track artifact.objectId) {
+                  <button type="button" class="artifact-album__item" [attr.aria-label]="artifact.name" (click)="openArtifact($event, artifact)">
+                    @if (thumbnailUrlOf(artifact); as thumbUri) {
+                      <img [src]="thumbUri" [alt]="artifact.name" />
+                    } @else {
+                      <mat-icon class="artifact-icon">image</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+            }
             <ul [id]="config().attrName" class="base-entity-form-list">
-              @for (artifact of artifacts(); track artifact.objectId) {
+              @for (artifact of listedArtifacts(); track artifact.objectId) {
                 <li>
                   @if (thumbnailUrlOf(artifact); as thumbUri) {
                     <img class="artifact-thumbnail" [src]="thumbUri" [alt]="artifact.name" />
@@ -89,6 +102,25 @@ const MIME_ICON_TABLE: Array<[RegExp | string, string]> = [
         border-radius: 4px;
         flex-shrink: 0;
       }
+      .artifact-album {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .artifact-album__item {
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+      }
+      .artifact-album__item img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 4px;
+        display: block;
+      }
       .artifact-icon {
         width: 24px;
         height: 24px;
@@ -114,6 +146,14 @@ export class ArtifactComponent<Entity extends BaseEntity> extends BaseFormContro
     const artifacts = toArtifactList(this.valueSignal());
     return this.multiValued() ? artifacts : artifacts.slice(0, 1);
   });
+  /** The image artifacts a read-only multi-valued control shows as an album. */
+  readonly imageArtifacts = computed(() => this.artifacts().filter((artifact) => artifact.mimeType?.startsWith('image/')));
+
+  /** The artifacts listed one row each: a read-only album takes the images, so the list keeps the rest. */
+  readonly listedArtifacts = computed(() =>
+    this.config().disabled && this.multiValued() ? this.artifacts().filter((artifact) => !artifact.mimeType?.startsWith('image/')) : this.artifacts(),
+  );
+
   /** The single-valued view: the one artifact, or null. */
   readonly artifact = computed(() => this.artifacts()[0] ?? null);
   /** A single-valued control can always take an upload (it replaces); a multi-valued one until it is full. */
