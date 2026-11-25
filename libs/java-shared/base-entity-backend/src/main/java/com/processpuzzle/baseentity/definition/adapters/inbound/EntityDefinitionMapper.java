@@ -178,7 +178,10 @@ public class EntityDefinitionMapper {
         model.setEnumValues(attribute.getEnumValues());
         model.setDateFormat(toModel(attribute.getDateFormat()));
         model.setLinkedEntityType(attribute.getLinkedEntityType());
-        model.setSnapshotFields(new java.util.ArrayList<>(attribute.getSnapshotFields()));
+        // Null when there is none: a definition saved before the field existed has null here, and an empty list would
+        // change its fingerprint (canonical JSON omits nulls but writes []).
+        model.setSnapshotFields(attribute.getSnapshotFields() == null || attribute.getSnapshotFields().isEmpty()
+                ? null : new java.util.ArrayList<>(attribute.getSnapshotFields()));
         model.setIsLinkToDetails(attribute.isLinkToDetails());
         model.setDefaultAvatar(attribute.getDefaultAvatar());
         model.setAutosizeColumn(attribute.isAutosizeColumn());
