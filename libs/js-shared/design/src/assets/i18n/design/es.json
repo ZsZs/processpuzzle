@@ -114,6 +114,11 @@
     "menu_rules": "Ver el tutorial",
     "menu_states": "Ver el tutorial",
     "menu_documents": "Ver el tutorial",
-    "menu_calculations": "Ver el tutorial"
+    "menu_calculations": "Ver el tutorial",
+    "menu_workflows": "Ver el tutorial",
+    "menu_chats": "Ver el tutorial",
+    "menu_applications": "Ver el tutorial",
+    "menu_starters": "Ver el tutorial",
+    "menu_release": "Ver el tutorial"
   }
 }

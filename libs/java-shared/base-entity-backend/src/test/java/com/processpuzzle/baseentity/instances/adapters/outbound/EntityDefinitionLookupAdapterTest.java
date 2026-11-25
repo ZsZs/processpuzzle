@@ -84,6 +84,30 @@ class EntityDefinitionLookupAdapterTest {
     }
 
     @Test
+    void snapshotsOf_namesTheAttributesThatCopyALinkedRecord() {
+        BaseEntityAttribute boat = BaseEntityAttribute.builder().code("boat").name("Boat").valueKind(ValueKind.REFERENCE)
+            .formControlType(FormControlType.FOREIGN_KEY).linkedEntityType("boat").snapshotFields(java.util.List.of("sailNumber", "name")).build();
+        BaseEntityAttribute name = BaseEntityAttribute.builder().code("title").name("Title").valueKind(ValueKind.TEXT)
+            .formControlType(FormControlType.TEXT).build();
+        when(repository.findByOrgKeyAndCodeAndChannel("club", "race", Channel.RELEASED)).thenReturn(java.util.Optional.of(
+            BaseEntityDefinition.builder().orgKey("club").code("race").name("Race").attributes(java.util.List.of(boat, name)).build()));
+
+        var snapshots = adapter.snapshotsOf("club", "race");
+
+        assertThat(snapshots).containsOnlyKeys("boat");
+        assertThat(snapshots.get("boat").linkedEntityType()).isEqualTo("boat");
+        assertThat(snapshots.get("boat").fields()).containsExactly("sailNumber", "name");
+    }
+
+    @Test
+    void snapshotsOf_isEmptyForAnUnknownType() {
+        when(repository.findByOrgKeyAndCodeAndChannel("club", "nothing", Channel.RELEASED)).thenReturn(java.util.Optional.empty());
+        when(dataSpaces.getIfAvailable()).thenReturn(null);
+
+        assertThat(adapter.snapshotsOf("club", "nothing")).isEmpty();
+    }
+
+    @Test
     void sharedFrom_namesTheCommon() {
         when(repository.existsByOrgKeyAndCodeAndChannel("club", "asset", Channel.RELEASED)).thenReturn(false);
         when(dataSpaces.getIfAvailable()).thenReturn(directory);

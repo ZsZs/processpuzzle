@@ -77,6 +77,7 @@ export class DesignContentComponent {
       subtitle: 'base-workflow_card_subtitle',
       content: ['base-workflow_card_content', 'base-workflow_card_content_1', 'base-workflow_card_content_2', 'base-workflow_card_content_3'],
       actions: [{ link: `${this.prefix}/design/workflows`, caption: 'base-workflow_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_workflows', link: `${this.prefix}/design/tutorials/workflows` }],
       translocoPrefix: 'design',
     },
     {
@@ -85,6 +86,7 @@ export class DesignContentComponent {
       subtitle: 'base-chat_card_subtitle',
       content: ['base-chat_card_content', 'base-chat_card_content_1', 'base-chat_card_content_2', 'base-chat_card_content_3'],
       actions: [{ link: `${this.prefix}/design/chats`, caption: 'base-chat_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_chats', link: `${this.prefix}/design/tutorials/chats` }],
       translocoPrefix: 'design',
     },
     {
@@ -94,6 +96,7 @@ export class DesignContentComponent {
       content: ['base-app_card_content', 'base-app_card_content_1', 'base-app_card_content_2', 'base-app_card_content_3'],
       // The section, not one of its tabs: `application` redirects to the App Definition tab on its own.
       actions: [{ link: `${this.prefix}/design/application`, caption: 'base-app_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_applications', link: `${this.prefix}/design/tutorials/applications` }],
       translocoPrefix: 'design',
     },
     {
@@ -110,6 +113,7 @@ export class DesignContentComponent {
       subtitle: 'base-starter_card_subtitle',
       content: ['base-starter_card_content', 'base-starter_card_content_1', 'base-starter_card_content_2', 'base-starter_card_content_3'],
       actions: [{ link: `${this.prefix}/design/starters`, caption: 'base-starter_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_starters', link: `${this.prefix}/design/tutorials/starters` }],
       translocoPrefix: 'design',
     },
     {
@@ -118,6 +122,7 @@ export class DesignContentComponent {
       subtitle: 'base-release_card_subtitle',
       content: ['base-release_card_content', 'base-release_card_content_1', 'base-release_card_content_2', 'base-release_card_content_3'],
       actions: [{ link: `${this.prefix}/design/release`, caption: 'base-release_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_release', link: `${this.prefix}/design/tutorials/release` }],
       translocoPrefix: 'design',
     },
   ];

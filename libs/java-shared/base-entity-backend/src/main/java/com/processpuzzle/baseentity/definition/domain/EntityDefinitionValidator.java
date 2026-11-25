@@ -107,6 +107,7 @@ public class EntityDefinitionValidator {
                 "%s attributes require linkedEntityType".formatted(attribute.getFormControlType())));
         }
         validateDateFormat(attribute, violations);
+        validateSnapshot(attribute, violations);
         validateMultiplicity(attribute, violations);
         validateComments(attribute, violations);
         validateAddress(attribute, violations);
@@ -182,6 +183,25 @@ public class EntityDefinitionValidator {
         } else if (maxOccurs != null) {
             violations.add(new Violation(attribute.getCode(),
                 "maxOccurs is only meaningful for multiplicity 0..x or 1..x"));
+        }
+    }
+
+    /** A snapshot copies named attributes of a linked record, so it needs a single REFERENCE to a linked type. */
+    private void validateSnapshot(BaseEntityAttribute attribute, List<Violation> violations) {
+        List<String> fields = attribute.getSnapshotFields();
+        if (fields == null || fields.isEmpty()) {
+            return;
+        }
+        if (attribute.getValueKind() != ValueKind.REFERENCE
+            || (attribute.getLinkedEntityType() == null || attribute.getLinkedEntityType().isBlank())) {
+            violations.add(new Violation(attribute.getCode(), "snapshotFields need a REFERENCE attribute with a linkedEntityType"));
+            return;
+        }
+        if (fields.stream().anyMatch(field -> field == null || field.isBlank())) {
+            violations.add(new Violation(attribute.getCode(), "snapshotFields must not name a blank attribute"));
+        }
+        if (fields.stream().distinct().count() != fields.size()) {
+            violations.add(new Violation(attribute.getCode(), "snapshotFields must not name an attribute twice"));
         }
     }
 

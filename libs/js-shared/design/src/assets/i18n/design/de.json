@@ -114,6 +114,11 @@
     "menu_rules": "Tutorial ansehen",
     "menu_states": "Tutorial ansehen",
     "menu_documents": "Tutorial ansehen",
-    "menu_calculations": "Tutorial ansehen"
+    "menu_calculations": "Tutorial ansehen",
+    "menu_workflows": "Tutorial ansehen",
+    "menu_chats": "Tutorial ansehen",
+    "menu_applications": "Tutorial ansehen",
+    "menu_starters": "Tutorial ansehen",
+    "menu_release": "Tutorial ansehen"
   }
 }

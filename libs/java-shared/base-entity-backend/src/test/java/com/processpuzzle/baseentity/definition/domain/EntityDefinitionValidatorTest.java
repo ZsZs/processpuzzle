@@ -80,6 +80,41 @@ class EntityDefinitionValidatorTest {
     }
 
     @Test
+    void validate_snapshotOnAReference_passes() {
+        validator.validate(definitionWith(snapshotAttribute(ValueKind.REFERENCE, "boat", List.of("sailNumber", "name"))));
+    }
+
+    @Test
+    void validate_snapshotOnANonReference_throwsValidationException() {
+        assertSingleViolation(snapshotAttribute(ValueKind.TEXT, "boat", List.of("sailNumber")),
+                "snapshotFields need a REFERENCE attribute with a linkedEntityType");
+    }
+
+    @Test
+    void validate_snapshotWithoutLinkedType_throwsValidationException() {
+        BaseEntityAttribute avatar = BaseEntityAttribute.builder()
+                .code("boat")
+                .name("Boat")
+                .valueKind(ValueKind.REFERENCE)
+                .formControlType(FormControlType.AVATAR)
+                .snapshotFields(List.of("sailNumber"))
+                .build();
+        assertSingleViolation(avatar, "snapshotFields need a REFERENCE attribute with a linkedEntityType");
+    }
+
+    @Test
+    void validate_snapshotNamingAFieldTwice_throwsValidationException() {
+        assertSingleViolation(snapshotAttribute(ValueKind.REFERENCE, "boat", List.of("sailNumber", "sailNumber")),
+                "snapshotFields must not name an attribute twice");
+    }
+
+    @Test
+    void validate_snapshotNamingABlankField_throwsValidationException() {
+        assertSingleViolation(snapshotAttribute(ValueKind.REFERENCE, "boat", List.of(" ")),
+                "snapshotFields must not name a blank attribute");
+    }
+
+    @Test
     void validate_multiplicityWithConsistentMaxOccurs_passes() {
         validator.validate(definitionWith(multiplicityAttribute(null, null)));
         validator.validate(definitionWith(multiplicityAttribute(Multiplicity.ZERO_TO_ONE, null)));
@@ -160,6 +195,17 @@ class EntityDefinitionValidatorTest {
                 .valueKind(valueKind)
                 .formControlType(FormControlType.DATE)
                 .dateFormat(dateFormat)
+                .build();
+    }
+
+    private static BaseEntityAttribute snapshotAttribute(ValueKind valueKind, String linkedEntityType, List<String> fields) {
+        return BaseEntityAttribute.builder()
+                .code("boat")
+                .name("Boat")
+                .valueKind(valueKind)
+                .formControlType(FormControlType.FOREIGN_KEY)
+                .linkedEntityType(linkedEntityType)
+                .snapshotFields(fields)
                 .build();
     }
 

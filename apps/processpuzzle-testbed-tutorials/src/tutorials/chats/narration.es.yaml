@@ -1,0 +1,51 @@
+title: "Chat Designer: conversaciones sobre sus objetos de negocio, y quién puede participar"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenido al Chat Designer. Un chat es una conversación ligada a un objeto de negocio: una discusión sobre un pedido, un
+    tema sobre un cliente, una pregunta sobre un producto. Una vez definido, la aplicación lo abre junto al objeto al que
+    pertenece, para que las personas que trabajan en ese objeto hablen de él donde se hace el trabajo, y la conversación se
+    queda con el registro del que trata. Este tutorial muestra cómo una definición de chat decide qué es una conversación,
+    quién puede participar en ella y cuánto tiempo se conserva.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Chat. El diseñador enumera las definiciones de chat de su organización.
+  list: >-
+    Cada fila es una definición de chat: el objeto al que se asocia, cuántas conversaciones permite por cada objeto, y si
+    está publicada. Las definiciones que vienen cargadas son Discusión de pedidos, Temas de pedido y Temas de Dynamic Entity.
+    Veremos primero la Discusión de pedidos, y después la compararemos con los Temas de pedido.
+  definition: >-
+    El nombre y la descripción dicen para qué sirve el chat, y son lo primero que se lee. Escriba la descripción para las
+    personas que van a conversar, porque es la finalidad que se les comunicará. La clave es el código con el que la aplicación
+    encuentra la definición, y no cambia una vez que está en uso.
+  subject: >-
+    El sujeto es el objeto de negocio del que trata el chat. Aquí el tipo de sujeto es una entidad, y la definición del sujeto
+    es el pedido. Cada conversación se asocia a un único pedido, y la aplicación la abre desde la propia pantalla del pedido,
+    así que nadie tiene que buscar la discusión de un pedido concreto.
+  multiplicity: >-
+    La multiplicidad decide cuántas conversaciones puede tener un objeto. Única significa un chat por pedido, desde el primer
+    mensaje. Toda la conversación sobre ese pedido ocurre en el mismo chat, que es la elección correcta cuando un pedido tiene
+    un solo hilo de discusión. Varias permitiría varias conversaciones separadas para el mismo pedido.
+  lifecycle: >-
+    El ciclo de vida indica cuándo existe el chat. Bajo demanda significa que el chat se abre cuando alguien quiere hablar del
+    objeto por primera vez. Los estados escribibles son los estados en los que el chat todavía acepta mensajes: cuando un
+    pedido sale de ellos, la conversación se puede leer, pero nadie añade nada más. Así un pedido cerrado sigue siendo un
+    registro, no un hilo activo.
+  roles: >-
+    Los roles deciden quién participa. Los roles de lectura pueden ver la conversación, los de escritura pueden añadir
+    mensajes, y los de creación pueden abrir un chat nuevo. Un rol se nombra una sola vez para toda la organización, así que
+    un almacenero y una contable son los mismos roles en cada definición. Quien no tenga ninguno de estos roles ni siquiera ve
+    el chat.
+  retention: >-
+    Incluir al responsable del objeto da acceso a su conversación a la persona responsable del objeto, aunque no tenga ninguno
+    de los roles anteriores. La retención en días indica cuánto tiempo se guardan los mensajes después de cerrar el chat; pasado
+    ese plazo se eliminan. Ajústela a lo que su organización está obligada a conservar, y no más.
+  compare: >-
+    Mire ahora los Temas de pedido, otra definición para el mismo tipo de objeto. Su multiplicidad es varias: el mismo pedido
+    puede tener varios temas, cada uno una conversación propia. El sujeto es el mismo, pero la forma de la conversación no. La
+    elección de la multiplicidad es la decisión más importante de una definición de chat, y la más difícil de cambiar después.
+  outro: >-
+    Eso es una definición de chat: el objeto de negocio al que se asocia, cuántas conversaciones permite, cuándo está abierta,
+    quién puede leer y escribir, y cuánto tiempo se conserva. A continuación, el Application Designer muestra dónde aparecen
+    esas conversaciones para las personas que usan su aplicación.

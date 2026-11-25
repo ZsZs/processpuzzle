@@ -1,0 +1,50 @@
+title: "Chat Designer: conversations about your business objects, and who may take part"
+
+values: {}
+
+steps:
+  intro: >-
+    Welcome to the Chat Designer. A chat is a conversation attached to a business object: a discussion about an order, a
+    topic about a customer, a question about a product. Once a chat is defined, the application opens it beside the object
+    it belongs to, so the people who work on that object can talk about it where the work happens, and the conversation
+    stays with the record it is about. This tutorial shows how a chat definition decides what a conversation is, who may
+    take part, and how long it is kept.
+  open: >-
+    From the Designer Home, open the Chat card. The designer lists the chat definitions of your organization.
+  list: >-
+    Each row is a chat definition: the subject it attaches to, how many conversations it allows for each subject, and
+    whether it is released. The seeded definitions here are Order discussion, Order topics and Dynamic Entity topics. We
+    will look at Order discussion first, then compare it with Order topics.
+  definition: >-
+    The name and the description say what the chat is for, and they are what a designer reads first. Write the description
+    for the people who will converse, because it is the purpose they will be told. The key is the code the application uses
+    to find the definition, and it does not change once it is in use.
+  subject: >-
+    The subject is the business object the chat is about. Here the subject type is an entity, and the subject definition is
+    the order. Every conversation attaches to one order, and the application opens it from the order's own screen, so
+    nobody has to search for the discussion of a particular order.
+  multiplicity: >-
+    Multiplicity decides how many conversations an object may have. Single means there is one chat for each order, from the
+    first message onward. The rest of the conversation about that order happens in the same chat, which is the right choice
+    when an order has one thread of discussion. Many would allow several separate conversations for the same order.
+  lifecycle: >-
+    The lifecycle says when the chat exists. On demand means the chat is opened when someone first wants to talk about the
+    object. The writable states are the states in which the chat still accepts messages: once an order has left them, the
+    conversation can still be read, but nobody adds to it. This is how a closed order stays a record, not a live thread.
+  roles: >-
+    Roles decide who takes part. Read roles may see the conversation, write roles may add messages, and create roles may
+    open a new chat. A role is named once for the whole organization, so a warehouse clerk and an accountant are the same
+    roles in every definition. A person without any of these roles never sees the chat at all.
+  retention: >-
+    Include subject owner gives the person responsible for the object access to its conversation, even when that person
+    holds none of the roles above. The retention in days says how long the messages are kept after the chat is closed, and
+    after that they are removed. Set it to what your organization is obliged to keep, and no longer.
+  compare: >-
+    Now look at Order topics, another definition for the same kind of object. Its multiplicity is many: the same order can
+    have several topics, each a conversation of its own. The subject is the same, but the shape of the conversation is not.
+    Choosing the multiplicity is the most important decision in a chat definition, and it is the one that is hardest to
+    change later.
+  outro: >-
+    That is a chat definition: the business object it attaches to, how many conversations it allows, when it is open, who
+    may read and write, and how long it is kept. Next, the Application Designer shows where those conversations appear for
+    the people who use your application.

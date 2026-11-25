@@ -254,6 +254,9 @@
     "map": "A cím térképe",
     "open_in_google_maps": "Megnyitás a Google Térképen"
   },
+  "link": {
+    "open": "Hivatkozás megnyitása új lapon"
+  },
   "geo_location": {
     "capture": "Helyzetem rögzítése",
     "recapture": "Helyzetem újbóli rögzítése",

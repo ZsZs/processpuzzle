@@ -102,6 +102,15 @@ public class BaseEntityAttribute {
      */
     private String linkedEntityType;
 
+    /**
+     * For a REFERENCE to a linked type: the attributes of the referenced record copied, under the key
+     * {@code <attribute>$snapshot}, into the referencing record when it is written. Empty means no snapshot.
+     */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @jakarta.persistence.Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> snapshotFields = new java.util.ArrayList<>();
+
     /** Marks the attribute used as this entity's display title (frontend componentIdentification()). */
     @Builder.Default
     private boolean isLinkToDetails = false;
@@ -190,6 +199,7 @@ public class BaseEntityAttribute {
         this.enumValues = source.enumValues == null ? null : new java.util.ArrayList<>(source.enumValues);
         this.dateFormat = source.dateFormat;
         this.linkedEntityType = source.linkedEntityType;
+        this.snapshotFields = source.snapshotFields == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(source.snapshotFields);
         this.isLinkToDetails = source.isLinkToDetails;
         this.defaultAvatar = source.defaultAvatar;
         this.autosizeColumn = source.autosizeColumn;

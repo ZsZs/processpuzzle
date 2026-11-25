@@ -1,0 +1,56 @@
+title: "Chat Designer: Unterhaltungen über Ihre Geschäftsobjekte und die Frage, wer teilnehmen darf"
+
+values: {}
+
+steps:
+  intro: >-
+    Willkommen beim Chat Designer. Ein Chat ist eine Unterhaltung, die an ein Geschäftsobjekt gebunden ist: eine Diskussion
+    über eine Bestellung, ein Thema zu einem Kunden, eine Frage zu einem Produkt. Ist ein Chat definiert, öffnet die
+    Anwendung ihn neben dem Objekt, zu dem er gehört. So können die Menschen, die an diesem Objekt arbeiten, dort sprechen,
+    wo die Arbeit geschieht, und die Unterhaltung bleibt bei dem Datensatz, um den es geht. Dieses Tutorial zeigt, wie eine
+    Chat-Definition festlegt, was eine Unterhaltung ist, wer teilnehmen darf und wie lange sie aufbewahrt wird.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Chat. Der Designer listet die Chat-Definitionen Ihrer
+    Organisation.
+  list: >-
+    Jede Zeile ist eine Chat-Definition: das Objekt, an das sie gebunden ist, wie viele Unterhaltungen sie pro Objekt
+    erlaubt, und ob sie freigegeben ist. Die vorhandenen Definitionen sind Bestellungsdiskussion, Bestellungsthemen und
+    Dynamic-Entity-Themen. Wir sehen uns zuerst die Bestellungsdiskussion an und vergleichen sie dann mit den
+    Bestellungsthemen.
+  definition: >-
+    Name und Beschreibung sagen, wofür der Chat da ist, und sie werden zuerst gelesen. Schreiben Sie die Beschreibung für
+    die Menschen, die sich unterhalten werden, denn das ist der Zweck, der ihnen mitgeteilt wird. Der Schlüssel ist der Code,
+    mit dem die Anwendung die Definition findet, und er ändert sich nicht, sobald er in Gebrauch ist.
+  subject: >-
+    Der Gegenstand ist das Geschäftsobjekt, um das es im Chat geht. Hier ist der Gegenstandstyp eine Entität, und die
+    Gegenstandsdefinition ist die Bestellung. Jede Unterhaltung hängt an genau einer Bestellung, und die Anwendung öffnet sie
+    direkt aus der Ansicht der Bestellung, sodass niemand die Diskussion zu einer bestimmten Bestellung suchen muss.
+  multiplicity: >-
+    Die Multiplizität legt fest, wie viele Unterhaltungen ein Objekt haben darf. Einzeln bedeutet: ein Chat pro Bestellung,
+    vom ersten Beitrag an. Der gesamte Austausch über diese Bestellung findet im selben Chat statt, was die richtige Wahl ist,
+    wenn eine Bestellung einen einzigen Gesprächsfaden hat. Mehrere erlaubt dagegen mehrere getrennte Unterhaltungen zur
+    selben Bestellung.
+  lifecycle: >-
+    Der Lebenszyklus legt fest, wann der Chat existiert. Bei Bedarf bedeutet: Der Chat wird geöffnet, sobald jemand zum ersten
+    Mal über das Objekt sprechen will. Die schreibbaren Zustände sind die Zustände, in denen der Chat noch Nachrichten
+    annimmt: Hat eine Bestellung sie verlassen, lässt sich die Unterhaltung weiterhin lesen, aber niemand schreibt mehr hinein.
+    So bleibt eine geschlossene Bestellung ein Datensatz und kein laufender Faden.
+  roles: >-
+    Rollen legen fest, wer teilnimmt. Leserollen dürfen die Unterhaltung sehen, Schreibrollen dürfen Nachrichten hinzufügen,
+    und Erstellrollen dürfen einen neuen Chat eröffnen. Eine Rolle wird einmal für die ganze Organisation benannt, sodass ein
+    Lagermitarbeiter und eine Buchhalterin in jeder Definition dieselben Rollen sind. Wer keine dieser Rollen hat, sieht den
+    Chat gar nicht.
+  retention: >-
+    Verantwortlichen des Objekts einbeziehen gibt der Person, die für das Objekt verantwortlich ist, Zugriff auf seine
+    Unterhaltung, auch wenn sie keine der oben genannten Rollen hat. Die Aufbewahrung in Tagen legt fest, wie lange die
+    Nachrichten nach dem Schließen des Chats gespeichert bleiben; danach werden sie entfernt. Setzen Sie sie auf das, wozu
+    Ihre Organisation verpflichtet ist, und nicht länger.
+  compare: >-
+    Sehen Sie sich nun die Bestellungsthemen an, eine andere Definition für dieselbe Art von Objekt. Ihre Multiplizität ist
+    mehrere: Dieselbe Bestellung kann mehrere Themen haben, jedes eine eigene Unterhaltung. Der Gegenstand ist derselbe, die
+    Form der Unterhaltung aber nicht. Die Wahl der Multiplizität ist die wichtigste Entscheidung in einer Chat-Definition,
+    und sie lässt sich später am schwersten ändern.
+  outro: >-
+    Das ist eine Chat-Definition: das Geschäftsobjekt, an das sie gebunden ist, wie viele Unterhaltungen sie erlaubt, wann
+    sie offen ist, wer lesen und schreiben darf und wie lange sie aufbewahrt wird. Als Nächstes zeigt der Application Designer,
+    wo diese Unterhaltungen für die Menschen erscheinen, die Ihre Anwendung nutzen.

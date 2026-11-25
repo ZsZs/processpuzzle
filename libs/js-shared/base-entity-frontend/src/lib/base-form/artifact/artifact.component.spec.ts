@@ -267,6 +267,27 @@ describe('ArtifactComponent', () => {
       expect(host.querySelectorAll('button[aria-label="Delete artifact reference"]')).toHaveLength(2);
     });
 
+    it('shows the images of a read-only control as an album and keeps the other files in the list', async () => {
+      objectStore.getThumbnailUriByID.mockReturnValue(of({ uri: 'https://cdn.example/two-thumb.jpg' }));
+      const config = makeMultiConfig();
+      config.disabled = true;
+      const { fixture } = await setupMulti(config, [first, second]);
+      const host = fixture.nativeElement as HTMLElement;
+
+      const album = host.querySelectorAll('[data-testid="artifact-album"] .artifact-album__item');
+      expect(album).toHaveLength(1);
+      expect(album[0].querySelector('img')?.getAttribute('src')).toBe('https://cdn.example/two-thumb.jpg');
+      expect(Array.from(host.querySelectorAll('li a')).map((link) => link.textContent?.trim())).toEqual(['one.pdf']);
+    });
+
+    it('shows no album for an editable control, which keeps one row per artifact', async () => {
+      const { fixture } = await setupMulti(makeMultiConfig(), [first, second]);
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelector('[data-testid="artifact-album"]')).toBeNull();
+      expect(host.querySelectorAll('li a')).toHaveLength(2);
+    });
+
     it('fetches a thumbnail per image artifact, keyed by objectId', async () => {
       objectStore.getThumbnailUriByID.mockReturnValue(of({ uri: 'https://cdn.example/two-thumb.jpg' }));
       const { component } = await setupMulti(makeMultiConfig(), [first, second]);

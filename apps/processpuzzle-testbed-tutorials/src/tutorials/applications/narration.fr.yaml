@@ -1,0 +1,46 @@
+title: "Application Designer : assembler votre application à partir de zones, de routes et de modules, et la voir comme la voient les utilisateurs"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenue dans l'Application Designer. Une application est ce que vos utilisateurs ouvrent : son en-tête, sa navigation,
+    les pages entre lesquelles ils passent et les écrans que ces pages affichent. Vous ne programmez rien de tout cela. Vous
+    décrivez l'application ici, de son nom et de son apparence jusqu'aux modules et aux widgets qui la composent, et
+    l'application s'assemble à partir de cette description. Ce tutoriel présente une application, la Gestion des commandes,
+    de sa définition à l'écran que voit un utilisateur.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Application. Le concepteur liste les applications de votre organisation.
+  list: >-
+    Chaque ligne est une application : son code, son nom, son statut et sa version. La Gestion des commandes est un brouillon,
+    elle est donc encore en conception et n'est pas encore celle qu'ouvrent vos utilisateurs. L'application de démonstration
+    figure à côté.
+  details: >-
+    Le nom et la description indiquent à quoi sert l'application, et la description est ce que lit en premier le prochain
+    concepteur. L'identifiant est le code sous lequel l'application est connue, et il reste le même une fois en service. Le
+    statut indique si l'application est un brouillon ; la version publiée est celle que voient les utilisateurs.
+  appearance: >-
+    L'apparence se règle ici. Le thème de matériel et le schéma de couleurs déterminent la palette, et le préréglage choisit un
+    aspect complet. Le mode de la barre latérale indique si la navigation reste ouverte, glisse par-dessus la page ou reste
+    masquée jusqu'à ce qu'on la demande. Ces choix s'appliquent à toute l'application à la fois : vous les réglez une fois ici,
+    et non sur chaque page.
+  structure: >-
+    La structure se compose de quatre parties. Les zones sont les espaces de l'écran, comme l'en-tête et la barre latérale. Les
+    routes sont les pages qu'un utilisateur peut atteindre, chacune affichant un ensemble de widgets. Les modules sont les
+    fonctions qu'utilise l'application, comme la liste des commandes, et les contextes sont les objets dont traite une page.
+    Ensemble, elles disent ce qu'est l'application et où apparaît chacune de ses parties.
+  preview: >-
+    L'aperçu est l'application telle qu'un utilisateur la voit. Voici l'en-tête, la navigation à gauche avec Commandes et Lignes,
+    et la liste des commandes sur la page. Ce que vous voyez ici est construit à partir de la description des écrans précédents :
+    si vous modifiez la description, c'est ici que vous en voyez l'effet.
+  modules: >-
+    La section Modules liste les fonctions dont l'application est composée. Un module apporte un ensemble d'écrans et leur
+    comportement, et une application utilise un module en le désignant. Les modules sont partagés entre les applications : une
+    fonction est construite une fois et utilisée partout où elle est nécessaire.
+  widgets: >-
+    La section Widgets liste les briques dont sont faites les pages : une grille de cartes, un tableau, un formulaire, un
+    en-tête. Un widget prend ses réglages de la page qui le place, si bien que le même widget peut afficher des commandes dans
+    une application et des clients dans une autre. Les widgets présentés ici sont ceux que l'on peut placer sur une page.
+  outro: >-
+    Voilà une application : une définition avec son apparence, ses zones, ses routes, ses modules et ses contextes, et l'aperçu
+    que verra un utilisateur. Ensuite, l'AI Designer vous aide à décrire chacune de ces parties en langage courant.

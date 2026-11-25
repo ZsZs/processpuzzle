@@ -1,0 +1,39 @@
+title: "Publicación: decidir qué pasa a producción, y hacerlo efectivo en un solo paso"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenido a la Publicación. Todo lo que diseña es un borrador hasta que lo publica. La aplicación en funcionamiento usa
+    solo las definiciones publicadas, así que un diseño a medio terminar nunca llega a sus usuarios. Este tutorial muestra qué
+    contiene una publicación, qué puede interponerse, y el único paso que hace efectivos los cambios.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Publicación. Es la pantalla en la que la organización decide qué pasa a
+    producción.
+  pending: >-
+    La tabla Cambios pendientes enumera todo lo que difiere entre los borradores y la aplicación en funcionamiento. Cada fila
+    nombra un tipo de definición, la definición en sí, y si se añade o se cambia. Nada de esta tabla está todavía en
+    funcionamiento.
+  changes: >-
+    Aquí están los cambios: la entidad Product se añade, el módulo order-admin se añade, y las aplicaciones demo y order-desk se
+    añaden. Una publicación lleva todos los cambios a la vez, o ninguno. Por eso un diseñador puede trabajar en varias
+    definiciones y publicarlas juntas.
+  problems: >-
+    La lista Problemas indica lo que la publicación pasaría por alto. Estas advertencias dicen que algunos documentos tienen
+    cambios sin publicar en su traducción al inglés o al húngaro. Una publicación no publica documentos: cada uno tiene que
+    publicarse en el editor de documentos, y la advertencia se mantiene hasta que se hace.
+  acknowledge: >-
+    La casilla deja constancia de que ha leído las advertencias y de que quiere publicar de todos modos. Publicar con una
+    advertencia es una elección consciente, y la casilla la conserva en el registro.
+  publish: >-
+    Publicar hace efectivos los cambios pendientes. El botón permanece desactivado hasta que se confirman las advertencias, y
+    una vez pulsado, los cambios llegan a los usuarios de la aplicación. No lo pulsamos en este vídeo, porque publicaría el
+    entorno de prueba.
+  history: >-
+    Cada publicación aparece aquí, con lo que contenía y el momento en que entró en funcionamiento. Todavía no se ha publicado
+    nada en esta organización, así que la lista está vacía. Cuando exista una publicación, esta lista es el registro de lo que
+    estaba en funcionamiento en cada momento.
+  outro: >-
+    Eso es la publicación: los cambios pendientes, los problemas que se interponen, la confirmación, y el único paso que hace
+    efectivo todo. A continuación, el Gestor de starters muestra cómo se añade a su aplicación un dominio de negocio ya
+    preparado.

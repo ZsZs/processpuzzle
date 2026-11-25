@@ -1,0 +1,27 @@
+title: "Starter-Manager: einen fertigen Geschäftsbereich zu Ihrer Anwendung hinzufügen"
+
+values: {}
+
+steps:
+  intro: >-
+    Willkommen beim Starter-Manager. Ein Geschäftsstarter ist ein fertiger Bereich: die Entitäten, Workflows, Regeln und Seiten
+    eines Geschäftsbereichs, etwa Rechnungsstellung oder Auftragsabwicklung. Statt diesen Bereich von Grund auf zu entwerfen,
+    installieren Sie einen Starter, und er ergänzt Ihre eigene Anwendung, neben den Teilen, die Sie schon gebaut haben.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Starter. Hier installiert die Organisation Geschäftsstarter aus dem
+    Katalog.
+  catalog: >-
+    Der Katalog listet die Starter, die der Organisation zur Verfügung stehen. Auf dieser Testumgebung ist der Katalog leer,
+    deshalb sagt der Bildschirm, dass noch kein Starter angeboten wird. In einer produktiven Organisation erscheint hier jeder
+    Starter mit seinem Namen und dem, was er hinzufügt.
+  preview: >-
+    Die Vorschau ist der sichere Weg, bevor Sie installieren. Sie führt die ganze Installation als Probelauf aus und schreibt
+    nichts, sodass Sie sehen, was der Starter hinzufügen würde und ob er zu dem passt, was schon vorhanden ist. Installieren
+    ist erst aktiv, wenn ein Starter ausgewählt wurde, und führt dann die echte Installation aus.
+  installed: >-
+    Die installierten Starter stehen hier, sobald es welche gibt. Hier ist noch keiner installiert. Ein installierter Starter
+    kann später entfernt werden, solange seine Daten nicht genutzt wurden.
+  outro: >-
+    Das ist der Starter-Manager: der Katalog fertiger Bereiche, eine Vorschau, die nichts schreibt, und die Liste dessen, was
+    installiert ist. Als Nächstes zeigt die Freigabe, wie die Änderungen, die Sie vornehmen, für Ihre Benutzer live geschaltet
+    werden.

@@ -1,0 +1,53 @@
+title: "Workflow Designer: model a business process, from its first step to its last"
+
+values: {}
+
+steps:
+  intro: >-
+    Welcome to the Workflow Designer. A workflow describes how work moves through your organization: who does what, in
+    which order, with which information, and what happens when something goes wrong. Once a workflow is released, the
+    application runs it: it assigns the tasks to the right people, keeps track of each case, and records what was done.
+    This tutorial walks through one released workflow, Order Fulfillment, from its definition to the cases that have
+    already run through it, so that you can see every part a workflow is made of.
+  open: >-
+    From the Designer Home, open the Workflow card. The designer lists the workflows of your organization.
+  list: >-
+    Each row is a workflow. The Release column tells you whether it is live or still a draft, and the Active instances
+    column counts the cases running through it right now. Order Fulfillment is one of the released ones; open it to see
+    how it is defined.
+  definition: >-
+    The definition holds the workflow's name and its description, which is the first thing a new designer reads, so
+    describe the purpose of the process here. It also records the version, and the events that start the workflow. Below
+    the definition the parts of the workflow are listed, one section for each kind of thing a process is made of.
+  modeler: >-
+    The modeler draws the process. Each shape is a step: a task a person performs, an event that starts or ends the flow,
+    a decision that splits it in two. The arrows say what follows what. The drawing is not decoration: it is the process
+    the application follows, and when a designer changes the diagram, the workflow changes with it.
+  roles: >-
+    Roles say who may do the work. A task is given to a role, and every person who holds that role can pick it up. Roles
+    are defined once for the whole organization, so a warehouse clerk or an accountant is named the same way in every
+    workflow that needs them.
+  tasks: >-
+    A task is one unit of work: a step in the diagram that a person performs, such as checking an order or confirming a
+    shipment. Each task names the role that performs it, and what information it needs and produces. A task can carry
+    steps of its own, so that the person doing it is guided through the work in the right order.
+  artifacts: >-
+    Artifacts are the things a workflow passes along: an order, an invoice, a delivery note. An artifact is either an
+    entity of your application, or a document, and the workflow declares which one each task reads and writes. This is how
+    a task knows which order it is working on, and how the next task finds the result of the one before.
+  tools: >-
+    Tools are automated steps: a call that the application makes on its own, such as reserving stock or sending a
+    confirmation. A tool does the work a person would otherwise have to do, and it reports back, so the workflow can
+    continue without anyone waiting on it.
+  events: >-
+    Events are what a workflow listens for and what it announces. An order placed in another part of the application can
+    start this workflow; a payment confirmed later can move a waiting case on. Events connect the workflow to the rest of
+    the application, so a process starts where its trigger happens, not where someone remembers to start it.
+  instances: >-
+    Finally, the instances are the cases that have actually run: one for each order, each with its own progress, its own
+    tasks and its own history. Nothing here is a copy of the design; it is the work the application is doing or has done,
+    and it is the first place to look when a case seems to be stuck.
+  outro: >-
+    That is a workflow: a diagram of steps, the roles that perform them, the artifacts they pass along, the tools that act
+    on their own, and the events that start and move them. Next, the Chat Designer defines the conversations that people
+    and processes can have about the work they share.

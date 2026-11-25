@@ -132,7 +132,8 @@ export class ForeignKeyComponent<Entity extends BaseEntity> extends BaseFormCont
   }
 
   foreignKeyDisplayName(): string {
-    return this.labels.labelOf(this.config().linkedEntityType, this.foreignKeyId(), this.selectedEntity());
+    const snapshot = (this.entity() as Record<string, unknown>)[`${this.config().attrName}$snapshot`] as Record<string, unknown> | undefined;
+    return this.labels.labelOf(this.config().linkedEntityType, this.foreignKeyId(), this.selectedEntity(), snapshot);
   }
 
   private addSelectedComponentFromNavigatorResponse(): void {

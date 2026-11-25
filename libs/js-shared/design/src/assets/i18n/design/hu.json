@@ -114,6 +114,11 @@
     "menu_rules": "Tutoriál megnézése",
     "menu_states": "Tutoriál megnézése",
     "menu_documents": "Tutoriál megnézése",
-    "menu_calculations": "Tutoriál megnézése"
+    "menu_calculations": "Tutoriál megnézése",
+    "menu_workflows": "Tutoriál megnézése",
+    "menu_chats": "Tutoriál megnézése",
+    "menu_applications": "Tutoriál megnézése",
+    "menu_starters": "Tutoriál megnézése",
+    "menu_release": "Tutoriál megnézése"
   }
 }

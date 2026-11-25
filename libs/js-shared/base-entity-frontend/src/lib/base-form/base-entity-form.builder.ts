@@ -21,6 +21,7 @@ import { TagsComponent } from './tags/tags.component';
 import { CommentsComponent } from './comments/comments.component';
 import { AddressComponent } from './address/address.component';
 import { GeoLocationComponent } from './geo-location/geo-location.component';
+import { LinkComponent } from './link/link.component';
 import { DimensionsComponent } from './fundamental-types/dimensions.component';
 import { MoneyComponent } from './fundamental-types/money.component';
 import { QuantityComponent } from './fundamental-types/quantity.component';
@@ -49,6 +50,7 @@ const FORM_CONTROL_COMPONENTS: Readonly<Partial<Record<FormControlType, AnyFormC
   [FormControlType.CHECKBOX]: CheckboxComponent,
   [FormControlType.COMMENTS]: CommentsComponent,
   [FormControlType.GEO_LOCATION]: GeoLocationComponent,
+  [FormControlType.LINK]: LinkComponent,
   [FormControlType.COMPONENTS]: ComponentsListComponent,
   [FormControlType.DATE]: DatepickerComponent,
   [FormControlType.DIMENSIONS]: DimensionsComponent,

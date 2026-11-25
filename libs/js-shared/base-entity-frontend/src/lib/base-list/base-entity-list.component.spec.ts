@@ -319,6 +319,7 @@ describe('EntityListComponent', () => {
       TestBed.flushEffects();
 
       expect(store.load).toHaveBeenLastCalledWith(expect.objectContaining({ includeRetired: true }));
+      expect(store.load).toHaveBeenLastCalledWith(expect.objectContaining({ allPages: true }));
     });
 
     it('marks a retired row as retired, and no other', async () => {
