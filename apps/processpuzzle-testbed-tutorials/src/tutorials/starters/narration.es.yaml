@@ -1,0 +1,26 @@
+title: "Gestor de starters: añadir un dominio de negocio ya preparado a su aplicación"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenido al Gestor de starters. Un starter de negocio es un dominio ya preparado: las entidades, los workflows, las reglas y
+    las páginas de un área de negocio, como la facturación o la gestión de pedidos. En lugar de diseñar esa área desde cero, instala
+    un starter, y se añade a su propia aplicación, junto a las partes que ya ha construido.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Starters. Aquí es donde la organización instala starters de negocio desde el
+    catálogo.
+  catalog: >-
+    El catálogo enumera los starters disponibles para la organización. En este entorno de prueba el catálogo está vacío, así que la
+    pantalla dice que todavía no hay ningún starter ofrecido. En una organización en funcionamiento, cada starter aparece aquí con su
+    nombre y con lo que añade.
+  preview: >-
+    La vista previa es la forma segura de mirar antes de instalar. Ejecuta toda la instalación en seco y no escribe nada, así que
+    ve lo que añadiría el starter y si encaja con lo que ya existe. Instalar solo se activa cuando se ha elegido un starter, y
+    entonces hace la instalación real.
+  installed: >-
+    Los starters instalados se enumeran aquí, cuando los hay. Aquí todavía no hay ninguno instalado. Un starter instalado se puede
+    retirar más adelante, siempre que sus datos no se hayan usado.
+  outro: >-
+    Ese es el Gestor de starters: el catálogo de dominios ya preparados, una vista previa que no escribe nada, y la lista de lo que
+    está instalado. A continuación, la Publicación muestra cómo se hacen efectivos para sus usuarios los cambios que usted hace.

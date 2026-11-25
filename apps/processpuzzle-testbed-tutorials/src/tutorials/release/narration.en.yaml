@@ -1,0 +1,35 @@
+title: "Release: decide what goes live, and make it live in one step"
+
+values: {}
+
+steps:
+  intro: >-
+    Welcome to Release. Everything you design is a draft until you publish it. The live application uses only the released
+    definitions, so a half-finished design never reaches your users. This tutorial shows what a release contains, what can
+    stand in its way, and the single step that makes the changes live.
+  open: >-
+    From the Designer Home, open the Release card. This is the screen where the organization decides what goes live.
+  pending: >-
+    The Pending changes table lists everything that differs between the drafts and the live application. Each row names
+    a kind of definition, the definition itself, and whether it is added or changed. Nothing in this table is live yet.
+  changes: >-
+    Here the changes are: the entity Product is added, the module order-admin is added, and the applications demo and
+    order-desk are added. One release carries every change at once, or none. That is why a designer can work on several
+    definitions and publish them together.
+  problems: >-
+    The Problems list names what the release would overlook. These warnings say that some documents have unpublished
+    changes in their English or Hungarian translations. A release does not publish documents, so each one has to be
+    published in the document editor, and the warning stays until it is.
+  acknowledge: >-
+    The checkbox records that you have read the warnings and want to release anyway. Releasing with a warning is a choice
+    you make consciously, and the checkbox keeps that choice on the record.
+  publish: >-
+    Publish makes the pending changes live. It stays disabled until the warnings are acknowledged, and once it is pressed,
+    the changes reach the users of the application. We do not press it in this video, because it would release the
+    testbed.
+  history: >-
+    Every release is listed here, with what it carried and when it went live. Nothing has been released yet on this
+    organization, so the list is empty. Once a release exists, this list is the record of what was live when.
+  outro: >-
+    That is the release: the pending changes, the problems that stand in the way, the acknowledgement, and the one step
+    that makes it live. Next, the Starter Manager shows how a ready-made business domain is added to your application.

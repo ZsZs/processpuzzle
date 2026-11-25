@@ -1,0 +1,24 @@
+title: "Starter Manager: add a ready-made business domain to your application"
+
+values: {}
+
+steps:
+  intro: >-
+    Welcome to the Starter Manager. A business starter is a ready-made domain: the entities, the workflows, the rules and the
+    pages of one business area, such as invoicing or order handling. Instead of designing that area from nothing, you install
+    a starter, and it adds to your own application, next to the parts you have already built.
+  open: >-
+    From the Designer Home, open the Starter card. This is where the organization installs business starters from the catalog.
+  catalog: >-
+    The catalog lists the starters that are available to the organization. On this testbed the catalog is empty, so the screen
+    says that no starter is offered yet. On a live organization, each starter appears here with its name and what it adds.
+  preview: >-
+    Preview is the safe way to look before installing. It runs the whole installation in a dry run and writes nothing, so you
+    see what the starter would add and whether it would fit with what already exists. Install is only enabled once a starter
+    is chosen, and it does the real installation.
+  installed: >-
+    The installed starters are listed here, once there are any. Here none is installed yet. An installed starter can be
+    removed later, as long as its data has not been used.
+  outro: >-
+    That is the Starter Manager: the catalog of ready-made domains, a preview that writes nothing, and the list of what is
+    installed. Next, the Release screen shows how the changes you make are made live for your users.

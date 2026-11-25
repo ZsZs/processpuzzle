@@ -1,0 +1,39 @@
+title: "Publication : décider ce qui passe en production, et le rendre actif en une seule étape"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenue dans la Publication. Tout ce que vous concevez reste un brouillon jusqu'à ce que vous le publiiez. L'application
+    en production n'utilise que les définitions publiées, si bien qu'une conception inachevée n'atteint jamais vos utilisateurs.
+    Ce tutoriel montre ce que contient une publication, ce qui peut la bloquer, et l'unique étape qui rend les changements
+    actifs.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Publication. C'est l'écran où l'organisation décide ce qui passe en
+    production.
+  pending: >-
+    Le tableau Modifications en attente liste tout ce qui diffère entre les brouillons et l'application en production. Chaque
+    ligne nomme un type de définition, la définition elle-même, et indique si elle est ajoutée ou modifiée. Rien dans ce tableau
+    n'est encore actif.
+  changes: >-
+    Voici les modifications : l'entité Product est ajoutée, le module order-admin est ajouté, et les applications demo et
+    order-desk sont ajoutées. Une publication porte toutes les modifications d'un coup, ou aucune. C'est pourquoi un concepteur
+    peut travailler sur plusieurs définitions et les publier ensemble.
+  problems: >-
+    La liste Problèmes indique ce que la publication laisserait passer. Ces avertissements signalent que certains documents ont
+    des modifications non publiées dans leurs traductions en anglais ou en hongrois. Une publication ne publie pas les documents :
+    chacun doit être publié dans l'éditeur de documents, et l'avertissement reste tant que ce n'est pas fait.
+  acknowledge: >-
+    La case à cocher indique que vous avez lu les avertissements et que vous voulez publier malgré tout. Publier malgré un
+    avertissement est un choix conscient, et la case le conserve dans le registre.
+  publish: >-
+    Publier rend les modifications en attente actives. Le bouton reste désactivé tant que les avertissements ne sont pas acquittés,
+    et une fois activé, les modifications atteignent les utilisateurs de l'application. Nous ne l'activons pas dans cette vidéo,
+    car cela publierait l'environnement de test.
+  history: >-
+    Chaque publication figure ici, avec ce qu'elle contenait et le moment où elle est devenue active. Rien n'a encore été publié
+    pour cette organisation, la liste est donc vide. Une fois qu'une publication existe, cette liste est le registre de ce qui
+    était actif à chaque moment.
+  outro: >-
+    Voilà la publication : les modifications en attente, les problèmes qui bloquent, l'acquittement, et l'unique étape qui rend
+    tout actif. Ensuite, le Gestionnaire de starters montre comment ajouter un domaine métier prêt à l'emploi à votre application.

@@ -113,6 +113,7 @@ export class DesignContentComponent {
       subtitle: 'base-starter_card_subtitle',
       content: ['base-starter_card_content', 'base-starter_card_content_1', 'base-starter_card_content_2', 'base-starter_card_content_3'],
       actions: [{ link: `${this.prefix}/design/starters`, caption: 'base-starter_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_starters', link: `${this.prefix}/design/tutorials/starters` }],
       translocoPrefix: 'design',
     },
     {
@@ -121,6 +122,7 @@ export class DesignContentComponent {
       subtitle: 'base-release_card_subtitle',
       content: ['base-release_card_content', 'base-release_card_content_1', 'base-release_card_content_2', 'base-release_card_content_3'],
       actions: [{ link: `${this.prefix}/design/release`, caption: 'base-release_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_release', link: `${this.prefix}/design/tutorials/release` }],
       translocoPrefix: 'design',
     },
   ];
