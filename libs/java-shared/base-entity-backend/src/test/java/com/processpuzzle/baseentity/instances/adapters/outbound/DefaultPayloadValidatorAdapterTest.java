@@ -52,6 +52,36 @@ class DefaultPayloadValidatorAdapterTest {
     }
 
     @Test
+    void validate_periodWhereTheEndIsNotBeforeTheStart_passes() {
+        EntityDefinitionView def = periodDefinition();
+        validator.validate(ORG, def, Map.of("period", Map.of("from", "2026-05-01T09:00:00+02:00", "to", "2026-05-01T17:00:00+02:00")));
+        validator.validate(ORG, def, Map.of("period", Map.of("from", "2026-05-01T09:00:00+02:00", "to", "2026-05-01T09:00:00+02:00")));
+    }
+
+    @Test
+    void validate_periodWhoseEndIsBeforeItsStart_throwsValidationException() {
+        assertThatThrownBy(() -> validator.validate(ORG, periodDefinition(),
+                Map.of("period", Map.of("from", "2026-05-01T17:00:00+02:00", "to", "2026-05-01T09:00:00+02:00"))))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations().get(0).message())
+                        .contains("before its start"));
+    }
+
+    @Test
+    void validate_periodWithoutAnEnd_throwsValidationException() {
+        assertThatThrownBy(() -> validator.validate(ORG, periodDefinition(),
+                Map.of("period", Map.of("from", "2026-05-01T09:00:00+02:00"))))
+                .isInstanceOf(ValidationException.class)
+                .satisfies(ex -> assertThat(((ValidationException) ex).getViolations().get(0).message())
+                        .contains("a from and a to instant"));
+    }
+
+    private static EntityDefinitionView periodDefinition() {
+        return new EntityDefinitionView("race", false, List.of(
+                new EntityAttributeView("period", ValueKindView.PERIOD, false, false, null, true)));
+    }
+
+    @Test
     void validate_missingRequiredField_throwsValidationException() {
         EntityDefinitionView def = new EntityDefinitionView(
                 "partner",

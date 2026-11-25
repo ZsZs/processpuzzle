@@ -15,6 +15,7 @@ public enum EntityAttributeKind {
     BOOLEAN,
     DATE,
     DATE_TIME,
+    PERIOD,
     ENUM,
     REFERENCE
 }

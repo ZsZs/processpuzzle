@@ -42,6 +42,6 @@ public record EntityAttributeView(
     }
 
     public enum ValueKindView {
-        TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE
+        TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE, PERIOD
     }
 }

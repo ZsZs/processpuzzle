@@ -86,7 +86,8 @@ final class JsonPathExpressionBuilder {
         return switch (valueKind) {
             case NUMBER -> cb.literal(new BigDecimal(raw));
             case BOOLEAN -> cb.literal(Boolean.parseBoolean(raw));
-            case DATE, DATE_TIME, TEXT, ENUM, REFERENCE -> cb.literal(raw);
+            // A period is not searched by its literal yet: it is compared as the text it was written as.
+            case DATE, DATE_TIME, TEXT, ENUM, REFERENCE, PERIOD -> cb.literal(raw);
         };
     }
 
