@@ -35,8 +35,19 @@ export class OrganizationExchangeRates {
 
   private async load(): Promise<void> {
     const records = await firstValueFrom(this.service.findAll());
-    // The logger is looked up now, not injected at construction: this store can be created while the logger itself is being built.
-    this.current.set(tableOf(records, this.injector.get(NGXLogger, null)));
+    this.current.set(tableOf(records, this.loggerOrNull()));
+  }
+
+  /**
+   * The logger, looked up now and not injected at construction: this store can be created while the logger itself is being
+   * built. When it is still being built, the warnings for unusable rates are left out, which is better than failing the load.
+   */
+  private loggerOrNull(): NGXLogger | null {
+    try {
+      return this.injector.get(NGXLogger, null);
+    } catch {
+      return null;
+    }
   }
 }
 
