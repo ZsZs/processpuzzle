@@ -306,7 +306,7 @@ public class EntityDefinitionReleaseParticipant implements ReleaseParticipant {
             case BOOLEAN -> "boolean";
             case DATE -> "date";
             case DATE_TIME -> "dateTime";
-            case REFERENCE -> null;
+            case REFERENCE, PERIOD -> null;
         };
         if (inputKind == null || attribute.isMultiValued()) {
             return List.of();

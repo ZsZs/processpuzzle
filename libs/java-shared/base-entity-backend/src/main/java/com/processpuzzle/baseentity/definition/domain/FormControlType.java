@@ -11,6 +11,7 @@ public enum FormControlType {
     NUMBER,
     DATE,
     DATE_TIME,
+    DATE_TIME_PERIOD,
     BOOLEAN,
     CHECKBOX,
     RADIO,

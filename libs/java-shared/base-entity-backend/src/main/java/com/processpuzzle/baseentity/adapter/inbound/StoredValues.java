@@ -46,6 +46,9 @@ final class StoredValues {
             case DATE_TIME -> value instanceof String text
                 && (parses(() -> OffsetDateTime.parse(text)) || parses(() -> LocalDateTime.parse(text)));
             case REFERENCE -> value instanceof String || value instanceof Map<?, ?>;
+            case PERIOD -> value instanceof Map<?, ?> period && period.get("from") instanceof String from
+                && period.get("to") instanceof String to
+                && parses(() -> OffsetDateTime.parse(from)) && parses(() -> OffsetDateTime.parse(to));
         };
     }
 
