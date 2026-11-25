@@ -5,7 +5,7 @@ import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@js
 import { DESIGN_ROUTE_PREFIX } from '@processpuzzle/util';
 import { catchError, combineLatest, forkJoin, map, Observable, of, switchMap } from 'rxjs';
 import { MatCardsGridComponent } from '../mat-cards-grid/mat-cards-grid.component';
-import { moduleAssetPathOf } from '../module-asset/module-asset-context';
+import { moduleAssetPathOf } from '@processpuzzle/util';
 import { launcherCardsOf, ModuleLauncherEntry, MODULE_LAUNCHER_CONTEXT } from './module-launcher-context';
 
 interface LoadedTexts {

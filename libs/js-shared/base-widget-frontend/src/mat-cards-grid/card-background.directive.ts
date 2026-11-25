@@ -1,5 +1,5 @@
 import { Directive, input } from '@angular/core';
-import { moduleAssetUrl } from '../module-asset/module-asset-context';
+import { moduleAssetUrl } from '@processpuzzle/util';
 
 /**
  * Draws a card's `backgroundImage` behind it: an ordinary URL as is, a `module:` asset fetched with the

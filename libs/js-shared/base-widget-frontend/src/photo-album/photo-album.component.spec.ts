@@ -2,7 +2,7 @@ import { fireEvent, render } from '@testing-library/angular';
 import '@testing-library/jest-dom/vitest';
 import { LayoutService } from '@processpuzzle/util';
 import { of } from 'rxjs';
-import { MODULE_ASSET_CONTEXT } from '../module-asset/module-asset-context';
+import { MODULE_ASSET_CONTEXT } from '@processpuzzle/util';
 import { describe, expect, it, vi } from 'vitest';
 import { PhotoAlbumComponent } from './photo-album.component';
 

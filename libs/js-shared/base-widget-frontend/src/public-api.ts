@@ -85,8 +85,8 @@ export {
   moduleAssetPathOf,
   moduleAssetUrl,
   resolveAssetLink,
-} from './module-asset/module-asset-context';
-export type { AppAssetContext, ModuleAssetContext } from './module-asset/module-asset-context';
+} from '@processpuzzle/util';
+export type { AppAssetContext, ModuleAssetContext } from '@processpuzzle/util';
 export { MatCardsGridComponent } from './mat-cards-grid/mat-cards-grid.component';
 export { provideAppPropertyStore } from './app-property/app-property-store.provider';
 export { ShareButtonComponent } from './share-button/share-button.component';

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { LayoutService } from '@processpuzzle/util';
-import { moduleAssetUrl } from '../module-asset/module-asset-context';
+import { moduleAssetUrl } from '@processpuzzle/util';
 
 @Component({
   selector: 'pp-image-zoom',

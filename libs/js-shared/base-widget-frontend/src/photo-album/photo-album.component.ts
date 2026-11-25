@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, inject, input, OnDestroy, signal } from '@angular/core';
 import { LayoutService } from '@processpuzzle/util';
-import { moduleAssetUrl } from '../module-asset/module-asset-context';
+import { moduleAssetUrl } from '@processpuzzle/util';
 
 export interface PhotoAlbumImage {
   readonly src: string;

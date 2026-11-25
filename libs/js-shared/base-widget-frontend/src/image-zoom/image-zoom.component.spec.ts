@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest';
 import { LayoutService } from '@processpuzzle/util';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { MODULE_ASSET_CONTEXT } from '../module-asset/module-asset-context';
+import { MODULE_ASSET_CONTEXT } from '@processpuzzle/util';
 import { ImageZoomComponent } from './image-zoom.component';
 
 describe('ImageZoomComponent', () => {
