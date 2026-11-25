@@ -128,6 +128,24 @@
     <arch-unit-maven-plugin.version>5.0.0</arch-unit-maven-plugin.version>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>github</id>
+      <name>ProcessPuzzle core on GitHub Packages</name>
+      <url>https://maven.pkg.github.com/ZsZs/processpuzzle</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <dependencyManagement>
     <dependencies>
       <!-- Spring Modulith BOM — every library declares spring-modulith-api without a
