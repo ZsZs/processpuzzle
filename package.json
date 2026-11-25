@@ -241,7 +241,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.9",
     "keycloak-js": "^26.2.5",
-    "marked": "^18.2.0",
+    "marked": "^18.2.1",
     "marked-katex-extension": "^5.1.13",
     "material-icons": "^1.13.14",
     "material-symbols": "^0.49.0",
