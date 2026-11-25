@@ -1,0 +1,45 @@
+title: "Application Designer: arme su aplicación con regiones, rutas y módulos, y véala como la ven los usuarios"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenido al Application Designer. Una aplicación es lo que abren sus usuarios: su cabecera, su navegación, las páginas
+    entre las que se mueven y las pantallas que muestran esas páginas. No programa nada de eso. Aquí describe la aplicación,
+    desde su nombre y su apariencia hasta los módulos y los widgets de los que se compone, y la aplicación se arma sola a partir
+    de esa descripción. Este tutorial muestra una aplicación, el Escritorio de pedidos, desde su definición hasta la pantalla
+    que ve un usuario.
+  open: >-
+    Desde el inicio del diseñador, abra la tarjeta Aplicación. El diseñador enumera las aplicaciones de su organización.
+  list: >-
+    Cada fila es una aplicación: su código, su nombre, su estado y su versión. El Escritorio de pedidos es un borrador, así que
+    todavía se está diseñando y no es la que abren sus usuarios. La aplicación de demostración aparece junto a ella.
+  details: >-
+    El nombre y la descripción dicen para qué sirve la aplicación, y la descripción es lo primero que lee el siguiente
+    diseñador. El identificador es el código con el que se conoce la aplicación, y no cambia una vez que está en uso. El estado
+    indica si la aplicación es un borrador; la versión publicada es la que ven los usuarios.
+  appearance: >-
+    La apariencia se define aquí. El tema de material y el esquema de colores determinan la paleta, y el preajuste elige un
+    aspecto completo. El modo de la barra lateral indica si la navegación se queda abierta, se desliza sobre la página o queda
+    oculta hasta que se pide. Estas decisiones se aplican a toda la aplicación a la vez, así que las define una sola vez aquí,
+    y no en cada página.
+  structure: >-
+    La estructura se compone de cuatro partes. Las regiones son las zonas de la pantalla, como la cabecera y la barra lateral.
+    Las rutas son las páginas a las que puede llegar un usuario, y cada una muestra un conjunto de widgets. Los módulos son las
+    funciones que usa la aplicación, como la lista de pedidos, y los contextos son los objetos de los que trata una página. Juntas
+    indican qué es la aplicación y dónde aparece cada una de sus partes.
+  preview: >-
+    La vista previa es la aplicación tal como la ve un usuario. Aquí está la cabecera, la navegación a la izquierda con Pedidos
+    y Líneas, y la lista de pedidos en la página. Lo que ve aquí se construye a partir de la descripción de las pantallas
+    anteriores, así que si cambia la descripción, aquí verá el efecto.
+  modules: >-
+    La sección Módulos enumera las funciones con las que está construida la aplicación. Un módulo aporta un conjunto de
+    pantallas y su comportamiento, y una aplicación usa un módulo nombrándolo. Los módulos se comparten entre aplicaciones, así
+    que una función se construye una vez y se usa donde haga falta.
+  widgets: >-
+    La sección Widgets enumera los bloques con los que se hacen las páginas: una cuadrícula de tarjetas, una tabla, un formulario,
+    una cabecera. Un widget toma su configuración de la página que lo coloca, así que el mismo widget puede mostrar pedidos en una
+    aplicación y clientes en otra. Los widgets que aquí se ven son los que se pueden colocar en una página.
+  outro: >-
+    Eso es una aplicación: una definición con su apariencia, sus regiones, rutas, módulos y contextos, y la vista previa que verá
+    un usuario. A continuación, el AI Designer le ayuda a describir cada una de estas partes en lenguaje sencillo.
