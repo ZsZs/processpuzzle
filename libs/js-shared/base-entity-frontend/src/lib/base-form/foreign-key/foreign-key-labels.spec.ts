@@ -43,6 +43,22 @@ describe('ForeignKeyLabels', () => {
     expect(labels.labelOf(undefined, 'x-1')).toBe('x-1');
   });
 
+  it('shows the snapshot of a linked object that is not visible here', () => {
+    expect(labels.labelOf('Boat', 'b-9', undefined, { sailNumber: 'FRA 12', name: 'Blue' })).toBe('FRA 12');
+  });
+
+  it('shows the first text value of a snapshot that lacks the identifying attribute', () => {
+    expect(labels.labelOf('Race', 'r-9', undefined, { title: 'Spring Cup' })).toBe('Spring Cup');
+  });
+
+  it('falls back to the id for an empty snapshot', () => {
+    expect(labels.labelOf('Boat', 'b-9', undefined, {})).toBe('b-9');
+  });
+
+  it('prefers the live object over its snapshot', () => {
+    expect(labels.labelOf('Boat', 'b-1', undefined, { sailNumber: 'OLD' })).toBe('CAN 603');
+  });
+
   it('is empty for an empty value', () => {
     expect(labels.labelOf('Boat', undefined)).toBe('');
     expect(labels.labelOf('Boat', null)).toBe('');
