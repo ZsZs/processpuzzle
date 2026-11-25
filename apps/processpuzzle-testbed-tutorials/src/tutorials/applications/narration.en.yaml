@@ -1,0 +1,44 @@
+title: "Application Designer: assemble your application from regions, routes and modules, and see it as users will"
+
+values: {}
+
+steps:
+  intro: >-
+    Welcome to the Application Designer. An application is what your users open: its header, its navigation, the pages
+    they move between, and the screens those pages show. You do not program any of it. You describe the application
+    here, from its name and its appearance down to the modules and widgets it is built from, and the application
+    assembles itself from that description. This tutorial shows one application, Order desk, from its definition to the
+    screen a user sees.
+  open: >-
+    From the Designer Home, open the Application card. The designer lists the applications of your organization.
+  list: >-
+    Each row is an application: its code, its name, its status and its version. Order desk is a draft, which means it is
+    still being designed and is not yet the one your users open. The demo application is listed beside it.
+  details: >-
+    The name and the description say what the application is for, and the description is what the next designer reads
+    first. The identifier is the code the application is known by, and it stays the same once it is in use. The status
+    tells you whether the application is a draft, and the published version is the one users see.
+  appearance: >-
+    The appearance is set here. The material theme and the colour scheme decide the palette, and the preset chooses a
+    complete look. The sidenav mode says whether the navigation stays open, slides over the page, or is hidden until it is
+    asked for. These choices apply to the whole application at once, so you set them once here, and not on every page.
+  structure: >-
+    The structure is made of four parts. Regions are the areas of the screen, such as a header and a sidenav. Routes are
+    the pages a user can reach, each showing a set of widgets. Modules are the features the application uses, such as the
+    order list, and contexts are the objects a page is about. Together they say what the application is and where each part
+    of it appears.
+  preview: >-
+    The preview is the application as a user sees it. Here is the header, the navigation on the left with Orders and Lines,
+    and the list of orders on the page. What you see here is built from the description on the previous screens, so when
+    you change the description, this is where you see the effect.
+  modules: >-
+    The Modules section lists the features that the application is built from. A module brings a set of screens and their
+    behaviour, and an application uses a module by naming it. The modules are shared across applications, so a feature is
+    built once and used wherever it is needed.
+  widgets: >-
+    The Widgets section lists the building blocks that the pages are made of: a cards grid, a table, a form, a header. A
+    widget takes its settings from the page that places it, so the same widget can show orders in one application and
+    customers in another. The widgets you see here are the ones that can be placed on a page.
+  outro: >-
+    That is an application: a definition with its appearance, its regions, routes, modules and contexts, and the preview a
+    user will see. Next, the AI Designer helps you describe any of these parts in plain language.

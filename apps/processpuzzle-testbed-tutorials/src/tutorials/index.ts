@@ -6,6 +6,7 @@ import { STATES_TUTORIAL } from './states/states.tutorial';
 import { CALCULATIONS } from './calculations/calculations.tutorial';
 import { WORKFLOWS } from './workflows/workflows.tutorial';
 import { CHATS } from './chats/chats.tutorial';
+import { APPLICATIONS } from './applications/applications.tutorial';
 
 /** Every tutorial, in the order of the Designer Home cards. */
-export const TUTORIALS: Tutorial[] = [ENTITY_DESIGNER, DOCUMENTS, RULES, STATES_TUTORIAL, CALCULATIONS, WORKFLOWS, CHATS];
+export const TUTORIALS: Tutorial[] = [ENTITY_DESIGNER, DOCUMENTS, RULES, STATES_TUTORIAL, CALCULATIONS, WORKFLOWS, CHATS, APPLICATIONS];

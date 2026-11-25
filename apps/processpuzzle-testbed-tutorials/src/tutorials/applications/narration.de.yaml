@@ -1,0 +1,48 @@
+title: "Application Designer: Ihre Anwendung aus Bereichen, Routen und Modulen zusammenstellen und sie so sehen, wie die Benutzer sie sehen"
+
+values: {}
+
+steps:
+  intro: >-
+    Willkommen beim Application Designer. Eine Anwendung ist das, was Ihre Benutzer öffnen: ihre Kopfzeile, ihre Navigation,
+    die Seiten, zwischen denen sie wechseln, und die Bildschirme, die diese Seiten zeigen. Sie programmieren davon nichts.
+    Sie beschreiben die Anwendung hier, vom Namen und dem Erscheinungsbild bis zu den Modulen und Widgets, aus denen sie
+    gebaut ist, und die Anwendung setzt sich aus dieser Beschreibung selbst zusammen. Dieses Tutorial zeigt eine Anwendung,
+    die Bestellübersicht, von ihrer Definition bis zu dem Bildschirm, den ein Benutzer sieht.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Anwendung. Der Designer listet die Anwendungen Ihrer Organisation.
+  list: >-
+    Jede Zeile ist eine Anwendung: ihr Code, ihr Name, ihr Status und ihre Version. Die Bestellübersicht ist ein Entwurf, sie
+    wird also noch entworfen und ist noch nicht die, die Ihre Benutzer öffnen. Daneben steht die Demo-Anwendung.
+  details: >-
+    Name und Beschreibung sagen, wofür die Anwendung da ist, und die Beschreibung liest der nächste Designer zuerst. Die
+    Kennung ist der Code, unter dem die Anwendung bekannt ist, und er bleibt gleich, sobald sie in Gebrauch ist. Der Status
+    zeigt, ob die Anwendung ein Entwurf ist; die veröffentlichte Version ist die, die Benutzer sehen.
+  appearance: >-
+    Das Erscheinungsbild wird hier festgelegt. Das Material-Thema und das Farbschema bestimmen die Palette, die Voreinstellung
+    wählt ein vollständiges Aussehen. Der Seitenleisten-Modus legt fest, ob die Navigation geöffnet bleibt, sich über die
+    Seite schiebt oder erst auf Wunsch sichtbar wird. Diese Entscheidungen gelten sofort für die ganze Anwendung. Sie legen
+    sie also einmal hier fest und nicht auf jeder Seite.
+  structure: >-
+    Die Struktur besteht aus vier Teilen. Bereiche sind die Flächen des Bildschirms, etwa Kopfzeile und Seitenleiste. Routen
+    sind die Seiten, die ein Benutzer erreichen kann, und jede zeigt eine Gruppe von Widgets. Module sind die Funktionen, die
+    die Anwendung nutzt, etwa die Bestellliste, und Kontexte sind die Objekte, um die sich eine Seite dreht. Zusammen legen
+    sie fest, was die Anwendung ist und wo jeder Teil von ihr erscheint.
+  preview: >-
+    Die Vorschau ist die Anwendung, so wie ein Benutzer sie sieht. Hier sind die Kopfzeile, die Navigation links mit
+    Bestellungen und Positionen und die Liste der Bestellungen auf der Seite. Was Sie hier sehen, entsteht aus der
+    Beschreibung auf den vorigen Bildschirmen. Ändern Sie also die Beschreibung, sehen Sie hier die Wirkung.
+  modules: >-
+    Der Abschnitt Module listet die Funktionen, aus denen die Anwendung gebaut ist. Ein Modul bringt eine Gruppe von
+    Bildschirmen und ihr Verhalten mit, und eine Anwendung verwendet ein Modul, indem sie es benennt. Die Module sind über
+    Anwendungen hinweg gemeinsam nutzbar, eine Funktion wird also einmal gebaut und überall dort verwendet, wo sie gebraucht
+    wird.
+  widgets: >-
+    Der Abschnitt Widgets listet die Bausteine, aus denen die Seiten bestehen: ein Kartenraster, eine Tabelle, ein Formular,
+    eine Kopfzeile. Ein Widget übernimmt seine Einstellungen von der Seite, die es platziert, daher kann dasselbe Widget in
+    einer Anwendung Bestellungen und in einer anderen Kunden zeigen. Die hier gezeigten Widgets sind die, die auf einer Seite
+    platziert werden können.
+  outro: >-
+    Das ist eine Anwendung: eine Definition mit ihrem Erscheinungsbild, ihren Bereichen, Routen, Modulen und Kontexten und die
+    Vorschau, die ein Benutzer sehen wird. Als Nächstes hilft der AI Designer, jeden dieser Teile in einfacher Sprache zu
+    beschreiben.

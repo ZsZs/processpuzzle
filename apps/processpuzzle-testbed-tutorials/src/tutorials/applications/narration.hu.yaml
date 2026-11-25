@@ -1,0 +1,44 @@
+title: "Application Designer: az alkalmazás összeállítása területekből, útvonalakból és modulokból, és megtekintése úgy, ahogy a felhasználók látják"
+
+values: {}
+
+steps:
+  intro: >-
+    Üdvözöljük az Application Designerben. Az alkalmazás az, amit a felhasználók megnyitnak: a fejléce, a navigációja, az
+    oldalak, amelyek között mozognak, és az a képernyő, amelyet ezek az oldalak mutatnak. Ezek közül semmit sem programozza.
+    Itt írja le az alkalmazást, a nevétől és a megjelenésétől a modulokig és a widgetekig, amelyekből felépül, és az
+    alkalmazás ebből a leírásból áll össze. Ez a bemutató egy alkalmazást, a Rendelésasztalt jár végig, a definíciójától
+    addig a képernyőig, amelyet a felhasználó lát.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg az Alkalmazás kártyát. A tervező felsorolja a szervezete alkalmazásait.
+  list: >-
+    Minden sor egy alkalmazás: a kódja, a neve, az állapota és a verziója. A Rendelésasztal piszkozat, tehát még tervezés alatt
+    áll, és nem az, amelyet a felhasználók megnyitnak. Mellette a demó alkalmazás látható.
+  details: >-
+    A név és a leírás megmondja, mire való az alkalmazás, a leírást pedig a következő tervező olvassa először. Az azonosító az
+    a kód, amelyen az alkalmazás ismert, és használatban sem változik. Az állapot megmutatja, hogy az alkalmazás piszkozat-e;
+    a közzétett verzió az, amelyet a felhasználók látnak.
+  appearance: >-
+    A megjelenés itt állítható be. Az anyagtéma és a színséma határozza meg a palettát, az előbeállítás pedig teljes megjelenést
+    választ. Az oldalsáv módja megmondja, hogy a navigáció nyitva marad, rácsúszik az oldalra, vagy csak kérésre látszik. Ezek a
+    döntések az egész alkalmazásra egyszerre érvényesek, így itt egyszer állítja be őket, nem minden oldalon külön.
+  structure: >-
+    A szerkezet négy részből áll. A területek a képernyő részei, például a fejléc és az oldalsáv. Az útvonalak azok az oldalak,
+    amelyeket a felhasználó elérhet, mindegyik widgetek egy csoportját mutatja. A modulok azok a funkciók, amelyeket az
+    alkalmazás használ, például a rendelési lista, a kontextusok pedig azok az objektumok, amelyekről az oldal szól. Együtt
+    megmondják, mi az alkalmazás, és hol jelenik meg annak minden része.
+  preview: >-
+    Az előnézet az alkalmazás, ahogy a felhasználó látja. Itt van a fejléc, balra a navigáció a Rendelésekkel és a Tételekkel,
+    és az oldalon a rendelések listája. Amit itt lát, az az előző képernyők leírásából épül fel, így ha módosítja a leírást,
+    itt látja a hatását.
+  modules: >-
+    A Modulok szakasz azokat a funkciókat listázza, amelyekből az alkalmazás épül. Egy modul képernyők egy csoportját és azok
+    viselkedését hozza, az alkalmazás pedig úgy használ egy modult, hogy megnevezi. A modulok az alkalmazások között
+    megoszthatók, így egy funkciót egyszer építenek meg, és mindenhol használják, ahol szükség van rá.
+  widgets: >-
+    A Widgetek szakasz azokat az építőelemeket listázza, amelyekből az oldalak állnak: kártyarács, táblázat, űrlap, fejléc. Egy
+    widget a beállításait attól az oldaltól kapja, amelyik elhelyezi, így ugyanaz a widget az egyik alkalmazásban rendeléseket,
+    a másikban ügyfeleket mutathat. Az itt látható widgetek azok, amelyek egy oldalra helyezhetők.
+  outro: >-
+    Ez egy alkalmazás: egy definíció a megjelenésével, a területeivel, útvonalaival, moduljaival és kontextusaival, valamint
+    az előnézet, amelyet a felhasználó látni fog. Következőként az AI Designer segít mindegyik részt köznyelven leírni.
