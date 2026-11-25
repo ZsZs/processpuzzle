@@ -2,6 +2,7 @@ package com.processpuzzle.baseentity.instances.usecases.outbound;
 
 import com.processpuzzle.core.definition.Channel;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -18,6 +19,18 @@ public interface EntityDefinitionLookupPort {
 
     /** Either row of a definition; the draft is for checking other drafts against, never for live data. */
     Optional<EntityDefinitionView> findByCode(String orgKey, String code, Channel channel);
+
+    /** A snapshot an attribute carries: the attributes of the linked record copied into the referencing record. */
+    record SnapshotView(String linkedEntityType, List<String> fields) {
+        public SnapshotView {
+            fields = fields == null ? List.of() : List.copyOf(fields);
+        }
+    }
+
+    /** The snapshots of a type, by attribute code; empty when none of its attributes carries one. */
+    default Map<String, SnapshotView> snapshotsOf(String orgKey, String code) {
+        return Map.of();
+    }
 
     /** The sharing policy of a shared type, as plain names so the instances module need not know the definition's enums. */
     record SharingView(String write, String visibility, List<String> visibleWhen, String from, String fromType) {

@@ -9,12 +9,15 @@ import com.processpuzzle.baseentity.definition.domain.FormControlType;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort.SnapshotView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.core.quantity.UnitCatalog;
 import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
 import java.util.Optional;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -87,6 +90,18 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             return Optional.empty();
         }
         return sharedDefinition(orgKey, code).map(BaseEntityDefinition::getOrgKey);
+    }
+
+    @Override
+    public Map<String, SnapshotView> snapshotsOf(String orgKey, String code) {
+        Optional<BaseEntityDefinition> own = entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, Channel.RELEASED);
+        Optional<BaseEntityDefinition> definition = own.isPresent() ? own : sharedDefinition(orgKey, code);
+        Map<String, SnapshotView> snapshots = new LinkedHashMap<>();
+        definition.ifPresent(type -> type.getAttributes().stream()
+            .filter(attribute -> attribute.getSnapshotFields() != null && !attribute.getSnapshotFields().isEmpty())
+            .forEach(attribute -> snapshots.put(attribute.getCode(),
+                new SnapshotView(attribute.getLinkedEntityType(), attribute.getSnapshotFields()))));
+        return snapshots;
     }
 
     private Optional<BaseEntityDefinition> sharedDefinition(String orgKey, String code) {
