@@ -298,7 +298,8 @@ export class BaseEntityListComponent<Entity extends BaseEntity> implements After
   private loadAllData() {
     const pathParams = new Map<string, string>([]);
     const filters: FilterCondition[] = [];
-    this.store.load({ pathParams, filters, query: this.rsqlQuery(), includeRetired: this.canShowRetired() && this.showRetired() });
+    // Every page, so the pager counts the whole list: the server answers 20 rows a page when none is asked for.
+    this.store.load({ pathParams, filters, query: this.rsqlQuery(), includeRetired: this.canShowRetired() && this.showRetired(), allPages: true });
   }
 
   private rsqlQuery(): string | undefined {
