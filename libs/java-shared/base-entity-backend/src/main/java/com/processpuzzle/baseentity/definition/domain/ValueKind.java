@@ -11,6 +11,7 @@ public enum ValueKind {
     BOOLEAN,
     DATE,
     DATE_TIME,
+    PERIOD,
     ENUM,
     REFERENCE
 }
