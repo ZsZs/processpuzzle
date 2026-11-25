@@ -1,0 +1,54 @@
+title: "Chat Designer : des conversations sur vos objets métier, et qui peut y participer"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenue dans le Chat Designer. Un chat est une conversation rattachée à un objet métier : une discussion sur une
+    commande, un sujet sur un client, une question sur un produit. Une fois un chat défini, l'application l'ouvre à côté de
+    l'objet auquel il appartient, afin que les personnes qui travaillent sur cet objet en parlent là où le travail se fait, et
+    la conversation reste attachée à la fiche dont elle traite. Ce tutoriel montre comment une définition de chat détermine ce
+    qu'est une conversation, qui peut y prendre part et combien de temps elle est conservée.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Chat. Le concepteur liste les définitions de chat de votre organisation.
+  list: >-
+    Chaque ligne est une définition de chat : l'objet auquel elle se rattache, le nombre de conversations qu'elle autorise pour
+    chaque objet, et si elle est publiée. Les définitions présentes sont Discussion sur les commandes, Sujets de commande et
+    Sujets Dynamic Entity. Nous regardons d'abord la Discussion sur les commandes, puis nous la comparons aux Sujets de
+    commande.
+  definition: >-
+    Le nom et la description indiquent à quoi sert le chat, et ce sont les premiers éléments que l'on lit. Rédigez la
+    description pour les personnes qui vont converser, puisque c'est la finalité qui leur sera communiquée. La clé est le code
+    qu'utilise l'application pour retrouver la définition, et elle ne change pas une fois en service.
+  subject: >-
+    Le sujet est l'objet métier dont traite le chat. Ici, le type de sujet est une entité, et la définition du sujet est la
+    commande. Chaque conversation se rattache à une seule commande, et l'application l'ouvre depuis l'écran de la commande
+    elle-même, si bien que personne n'a besoin de chercher la discussion d'une commande donnée.
+  multiplicity: >-
+    La multiplicité détermine le nombre de conversations qu'un objet peut avoir. Unique signifie un chat par commande, dès le
+    premier message. Toute la conversation sur cette commande se déroule dans le même chat, ce qui est le bon choix quand une
+    commande n'a qu'un fil de discussion. Plusieurs autoriserait plusieurs conversations distinctes pour la même commande.
+  lifecycle: >-
+    Le cycle de vie indique quand le chat existe. À la demande signifie que le chat est ouvert dès que quelqu'un veut parler
+    de l'objet pour la première fois. Les états modifiables sont les états dans lesquels le chat accepte encore des messages :
+    une fois la commande sortie de ces états, la conversation reste lisible, mais personne n'y ajoute plus rien. Une commande
+    close reste ainsi une fiche, et non un fil toujours actif.
+  roles: >-
+    Les rôles décident qui participe. Les rôles de lecture peuvent voir la conversation, les rôles d'écriture peuvent ajouter
+    des messages, et les rôles de création peuvent ouvrir un nouveau chat. Un rôle est nommé une seule fois pour toute
+    l'organisation, donc un magasinier et une comptable sont les mêmes rôles dans chaque définition. Une personne qui n'a
+    aucun de ces rôles ne voit même pas le chat.
+  retention: >-
+    Inclure le responsable de l'objet donne à la personne responsable de l'objet l'accès à sa conversation, même si elle ne
+    détient aucun des rôles ci-dessus. La conservation en jours indique combien de temps les messages sont gardés après la
+    fermeture du chat ; ensuite, ils sont supprimés. Réglez-la sur ce que votre organisation est tenue de conserver, et pas
+    davantage.
+  compare: >-
+    Regardez maintenant les Sujets de commande, une autre définition pour le même type d'objet. Leur multiplicité est
+    plusieurs : une même commande peut avoir plusieurs sujets, chacun une conversation à part. Le sujet est le même, mais la
+    forme de la conversation ne l'est pas. Le choix de la multiplicité est la décision la plus importante d'une définition de
+    chat, et celle qu'il est le plus difficile de modifier plus tard.
+  outro: >-
+    Voilà une définition de chat : l'objet métier auquel elle se rattache, le nombre de conversations qu'elle autorise, le
+    moment où elle est ouverte, qui peut lire et écrire, et combien de temps elle est conservée. Ensuite, l'Application
+    Designer montre où ces conversations apparaissent pour les personnes qui utilisent votre application.
