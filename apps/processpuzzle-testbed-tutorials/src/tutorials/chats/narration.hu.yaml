@@ -1,0 +1,52 @@
+title: "Chat Designer: beszélgetések az üzleti objektumairól, és arról, ki vehet részt bennük"
+
+values: {}
+
+steps:
+  intro: >-
+    Üdvözöljük a Chat Designerben. A chat egy üzleti objektumhoz kötött beszélgetés: megbeszélés egy rendelésről, egy
+    témáról egy ügyfélről, egy kérdés egy termékről. Ha egy chat definiálva van, az alkalmazás a hozzá tartozó objektum mellett
+    nyitja meg, így az ezen az objektumon dolgozó emberek ott beszélhetnek róla, ahol a munka folyik, a beszélgetés pedig az
+    adatrekordhoz kötődik, amelyről szól. Ez a bemutató megmutatja, hogyan dönti el a chat-definíció, mi a beszélgetés, ki
+    vehet részt benne, és meddig őrzik meg.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Chat kártyát. A tervező felsorolja a szervezete chat-definícióit.
+  list: >-
+    Minden sor egy chat-definíció: az objektum, amelyhez kapcsolódik, hogy objektumonként hány beszélgetést enged meg, és hogy
+    közzé van-e téve. Itt a Rendelés-megbeszélés, a Rendelés-témák és a Dynamic Entity-témák találhatók. Először a
+    Rendelés-megbeszélést nézzük meg, majd összehasonlítjuk a Rendelés-témákkal.
+  definition: >-
+    A név és a leírás megmondja, mire való a chat, és ezeket olvassák el először. A leírást azoknak írja, akik beszélgetni
+    fognak, mert ezt a célt fogják megkapni. A kulcs az a kód, amellyel az alkalmazás megtalálja a definíciót, és ez nem
+    változik, ha már használatban van.
+  subject: >-
+    A tárgy az az üzleti objektum, amelyről a chat szól. Itt a tárgy típusa egy entitás, a tárgy definíciója pedig a
+    rendelés. Minden beszélgetés egy rendeléshez tartozik, és az alkalmazás a rendelés saját képernyőjéről nyitja meg, így
+    senkinek nem kell keresnie egy adott rendelés megbeszélését.
+  multiplicity: >-
+    A multiplicitás azt határozza meg, hány beszélgetése lehet egy objektumnak. Egy azt jelenti: egy chat rendelésenként, az
+    első üzenettől kezdve. A rendeléssel kapcsolatos összes beszélgetés ugyanabban a chatben zajlik, ami akkor a jó választás,
+    ha egy rendelésnek egyetlen beszélgetési szála van. A több azt engedi, hogy ugyanahhoz a rendeléshez több külön
+    beszélgetés tartozzon.
+  lifecycle: >-
+    Az életciklus azt mondja meg, mikor létezik a chat. Igény szerint azt jelenti, hogy a chat akkor nyílik meg, amikor valaki
+    először szeretne beszélni az objektumról. Az írható állapotok azok az állapotok, amelyekben a chat még fogad üzeneteket: ha
+    egy rendelés kikerült ezekből, a beszélgetés olvasható marad, de senki nem ír bele. Így egy lezárt rendelés rekord marad,
+    nem élő szál.
+  roles: >-
+    A szerepkörök döntik el, ki vesz részt. Az olvasási szerepkörök láthatják a beszélgetést, az írási szerepkörök üzeneteket
+    adhatnak hozzá, a létrehozási szerepkörök pedig új chatet nyithatnak. Egy szerepkört egyszer neveznek el az egész
+    szervezetre, így egy raktáros és egy könyvelő minden definícióban ugyanaz a szerepkör. Akinek egyik sincs, az egyáltalán
+    nem látja a chatet.
+  retention: >-
+    Az objektum felelősének bevonása hozzáférést ad az objektum felelősének a beszélgetéséhez akkor is, ha a fenti
+    szerepkörök egyikével sem rendelkezik. A megőrzés napokban megmondja, meddig maradnak meg az üzenetek a chat lezárása után;
+    utána eltávolítják őket. Azt állítsa be, amennyit a szervezete megőrizni köteles, és ne tovább.
+  compare: >-
+    Nézze meg most a Rendelés-témákat, egy másik definíciót ugyanarra a fajta objektumra. Multiplicitása több: ugyanannak a
+    rendelésnek több témája lehet, mindegyik saját beszélgetés. A tárgy ugyanaz, de a beszélgetés alakja nem. A
+    multiplicitás megválasztása a legfontosabb döntés egy chat-definícióban, és később a legnehezebb megváltoztatni.
+  outro: >-
+    Ez egy chat-definíció: az üzleti objektum, amelyhez kapcsolódik, hány beszélgetést enged meg, mikor van nyitva, ki olvashat
+    és írhat benne, és meddig őrzik meg. Következőként az Application Designer megmutatja, hol jelennek meg ezek a
+    beszélgetések azok számára, akik az alkalmazását használják.

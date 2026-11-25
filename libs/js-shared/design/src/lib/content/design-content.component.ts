@@ -86,6 +86,7 @@ export class DesignContentComponent {
       subtitle: 'base-chat_card_subtitle',
       content: ['base-chat_card_content', 'base-chat_card_content_1', 'base-chat_card_content_2', 'base-chat_card_content_3'],
       actions: [{ link: `${this.prefix}/design/chats`, caption: 'base-chat_card_button', colour: 'primary' }],
+      menuItems: [{ icon: 'play_circle', label: 'tutorial.menu_chats', link: `${this.prefix}/design/tutorials/chats` }],
       translocoPrefix: 'design',
     },
     {
