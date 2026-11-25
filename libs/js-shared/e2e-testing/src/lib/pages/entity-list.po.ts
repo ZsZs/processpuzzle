@@ -70,8 +70,16 @@ export class EntityListPO {
    */
   async openDetailsByIdentification(identificationValue: string): Promise<string> {
     await this.filter(identificationValue);
-    await this.identificationLink(identificationValue).first().click();
-    await this.page.waitForURL(/\/details$/);
+    // The click is repeated until the application has navigated. A click dispatched while the list is still
+    // re-rendering after the create reaches no handler, and waiting on the URL alone then times out.
+    const link = this.identificationLink(identificationValue).first();
+    const listUrl = this.page.url();
+    await expect(async () => {
+      if (this.page.url() === listUrl) {
+        await link.click({ timeout: 2_000 });
+      }
+      await expect.poll(() => this.page.url(), { timeout: 3_000 }).toMatch(/\/details$/);
+    }).toPass({ timeout: 20_000 });
     return entityIdFromDetailUrl(this.page.url());
   }
 
