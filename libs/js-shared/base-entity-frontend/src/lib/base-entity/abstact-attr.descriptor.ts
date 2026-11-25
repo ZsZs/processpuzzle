@@ -39,6 +39,11 @@ export enum FormControlType {
   FLEX_BOX = 'FLEX_BOX',
   FOREIGN_KEY = 'FOREIGN_KEY',
   LABEL = 'LABEL',
+  /**
+   * A web link shown as a link and edited in place: a single text value. Clicking the value or tabbing into it
+   * makes it editable; the open icon opens an http or https address in a new tab.
+   */
+  LINK = 'LINK',
   LOOKUP = 'LOOKUP',
   /**
    * An amount of a currency — the value is one `MoneyValue`. The amount carries the currency's minor units;

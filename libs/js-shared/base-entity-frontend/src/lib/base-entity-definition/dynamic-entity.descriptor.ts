@@ -50,6 +50,7 @@ const CONTROL_TYPES: Readonly<Record<string, FormControlType>> = {
   FOREIGN_KEY: FormControlType.FOREIGN_KEY,
   GEO_LOCATION: FormControlType.GEO_LOCATION,
   LABEL: FormControlType.LABEL,
+  LINK: FormControlType.LINK,
   LOOKUP: FormControlType.LOOKUP,
   MONEY: FormControlType.MONEY,
   NUMBER: FormControlType.TEXT_BOX,

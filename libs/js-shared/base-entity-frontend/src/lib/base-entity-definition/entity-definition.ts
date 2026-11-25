@@ -80,6 +80,7 @@ export const ENTITY_FORM_CONTROL_TYPES: readonly string[] = [
   'COMMENTS',
   'ADDRESS',
   'GEO_LOCATION',
+  'LINK',
   'QUANTITY',
   'MONEY',
   'DIMENSIONS',

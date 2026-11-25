@@ -254,6 +254,9 @@
     "map": "Karte der Adresse",
     "open_in_google_maps": "In Google Maps öffnen"
   },
+  "link": {
+    "open": "Link in neuem Tab öffnen"
+  },
   "geo_location": {
     "capture": "Meinen Standort erfassen",
     "recapture": "Standort erneut erfassen",

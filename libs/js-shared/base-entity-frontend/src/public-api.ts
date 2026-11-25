@@ -39,6 +39,7 @@ export { addressFormatOf, formatAddress, type AddressFormat } from './lib/base-f
 export { AddressPipe } from './lib/base-form/address/address.pipe';
 export { AddressGeocoder } from './lib/base-form/address/address-geocoder';
 export { COUNTRY_CODES, countryName, countryOptions } from './lib/base-form/address/countries';
+export { LinkComponent, openableUrl } from './lib/base-form/link/link.component';
 export { GeoLocationComponent } from './lib/base-form/geo-location/geo-location.component';
 export { formatGeoLocation, geoLocationOf, type GeoLocation } from './lib/base-form/geo-location/geo-location';
 export { GeoLocationPipe } from './lib/base-form/geo-location/geo-location.pipe';
