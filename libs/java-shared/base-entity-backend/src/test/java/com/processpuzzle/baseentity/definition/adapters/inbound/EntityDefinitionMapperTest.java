@@ -77,6 +77,25 @@ class EntityDefinitionMapperTest {
     }
 
     @Test
+    void toModel_leavesSnapshotFieldsNullWhenAttributeHasNone() {
+        // A definition saved before the field existed has null, and must map without failing or changing its fingerprint.
+        BaseEntityAttribute legacy = BaseEntityAttribute.builder().code("title").name("Title").valueKind(com.processpuzzle.baseentity.definition.domain.ValueKind.TEXT).build();
+        legacy.setSnapshotFields(null);
+        assertThat(mapper.toModel(legacy).getSnapshotFields()).isNull();
+
+        BaseEntityAttribute empty = BaseEntityAttribute.builder().code("title").name("Title").valueKind(com.processpuzzle.baseentity.definition.domain.ValueKind.TEXT).build();
+        assertThat(mapper.toModel(empty).getSnapshotFields()).isNull();
+    }
+
+    @Test
+    void toModel_copiesSnapshotFieldsWhenThereAre() {
+        BaseEntityAttribute boat = BaseEntityAttribute.builder().code("boat").name("Boat").valueKind(com.processpuzzle.baseentity.definition.domain.ValueKind.REFERENCE)
+            .formControlType(com.processpuzzle.baseentity.definition.domain.FormControlType.FOREIGN_KEY).linkedEntityType("boat")
+            .snapshotFields(List.of("sailNumber")).build();
+        assertThat(mapper.toModel(boat).getSnapshotFields()).containsExactly("sailNumber");
+    }
+
+    @Test
     void dateFormat_roundTripsThroughAttributeAndDescriptor() {
         BaseEntityAttributeInput attrInput = new BaseEntityAttributeInput();
         attrInput.setCode("born");
