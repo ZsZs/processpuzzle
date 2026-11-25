@@ -5,7 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MarkdownComponent } from 'ngx-markdown';
 import { Component, input, output } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { MODULE_ASSET_CONTEXT } from '../module-asset/module-asset-context';
+import { MODULE_ASSET_CONTEXT } from '@processpuzzle/util';
 
 @Component({
   selector: 'markdown',

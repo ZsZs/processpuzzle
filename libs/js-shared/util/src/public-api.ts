@@ -67,3 +67,14 @@ export { addMoney, compareMoney, divideMoney, multiplyMoney, parseMoney, roundMo
 export { convertDimensions, dimensionsArea, dimensionsVolume, type DimensionsValue } from './lib/fundamental-types/dimensions';
 export { sumMeasures } from './lib/fundamental-types/measure-display';
 export { isoDurationToQuantity, quantityToIsoDuration } from './lib/fundamental-types/iso-duration';
+export {
+  APP_ASSET_CONTEXT,
+  APP_ASSET_SCHEME,
+  appAssetPathOf,
+  MODULE_ASSET_CONTEXT,
+  MODULE_ASSET_SCHEME,
+  moduleAssetPathOf,
+  moduleAssetUrl,
+  resolveAssetLink,
+} from './lib/module-asset/module-asset-context';
+export type { AppAssetContext, ModuleAssetContext } from './lib/module-asset/module-asset-context';

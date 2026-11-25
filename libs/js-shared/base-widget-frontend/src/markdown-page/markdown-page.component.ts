@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, Eleme
 import { CommonModule } from '@angular/common';
 import { MarkdownComponent } from 'ngx-markdown';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MODULE_ASSET_CONTEXT, moduleAssetPathOf, resolveAssetLink } from '../module-asset/module-asset-context';
+import { MODULE_ASSET_CONTEXT, moduleAssetPathOf, resolveAssetLink } from '@processpuzzle/util';
 
 @Component({
   selector: 'pp-markdown-page',
