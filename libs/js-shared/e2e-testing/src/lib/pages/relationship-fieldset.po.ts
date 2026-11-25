@@ -86,8 +86,16 @@ export class RelationshipFieldsetPO {
     await addButton.click();
   }
 
+  /** Opens the row's form. Retried until the URL moves: a click that lands during a re-render is lost silently. */
   async openRow(name: string): Promise<void> {
-    await this.row(name).locator('a').first().click();
+    const link = this.row(name).locator('a').first();
+    const before = this.page.url();
+    await expect(async () => {
+      if (this.page.url() === before) {
+        await link.click({ timeout: 2000 });
+      }
+      await expect.poll(() => this.page.url(), { timeout: 3000 }).not.toBe(before);
+    }).toPass({ timeout: this.options.expectTimeoutMs ?? 15000 });
   }
 
   /** Removes a row, confirming when the control's delete destroys something rather than detaching it. */
