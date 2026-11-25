@@ -1455,6 +1455,14 @@ components:
             Entity definition code this attribute points at. Required when
             formControlType is FOREIGN_KEY (parent reference for a non-embedded
             component) or EMBEDDED_COMPONENTS (child definition carried inline).
+        snapshotFields:
+          type: array
+          description: >
+            For a REFERENCE to a linked type: the attributes of the referenced record copied into
+            the referencing record when it is written (see docs/race-platform-design.md). Empty or absent
+            means no snapshot. Each name must be an attribute of linkedEntityType.
+          items:
+            type: string
         isLinkToDetails:
           type: boolean
           default: false
