@@ -4,13 +4,16 @@ import com.processpuzzle.baseentity.common.ValidationException;
 import com.processpuzzle.baseentity.common.ValidationException.Violation;
 import com.processpuzzle.baseentity.instances.domain.MeasureValues;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
+import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView.ValueKindView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.PayloadValidatorPort;
 import com.processpuzzle.baseentity.port.EntityRulesPort;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -72,6 +75,10 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
         if (value != null && validateStructuredValue(attribute, value, violations)) {
             return;
         }
+        if (value != null && attribute.valueKind() == ValueKindView.PERIOD) {
+            validatePeriod(attribute, value, violations);
+            return;
+        }
         if (value == null || !attribute.embeddedComponent()) {
             return;
         }
@@ -85,6 +92,21 @@ public class DefaultPayloadValidatorAdapter implements PayloadValidatorPort {
             validateMultiValuedEmbedded(orgKey, attribute, value, childDefinition, violations);
         } else {
             validateSingleEmbedded(orgKey, childDefinition, value, violations);
+        }
+    }
+
+    /** A period is {@code {"from": <instant>, "to": <instant>}}, and its end is not before its start. */
+    private static void validatePeriod(EntityAttributeView attribute, Object value, List<Violation> violations) {
+        if (!(value instanceof Map<?, ?> period) || !(period.get("from") instanceof String from) || !(period.get("to") instanceof String to)) {
+            violations.add(new Violation(attribute.code(), "a period needs a from and a to instant"));
+            return;
+        }
+        try {
+            if (OffsetDateTime.parse(to).isBefore(OffsetDateTime.parse(from))) {
+                violations.add(new Violation(attribute.code(), "the end of a period is before its start"));
+            }
+        } catch (DateTimeParseException e) {
+            violations.add(new Violation(attribute.code(), "from and to are instants with an offset, e.g. 2026-05-01T09:00:00+02:00"));
         }
     }
 

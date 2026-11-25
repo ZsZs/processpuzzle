@@ -27,7 +27,7 @@ public class CalculationAttributeTypeAdapter implements EntityAttributeTypePort 
             case BOOLEAN -> AttributeType.BOOLEAN;
             case DATE -> AttributeType.DATE;
             case DATE_TIME -> AttributeType.DATE_TIME;
-            case REFERENCE -> AttributeType.OTHER;
+            case REFERENCE, PERIOD -> AttributeType.OTHER;
         });
     }
 }

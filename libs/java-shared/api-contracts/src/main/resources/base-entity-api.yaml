@@ -1192,7 +1192,8 @@ components:
         Data type of the attribute's value. Drives JSON payload validation and
         RSQL comparison-operator casting. (TEXT_LIST intentionally omitted —
         repetition is expressed via the attribute's multiplicity instead.)
-      enum: [ TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, ENUM, REFERENCE ]
+        PERIOD is a start and an end instant, `{"from": <instant>, "to": <instant>}`, with `to` not before `from`.
+      enum: [ TEXT, NUMBER, BOOLEAN, DATE, DATE_TIME, PERIOD, ENUM, REFERENCE ]
 
     Multiplicity:
       type: string
@@ -1217,6 +1218,7 @@ components:
         - NUMBER
         - DATE
         - DATE_TIME
+        - DATE_TIME_PERIOD
         - BOOLEAN
         - CHECKBOX
         - RADIO
