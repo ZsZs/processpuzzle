@@ -266,7 +266,7 @@
     "@angular-eslint/template-parser": "^22.6.0",
     "@angular/build": "^22.2.7",
     "@angular/cdk": "^22.2.7",
-    "@angular/cli": "~22.2.7",
+    "@angular/cli": "~22.3.0",
     "@angular/common": "~22.2.6",
     "@angular/compiler-cli": "~22.2.6",
     "@angular/core": "~22.2.6",
