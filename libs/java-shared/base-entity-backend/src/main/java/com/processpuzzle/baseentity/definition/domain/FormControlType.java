@@ -40,6 +40,11 @@ public enum FormControlType {
      */
     GEO_LOCATION,
     /**
+     * A web link shown as a link and edited in place: valueKind TEXT, single-valued. Only http and https addresses
+     * are opened; any other text is kept as typed.
+     */
+    LINK,
+    /**
      * An amount of a unit of one quantity kind: valueKind REFERENCE, single-valued, no linkedEntityType. The value is
      * {@code {amount, unit}} with the amount as decimal text and the unit a code of the standard catalog; the backend
      * adds {@code baseAmount}, the amount in the kind's base unit, so values compare across units. May set quantityKind,

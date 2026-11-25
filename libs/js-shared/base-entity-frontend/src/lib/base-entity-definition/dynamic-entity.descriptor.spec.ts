@@ -207,6 +207,7 @@ describe('controlTypeOf', () => {
     ['COMMENTS', FormControlType.COMMENTS],
     ['ADDRESS', FormControlType.ADDRESS],
     ['GEO_LOCATION', FormControlType.GEO_LOCATION],
+    ['LINK', FormControlType.LINK],
     ['QUANTITY', FormControlType.QUANTITY],
     ['MONEY', FormControlType.MONEY],
     ['DIMENSIONS', FormControlType.DIMENSIONS],

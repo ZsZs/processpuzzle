@@ -1232,6 +1232,7 @@ components:
         - COMMENTS
         - ADDRESS
         - GEO_LOCATION
+        - LINK
         - QUANTITY
         - MONEY
         - DIMENSIONS

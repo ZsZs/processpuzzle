@@ -254,6 +254,9 @@
     "map": "Carte de l'adresse",
     "open_in_google_maps": "Ouvrir dans Google Maps"
   },
+  "link": {
+    "open": "Ouvrir le lien dans un nouvel onglet"
+  },
   "geo_location": {
     "capture": "Enregistrer ma position",
     "recapture": "Enregistrer à nouveau ma position",
