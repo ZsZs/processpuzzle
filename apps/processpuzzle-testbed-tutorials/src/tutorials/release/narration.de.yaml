@@ -1,0 +1,40 @@
+title: "Freigabe: entscheiden, was live geht, und es in einem Schritt live schalten"
+
+values: {}
+
+steps:
+  intro: >-
+    Willkommen bei der Freigabe. Alles, was Sie entwerfen, ist ein Entwurf, bis Sie es veröffentlichen. Die laufende
+    Anwendung verwendet nur die freigegebenen Definitionen, sodass ein halbfertiger Entwurf nie bei Ihren Benutzern landet.
+    Dieses Tutorial zeigt, was eine Freigabe enthält, was ihr im Weg stehen kann, und den einen Schritt, der die Änderungen
+    live schaltet.
+  open: >-
+    Öffnen Sie vom Designer-Startbildschirm aus die Karte Freigabe. Dies ist der Bildschirm, auf dem die Organisation
+    entscheidet, was live geht.
+  pending: >-
+    Die Tabelle Ausstehende Änderungen listet alles auf, was sich zwischen den Entwürfen und der laufenden Anwendung
+    unterscheidet. Jede Zeile nennt eine Art von Definition, die Definition selbst und ob sie hinzugefügt oder geändert wird.
+    Nichts in dieser Tabelle ist schon live.
+  changes: >-
+    Hier sind die Änderungen: die Entität Product wird hinzugefügt, das Modul order-admin wird hinzugefügt, und die
+    Anwendungen demo und order-desk werden hinzugefügt. Eine Freigabe enthält alle Änderungen auf einmal oder keine. Deshalb
+    können Designer an mehreren Definitionen arbeiten und sie gemeinsam veröffentlichen.
+  problems: >-
+    Die Liste Probleme nennt, was die Freigabe übersehen würde. Diese Warnungen sagen, dass einige Dokumente ungeveröffentlichte
+    Änderungen in ihren englischen oder ungarischen Übersetzungen haben. Eine Freigabe veröffentlicht keine Dokumente, also muss
+    jedes im Dokumenteditor veröffentlicht werden, und die Warnung bleibt, bis es geschehen ist.
+  acknowledge: >-
+    Das Kontrollkästchen hält fest, dass Sie die Warnungen gelesen haben und trotzdem freigeben wollen. Eine Freigabe trotz
+    Warnung ist eine bewusste Entscheidung, und das Kästchen hält sie im Protokoll fest.
+  publish: >-
+    Veröffentlichen schaltet die ausstehenden Änderungen live. Der Knopf bleibt deaktiviert, bis die Warnungen bestätigt sind,
+    und sobald er gedrückt wird, erreichen die Änderungen die Benutzer der Anwendung. Wir drücken ihn in diesem Video nicht,
+    weil dadurch die Testumgebung freigegeben würde.
+  history: >-
+    Jede Freigabe ist hier aufgeführt, mit dem, was sie enthielt, und dem Zeitpunkt, zu dem sie live ging. Auf dieser
+    Organisation wurde noch nichts freigegeben, die Liste ist deshalb leer. Sobald es eine Freigabe gibt, ist diese Liste das
+    Protokoll dessen, was zu welchem Zeitpunkt live war.
+  outro: >-
+    Das ist die Freigabe: die ausstehenden Änderungen, die Probleme, die im Weg stehen, die Bestätigung und der eine Schritt,
+    der alles live schaltet. Als Nächstes zeigt der Starter-Manager, wie eine fertige Geschäftsdomäne zu Ihrer Anwendung
+    hinzugefügt wird.

@@ -1,0 +1,25 @@
+title: "Starter-kezelő: kész üzleti terület hozzáadása az alkalmazásához"
+
+values: {}
+
+steps:
+  intro: >-
+    Üdvözöljük a Starter-kezelőben. Az üzleti starter egy kész terület: egy üzleti terület entitásai, workflow-i, szabályai és
+    oldalai, például a számlázás vagy a rendeléskezelés. Ahelyett, hogy ezt a területet nulláról tervezné meg, telepít egy
+    startert, és az a saját alkalmazásához adódik hozzá, a már elkészített részek mellé.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Starter kártyát. Itt telepíti a szervezet az üzleti startereket a katalógusból.
+  catalog: >-
+    A katalógus felsorolja a szervezet számára elérhető startereket. Ezen a tesztkörnyezeten a katalógus üres, ezért a képernyő
+    azt mondja, hogy még nincs felajánlott starter. Egy éles szervezetben minden starter itt jelenik meg a nevével és azzal,
+    amit hozzáad.
+  preview: >-
+    Az előnézet a biztonságos módja annak, hogy telepítés előtt megnézze. Az egész telepítést próbafutásként hajtja végre, és nem
+    ír semmit, így látja, mit adna hozzá a starter, és beleillik-e abba, ami már van. A telepítés csak akkor aktív, ha egy startert
+    kiválasztottak, és akkor végzi el a valódi telepítést.
+  installed: >-
+    A telepített starterek itt vannak felsorolva, amint vannak ilyenek. Itt még egy sincs telepítve. Egy telepített starter később
+    eltávolítható, amíg az adatait nem használták.
+  outro: >-
+    Ez a Starter-kezelő: a kész területek katalógusa, egy előnézet, amely nem ír semmit, és a telepítettek listája. Következőként a
+    Közzététel mutatja meg, hogyan lesznek a változásai élesek a felhasználói számára.

@@ -1,0 +1,37 @@
+title: "Közzététel: eldönteni, mi kerüljön élesbe, és egy lépésben élesíteni"
+
+values: {}
+
+steps:
+  intro: >-
+    Üdvözöljük a Közzétételben. Minden, amit tervez, piszkozat marad, amíg közzé nem teszi. Az éles alkalmazás csak a közzétett
+    definíciókat használja, így a félkész tervezet sosem jut el a felhasználókhoz. Ez a bemutató megmutatja, mit tartalmaz egy
+    közzététel, mi állhat útjában, és azt az egyetlen lépést, amely élesíti a változásokat.
+  open: >-
+    A tervező kezdőlapjáról nyissa meg a Közzététel kártyát. Ez az a képernyő, ahol a szervezet eldönti, mi kerüljön élesbe.
+  pending: >-
+    A Függőben lévő változások táblázat felsorol mindent, ami eltér a piszkozatok és az éles alkalmazás között. Minden sor
+    megnevez egy definíciótípust, magát a definíciót, és azt, hogy hozzáadják-e vagy módosítják. Ebben a táblázatban semmi sincs
+    még élesben.
+  changes: >-
+    Itt vannak a változások: a Product entitás hozzáadva, az order-admin modul hozzáadva, és a demo és az order-desk alkalmazás
+    hozzáadva. Egy közzététel az összes változást egyszerre viszi, vagy egyet sem. Ezért dolgozhat a tervező több definíción, és
+    publikálhatja őket együtt.
+  problems: >-
+    A Problémák lista megnevezi, amit a közzététel figyelmen kívül hagyna. Ezek a figyelmeztetések azt jelzik, hogy néhány
+    dokumentumnak közzé nem tett változásai vannak az angol vagy a magyar fordításában. A közzététel nem tesz közzé dokumentumokat,
+    ezért mindegyiket a dokumentumszerkesztőben kell közzétenni, és a figyelmeztetés addig marad.
+  acknowledge: >-
+    A jelölőnégyzet rögzíti, hogy elolvasta a figyelmeztetéseket, és mindenképpen közzé akarja tenni. Figyelmeztetés ellenére
+    közzétenni tudatos döntés, és a négyzet ezt a döntést rögzíti.
+  publish: >-
+    A Közzététel élesíti a függőben lévő változásokat. A gomb mindaddig inaktív marad, amíg a figyelmeztetéseket nem nyugtázták,
+    és amint megnyomják, a változások eljutnak az alkalmazás felhasználóihoz. Ezt a videóban nem nyomjuk meg, mert ezzel a
+    tesztkörnyezet kerülne élesbe.
+  history: >-
+    Minden közzététel itt szerepel, azzal, amit tartalmazott, és azzal, mikor lett élesben. Ennél a szervezetnél még nem
+    tettek közzé semmit, ezért a lista üres. Amint lesz közzététel, ez a lista annak a nyilvántartása, hogy mi volt élesben
+    egy-egy időpontban.
+  outro: >-
+    Ez a közzététel: a függőben lévő változások, az őket akadályozó problémák, a nyugtázás, és az az egy lépés, amely mindent
+    élesít. Következőként a Starter-kezelő azt mutatja meg, hogyan adható hozzá egy kész üzleti terület az alkalmazásához.

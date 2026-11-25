@@ -1,0 +1,28 @@
+title: "Gestionnaire de starters : ajouter un domaine métier prêt à l'emploi à votre application"
+
+values: {}
+
+steps:
+  intro: >-
+    Bienvenue dans le Gestionnaire de starters. Un starter métier est un domaine prêt à l'emploi : les entités, les workflows,
+    les règles et les pages d'un domaine d'activité, par exemple la facturation ou le traitement des commandes. Au lieu de
+    concevoir ce domaine à partir de zéro, vous installez un starter, qui s'ajoute à votre propre application, à côté des parties
+    que vous avez déjà construites.
+  open: >-
+    Depuis l'accueil du concepteur, ouvrez la carte Starters. C'est ici que l'organisation installe des starters métier depuis le
+    catalogue.
+  catalog: >-
+    Le catalogue liste les starters disponibles pour l'organisation. Sur cet environnement de test, le catalogue est vide, donc
+    l'écran indique qu'aucun starter n'est encore proposé. Dans une organisation en production, chaque starter apparaît ici avec
+    son nom et ce qu'il ajoute.
+  preview: >-
+    L'aperçu est la façon sûre de regarder avant d'installer. Il exécute toute l'installation à blanc et n'écrit rien : vous voyez
+    ce que le starter ajouterait et s'il s'accorde avec ce qui existe déjà. Installer n'est activé qu'une fois un starter choisi,
+    et il effectue alors l'installation réelle.
+  installed: >-
+    Les starters installés sont listés ici, dès qu'il y en a. Ici, aucun n'est encore installé. Un starter installé peut être retiré
+    plus tard, tant que ses données n'ont pas été utilisées.
+  outro: >-
+    Voilà le Gestionnaire de starters : le catalogue des domaines prêts à l'emploi, un aperçu qui n'écrit rien, et la liste de ce
+    qui est installé. Ensuite, l'écran Publication montre comment les modifications que vous faites deviennent actives pour vos
+    utilisateurs.
