@@ -26,7 +26,7 @@ class EntitySnapshotsTest {
         Map<String, Object> written = EntitySnapshots.withSnapshots(Map.of("boat", BOAT.toString()), BOAT_SNAPSHOT, null, EntitySnapshotsTest::lookup);
 
         assertThat(written).containsEntry("boat", BOAT.toString());
-        assertThat(written.get("boat$snapshot")).isEqualTo(Map.of("sailNumber", "G 470", "name", "Blue"));
+        assertThat(written).containsEntry("boat$snapshot", Map.of("sailNumber", "G 470", "name", "Blue"));
     }
 
     @Test
@@ -35,7 +35,7 @@ class EntitySnapshotsTest {
 
         Map<String, Object> written = EntitySnapshots.withSnapshots(Map.of("boat", BOAT.toString()), BOAT_SNAPSHOT, stored, EntitySnapshotsTest::lookup);
 
-        assertThat(written.get("boat$snapshot")).isEqualTo(Map.of("sailNumber", "G 1", "name", "Old"));
+        assertThat(written).containsEntry("boat$snapshot", Map.of("sailNumber", "G 1", "name", "Old"));
     }
 
     @Test
@@ -44,7 +44,7 @@ class EntitySnapshotsTest {
 
         Map<String, Object> written = EntitySnapshots.withSnapshots(forged, BOAT_SNAPSHOT, null, EntitySnapshotsTest::lookup);
 
-        assertThat(written.get("boat$snapshot")).isEqualTo(Map.of("sailNumber", "G 470", "name", "Blue"));
+        assertThat(written).containsEntry("boat$snapshot", Map.of("sailNumber", "G 470", "name", "Blue"));
     }
 
     @Test
@@ -60,16 +60,16 @@ class EntitySnapshotsTest {
 
     @Test
     void refusesAReferenceTheWriterCannotSee() {
-        assertThatThrownBy(() -> EntitySnapshots.withSnapshots(Map.of("boat", UUID.randomUUID().toString()), BOAT_SNAPSHOT, null,
-                EntitySnapshotsTest::lookup))
+        Map<String, Object> unseen = Map.of("boat", UUID.randomUUID().toString());
+        assertThatThrownBy(() -> EntitySnapshots.withSnapshots(unseen, BOAT_SNAPSHOT, null, EntitySnapshotsTest::lookup))
             .isInstanceOf(ConflictException.class)
             .hasMessageContaining("not visible here");
     }
 
     @Test
     void refusesAMultiValuedReference() {
-        assertThatThrownBy(() -> EntitySnapshots.withSnapshots(Map.of("boat", List.of(BOAT.toString())), BOAT_SNAPSHOT, null,
-                EntitySnapshotsTest::lookup))
+        Map<String, Object> many = Map.of("boat", List.of(BOAT.toString()));
+        assertThatThrownBy(() -> EntitySnapshots.withSnapshots(many, BOAT_SNAPSHOT, null, EntitySnapshotsTest::lookup))
             .isInstanceOf(ConflictException.class)
             .hasMessageContaining("takes one reference");
     }
