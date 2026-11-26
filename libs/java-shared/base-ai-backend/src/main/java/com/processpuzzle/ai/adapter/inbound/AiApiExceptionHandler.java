@@ -1,5 +1,9 @@
 package com.processpuzzle.ai.adapter.inbound;
 
+import com.processpuzzle.ai.assist.AssistUnavailableException;
+import com.processpuzzle.ai.assist.UnknownAssistTaskException;
+import com.processpuzzle.ai.assistant.AssistantNotConfiguredException;
+import com.processpuzzle.ai.assistant.AssistantQuotaExceededException;
 import com.processpuzzle.ai.usecase.exception.AiRequestException;
 import com.processpuzzle.ai.usecase.port.MediaStoreUnavailableException;
 import com.processpuzzle.core.exception.ApiAdviceOrder;
@@ -35,5 +39,27 @@ public class AiApiExceptionHandler {
     public ResponseEntity<ErrorResponse> handleStorageUnavailable(MediaStoreUnavailableException ex) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(new ErrorResponse("ai.media.storage-unavailable", ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnknownAssistTaskException.class)
+    public ResponseEntity<ErrorResponse> handleUnknownAssistTask(UnknownAssistTaskException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("ai.assist.unknown-task", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AssistantNotConfiguredException.class)
+    public ResponseEntity<ErrorResponse> handleNotConfigured(AssistantNotConfiguredException ex) {
+        return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED)
+                .body(new ErrorResponse("ai.assist.not-configured", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AssistantQuotaExceededException.class)
+    public ResponseEntity<ErrorResponse> handleQuotaExceeded(AssistantQuotaExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse("ai.assist.quota-exceeded", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AssistUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleModelUnavailable(AssistUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(new ErrorResponse("ai.assist.model-unavailable", ex.getMessage()));
     }
 }

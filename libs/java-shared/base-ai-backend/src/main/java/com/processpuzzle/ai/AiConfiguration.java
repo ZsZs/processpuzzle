@@ -1,6 +1,7 @@
 package com.processpuzzle.ai;
 
 import com.processpuzzle.ai.adapter.outbound.HttpVisionServer;
+import com.processpuzzle.ai.assist.AuthoringAssist;
 import com.processpuzzle.ai.assistant.AiSecretCipher;
 import com.processpuzzle.ai.assistant.AssistantAccess;
 import com.processpuzzle.ai.assistant.AssistantAuditLog;
@@ -20,6 +21,7 @@ import com.processpuzzle.ai.assistant.LoggingAssistantAuditLog;
 import com.processpuzzle.ai.assistant.SecurityContextAssistantAccess;
 import com.processpuzzle.ai.usecase.port.UnavailableVisionServer;
 import com.processpuzzle.ai.usecase.port.VisionServer;
+import com.processpuzzle.core.assist.AuthoringAssistParticipant;
 import com.processpuzzle.core.definition.DefinitionAuthoringParticipant;
 import com.processpuzzle.core.security.CurrentPrincipal;
 import java.time.Clock;
@@ -112,6 +114,21 @@ public class AiConfiguration {
         return new DesignAssistant(models,
             new DefinitionDrafts(participants.orderedStream().toList()), access,
             new AssistantLimits(assistant.getMaxToolCalls(), assistant.getMaxRepairRounds()), audit, quota, sessions);
+    }
+
+    /**
+     * The authoring assist, built only when the assistant is enabled, over whatever {@code AuthoringAssistParticipant}
+     * the features contribute; it shares the assistant's model, access, limits, audit and quota.
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "processpuzzle.ai.assistant", name = "enabled", havingValue = "true")
+    public AuthoringAssist authoringAssist(AiProperties properties, AssistantModels models, AssistantAccess access,
+                                           AssistantAuditLog audit, AssistantQuota quota,
+                                           ObjectProvider<AuthoringAssistParticipant> participants) {
+        AiProperties.Assistant assistant = properties.getAssistant();
+        return new AuthoringAssist(models, access,
+            new AssistantLimits(assistant.getMaxToolCalls(), assistant.getMaxRepairRounds()), audit, quota,
+            participants.orderedStream().toList());
     }
 
     /** The design conversations, kept in this application's database and expired when idle. */

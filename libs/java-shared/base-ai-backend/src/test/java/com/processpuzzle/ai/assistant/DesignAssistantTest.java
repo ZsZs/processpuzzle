@@ -169,6 +169,11 @@ class DesignAssistantTest {
         private final List<Turn> turns = new ArrayList<>();
 
         @Override
+        public void assist(Assist assist) {
+            // Assists are not what this test checks.
+        }
+
+        @Override
         public void toolCall(ToolCall call) {
             // Tool calls are not what this test checks.
         }
