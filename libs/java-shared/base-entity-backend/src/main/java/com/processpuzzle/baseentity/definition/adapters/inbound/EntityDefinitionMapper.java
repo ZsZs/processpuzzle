@@ -40,6 +40,8 @@ public class EntityDefinitionMapper {
             .organizationId(input.getOrganizationId())
             .identifiers(input.getIdentifiers() == null ? new java.util.ArrayList<>()
                 : input.getIdentifiers().stream().<List<String>>map(java.util.ArrayList::new).toList())
+            .layout(input.getLayout() == null ? new java.util.ArrayList<>()
+                : input.getLayout().stream().<List<String>>map(java.util.ArrayList::new).toList())
             .sharingWrite(sharingWrite(input.getSharing()))
             .sharingVisibility(sharingVisibility(input.getSharing()))
             .sharingFrom(input.getSharing() == null ? null : input.getSharing().getFrom())
@@ -149,6 +151,7 @@ public class EntityDefinitionMapper {
         }
         model.setOrganizationId(definition.getOrganizationId());
         model.setIdentifiers(definition.getIdentifiers() == null || definition.getIdentifiers().isEmpty() ? null : definition.getIdentifiers());
+        model.setLayout(definition.getLayout() == null || definition.getLayout().isEmpty() ? null : definition.getLayout());
         if (definition.getAttributes() != null) {
             model.setAttributes(definition.getAttributes().stream().map(this::toModel).toList());
         }

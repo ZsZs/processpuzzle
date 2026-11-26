@@ -57,6 +57,7 @@ interface EntityDefinitionDto {
   canContextObject?: boolean;
   sharing?: EntitySharing;
   identifiers?: string[][];
+  layout?: string[][];
   sharedFrom?: string;
   attributes?: EntityAttributeDto[];
   version?: number;
@@ -105,6 +106,7 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       canContextObject: source.canContextObject,
       sharing: source.sharing,
       identifiers: source.identifiers,
+      layout: source.layout,
       sharedFrom: source.sharedFrom,
       attributes: (source.attributes ?? []).map(toAttribute),
       version: source.version,
@@ -128,6 +130,8 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       sharing: entity.sharing,
       // Likewise carried: the natural keys of the type, which only the starter's YAML authors for now.
       identifiers: entity.identifiers,
+      // Carried like the keys: authored in the starter's YAML, and a save without it would flatten the form.
+      layout: entity.layout,
       attributes: (entity.attributes ?? []).map(fromAttribute),
     };
   }

@@ -1,6 +1,8 @@
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityAttrDescriptor } from '../base-entity/base-entity-attr.descriptor';
+import { AbstractAttrDescriptor } from '../base-entity/abstact-attr.descriptor';
 import { BaseEntityDescriptor } from '../base-entity/base-entity.descriptor';
+import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { effectiveDateFormat } from '../base-entity/date-format';
 import { toSelectables } from '../base-entity/selectables';
 import { DynamicEntity, EntityAttributeDefinition, EntityDefinition } from './entity-definition';
@@ -110,7 +112,7 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
     // every crumb read `Order` instead of `ORD-1001`, at every level, which is the one thing the status bar
     // exists to tell the user. Left unset, `titleAttrName()` falls through to the `isLinkToDetails`
     // attribute, exactly as it does for a hand-written descriptor: none of those sets `entityTitle` either.
-    attrDescriptors: attributes.map((attribute) => attrDescriptorOf(attribute, lookup)),
+    attrDescriptors: layoutOf(definition.layout, attributes.map((attribute) => attrDescriptorOf(attribute, lookup))),
     componentParent: componentParents,
     // `isEmbedded` is dropped when no parent name resolved, because the descriptor's constructor throws on
     // that combination — rightly, since such a component has neither an endpoint of its own nor a payload
@@ -126,6 +128,33 @@ export function descriptorOf(definition: EntityDefinition, lookup: DefinitionLoo
     isEditable: (entity) => !(entity as DynamicEntity | undefined)?.retiredAt,
     isDeletable: (entity) => !(entity as DynamicEntity | undefined)?.retiredAt,
   });
+}
+
+/**
+ * Arranges the attribute descriptors in the rows of the definition's `layout`: one column of rows, each row a
+ * flexbox. A code that names no attribute, or one a row already placed, is skipped; an attribute no row names
+ * follows in a row of its own, in the order it came. Without a layout the descriptors stay a flat list.
+ */
+function layoutOf(layout: string[][] | undefined, descriptors: BaseEntityAttrDescriptor[]): AbstractAttrDescriptor[] {
+  if (!layout?.length) return descriptors;
+  const byCode = new Map(descriptors.map((descriptor) => [descriptor.attrName, descriptor]));
+  const placed = new Set<string>();
+  const rows: BaseEntityAttrDescriptor[][] = [];
+  for (const codes of layout) {
+    const row = codes.filter((code) => byCode.has(code) && !placed.has(code));
+    row.forEach((code) => placed.add(code));
+    if (row.length) rows.push(row.map((code) => byCode.get(code) as BaseEntityAttrDescriptor));
+  }
+  descriptors.filter((descriptor) => !placed.has(descriptor.attrName)).forEach((descriptor) => rows.push([descriptor]));
+  const column = new FlexboxDescriptor(
+    rows.map((row) => {
+      const flexRow = new FlexboxDescriptor(row, FlexDirection.ROW);
+      flexRow.style = { 'column-gap': '16px' };
+      return flexRow;
+    }),
+    FlexDirection.COLUMN,
+  );
+  return [column];
 }
 
 /** One attribute as an `BaseEntityAttrDescriptor`, with everything the definition has to say about it. */

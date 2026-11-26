@@ -1630,6 +1630,16 @@ components:
             type: array
             items:
               type: string
+        layout:
+          type: array
+          description: >
+            Form layout. Each entry is a row listing attribute codes shown side by side; rows run top to
+            bottom. An attribute no row names follows in a row of its own, in displayOrder. Absent: one
+            attribute per row. Rejected (422) when a row is empty or names an unknown or repeated attribute.
+          items:
+            type: array
+            items:
+              type: string
         organizationId:
           type: string
           format: uuid

@@ -764,7 +764,15 @@ export function createControlTester(attr: BaseEntityAttrDescriptor): ControlTest
 
 /** The attributes a test can act on at all: the invisible and the disabled ones offer no interaction. */
 function testableAttrs(descriptor: BaseEntityDescriptor): BaseEntityAttrDescriptor[] {
-  return (descriptor.attrDescriptors as BaseEntityAttrDescriptor[]).filter((attr) => attr.visible !== false && attr.disabled !== true);
+  return leafAttrs(descriptor.attrDescriptors as BaseEntityAttrDescriptor[]).filter((attr) => attr.visible !== false && attr.disabled !== true);
+}
+
+/** The attributes themselves: a layout wraps them in flexboxes, which hold their own `attrDescriptors` and take no input. */
+function leafAttrs(descriptors: BaseEntityAttrDescriptor[]): BaseEntityAttrDescriptor[] {
+  return descriptors.flatMap((attr) => {
+    const nested = (attr as unknown as { attrDescriptors?: BaseEntityAttrDescriptor[] }).attrDescriptors;
+    return (attr.formControlType as string) === 'FLEX_BOX' && nested ? leafAttrs(nested) : [attr];
+  });
 }
 
 export function controlTestersFor(descriptor: BaseEntityDescriptor): ControlTester[] {

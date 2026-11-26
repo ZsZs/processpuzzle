@@ -44,6 +44,7 @@ public class EntityDefinitionValidator {
         validateContextObject(definition, violations);
         validateAttributes(orgKey, definition, violations);
         validateIdentifiers(definition, violations);
+        validateLayout(definition, violations);
         validateEmbeddedComponentsUniqueness(definition, violations);
 
         if (!violations.isEmpty()) {
@@ -80,6 +81,25 @@ public class EntityDefinitionValidator {
                     + "(or an embedded collection, which cannot be part of a key).".formatted(definition.getCode(), key)));
             } else if (!seen.add(key)) {
                 violations.add(new Violation(null, "'%s' declares the identifier %s twice.".formatted(definition.getCode(), key)));
+            }
+        }
+    }
+
+    /** A layout row names attributes the type has, each at most once across the whole layout. */
+    private void validateLayout(BaseEntityDefinition definition, List<Violation> violations) {
+        java.util.Set<String> codes = definition.getAttributes().stream().map(BaseEntityAttribute::getCode).collect(Collectors.toSet());
+        java.util.Set<String> placed = new java.util.HashSet<>();
+        for (List<String> row : definition.getLayout() == null ? List.<List<String>>of() : definition.getLayout()) {
+            if (row == null || row.isEmpty()) {
+                violations.add(new Violation(null, "'%s' declares an empty layout row.".formatted(definition.getCode())));
+                continue;
+            }
+            for (String code : row) {
+                if (!codes.contains(code)) {
+                    violations.add(new Violation(null, "'%s' lays out '%s', which is not one of its attributes.".formatted(definition.getCode(), code)));
+                } else if (!placed.add(code)) {
+                    violations.add(new Violation(code, "'%s' lays out '%s' more than once.".formatted(definition.getCode(), code)));
+                }
             }
         }
     }
