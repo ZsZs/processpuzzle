@@ -148,6 +148,15 @@ public class BaseEntityDefinition extends Auditable {
     @Builder.Default
     private List<List<String>> identifiers = new ArrayList<>();
 
+    /**
+     * Form layout: each row lists the attribute codes shown side by side, rows top to bottom. Attributes no row names
+     * follow in rows of their own. Empty: one attribute per row.
+     */
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<List<String>> layout = new ArrayList<>();
+
     private UUID organizationId;
 
     @jakarta.persistence.OneToMany(mappedBy = "entityDefinition", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
@@ -220,6 +229,7 @@ public class BaseEntityDefinition extends Auditable {
         this.sharingVisibleWhen = draft.sharingVisibleWhen == null ? new ArrayList<>() : new ArrayList<>(draft.sharingVisibleWhen);
         this.sharingFrom = draft.sharingFrom;
         this.identifiers = copyOf(draft.identifiers);
+        this.layout = copyOf(draft.layout);
         java.util.Map<String, BaseEntityAttribute> current = new java.util.HashMap<>();
         this.attributes.forEach(attribute -> current.put(attribute.getCode(), attribute));
         java.util.Set<String> kept = new java.util.HashSet<>();

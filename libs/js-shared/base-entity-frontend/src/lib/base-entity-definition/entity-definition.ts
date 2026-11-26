@@ -234,6 +234,11 @@ export class EntityDefinition implements BaseEntity {
   /** Natural keys: attribute codes whose values together are unique among the type's non-retired records. Kept as read. */
   identifiers?: string[][];
   /**
+   * Form layout: each row lists the attribute codes shown side by side, rows top to bottom. An attribute no row
+   * names follows in a row of its own, in `displayOrder`. Absent: one attribute per row, as before.
+   */
+  layout?: string[][];
+  /**
    * Set on a type this organization reads but does not own: the key of the common that shares it. Such a type is
    * released, shown read-only, and neither changed nor deleted from here. Reported by the backend, never sent back.
    */
@@ -259,6 +264,7 @@ export class EntityDefinition implements BaseEntity {
     this.canContextObject = init.canContextObject ?? false;
     this.sharing = init.sharing;
     this.identifiers = init.identifiers;
+    this.layout = init.layout;
     this.sharedFrom = init.sharedFrom;
     this.attributes = init.attributes ?? [];
     this.version = init.version;
