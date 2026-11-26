@@ -35,6 +35,12 @@ info:
     the configured number of rounds; what is still wrong with it is returned as `issues`. A caller may use a task
     only when they may edit its target. The organization has to have an AI subscription.
 
+    Tasks:
+
+    - `rule.expression`: a rule's expression (one JavaScript boolean expression over `entity`) from its description.
+      Parameter `context`: the name of the entity the rule is for, whose attributes the model may refer to and the
+      candidate is checked against; without it only the syntax is checked. Needs the `design` right.
+
   version: 0.1.0
 
 servers:

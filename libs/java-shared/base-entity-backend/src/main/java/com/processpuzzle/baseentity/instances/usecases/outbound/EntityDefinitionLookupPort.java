@@ -20,6 +20,14 @@ public interface EntityDefinitionLookupPort {
     /** Either row of a definition; the draft is for checking other drafts against, never for live data. */
     Optional<EntityDefinitionView> findByCode(String orgKey, String code, Channel channel);
 
+    /**
+     * The definition a rule's {@code context} names: the one whose {@link EntityDefinitionView#ruleContext()} it is. Empty
+     * when there is none, which is also what a port without a catalog answers.
+     */
+    default Optional<EntityDefinitionView> findByRuleContext(String orgKey, String ruleContext, Channel channel) {
+        return Optional.empty();
+    }
+
     /** A snapshot an attribute carries: the attributes of the linked record copied into the referencing record. */
     record SnapshotView(String linkedEntityType, List<String> fields) {
         public SnapshotView {

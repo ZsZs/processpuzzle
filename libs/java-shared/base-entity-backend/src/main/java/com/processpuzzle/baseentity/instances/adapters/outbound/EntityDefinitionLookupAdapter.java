@@ -63,6 +63,14 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
     }
 
     @Override
+    public Optional<EntityDefinitionView> findByRuleContext(String orgKey, String ruleContext, Channel channel) {
+        return entityDefinitionRepository.findAllByOrgKeyAndChannel(orgKey, channel).stream()
+            .map(this::toView)
+            .filter(view -> view.ruleContext().equals(ruleContext))
+            .findFirst();
+    }
+
+    @Override
     public boolean isShared(String orgKey, String code) {
         return entityDefinitionRepository.findByOrgKeyAndCodeAndChannel(orgKey, code, Channel.RELEASED)
             .map(BaseEntityDefinition::isShared)
