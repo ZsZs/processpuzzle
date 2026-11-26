@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FormControlType } from '../base-entity/abstact-attr.descriptor';
+import { FlexboxDescriptor, FlexDirection } from '../base-entity/flexboxDescriptor';
 import { filterAttributeDescriptors } from '../base-entity/filter-attr-descriptor';
 import { controlTypeOf, descriptorOf, referenceIdFieldOf } from './dynamic-entity.descriptor';
 import { EntityDefinition } from './entity-definition';
@@ -52,6 +53,35 @@ describe('descriptorOf', () => {
     };
 
     expect(descriptorOf(definition, lookup).attrDescriptors.map((attrDescriptor) => attrDescriptor.attrName)).toEqual(['first', 'second', 'third']);
+  });
+
+  describe('layout', () => {
+    const attributes = ['a', 'b', 'c', 'd', 'e'].map((code, index) => ({ code, displayOrder: index + 1, formControlType: 'TEXT' }));
+    const rowsOf = (layout?: string[][]) => {
+      const [column] = descriptorOf({ code: 'laid', name: 'Laid', layout, attributes }, lookup).attrDescriptors as FlexboxDescriptor[];
+      return column.attrDescriptors.map((row) => (row as FlexboxDescriptor).attrDescriptors.map((attr) => attr.attrName));
+    };
+
+    it('arranges the attributes in the rows of the layout, in one column', () => {
+      const [column] = descriptorOf({ code: 'laid', name: 'Laid', layout: [['a', 'b'], ['c']], attributes }, lookup).attrDescriptors as FlexboxDescriptor[];
+      expect(column.direction).toBe(FlexDirection.COLUMN);
+      expect((column.attrDescriptors[0] as FlexboxDescriptor).direction).toBe(FlexDirection.ROW);
+      expect(rowsOf([['a', 'b'], ['c']])).toEqual([['a', 'b'], ['c'], ['d'], ['e']]);
+    });
+
+    it('puts an attribute no row names in a row of its own, and skips unknown or repeated codes', () => {
+      expect(rowsOf([['b', 'zzz'], ['a', 'b']])).toEqual([['b'], ['a'], ['c'], ['d'], ['e']]);
+    });
+
+    it('stays a flat list without a layout', () => {
+      expect(descriptorOf({ code: 'flat', name: 'Flat', attributes }, lookup).attrDescriptors.map((attr) => attr.attrName)).toEqual(['a', 'b', 'c', 'd', 'e']);
+      expect(descriptorOf({ code: 'flat', name: 'Flat', layout: [], attributes }, lookup).attrDescriptors).toHaveLength(5);
+    });
+
+    it('keeps every attribute reachable through the flattening filter', () => {
+      const descriptor = descriptorOf({ code: 'laid', name: 'Laid', layout: [['d', 'a']], attributes }, lookup);
+      expect(filterAttributeDescriptors(descriptor.attrDescriptors).map((attr) => attr.attrName)).toEqual(['d', 'a', 'b', 'c', 'e']);
+    });
   });
 
   it('labels an attribute by its authored name, falling back to the code', () => {

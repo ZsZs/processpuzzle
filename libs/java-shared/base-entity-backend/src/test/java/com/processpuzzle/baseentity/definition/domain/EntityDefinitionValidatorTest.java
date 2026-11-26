@@ -663,4 +663,37 @@ class EntityDefinitionValidatorTest {
         assertThatThrownBy(() -> validator.validate(withIdentifiers(List.of(List.of("name"), List.of("name")))))
                 .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
     }
+
+    private static BaseEntityDefinition withLayout(List<List<String>> layout) {
+        List<BaseEntityAttribute> attributes = List.of("name", "category", "state").stream()
+                .map(code -> BaseEntityAttribute.builder().code(code).name(code)
+                        .valueKind(ValueKind.TEXT).formControlType(FormControlType.TEXT).build())
+                .toList();
+        return BaseEntityDefinition.builder().code("area").name("Area").attributes(attributes).layout(layout).build();
+    }
+
+    @Test
+    void validate_layoutNamingTheTypesAttributesOnce_passes() {
+        validator.validate(withLayout(List.of(List.of("name", "category"), List.of("state"))));
+        validator.validate(withLayout(List.of(List.of("name"))));
+        validator.validate(withLayout(List.of()));
+    }
+
+    @Test
+    void validate_layoutWithAnEmptyRow_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withLayout(List.of(List.of("name"), List.of()))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+    }
+
+    @Test
+    void validate_layoutNamingAnUnknownAttribute_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withLayout(List.of(List.of("name", "country")))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+    }
+
+    @Test
+    void validate_layoutPlacingAnAttributeTwice_isRefused() {
+        assertThatThrownBy(() -> validator.validate(withLayout(List.of(List.of("name"), List.of("state", "name")))))
+                .isInstanceOf(com.processpuzzle.baseentity.common.ValidationException.class);
+    }
 }

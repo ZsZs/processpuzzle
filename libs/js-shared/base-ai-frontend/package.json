@@ -23,7 +23,7 @@
     "@angular/router": "~22.0.1",
     "@jsverse/transloco": "8.4.0",
     "@ngrx/signals": "^21.1.1",
-    "@processpuzzle/base-entity": "^1.5.0",
+    "@processpuzzle/base-entity": "^1.6.0",
     "@processpuzzle/util": "^1.4.0",
     "ngx-markdown": "^22.0.0",
     "rxjs": "~7.8.2"

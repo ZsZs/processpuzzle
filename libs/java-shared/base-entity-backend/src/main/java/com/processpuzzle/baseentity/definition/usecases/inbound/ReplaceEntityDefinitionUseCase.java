@@ -44,6 +44,7 @@ public class ReplaceEntityDefinitionUseCase {
         existing.setSharingVisibleWhen(desiredState.getSharingVisibleWhen());
         existing.setSharingFrom(desiredState.getSharingFrom());
         existing.setIdentifiers(desiredState.getIdentifiers());
+        existing.setLayout(desiredState.getLayout());
         existing.setOrganizationId(desiredState.getOrganizationId());
 
         replaceAttributes(existing, desiredState);
