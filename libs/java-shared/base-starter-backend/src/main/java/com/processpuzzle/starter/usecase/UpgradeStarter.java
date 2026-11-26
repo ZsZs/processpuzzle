@@ -4,6 +4,7 @@ import com.processpuzzle.core.definition.DefinitionRemoval;
 import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.core.definition.MigrationStepQueue;
 import com.processpuzzle.core.definition.ParticipantResult;
+import com.processpuzzle.core.definition.PendingRecordQueue;
 import com.processpuzzle.core.definition.RecordImportParticipant;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -64,15 +66,29 @@ public class UpgradeStarter {
     private final OfferedVersionRepository offered;
     private final ObjectProvider<MigrationStepQueue> queue;
     private final ObjectProvider<RecordImportParticipant> records;
+    private final ObjectProvider<PendingRecordQueue> pendingRecords;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
+    /** For a caller whose records load at once, such as a test or a deployment that cannot release. */
     public UpgradeStarter(OrganizationGuard guard, InstallStarter installer, StarterRegistry registry, BundleReader reader,
                           UpgradePlanner planner, CommonRules commonRules, KeyPrefixRules keyPrefixRules,
                           DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
                           OfferedVersionRepository offered, ObjectProvider<MigrationStepQueue> queue,
                           ObjectProvider<RecordImportParticipant> records,
                           PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
+        this(guard, installer, registry, reader, planner, commonRules, keyPrefixRules, provenanceRepository, installedRepository,
+            offered, queue, records, null, transactionManager, clock);
+    }
+
+    @Autowired
+    public UpgradeStarter(OrganizationGuard guard, InstallStarter installer, StarterRegistry registry, BundleReader reader,
+                          UpgradePlanner planner, CommonRules commonRules, KeyPrefixRules keyPrefixRules,
+                          DefinitionProvenanceRepository provenanceRepository, InstalledStarterRepository installedRepository,
+                          OfferedVersionRepository offered, ObjectProvider<MigrationStepQueue> queue,
+                          ObjectProvider<RecordImportParticipant> records, ObjectProvider<PendingRecordQueue> pendingRecords,
+                          PlatformTransactionManager transactionManager, ObjectProvider<Clock> clock) {
+        this.pendingRecords = pendingRecords;
         this.guard = guard;
         this.installer = installer;
         this.registry = registry;
@@ -195,7 +211,9 @@ public class UpgradeStarter {
                 return UpgradeReport.rejected(dryRun, manifest.id(), from, manifest.version(), errors);
             }
         }
-        List<ImportReport.Error> recordErrors = loadRecords(orgKey, bundle, items);
+        List<ImportReport.Error> recordErrors = wroteDefinitions(plan) && queueRecords(orgKey, bundle, items)
+            ? List.of()
+            : loadRecords(orgKey, bundle, items);
         if (!recordErrors.isEmpty()) {
             status.setRollbackOnly();
             return UpgradeReport.rejected(dryRun, manifest.id(), from, manifest.version(), recordErrors);
@@ -251,6 +269,27 @@ public class UpgradeStarter {
             result.errors().forEach(message -> errors.add(new ImportReport.Error(file, message)));
         });
         return errors;
+    }
+
+    private static boolean wroteDefinitions(UpgradePlanner.Plan plan) {
+        return plan.kinds().stream().anyMatch(kind -> !kind.written().isEmpty());
+    }
+
+    /**
+     * Queues the bundle's records files for the organization's next release, which loads them once the drafts this
+     * upgrade wrote are released — a record is validated against its released type. False when the deployment cannot
+     * release, and the records are loaded at once as before.
+     */
+    private boolean queueRecords(String orgKey, StarterBundle bundle, List<UpgradeReport.Item> items) {
+        PendingRecordQueue queue = pendingRecords == null ? null : pendingRecords.getIfAvailable();
+        if (queue == null) {
+            return false;
+        }
+        for (String file : bundle.manifest().contents().getOrDefault(ContentGroups.RECORDS, List.of())) {
+            queue.enqueue(orgKey, file, bundle.file(file));
+            items.add(new UpgradeReport.Item(ImportReport.RECORD, file, UpgradeReport.Action.ADD, "loaded when the organization releases"));
+        }
+        return true;
     }
 
     /**

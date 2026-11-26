@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.OrganizationReleaseRefusedException;
@@ -22,11 +23,21 @@ class ReleaseOnBehalfTest {
 
     private final ReleaseOrganization release = mock(ReleaseOrganization.class);
     private final FakeParticipant entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, new ArrayList<>());
-    private final ReleaseOnBehalf onBehalf = new ReleaseOnBehalf(release, ReleaseParticipants.of(List.of(entities)));
+    private final PendingRecordsLoader records = mock(PendingRecordsLoader.class);
+    private final ReleaseOnBehalf onBehalf = new ReleaseOnBehalf(release, ReleaseParticipants.of(List.of(entities)), records);
 
     @Test
     void releasesWhatIsPending() {
         entities.withDraft("item", PendingChange.Change.ADDED);
+
+        assertThat(onBehalf.release("common", "staff")).isEqualTo(OrganizationReleaser.Outcome.RELEASED);
+        verify(release).provision("common", "staff");
+    }
+
+    /** Seed records queued by an install whose definitions are released already still need a release to load them. */
+    @Test
+    void pendingRecordsAloneAreSomethingToRelease() {
+        when(records.hasPending("common")).thenReturn(true);
 
         assertThat(onBehalf.release("common", "staff")).isEqualTo(OrganizationReleaser.Outcome.RELEASED);
         verify(release).provision("common", "staff");
