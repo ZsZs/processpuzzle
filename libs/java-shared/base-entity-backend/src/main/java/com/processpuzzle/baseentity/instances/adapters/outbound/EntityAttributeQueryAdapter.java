@@ -9,8 +9,12 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityAttributeView;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionLookupPort;
 import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -61,8 +65,19 @@ public class EntityAttributeQueryAdapter implements EntityAttributeQuery {
             .map(EntityAttributeQueryAdapter::describe);
     }
 
+    @Override
+    public List<EntityTypeDescription> describeAll(String orgKey) {
+        List<EntityDefinitionView> released = definitionLookupPort.findAll(orgKey, Channel.RELEASED);
+        Set<String> codes = released.stream().map(EntityDefinitionView::code).collect(Collectors.toSet());
+        return Stream.concat(released.stream(),
+                definitionLookupPort.findAll(orgKey, Channel.DRAFT).stream().filter(draft -> !codes.contains(draft.code())))
+            .map(EntityAttributeQueryAdapter::describe)
+            .sorted(Comparator.comparing(EntityTypeDescription::code))
+            .toList();
+    }
+
     private static EntityTypeDescription describe(EntityDefinitionView definition) {
-        return new EntityTypeDescription(definition.code(), definition.ruleContext(),
+        return new EntityTypeDescription(definition.code(), definition.ruleContext(), definition.embedded(),
             definition.attributes().stream().map(EntityAttributeQueryAdapter::describe).toList());
     }
 

@@ -163,4 +163,26 @@ class EntityAttributeQueryAdapterTest {
             .extracting(EntityTypeDescription::code).isEqualTo("order");
         assertThat(adapter.describeByRuleContext(ORG, "Missing")).isEmpty();
     }
+
+    @Test
+    void describeAll_listsReleasedTypesAndDraftOnlyOnesSortedByCodeWithTheEmbeddedFlag() {
+        when(definitionLookupPort.findAll(ORG, Channel.RELEASED)).thenReturn(List.of(
+            new EntityDefinitionView("order", false, List.of(attribute("total", ValueKindView.NUMBER)), null, "Order"),
+            new EntityDefinitionView("order-line", true, List.of(), null, "Order Line")));
+        when(definitionLookupPort.findAll(ORG, Channel.DRAFT)).thenReturn(List.of(
+            new EntityDefinitionView("order", false, List.of(attribute("draftOnly", ValueKindView.TEXT)), null, "Order"),
+            new EntityDefinitionView("customer", false, List.of(), null, "Customer")));
+
+        List<EntityTypeDescription> all = adapter.describeAll(ORG);
+
+        assertThat(all).extracting(EntityTypeDescription::code).containsExactly("customer", "order", "order-line");
+        assertThat(all.get(1).attributes()).extracting(EntityTypeDescription.AttributeDescription::code).containsExactly("total");
+        assertThat(all.get(2).embedded()).isTrue();
+        assertThat(all.get(0).embedded()).isFalse();
+    }
+
+    @Test
+    void describeAll_ofAnOrganizationWithoutDefinitionsIsEmpty() {
+        assertThat(adapter.describeAll(ORG)).isEmpty();
+    }
 }

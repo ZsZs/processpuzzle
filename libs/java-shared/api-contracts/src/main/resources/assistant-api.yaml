@@ -40,6 +40,10 @@ info:
     - `rule.expression`: a rule's expression (one JavaScript boolean expression over `entity`) from its description.
       Parameter `context`: the name of the entity the rule is for, whose attributes the model may refer to and the
       candidate is checked against; without it only the syntax is checked. Needs the `design` right.
+    - `calculation.source`: a calculation's whole YAML source from the `description` key the user wrote in it. `text` is that
+      description and `current` the source as it stands, whose `calculation` id and `description` the candidate keeps. Takes no
+      parameter. The model is told the organization's entity types; the candidate is checked by the calculation validator and
+      against those entities (entities named, an embedded input's path, the output's mapped attributes). Needs the `design` right.
 
   version: 0.1.0
 

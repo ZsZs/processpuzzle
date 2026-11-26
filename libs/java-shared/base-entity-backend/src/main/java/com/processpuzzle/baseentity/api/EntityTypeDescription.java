@@ -8,12 +8,18 @@ import java.util.List;
  *
  * @param code       the definition's code, which linked and embedded attributes name it by
  * @param name       the definition's display name, which a rule's context names it by; the code when it has none
+ * @param embedded   whether it is a component that only exists inside another type's objects
  * @param attributes the attributes in the order the definition declares them
  */
-public record EntityTypeDescription(String code, String name, List<AttributeDescription> attributes) {
+public record EntityTypeDescription(String code, String name, boolean embedded, List<AttributeDescription> attributes) {
 
     public EntityTypeDescription {
         attributes = attributes == null ? List.of() : List.copyOf(attributes);
+    }
+
+    /** A type that stands on its own. */
+    public EntityTypeDescription(String code, String name, List<AttributeDescription> attributes) {
+        this(code, name, false, attributes);
     }
 
     /**

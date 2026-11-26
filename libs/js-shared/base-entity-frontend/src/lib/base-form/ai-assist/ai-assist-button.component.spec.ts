@@ -4,7 +4,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslocoService } from '@jsverse/transloco';
 import { provideTranslocoTesting } from '@processpuzzle/test-util';
-import { NgxLoggerLevel, provideLogger } from 'ngx-logging-kit';
 import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AI_ASSIST_CLIENT, AiAssistClient, AiAssistResult } from './ai-assist';
@@ -34,7 +33,6 @@ describe('AiAssistButtonComponent', () => {
     snackBar = { open: vi.fn(() => ({ onAction: () => action.asObservable() })) };
     await TestBed.configureTestingModule({
       providers: [
-        provideLogger({ level: NgxLoggerLevel.OFF, serverLogLevel: NgxLoggerLevel.OFF, disableConsoleLogging: true }),
         provideTranslocoTesting({ translations: TRANSLATIONS }),
         { provide: MatSnackBar, useValue: snackBar },
         ...(options.client === false ? [] : [{ provide: AI_ASSIST_CLIENT, useValue: client as unknown as AiAssistClient }]),
@@ -186,10 +184,11 @@ describe('AiAssistButtonComponent', () => {
     expect(generated).toEqual(['entity.total > 0']);
   });
 
-  it('survives a failure that is not an HTTP error', async () => {
+  it('rethrows a failure that is not an HTTP error, and is usable again', async () => {
     await setUp();
     client.run.mockRejectedValue(new Error('boom'));
 
-    await expect(fixture.componentInstance.generate()).resolves.toBeUndefined();
+    await expect(fixture.componentInstance.generate()).rejects.toThrow('boom');
+    expect(button()?.disabled).toBe(false);
   });
 });

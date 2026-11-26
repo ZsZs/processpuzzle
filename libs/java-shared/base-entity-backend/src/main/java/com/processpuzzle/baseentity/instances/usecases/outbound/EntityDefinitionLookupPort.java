@@ -20,6 +20,11 @@ public interface EntityDefinitionLookupPort {
     /** Either row of a definition; the draft is for checking other drafts against, never for live data. */
     Optional<EntityDefinitionView> findByCode(String orgKey, String code, Channel channel);
 
+    /** Every definition of the organization in the channel; empty for a port without a catalog. */
+    default List<EntityDefinitionView> findAll(String orgKey, Channel channel) {
+        return List.of();
+    }
+
     /**
      * The definition a rule's {@code context} names: the one whose {@link EntityDefinitionView#ruleContext()} it is. Empty
      * when there is none, which is also what a port without a catalog answers.

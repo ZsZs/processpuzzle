@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.api;
 
 import com.processpuzzle.core.definition.Channel;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -65,5 +66,13 @@ public interface EntityAttributeQuery {
      */
     default Optional<EntityTypeDescription> describeByRuleContext(String orgKey, String ruleContext) {
         return Optional.empty();
+    }
+
+    /**
+     * Every entity type of the organization, as {@link #describe} does: the released types, and the drafted ones that have
+     * no released row yet. For a module that tells an AI which entities there are.
+     */
+    default List<EntityTypeDescription> describeAll(String orgKey) {
+        return List.of();
     }
 }

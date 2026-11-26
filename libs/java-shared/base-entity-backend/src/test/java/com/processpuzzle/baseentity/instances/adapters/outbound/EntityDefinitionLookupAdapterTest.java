@@ -307,4 +307,15 @@ class EntityDefinitionLookupAdapterTest {
         assertThat(adapter.findByRuleContext("acme", "invoice", Channel.RELEASED)).isPresent();
         assertThat(adapter.findByRuleContext("acme", "order", Channel.RELEASED)).isEmpty();
     }
+
+    @Test
+    void findAll_listsTheOrganizationsDefinitionsOfTheChannel() {
+        when(repository.findAllByOrgKeyAndChannel("acme", Channel.RELEASED)).thenReturn(java.util.List.of(
+            BaseEntityDefinition.builder().orgKey("acme").code("order").name("Order").build(),
+            BaseEntityDefinition.builder().orgKey("acme").code("order-line").name("Order Line").isEmbedded(true).build()));
+
+        assertThat(adapter.findAll("acme", Channel.RELEASED))
+            .extracting(com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView::code, com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinitionView::embedded)
+            .containsExactly(org.assertj.core.groups.Tuple.tuple("order", false), org.assertj.core.groups.Tuple.tuple("order-line", true));
+    }
 }

@@ -6,7 +6,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltip } from '@angular/material/tooltip';
 import { provideTranslocoScope, TranslocoDirective, TranslocoService } from '@jsverse/transloco';
-import { NGXLogger } from 'ngx-logging-kit';
 import { AI_ASSIST_CLIENT, AiAssistRequest, AiAssistResult } from './ai-assist';
 
 /**
@@ -16,7 +15,8 @@ import { AI_ASSIST_CLIENT, AiAssistRequest, AiAssistResult } from './ai-assist';
  *
  * The host owns the field: the button hands it the value through {@link generated}. When it replaces something, or the result
  * is not clean, a snackbar says so, and offers to bring back what was there; undoing emits the earlier value the same way.
- * A failed request is left to the application's error handling, which already tells the user about an HTTP error.
+ * A failed request is left to the application's error handling, which already tells the user about an HTTP error; any other
+ * failure is rethrown.
  */
 @Component({
   selector: 'base-ai-assist-button',
@@ -72,7 +72,6 @@ export class AiAssistButtonComponent {
   private readonly client = inject(AI_ASSIST_CLIENT, { optional: true });
   private readonly snackBar = inject(MatSnackBar);
   private readonly transloco = inject(TranslocoService);
-  private readonly logger = inject(NGXLogger);
 
   protected readonly available = computed(() => this.client?.isAvailable(this.task())() ?? false);
   protected readonly enabled = computed(() => this.text().trim().length > 0 && !this.busy());
@@ -87,7 +86,10 @@ export class AiAssistButtonComponent {
     try {
       this.report(await this.client.run(this.task(), request), previous);
     } catch (error) {
-      this.logger.warn('The AI assist request failed.', error instanceof HttpErrorResponse ? error.status : error);
+      // An HTTP failure has been reported by the application's error handling already; anything else is a bug to surface.
+      if (!(error instanceof HttpErrorResponse)) {
+        throw error;
+      }
     } finally {
       this.busy.set(false);
     }
