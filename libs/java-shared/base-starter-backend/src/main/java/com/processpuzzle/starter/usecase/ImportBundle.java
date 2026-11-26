@@ -6,6 +6,7 @@ import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.definition.ModuleMountPort;
 import com.processpuzzle.core.definition.ParticipantResult;
+import com.processpuzzle.core.definition.PendingRecordQueue;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.starter.bundle.BundleReader;
 import com.processpuzzle.starter.bundle.BundleRejectedException;
@@ -181,9 +182,18 @@ public class ImportBundle {
         return writeRecords(orgKey, bundle, recordFiles, items);
     }
 
-    /** Loads the record files after the definitions; the first refused file is the answer, as for a definition. */
+    /**
+     * Loads the record files after the definitions; the first refused file is the answer, as for a definition. When the
+     * install wrote definitions — drafts, which a record cannot be validated against — and the deployment can release,
+     * the files are queued for the release instead, which loads them once the drafts are released.
+     */
     private Optional<List<ImportReport.Error>> writeRecords(String orgKey, StarterBundle bundle, List<String> recordFiles,
                                                             List<ImportReport.Item> items) {
+        Optional<PendingRecordQueue> queue = participants.pendingRecords();
+        if (!recordFiles.isEmpty() && !items.isEmpty() && queue.isPresent()) {
+            recordFiles.forEach(file -> queue.get().enqueue(orgKey, file, bundle.file(file)));
+            return Optional.empty();
+        }
         for (String file : recordFiles) {
             ParticipantResult result = participants.records().orElseThrow().load(orgKey, file, bundle.file(file));
             if (result.isRejected()) {
@@ -193,6 +203,18 @@ public class ImportBundle {
                     items.add(new ImportReport.Item(ImportReport.RECORD, item.key(), ImportReport.Action.CREATE)));
         }
         return Optional.empty();
+    }
+
+    /** A note for each record file {@link #writeRecords} queued for the release: it loaded none of them then. */
+    private List<String> queuedRecords(StarterManifest manifest, List<ImportReport.Item> items) {
+        boolean wroteDefinitions = items.stream().anyMatch(item ->
+                !ImportReport.RECORD.equals(item.kind()) && item.action() != ImportReport.Action.DELETE);
+        if (participants.pendingRecords().isEmpty() || !wroteDefinitions) {
+            return List.of();
+        }
+        return recordFiles(manifest).stream()
+                .map(file -> "The seed records of '" + file + "' are loaded when the organization releases.")
+                .toList();
     }
 
     /** Whether the bundle is added to the organization rather than replacing its definitions. */
@@ -215,7 +237,10 @@ public class ImportBundle {
             return ImportReport.rejected(dryRun, manifest.id(), manifest.version(), refusal.get());
         }
         removed.forEach((kind, keys) -> keys.forEach(key -> items.add(new ImportReport.Item(kind, key, ImportReport.Action.DELETE))));
-        List<String> warnings = additive ? mount(orgKey, manifest, items) : List.of();
+        List<String> warnings = new ArrayList<>(queuedRecords(manifest, items));
+        if (additive) {
+            warnings.addAll(mount(orgKey, manifest, items));
+        }
 
         if (dryRun) {
             status.setRollbackOnly();

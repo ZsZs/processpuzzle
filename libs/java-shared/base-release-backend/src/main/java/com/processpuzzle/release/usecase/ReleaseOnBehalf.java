@@ -14,16 +14,18 @@ public class ReleaseOnBehalf implements OrganizationReleaser {
 
     private final ReleaseOrganization release;
     private final ReleaseParticipants participants;
+    private final PendingRecordsLoader records;
 
-    ReleaseOnBehalf(ReleaseOrganization release, ReleaseParticipants participants) {
+    ReleaseOnBehalf(ReleaseOrganization release, ReleaseParticipants participants, PendingRecordsLoader records) {
         this.release = release;
         this.participants = participants;
+        this.records = records;
     }
 
     @Override
     public Outcome release(String orgKey, String releasedBy) {
         boolean pending = participants.inOrder().stream().map(participant -> participant.pending(orgKey))
-            .anyMatch(changes -> !changes.isEmpty());
+            .anyMatch(changes -> !changes.isEmpty()) || records.hasPending(orgKey);
         if (!pending) {
             return Outcome.NOTHING_PENDING;
         }

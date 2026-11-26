@@ -4,6 +4,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
 import com.processpuzzle.release.domain.OrgMigrationStepRepository;
+import com.processpuzzle.release.domain.OrgPendingRecordsRepository;
 import com.processpuzzle.release.domain.OrgReleaseContentRepository;
 import com.processpuzzle.release.domain.OrgReleaseItemRepository;
 import com.processpuzzle.release.domain.OrgReleaseRepository;
@@ -17,14 +18,16 @@ class TenantDataCleanerTest {
     private final OrgReleaseItemRepository itemRepository = mock(OrgReleaseItemRepository.class);
     private final OrgReleaseContentRepository contentRepository = mock(OrgReleaseContentRepository.class);
     private final OrgMigrationStepRepository stepRepository = mock(OrgMigrationStepRepository.class);
+    private final OrgPendingRecordsRepository pendingRecordsRepository = mock(OrgPendingRecordsRepository.class);
 
     @Test
-    void erasesTheDeletedTenantsReleaseHistory_stepsContentAndItemsFirst() {
-        new TenantDataCleaner(releaseRepository, itemRepository, contentRepository, stepRepository)
+    void erasesTheDeletedTenantsReleaseHistory_stepsRecordsContentAndItemsFirst() {
+        new TenantDataCleaner(releaseRepository, itemRepository, contentRepository, stepRepository, pendingRecordsRepository)
                 .onOrganizationDeleted(new OrganizationDeletedEvent("gone"));
 
-        InOrder order = inOrder(stepRepository, contentRepository, itemRepository, releaseRepository);
+        InOrder order = inOrder(stepRepository, pendingRecordsRepository, contentRepository, itemRepository, releaseRepository);
         order.verify(stepRepository).eraseByOrgKey("gone");
+        order.verify(pendingRecordsRepository).eraseByOrgKey("gone");
         order.verify(contentRepository).eraseByOrgKey("gone");
         order.verify(itemRepository).eraseByOrgKey("gone");
         order.verify(releaseRepository).eraseByOrgKey("gone");
