@@ -134,6 +134,8 @@ export { BaseUrlSegments } from './lib/base-form-navigator/base-url-segments';
 export { RULE_ENGINE, type EvaluatableRule, type RuleEngine, type RuleEvaluationResult, type RuleSeverity } from './lib/rule-engine/rule-engine';
 export { RuleViolationsSingletonStore } from './lib/rule-engine/rule-violations.store';
 export type { LookupTable } from './lib/base-form/lookup/lookup-table';
+export { AI_ASSIST_CLIENT, type AiAssistClient, type AiAssistConfig, type AiAssistIssue, type AiAssistRequest, type AiAssistResult } from './lib/base-form/ai-assist/ai-assist';
+export { AiAssistButtonComponent } from './lib/base-form/ai-assist/ai-assist-button.component';
 export { unsavedChangesGuard, type HasUnsavedChanges } from './lib/base-form/unsaved-changes/unsaved-changes.guard';
 export { UnsavedChangesRegistry } from './lib/base-form/unsaved-changes/unsaved-changes.registry';
 export { PdfExportService } from './lib/pdf-service/pdf-export.service';

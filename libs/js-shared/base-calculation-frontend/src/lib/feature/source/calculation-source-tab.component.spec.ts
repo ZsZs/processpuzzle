@@ -1,7 +1,11 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ORDER_TOTAL_DTO, SERVICE_ROOT } from '../../domain/test-calculation-definition';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AI_ASSIST_CLIENT, type AiAssistClient } from '@processpuzzle/base-entity';
+import { NEVER } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ORDER_TOTAL_DTO, ORDER_TOTAL_SOURCE, SERVICE_ROOT } from '../../domain/test-calculation-definition';
 import { byTestId, configureCalculationTabTest, flushDefinitions, settle } from '../calculation-tab.testing';
 import { CalculationSourceTabComponent } from './calculation-source-tab.component';
 
@@ -83,5 +87,67 @@ describe('CalculationSourceTabComponent', () => {
     controller.expectOne(`${SERVICE_ROOT}/calculation-definitions/validate`).flush({ errorText: 'down' }, { status: 503, statusText: 'Unavailable' });
     await settle(fixture);
     expect(byTestId(root(), 'calculation-source-failure')?.textContent).toContain('down');
+  });
+});
+
+describe('CalculationSourceTabComponent AI assist', () => {
+  const GENERATED = 'calculation: order-total\ndescription: Sums the lines.\ndecisions:\n  total: { expr: "1" }\n';
+  const run = vi.fn();
+  let fixture: ComponentFixture<CalculationSourceTabComponent>;
+
+  const root = () => fixture.nativeElement as HTMLElement;
+  const edit = (source: string) => {
+    (fixture.componentInstance as unknown as { edit(source: string): void }).edit(source);
+    fixture.detectChanges();
+  };
+
+  async function setUp(withClient = true): Promise<void> {
+    run.mockReset();
+    configureCalculationTabTest();
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: MatSnackBar, useValue: { open: vi.fn(() => ({ onAction: () => NEVER })) } },
+        ...(withClient ? [{ provide: AI_ASSIST_CLIENT, useValue: { isAvailable: () => signal(true), run } as unknown as AiAssistClient }] : []),
+      ],
+    });
+    fixture = TestBed.createComponent(CalculationSourceTabComponent);
+    fixture.componentRef.setInput('entityId', 'order-total');
+    fixture.detectChanges();
+    flushDefinitions();
+    fixture.detectChanges();
+    await fixture.whenStable();
+  }
+
+  const button = () => byTestId(root(), 'ai-assist-button') as HTMLButtonElement | null;
+
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('shows no AI button without an AI assist client', async () => {
+    await setUp(false);
+
+    expect(button()).toBeNull();
+  });
+
+  it('is disabled while the source has no description, and enabled once the user has written one', async () => {
+    await setUp();
+    expect(button()?.disabled).toBe(true);
+
+    edit(ORDER_TOTAL_SOURCE.replace('name: Order total\n', 'name: Order total\ndescription: Sums the lines.\n'));
+
+    expect(button()?.disabled).toBe(false);
+  });
+
+  it('asks for the calculation with the description and the whole source, and puts the answer in the editor as an unsaved change', async () => {
+    await setUp();
+    const source = ORDER_TOTAL_SOURCE.replace('name: Order total\n', 'name: Order total\ndescription: Sums the lines.\n');
+    edit(source);
+    run.mockResolvedValue({ candidate: GENERATED, explanation: '', assumptions: [], issues: [], rounds: 1, model: 'pp' });
+
+    button()?.click();
+    await settle(fixture);
+
+    expect(run).toHaveBeenCalledWith('calculation.source', { text: 'Sums the lines.', parameters: {}, current: source });
+    expect(root().querySelector('.cm-content')?.textContent).toContain('total: { expr: "1" }');
+    expect(byTestId(root(), 'calculation-unsaved')).not.toBeNull();
   });
 });

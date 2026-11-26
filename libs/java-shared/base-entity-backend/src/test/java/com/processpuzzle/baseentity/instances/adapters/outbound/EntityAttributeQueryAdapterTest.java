@@ -9,6 +9,8 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.EntityDefinition
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
+import com.processpuzzle.baseentity.api.EntityTypeDescription;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -101,5 +103,86 @@ class EntityAttributeQueryAdapterTest {
 
         assertThat(adapter.entityTypeExists(ORG, "order")).isTrue();
         assertThat(adapter.entityTypeExists(ORG, "nope")).isFalse();
+    }
+
+    @Test
+    void describe_listsTheAttributesWithTheirKindRequirednessAndMeasure() {
+        MeasureView measure = new MeasureView(MeasureView.Kind.QUANTITY, "mass", List.of("kg", "g"), null, null, null);
+        when(definitionLookupPort.findByCode(ORG, "order", Channel.RELEASED)).thenReturn(Optional.of(
+            new EntityDefinitionView("order", false, List.of(
+                new EntityAttributeView("total", ValueKindView.NUMBER, false, false, null, true),
+                new EntityAttributeView("lineItems", ValueKindView.REFERENCE, true, true, "order-line", false),
+                new EntityAttributeView("weight", ValueKindView.TEXT, false, false, null, false, false, false, false, measure)),
+                null, "Order")));
+
+        EntityTypeDescription description = adapter.describe(ORG, "order", Channel.RELEASED).orElseThrow();
+
+        assertThat(description.code()).isEqualTo("order");
+        assertThat(description.name()).isEqualTo("Order");
+        assertThat(description.attributes()).extracting(EntityTypeDescription.AttributeDescription::code)
+            .containsExactly("total", "lineItems", "weight");
+        assertThat(description.attributes().get(0).kind()).isEqualTo(EntityAttributeKind.NUMBER);
+        assertThat(description.attributes().get(0).required()).isTrue();
+        assertThat(description.attributes().get(1).embedded()).isTrue();
+        assertThat(description.attributes().get(1).multiValued()).isTrue();
+        assertThat(description.attributes().get(1).linkedEntityType()).isEqualTo("order-line");
+        assertThat(description.attributes().get(2).measure()).isEqualTo("QUANTITY");
+        assertThat(description.attributes().get(2).measureOptions()).containsExactly("kg", "g");
+    }
+
+    @Test
+    void describe_unknownTypeIsEmpty() {
+        assertThat(adapter.describe(ORG, "nope", Channel.RELEASED)).isEmpty();
+    }
+
+    @Test
+    void measureOptions_fallBackToTheCurrenciesThenTheDefault() {
+        when(definitionLookupPort.findByCode(ORG, "price", Channel.RELEASED)).thenReturn(Optional.of(
+            new EntityDefinitionView("price", false, List.of(
+                new EntityAttributeView("amount", ValueKindView.TEXT, false, false, null, false, false, false, false,
+                    new MeasureView(MeasureView.Kind.MONEY, null, null, null, List.of("EUR", "USD"), null)),
+                new EntityAttributeView("size", ValueKindView.TEXT, false, false, null, false, false, false, false,
+                    new MeasureView(MeasureView.Kind.QUANTITY, "length", null, null, null, null, "m", null, null)),
+                new EntityAttributeView("blank", ValueKindView.TEXT, false, false, null, false, false, false, false,
+                    new MeasureView(MeasureView.Kind.QUANTITY, "length", null, null, null, null))))));
+
+        var attributes = adapter.describe(ORG, "price", Channel.RELEASED).orElseThrow().attributes();
+
+        assertThat(attributes.get(0).measureOptions()).containsExactly("EUR", "USD");
+        assertThat(attributes.get(1).measureOptions()).containsExactly("m");
+        assertThat(attributes.get(2).measureOptions()).isEmpty();
+    }
+
+    @Test
+    void describeByRuleContext_readsTheReleasedTypeFirstThenTheDraft() {
+        when(definitionLookupPort.findByRuleContext(ORG, "Order", Channel.RELEASED)).thenReturn(Optional.empty());
+        when(definitionLookupPort.findByRuleContext(ORG, "Order", Channel.DRAFT)).thenReturn(Optional.of(
+            new EntityDefinitionView("order", false, List.of(attribute("total", ValueKindView.NUMBER)), null, "Order")));
+
+        assertThat(adapter.describeByRuleContext(ORG, "Order")).get()
+            .extracting(EntityTypeDescription::code).isEqualTo("order");
+        assertThat(adapter.describeByRuleContext(ORG, "Missing")).isEmpty();
+    }
+
+    @Test
+    void describeAll_listsReleasedTypesAndDraftOnlyOnesSortedByCodeWithTheEmbeddedFlag() {
+        when(definitionLookupPort.findAll(ORG, Channel.RELEASED)).thenReturn(List.of(
+            new EntityDefinitionView("order", false, List.of(attribute("total", ValueKindView.NUMBER)), null, "Order"),
+            new EntityDefinitionView("order-line", true, List.of(), null, "Order Line")));
+        when(definitionLookupPort.findAll(ORG, Channel.DRAFT)).thenReturn(List.of(
+            new EntityDefinitionView("order", false, List.of(attribute("draftOnly", ValueKindView.TEXT)), null, "Order"),
+            new EntityDefinitionView("customer", false, List.of(), null, "Customer")));
+
+        List<EntityTypeDescription> all = adapter.describeAll(ORG);
+
+        assertThat(all).extracting(EntityTypeDescription::code).containsExactly("customer", "order", "order-line");
+        assertThat(all.get(1).attributes()).extracting(EntityTypeDescription.AttributeDescription::code).containsExactly("total");
+        assertThat(all.get(2).embedded()).isTrue();
+        assertThat(all.get(0).embedded()).isFalse();
+    }
+
+    @Test
+    void describeAll_ofAnOrganizationWithoutDefinitionsIsEmpty() {
+        assertThat(adapter.describeAll(ORG)).isEmpty();
     }
 }

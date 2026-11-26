@@ -199,4 +199,24 @@ class OrganizationAiSubscriptionsTest {
     private static OrganizationAiSubscriptions.Change change(String apiKey) {
         return new OrganizationAiSubscriptions.Change(AiProvider.MISTRAL, "mistral-large-latest", null, apiKey);
     }
+
+    @Test
+    void anOrganizationIsConfiguredExactlyWhenItHasASubscription() {
+        when(repository.existsById("acme")).thenReturn(true);
+        when(repository.existsById("other")).thenReturn(false);
+
+        assertThat(subscriptions.isConfigured("acme")).isTrue();
+        assertThat(subscriptions.isConfigured("other")).isFalse();
+    }
+
+    @Test
+    void theDefaultIsConfiguredAsksForTheClient() {
+        AssistantModels unconfigured = organization -> {
+            throw new AssistantNotConfiguredException(organization);
+        };
+        AssistantModels configured = organization -> null;
+
+        assertThat(unconfigured.isConfigured("acme")).isFalse();
+        assertThat(configured.isConfigured("acme")).isTrue();
+    }
 }

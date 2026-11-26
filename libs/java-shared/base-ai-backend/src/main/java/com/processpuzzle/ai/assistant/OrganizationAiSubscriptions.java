@@ -110,6 +110,11 @@ public class OrganizationAiSubscriptions implements AssistantModels {
     }
 
     @Override
+    public boolean isConfigured(String organization) {
+        return repository.existsById(organization);
+    }
+
+    @Override
     public ChatClient clientFor(String organization) {
         OrganizationAiSubscription subscription = repository.findById(organization)
             .orElseThrow(() -> new AssistantNotConfiguredException(organization));

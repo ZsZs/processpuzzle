@@ -11,6 +11,7 @@ export {
   RECOGNITION_CAMERA_I18N_SCOPE,
   RECOGNITION_PROFILE_I18N_SCOPE,
 } from './lib/base-ai.i18n';
+export { AuthoringAssistService } from './lib/domain/assist/authoring-assist.service';
 export { MATCHING_DEFAULTS, RECOGNITION_PROFILE_ENTITY_NAME, RecognitionProfile } from './lib/domain/profile/recognition-profile';
 export { DETECTOR_CLASSES, createRecognitionProfileDescriptor } from './lib/domain/profile/recognition-profile.descriptors';
 export { RecognitionProfileMapper } from './lib/domain/profile/recognition-profile.mapper';
@@ -34,7 +35,7 @@ export { RecognitionProfileFacade } from './lib/feature/profile/recognition-prof
 export { ENTITY_ENROLLMENT_TAB, ENTITY_ENROLLMENT_TAB_SEGMENT } from './lib/feature/enrollment/entity-enrollment-tab';
 export { ENROLLMENT_MAX_POLLS, ENROLLMENT_POLL_MS, EntityEnrollmentTabComponent } from './lib/feature/enrollment/entity-enrollment-tab.component';
 export { EntityEnrollmentTabContributor, provideEntityEnrollmentTab } from './lib/feature/enrollment/entity-enrollment-tab.contributor';
-export { BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS } from './lib/base-ai.providers';
+export { BASE_AI_ASSIST_PROVIDERS, BASE_AI_ENTITY_FACADES, BASE_AI_FACADE_PROVIDERS } from './lib/base-ai.providers';
 export { BASE_AI_ROUTES } from './lib/base-ai.routes';
 
 export { AssistantPanelComponent } from './lib/feature/assistant/assistant-panel.component';

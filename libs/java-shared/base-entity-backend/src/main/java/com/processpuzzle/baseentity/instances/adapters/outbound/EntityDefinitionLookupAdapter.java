@@ -15,6 +15,7 @@ import com.processpuzzle.baseentity.instances.usecases.outbound.MeasureView;
 import com.processpuzzle.core.quantity.UnitCatalog;
 import com.processpuzzle.core.quantity.UnitCatalogProvider;
 import com.processpuzzle.core.tenancy.DataSpaceDirectory;
+import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -60,6 +61,19 @@ public class EntityDefinitionLookupAdapter implements EntityDefinitionLookupPort
             return own;
         }
         return sharedDefinition(orgKey, code).map(this::toView);
+    }
+
+    @Override
+    public List<EntityDefinitionView> findAll(String orgKey, Channel channel) {
+        return entityDefinitionRepository.findAllByOrgKeyAndChannel(orgKey, channel).stream().map(this::toView).toList();
+    }
+
+    @Override
+    public Optional<EntityDefinitionView> findByRuleContext(String orgKey, String ruleContext, Channel channel) {
+        return entityDefinitionRepository.findAllByOrgKeyAndChannel(orgKey, channel).stream()
+            .map(this::toView)
+            .filter(view -> view.ruleContext().equals(ruleContext))
+            .findFirst();
     }
 
     @Override

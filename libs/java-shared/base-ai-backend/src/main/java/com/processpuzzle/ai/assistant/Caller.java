@@ -7,7 +7,7 @@ package com.processpuzzle.ai.assistant;
  */
 public record Caller(String organization, String subject, String principal, boolean mayDesign) {
 
-    static Caller of(AssistantAccess access) {
+    public static Caller of(AssistantAccess access) {
         return new Caller(access.currentOrganization(), access.subject(), access.principal(), access.mayDesign());
     }
 }

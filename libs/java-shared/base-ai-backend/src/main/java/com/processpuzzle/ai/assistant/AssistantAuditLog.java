@@ -18,6 +18,16 @@ public interface AssistantAuditLog {
     /** A finished turn, with the model that answered and the tokens it used, where the gateway reports them. */
     void turn(Turn turn);
 
+    /**
+     * A finished authoring assist: which task, a hash of what was asked (never the text), how many model calls it took,
+     * and how it ended: {@code valid}, {@code issues} (the repair rounds ran out) or {@code failed}.
+     */
+    void assist(Assist assist);
+
+    record Assist(Instant at, String principal, String organization, String task, String inputHash, String model,
+                  int rounds, Integer promptTokens, Integer completionTokens, String outcome) {
+    }
+
     record ToolCall(Instant at, String principal, String organization, String tool, String argumentsHash, String outcome) {
     }
 

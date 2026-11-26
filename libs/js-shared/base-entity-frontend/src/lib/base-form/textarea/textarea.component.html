@@ -3,6 +3,9 @@
     <mat-form-field [ngClass]="config().styleClass">
       <mat-label [ngClass]="config().labelClass" [attr.for]="config().attrName">{{ config().i18nKey() | ppLabel: config().label }}</mat-label>
       <textarea matInput [id]="config().attrName" [attr.rows]="config().lines" formControlName="{{ config().attrName }}" [placeholder]="config().placeholder ?? ''"></textarea>
+      @if (assist(); as assist) {
+        <base-ai-assist-button matSuffix [task]="assist.task" [text]="assistText()" [parameters]="assistParameters()" [current]="assistCurrent()" (generated)="onAssistGenerated($event)" />
+      }
     </mat-form-field>
   </div>
 }

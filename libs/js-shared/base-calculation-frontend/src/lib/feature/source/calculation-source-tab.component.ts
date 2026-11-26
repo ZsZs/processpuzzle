@@ -1,9 +1,11 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { AiAssistButtonComponent } from '@processpuzzle/base-entity';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 import { CALCULATION_SOURCE_I18N_SCOPE } from '../../base-calculation.i18n';
 import type { ValidationReport } from '../../domain/calculation-api';
 import { CalculationApiService } from '../../domain/calculation-api.service';
+import { descriptionOf } from '../../domain/calculation-source';
 import { CALCULATION_TAB_STYLES } from '../calculation-tab.styles';
 import { currentCalculation } from '../current-calculation';
 import { messageOf } from '../message-of';
@@ -16,7 +18,7 @@ import { CalculationSourceEditorComponent } from './calculation-source-editor.co
 @Component({
   selector: 'pp-calculation-source-tab',
   standalone: true,
-  imports: [TranslocoPipe, CalculationSourceEditorComponent],
+  imports: [TranslocoPipe, CalculationSourceEditorComponent, AiAssistButtonComponent],
   template: `
     <div class="pp-calculation-tab">
       <div class="pp-calculation-tab__toolbar">
@@ -24,6 +26,7 @@ import { CalculationSourceEditorComponent } from './calculation-source-editor.co
           {{ scope + '.validate' | transloco }}
         </button>
         <button type="button" data-testid="calculation-save" [disabled]="busy() || !dirty()" (click)="save()">{{ scope + '.save' | transloco }}</button>
+        <base-ai-assist-button task="calculation.source" [text]="description()" [current]="working()" (generated)="edit($event)" />
         @if (dirty()) {
           <span class="muted" data-testid="calculation-unsaved">{{ scope + '.unsaved' | transloco }}</span>
         }
@@ -84,6 +87,8 @@ export class CalculationSourceTabComponent {
   protected readonly report = signal<ValidationReport | undefined>(undefined);
   protected readonly failure = signal<string | undefined>(undefined);
   protected readonly busy = signal(false);
+  /** What the user wrote about the calculation, in the source's `description` key: the AI assist writes the rest from it. */
+  protected readonly description = computed(() => descriptionOf(this.working()));
   protected readonly dirty = computed(() => this.calculation.definition() !== undefined && this.working() !== this.calculation.definition()?.source);
 
   /** The decisions in evaluation order — declaration order where the graph has a cycle — with what each requires. */

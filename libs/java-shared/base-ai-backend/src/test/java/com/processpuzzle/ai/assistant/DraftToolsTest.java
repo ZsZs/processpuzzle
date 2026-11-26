@@ -120,6 +120,11 @@ class DraftToolsTest {
         private final List<ToolCall> toolCalls = new ArrayList<>();
 
         @Override
+        public void assist(Assist assist) {
+            // Assists are not what this test checks.
+        }
+
+        @Override
         public void toolCall(ToolCall call) {
             toolCalls.add(call);
         }
