@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { NEVER } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { setupFormControlTest } from '../../../test-setup';
 import { FormControlType } from '../../base-entity/abstact-attr.descriptor';
@@ -35,7 +36,8 @@ describe('TextareaComponent', () => {
     expression.aiAssist = { task: 'rule.expression', from: 'description', parameters: ['context', 'severity'] };
     const run = vi.fn();
     const client = { isAvailable: () => signal(true), run } as unknown as AiAssistClient;
-    const snackBar = { open: vi.fn() };
+    // Returns what the real snackbar returns, so the button can subscribe to the undo action.
+    const snackBar = { open: vi.fn(() => ({ onAction: () => NEVER })) };
 
     async function setUp(values: Record<string, string>) {
       const setup = await setupFormControlTest(TextareaComponent, expression, new TestEntity(), [
