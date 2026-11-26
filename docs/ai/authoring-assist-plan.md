@@ -1,6 +1,6 @@
 # AI Authoring Assist: Implementation Plan
 
-Status: plan, 2026-11-25. Companion to [implementation-plan.md](implementation-plan.md) (the design assistant chat). The two share the model, subscription, quota, access and audit infrastructure of `base-ai-backend`; they differ in interaction style.
+Status: implemented, 2026-11-26 (PR #1527, merged). Phases 1–5 are built; Phase 6 is not started. Section 7 records where the build departs from this plan. Companion to [implementation-plan.md](implementation-plan.md) (the design assistant chat). The two share the model, subscription, quota, access and audit infrastructure of `base-ai-backend`; they differ in interaction style.
 
 ## 1. Goal
 
@@ -36,7 +36,7 @@ Both stay. Rule and calculation also become `DefinitionAuthoringParticipant` kin
 | Knowledge of usage | `ai.assist` knows tasks only by name. Language guides, context and validation belong to the owning feature (same principle as image recognition: AI knows nothing of its usage) |
 | Model, cost | The organization's AI subscription (`OrganizationAiSubscription`, `AssistantModels`); no subscription = assist unavailable, button hidden |
 | Controls | Reuse `AssistantAccess`, `AssistantQuota`, `AssistantAuditLog`; `maxRepairRounds` from `AssistantLimits` (default 3) |
-| Writes | Never. The candidate is shown as a proposal; the user accepts, edits or discards it. Saving goes through the normal form and validators |
+| Writes | The assist never writes to the database. Its candidate goes into the field, and the user saves the form through the normal validators. The design assistant's draft save is stricter: it refuses ERROR-level findings (Phase 5) |
 | Role | Same as editing the target: whoever may edit rules / calculations may ask the assist. No extra role |
 | Data sent to the model | Metadata only (descriptors, attribute names and types, units, function catalog, the user's text). Never entity object data. Dry runs use generated sample objects, run server-side, results reduced to issues |
 | Untrusted input | The description and validator output are data, not instructions (same system-prompt rule as `DesignAssistant`) |
@@ -112,10 +112,10 @@ Synchronous to start with (a few seconds, at most 4 model calls). Switch to SSE 
 ### 4.5 Frontend
 
 - `BaseEntityAttrDescriptor.aiAssist?: { task: string; from: string; parameters?: string[] }`. `from` names the source attribute (`description`); `parameters` names the other attributes sent along (`context`).
-- `base-entity-frontend` renders an icon button next to a field with `aiAssist` when the `AI_ASSIST_CLIENT` token reports the task available. The dialog shows the candidate, a diff against the current value, the explanation, the assumptions and any issues, with Accept / Edit / Discard actions. Accept writes into the form control only; the user still saves.
+- `base-entity-frontend` renders one icon button beside a field with `aiAssist` when the `AI_ASSIST_CLIENT` token reports the task available. The button is enabled once the description has text. A click writes the candidate into the field; the user still saves. There is no dialog and no diff. Undo is offered through a snackbar when the field held a value. Explanation and assumptions are returned by the API but not shown.
 - `base-ai-frontend` provides the real `AI_ASSIST_CLIENT` (HTTP + availability cache); applications opt in with its providers.
 - `base-rule.descriptors.ts`: `expressionAttr.aiAssist = { task: 'rule.expression', from: 'description', parameters: ['context', 'severity'] }`.
-- `base-calculation-frontend`: the YAML source editor is custom, so it calls the same client directly from a toolbar action, with the same dialog component (exported by `base-entity-frontend` or `base-widget-frontend`, not by `base-ai-frontend`).
+- `base-calculation-frontend`: the Source tab reuses the same `base-ai-assist-button`, enabled from the source's own `description:` key. It writes into the editor as an unsaved change.
 
 ## 5. Phases
 
@@ -135,22 +135,24 @@ Synchronous to start with (a few seconds, at most 4 model calls). Switch to SSE 
 
 ### Phase 3: Frontend for rules
 
-- `aiAssist` descriptor property, button and proposal dialog in `base-entity-frontend`; `AI_ASSIST_CLIENT` token with a no-op default.
+- `aiAssist` descriptor property, the button and the `AI_ASSIST_CLIENT` token (no client, no button) in `base-entity-frontend`.
 - Client and providers in `base-ai-frontend`; wire in the testbed.
 - Rule descriptor update.
-- Specs: button hidden when unavailable; accept writes the control, does not save; issues rendered. One e2e against a stubbed assist endpoint (no real model in CI).
+- Specs: button hidden when unavailable; disabled without a description; a click writes the control and marks it dirty without saving; issues and undo. Not built: an e2e test against a stubbed assist endpoint.
 
 ### Phase 4: Calculation task
 
 - `CalculationSourceAssist` in `base-calculation-backend` + guide resource; context port for entity definitions if not already available to the module.
-- Toolbar action in the calculation source editor.
+- Button on the Source tab (built as a button beside Validate and Save).
 - Tests as for rules.
 
 ### Phase 5: Chat parity
 
-- `DefinitionAuthoringParticipant` for `rule` and `calculation`, so the design assistant can save them as drafts. Each participant's `saveDraft` runs the same validators; the guides from Phases 2 and 4 are added to the authoring guide.
+- Built: `RuleAuthoringParticipant` and `CalculationAuthoringParticipant`, so the design assistant can list, read, save and check rule and calculation drafts. A calculation draft's JSON is `{"source": ...}`, keyed by the source's `calculation` id.
+- A save is refused on ERROR-level findings from the same checks the assist uses (expression checks for rules, `SourceChecker` for calculations). Warnings pass. The form does not apply this bar.
+- Not done: the guides from Phases 2 and 4 are not added to the design assistant's authoring guide, which the chat does not yet read.
 
-### Phase 6: Evaluation set
+### Phase 6: Evaluation set (not started)
 
 - Per task, 20-30 pairs of (description, context, accepted artifact) as YAML under the feature's test resources; a tagged, manually run test that scores a real model: valid on first round, valid after repair, semantically equal to the expected artifact (same results on the sample objects). Run when changing the guide or the model.
 
@@ -165,3 +167,17 @@ Synchronous to start with (a few seconds, at most 4 model calls). Switch to SSE 
 - **Guide size vs. context window.** Long guides cost tokens on every call; keep them focused per task and measure token usage in the audit log.
 - **Calculation context size.** An organization with many entities may produce a big context; restrict it to the input / output entities and their direct references.
 - **Determinism.** Use a low temperature; the same description can still give different candidates. Acceptable, since the user reviews every candidate.
+
+## 7. As built: deviations from this plan
+
+- **Interaction:** one button, no dialog, diff or accept step (decided with the user on 2026-11-26).
+- **One flag:** the assist is enabled by `processpuzzle.ai.assistant.enabled`; there is no separate `assist.enabled`.
+- **Status codes:** "not configured" is 428, as the chat endpoint uses, not 409. Quota is 429 and an unavailable model 502.
+- **Port:** `AuthoringAssistParticipant` has `checkAccess(orgKey)`, so a caller who may not edit the target is refused before any model call. The `ai` module cannot call `OrganizationGuard` itself.
+- **Audit:** `AssistantAuditLog` gained an abstract `assist(...)` method. Any custom audit bean in another repository must implement it.
+- **Parameters:** the `severity` parameter was dropped; `rule.expression` takes only `context`.
+- **Rule checks:** a path check against the entity (the engine answers `undefined` for an unknown name, so this check is essential), then a dry run on three generated sample objects. A failure on the fully filled object is an error; a failure on the sparser ones is a warning.
+- **Calculation checks:** the validator, plus that every named entity exists, that an embedded input's path is a list, and that every output attribute exists. The assist keeps the user's `calculation` id and `description`.
+- **Model options:** no low temperature yet; it waits for the evaluation set, since reasoning models reject some options.
+- **Verification:** unit and integration tests run in CI, with the model scripted. Neither button has been checked in a running browser, and there is no end-to-end test.
+
