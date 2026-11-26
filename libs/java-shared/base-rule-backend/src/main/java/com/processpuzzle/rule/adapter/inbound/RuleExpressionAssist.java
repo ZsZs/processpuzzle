@@ -11,7 +11,6 @@ import com.processpuzzle.rule.usecase.assist.ExpressionChecker;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.ObjectProvider;
@@ -73,13 +72,11 @@ public class RuleExpressionAssist implements AuthoringAssistParticipant {
 
     @Override
     public List<AuthoringIssue> validate(String orgKey, AssistRequest request, String candidate) {
-        Optional<RuleContext> context = contextOf(orgKey, request);
-        List<AuthoringIssue> issues = new ArrayList<>(checker.check(orgKey, context, candidate));
-        String named = request.parameters().get(CONTEXT_PARAMETER);
-        if (context.isEmpty() && named != null && !named.isBlank()) {
-            issues.add(AuthoringIssue.warning("", "The entity '%s' is not known, so attribute names were not checked.".formatted(named)));
-        }
-        return issues;
+        return checker.review(orgKey, directory(), request.parameters().get(CONTEXT_PARAMETER), candidate);
+    }
+
+    private RuleContextDirectory directory() {
+        return directory.getIfAvailable(() -> RuleContextDirectory.UNKNOWN);
     }
 
     private Optional<RuleContext> contextOf(String orgKey, AssistRequest request) {
@@ -90,6 +87,6 @@ public class RuleExpressionAssist implements AuthoringAssistParticipant {
         if (named == null || named.isBlank()) {
             return Optional.empty();
         }
-        return directory.getIfAvailable(() -> RuleContextDirectory.UNKNOWN).find(orgKey, named);
+        return directory().find(orgKey, named);
     }
 }

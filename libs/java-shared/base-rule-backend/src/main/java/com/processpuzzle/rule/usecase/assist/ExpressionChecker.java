@@ -2,6 +2,7 @@ package com.processpuzzle.rule.usecase.assist;
 
 import com.processpuzzle.core.definition.AuthoringIssue;
 import com.processpuzzle.rule.port.RuleContext;
+import com.processpuzzle.rule.port.RuleContextDirectory;
 import com.processpuzzle.rule.usecase.assist.SampleEntities.Sample;
 import com.processpuzzle.rule.usecase.engine.RuleEngine;
 import com.processpuzzle.rule.usecase.engine.RuleKey;
@@ -53,6 +54,21 @@ public class ExpressionChecker {
             failure.filter(f -> seen.add(f.message())).ifPresent(f -> issues.add(issueOf(f, sample, expression, context)));
         }
         context.ifPresent(known -> issues.addAll(0, ExpressionPaths.unknownAttributes(expression, known)));
+        return issues;
+    }
+
+    /**
+     * The review of an expression that names its entity by {@code contextName}, which the caller reads from the
+     * organization's definitions: the checks of {@link #check}, and a warning when that entity is not known. Shared by the
+     * assist and by the draft participant, so a rule is judged the same way wherever it is written.
+     */
+    public List<AuthoringIssue> review(String orgKey, RuleContextDirectory directory, String contextName, String expression) {
+        boolean named = contextName != null && !contextName.isBlank();
+        Optional<RuleContext> context = named ? directory.find(orgKey, contextName) : Optional.empty();
+        List<AuthoringIssue> issues = new ArrayList<>(check(orgKey, context, expression));
+        if (named && context.isEmpty()) {
+            issues.add(AuthoringIssue.warning("", "The entity '%s' is not known, so attribute names were not checked.".formatted(contextName)));
+        }
         return issues;
     }
 
