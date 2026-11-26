@@ -45,10 +45,21 @@ runs:
       with:
         distribution: 'temurin'
         java-version: ${{ inputs.java-version }}
-        cache: 'maven'
         server-id: github
         server-username: GITHUB_ACTOR
         server-password: PACKAGES_TOKEN
+    # Explicit ~/.m2 cache instead of setup-java's `cache: 'maven'`. setup-java keys on the exact pom
+    # hashes with no fallback, so any pom change (a version bump) starts from an empty repository and
+    # re-downloads every plugin from Maven Central, which rate-limits (HTTP 429). The restore-keys
+    # fallback restores the most recent repository; the key keeps the `setup-java-` prefix that
+    # cleanup-caches.yml already manages.
+    - name: Cache Maven repository
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2/repository
+        key: setup-java-${{ runner.os }}-${{ runner.arch }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          setup-java-${{ runner.os }}-${{ runner.arch }}-maven-
     - name: Report Maven version
       # Uses the Maven preinstalled on the runner image (3.9.x) rather than
       # downloading a pinned tarball. stCarolas/setup-maven fetched Maven from
