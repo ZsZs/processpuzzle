@@ -458,6 +458,22 @@ The tab captions take the resolved entity name as a parameter, so translators co
 }
 ```
 
+## AI-written fields
+
+A `TEXTAREA` attribute can let the platform's AI write its value from a description held in another attribute — a rule's
+expression from the rule's description, say. It adds one icon button beside the field, enabled once the description has text;
+clicking it fills the field, and the user still saves the form. When the field already had a value, a snackbar offers to bring
+it back.
+
+```ts
+expressionAttr.aiAssist = { task: 'rule.expression', from: 'description', parameters: ['context'] };
+```
+
+`task` names the assist task, `from` the attribute with the description, and `parameters` the other attributes whose values
+the task needs. The button appears only when the application provides an `AI_ASSIST_CLIENT` — `BASE_AI_ASSIST_PROVIDERS` of
+[`@processpuzzle/base-ai`](../base-ai-frontend/README.md) — and the client reports the task available, which it does not for an
+organization without an AI subscription or a user who may not edit the field's target. Without a client nothing is rendered.
+
 ## Unsaved changes
 An embedded child or a relationship is saved by its **container's** Save, which is easy to forget once the
 child's own form is closed. Every `base-form` therefore reports whether it holds unsaved edits — its own

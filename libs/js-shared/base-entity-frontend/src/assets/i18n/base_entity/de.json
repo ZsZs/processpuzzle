@@ -324,5 +324,12 @@
   },
   "list": {
     "show_retired": "Stillgelegte Datensätze anzeigen"
+  },
+  "ai_assist": {
+    "tooltip": "Aus der Beschreibung erzeugen",
+    "empty": "Der Assistent konnte kein Ergebnis erzeugen. Versuchen Sie, es anders zu beschreiben.",
+    "replaced": "Durch den erzeugten Text ersetzt.",
+    "issue": "Der erzeugte Text ist möglicherweise ungültig: {{issue}}",
+    "undo": "Rückgängig"
   }
 }

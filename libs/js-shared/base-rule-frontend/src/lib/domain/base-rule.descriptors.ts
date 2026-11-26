@@ -20,6 +20,7 @@ function createBaseRuleAttrDescriptors(getContextOptions: () => Array<Selectable
   expressionAttr.required = true;
   expressionAttr.placeholder = 'PPCL boolean expression evaluated against `entity`';
   expressionAttr.styleClass = 'monospace full-width';
+  expressionAttr.aiAssist = { task: 'rule.expression', from: 'description', parameters: ['context'] };
   expressionAttr.hideInTable = true;
 
   const severityAttr = new BaseEntityAttrDescriptor('severity', FormControlType.DROPDOWN, 'Severity', severitySelectables);

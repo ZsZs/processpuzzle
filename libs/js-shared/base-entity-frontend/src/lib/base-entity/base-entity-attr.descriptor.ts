@@ -2,6 +2,7 @@ import type { Type } from '@angular/core';
 import { AbstractAttrDescriptor, FormControlType } from './abstact-attr.descriptor';
 import type { DateFormat } from './date-format';
 import type { Multiplicity } from './multiplicity';
+import type { AiAssistConfig } from '../base-form/ai-assist/ai-assist';
 import type { MapProvider } from '../base-form/address/address-map';
 
 export type Selectable = { key: string; value: unknown };
@@ -94,6 +95,11 @@ export class BaseEntityAttrDescriptor extends AbstractAttrDescriptor {
   isHeading?: boolean;
   placeholder?: string;
   lines?: number;
+  /**
+   * `TEXTAREA` only: lets the platform's AI write this value from a description held in another attribute. A button
+   * beside the field then fills it, when an application provides the `AI_ASSIST_CLIENT` and the task is available.
+   */
+  aiAssist?: AiAssistConfig;
   options: { inputType: 'text' };
   required = false;
   /** Child attribute descriptors for nested forms (`EMBEDDED_OBJECT`, `EMBEDDED_LIST`). */
