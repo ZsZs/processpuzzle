@@ -45,4 +45,14 @@ class LoggingAssistantAuditLogTest {
         assertThat(events.list).singleElement().satisfies(event -> assertThat(event.getFormattedMessage())
             .contains("event=turn", "model=pp-designer", "promptTokens=73", "completionTokens=12", "toolCalls=2"));
     }
+
+    @Test
+    void anAssistIsWrittenWithTheTaskTheHashAndTheOutcomeButNotTheText() {
+        new LoggingAssistantAuditLog().assist(new AssistantAuditLog.Assist(Instant.EPOCH, "Ada", "acme",
+            "rule.expression", "abc123", "pp-designer", 2, 73, 12, "valid"));
+
+        assertThat(events.list).singleElement().satisfies(event -> assertThat(event.getFormattedMessage())
+            .contains("event=assist", "task=rule.expression", "inputHash=abc123", "model=pp-designer", "rounds=2",
+                "promptTokens=73", "completionTokens=12", "outcome=valid"));
+    }
 }

@@ -25,6 +25,26 @@ info:
     The caller must hold the `definition-designer` realm role, and the organization in the path must be the
     organization the caller's token was issued for. Otherwise the turn is refused with 403, before any model call.
 
+    ## Authoring assist
+
+    A one-shot companion to the chat (see docs/ai/authoring-assist-plan.md): the user describes one field of a
+    definition, such as a rule's expression, and the platform answers a candidate in the field's own language. Each
+    feature contributes its tasks (`rule.expression`, ...); the assist only knows a task by its name. The assist
+    writes NOTHING: the candidate goes back to the user, who accepts it into the form and saves it through the
+    ordinary validators. The candidate is checked by the task's feature and sent back to the model for a repair up to
+    the configured number of rounds; what is still wrong with it is returned as `issues`. A caller may use a task
+    only when they may edit its target. The organization has to have an AI subscription.
+
+    Tasks:
+
+    - `rule.expression`: a rule's expression (one JavaScript boolean expression over `entity`) from its description.
+      Parameter `context`: the name of the entity the rule is for, whose attributes the model may refer to and the
+      candidate is checked against; without it only the syntax is checked. Needs the `design` right.
+    - `calculation.source`: a calculation's whole YAML source from the `description` key the user wrote in it. `text` is that
+      description and `current` the source as it stands, whose `calculation` id and `description` the candidate keeps. Takes no
+      parameter. The model is told the organization's entity types; the candidate is checked by the calculation validator and
+      against those entities (entities named, an embedded input's path, the output's mapped attributes). Needs the `design` right.
+
   version: 0.1.0
 
 servers:
@@ -82,6 +102,99 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /organizations/{orgKey}/ai/assist:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+    get:
+      operationId: listAssistTasks
+      summary: The authoring assist tasks the caller can use
+      description: >-
+        Empty when the organization has no AI subscription, so a client can hide its assist actions. Only tasks whose
+        target the caller may edit are listed.
+      tags: [ Assistant ]
+      responses:
+        "200":
+          description: The available task names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistTasks"
+        "403":
+          description: The organization is not the one the caller's token was issued for
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations/{orgKey}/ai/assist/{task}:
+    parameters:
+      - $ref: "#/components/parameters/OrgKeyParam"
+      - name: task
+        in: path
+        required: true
+        description: The task's name, such as `rule.expression`
+        schema:
+          type: string
+    post:
+      operationId: runAssistTask
+      summary: Turn a description into a candidate for one field
+      description: >-
+        Returns 200 also when the model could not produce a clean candidate within the repair rounds: the last
+        candidate is then returned with its ERROR issues, for the user to fix by hand. `candidate` is empty only when
+        no reply of the model was readable.
+      tags: [ Assistant ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistRequest"
+      responses:
+        "200":
+          description: The best candidate, with its explanation, assumptions and remaining issues
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistResponse"
+        "400":
+          description: >-
+            The text is empty or longer than 4000 characters, the current value longer than 20000, or the parameters are
+            more than 20, null, or longer than 500 characters; or the task rejects a parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: The organization is not the caller's, or the caller may not edit the task's target
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No such task (errorId `ai.assist.unknown-task`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "428":
+          description: The organization has no AI subscription (errorId `ai.assist.not-configured`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: The organization has used up its assistant limit for the day (errorId `ai.assist.quota-exceeded`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: The model service did not answer (errorId `ai.assist.model-unavailable`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   parameters:
     OrgKeyParam:
@@ -106,6 +219,71 @@ components:
           type: string
           format: uuid
           description: The conversation to continue; omitted to open a new one
+
+    AssistTasks:
+      type: object
+      required: [ tasks ]
+      properties:
+        tasks:
+          type: array
+          items:
+            type: string
+
+    AssistRequest:
+      type: object
+      required: [ text ]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          description: The user's own description of what the artifact should do
+        parameters:
+          type: object
+          maxProperties: 20
+          additionalProperties:
+            type: string
+            maxLength: 500
+          description: The target's other form values the task asks for, by name; each task documents its keys
+        current:
+          type: string
+          maxLength: 20000
+          description: The field's present value, so the task can repair or extend it
+
+    AssistIssue:
+      type: object
+      properties:
+        severity:
+          type: string
+          enum: [ ERROR, WARNING ]
+        path:
+          type: string
+          description: Where in the candidate, or empty when the whole candidate is at fault
+        text:
+          type: string
+
+    AssistResponse:
+      type: object
+      properties:
+        candidate:
+          type: string
+        explanation:
+          type: string
+          description: What the candidate does, in the user's terms
+        assumptions:
+          type: array
+          items:
+            type: string
+          description: What the model had to assume where the description was silent
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistIssue"
+        rounds:
+          type: integer
+          description: How many model calls it took
+        model:
+          type: string
 
     ErrorResponse:
       type: object

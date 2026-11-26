@@ -324,5 +324,12 @@
   },
   "list": {
     "show_retired": "Show retired records"
+  },
+  "ai_assist": {
+    "tooltip": "Generate from the description",
+    "empty": "The assistant could not produce a result. Try describing it differently.",
+    "replaced": "Replaced with the generated text.",
+    "issue": "The generated text may not be valid: {{issue}}",
+    "undo": "Undo"
   }
 }

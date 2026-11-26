@@ -1,5 +1,6 @@
 import type { Provider } from '@angular/core';
-import type { BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
+import { AI_ASSIST_CLIENT, type BaseEntityFacadeRegistry } from '@processpuzzle/base-entity';
+import { AuthoringAssistService } from './domain/assist/authoring-assist.service';
 import { RECOGNITION_PROFILE_ENTITY_NAME } from './domain/profile/recognition-profile';
 import { RecognitionProfileFacade } from './feature/profile/recognition-profile.facade';
 
@@ -14,3 +15,10 @@ export const BASE_AI_FACADE_PROVIDERS: Provider[] = [RecognitionProfileFacade];
 export const BASE_AI_ENTITY_FACADES: BaseEntityFacadeRegistry = {
   [RECOGNITION_PROFILE_ENTITY_NAME]: RecognitionProfileFacade,
 };
+
+/**
+ * Puts the AI assist button on every form field that asks for one — a rule's expression, for now. Spread into the
+ * application's `providers`: without it no button is shown. The button also stays hidden for an organization without an
+ * AI subscription and for a user who may not edit the field's target, so providing it is safe everywhere.
+ */
+export const BASE_AI_ASSIST_PROVIDERS: Provider[] = [{ provide: AI_ASSIST_CLIENT, useExisting: AuthoringAssistService }];

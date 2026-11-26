@@ -3,6 +3,7 @@ package com.processpuzzle.ai;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import com.processpuzzle.ai.assist.AuthoringAssist;
 import com.processpuzzle.ai.assistant.AssistantAccess;
 import com.processpuzzle.ai.assistant.DesignAssistant;
 import com.processpuzzle.ai.domain.AssistantSessionRepository;
@@ -45,7 +46,16 @@ class AssistantConfigurationTest {
 
     @Test
     void theAssistantIsNotBuiltWhileItIsDisabled() {
-        runner.run(context -> assertThat(context).doesNotHaveBean(DesignAssistant.class));
+        runner.run(context -> assertThat(context).doesNotHaveBean(DesignAssistant.class)
+            .doesNotHaveBean(AuthoringAssist.class));
+    }
+
+    @Test
+    void theAuthoringAssistIsBuiltWithTheAssistantAndTakesTheFeaturesParticipants() {
+        runner.withPropertyValues(
+                "processpuzzle.ai.assistant.enabled=true",
+                "processpuzzle.ai.assistant.secret-key=" + SECRET)
+            .run(context -> assertThat(context).hasSingleBean(AuthoringAssist.class));
     }
 
     @Test

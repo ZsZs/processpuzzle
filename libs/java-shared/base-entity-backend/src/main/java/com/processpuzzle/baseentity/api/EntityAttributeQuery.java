@@ -1,6 +1,7 @@
 package com.processpuzzle.baseentity.api;
 
 import com.processpuzzle.core.definition.Channel;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -49,4 +50,29 @@ public interface EntityAttributeQuery {
      * unknown or marks none.
      */
     Optional<String> titleAttribute(String orgKey, String entityDefinitionCode);
+
+    /**
+     * The entity type {@code entityDefinitionCode} as a reader would see it, or empty when the organization has no such
+     * type in the channel. For a module that tells a user or an AI what an object of the type has.
+     */
+    default Optional<EntityTypeDescription> describe(String orgKey, String entityDefinitionCode, Channel channel) {
+        return Optional.empty();
+    }
+
+    /**
+     * The entity type a rule's {@code context} names — its display name, or its code when it has none — as
+     * {@link #describe} does. A rule is written for what the running application uses, so the released type is read
+     * first; the draft answers only when there is no released one, so a designer can write rules for a type being drafted.
+     */
+    default Optional<EntityTypeDescription> describeByRuleContext(String orgKey, String ruleContext) {
+        return Optional.empty();
+    }
+
+    /**
+     * Every entity type of the organization, as {@link #describe} does: the released types, and the drafted ones that have
+     * no released row yet. For a module that tells an AI which entities there are.
+     */
+    default List<EntityTypeDescription> describeAll(String orgKey) {
+        return List.of();
+    }
 }

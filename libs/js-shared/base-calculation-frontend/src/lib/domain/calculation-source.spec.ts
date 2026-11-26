@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newTable, readTables, removeTable, writeTable, yamlErrorsOf } from './calculation-source';
+import { descriptionOf, newTable, readTables, removeTable, writeTable, yamlErrorsOf } from './calculation-source';
 import { ORDER_TOTAL_SOURCE } from './test-calculation-definition';
 
 describe('calculation-source', () => {
@@ -65,5 +65,25 @@ describe('calculation-source', () => {
   it('refuses to rewrite a source that does not parse', () => {
     expect(() => writeTable('calculation: [', newTable('t'))).toThrow();
     expect(() => removeTable('calculation: [', 't')).toThrow();
+  });
+
+  describe('descriptionOf', () => {
+    it("reads the source's description key", () => {
+      expect(descriptionOf('calculation: x\ndescription: Adds up the lines.\n')).toBe('Adds up the lines.');
+    });
+
+    it('reads a folded multi-line description as one text', () => {
+      expect(descriptionOf('calculation: x\ndescription: >-\n  Adds up\n  the lines.\nname: X\n')).toBe('Adds up the lines.');
+    });
+
+    it.each([
+      ['has none', 'calculation: x\n'],
+      ['is blank', 'calculation: x\ndescription: "  "\n'],
+      ['is not text', 'calculation: x\ndescription: [a, b]\n'],
+      ['does not parse', 'calculation: [\ndescription: x'],
+      ['is empty', ''],
+    ])('is empty when the source %s', (_case, source) => {
+      expect(descriptionOf(source)).toBe('');
+    });
   });
 });

@@ -324,5 +324,12 @@
   },
   "list": {
     "show_retired": "Mostrar registros retirados"
+  },
+  "ai_assist": {
+    "tooltip": "Generar a partir de la descripción",
+    "empty": "El asistente no pudo generar un resultado. Intente describirlo de otra manera.",
+    "replaced": "Sustituido por el texto generado.",
+    "issue": "Puede que el texto generado no sea válido: {{issue}}",
+    "undo": "Deshacer"
   }
 }

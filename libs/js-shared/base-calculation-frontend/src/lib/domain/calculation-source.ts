@@ -32,6 +32,17 @@ export function yamlErrorsOf(source: string): string[] {
   return parseDocument(source).errors.map((error) => error.message);
 }
 
+/**
+ * The `description` key of the source — what the user wrote in their own words about what the calculation does, which the AI
+ * assist builds the rest from. Empty when there is none, or when the source does not parse.
+ */
+export function descriptionOf(source: string): string {
+  const document = parseDocument(source);
+  if (document.errors.length > 0) return '';
+  const description = document.get('description');
+  return typeof description === 'string' ? description.trim() : '';
+}
+
 /** The decision tables the source declares, in source order; none when it does not parse. */
 export function readTables(source: string): DecisionTableModel[] {
   const document = parseDocument(source);

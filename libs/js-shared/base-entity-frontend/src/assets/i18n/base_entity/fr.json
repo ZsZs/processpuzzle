@@ -324,5 +324,12 @@
   },
   "list": {
     "show_retired": "Afficher les enregistrements retirés"
+  },
+  "ai_assist": {
+    "tooltip": "Générer à partir de la description",
+    "empty": "L'assistant n'a pas pu produire de résultat. Essayez de le décrire autrement.",
+    "replaced": "Remplacé par le texte généré.",
+    "issue": "Le texte généré n'est peut-être pas valide : {{issue}}",
+    "undo": "Annuler"
   }
 }

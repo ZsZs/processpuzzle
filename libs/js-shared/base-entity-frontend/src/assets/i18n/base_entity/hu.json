@@ -324,5 +324,12 @@
   },
   "list": {
     "show_retired": "Kivont rekordok megjelenítése"
+  },
+  "ai_assist": {
+    "tooltip": "Generálás a leírásból",
+    "empty": "Az asszisztens nem tudott eredményt előállítani. Próbálja meg másképp megfogalmazni.",
+    "replaced": "Lecserélve a generált szövegre.",
+    "issue": "A generált szöveg lehet, hogy érvénytelen: {{issue}}",
+    "undo": "Visszavonás"
   }
 }

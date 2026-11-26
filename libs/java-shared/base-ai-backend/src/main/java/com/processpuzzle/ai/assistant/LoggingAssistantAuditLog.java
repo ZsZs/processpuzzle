@@ -24,4 +24,11 @@ public class LoggingAssistantAuditLog implements AssistantAuditLog {
             turn.at(), turn.principal(), turn.organization(), turn.model(),
             turn.promptTokens(), turn.completionTokens(), turn.toolCalls());
     }
+
+    @Override
+    public void assist(Assist assist) {
+        AUDIT.info("event=assist at={} principal={} organization={} task={} inputHash={} model={} rounds={} promptTokens={} completionTokens={} outcome={}",
+            assist.at(), assist.principal(), assist.organization(), assist.task(), assist.inputHash(), assist.model(),
+            assist.rounds(), assist.promptTokens(), assist.completionTokens(), assist.outcome());
+    }
 }
