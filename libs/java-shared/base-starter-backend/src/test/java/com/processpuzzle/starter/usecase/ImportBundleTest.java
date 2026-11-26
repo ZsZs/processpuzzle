@@ -11,6 +11,7 @@ import com.processpuzzle.core.definition.ImportedItem;
 import com.processpuzzle.core.definition.InstanceDataProbe;
 import com.processpuzzle.core.definition.ModuleMountPort;
 import com.processpuzzle.core.definition.ParticipantResult;
+import com.processpuzzle.core.definition.PendingRecordQueue;
 import com.processpuzzle.core.definition.RecordImportParticipant;
 import com.processpuzzle.core.tenancy.OrganizationAccessDeniedException;
 import com.processpuzzle.core.tenancy.OrganizationAccessPolicy;
@@ -901,13 +902,54 @@ class ImportBundleTest {
         assertThat(registeredDuringWrite).containsExactly(true);
     }
 
+    /**
+     * The regression: the definitions an install writes are drafts, and a record is validated against its released type,
+     * so a deployment that can release queues the records for the release instead of loading them against nothing.
+     */
+    @Test
+    void recordsThatComeWithDraftsAreQueuedForTheRelease_notLoaded() {
+        List<String> queued = new ArrayList<>();
+        PendingRecordQueue queue = (orgKey, file, yaml) -> queued.add(orgKey + ":" + file + ":" + new String(yaml).trim());
+        ImportBundle withRecords = importBundleWithRecords((orgKey, file, yaml) -> {
+            calls.add("records:" + file);
+            return new ParticipantResult(List.of(), List.of());
+        }, queue);
+
+        ImportReport report = withRecords.execute("acme", recordsBundle(), false, null);
+
+        assertThat(calls).doesNotContain("records:records/seed.yaml");
+        assertThat(queued).containsExactly("acme:records/seed.yaml:entities: []");
+        assertThat(report.warnings()).contains("The seed records of 'records/seed.yaml' are loaded when the organization releases.");
+    }
+
+    /** A bundle that writes no definition leaves nothing to release first: its records load at once. */
+    @Test
+    void recordsOfABundleWithoutDefinitionsLoadAtOnce_evenWhereTheyCouldBeQueued() {
+        List<String> queued = new ArrayList<>();
+        ImportBundle withRecords = importBundleWithRecords((orgKey, file, yaml) -> {
+            calls.add("records:" + file);
+            return new ParticipantResult(List.of(), List.of());
+        }, (orgKey, file, yaml) -> queued.add(file));
+        String manifest = "manifestVersion: 3" + "\n" + "kind: common" + "\n" + "id: inventory-common" + "\n" + "name: Inventory Common" + "\n" + "version: 1.0.0" + "\n" + "definitionSchemaVersion: 1" + "\n" + "keyPrefix: inventory" + "\n" + "contents:" + "\n" + "  records:" + "\n" + "    - records/seed.yaml" + "\n";
+
+        ImportReport report = withRecords.execute("inventory-common", zip(Map.of("manifest.yaml", manifest, "records/seed.yaml", "entities: []\n")), false, null);
+
+        assertThat(calls).contains("records:records/seed.yaml");
+        assertThat(queued).isEmpty();
+        assertThat(report.warnings()).isEmpty();
+    }
+
     private ImportBundle importBundleWithRecords(RecordImportParticipant records) {
+        return importBundleWithRecords(records, null);
+    }
+
+    private ImportBundle importBundleWithRecords(RecordImportParticipant records, PendingRecordQueue queue) {
         StaticListableBeanFactory factory = new StaticListableBeanFactory();
         factory.addBean("entities", entities);
         factory.addBean("rules", rules);
         factory.addBean("modules", modules);
         ImportParticipants participants = new ImportParticipants(factory.getBeanProvider(DefinitionImportParticipant.class),
-                factory.getBeanProvider(InstanceDataProbe.class), provider(records));
+                factory.getBeanProvider(InstanceDataProbe.class), provider(records), provider(queue));
         return new ImportBundle(new OrganizationGuard(provider(policy)), new BundleReader(new StarterProperties()), participants,
                 provenanceRepository, installedStarterRepository, commonRules(), new KeyPrefixRules(participants),
                 provider(mountPort), transactionManager, provider(null));

@@ -7,6 +7,12 @@ import static org.mockito.Mockito.mock;
 
 import com.processpuzzle.core.definition.DefinitionKinds;
 import com.processpuzzle.core.definition.DefinitionReference;
+import com.processpuzzle.core.definition.ImportedItem;
+import com.processpuzzle.core.definition.ParticipantResult;
+import com.processpuzzle.core.definition.RecordImportParticipant;
+import com.processpuzzle.release.domain.OrgPendingRecords;
+import com.processpuzzle.release.domain.OrgPendingRecordsRepository;
+import java.nio.charset.StandardCharsets;
 import com.processpuzzle.core.definition.MigrationParticipant;
 import com.processpuzzle.core.definition.MigrationStep;
 import com.processpuzzle.core.definition.MigrationStepFailedException;
@@ -76,6 +82,8 @@ class ReleaseOrganizationTest {
     @Autowired
     private OrgMigrationStepRepository stepRepository;
     @Autowired
+    private OrgPendingRecordsRepository pendingRecordsRepository;
+    @Autowired
     private PlatformTransactionManager transactionManager;
 
     private final List<String> calls = new ArrayList<>();
@@ -88,10 +96,12 @@ class ReleaseOrganizationTest {
     private ReleaseHistory releaseHistory;
     private ManagePendingSteps managePendingSteps;
     private FakeMigration migration;
+    private FakeRecords records;
 
     @BeforeEach
     void setUp() {
         stepRepository.deleteAll();
+        pendingRecordsRepository.deleteAll();
         contentRepository.deleteAll();
         itemRepository.deleteAll();
         releaseRepository.deleteAll();
@@ -99,6 +109,7 @@ class ReleaseOrganizationTest {
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
         apps = new FakeParticipant(DefinitionKinds.APP, DefinitionKinds.APP_ORDER, calls);
         migration = new FakeMigration();
+        records = new FakeRecords();
         useParticipants(apps, entities);
     }
 
@@ -108,7 +119,8 @@ class ReleaseOrganizationTest {
         MigrationParticipants migrations = MigrationParticipants.of(List.of(migration));
         MigratingPlanner planner = new MigratingPlanner(new ReleasePlanner(all), migrations, stepRepository);
         releaseOrganization = new ReleaseOrganization(guard, planner, all, releaseRepository, itemRepository,
-                contentRepository, transactionManager, provider(Clock.fixed(NOW, ZoneOffset.UTC)));
+                contentRepository, new PendingRecordsLoader(pendingRecordsRepository, provider(records)),
+                transactionManager, provider(Clock.fixed(NOW, ZoneOffset.UTC)));
         releaseHistory = new ReleaseHistory(itemRepository, contentRepository);
         describePendingRelease = new DescribePendingRelease(guard, planner, transactionManager);
         listReleases = new ListReleases(guard, releaseRepository, itemRepository, stepRepository);
@@ -457,6 +469,78 @@ class ReleaseOrganizationTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("explode");
 
         assertThat(managePendingSteps.list(ORG)).isEmpty();
+    }
+
+    // --- seed records an install or an upgrade queued ------------------------------------
+
+    /** Loads a file: logs it, writes a row through the transaction, and refuses when a test says so. */
+    private class FakeRecords implements RecordImportParticipant {
+        String refusal;
+
+        @Override
+        public ParticipantResult load(String orgKey, String fileName, byte[] yaml) {
+            calls.add("load " + fileName);
+            if (refusal != null) {
+                return ParticipantResult.rejected(List.of(refusal));
+            }
+            contentRepository.save(new OrgReleaseContent(UUID.randomUUID(), ORG, new String(yaml, StandardCharsets.UTF_8)));
+            return new ParticipantResult(List.of(new ImportedItem("record-1", ImportedItem.Action.CREATE)), List.of());
+        }
+    }
+
+    private void queueRecords(String fileName) {
+        new QueuePendingRecords(pendingRecordsRepository).enqueue(ORG, fileName, "entities: []".getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * The regression: an install writes its types as drafts, and a record is validated against the released type, so
+     * the records it brings can only be loaded once the release has released every kind.
+     */
+    @Test
+    void queuedRecordsAreLoadedAfterEveryKindIsReleased_andRecordedWithTheRelease() {
+        entities.withDraft("sailrc-boat-class", PendingChange.Change.ADDED);
+        queueRecords("seed/boat-classes.yaml");
+        queueRecords("seed/sailing-areas.yaml");
+
+        ReleaseRecord released = releaseOrganization.provision(ORG, "rollout");
+
+        assertThat(calls).containsExactly("release entity", "release app", "load seed/boat-classes.yaml", "load seed/sailing-areas.yaml");
+        assertThat(pendingRecordsRepository.findByOrgKeyAndReleaseNumberIsNullOrderBySequenceNoAsc(ORG)).isEmpty();
+        assertThat(pendingRecordsRepository.findAll()).extracting(OrgPendingRecords::getReleaseNumber, OrgPendingRecords::getCreatedRecords)
+                .containsOnly(org.assertj.core.groups.Tuple.tuple(released.release().getReleaseNumber(), 1));
+    }
+
+    @Test
+    void aRefusedRecordRefusesTheRelease_andRollsTheDefinitionsBack() {
+        entities.withDraft("sailrc-boat-class", PendingChange.Change.ADDED);
+        entities.onRelease = () -> itemRepository.save(new OrgReleaseItem(ORG, 99, 0, "entity", "written", PendingChange.Change.ADDED, null));
+        queueRecords("seed/boat-classes.yaml");
+        records.refusal = "Record 1 ('sailrc-boat-class') is refused: 'name' is required.";
+
+        assertThatThrownBy(() -> releaseOrganization.provision(ORG, "rollout"))
+                .isInstanceOfSatisfying(ReleaseRefusedException.class, refused -> {
+                    assertThat(refused.getReason()).isEqualTo(ReleaseRefusedException.Reason.RECORDS_REFUSED);
+                    assertThat(refused.getPending().problems()).singleElement().satisfies(problem -> {
+                        assertThat(problem.isError()).isTrue();
+                        assertThat(problem.key()).isEqualTo("seed/boat-classes.yaml");
+                        assertThat(problem.message()).contains("'name' is required");
+                    });
+                });
+
+        assertThat(releaseRepository.count()).isZero();
+        assertThat(itemRepository.count()).isZero();
+        assertThat(pendingRecordsRepository.findByOrgKeyAndReleaseNumberIsNullOrderBySequenceNoAsc(ORG)).hasSize(1);
+    }
+
+    /** An upgrade that brings records for types released already leaves nothing else to release. */
+    @Test
+    void pendingRecordsAloneAreReleased() {
+        queueRecords("seed/boat-classes.yaml");
+
+        ReleaseRecord released = releaseOrganization.provision(ORG, "rollout");
+
+        assertThat(released.items()).isEmpty();
+        assertThat(calls).containsExactly("release entity", "release app", "load seed/boat-classes.yaml");
     }
 
     /** The queue over the test's own migration participant and repository. */

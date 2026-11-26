@@ -2,6 +2,7 @@ package com.processpuzzle.release.usecase;
 
 import com.processpuzzle.core.definition.PendingChange;
 import com.processpuzzle.core.definition.ReleaseParticipant;
+import com.processpuzzle.core.definition.ReleaseProblem;
 import com.processpuzzle.core.tenancy.OrganizationGuard;
 import com.processpuzzle.release.domain.OrgMigrationStep;
 import com.processpuzzle.release.domain.OrgRelease;
@@ -33,6 +34,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * release is recorded with the hash and the content of each definition it carried — see
  * {@link OrgReleaseContent} — and with the steps it ran. A participant that fails rolls every kind back,
  * and every step with it.
+ *
+ * <p>Last, still in the one transaction, it loads the seed records a starter's install or upgrade queued
+ * ({@link PendingRecordsLoader}): only now are the definitions they are validated against released. A refused record
+ * refuses the release, and rolls back the definitions with it.
  */
 @Service
 public class ReleaseOrganization {
@@ -43,6 +48,7 @@ public class ReleaseOrganization {
     private final OrgReleaseRepository releaseRepository;
     private final OrgReleaseItemRepository itemRepository;
     private final OrgReleaseContentRepository contentRepository;
+    private final PendingRecordsLoader records;
     private final TransactionTemplate transactionTemplate;
     private final Clock clock;
 
@@ -52,6 +58,7 @@ public class ReleaseOrganization {
                         OrgReleaseRepository releaseRepository,
                         OrgReleaseItemRepository itemRepository,
                         OrgReleaseContentRepository contentRepository,
+                        PendingRecordsLoader records,
                         PlatformTransactionManager transactionManager,
                         ObjectProvider<Clock> clock) {
         this.guard = guard;
@@ -60,6 +67,7 @@ public class ReleaseOrganization {
         this.releaseRepository = releaseRepository;
         this.itemRepository = itemRepository;
         this.contentRepository = contentRepository;
+        this.records = records;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.clock = clock.getIfAvailable(Clock::systemUTC);
     }
@@ -86,7 +94,7 @@ public class ReleaseOrganization {
         return transactionTemplate.execute(status -> {
             MigratingPlanner.Planned planned = planner.plan(orgKey);
             PendingRelease pending = planned.pending();
-            if (pending.changes().isEmpty()) {
+            if (pending.changes().isEmpty() && !records.hasPending(orgKey)) {
                 throw new ReleaseRefusedException(orgKey, pending, ReleaseRefusedException.Reason.NOTHING_PENDING);
             }
             if (pending.hasErrors()) {
@@ -100,6 +108,11 @@ public class ReleaseOrganization {
                 participant.release(orgKey);
             }
             ReleaseRecord released = recordRelease(orgKey, pending.changes(), releasedBy);
+            List<ReleaseProblem> refusedRecords = records.load(orgKey, released.release().getReleaseNumber());
+            if (!refusedRecords.isEmpty()) {
+                throw new ReleaseRefusedException(orgKey, new PendingRelease(pending.changes(), refusedRecords, pending.steps()),
+                        ReleaseRefusedException.Reason.RECORDS_REFUSED);
+            }
             return new ReleaseRecord(released.release(), released.items(),
                     recordSteps(released.release().getReleaseNumber(), planned.steps(), pending.steps()));
         });

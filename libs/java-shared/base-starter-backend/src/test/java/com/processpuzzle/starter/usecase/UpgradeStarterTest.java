@@ -76,6 +76,7 @@ class UpgradeStarterTest {
     private OfferStarterVersion offer;
     private ListInstalledStarters listing;
     private com.processpuzzle.core.definition.RecordImportParticipant recordLoader;
+    private com.processpuzzle.core.definition.PendingRecordQueue recordQueue;
 
     @BeforeEach
     void setUp() {
@@ -85,6 +86,7 @@ class UpgradeStarterTest {
         offeredRepository.deleteAll();
         queued.clear();
         recordLoader = null;
+        recordQueue = null;
         hostMigrates = true;
         calls.clear();
         entities = new FakeParticipant(DefinitionKinds.ENTITY, DefinitionKinds.ENTITY_ORDER, calls);
@@ -108,7 +110,7 @@ class UpgradeStarterTest {
         InstallStarter installer = new InstallStarter(guard, new BrowseCatalog(registry), registry, importBundle);
         upgrade = new UpgradeStarter(guard, installer, registry, new BundleReader(new StarterProperties()),
                 new UpgradePlanner(participants, provenanceRepository), commonRules, new KeyPrefixRules(participants), provenanceRepository,
-                installedRepository, offeredRepository, queueProvider(), recordsProvider(), transactionManager, provider());
+                installedRepository, offeredRepository, queueProvider(), recordsProvider(), recordQueueProvider(), transactionManager, provider());
         offer = new OfferStarterVersion(new BrowseCatalog(registry), installer, new BundleReader(new StarterProperties()), commonRules,
                 offeredRepository, provider());
         listing = new ListInstalledStarters(guard, installedRepository, provenanceRepository, participants, offeredRepository);
@@ -136,6 +138,36 @@ class UpgradeStarterTest {
         org.springframework.beans.factory.ObjectProvider<com.processpuzzle.core.definition.RecordImportParticipant> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenAnswer(call -> recordLoader);
         return provider;
+    }
+
+    @SuppressWarnings("unchecked")
+    private ObjectProvider<com.processpuzzle.core.definition.PendingRecordQueue> recordQueueProvider() {
+        ObjectProvider<com.processpuzzle.core.definition.PendingRecordQueue> provider = mock(ObjectProvider.class);
+        when(provider.getIfAvailable()).thenAnswer(call -> recordQueue);
+        return provider;
+    }
+
+    /**
+     * The regression: the upgrade writes drafts, and a record is validated against its released type, so where the
+     * organization can release, the records wait for that release instead of being refused for a type not released yet.
+     */
+    @Test
+    void recordsThatComeWithDraftsAreQueuedForTheRelease_notLoaded() {
+        publish2WithRecords();
+        List<String> loaded = new ArrayList<>();
+        recordLoader = (orgKey, file, yaml) -> {
+            loaded.add(file);
+            return new com.processpuzzle.core.definition.ParticipantResult(List.of(), List.of());
+        };
+        List<String> waiting = new ArrayList<>();
+        recordQueue = (orgKey, file, yaml) -> waiting.add(orgKey + " " + file);
+
+        UpgradeReport report = upgrade.provision(ORG, "inventory", "2.0.0", "staff");
+
+        assertThat(report.status()).isEqualTo(UpgradeReport.Status.APPLIED);
+        assertThat(loaded).isEmpty();
+        assertThat(waiting).containsExactly(ORG + " records/seed.yaml");
+        assertThat(items(report)).containsEntry("record:records/seed.yaml", "ADD");
     }
 
     /** Replaces version 2.0.0 with a bundle that also carries one seed record file. */

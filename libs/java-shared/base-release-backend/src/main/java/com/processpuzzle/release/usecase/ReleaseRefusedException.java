@@ -4,7 +4,9 @@ package com.processpuzzle.release.usecase;
 public class ReleaseRefusedException extends RuntimeException {
 
     public enum Reason {
-        NOTHING_PENDING, ERRORS, UNCONFIRMED_WARNINGS
+        NOTHING_PENDING, ERRORS, UNCONFIRMED_WARNINGS,
+        /** The definitions were fine, but a queued seed record was refused once they were released. */
+        RECORDS_REFUSED
     }
 
     private final transient PendingRelease pending;
@@ -21,6 +23,7 @@ public class ReleaseRefusedException extends RuntimeException {
             case NOTHING_PENDING -> "has nothing to release.";
             case ERRORS -> "cannot be released: its drafts have errors.";
             case UNCONFIRMED_WARNINGS -> "has release warnings that were not confirmed.";
+            case RECORDS_REFUSED -> "cannot be released: a pending seed record was refused.";
         };
         return "Organization '" + orgKey + "' " + what;
     }

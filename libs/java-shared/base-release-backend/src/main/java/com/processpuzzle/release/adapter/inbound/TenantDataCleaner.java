@@ -1,6 +1,7 @@
 package com.processpuzzle.release.adapter.inbound;
 
 import com.processpuzzle.release.domain.OrgMigrationStepRepository;
+import com.processpuzzle.release.domain.OrgPendingRecordsRepository;
 import com.processpuzzle.release.domain.OrgReleaseContentRepository;
 import com.processpuzzle.release.domain.OrgReleaseItemRepository;
 import com.processpuzzle.release.domain.OrgReleaseRepository;
@@ -26,19 +27,23 @@ public class TenantDataCleaner {
     private final OrgReleaseItemRepository itemRepository;
     private final OrgReleaseContentRepository contentRepository;
     private final OrgMigrationStepRepository stepRepository;
+    private final OrgPendingRecordsRepository pendingRecordsRepository;
 
     public TenantDataCleaner(OrgReleaseRepository releaseRepository, OrgReleaseItemRepository itemRepository,
-                             OrgReleaseContentRepository contentRepository, OrgMigrationStepRepository stepRepository) {
+                             OrgReleaseContentRepository contentRepository, OrgMigrationStepRepository stepRepository,
+                             OrgPendingRecordsRepository pendingRecordsRepository) {
         this.releaseRepository = releaseRepository;
         this.itemRepository = itemRepository;
         this.contentRepository = contentRepository;
         this.stepRepository = stepRepository;
+        this.pendingRecordsRepository = pendingRecordsRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void onOrganizationDeleted(OrganizationDeletedEvent event) {
         LOG.info("Organization '{}' deleted; removing its release history.", event.orgKey());
         stepRepository.eraseByOrgKey(event.orgKey());
+        pendingRecordsRepository.eraseByOrgKey(event.orgKey());
         contentRepository.eraseByOrgKey(event.orgKey());
         itemRepository.eraseByOrgKey(event.orgKey());
         releaseRepository.eraseByOrgKey(event.orgKey());
