@@ -34,8 +34,8 @@ A common is an ordinary organization with a reserved key, one per starter: `<sta
 
 - It lives in the same pooled custom database and is served by the same `processpuzzle-custom-backend` as
   every subscriber. It has no backend, realm or database of its own.
-- Its members are ProcessPuzzle staff. They curate its data with the generated CRUD screens of the shared
-  types; a curation app of its own is not planned.
+- Its members are ProcessPuzzle staff, or whichever organization maintains the data (§12). They curate its data
+  with the generated CRUD screens of the shared types, in the common's own application (§12.2).
 - It is never deleted. The tenant data cleaner refuses a common's key.
 
 This is the global entity type already planned in `EntityObjectScope` (reserved key `_global`, never
@@ -230,8 +230,8 @@ backend only knows the offered version per starter and what each organization ha
 
 ### 5.5 Creating a common
 
-The first rollout of a starter's common part creates the common: Admin creates the Keycloak organization,
-seeds it without a starter, then replace-installs the common bundle. Later rollouts upgrade it (§5.4). Installing the starter into a subscriber is refused while its common does not exist; the SeedJob
+The first rollout of a starter's common part creates the common: the Keycloak organization is created (§12.3),
+the organization is seeded without a starter, then the common bundle is replace-installed. Later rollouts upgrade it (§5.4). Installing the starter into a subscriber is refused while its common does not exist; the SeedJob
 records the failure as for any failed install.
 
 ## 6. Security model
@@ -379,3 +379,51 @@ changes the shape of existing data. The packager packages `common/` as a bundle 
 the designer (already built: *Upgrade to …*, preview, apply) and releases afterwards. A common's upgrade releases at once.
 An app is never removed by an upgrade. References from members to a single *attribute* of a shared type are not checked by
 the common's release (§5.3 note).
+
+## 12. Curating a common: the staff application (decided 2026-11-27)
+
+Found on stage after the first SailRC common rollout: a common could be rolled out but nobody could curate it. Its
+application was the empty default shell (Home, an empty module launcher), and no login could reach it.
+
+### 12.1 Who maintains a common
+
+Maintainers of a common are ordinary members of the common's organization, with separate logins in the shared
+`processpuzzle-custom` realm. They are not platform-realm staff: the custom backend has no staff exemption and keeps
+none (`CustomerOrganizationAccessPolicy`). Because the maintainers are plain members, the role can move to another
+organization — a country or Europe-wide body taking over the data — by changing the common's members. No data moves
+(§7, "Transferring administration").
+
+### 12.2 Every common has a generated application
+
+The common's application is generated from its shared types, not authored in the bundle:
+
+- one navigation entry per shared entity type that the common holds and members cannot write
+  (`sharing.write: COMMON_ADMIN`), each opening that type's generated list and form;
+- the entries are grouped under one module, named after the starter;
+- generation runs when the common is created and on every upgrade, so a type added to a bundle appears in the menu
+  without further work.
+
+The application is not a place for authoring definitions (§4): it is the generated CRUD screens, nothing more. A bundle
+may later ship an override for the generated layout; none is required.
+
+Org members stay read-only on `COMMON_ADMIN` types (decided 2026-11-27: SailRC organizations do not edit sailing
+clubs). `OWNER_ORG` types are written by their owner in its own application, as before.
+
+### 12.3 Creating the common creates its identity
+
+The first rollout (§5.5) creates the Keycloak organization `<starterId>-common` in the shared realm. Before this
+decision the rollout seeded the organization in the custom database only, so the common had no Keycloak organization
+and no user could be a member. Adding and removing maintainers uses the existing org-admin user management of the
+common, signed in as one of its administrators; the platform-admin Commons overview (below) is only a link to it.
+
+### 12.4 Platform-admin: an overview only
+
+Platform-admin lists each common with its version, member count and a link into the common's application. It edits
+nothing.
+
+### 12.5 Still open
+
+- **Data policy:** whether staff edits or the starter's seed files are the truth once data is maintained on a live
+  system (seed records are additive and never overwrite). Postponed deliberately.
+- **First maintainer:** who receives the first `org-admin` login of a common, and how that credential is delivered.
+
