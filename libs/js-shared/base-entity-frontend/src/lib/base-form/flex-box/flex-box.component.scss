@@ -11,3 +11,12 @@
   display: flex;
   flex-direction: row;
 }
+
+/*
+ * A control that is alone in its row is as wide as the row: the controls of a row share its width, a lone one
+ * takes all of it. ::ng-deep because the children are other components' hosts, not this template's elements.
+ */
+:host ::ng-deep .flex-box-container-rows > :only-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}

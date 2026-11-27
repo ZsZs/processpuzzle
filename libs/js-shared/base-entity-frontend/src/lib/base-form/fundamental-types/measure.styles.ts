@@ -26,8 +26,16 @@ export const MEASURE_STYLES = `
     flex: 1 1 0;
     min-width: 110px;
   }
+  /* A unit is a short symbol: the field is as wide as the symbol and its arrow, not the Material default width. */
   .pp-measure__line mat-form-field.pp-measure__unit {
-    flex: 0 1 220px;
+    flex: 0 0 auto;
+  }
+  .pp-measure__unit ::ng-deep .mat-mdc-form-field-infix {
+    width: auto;
+    min-width: 0;
+  }
+  .pp-measure__unit ::ng-deep .mat-mdc-select {
+    min-width: 4.5rem;
   }
   .pp-measure__error {
     margin: 0 0 8px;
