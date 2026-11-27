@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   APP_LOGO_WIDGET,
   APP_TITLE_WIDGET,
+  BREADCRUMBS_WIDGET,
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
@@ -43,6 +44,7 @@ describe('base-widget providers', () => {
       [
         APP_LOGO_WIDGET,
         APP_TITLE_WIDGET,
+        BREADCRUMBS_WIDGET,
         CARDS_GRID_WIDGET,
         COPYRIGHT_WIDGET,
         DESIGN_BUTTON_WIDGET,

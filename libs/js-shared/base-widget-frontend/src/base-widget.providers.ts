@@ -5,6 +5,7 @@ import { APP_TITLE_WIDGET_REGISTRATION } from './app-title/app-title.widget';
 import { NAV_BAR_WIDGET_REGISTRATION } from './nav-bar/nav-bar.widget';
 import { NAV_MENU_WIDGET_REGISTRATION } from './nav-menu/nav-menu.widget';
 import { NAVIGATE_BACK_WIDGET_REGISTRATION } from './navigate-back/navigate-back.widget';
+import { BREADCRUMBS_WIDGET_REGISTRATION } from './breadcrumbs/breadcrumbs.widget';
 import { CARDS_GRID_WIDGET_REGISTRATION } from './mat-cards-grid/cards-grid.widget';
 import { MODULE_LAUNCHER_WIDGET_REGISTRATION } from './module-launcher/module-launcher.widget';
 import { CONTEXT_ACTIONS_WIDGET_REGISTRATION } from './context-actions/context-actions.widget';
@@ -32,6 +33,7 @@ import { provideWidget, WidgetRegistration } from './widget-registry/widget-regi
 
 export { APP_LOGO_WIDGET } from './app-logo/app-logo.widget';
 export { APP_TITLE_WIDGET } from './app-title/app-title.widget';
+export { BREADCRUMBS_WIDGET } from './breadcrumbs/breadcrumbs.widget';
 export { CARDS_GRID_WIDGET } from './mat-cards-grid/cards-grid.widget';
 export { MODULE_LAUNCHER_WIDGET } from './module-launcher/module-launcher.widget';
 export { CONTEXT_ACTIONS_WIDGET } from './context-actions/context-actions.widget';
@@ -94,6 +96,10 @@ export function provideNavMenuWidget(): Provider[] {
 
 export function provideNavigateBackWidget(): Provider[] {
   return provideWidget(NAVIGATE_BACK_WIDGET_REGISTRATION);
+}
+
+export function provideBreadcrumbsWidget(): Provider[] {
+  return provideWidget(BREADCRUMBS_WIDGET_REGISTRATION);
 }
 
 export function provideCardsGridWidget(): Provider[] {
@@ -176,6 +182,7 @@ export function provideVideoPlayerWidget(): Provider[] {
 export const BASE_WIDGET_REGISTRATIONS: readonly WidgetRegistration[] = [
   APP_LOGO_WIDGET_REGISTRATION,
   APP_TITLE_WIDGET_REGISTRATION,
+  BREADCRUMBS_WIDGET_REGISTRATION,
   CARDS_GRID_WIDGET_REGISTRATION,
   COPYRIGHT_WIDGET_REGISTRATION,
   DESIGN_BUTTON_WIDGET_REGISTRATION,

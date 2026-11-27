@@ -140,6 +140,10 @@
   "nav_menu": {
     "name": "Navigációs menü"
   },
+  "breadcrumbs": {
+    "name": "Morzsamenü",
+    "home": "Kezdőlap"
+  },
   "navigate_back": {
     "name": "Vissza"
   },

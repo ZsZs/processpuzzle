@@ -140,6 +140,10 @@
   "nav_menu": {
     "name": "Menú de navegación"
   },
+  "breadcrumbs": {
+    "name": "Migas de pan",
+    "home": "Inicio"
+  },
   "navigate_back": {
     "name": "Volver"
   },

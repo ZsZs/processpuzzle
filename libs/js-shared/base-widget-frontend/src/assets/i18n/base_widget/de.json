@@ -140,6 +140,10 @@
   "nav_menu": {
     "name": "Navigationsmenü"
   },
+  "breadcrumbs": {
+    "name": "Brotkrumennavigation",
+    "home": "Start"
+  },
   "navigate_back": {
     "name": "Zurück"
   },
