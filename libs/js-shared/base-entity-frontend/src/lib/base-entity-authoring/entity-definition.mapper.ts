@@ -107,6 +107,7 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       sharing: source.sharing,
       identifiers: source.identifiers,
       layout: source.layout,
+      layoutText: layoutToText(source.layout),
       sharedFrom: source.sharedFrom,
       attributes: (source.attributes ?? []).map(toAttribute),
       version: source.version,
@@ -130,14 +131,32 @@ export class EntityDefinitionMapper implements BaseEntityMapper<EntityDefinition
       sharing: entity.sharing,
       // Likewise carried: the natural keys of the type, which only the starter's YAML authors for now.
       identifiers: entity.identifiers,
-      // Carried like the keys: authored in the starter's YAML, and a save without it would flatten the form.
-      layout: entity.layout,
+      // Authored in the form as text; without that text (a definition not edited through the form) the layout is carried as read.
+      layout: entity.layoutText === undefined ? entity.layout : layoutFromText(entity.layoutText),
       attributes: (entity.attributes ?? []).map(fromAttribute),
     };
   }
 }
 
 // region private helper functions
+function layoutToText(layout: string[][] | undefined): string {
+  return (layout ?? []).map((row) => row.join(', ')).join('\n');
+}
+
+/** One row per non-blank line, codes split on commas; no rows at all clears the layout. */
+function layoutFromText(text: string): string[][] | undefined {
+  const rows = text
+    .split('\n')
+    .map((line) =>
+      line
+        .split(',')
+        .map((code) => code.trim())
+        .filter(Boolean),
+    )
+    .filter((row) => row.length > 0);
+  return rows.length ? rows : undefined;
+}
+
 function toAttribute(dto: EntityAttributeDto): EntityAttributeDefinition {
   return new EntityAttributeDefinition({
     code: dto.code,

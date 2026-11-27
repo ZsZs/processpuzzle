@@ -68,6 +68,13 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   attributesAttr.referenceIdField = ENTITY_ATTRIBUTE_ID_FIELD;
   attributesAttr.hideInTable = true;
 
+  // How the form of this type is arranged: one row per line, the attribute codes of a row side by side.
+  // Text rather than a picker, as the designer's other free lists are; `EntityDefinitionMapper` converts it.
+  const layoutAttr = new BaseEntityAttrDescriptor('layoutText', FormControlType.TEXTAREA, 'Layout');
+  layoutAttr.styleClass = 'full-width';
+  layoutAttr.hideInTable = true;
+  layoutAttr.placeholder = 'One row per line, e.g.\nfirstName, lastName\nemail';
+
   // region server-assigned
   // Shown so the author can see which revision is on screen, never edited here. `version` is the
   // optimistic lock the backend holds; `BaseEntityDefinitionInput` has no field to send it back in, so
@@ -86,7 +93,7 @@ function createEntityDefinitionAttrDescriptors(entityCodes?: () => Selectable[])
   const revisionRow = new FlexboxDescriptor([versionAttr, updatedAtAttr], FlexDirection.ROW);
   revisionRow.style = { 'column-gap': '10px' };
 
-  const flexBoxContainer = new FlexboxDescriptor([identityRow, containmentRow, revisionRow, descriptionAttr, attributesAttr], FlexDirection.COLUMN);
+  const flexBoxContainer = new FlexboxDescriptor([identityRow, containmentRow, revisionRow, descriptionAttr, attributesAttr, layoutAttr], FlexDirection.COLUMN);
   flexBoxContainer.style = { 'row-gap': '5px', width: 'fit-content' };
   return [flexBoxContainer];
 }

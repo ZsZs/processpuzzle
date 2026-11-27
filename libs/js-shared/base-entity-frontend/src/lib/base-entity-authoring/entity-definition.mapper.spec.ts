@@ -128,6 +128,22 @@ describe('EntityDefinitionMapper', () => {
       expect(mapper.toDto(mapper.fromDto({ ...responseDto, identifiers })).identifiers).toEqual(identifiers);
     });
 
+    it('shows the layout as one line per row and saves the edited text as rows', () => {
+      const layout = [['a', 'b'], ['c']];
+      const entity = mapper.fromDto({ ...responseDto, layout });
+
+      expect(entity.layoutText).toBe('a, b\nc');
+      expect(mapper.toDto(entity).layout).toEqual(layout);
+      expect(mapper.toDto({ ...entity, layoutText: ' x ,y,\n\n z \n' }).layout).toEqual([['x', 'y'], ['z']]);
+    });
+
+    it('clears the layout when its text is emptied, and keeps it when there is no text', () => {
+      const entity = mapper.fromDto({ ...responseDto, layout: [['a']] });
+
+      expect(mapper.toDto({ ...entity, layoutText: '' }).layout).toBeUndefined();
+      expect(mapper.toDto({ ...entity, layoutText: undefined }).layout).toEqual([['a']]);
+    });
+
     it('carries the sharing of a type through a save, and never sends where it was shared from', () => {
       const sharing = { write: 'COMMON_ADMIN' as const, visibility: 'PUBLIC' as const };
       const read = mapper.fromDto({ ...responseDto, sharing, sharedFrom: 'starter-common' });

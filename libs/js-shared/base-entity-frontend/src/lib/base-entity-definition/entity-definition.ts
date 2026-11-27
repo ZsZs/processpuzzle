@@ -239,6 +239,11 @@ export class EntityDefinition implements BaseEntity {
    */
   layout?: string[][];
   /**
+   * The `layout` as the designer edits it: one row per line, the attribute codes of a row separated by commas.
+   * Form-only; the mapper derives it from `layout` and turns it back into `layout` on save.
+   */
+  layoutText?: string;
+  /**
    * Set on a type this organization reads but does not own: the key of the common that shares it. Such a type is
    * released, shown read-only, and neither changed nor deleted from here. Reported by the backend, never sent back.
    */
@@ -265,6 +270,7 @@ export class EntityDefinition implements BaseEntity {
     this.sharing = init.sharing;
     this.identifiers = init.identifiers;
     this.layout = init.layout;
+    this.layoutText = init.layoutText;
     this.sharedFrom = init.sharedFrom;
     this.attributes = init.attributes ?? [];
     this.version = init.version;
