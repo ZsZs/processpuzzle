@@ -9,6 +9,7 @@ export {
   APP_LOGO_WIDGET,
   APP_TITLE_WIDGET,
   BASE_WIDGET_REGISTRATIONS,
+  BREADCRUMBS_WIDGET,
   CARDS_GRID_WIDGET,
   COPYRIGHT_WIDGET,
   DESIGN_BUTTON_WIDGET,
@@ -34,6 +35,7 @@ export {
   provideAppLogoWidget,
   provideAppTitleWidget,
   provideBaseWidgets,
+  provideBreadcrumbsWidget,
   provideCardsGridWidget,
   provideCopyrightWidget,
   provideDesignButtonWidget,
@@ -112,6 +114,9 @@ export { DOCUMENT_THEME_STORAGE_KEY, ThemeService } from './themes-button/theme.
 export { SIDENAV_CONTROL } from './sidenav-toggle/sidenav-control';
 export type { SidenavControl } from './sidenav-toggle/sidenav-control';
 export { SidenavToggleComponent } from './sidenav-toggle/sidenav-toggle.component';
+export { BreadcrumbsComponent } from './breadcrumbs/breadcrumbs.component';
+export { readBreadcrumbTrail } from './breadcrumbs/breadcrumb-trail';
+export type { BreadcrumbItem } from './breadcrumbs/breadcrumb-trail';
 export { ThemesButtonComponent } from './themes-button/themes-button.component';
 export { VersionButtonComponent } from './version-button/version-button.component';
 export { WIDGET_PLACEMENTS, WidgetInstance, WidgetPlacement } from './widget-registry/widget-instance';

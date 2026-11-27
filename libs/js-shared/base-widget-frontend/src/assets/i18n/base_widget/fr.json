@@ -140,6 +140,10 @@
   "nav_menu": {
     "name": "Menu de navigation"
   },
+  "breadcrumbs": {
+    "name": "Fil d'Ariane",
+    "home": "Accueil"
+  },
   "navigate_back": {
     "name": "Retour"
   },
