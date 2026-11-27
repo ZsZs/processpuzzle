@@ -31,7 +31,7 @@ describe('createEntityDefinitionDescriptor', () => {
   });
 
   it('authors every field of BaseEntityDefinitionInput', () => {
-    expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual(['attributes', 'canContextObject', 'code', 'componentParents', 'description', 'isEmbedded', 'name', 'releaseState', 'sharedFrom', 'status', 'updatedAt', 'version']);
+    expect(flattenAttrs(attrs).map((attr) => attr.attrName).sort()).toEqual(['attributes', 'canContextObject', 'code', 'componentParents', 'description', 'isEmbedded', 'layoutText', 'name', 'releaseState', 'sharedFrom', 'status', 'updatedAt', 'version']);
   });
 
   /**
