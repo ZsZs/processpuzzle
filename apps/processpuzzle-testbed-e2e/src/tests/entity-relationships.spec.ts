@@ -89,10 +89,9 @@ defineEntityRelationshipSuite({
       // The generator ticks every checkbox, so a generated definition is embedded AND a context object, which the backend
       // rejects: a context object is always a stand-alone entity. Pinned off, as the other rule-bound fields are.
       entityName: 'Entity Definition',
-      // Layout is likewise left empty: it names attribute codes, and generated prose names none, which the backend rejects.
-      create: { canContextObject: 'false', layoutText: '' },
-      update: { canContextObject: 'false', layoutText: '' },
-      reason: 'canContextObject is only allowed on a stand-alone definition, and the generator ticks Embedded too; the layout must name existing attributes',
+      create: { canContextObject: 'false' },
+      update: { canContextObject: 'false' },
+      reason: 'canContextObject is only allowed on a stand-alone definition, and the generator ticks Embedded too',
     },
     {
       // Routes of a module, and of an app, that name a context. The generator fills every field, and the backend rejects
