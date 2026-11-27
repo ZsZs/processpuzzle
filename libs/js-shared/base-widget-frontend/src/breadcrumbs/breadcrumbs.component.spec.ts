@@ -50,7 +50,7 @@ describe('BreadcrumbsComponent', () => {
     const { el } = await setup('/sailing/races/42/results');
 
     expect(el.querySelector('[aria-current="page"]')?.textContent).toBe('Results');
-    expect(el.querySelectorAll('a').length).toBe(3);
+    expect(el.querySelectorAll('a')).toHaveLength(3);
   });
 
   it('leaves out a route whose breadcrumb is false', async () => {
