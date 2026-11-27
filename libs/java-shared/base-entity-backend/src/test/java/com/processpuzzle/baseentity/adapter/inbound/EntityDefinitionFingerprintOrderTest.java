@@ -66,4 +66,23 @@ class EntityDefinitionFingerprintOrderTest {
 
         assertThat(fingerprint.of(reversed)).isEqualTo(fingerprint.of(inOrder));
     }
+
+    @Test
+    void aDefinitionWithoutAttributesAndAnAttributeWithoutACodeStillFingerprint() throws Exception {
+        EntityDefinitionMapper mapper = new EntityDefinitionMapper();
+        EntityDefinitionFingerprint fingerprint = new EntityDefinitionFingerprint(mapper);
+        BaseEntityDefinition noAttributes = mapper.toDomain(document().entityDefinitions().getFirst());
+        noAttributes.setAttributes(null);
+        assertThat(fingerprint.of(noAttributes)).contains("\"code\":\"sailrc-sailing-club\"");
+
+        BaseEntityDefinition codeless = mapper.toDomain(document().entityDefinitions().getFirst());
+        codeless.getAttributes().getFirst().setCode(null);
+        assertThat(fingerprint.of(codeless)).isNotBlank();
+    }
+
+    private static DefaultEntitiesDocument document() throws Exception {
+        return new ObjectMapper(new YAMLFactory())
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .readValue(DEFINITION.getBytes(StandardCharsets.UTF_8), DefaultEntitiesDocument.class);
+    }
 }
