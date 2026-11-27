@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -9,7 +9,7 @@ import { DEFAULT_DATE_TIME_FORMAT } from '../../base-entity/date-format';
 import { DateFormatPipe } from '../../i18n/date-format.pipe';
 import { EntityLabelPipe } from '../../i18n/entity-label.pipe';
 import { BaseFormControlComponent } from '../base-form-control.component';
-import { googleMapsUrl } from '../address/address-map';
+import { DEFAULT_MAP_PROVIDER, googleMapsUrl, mapEmbedUrl } from '../address/address-map';
 import { formatGeoLocation, GeoLocation, geoLocationOf } from './geo-location';
 import { GeoLocator, GeoLocatorError, GeoLocatorFailure } from './geo-locator';
 
@@ -32,9 +32,6 @@ import { GeoLocator, GeoLocatorError, GeoLocatorFailure } from './geo-locator';
         <div class="pp-geo-location__line">
           @if (location(); as point) {
             <span class="pp-geo-location__value" data-testid="geo-location-value">{{ text() }}</span>
-            <a class="pp-geo-location__open" data-testid="geo-location-map-link" [href]="openUrl()" target="_blank" rel="noopener noreferrer" [matTooltip]="'base_entity.geo_location.open_in_google_maps' | transloco">
-              <mat-icon>map</mat-icon>
-            </a>
             @if (point.capturedAt) {
               <span class="pp-geo-location__captured" data-testid="geo-location-captured">
                 {{ 'base_entity.geo_location.captured_at' | transloco: { time: point.capturedAt | ppDate: capturedAtFormat } }}
@@ -44,6 +41,21 @@ import { GeoLocator, GeoLocatorError, GeoLocatorFailure } from './geo-locator';
             <span class="pp-geo-location__empty" data-testid="geo-location-empty">{{ 'base_entity.geo_location.none' | transloco }}</span>
           }
         </div>
+        @if (mapUrl()) {
+          <div class="pp-geo-location__map">
+            <iframe #mapFrame [title]="'base_entity.address.map' | transloco" loading="lazy" referrerpolicy="no-referrer-when-downgrade" tabindex="-1"></iframe>
+            <!-- The map is a third-party page the click would otherwise land in; this link sits over it. -->
+            <a
+              class="pp-geo-location__map-link"
+              data-testid="geo-location-map-link"
+              [href]="openUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="'base_entity.geo_location.open_in_google_maps' | transloco"
+              [matTooltip]="'base_entity.geo_location.open_in_google_maps' | transloco"
+            ></a>
+          </div>
+        }
         @if (isEditable()) {
           <span [matTooltip]="unavailable() ? ('base_entity.geo_location.unavailable' | transloco) : ''">
             <button mat-stroked-button type="button" data-testid="geo-location-capture" [disabled]="unavailable() || locating()" (click)="capture()">
@@ -67,8 +79,24 @@ import { GeoLocator, GeoLocatorError, GeoLocatorFailure } from './geo-locator';
       .pp-geo-location {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 6px;
+      }
+      .pp-geo-location__map {
+        position: relative;
+        height: 240px;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pp-geo-location__map iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+      .pp-geo-location__map-link {
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
       }
       .pp-geo-location__title {
         font-size: 1rem;
@@ -82,10 +110,6 @@ import { GeoLocator, GeoLocatorError, GeoLocatorFailure } from './geo-locator';
       }
       .pp-geo-location__value {
         font-family: monospace;
-      }
-      .pp-geo-location__open {
-        display: inline-flex;
-        color: inherit;
       }
       .pp-geo-location__captured,
       .pp-geo-location__empty,
@@ -106,17 +130,33 @@ export class GeoLocationComponent<Entity extends BaseEntity> extends BaseFormCon
   readonly failure = signal<GeoLocatorError | undefined>(undefined);
   readonly location = signal<GeoLocation | undefined>(undefined);
   readonly text = computed(() => formatGeoLocation(this.location()));
+  readonly mapUrl = computed<string | undefined>(() => {
+    const point = this.location();
+    return point ? mapEmbedUrl(DEFAULT_MAP_PROVIDER, point) : undefined;
+  });
   readonly openUrl = computed(() => {
     const point = this.location();
     return point ? googleMapsUrl(point) : undefined;
   });
 
+  private readonly mapFrame = viewChild<ElementRef<HTMLIFrameElement>>('mapFrame');
   private readonly locator = inject(GeoLocator);
   private readonly destroyRef = inject(DestroyRef);
   private readonly denied = signal(false);
   private readonly available = signal(true);
   /** No API, or a refusal the user has to lift in the browser's site settings — pressing would do nothing. */
   readonly unavailable = computed(() => !this.available() || this.denied());
+
+  constructor() {
+    super();
+    // Assigned rather than bound: `[src]` on an iframe demands a SafeResourceUrl. The URL needs none — `mapEmbedUrl`
+    // builds it from two finite numbers and a constant host.
+    effect(() => {
+      const frame = this.mapFrame()?.nativeElement;
+      const url = this.mapUrl();
+      if (frame && url && frame.src !== url) frame.src = url;
+    });
+  }
 
   // region Angular lifecycle hooks
   ngOnInit(): void {
