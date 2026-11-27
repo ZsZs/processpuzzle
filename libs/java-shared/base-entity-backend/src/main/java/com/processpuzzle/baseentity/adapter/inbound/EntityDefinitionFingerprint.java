@@ -3,12 +3,18 @@ package com.processpuzzle.baseentity.adapter.inbound;
 import com.processpuzzle.baseentity.definition.adapters.inbound.EntityDefinitionMapper;
 import com.processpuzzle.baseentity.definition.domain.BaseEntityDefinition;
 import com.processpuzzle.core.definition.CanonicalJson;
+import java.util.Comparator;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
  * A definition's authored content as canonical JSON: what a starter's provenance hashes and what a release
  * compares a draft with its released row by. One place, so that the two cannot disagree about what changed.
+ *
+ * <p>The attributes are sorted by code. They are a set: the order a definition holds them in depends on how it was
+ * loaded (a database returns them in no particular order), and a fingerprint that followed that order would call an
+ * untouched definition customized whenever the two loads disagreed. Upgrades record a hash that was taken from one
+ * load and compare it with another, so the order must not show.
  *
  * <p>Ids, versions and audit fields are left out at every depth — they are assigned, not authored, and a draft and
  * its released copy never share them. So is the release state, which is what this comparison answers.
@@ -34,6 +40,11 @@ public class EntityDefinitionFingerprint {
         // Cleared rather than only stripped: canonical JSON is written without a java.time module.
         model.setCreatedAt(null);
         model.setUpdatedAt(null);
+        if (model.getAttributes() != null) {
+            model.setAttributes(model.getAttributes().stream()
+                .sorted(Comparator.comparing(attribute -> attribute.getCode() == null ? "" : attribute.getCode()))
+                .toList());
+        }
         return CanonicalJson.of(model, VOLATILE_FIELDS);
     }
 }
